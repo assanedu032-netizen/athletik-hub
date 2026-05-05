@@ -1,0 +1,697 @@
+/* ═══════════════════════════════════════════════════
+   SCREENS.CSS — Chat, Moi, Nutrition, Polish V8
+   Athletik Hub V8
+═══════════════════════════════════════════════════ */
+
+/* ═══ CHAT HEADER ═══ */
+.chat-header{background:var(--navy);padding:16px 18px;display:flex;align-items:center;gap:12px;flex-shrink:0}
+.ch-back{color:var(--gold);font-size:18px;cursor:pointer;padding:4px}
+.ch-avatar{width:38px;height:38px;border-radius:50%;background:var(--navy2);border:2px solid var(--gold);overflow:hidden;flex-shrink:0}
+.ch-avatar img{width:100%;height:100%;object-fit:cover;object-position:top}
+.ch-info{flex:1}
+.ch-name{font-family:'Bebas Neue',sans-serif;font-size:18px;color:#fff;letter-spacing:1.5px}
+.ch-status{font-size:10px;color:var(--gold);font-weight:600}
+.ch-menu{color:rgba(255,255,255,.5);font-size:18px;cursor:pointer;padding:4px}
+
+/* ═══ MESSAGES AREA ═══ */
+.chat-body{flex:1;overflow-y:auto;padding:16px 14px;display:flex;flex-direction:column;gap:8px;-webkit-overflow-scrolling:touch}
+.chat-body::-webkit-scrollbar{width:2px}.chat-body::-webkit-scrollbar-thumb{background:var(--border2);border-radius:2px}
+
+/* Message bubbles */
+.msg{max-width:82%;display:flex;flex-direction:column;animation:msgIn .3s ease both}
+@keyframes msgIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+.msg.titan{align-self:flex-start}
+.msg.user{align-self:flex-end}
+
+.msg-bubble{padding:10px 14px;font-size:13px;line-height:1.55;font-weight:500;word-wrap:break-word}
+.msg.titan .msg-bubble{background:var(--surface);border:1px solid var(--border);border-radius:4px 16px 16px 16px;color:var(--text)}
+.msg.user .msg-bubble{background:var(--navy);border-radius:16px 4px 16px 16px;color:#fff}
+
+.msg-time{font-size:9px;color:var(--muted);margin-top:3px;font-weight:600}
+.msg.titan .msg-time{margin-left:4px}
+.msg.user .msg-time{margin-right:4px;text-align:right}
+
+/* Titan label */
+.msg-titan-label{display:flex;align-items:center;gap:6px;margin-bottom:4px}
+.mtl-av{width:22px;height:22px;border-radius:50%;background:var(--navy);border:1.5px solid var(--gold);flex-shrink:0}
+.mtl-name{font-size:10px;font-weight:700;color:var(--gold);letter-spacing:1px;text-transform:uppercase}
+
+/* Typing indicator */
+.typing{align-self:flex-start;display:none;animation:msgIn .3s ease both}
+.typing.show{display:flex}
+.typing-inner{display:flex;align-items:center;gap:6px;padding:10px 16px;background:var(--surface);border:1px solid var(--border);border-radius:4px 16px 16px 16px}
+.typing-dot{width:6px;height:6px;border-radius:50%;background:var(--muted);animation:typeDot 1.4s infinite}
+.typing-dot:nth-child(2){animation-delay:.2s}
+.typing-dot:nth-child(3){animation-delay:.4s}
+@keyframes typeDot{0%,80%,100%{opacity:.3;transform:scale(.8)}40%{opacity:1;transform:scale(1)}}
+
+/* Security blocked message */
+.msg-blocked{align-self:center;padding:8px 16px;background:#FEF0F0;border:1px solid #FECACA;border-radius:12px;font-size:11px;font-weight:700;color:#DC2626;text-align:center;max-width:90%;animation:msgIn .3s ease both}
+
+/* ═══ INPUT BAR ═══ */
+.chat-input{display:flex;gap:8px;padding:12px 14px;background:var(--surface);border-top:1px solid var(--border);flex-shrink:0;align-items:flex-end}
+.ci-field{flex:1;padding:10px 14px;background:var(--surface2);border:1.5px solid var(--border);border-radius:20px;font-family:'Outfit',sans-serif;font-size:14px;font-weight:500;color:var(--text);outline:none;resize:none;max-height:100px;min-height:40px;line-height:1.4;transition:border-color .2s}
+.ci-field:focus{border-color:var(--gold)}
+.ci-field::placeholder{color:var(--muted);opacity:.6}
+.ci-send{width:40px;height:40px;border-radius:50%;background:var(--gold);border:none;display:flex;align-items:center;justify-content:center;cursor:pointer;transition:all .2s;flex-shrink:0}
+.ci-send:active{transform:scale(.9)}
+.ci-send svg{width:18px;height:18px;fill:var(--navy)}
+.ci-send.disabled{background:var(--border);cursor:not-allowed}
+
+/* ═══ NAV ═══ */
+.nav{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:430px;background:var(--surface);display:flex;justify-content:space-around;padding:10px 0 env(safe-area-inset-bottom,20px);border-top:1px solid var(--border);z-index:100}
+.nav-item{display:flex;flex-direction:column;align-items:center;gap:3px;color:var(--muted);cursor:pointer;padding:4px 12px;position:relative}
+.nav-item.on{color:var(--gold)}.nav-item.on::after{content:'';position:absolute;top:-1px;left:50%;transform:translateX(-50%);width:20px;height:3px;background:var(--gold);border-radius:0 0 3px 3px}
+.nav-ic{font-size:22px}.nav-lb{font-size:9px;font-weight:700;letter-spacing:1px;text-transform:uppercase}
+
+
+
+
+
+
+.main{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:0 0 90px}.main::-webkit-scrollbar{width:2px}.main::-webkit-scrollbar-thumb{background:var(--border2);border-radius:2px}
+@keyframes fadeUp{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
+@keyframes popIn{from{opacity:0;transform:scale(.85)}to{opacity:1;transform:scale(1)}}
+@keyframes shine{0%{left:-100%}100%{left:200%}}
+
+/* ═══ PROFILE HEADER ═══ */
+.prof-header{background:var(--navy);padding:28px 22px 24px;text-align:center;border-radius:0 0 28px 28px;position:relative;overflow:hidden}
+.prof-header::after{content:'';position:absolute;top:0;left:0;right:0;bottom:0;background:radial-gradient(ellipse at 50% 120%,rgba(197,164,78,.12) 0%,transparent 60%);pointer-events:none}
+.prof-av{width:80px;height:80px;border-radius:50%;background:var(--navy2);border:3px solid var(--gold);margin:0 auto;display:flex;align-items:center;justify-content:center;font-family:'Bebas Neue',sans-serif;font-size:28px;color:#fff;position:relative;box-shadow:0 4px 24px var(--gold-glow)}
+.prof-name{font-family:'Bebas Neue',sans-serif;font-size:24px;color:#fff;letter-spacing:2px;margin-top:12px}
+.prof-email{font-size:11px;color:rgba(255,255,255,.45);margin-top:2px}
+.prof-stats{display:flex;justify-content:center;gap:24px;margin-top:16px}
+.ps-item{text-align:center}
+.ps-val{font-family:'Bebas Neue',sans-serif;font-size:24px;color:var(--gold);line-height:1}
+.ps-label{font-size:9px;color:rgba(255,255,255,.5);font-weight:700;letter-spacing:1px;text-transform:uppercase;margin-top:2px}
+
+/* ═══ LEVEL CARD ═══ */
+.level-card{margin:16px 22px 0;background:var(--surface);border:1px solid var(--border);border-radius:var(--r2);padding:18px;box-shadow:var(--card-shadow);display:flex;align-items:center;gap:14px;animation:fadeUp .3s ease both}
+.lc-icon{font-size:36px}
+.lc-body{flex:1}
+.lc-name{font-family:'Bebas Neue',sans-serif;font-size:20px;color:var(--text);letter-spacing:1px}
+.lc-desc{font-size:11px;color:var(--muted);margin-top:2px}
+.lc-bar{height:5px;background:var(--surface2);border-radius:3px;margin-top:8px;overflow:hidden}
+.lc-bar-in{height:100%;background:linear-gradient(90deg,var(--gold),var(--gold2));border-radius:3px;transition:width 1s ease}
+.lc-progress{font-size:10px;color:var(--muted);font-weight:700;margin-top:4px;display:flex;justify-content:space-between}
+
+/* ═══ SECTION TITLES ═══ */
+.sec-title{font-family:'Bebas Neue',sans-serif;font-size:18px;color:var(--text);letter-spacing:1px;margin:20px 22px 10px}
+
+/* ═══ GOLDEN TITAN BADGES ═══ */
+.gtb-row{display:flex;gap:10px;padding:0 22px;overflow-x:auto;scrollbar-width:none}
+.gtb-row::-webkit-scrollbar{display:none}
+.gtb{
+  min-width:100px;padding:16px 14px;
+  background:var(--surface);border:1px solid var(--border);
+  border-radius:var(--r);text-align:center;
+  box-shadow:var(--card-shadow);flex-shrink:0;
+  position:relative;overflow:hidden;transition:all .2s;
+}
+.gtb.earned{border-color:var(--gold);background:var(--gold-dim)}
+.gtb.locked{opacity:.45}
+.gtb-icon{font-size:32px;margin-bottom:6px}
+.gtb-name{font-size:11px;font-weight:800;color:var(--text);letter-spacing:.5px}
+.gtb-req{font-size:9px;color:var(--muted);margin-top:3px;line-height:1.3}
+.gtb.earned .gtb-name{color:var(--gold)}
+.gtb-shine{position:absolute;top:0;left:-100%;width:50%;height:100%;background:linear-gradient(90deg,transparent,rgba(197,164,78,.15),transparent);animation:shine 3s infinite;pointer-events:none}
+.gtb.locked .gtb-shine{display:none}
+
+/* ═══ ACHIEVEMENT BADGES ═══ */
+.badge-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;padding:0 22px}
+.badge{
+  background:var(--surface);border:1px solid var(--border);
+  border-radius:var(--r);padding:14px 8px;text-align:center;
+  box-shadow:var(--card-shadow);transition:all .2s;
+}
+.badge.locked{opacity:.35}
+.badge.earned{border-color:var(--gold);background:var(--gold-dim)}
+.badge-icon{font-size:28px;margin-bottom:4px}
+.badge-name{font-size:10px;font-weight:700;color:var(--text);line-height:1.2}
+.badge-desc{font-size:8px;color:var(--muted);margin-top:3px;line-height:1.3}
+.badge.earned .badge-name{color:var(--navy)}
+
+/* ═══ HISTORY ═══ */
+.hist-item{
+  display:flex;gap:12px;padding:14px 22px;
+  border-bottom:1px solid var(--border);
+  animation:fadeUp .3s ease both;
+}
+.hi-dot{width:10px;height:10px;border-radius:50%;margin-top:4px;flex-shrink:0}
+.hi-dot.green{background:var(--green)}.hi-dot.gold{background:var(--gold)}.hi-dot.red{background:var(--red)}
+.hi-body{flex:1}
+.hi-title{font-size:13px;font-weight:700;color:var(--text)}
+.hi-detail{font-size:11px;color:var(--muted);margin-top:2px}
+.hi-date{font-size:10px;color:var(--muted);font-weight:600;margin-top:3px}
+
+/* ═══ TITAN ENGINE MODE ═══ */
+.engine-card{margin:0 22px;background:var(--surface);border:1px solid var(--border);border-radius:var(--r2);padding:18px;box-shadow:var(--card-shadow)}
+.engine-title{font-family:'Bebas Neue',sans-serif;font-size:18px;color:var(--text);letter-spacing:1px;margin-bottom:4px;display:flex;align-items:center;gap:8px}
+.engine-desc{font-size:11px;color:var(--muted);margin-bottom:14px;line-height:1.5}
+.mode-opts{display:flex;flex-direction:column;gap:8px}
+.mode-opt{
+  padding:14px 16px;background:var(--surface2);
+  border:1.5px solid var(--border);border-radius:12px;
+  cursor:pointer;transition:all .2s;display:flex;align-items:center;gap:12px;
+}
+.mode-opt:active{transform:scale(.98)}
+.mode-opt.on{background:var(--gold-dim);border-color:var(--gold)}
+.mo-radio{width:20px;height:20px;border-radius:50%;border:2px solid var(--border2);display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:all .2s}
+.mode-opt.on .mo-radio{border-color:var(--gold);background:var(--gold)}
+.mo-radio::after{content:'';width:8px;height:8px;border-radius:50%;background:#fff;display:none}
+.mode-opt.on .mo-radio::after{display:block}
+.mo-body{flex:1}
+.mo-name{font-size:13px;font-weight:700;color:var(--text)}
+.mo-desc{font-size:11px;color:var(--muted);margin-top:2px}
+.mode-opt.on .mo-name{color:var(--navy)}
+
+/* ═══ SETTINGS ═══ */
+.setting-item{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:14px 22px;border-bottom:1px solid var(--border);
+  cursor:pointer;transition:background .2s;
+}
+.setting-item:active{background:var(--surface2)}
+.si-left{display:flex;align-items:center;gap:12px}
+.si-icon{font-size:20px;width:28px;text-align:center}
+.si-text{font-size:13px;font-weight:600;color:var(--text)}
+.si-sub{font-size:10px;color:var(--muted);margin-top:1px}
+.si-right{color:var(--muted);font-size:14px}
+
+/* Toggle switch */
+.toggle{width:44px;height:24px;border-radius:12px;background:var(--border2);position:relative;cursor:pointer;transition:background .3s}
+.toggle.on{background:var(--gold)}
+.toggle-knob{width:20px;height:20px;border-radius:50%;background:#fff;position:absolute;top:2px;left:2px;transition:transform .3s;box-shadow:0 1px 4px rgba(0,0,0,.15)}
+.toggle.on .toggle-knob{transform:translateX(20px)}
+
+/* ═══ LOGOUT ═══ */
+.logout-btn{
+  margin:20px 22px;padding:14px;
+  background:transparent;border:1.5px solid var(--red);
+  border-radius:var(--r);font-family:'Outfit',sans-serif;
+  font-size:14px;font-weight:700;color:var(--red);
+  cursor:pointer;text-align:center;transition:all .2s;
+}
+.logout-btn:active{background:rgba(224,82,82,.06);transform:scale(.98)}
+
+/* ═══ NAV ═══ */
+.nav{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:430px;background:var(--surface);display:flex;justify-content:space-around;padding:10px 0 env(safe-area-inset-bottom,20px);border-top:1px solid var(--border);z-index:100}
+.nav-item{display:flex;flex-direction:column;align-items:center;gap:3px;color:var(--muted);cursor:pointer;padding:4px 12px;position:relative}
+.nav-item.on{color:var(--gold)}.nav-item.on::after{content:'';position:absolute;top:-1px;left:50%;transform:translateX(-50%);width:20px;height:3px;background:var(--gold);border-radius:0 0 3px 3px}
+.nav-ic{font-size:22px}.nav-lb{font-size:9px;font-weight:700;letter-spacing:1px;text-transform:uppercase}
+
+/* ═══ NUTRITION WIDGET CSS ═══ */
+
+/* ═══ NUTRITION WIDGET (Integrated in Home) ═══ */
+.nutri-widget{background:var(--surface);border:1.5px solid var(--gold);border-radius:var(--r2);padding:18px;margin:0 22px 16px;box-shadow:0 4px 20px var(--gold-glow);position:relative;overflow:hidden}
+.nutri-widget::before{content:'';position:absolute;top:0;left:0;right:0;height:4px;background:linear-gradient(90deg,var(--gold),var(--gold2))}
+.nw-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px}
+.nw-title{font-family:'Bebas Neue',sans-serif;font-size:20px;color:var(--navy);letter-spacing:2px}
+.nw-cals{font-family:'Bebas Neue',sans-serif;font-size:28px;color:var(--gold);line-height:1}
+.nw-cals span{font-size:12px;color:var(--muted);font-weight:600}
+.nw-macros{display:flex;gap:8px;margin-bottom:14px}
+.nw-macro{flex:1;text-align:center;padding:10px 6px;background:var(--surface2);border-radius:10px}
+.nw-macro-v{font-family:'Bebas Neue',sans-serif;font-size:18px;color:var(--text);line-height:1}
+.nw-macro-v.prot{color:#3B82F6}
+.nw-macro-v.carbs{color:var(--gold)}
+.nw-macro-v.fat{color:#EC4899}
+.nw-macro-l{font-size:9px;color:var(--muted);font-weight:700;letter-spacing:1px;text-transform:uppercase;margin-top:3px}
+.nw-meals{display:flex;flex-direction:column;gap:8px;margin-bottom:14px}
+.nw-meal{display:flex;align-items:center;gap:10px;padding:10px 12px;background:var(--surface2);border-radius:10px;cursor:pointer;transition:all .2s}
+.nw-meal:active{transform:scale(.98);background:var(--gold-dim)}
+.nw-meal-ic{font-size:20px}
+.nw-meal-body{flex:1}
+.nw-meal-name{font-size:12px;font-weight:700;color:var(--text)}
+.nw-meal-cals{font-size:10px;color:var(--muted);margin-top:1px}
+.nw-meal-status{font-size:10px;font-weight:700;padding:3px 8px;border-radius:6px;white-space:nowrap}
+.nw-meal-status.done{background:#DCFCE7;color:#166534}
+.nw-meal-status.planned{background:var(--gold-dim);color:var(--gold)}
+.nw-btn{width:100%;padding:12px;background:linear-gradient(135deg,var(--gold),var(--gold2));color:var(--navy);border:none;border-radius:12px;font-family:'Outfit',sans-serif;font-size:13px;font-weight:800;cursor:pointer;transition:all .2s}
+.nw-btn:active{transform:scale(.97)}
+.nw-titan{display:flex;gap:10px;padding:12px;background:var(--navy);border-radius:12px;margin-top:12px}
+.nw-titan-av{width:28px;height:28px;border-radius:50%;background:var(--navy2);border:2px solid var(--gold);display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0}
+.nw-titan-txt{font-size:11px;color:#fff;line-height:1.4;font-weight:500}
+.nw-titan-txt strong{color:var(--gold);font-weight:800}
+
+
+/* ── V6 ── */
+.typing-cursor{animation:blink 1s infinite;color:var(--gold)}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:0}}
+.cal-day{width:36px;height:36px;display:flex;align-items:center;justify-content:center;background:var(--surface);border:1.5px solid var(--border2);border-radius:50%;font-size:11px;font-weight:700;cursor:pointer;color:var(--text2);transition:all .2s}
+.cal-day.on{background:var(--gold);border-color:var(--gold);color:var(--navy)}
+.dur-btn{padding:8px 16px;background:var(--surface);border:1.5px solid var(--border2);border-radius:20px;font-size:12px;font-weight:700;color:var(--text2);cursor:pointer}
+.dur-btn.on{background:var(--gold);border-color:var(--gold);color:var(--navy)}
+.habit-item{background:var(--surface);border-radius:10px;padding:12px;margin-bottom:8px;display:flex;justify-content:space-between;align-items:center;border:1.5px solid var(--border)}
+.npi-sel{background:var(--navy)!important}
+.npi-sel > div:first-child{background:var(--gold)!important;border-color:var(--gold)!important}
+
+.nav-svg{width:22px;height:22px;color:var(--muted);transition:color .2s,filter .2s}
+.nav-item.on .nav-svg{color:var(--gold);filter:drop-shadow(0 0 6px rgba(197,164,78,.5))}
+.nav-item.on .nav-lb{color:var(--gold)}
+
+.quick-card{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:14px;display:flex;align-items:center;gap:10px;cursor:pointer;transition:all .2s;min-height:56px}
+.quick-card:active{transform:scale(.97);background:var(--surface2)}
+.qc-txt{font-size:13px;font-weight:700;color:var(--text);line-height:1.3}
+
+/* Auth screen toujours en light mode */
+#auth { background: #FFFFFF !important; }
+#auth .ac { background: #FFFFFF; border: 1px solid #E2E5F0; }
+#auth .ab-n { color: #1B2A4A; }
+#auth .ab-s { color: #8896AE; }
+#auth .ac-t { color: #0D1117; }
+#auth .ac-s { color: #8896AE; }
+#auth .fi { background: #F5F6FA; border-color: #E2E5F0; color: #0D1117; }
+#auth .fl { color: #8896AE; }
+#auth .ad-t { color: #8896AE; }
+#auth .ad-l { background: #E2E5F0; }
+#auth .af { color: #8896AE; }
+#auth .af a { color: #C5A44E; }
+
+
+/* Bouton Suivant dans l'onboarding */
+.btn-next{
+  width:100%;padding:15px;margin-top:20px;
+  background:linear-gradient(135deg,var(--gold),var(--gold2));
+  color:var(--navy);border:none;border-radius:14px;
+  font-family:'Outfit',sans-serif;font-size:14px;font-weight:800;
+  cursor:pointer;box-shadow:0 4px 20px var(--gold-glow);
+  transition:all .2s;
+}
+.btn-next:active{transform:scale(.97)}
+
+
+/* ═══ POLISH V8 — DESIGN PREMIUM ═══ */
+
+/* 1. SPLASH — Ambiance sombre avec rayonnement gold */
+#splash {
+  background: #060C18;
+  background-image: radial-gradient(ellipse 60% 40% at 50% 60%, rgba(197,164,78,.15) 0%, transparent 70%);
+  justify-content: center; align-items: center;
+}
+.sp-logo {
+  background: linear-gradient(135deg, #1B2A4A, #243457) !important;
+  border: 1px solid rgba(197,164,78,.3) !important;
+  box-shadow: 0 0 60px rgba(197,164,78,.2), 0 0 120px rgba(197,164,78,.08) !important;
+  font-size: 42px !important;
+  letter-spacing: 2px !important;
+  animation: logoPulse 2s ease-in-out infinite !important;
+}
+@keyframes logoPulse {
+  0%,100% { box-shadow: 0 0 40px rgba(197,164,78,.2), 0 0 80px rgba(197,164,78,.08); }
+  50% { box-shadow: 0 0 60px rgba(197,164,78,.35), 0 0 120px rgba(197,164,78,.15); }
+}
+.sp-name { font-size: 40px !important; letter-spacing: 10px !important; color: #fff !important; }
+.sp-sub { letter-spacing: 4px !important; color: var(--gold) !important; font-size: 10px !important; }
+.sp-bar { width: 60px !important; background: rgba(197,164,78,.15) !important; }
+.sp-bar-in { background: linear-gradient(90deg, var(--gold), #D4B86A) !important; }
+
+/* 2. TITAN INTRO — Avatar premium */
+#titanIntro {
+  background: #060C18;
+  background-image: radial-gradient(ellipse 80% 50% at 50% 30%, rgba(197,164,78,.1) 0%, transparent 60%);
+}
+.t-avatar {
+  width: 110px !important; height: 110px !important;
+  background: linear-gradient(135deg, #1B2A4A 0%, #0A0F1E 100%) !important;
+  border: 2px solid var(--gold) !important;
+  box-shadow: 0 0 0 6px rgba(197,164,78,.08), 0 20px 60px rgba(0,0,0,.6) !important;
+  display: flex; align-items: center; justify-content: center;
+  font-family: 'Bebas Neue', sans-serif; font-size: 44px; color: var(--gold);
+  overflow: hidden;
+}
+/* SVG Titan dans l'avatar */
+.t-avatar::after {
+  content: 'T';
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 48px;
+  color: var(--gold);
+  position: absolute;
+}
+.t-name {
+  font-size: 36px !important;
+  letter-spacing: 8px !important;
+  background: linear-gradient(135deg, #C5A44E, #D4B86A);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  margin-top: 16px !important;
+}
+.t-role { color: rgba(255,255,255,.4) !important; letter-spacing: 3px !important; font-size: 10px !important; }
+.t-bubble {
+  background: rgba(255,255,255,.03) !important;
+  border: 1px solid rgba(197,164,78,.15) !important;
+  border-radius: 4px 20px 20px 20px !important;
+  font-size: 15px !important;
+  line-height: 1.8 !important;
+  color: rgba(255,255,255,.85) !important;
+  backdrop-filter: blur(10px);
+  max-width: 300px !important;
+}
+.btn-cta {
+  background: linear-gradient(135deg, #C5A44E 0%, #D4B86A 50%, #C5A44E 100%) !important;
+  background-size: 200% 100% !important;
+  animation: shimmerBtn 3s ease infinite !important;
+  border-radius: 16px !important;
+  font-size: 16px !important;
+  letter-spacing: 1px !important;
+  box-shadow: 0 8px 30px rgba(197,164,78,.4) !important;
+}
+@keyframes shimmerBtn {
+  0%,100% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+}
+
+/* 3. ONBOARDING — Questions style coach */
+.ob { padding: 28px 24px 100px !important; }
+.ob-q {
+  font-size: 26px !important;
+  font-weight: 900 !important;
+  line-height: 1.2 !important;
+  color: #fff !important;
+  margin-bottom: 8px !important;
+}
+.ob-sub { font-size: 13px !important; color: rgba(255,255,255,.4) !important; }
+.ob-opt {
+  background: rgba(255,255,255,.03) !important;
+  border: 1px solid rgba(255,255,255,.08) !important;
+  border-radius: 16px !important;
+  transition: all .15s !important;
+}
+.ob-opt:active, .ob-opt.sel {
+  background: rgba(197,164,78,.1) !important;
+  border-color: var(--gold) !important;
+  transform: scale(.98);
+}
+.ob-opt-ltr {
+  background: rgba(197,164,78,.1) !important;
+  border: 1px solid rgba(197,164,78,.2) !important;
+  color: var(--gold) !important;
+  border-radius: 10px !important;
+}
+.ob-opt.sel .ob-opt-ltr {
+  background: var(--gold) !important;
+  color: #0A0F1E !important;
+}
+.ob-opt-txt { font-size: 14px !important; color: rgba(255,255,255,.8) !important; }
+.ob-prog { gap: 4px !important; margin-bottom: 28px !important; }
+.ob-dot { height: 3px !important; border-radius: 2px !important; }
+.ob-dot.done { background: var(--gold) !important; }
+.ob-dot.now { background: rgba(197,164,78,.5) !important; }
+.ob-step { color: rgba(255,255,255,.3) !important; font-size: 10px !important; letter-spacing: 2px !important; }
+
+/* 4. RESULT — Révélation du programme */
+#result {
+  background: #060C18;
+  background-image: radial-gradient(ellipse 80% 60% at 50% 30%, rgba(197,164,78,.12) 0%, transparent 65%);
+}
+.res-card {
+  background: linear-gradient(135deg, #1B2A4A 0%, #0F1A30 100%) !important;
+  border: 1px solid rgba(197,164,78,.25) !important;
+  box-shadow: 0 20px 60px rgba(0,0,0,.5), 0 0 0 1px rgba(197,164,78,.05) !important;
+  border-radius: 24px !important;
+  padding: 28px 24px !important;
+}
+.res-name {
+  font-size: 32px !important;
+  letter-spacing: 3px !important;
+  background: linear-gradient(135deg, #C5A44E, #D4B86A);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+.res-badge {
+  background: rgba(197,164,78,.1) !important;
+  border: 1px solid rgba(197,164,78,.25) !important;
+  color: var(--gold) !important;
+  letter-spacing: 2px !important;
+}
+.res-btn {
+  background: linear-gradient(135deg, #C5A44E, #D4B86A) !important;
+  border-radius: 16px !important;
+  font-size: 15px !important;
+  letter-spacing: 1px !important;
+  box-shadow: 0 8px 30px rgba(197,164,78,.35) !important;
+}
+
+/* 5. HOME — Layout épuré premium */
+.home-header { padding: 20px 20px 16px !important; }
+.hh-avatar {
+  border: 2px solid rgba(197,164,78,.4) !important;
+  box-shadow: 0 0 0 4px rgba(197,164,78,.08) !important;
+}
+.hh-name { font-size: 20px !important; letter-spacing: 2px !important; }
+#titanHomeMsg { font-style: italic; color: rgba(255,255,255,.7) !important; }
+
+/* 6. CARDS — Profondeur et matière */
+.card {
+  background: rgba(255,255,255,.03) !important;
+  border: 1px solid rgba(255,255,255,.07) !important;
+  border-radius: 20px !important;
+  box-shadow: 0 4px 24px rgba(0,0,0,.3) !important;
+}
+
+/* 7. NAV — Glassmorphisme */
+.nav {
+  background: rgba(6,12,24,.9) !important;
+  border-top: 1px solid rgba(197,164,78,.1) !important;
+  box-shadow: 0 -1px 0 rgba(255,255,255,.03), 0 -10px 40px rgba(0,0,0,.4) !important;
+}
+
+/* 8. THINKING — Style probe/scan */
+#thinking {
+  background: #060C18 !important;
+  background-image: radial-gradient(ellipse 60% 40% at 50% 50%, rgba(197,164,78,.08) 0%, transparent 70%) !important;
+}
+#thinkPct {
+  font-size: 64px !important;
+  background: linear-gradient(135deg, #C5A44E, #D4B86A);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* 9. SPORT CHIPS — Style sélection moderne */
+.sport-chip {
+  background: rgba(255,255,255,.03) !important;
+  border: 1px solid rgba(255,255,255,.08) !important;
+  border-radius: 16px !important;
+  transition: all .15s ease !important;
+}
+.sport-chip:active, .sport-chip.sel, .sport-chip.on {
+  background: rgba(197,164,78,.12) !important;
+  border-color: var(--gold) !important;
+  box-shadow: 0 0 20px rgba(197,164,78,.15) !important;
+}
+.sport-ic { font-size: 32px !important; margin-bottom: 6px !important; }
+.sport-name { font-weight: 700 !important; font-size: 12px !important; color: rgba(255,255,255,.8) !important; }
+
+/* 10. INPUT fi — Style premium */
+.fi {
+  background: rgba(255,255,255,.04) !important;
+  border: 1px solid rgba(255,255,255,.1) !important;
+  color: #fff !important;
+  border-radius: 14px !important;
+  font-size: 16px !important;
+}
+.fi:focus {
+  border-color: var(--gold) !important;
+  background: rgba(197,164,78,.05) !important;
+  box-shadow: 0 0 0 3px rgba(197,164,78,.1) !important;
+}
+.fi::placeholder { color: rgba(255,255,255,.25) !important; }
+
+/* 11. SELECT dropdown */
+.fi-select {
+  background-color: rgba(255,255,255,.04) !important;
+  border: 1px solid rgba(255,255,255,.1) !important;
+  color: #fff !important;
+  border-radius: 14px !important;
+}
+
+/* 12. Mode Choice — Cards de sélection */
+#modeChoice {
+  background: #060C18;
+  background-image: radial-gradient(ellipse 80% 50% at 50% 80%, rgba(197,164,78,.08) 0%, transparent 60%);
+}
+
+/* 13. Streak flame animation */
+.streak-flame { animation: flamePulse 2s ease-in-out infinite; }
+@keyframes flamePulse {
+  0%,100% { transform: scale(1) rotate(-3deg); }
+  50% { transform: scale(1.2) rotate(3deg); }
+}
+
+/* 14. Prog bar — Gradient animé */
+.prog-bar-fill {
+  background: linear-gradient(90deg, #C5A44E, #D4B86A, #C5A44E) !important;
+  background-size: 200% 100% !important;
+  animation: progressShimmer 2s linear infinite !important;
+}
+@keyframes progressShimmer {
+  0% { background-position: 0% 50%; }
+  100% { background-position: 200% 50%; }
+}
+
+/* 15. Scores et stats — Typography forte */
+.sc-value, .stk-count, .ps-val {
+  background: linear-gradient(135deg, #C5A44E, #D4B86A);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* GLOBAL — Fond sombre cohérent sur tous les écrans */
+[data-theme="dark"] .scr { background: #060C18 !important; }
+[data-theme="dark"] body { background: #060C18 !important; }
+[data-theme="dark"] #app { background: #060C18 !important; }
+
+/* Light mode screens */
+[data-theme="light"] .scr { background: #F5F6FA !important; }
+[data-theme="light"] #splash { background: var(--navy) !important; }
+[data-theme="light"] #titanIntro { background: #F5F6FA !important; background-image: radial-gradient(ellipse 80% 50% at 50% 30%, rgba(197,164,78,.08) 0%, transparent 60%) !important; }
+[data-theme="light"] #titanIntro .t-bubble { background: #fff !important; border: 1px solid #E2E5F0 !important; color: #0D1117 !important; }
+[data-theme="light"] #titanIntro .t-name { background: linear-gradient(135deg, #1B2A4A, #243457); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+[data-theme="light"] #thinking { background: #F5F6FA !important; }
+[data-theme="light"] #result { background: #F5F6FA !important; }
+[data-theme="light"] .ob { background: #F5F6FA !important; }
+[data-theme="light"] #modeChoice { background: #F5F6FA !important; }
+[data-theme="light"] .ob-q { color: var(--text) !important; }
+[data-theme="light"] .ob-sub { color: var(--muted) !important; }
+[data-theme="light"] .ob-opt { background: #fff !important; border: 1.5px solid var(--border) !important; }
+[data-theme="light"] .ob-opt.sel { background: var(--gold-dim) !important; border-color: var(--gold) !important; }
+[data-theme="light"] .ob-opt-txt { color: var(--text) !important; }
+[data-theme="light"] .ob-step { color: var(--muted) !important; }
+[data-theme="light"] .sport-chip { background: #fff !important; border: 1.5px solid var(--border) !important; }
+[data-theme="light"] .sport-chip.sel { background: var(--gold-dim) !important; border-color: var(--gold) !important; }
+[data-theme="light"] .sport-name { color: var(--text) !important; }
+[data-theme="light"] .fi { background: #fff !important; border: 1.5px solid var(--border) !important; color: var(--text) !important; }
+[data-theme="light"] .fi::placeholder { color: var(--muted) !important; }
+[data-theme="light"] .fi-select { background-color: #fff !important; border: 1.5px solid var(--border) !important; color: var(--text) !important; }
+
+/* Texte global */
+.ob-q { font-family: 'Bebas Neue', sans-serif !important; letter-spacing: 1px !important; }
+
+/* ═══ BOUTON TITAN CENTRAL NAV ═══ */
+.nav { justify-content: space-around; align-items: flex-end; }
+.nav-titan {
+  display: flex; flex-direction: column; align-items: center;
+  cursor: pointer; padding: 0 8px; position: relative;
+  margin-top: -20px;
+}
+.nav-titan-btn {
+  width: 58px; height: 58px; border-radius: 50%;
+  background: linear-gradient(135deg, var(--navy), #1B2A4A);
+  border: 3px solid var(--gold);
+  display: flex; align-items: center; justify-content: center;
+  box-shadow: 0 4px 20px rgba(197,164,78,.35), 0 0 0 4px var(--surface);
+  transition: all .2s;
+}
+.nav-titan-btn:active { transform: scale(.93); }
+[data-theme="light"] .nav-titan-btn { box-shadow: 0 4px 20px rgba(197,164,78,.35), 0 0 0 4px #fff; }
+
+/* ═══ RECIPE MODAL ═══ */
+.recipe-modal {
+  position: fixed; top: 0; left: 50%; transform: translateX(-50%);
+  width: 100%; max-width: 430px; height: 100%;
+  background: var(--bg); z-index: 400; overflow-y: auto;
+  display: none; flex-direction: column;
+  animation: slideUpModal .3s ease;
+}
+.recipe-modal.open { display: flex; }
+@keyframes slideUpModal { from { transform: translateX(-50%) translateY(60px); opacity: 0; } to { transform: translateX(-50%) translateY(0); opacity: 1; } }
+.rm-header {
+  position: sticky; top: 0; z-index: 10;
+  background: var(--bg); padding: 16px 20px;
+  display: flex; align-items: center; gap: 12px;
+  border-bottom: 1px solid var(--border);
+}
+.rm-back { color: var(--gold); font-size: 18px; cursor: pointer; }
+.rm-title { font-family: 'Bebas Neue', sans-serif; font-size: 20px; color: var(--text); letter-spacing: 1px; flex: 1; }
+.rm-tag { padding: 4px 10px; border-radius: 20px; font-size: 10px; font-weight: 700; }
+.rm-tag.pre { background: var(--gold-dim); color: var(--gold); border: 1px solid var(--gold); }
+.rm-tag.post { background: rgba(34,197,94,.1); color: #22C55E; border: 1px solid #22C55E; }
+.rm-tag.meal { background: rgba(59,130,246,.1); color: #3B82F6; border: 1px solid #3B82F6; }
+
+.rm-hero {
+  width: 100%; height: 200px; overflow: hidden; flex-shrink: 0; position: relative;
+}
+.rm-hero img { width: 100%; height: 100%; object-fit: cover; }
+.rm-hero-overlay { position: absolute; inset: 0; background: linear-gradient(to top, rgba(0,0,0,.5) 0%, transparent 60%); }
+.rm-hero-cals { position: absolute; bottom: 14px; left: 18px; font-family: 'Bebas Neue', sans-serif; font-size: 28px; color: #fff; letter-spacing: 2px; }
+
+.rm-body { padding: 20px; flex: 1; }
+.rm-macros { display: grid; grid-template-columns: repeat(4,1fr); gap: 8px; margin-bottom: 20px; }
+.rm-macro { text-align: center; padding: 10px 6px; background: var(--surface); border: 1px solid var(--border); border-radius: 12px; }
+.rm-macro-v { font-family: 'Bebas Neue', sans-serif; font-size: 18px; line-height: 1; }
+.rm-macro-l { font-size: 9px; color: var(--muted); font-weight: 700; text-transform: uppercase; margin-top: 3px; }
+
+.rm-section { margin-bottom: 20px; }
+.rm-section-title { font-family: 'Bebas Neue', sans-serif; font-size: 16px; color: var(--text); letter-spacing: 1px; margin-bottom: 10px; display: flex; align-items: center; gap: 8px; }
+.rm-ingr { display: flex; align-items: center; gap: 10px; padding: 9px 0; border-bottom: 1px solid var(--border); }
+.rm-ingr:last-child { border: none; }
+.rm-ingr-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--gold); flex-shrink: 0; }
+.rm-ingr-name { flex: 1; font-size: 13px; color: var(--text); }
+.rm-ingr-qty { font-size: 12px; font-weight: 700; color: var(--muted); }
+
+.rm-step { display: flex; gap: 12px; margin-bottom: 12px; align-items: flex-start; }
+.rm-step-num { width: 28px; height: 28px; border-radius: 50%; background: var(--navy); color: var(--gold); font-family: 'Bebas Neue', sans-serif; font-size: 14px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; margin-top: 1px; }
+.rm-step-txt { font-size: 13px; color: var(--text); line-height: 1.5; flex: 1; }
+
+.rm-titan { display: flex; gap: 10px; padding: 12px 14px; background: var(--navy); border-radius: 12px; margin-bottom: 20px; }
+.rm-titan-av { width: 28px; height: 28px; border-radius: 50%; border: 2px solid var(--gold); display: flex; align-items: center; justify-content: center; font-family: 'Bebas Neue', sans-serif; font-size: 12px; color: var(--gold); flex-shrink: 0; background: rgba(0,0,0,.3); }
+.rm-titan-txt { font-size: 12px; color: rgba(255,255,255,.75); line-height: 1.5; font-style: italic; }
+
+.rm-add-btn {
+  width: 100%; padding: 15px;
+  background: linear-gradient(135deg, var(--gold), var(--gold2));
+  color: var(--navy); border: none; border-radius: 14px;
+  font-family: 'Outfit', sans-serif; font-size: 15px; font-weight: 800;
+  cursor: pointer; box-shadow: 0 4px 20px var(--gold-glow);
+  transition: all .2s; margin-bottom: 24px;
+}
+.rm-add-btn:active { transform: scale(.97); }
+
+/* ═══ SET SECTION ═══ */
+.set-day-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 16px; }
+.set-day-card {
+  background: var(--surface); border: 1.5px solid var(--border);
+  border-radius: 14px; padding: 14px; cursor: pointer; transition: all .2s;
+  text-align: center;
+}
+.set-day-card:active { transform: scale(.97); }
+.set-day-card.sel { border-color: var(--gold); background: var(--gold-dim); }
+.set-day-ic { font-size: 28px; margin-bottom: 6px; }
+.set-day-name { font-size: 12px; font-weight: 700; color: var(--text); }
+.set-day-desc { font-size: 10px; color: var(--muted); margin-top: 3px; }
+
+.set-exercise {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: 12px; padding: 14px; margin-bottom: 10px;
+  display: flex; align-items: center; gap: 12px;
+}
+.set-ex-ic { font-size: 22px; flex-shrink: 0; }
+.set-ex-body { flex: 1; }
+.set-ex-name { font-size: 13px; font-weight: 700; color: var(--text); }
+.set-ex-target { font-size: 11px; color: var(--muted); margin-top: 2px; }
+.set-ex-input { width: 64px; height: 36px; border-radius: 8px; border: 1.5px solid var(--border); background: var(--surface2); text-align: center; font-family: 'Bebas Neue', sans-serif; font-size: 16px; color: var(--text); outline: none; }
+.set-ex-input:focus { border-color: var(--gold); }
+
+/* ─── CSS secondaire (fin index.html) ─── */
+#installBtn{position:fixed;bottom:90px;right:16px;z-index:9998;display:none;align-items:center;gap:8px;padding:12px 18px;background:linear-gradient(135deg,#C5A44E,#D4B86A);color:#1B2A4A;border:none;border-radius:30px;font-family:'Outfit',sans-serif;font-size:13px;font-weight:800;cursor:pointer;box-shadow:0 6px 24px rgba(197,164,78,.45);animation:installPulse 2.5s ease-in-out infinite}
+#installBtn.show{display:flex}
+#installBtn:active{transform:scale(.95)}
+@keyframes installPulse{0%,100%{box-shadow:0 6px 24px rgba(197,164,78,.45)}50%{box-shadow:0 6px 32px rgba(197,164,78,.7)}}
+#iosInstallModal{position:fixed;inset:0;background:rgba(10,15,30,.85);backdrop-filter:blur(8px);z-index:99999;display:none;align-items:flex-end;justify-content:center;animation:fadeIn .25s ease}
+#iosInstallModal.show{display:flex}
+#iosInstallModal .ios-card{width:100%;max-width:430px;background:#fff;border-radius:24px 24px 0 0;padding:24px 22px 32px;animation:slideUp .35s cubic-bezier(.16,1,.3,1)}
+@keyframes fadeIn{from{opacity:0}to{opacity:1}}
+@keyframes slideUp{from{transform:translateY(100%)}to{transform:translateY(0)}}
+.ios-handle{width:40px;height:4px;background:#D0D4E8;border-radius:2px;margin:0 auto 18px}
+.ios-title{font-family:'Bebas Neue',sans-serif;font-size:24px;color:#1B2A4A;letter-spacing:2px;text-align:center;margin-bottom:6px}
+.ios-sub{font-size:12px;color:#8896AE;text-align:center;margin-bottom:22px}
+.ios-step{display:flex;align-items:center;gap:14px;padding:14px;background:#F5F6FA;border-radius:14px;margin-bottom:10px}
+.ios-step-num{width:32px;height:32px;border-radius:50%;background:linear-gradient(135deg,#C5A44E,#D4B86A);color:#1B2A4A;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:800;flex-shrink:0}
+.ios-step-txt{font-size:13px;font-weight:600;color:#0D1117;line-height:1.4}
+.ios-step-icon{font-size:22px;flex-shrink:0}
+.ios-close{width:100%;margin-top:14px;padding:14px;background:#1B2A4A;color:#fff;border:none;border-radius:12px;font-family:'Outfit',sans-serif;font-size:13px;font-weight:800;cursor:pointer}
+.ios-close:active{opacity:.85}

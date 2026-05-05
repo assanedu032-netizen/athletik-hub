@@ -1,0 +1,1699 @@
+<!DOCTYPE html>
+<html lang="fr" data-theme="light">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="theme-color" content="#0A0F1E" id="themeColor">
+<title>ATHLETIK HUB</title>
+
+<link rel="manifest" href="/manifest.json">
+<link rel="icon" type="image/png" sizes="32x32" href="/icons/favicon-32.png">
+<link rel="apple-touch-icon" href="/icons/apple-touch-icon.png">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="mobile-web-app-capable" content="yes">
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Outfit:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+
+<!-- ═══ CSS MODULES ═══ -->
+<link rel="stylesheet" href="css/base.css">
+<link rel="stylesheet" href="css/components.css">
+<link rel="stylesheet" href="css/screens.css">
+
+
+<template id="__bundler_thumbnail" data-bg-color="#1B2A4A">
+  <svg viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg">
+    <rect width="120" height="120" fill="#1B2A4A"/>
+    <rect x="35" y="28" width="50" height="50" rx="14" fill="#C5A44E" opacity="0.15"/>
+    <text x="60" y="62" font-family="sans-serif" font-size="28" font-weight="900" fill="#C5A44E" text-anchor="middle">A</text>
+    <text x="60" y="92" font-family="sans-serif" font-size="8" font-weight="700" fill="#C5A44E" text-anchor="middle" letter-spacing="3">HUB</text>
+  </svg>
+</template>
+</head>
+<body>
+<div id="app">
+
+<!-- ═══ SPLASH ═══ -->
+<div id="splash" class="scr on">
+  <div class="sp-logo" style="background:var(--gold-dim);display:flex;align-items:center;justify-content:center;font-family:'Bebas Neue',sans-serif;font-size:36px;color:#fff;width:100px;height:100px;border-radius:24px">AH</div>
+  <div class="sp-name">ATHLETIK HUB</div>
+  <div class="sp-sub">Deviens ce que tu peux être</div>
+  <div class="sp-bar"><div class="sp-bar-in" id="splashBar"></div></div>
+</div>
+
+<!-- ═══ TITAN INTRO ═══ -->
+<div id="titanIntro" class="scr">
+  <div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:32px 24px;text-align:center">
+    <div class="t-avatar" id="titanImg" style="width:110px;height:110px;border-radius:50%;background:linear-gradient(135deg,#1B2A4A,#0A0F1E);border:2px solid #C5A44E;box-shadow:0 0 0 6px rgba(197,164,78,.08),0 20px 60px rgba(0,0,0,.6);display:flex;align-items:center;justify-content:center;flex-shrink:0">
+      <svg width="56" height="56" viewBox="0 0 56 56" fill="none">
+        <ellipse cx="28" cy="20" rx="11" ry="12" fill="#C5A44E" opacity=".9"/>
+        <path d="M8 52c0-11 9-18 20-18s20 7 20 18" fill="#C5A44E" opacity=".7"/>
+        <ellipse cx="28" cy="18" rx="9" ry="10" fill="#0A0F1E"/>
+        <circle cx="24" cy="17" r="2.5" fill="#C5A44E"/>
+        <circle cx="32" cy="17" r="2.5" fill="#C5A44E"/>
+        <path d="M23 23 Q28 27 33 23" stroke="#C5A44E" stroke-width="1.5" fill="none" stroke-linecap="round"/>
+      </svg>
+    </div>
+    <div class="t-name">TITAN</div>
+    <div class="t-role">Ton coach virtuel</div>
+    <div class="t-bubble" id="titanBubble"><span id="titanTypingText"></span><span class="typing-cursor">|</span></div>
+    <button class="btn-cta" id="btnStart" onclick="go('q0')">C'est parti 🔥</button>
+  </div>
+</div>
+
+
+<!-- ═══ Q0 — PRÉNOM ═══ -->
+<div id="q0" class="scr">
+  <div class="ob">
+    <div class="ob-prog"><div class="ob-dot now"></div><div class="ob-dot"></div><div class="ob-dot"></div><div class="ob-dot"></div><div class="ob-dot"></div></div>
+    <div class="ob-step">Étape 1 / 5</div>
+    <div class="ob-q">Comment tu t'appelles ?</div>
+    <div class="ob-sub">Titan ne répond pas aux anonymes.</div>
+    <input class="fi" type="text" id="prenomInput" placeholder="Ton prénom..." maxlength="30" style="margin-top:12px;text-transform:capitalize" onkeydown="if(event.key==='Enter')submitPrenom()">
+    <button class="btn-next" onclick="submitPrenom()">Suivant →</button>
+  </div>
+</div>
+
+<!-- ═══ Q_SEXE — SEXE ═══ -->
+<div id="qSexe" class="scr">
+  <div class="ob">
+    <div class="ob-prog"><div class="ob-dot done"></div><div class="ob-dot now"></div><div class="ob-dot"></div><div class="ob-dot"></div><div class="ob-dot"></div></div>
+    <div class="ob-step">Étape 2 / 5</div>
+    <div class="ob-q">T'es un homme ou une femme ?</div>
+    <div class="ob-sub">Ça change les standards. Sois honnête.</div>
+    <div class="sport-grid" style="grid-template-columns:1fr 1fr;gap:12px;margin-top:20px">
+      <button class="sport-chip" onclick="pickSexe(this,'homme')"><div class="sport-ic">♂</div><div class="sport-name">Homme</div></button>
+      <button class="sport-chip" onclick="pickSexe(this,'femme')"><div class="sport-ic">♀</div><div class="sport-name">Femme</div></button>
+    </div>
+  </div>
+</div>
+
+<div id="q4" class="scr">
+  <div class="ob">
+    <div class="ob-prog"><div class="ob-dot done"></div><div class="ob-dot done"></div><div class="ob-dot now"></div><div class="ob-dot"></div><div class="ob-dot"></div></div>
+    <div class="ob-step">Étape 3 / 5</div>
+    <div class="ob-q">Pourquoi t'es là ?</div>
+    <div class="ob-sub">Un seul objectif. Celui pour lequel tu es vraiment là.</div>
+    <div class="ob-opts" id="q4opts">
+      <button class="ob-opt" onclick="pickOne(this,'q4','dunker')"><div class="ob-opt-ltr">A</div><div class="ob-opt-txt">Apprendre à dunker au basket</div></button>
+      <button class="ob-opt" onclick="pickOne(this,'q4','vertical')"><div class="ob-opt-ltr">B</div><div class="ob-opt-txt">Sauter plus haut (détente verticale pure)</div></button>
+      <button class="ob-opt" onclick="pickOne(this,'q4','explosif')"><div class="ob-opt-ltr">C</div><div class="ob-opt-txt">Être explosif et complet (vitesse + détente + agilité)</div></button>
+      <button class="ob-opt" onclick="pickOne(this,'q4','force')"><div class="ob-opt-ltr">D</div><div class="ob-opt-txt">Développer ma force sans accès à une salle</div></button>
+      <button class="ob-opt" onclick="pickOne(this,'q4','poids')"><div class="ob-opt-ltr">E</div><div class="ob-opt-txt">Perdre du poids tout en devenant explosif</div></button>
+      <button class="ob-opt" onclick="pickOne(this,'q4','discipline')"><div class="ob-opt-ltr">F</div><div class="ob-opt-txt">Créer une discipline et une régularité solides</div></button>
+      <button class="ob-opt" onclick="pickOne(this,'q4','tout')"><div class="ob-opt-ltr">G</div><div class="ob-opt-txt">Optimiser TOUT : mental, nutrition, entraînement, récupération</div></button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ Q5 — SPORT (grid chips) ═══ -->
+<div id="q5" class="scr">
+  <div class="ob">
+    <div class="ob-prog"><div class="ob-dot done"></div><div class="ob-dot done"></div><div class="ob-dot done"></div><div class="ob-dot now"></div><div class="ob-dot"></div></div>
+    <div class="ob-step">Étape 4 / 5</div>
+    <div class="ob-q">Ton sport ?</div>
+    <div class="ob-sub">Titan a besoin de savoir dans quoi tu joues.</div>
+    <div class="sport-grid">
+      <button class="sport-chip" onclick="pickSport(this,'basket')"><div class="sport-ic">🏀</div><div class="sport-name">Basket / Volley</div></button>
+      <button class="sport-chip" onclick="pickSport(this,'foot')"><div class="sport-ic">⚽</div><div class="sport-name">Foot / Rugby</div></button>
+      <button class="sport-chip" onclick="pickSport(this,'athletisme')"><div class="sport-ic">🏃</div><div class="sport-name">Athlétisme</div></button>
+      <button class="sport-chip" onclick="pickSport(this,'combat')"><div class="sport-ic">💥</div><div class="sport-name">Sports de combat</div></button>
+      <button class="sport-chip" onclick="pickSport(this,'autre')"><div class="sport-ic">🏅</div><div class="sport-name">Autre sport</div></button>
+    </div>
+  </div>
+</div>
+
+<div id="q6" class="scr">
+  <div class="ob">
+    <div class="ob-prog"><div class="ob-dot done"></div><div class="ob-dot done"></div><div class="ob-dot done"></div><div class="ob-dot done"></div><div class="ob-dot done"></div><div class="ob-dot now"></div></div>
+    <div class="ob-step">Étape 5 / 5 — Dernière</div>
+    <div class="ob-q">T'as quel âge ?</div>
+    <div class="ob-sub">Dernière info. Après ça Titan calcule tout.</div>
+    <select class="fi-select" id="ageSelect">
+      <option value="14">14 ans</option>
+      <option value="15">15 ans</option>
+      <option value="16">16 ans</option>
+      <option value="17">17 ans</option>
+      <option value="18">18 ans</option>
+      <option value="19">19 ans</option>
+      <option value="20">20 ans</option>
+      <option value="21">21 ans</option>
+      <option value="22">22 ans</option>
+      <option value="23">23 ans</option>
+      <option value="24">24 ans</option>
+      <option value="25">25 ans</option>
+      <option value="26">26 ans</option>
+      <option value="27">27 ans</option>
+      <option value="28">28 ans</option>
+      <option value="29">29 ans</option>
+      <option value="30">30 ans</option>
+      <option value="31">31 ans</option>
+      <option value="32">32 ans</option>
+      <option value="33">33 ans</option>
+      <option value="34">34 ans</option>
+      <option value="35">35 ans</option>
+      <option value="36">36 ans</option>
+      <option value="37">37 ans</option>
+      <option value="38">38 ans</option>
+      <option value="39">39 ans</option>
+      <option value="40">40 ans</option>
+      <option value="41">41 ans</option>
+      <option value="42">42 ans</option>
+      <option value="43">43 ans</option>
+      <option value="44">44 ans</option>
+      <option value="45">45 ans</option>
+      <option value="46">46 ans</option>
+      <option value="47">47 ans</option>
+      <option value="48">48 ans</option>
+      <option value="49">49 ans</option>
+      <option value="50">50 ans</option>
+      <option value="50+">50 ans et plus</option>
+    </select>
+    <div style="margin-top:24px">
+      <button class="ob-next ready" style="position:static;opacity:1;pointer-events:auto" onclick="submitAge()">Valider →</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ TITAN THINKING ═══ -->
+<div id="thinking" class="scr" style="justify-content:center;align-items:center;flex-direction:column;text-align:center;padding:32px 24px">
+  <img class="think-avatar" id="thinkImg" src="" alt="Titan" style="width:80px;height:80px;border-radius:20px;background:var(--navy);margin-bottom:24px">
+  <div style="font-family:'Bebas Neue',sans-serif;font-size:22px;color:var(--gold);letter-spacing:2px;margin-bottom:8px">TITAN ANALYSE</div>
+  <div id="thinkMsg" style="font-size:13px;color:var(--text2);min-height:36px;margin-bottom:20px;max-width:260px;line-height:1.5">Analyse du profil en cours...</div>
+  <div style="width:200px;height:4px;background:var(--border);border-radius:2px;overflow:hidden;margin-bottom:12px">
+    <div id="thinkBar" style="height:100%;background:var(--gold);border-radius:2px;width:0%;transition:width 0.4s ease"></div>
+  </div>
+  <div id="thinkPct" style="font-family:'Bebas Neue',sans-serif;font-size:36px;color:var(--text)">0%</div>
+</div>
+
+<!-- ═══ RESULT ═══ -->
+<div id="result" class="scr">
+  <div style="flex:1;display:flex;flex-direction:column;align-items:center;padding:28px 24px;text-align:center;overflow-y:auto">
+    <div class="res-badge">⚡ Analyse terminée</div>
+    <div class="res-title">TON PROGRAMME</div>
+    <div class="res-card">
+      <div class="res-emoji" id="rEmoji">🏆</div>
+      <div class="res-name" id="rName">ELITE ATHLETE</div>
+      <div class="res-obj" id="rObj">Explosivité globale</div>
+      <div class="res-meta"><div class="res-meta-i" id="rDur">⏱ 16-20 sem</div><div class="res-meta-i" id="rLvl">📊 Tous niveaux</div></div>
+    </div>
+    <div class="res-titan">
+      <img class="res-t-av" id="rTitanImg" src="" alt="T">
+      <div class="res-t-txt" id="rMsg">"Ton profil montre que tu as besoin d'un programme complet."</div>
+    </div>
+    <button class="res-btn" onclick="go('auth')">Crée ton compte pour sauvegarder</button>
+  </div>
+</div>
+
+<!-- ═══ AUTH ═══ -->
+<div id="auth" class="scr">
+  <div class="aw">
+    <div class="ab">
+      <div class="al-w"><div style="font-family:'Bebas Neue',sans-serif;font-size:28px;color:#fff">AH</div></div>
+      <div class="ab-n">ATHLETIK HUB</div>
+      <div class="ab-s">Crée ton compte</div>
+    </div>
+    <div class="ac">
+      <div class="ac-t">Rejoins la meute</div>
+      <div class="ac-s">Sauvegarde ta progression et accède à ton programme.</div>
+      <div id="authMsg" class="msg"></div>
+      <button class="bg" onclick="alert('Google Auth — Firebase à intégrer')">
+        <svg class="gi" viewBox="0 0 24 24"><path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.07 5.07 0 01-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/><path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/><path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05"/><path d="M12 5.38c1.62 0 3.06.56 4.21 1.66l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/></svg>
+        Continuer avec Google
+      </button>
+      <div class="ad"><div class="ad-l"></div><div class="ad-t">OU</div><div class="ad-l"></div></div>
+      <div class="fw"><label class="fl">Email</label><input class="fi" type="email" id="aEmail" placeholder="ton@email.com"></div>
+      <div class="fw"><label class="fl">Mot de passe</label><input class="fi" type="password" id="aPass" placeholder="Minimum 6 caractères"></div>
+      
+      <button class="bc" onclick="createAccount()">Créer mon profil</button>
+<button onclick="testMode()" style="width:100%;padding:12px;margin-top:8px;background:none;border:1.5px dashed var(--border2);border-radius:12px;font-family:'Outfit',sans-serif;font-size:13px;font-weight:700;color:var(--muted);cursor:pointer">⚡ Accès Test — Sans compte</button>
+    </div>
+    <div class="af">Déjà un compte ? <a href="#" onclick="alert('Connexion — Firebase à intégrer')">Se connecter</a></div>
+  </div>
+</div>
+
+
+<!-- ═══ CHOIX MODE ═══ -->
+<div id="modeChoice" class="scr" style="justify-content:center;align-items:center;flex-direction:column;padding:32px 24px">
+  <div style="font-family:'Bebas Neue',sans-serif;font-size:24px;color:var(--gold);letter-spacing:2px;margin-bottom:8px;text-align:center">COMMENT TU VEUX AVANCER ?</div>
+  <div style="font-size:13px;color:var(--text2);text-align:center;margin-bottom:28px;max-width:280px">Titan a calculé ton programme. Maintenant choisis comment tu veux avancer.</div>
+  <div onclick="startGuidedMode()" style="background:var(--navy);border:2px solid var(--gold);border-radius:16px;padding:20px;width:100%;max-width:320px;margin-bottom:14px;cursor:pointer;box-sizing:border-box">
+    <div style="font-family:'Bebas Neue',sans-serif;font-size:20px;color:var(--gold);margin-bottom:6px">🏆 PROGRAMME GUIDÉ</div>
+    <div style="font-size:13px;color:var(--text2);line-height:1.5">Titan planifie tout. Séances, charges, repos. Tu exécutes.</div>
+    <div style="font-size:11px;color:var(--gold);margin-top:8px;font-weight:700">RECOMMANDÉ →</div>
+  </div>
+  <div onclick="startFreeMode()" style="background:var(--surface);border:1.5px solid var(--border2);border-radius:16px;padding:20px;width:100%;max-width:320px;cursor:pointer;box-sizing:border-box">
+    <div style="font-family:'Bebas Neue',sans-serif;font-size:20px;color:var(--text);margin-bottom:6px">🎬 MODE LIBRE</div>
+    <div style="font-size:13px;color:var(--muted);line-height:1.5">Tu explores, tu construis tes séances. Titan observe et donne son avis.</div>
+  </div>
+  <div style="font-size:11px;color:var(--muted);text-align:center;margin-top:14px">Modifiable à tout moment dans ton profil.</div>
+</div>
+
+<div id="vHome" class="view">
+  <div class="main" style="padding-bottom:90px">
+
+    <!-- HERO PHOTO style Coach Mike G -->
+    <div style="position:relative;height:260px;overflow:hidden">
+      <img src="https://images.unsplash.com/photo-1571019614242-c5c5dee9f50b?w=800&q=80" 
+           style="width:100%;height:100%;object-fit:cover;object-position:center top"
+           onerror="this.style.background='linear-gradient(135deg,#1B2A4A,#060C18)';this.src=''">
+      <!-- Overlay gradient -->
+      <div style="position:absolute;inset:0;background:linear-gradient(to bottom,rgba(6,12,24,.3) 0%,rgba(6,12,24,.0) 40%,rgba(6,12,24,.95) 100%)"></div>
+      <!-- Avatar profil haut droite -->
+      <div onclick="switchTab('moi')" style="position:absolute;top:16px;right:16px;width:40px;height:40px;border-radius:50%;background:rgba(6,12,24,.7);border:2px solid var(--gold);display:flex;align-items:center;justify-content:center;cursor:pointer;backdrop-filter:blur(8px)">
+        <span id="userInitial" style="font-family:'Bebas Neue',sans-serif;font-size:16px;color:var(--gold)">A</span>
+      </div>
+      <!-- Nom + salutation sur la photo -->
+      <div style="position:absolute;bottom:16px;left:20px;right:20px">
+        <div id="greetText" style="font-size:11px;color:rgba(255,255,255,.5);font-weight:600;letter-spacing:2px;text-transform:uppercase;margin-bottom:2px">Bonjour</div>
+        <div id="userName" style="font-family:'Bebas Neue',sans-serif;font-size:32px;color:#fff;letter-spacing:3px;line-height:1;text-shadow:0 2px 20px rgba(0,0,0,.5)">ATHLÈTE</div>
+      </div>
+    </div>
+
+    <!-- CARTE SÉANCE — collée sous la photo, style FizzUp TODAY -->
+    <div id="todayCard" style="margin:-1px 0 0;background:#0F1A30;border-bottom:1px solid rgba(197,164,78,.15);padding:18px 20px">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
+        <div style="font-size:10px;font-weight:700;letter-spacing:3px;color:var(--gold);text-transform:uppercase">Aujourd'hui</div>
+        <div style="font-size:10px;color:rgba(255,255,255,.3)" id="pcDur">Semaine 1 / 20</div>
+      </div>
+      <div style="font-family:'Bebas Neue',sans-serif;font-size:22px;color:#fff;letter-spacing:2px;margin-bottom:2px" id="pcName">ELITE ATHLETE</div>
+      <div style="font-size:12px;color:rgba(255,255,255,.45);margin-bottom:14px" id="pcObj">Explosivité globale</div>
+      <button onclick="switchTab('tracks')" style="width:100%;padding:14px;background:var(--gold);border:none;border-radius:10px;font-family:'Bebas Neue',sans-serif;font-size:16px;letter-spacing:2px;color:#060C18;cursor:pointer;touch-action:manipulation">
+        LANCER LA SÉANCE →
+      </button>
+    </div>
+
+    <!-- PROGRESSION -->
+    <div style="padding:16px 20px;border-bottom:1px solid rgba(255,255,255,.05)">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+        <div style="font-size:12px;color:rgba(255,255,255,.5)" id="pcPhase">Phase 1 — Fondations</div>
+        <div style="font-family:'Bebas Neue',sans-serif;font-size:18px;color:var(--gold)" id="pcPct">0%</div>
+      </div>
+      <div style="height:2px;background:rgba(255,255,255,.08);border-radius:1px;overflow:hidden">
+        <div id="pcBar" style="height:100%;background:var(--gold);border-radius:1px;width:0%;transition:width 1s ease"></div>
+      </div>
+    </div>
+
+    <!-- TITAN MESSAGE -->
+    <div style="padding:16px 20px;border-bottom:1px solid rgba(255,255,255,.05)">
+      <div style="font-size:9px;font-weight:700;letter-spacing:2px;color:rgba(255,255,255,.25);text-transform:uppercase;margin-bottom:8px">Titan</div>
+      <div id="titanHomeMsg" style="font-size:14px;color:rgba(255,255,255,.7);line-height:1.6;font-style:italic"></div>
+    </div>
+
+    <!-- STREAK -->
+    <div style="padding:16px 20px;border-bottom:1px solid rgba(255,255,255,.05);display:flex;align-items:center;justify-content:space-between">
+      <div>
+        <div style="font-size:9px;font-weight:700;letter-spacing:2px;color:rgba(255,255,255,.25);text-transform:uppercase;margin-bottom:4px">Streak</div>
+        <div style="font-family:'Bebas Neue',sans-serif;font-size:28px;color:var(--gold)" id="streakCount">0 JOURS</div>
+        <div style="font-size:11px;color:rgba(255,255,255,.35);margin-top:2px" id="streakMsg">Commence aujourd'hui.</div>
+      </div>
+      <div class="streak-flame" style="font-size:44px">🔥</div>
+    </div>
+
+    <!-- QUICK ACTIONS — 4 boutons épurés -->
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:1px;background:rgba(255,255,255,.05);margin-top:1px">
+      <div onclick="switchTab('tracks')" style="background:#060C18;padding:20px;cursor:pointer;touch-action:manipulation" ontouchstart="">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--gold)" stroke-width="1.8" style="margin-bottom:8px"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+        <div style="font-family:'Bebas Neue',sans-serif;font-size:14px;color:#fff;letter-spacing:1px">SAT</div>
+        <div style="font-size:10px;color:rgba(255,255,255,.3);margin-top:2px">Mon score</div>
+      </div>
+      <div onclick="switchTab('chat')" style="background:#060C18;padding:20px;cursor:pointer;touch-action:manipulation" ontouchstart="">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--gold)" stroke-width="1.8" style="margin-bottom:8px"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+        <div style="font-family:'Bebas Neue',sans-serif;font-size:14px;color:#fff;letter-spacing:1px">TITAN</div>
+        <div style="font-size:10px;color:rgba(255,255,255,.3);margin-top:2px">Poser une question</div>
+      </div>
+      <div onclick="switchTab('train')" style="background:#060C18;padding:20px;cursor:pointer;touch-action:manipulation" ontouchstart="">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--gold)" stroke-width="1.8" style="margin-bottom:8px"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
+        <div style="font-family:'Bebas Neue',sans-serif;font-size:14px;color:#fff;letter-spacing:1px">VIDÉOS</div>
+        <div style="font-size:10px;color:rgba(255,255,255,.3);margin-top:2px">Librairie</div>
+      </div>
+      <div onclick="switchTab('nutrition')" style="background:#060C18;padding:20px;cursor:pointer;touch-action:manipulation" ontouchstart="">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--gold)" stroke-width="1.8" style="margin-bottom:8px"><path d="M12 2a7 7 0 0 1 7 7c0 4-3 7-7 9-4-2-7-5-7-9a7 7 0 0 1 7-7z"/><path d="M12 6v6M9 9h6"/></svg>
+        <div style="font-family:'Bebas Neue',sans-serif;font-size:14px;color:#fff;letter-spacing:1px">NUTRITION</div>
+        <div style="font-size:10px;color:rgba(255,255,255,.3);margin-top:2px">Journal du jour</div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<div id="vTracks" class="view">
+<div class="main" id="mainScroll">
+
+  <!-- Page Header -->
+  <div class="pg-head">
+    <div class="pg-title">TRACKS</div>
+    <div class="pg-sub">Mesure, track et progresse.</div>
+  </div>
+
+  <!-- Sub-tabs -->
+  <div class="sub-tabs">
+    <div class="sub-tab on" onclick="showSec('sat',this)">SAT</div>
+    <div class="sub-tab" onclick="showSec('set',this)">SET</div>
+    <div class="sub-tab" onclick="showSec('track',this)">Track</div>
+    <div class="sub-tab" onclick="showSec('live',this)">Live</div>
+  </div>
+
+  <!-- ══════════════════════════════════════════ -->
+  <!-- SECTION 1: SAT — Super Athletic Test      -->
+  <!-- ══════════════════════════════════════════ -->
+  <div id="secSat" class="sec on">
+
+    <!-- Phase selector -->
+    <div style="display:flex;gap:8px;margin-bottom:16px">
+      <div class="tp on" onclick="setSatPhase(this,'debut')">🏁 Début programme</div>
+      <div class="tp" onclick="setSatPhase(this,'fin')">🏆 Fin programme</div>
+    </div>
+
+    <div id="satForm">
+      <!-- Test 1: Détente -->
+      <div class="card">
+        <div class="card-title"><span>🦘</span> Test 1 — Détente verticale</div>
+        <div class="fi-row">
+          <div class="fg"><label class="fl">Taille bras levés</label><input class="fi" type="number" id="satReach" placeholder="230" step="1"></div>
+          <div class="fi-unit">cm</div>
+        </div>
+        <div class="fi-row">
+          <div class="fg"><label class="fl">Hauteur max atteinte</label><input class="fi" type="number" id="satJump" placeholder="290" step="1"></div>
+          <div class="fi-unit">cm</div>
+        </div>
+        <div style="font-size:12px;color:var(--muted);margin-top:6px">Détente = Hauteur max − Taille bras levés</div>
+      </div>
+
+      <!-- Test 2: Force -->
+      <div class="card">
+        <div class="card-title"><span>🏋️</span> Test 2 — Force (5RM)</div>
+        <div class="fi-row">
+          <div class="fg"><label class="fl">Squat 5RM</label><input class="fi" type="number" id="satSquat" placeholder="100" step="1"></div>
+          <div class="fi-unit">kg</div>
+        </div>
+        <div class="fi-row">
+          <div class="fg"><label class="fl">Soulevé de terre</label><input class="fi" type="number" id="satDL" placeholder="120" step="1"></div>
+          <div class="fi-unit">kg</div>
+        </div>
+        <div class="fi-row">
+          <div class="fg"><label class="fl">Hip Thrust</label><input class="fi" type="number" id="satHT" placeholder="80" step="1"></div>
+          <div class="fi-unit">kg</div>
+        </div>
+        <div class="fi-row">
+          <div class="fg"><label class="fl">Développé couché</label><input class="fi" type="number" id="satDC" placeholder="70" step="1"></div>
+          <div class="fi-unit">kg</div>
+        </div>
+        <div style="font-size:12px;color:var(--muted);margin-top:6px">1RM estimé = 5RM × 1.15</div>
+      </div>
+
+      <!-- Test 3: Sprint -->
+      <div class="card">
+        <div class="card-title"><span>⚡</span> Test 3 — Sprint</div>
+        <div class="fi-row">
+          <div class="fg"><label class="fl">Distance</label><input class="fi" type="number" id="satSprintDist" placeholder="30" step="1"></div>
+          <div class="fi-unit">m</div>
+        </div>
+        <div class="fi-row">
+          <div class="fg"><label class="fl">Temps</label><input class="fi" type="number" id="satSprintTime" placeholder="4.2" step="0.01"></div>
+          <div class="fi-unit">sec</div>
+        </div>
+      </div>
+
+      <!-- Test 4: Agilité -->
+      <div class="card">
+        <div class="card-title"><span>🔄</span> Test 4 — Agilité T-Test</div>
+        <div class="fi-row">
+          <div class="fg"><label class="fl">Temps T-Test</label><input class="fi" type="number" id="satTTest" placeholder="9.5" step="0.01"></div>
+          <div class="fi-unit">sec</div>
+        </div>
+      </div>
+
+      <!-- Test 5: Mobilité -->
+      <div class="card">
+        <div class="card-title"><span>🧘</span> Test 5 — Mobilité</div>
+        <div class="fi-row">
+          <div class="fg"><label class="fl">Score FMS</label><input class="fi" type="number" id="satFMS" placeholder="14" step="1" min="0" max="21"></div>
+          <div class="fi-unit">/21</div>
+        </div>
+      </div>
+
+      <button class="btn btn-gold" onclick="calculateSAT()" style="margin-top:8px">Calculer mon Athletik Score</button>
+    </div>
+
+    <!-- SAT Result -->
+    <div id="satResult" class="hidden">
+      <div class="scorecard">
+        <div class="sc-label-w">ATHLETIK SCORE</div>
+        <div><span class="sc-score" id="scScore">0</span><span class="sc-max">/100</span></div>
+        <div class="sc-level-badge" id="scLevel">ROOKIE</div>
+        <div class="sc-breakdown">
+          <div class="sc-row"><div class="sc-row-label">🦘 Détente verticale</div><div><span class="sc-row-val" id="scJump">—</span><span class="sc-row-pct">40%</span></div></div>
+          <div class="sc-row"><div class="sc-row-label">🏋️ Force (1RM Squat)</div><div><span class="sc-row-val" id="scForce">—</span><span class="sc-row-pct">25%</span></div></div>
+          <div class="sc-row"><div class="sc-row-label">⚡ Sprint</div><div><span class="sc-row-val" id="scSprint">—</span><span class="sc-row-pct">20%</span></div></div>
+          <div class="sc-row"><div class="sc-row-label">🧘 Mobilité FMS</div><div><span class="sc-row-val" id="scMobility">—</span><span class="sc-row-pct">15%</span></div></div>
+        </div>
+      </div>
+
+      <div class="titan-fb" id="satTitanFb">
+        <div class="tf-av"></div>
+        <div class="tf-txt" id="satTitanMsg">"Score enregistré."</div>
+      </div>
+
+      <button class="btn btn-outline" onclick="resetSAT()" style="margin-top:8px">Refaire le test</button>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════════ -->
+  <!-- SECTION SET — SESSION D'ÉVALUATION TERRAIN -->
+  <!-- ══════════════════════════════════════════ -->
+  <div id="secSet" class="sec">
+
+    <div style="display:flex;gap:8px;margin-bottom:16px;align-items:center">
+      <div style="font-size:10px;font-weight:700;color:var(--muted);letter-spacing:1px">Séance du</div>
+      <div style="font-family:'Bebas Neue',sans-serif;font-size:14px;color:var(--gold)" id="setDateLabel"></div>
+    </div>
+
+    <!-- Titan intro SET -->
+    <div class="titan-fb" style="margin-bottom:16px">
+      <div class="tf-av" style="background:var(--navy);border:2px solid var(--gold);display:flex;align-items:center;justify-content:center;font-family:'Bebas Neue',sans-serif;font-size:12px;color:var(--gold)">T</div>
+      <div class="tf-txt">"La SET c'est ton terrain. Pas de labo, pas de calcul — juste toi et le chrono. Mesure ce que tu vaux <strong>aujourd'hui</strong>."</div>
+    </div>
+
+    <!-- Choix du type de SET -->
+    <div style="font-size:10px;font-weight:700;color:var(--muted);letter-spacing:1.5px;text-transform:uppercase;margin-bottom:10px">Type de séance</div>
+    <div class="set-day-grid" id="setTypeGrid">
+      <div class="set-day-card sel" onclick="selectSetType(this,'jump')">
+        <div class="set-day-ic">🦘</div>
+        <div class="set-day-name">Détente</div>
+        <div class="set-day-desc">Verticale + CMJ</div>
+      </div>
+      <div class="set-day-card" onclick="selectSetType(this,'sprint')">
+        <div class="set-day-ic">⚡</div>
+        <div class="set-day-name">Sprint</div>
+        <div class="set-day-desc">10m / 30m</div>
+      </div>
+      <div class="set-day-card" onclick="selectSetType(this,'force')">
+        <div class="set-day-ic">🏋️</div>
+        <div class="set-day-name">Force</div>
+        <div class="set-day-desc">Squat + DL + HT</div>
+      </div>
+      <div class="set-day-card" onclick="selectSetType(this,'complet')">
+        <div class="set-day-ic">🔥</div>
+        <div class="set-day-name">Complet</div>
+        <div class="set-day-desc">Tout en 1</div>
+      </div>
+    </div>
+
+    <!-- Exercices dynamiques -->
+    <div id="setExercises"></div>
+
+    <!-- Bouton valider -->
+    <button class="btn btn-gold" onclick="validateSET()" style="margin-top:8px">Enregistrer ma SET 🏆</button>
+
+    <!-- Historique SET -->
+    <div id="setHistory" style="margin-top:20px;display:none">
+      <div style="font-family:'Bebas Neue',sans-serif;font-size:16px;color:var(--text);letter-spacing:1px;margin-bottom:10px">Dernières SET</div>
+      <div id="setHistoryList"></div>
+    </div>
+
+  </div>
+
+  <!-- ══════════════════════════════════════════ -->
+  <!-- SECTION 2: TRACK EXERCICES                 -->
+  <!-- ══════════════════════════════════════════ -->
+  <div id="secTrack" class="sec">
+
+    <!-- Exercise selector -->
+    <div class="card">
+      <div class="card-title"><span>📊</span> Tracker un exercice</div>
+      <div class="fg">
+        <label class="fl">Choisis ton exercice</label>
+        <select class="fi-select" id="trackExSelect" onchange="updateTrackFields()">
+          <option value="" disabled selected>Sélectionne un exercice</option>
+          <optgroup label="Force">
+            <option value="squat" data-type="force">Back Squat</option>
+            <option value="sdl" data-type="force">Soulevé de terre</option>
+            <option value="hip-thrust" data-type="force">Hip Thrust</option>
+            <option value="dc" data-type="force">Développé couché</option>
+          </optgroup>
+          <optgroup label="Pliométrie">
+            <option value="box-jump" data-type="saut">Box Jump</option>
+            <option value="depth-jump" data-type="saut">Depth Jump</option>
+            <option value="pogo" data-type="saut">Pogo Jumps</option>
+          </optgroup>
+          <optgroup label="Sprint">
+            <option value="sprint-10" data-type="sprint">Sprint 10m</option>
+            <option value="sprint-30" data-type="sprint">Sprint 30m</option>
+            <option value="sprint-60" data-type="sprint">Sprint 60m</option>
+          </optgroup>
+          <optgroup label="Saut">
+            <option value="cmj" data-type="saut">Counter Movement Jump</option>
+            <option value="squat-jump" data-type="saut">Squat Jump</option>
+          </optgroup>
+        </select>
+      </div>
+
+      <!-- Last score -->
+      <div id="trackLastWrap" class="hidden" style="margin-bottom:14px">
+        <div style="font-size:11px;color:var(--muted);font-weight:700;letter-spacing:1px;text-transform:uppercase;margin-bottom:4px">Dernier score</div>
+        <div id="trackLast" style="font-size:16px;font-weight:800;color:var(--green)">—</div>
+      </div>
+
+      <!-- Dynamic fields -->
+      <div id="trackFields"></div>
+
+      <!-- RPE -->
+      <div class="rpe-wrap" id="trackRPEWrap" class="hidden">
+        <label class="fl">RPE — Effort perçu (Borg 1-10)</label>
+        <div class="rpe-row">
+          <div class="rpe-btn" onclick="setRPE(this,1)">1</div>
+          <div class="rpe-btn" onclick="setRPE(this,2)">2</div>
+          <div class="rpe-btn" onclick="setRPE(this,3)">3</div>
+          <div class="rpe-btn" onclick="setRPE(this,4)">4</div>
+          <div class="rpe-btn" onclick="setRPE(this,5)">5</div>
+          <div class="rpe-btn" onclick="setRPE(this,6)">6</div>
+          <div class="rpe-btn" onclick="setRPE(this,7)">7</div>
+          <div class="rpe-btn" onclick="setRPE(this,8)">8</div>
+          <div class="rpe-btn" onclick="setRPE(this,9)">9</div>
+          <div class="rpe-btn" onclick="setRPE(this,10)">10</div>
+        </div>
+      </div>
+
+      <!-- Video button -->
+      <button class="btn btn-outline btn-sm" onclick="alert('Vidéo YouTube — liens à intégrer')" style="margin-bottom:12px">▶ Voir la vidéo</button>
+
+      <button class="btn btn-gold" onclick="saveTrack()">Enregistrer</button>
+    </div>
+
+    <!-- Titan feedback (appears after save) -->
+    <div id="trackTitanFb" class="titan-fb hidden">
+      <div class="tf-av"></div>
+      <div class="tf-txt" id="trackTitanMsg">"Enregistré."</div>
+    </div>
+
+    <!-- Tracked exercises history -->
+    <div style="margin-top:20px">
+      <div style="font-family:'Bebas Neue',sans-serif;font-size:18px;color:var(--text);letter-spacing:1px;margin-bottom:10px">Exercices trackés</div>
+      <div id="trackHistory">
+        <div class="track-item"><div class="ti-ic">🏋️</div><div class="ti-body"><div class="ti-name">Back Squat</div><div class="ti-cat">Force Charge</div><div class="ti-last">Dernier : 100kg × 5 reps • RPE 7</div></div><div class="ti-arrow">→</div></div>
+        <div class="track-item"><div class="ti-ic">🦘</div><div class="ti-body"><div class="ti-name">Box Jump</div><div class="ti-cat">Pliométrie intensive</div><div class="ti-last">Dernier : 90cm × 3 reps</div></div><div class="ti-arrow">→</div></div>
+        <div class="track-item"><div class="ti-ic">⚡</div><div class="ti-body"><div class="ti-name">Sprint 30m</div><div class="ti-cat">Sprint</div><div class="ti-last">Dernier : 4.12s</div></div><div class="ti-arrow">→</div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════════ -->
+  <!-- SECTION 3: SÉANCE LIVE                     -->
+  <!-- ══════════════════════════════════════════ -->
+  <div id="secLive" class="sec">
+
+    <!-- Start screen -->
+    <div id="liveStart">
+      <div class="card" style="text-align:center;padding:28px">
+        <div style="font-size:48px;margin-bottom:12px">🔥</div>
+        <div style="font-family:'Bebas Neue',sans-serif;font-size:24px;color:var(--text);letter-spacing:2px">LANCER UNE SÉANCE</div>
+        <div style="font-size:13px;color:var(--muted);margin:8px 0 20px;line-height:1.5">Les exercices de ton programme défilent un par un. Tu enregistres tes données en direct.</div>
+        <button class="btn btn-gold" onclick="startLive()">Commencer la séance</button>
+      </div>
+    </div>
+
+    <!-- Active session -->
+    <div id="liveSession" class="hidden">
+      <div class="live-header">
+        <div class="lh-step" id="liveStep">EXERCICE 1 / 4</div>
+        <div class="lh-name" id="liveName">BOX JUMPS</div>
+        <div class="lh-target" id="liveTarget">Objectif : 3 séries × 5 reps</div>
+      </div>
+
+      <!-- Quick inputs -->
+      <div style="padding:0 22px">
+        <div class="fi-row">
+          <div class="fg"><label class="fl">Reps effectuées</label><input class="fi" type="number" id="liveReps" placeholder="5"></div>
+          <div class="fg"><label class="fl">Charge (kg)</label><input class="fi" type="number" id="liveLoad" placeholder="0"></div>
+        </div>
+
+        <!-- RPE -->
+        <div class="rpe-wrap">
+          <label class="fl">RPE</label>
+          <div class="rpe-row">
+            <div class="rpe-btn" onclick="setLiveRPE(this,1)">1</div>
+            <div class="rpe-btn" onclick="setLiveRPE(this,2)">2</div>
+            <div class="rpe-btn" onclick="setLiveRPE(this,3)">3</div>
+            <div class="rpe-btn" onclick="setLiveRPE(this,4)">4</div>
+            <div class="rpe-btn" onclick="setLiveRPE(this,5)">5</div>
+            <div class="rpe-btn" onclick="setLiveRPE(this,6)">6</div>
+            <div class="rpe-btn" onclick="setLiveRPE(this,7)">7</div>
+            <div class="rpe-btn" onclick="setLiveRPE(this,8)">8</div>
+            <div class="rpe-btn" onclick="setLiveRPE(this,9)">9</div>
+            <div class="rpe-btn" onclick="setLiveRPE(this,10)">10</div>
+          </div>
+        </div>
+
+        <!-- Timer -->
+        <div class="timer-wrap">
+          <div style="font-size:10px;font-weight:700;color:var(--muted);letter-spacing:1.5px;text-transform:uppercase;margin-bottom:6px">Temps de repos</div>
+          <div class="timer-display" id="liveTimer">02:00</div>
+          <div class="timer-presets">
+            <div class="tp" onclick="setTimerPreset(this,30)">30s</div>
+            <div class="tp" onclick="setTimerPreset(this,60)">1:00</div>
+            <div class="tp on" onclick="setTimerPreset(this,120)">2:00</div>
+            <div class="tp" onclick="setTimerPreset(this,180)">3:00</div>
+            <div class="tp" onclick="setTimerPreset(this,300)">5:00</div>
+          </div>
+          <div class="timer-btns">
+            <button class="timer-btn start" id="timerBtn" onclick="toggleLiveTimer()">▶ START</button>
+            <button class="timer-btn reset" onclick="resetLiveTimer()">↺ RESET</button>
+          </div>
+        </div>
+
+        <button class="btn btn-navy" onclick="nextLiveExercise()" style="margin-top:12px">Exercice suivant →</button>
+      </div>
+    </div>
+
+    <!-- Session summary -->
+    <div id="liveSummary" class="hidden" style="padding:0 22px">
+      <div style="text-align:center;margin:20px 0">
+        <div style="font-size:48px">🏆</div>
+        <div style="font-family:'Bebas Neue',sans-serif;font-size:28px;color:var(--text);letter-spacing:2px;margin-top:8px">SÉANCE TERMINÉE</div>
+      </div>
+
+      <div id="summaryList"></div>
+
+      <!-- Post-session feedback -->
+      <div class="card" style="margin-top:16px">
+        <div class="card-title"><span>💬</span> Feedback de séance</div>
+        <div style="font-size:12px;color:var(--muted);margin-bottom:10px">Comment tu t'es senti ? (optionnel)</div>
+        <textarea class="fb-area" id="sessionFeedback" placeholder="Ex: Bonne séance mais fatigue sur les dernières séries de squat..."></textarea>
+      </div>
+
+      <div class="titan-fb">
+        <div class="tf-av"></div>
+        <div class="tf-txt">"C'est comme ça qu'on progresse. Repose-toi bien. On remet ça demain."</div>
+      </div>
+
+      <button class="btn btn-gold" onclick="endLive()" style="margin-top:12px">Terminer et sauvegarder</button>
+    </div>
+  </div>
+
+</div>
+</div>
+
+<div id="vTrain" class="view">
+<div class="main" id="mainScroll">
+<div class="pg-head"><div class="pg-title">TRAIN</div><div class="pg-sub">Librairie, programmes et construction.</div></div>
+<div class="sub-tabs"><div class="sub-tab on" onclick="showPg('lib')">Librairie</div><div class="sub-tab" onclick="showPg('prog')">Programmes</div><div class="sub-tab" onclick="showPg('builder')">Builder</div></div>
+
+<div id="pgLib" class="pg on">
+<div class="search-wrap"><div class="search-ic">🔍</div><input class="search-input" id="libSearch" placeholder="Rechercher un exercice..." oninput="filterLib()"></div>
+<div id="libGrid">
+<div class="grp-title">PRÉPARATION</div><div class="cat-grid"><div class="cat-card" onclick="openCat('Échauffement général','🔥','echauf_gen')"><div class="cat-ic">🔥</div><div class="cat-name">Échauffement général</div><div class="cat-count">4 exercices</div></div><div class="cat-card" onclick="openCat('Échauffement spécifique','🎯','echauf_spe')"><div class="cat-ic">🎯</div><div class="cat-name">Échauffement spécifique</div><div class="cat-count">3 exercices</div></div></div>
+<div class="grp-title">MOBILITÉ & RÉCUP</div><div class="cat-grid"><div class="cat-card" onclick="openCat('Mobilité','🧘','mobilite')"><div class="cat-ic">🧘</div><div class="cat-name">Mobilité</div><div class="cat-count">3 exercices</div></div><div class="cat-card" onclick="openCat('Récupération','💆','recup')"><div class="cat-ic">💆</div><div class="cat-name">Récupération & Étirements</div><div class="cat-count">1 exercice</div></div></div>
+<div class="grp-title">STABILITÉ</div><div class="cat-grid"><div class="cat-card" onclick="openCat('Proprioception','⚖️','proprio')"><div class="cat-ic">⚖️</div><div class="cat-name">Proprioception</div><div class="cat-count">1 exercice</div></div><div class="cat-card" onclick="openCat('Coordination','🔄','coord')"><div class="cat-ic">🔄</div><div class="cat-name">Coordination</div><div class="cat-count">1 exercice</div></div><div class="cat-card" onclick="openCat('Gainage','🧱','gainage')"><div class="cat-ic">🧱</div><div class="cat-name">Gainage</div><div class="cat-count">1 exercice</div></div><div class="cat-card" onclick="openCat('Abdos dynamiques','💥','abdos')"><div class="cat-ic">💥</div><div class="cat-name">Abdos dynamiques</div><div class="cat-count">1 exercice</div></div></div>
+<div class="grp-title">FORCE</div><div class="cat-grid"><div class="cat-card" onclick="openCat('Force PDC','🤸','force_pdc')"><div class="cat-ic">🤸</div><div class="cat-name">Force PDC</div><div class="cat-count">1 exercice</div></div><div class="cat-card" onclick="openCat('Force Charge','🏋️','force_charge')"><div class="cat-ic">🏋️</div><div class="cat-name">Force Charge</div><div class="cat-count">4 exercices</div></div><div class="cat-card" onclick="openCat('Puissance rotation','🔁','rotation')"><div class="cat-ic">🔁</div><div class="cat-name">Puissance rotation</div><div class="cat-count">1 exercice</div></div><div class="cat-card" onclick="openCat('Mvts olympiques','🥇','olympiques')"><div class="cat-ic">🥇</div><div class="cat-name">Mouvements olympiques</div><div class="cat-count">1 exercice</div></div></div>
+<div class="grp-title">EXPLOSIVITÉ</div><div class="cat-grid"><div class="cat-card" onclick="openCat('Pliométrie extensive','📈','plio_ext')"><div class="cat-ic">📈</div><div class="cat-name">Pliométrie extensive</div><div class="cat-count">2 exercices</div></div><div class="cat-card" onclick="openCat('Pliométrie intensive','⚡','plio_int')"><div class="cat-ic">⚡</div><div class="cat-name">Pliométrie intensive</div><div class="cat-count">2 exercices</div></div></div>
+<div class="grp-title">VITESSE & SAUT</div><div class="cat-grid"><div class="cat-card" onclick="openCat('Entraînement pied','👟','pied')"><div class="cat-ic">👟</div><div class="cat-name">Entraînement pied</div><div class="cat-count">1 exercice</div></div><div class="cat-card" onclick="openCat('Sprint','🏃','sprint')"><div class="cat-ic">🏃</div><div class="cat-name">Sprint</div><div class="cat-count">3 exercices</div></div><div class="cat-card" onclick="openCat('Vitesse multi','↗️','multi')"><div class="cat-ic">↗️</div><div class="cat-name">Vitesse multidirectionnelle</div><div class="cat-count">1 exercice</div></div><div class="cat-card" onclick="openCat('Technique de saut','🦘','saut')"><div class="cat-ic">🦘</div><div class="cat-name">Technique de saut</div><div class="cat-count">3 exercices</div></div></div>
+</div>
+<div id="libCatView" class="hidden"><div class="back-btn" onclick="closeCat()">← Retour Librairie</div><div style="font-family:'Bebas Neue',sans-serif;font-size:24px;color:var(--text);letter-spacing:1.5px;margin-bottom:12px" id="catTitle">CATÉGORIE</div><div class="filter-row"><div class="fc on" onclick="filterCat(this,'all')">Tous</div><div class="fc" onclick="filterCat(this,'easy')">Débutant</div><div class="fc" onclick="filterCat(this,'med')">Intermédiaire</div><div class="fc" onclick="filterCat(this,'hard')">Avancé</div></div><div id="catExList"></div></div>
+<div id="libDetailView" class="hidden"><div class="back-btn" onclick="closeDetail()">← Retour Liste</div><div class="detail-video">▶ Vidéo YouTube (placeholder)</div><div class="detail-name" id="detailName">EXERCICE</div><div class="detail-diff easy" id="detailDiff">Débutant</div><div class="detail-desc" id="detailDesc">Description.</div><div style="font-family:'Bebas Neue',sans-serif;font-size:14px;color:var(--text);margin:10px 0 6px">MUSCLES CIBLÉS</div><div class="tag-row" id="detailTags"></div><button class="btn btn-gold" onclick="alert('→ Tracks')">Tracker cet exercice</button><button class="btn btn-outline btn-disabled">Ajouter au Workout Builder 🔒</button><div style="font-size:11px;color:var(--muted);text-align:center">Débloqué après 2 programmes terminés</div></div>
+</div>
+
+<div id="pgProg" class="pg">
+<div id="progList">
+<div onclick="openProg('ea')" style="position:relative;height:160px;border-radius:16px;overflow:hidden;margin-bottom:12px;cursor:pointer;opacity:1;touch-action:manipulation">
+  <img src="https://images.unsplash.com/photo-1534438327276-14e5300c3a48?w=600&q=80" style="width:100%;height:100%;object-fit:cover" onerror="this.style.background='linear-gradient(135deg,#1B2A4A,#060C18)';this.src=''">
+  <div style="position:absolute;inset:0;background:linear-gradient(to right,rgba(6,12,24,.85) 0%,rgba(6,12,24,.3) 100%)"></div>
+  <div style="position:absolute;top:12px;right:12px;padding:4px 10px;background:rgba(197,164,78,.15);border:1px solid var(--gold);border-radius:20px;font-size:9px;font-weight:700;color:var(--gold);letter-spacing:1px">EN COURS</div>
+  <div style="position:absolute;bottom:16px;left:16px">
+    <div style="font-family:'Bebas Neue',sans-serif;font-size:22px;color:#fff;letter-spacing:2px;line-height:1">ELITE ATHLETE</div>
+    <div style="font-size:11px;color:rgba(255,255,255,.5);margin-top:3px">Explosivité globale</div>
+  </div>
+</div>
+<div onclick="openProg('vd')" style="position:relative;height:160px;border-radius:16px;overflow:hidden;margin-bottom:12px;cursor:pointer;opacity:0.65;touch-action:manipulation">
+  <img src="https://images.unsplash.com/photo-1518611012118-696072aa579a?w=600&q=80" style="width:100%;height:100%;object-fit:cover" onerror="this.style.background='linear-gradient(135deg,#1B2A4A,#060C18)';this.src=''">
+  <div style="position:absolute;inset:0;background:linear-gradient(to right,rgba(6,12,24,.85) 0%,rgba(6,12,24,.3) 100%)"></div>
+  <div style="position:absolute;top:12px;right:12px;padding:4px 10px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.3);border-radius:20px;font-size:9px;font-weight:700;color:rgba(255,255,255,.3);letter-spacing:1px">VERROUILLÉ</div>
+  <div style="position:absolute;bottom:16px;left:16px">
+    <div style="font-family:'Bebas Neue',sans-serif;font-size:22px;color:#fff;letter-spacing:2px;line-height:1">VERTICAL DUNK</div>
+    <div style="font-size:11px;color:rgba(255,255,255,.5);margin-top:3px">Dunker + Détente max</div>
+  </div>
+</div>
+<div onclick="openProg('mt')" style="position:relative;height:160px;border-radius:16px;overflow:hidden;margin-bottom:12px;cursor:pointer;opacity:0.65;touch-action:manipulation">
+  <img src="https://images.unsplash.com/photo-1552674605-db6ffd4facb5?w=600&q=80" style="width:100%;height:100%;object-fit:cover" onerror="this.style.background='linear-gradient(135deg,#1B2A4A,#060C18)';this.src=''">
+  <div style="position:absolute;inset:0;background:linear-gradient(to right,rgba(6,12,24,.85) 0%,rgba(6,12,24,.3) 100%)"></div>
+  <div style="position:absolute;top:12px;right:12px;padding:4px 10px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.3);border-radius:20px;font-size:9px;font-weight:700;color:rgba(255,255,255,.3);letter-spacing:1px">VERROUILLÉ</div>
+  <div style="position:absolute;bottom:16px;left:16px">
+    <div style="font-family:'Bebas Neue',sans-serif;font-size:22px;color:#fff;letter-spacing:2px;line-height:1">MICROTRAINING</div>
+    <div style="font-size:11px;color:rgba(255,255,255,.5);margin-top:3px">Discipline et habitudes</div>
+  </div>
+</div>
+<div onclick="openProg('tri')" style="position:relative;height:160px;border-radius:16px;overflow:hidden;margin-bottom:12px;cursor:pointer;opacity:0.65;touch-action:manipulation">
+  <img src="https://images.unsplash.com/photo-1574680096145-d05b474e2155?w=600&q=80" style="width:100%;height:100%;object-fit:cover" onerror="this.style.background='linear-gradient(135deg,#1B2A4A,#060C18)';this.src=''">
+  <div style="position:absolute;inset:0;background:linear-gradient(to right,rgba(6,12,24,.85) 0%,rgba(6,12,24,.3) 100%)"></div>
+  <div style="position:absolute;top:12px;right:12px;padding:4px 10px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.3);border-radius:20px;font-size:9px;font-weight:700;color:rgba(255,255,255,.3);letter-spacing:1px">VERROUILLÉ</div>
+  <div style="position:absolute;bottom:16px;left:16px">
+    <div style="font-family:'Bebas Neue',sans-serif;font-size:22px;color:#fff;letter-spacing:2px;line-height:1">TRIPHASIQUE</div>
+    <div style="font-size:11px;color:rgba(255,255,255,.5);margin-top:3px">Force sans salle</div>
+  </div>
+</div>
+<div onclick="openProg('se')" style="position:relative;height:160px;border-radius:16px;overflow:hidden;margin-bottom:12px;cursor:pointer;opacity:0.65;touch-action:manipulation">
+  <img src="https://images.unsplash.com/photo-1517836357463-d25dfeac3438?w=600&q=80" style="width:100%;height:100%;object-fit:cover" onerror="this.style.background='linear-gradient(135deg,#1B2A4A,#060C18)';this.src=''">
+  <div style="position:absolute;inset:0;background:linear-gradient(to right,rgba(6,12,24,.85) 0%,rgba(6,12,24,.3) 100%)"></div>
+  <div style="position:absolute;top:12px;right:12px;padding:4px 10px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.3);border-radius:20px;font-size:9px;font-weight:700;color:rgba(255,255,255,.3);letter-spacing:1px">VERROUILLÉ</div>
+  <div style="position:absolute;bottom:16px;left:16px">
+    <div style="font-family:'Bebas Neue',sans-serif;font-size:22px;color:#fff;letter-spacing:2px;line-height:1">SHRED EXPLOSE</div>
+    <div style="font-size:11px;color:rgba(255,255,255,.5);margin-top:3px">Perdre + Exploser</div>
+  </div>
+</div>
+<div onclick="openProg('ep')" style="position:relative;height:160px;border-radius:16px;overflow:hidden;margin-bottom:12px;cursor:pointer;opacity:0.65;touch-action:manipulation">
+  <img src="https://images.unsplash.com/photo-1526506118085-60ce8714f8c5?w=600&q=80" style="width:100%;height:100%;object-fit:cover" onerror="this.style.background='linear-gradient(135deg,#1B2A4A,#060C18)';this.src=''">
+  <div style="position:absolute;inset:0;background:linear-gradient(to right,rgba(6,12,24,.85) 0%,rgba(6,12,24,.3) 100%)"></div>
+  <div style="position:absolute;top:12px;right:12px;padding:4px 10px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.3);border-radius:20px;font-size:9px;font-weight:700;color:rgba(255,255,255,.3);letter-spacing:1px">VERROUILLÉ</div>
+  <div style="position:absolute;bottom:16px;left:16px">
+    <div style="font-family:'Bebas Neue',sans-serif;font-size:22px;color:#fff;letter-spacing:2px;line-height:1">EXPLOSE+</div>
+    <div style="font-size:11px;color:rgba(255,255,255,.5);margin-top:3px">Transformation totale</div>
+  </div>
+</div>
+</div>
+<div id="progDetail" class="hidden"><div class="back-btn" onclick="closeProg()">← Retour Programmes</div><div style="font-family:'Bebas Neue',sans-serif;font-size:28px;color:var(--text);letter-spacing:2px" id="progDetailName">PROGRAMME</div><div style="font-size:12px;color:var(--muted);margin:4px 0 10px" id="progDetailObj">Objectif</div><div class="phase-tabs"><div class="phase-tab on" onclick="switchPhase(this,0)">Fondations</div><div class="phase-tab" onclick="switchPhase(this,1)">Intensification</div><div class="phase-tab" onclick="switchPhase(this,2)">Peak</div></div><div id="phaseExList"></div><button class="btn btn-gold" onclick="alert('→ Séance Live')" style="margin-top:12px">Commencer la séance 🔥</button></div>
+</div>
+
+<div id="pgBuilder" class="pg"><div class="builder-locked"><div class="bl-ic">🔒</div><div class="bl-title">WORKOUT BUILDER</div><div class="bl-sub">Crée tes propres séances. Débloqué après 2 programmes terminés.</div><div class="bl-bar"><div class="bl-bar-in" style="width:0%"></div></div><div class="bl-count">0 / 2 programmes terminés</div></div></div>
+
+</div>
+</div>
+
+<div id="vChat" class="view">
+<!-- Chat Header -->
+  <div class="chat-header">
+    <div class="ch-back" onclick="switchTab('home')">←</div>
+    <div class="ch-avatar"><div style="width:100%;height:100%;background:linear-gradient(135deg,var(--navy),var(--navy2))"></div></div>
+    <div class="ch-info">
+      <div class="ch-name">TITAN</div>
+      <div class="ch-status" id="chatStatus">En ligne</div>
+    </div>
+    <div class="ch-menu" onclick="switchTab('moi')">⋮</div>
+  </div>
+
+  <!-- Messages -->
+  <div class="chat-body" id="chatBody">
+    <!-- Welcome message -->
+    <div class="msg titan">
+      <div class="msg-titan-label"><div class="mtl-av"></div><div class="mtl-name">Titan</div></div>
+      <div class="msg-bubble">Yo. T'es connecté. Si t'es là c'est pour bosser. Dis-moi ce que tu veux travailler ou pose ta question.</div>
+      <div class="msg-time">Aujourd'hui</div>
+    </div>
+  </div>
+
+  <!-- Typing indicator -->
+  <div class="typing" id="typingIndicator">
+    <div class="typing-inner">
+      <div class="typing-dot"></div>
+      <div class="typing-dot"></div>
+      <div class="typing-dot"></div>
+    </div>
+  </div>
+
+  <!-- Input -->
+  <div class="chat-input">
+    <textarea class="ci-field" id="chatInput" placeholder="Écris à Titan..." rows="1" oninput="autoResize(this)" onkeydown="handleEnter(event)"></textarea>
+    <button class="ci-send" id="sendBtn" onclick="sendMessage()">
+      <svg viewBox="0 0 24 24"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg>
+    </button>
+
+</div>
+</div>
+
+<div id="vMoi" class="view">
+<div class="main">
+
+  <!-- Profile Header -->
+  <div class="prof-header">
+    <div class="prof-av" id="profAvatar">A</div>
+    <div class="prof-name" id="profName">ATHLÈTE</div>
+    <div class="prof-email" id="profEmail">athlete@email.com</div>
+    <div class="prof-stats">
+      <div class="ps-item"><div class="ps-val" id="psScore">—</div><div class="ps-label">Score /100</div></div>
+      <div class="ps-item"><div class="ps-val" id="psStreak">3</div><div class="ps-label">Jours streak</div></div>
+      <div class="ps-item"><div class="ps-val" id="psSessions">8</div><div class="ps-label">Séances</div></div>
+      <div class="ps-item"><div class="ps-val" id="psBadges">2</div><div class="ps-label">Badges</div></div>
+    </div>
+  </div>
+
+  <!-- Level Card -->
+  <div class="level-card">
+    <div class="lc-icon" id="lcIcon">🥉</div>
+    <div class="lc-body">
+      <div class="lc-name" id="lcName">ROOKIE</div>
+      <div class="lc-desc" id="lcDesc">Fais ton test SAT pour débloquer ton vrai niveau.</div>
+      <div class="lc-bar"><div class="lc-bar-in" id="lcBar" style="width:0%"></div></div>
+      <div class="lc-progress"><span id="lcCurrent">Score : —</span><span id="lcNext">Prochain : Débutant (21)</span></div>
+    </div>
+  </div>
+
+  <!-- Golden Titan Badges -->
+  <div class="sec-title">🏅 GOLDEN TITAN BADGE</div>
+  <div class="gtb-row">
+    <div class="gtb locked">
+      <div class="gtb-shine"></div>
+      <div class="gtb-icon">🥉</div>
+      <div class="gtb-name">Bronze</div>
+      <div class="gtb-req">Rythme parfait<br>1 mois</div>
+    </div>
+    <div class="gtb locked">
+      <div class="gtb-shine"></div>
+      <div class="gtb-icon">🥈</div>
+      <div class="gtb-name">Argent</div>
+      <div class="gtb-req">Rythme parfait<br>3 mois</div>
+    </div>
+    <div class="gtb locked">
+      <div class="gtb-shine"></div>
+      <div class="gtb-icon">🥇</div>
+      <div class="gtb-name">Or</div>
+      <div class="gtb-req">Rythme parfait<br>6 mois</div>
+    </div>
+    <div class="gtb locked">
+      <div class="gtb-shine"></div>
+      <div class="gtb-icon">🔱</div>
+      <div class="gtb-name">Suprême</div>
+      <div class="gtb-req">Rythme parfait<br>1 an (perdable)</div>
+    </div>
+  </div>
+
+  <!-- Achievement Badges -->
+  <div class="sec-title">🎖️ BADGES</div>
+  <div class="badge-grid">
+    <div class="badge earned"><div class="badge-icon">🔥</div><div class="badge-name">Premier Pas</div><div class="badge-desc">1ère séance terminée</div></div>
+    <div class="badge earned"><div class="badge-icon">📊</div><div class="badge-name">Data Driven</div><div class="badge-desc">1er exercice tracké</div></div>
+    <div class="badge locked"><div class="badge-icon">🏆</div><div class="badge-name">Testeur</div><div class="badge-desc">SAT complété</div></div>
+    <div class="badge locked"><div class="badge-icon">⚡</div><div class="badge-name">Streak 7</div><div class="badge-desc">7 jours consécutifs</div></div>
+    <div class="badge locked"><div class="badge-icon">🦅</div><div class="badge-name">Streak 30</div><div class="badge-desc">30 jours consécutifs</div></div>
+    <div class="badge locked"><div class="badge-icon">💪</div><div class="badge-name">Phase 1</div><div class="badge-desc">Fondations terminées</div></div>
+    <div class="badge locked"><div class="badge-icon">🏀</div><div class="badge-name">Programme 1</div><div class="badge-desc">1er programme fini</div></div>
+    <div class="badge locked"><div class="badge-icon">🛠️</div><div class="badge-name">Builder</div><div class="badge-desc">Workout Builder débloqué</div></div>
+    <div class="badge locked"><div class="badge-icon">🔱</div><div class="badge-name">Surhumain</div><div class="badge-desc">Score 91+/100</div></div>
+    <div class="badge locked"><div class="badge-icon">📈</div><div class="badge-name">PR Hunter</div><div class="badge-desc">5 records personnels</div></div>
+    <div class="badge locked"><div class="badge-icon">🧘</div><div class="badge-name">Zen Master</div><div class="badge-desc">Protocole Flow 10 fois</div></div>
+    <div class="badge locked"><div class="badge-icon">👑</div><div class="badge-name">Légende</div><div class="badge-desc">2 programmes terminés</div></div>
+  </div>
+
+  <!-- Titan Engine Mode -->
+  <div class="sec-title">🤖 TITAN ENGINE</div>
+  <div class="engine-card">
+    <div class="engine-title"><span>⚙️</span> Mode de coaching</div>
+    <div class="engine-desc">Choisis comment Titan t'accompagne. Tu peux changer à tout moment.</div>
+    <div class="mode-opts">
+      <div class="mode-opt on" onclick="setMode(this,'full')">
+        <div class="mo-radio"><div></div></div>
+        <div class="mo-body"><div class="mo-name">🤖 Full Auto</div><div class="mo-desc">Titan décide tout : exercices, charges, repos, progression.</div></div>
+      </div>
+      <div class="mode-opt" onclick="setMode(this,'hybrid')">
+        <div class="mo-radio"><div></div></div>
+        <div class="mo-body"><div class="mo-name">🔄 Hybride</div><div class="mo-desc">Titan propose, tu ajustes. Le meilleur des deux mondes.</div></div>
+      </div>
+      <div class="mode-opt" onclick="setMode(this,'manual')">
+        <div class="mo-radio"><div></div></div>
+        <div class="mo-body"><div class="mo-name">✋ Manuel</div><div class="mo-desc">Tu construis tes séances. Titan observe et donne du feedback.</div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Session History -->
+  <div class="sec-title">📅 HISTORIQUE</div>
+  <div id="historyList">
+    <div class="hist-item"><div class="hi-dot green"></div><div class="hi-body"><div class="hi-title">Séance Elite Athlete — Phase 1</div><div class="hi-detail">Pogo Jumps 3×10 • Sprint 10m 5 passages • RPE 7</div><div class="hi-date">Aujourd'hui, 18:30</div></div></div>
+    <div class="hist-item"><div class="hi-dot green"></div><div class="hi-body"><div class="hi-title">Séance Elite Athlete — Phase 1</div><div class="hi-detail">Squat progressif 3×8 • Activation fessiers 2×12</div><div class="hi-date">Hier, 17:45</div></div></div>
+    <div class="hist-item"><div class="hi-dot gold"></div><div class="hi-body"><div class="hi-title">Exercice tracké : Back Squat</div><div class="hi-detail">100kg × 5 reps • RPE 7</div><div class="hi-date">Hier, 17:50</div></div></div>
+    <div class="hist-item"><div class="hi-dot green"></div><div class="hi-body"><div class="hi-title">Séance Elite Athlete — Phase 1</div><div class="hi-detail">Échauffement + Planche 3×30s</div><div class="hi-date">15 avr, 19:00</div></div></div>
+    <div class="hist-item"><div class="hi-dot red"></div><div class="hi-body"><div class="hi-title">Séance manquée</div><div class="hi-detail">Titan : "Tu avais prévu de t'entraîner. Qu'est-ce qui s'est passé ?"</div><div class="hi-date">14 avr</div></div></div>
+  </div>
+
+  <!-- Settings -->
+  <div class="sec-title">⚙️ PARAMÈTRES</div>
+
+  <div class="setting-item" onclick="toggleDark()">
+    <div class="si-left"><div class="si-icon">🌙</div><div><div class="si-text">Mode sombre</div></div></div>
+    <div class="toggle" id="darkToggle"><div class="toggle-knob"></div></div>
+  </div>
+
+  <div class="setting-item" onclick="toggleNotif()">
+    <div class="si-left"><div class="si-icon">🔔</div><div><div class="si-text">Notifications</div><div class="si-sub">Rappels de Titan par WhatsApp-style</div></div></div>
+    <div class="toggle on" id="notifToggle"><div class="toggle-knob"></div></div>
+  </div>
+
+  <div class="setting-item" onclick="alert('Jours d\'entraînement — Firebase à intégrer')">
+    <div class="si-left"><div class="si-icon">📅</div><div><div class="si-text">Jours d'entraînement</div><div class="si-sub">Lun, Mar, Jeu, Ven</div></div></div>
+    <div class="si-right">→</div>
+  </div>
+
+  <div class="setting-item" onclick="restartOnboarding()">
+    <div class="si-left"><div class="si-icon">🔄</div><div><div class="si-text">Refaire le questionnaire</div><div class="si-sub">Modifier objectif et programme</div></div></div>
+    <div class="si-right">→</div>
+  </div>
+
+  <div class="setting-item" onclick="alert('Questionnaire MENER — Identifier ton pilier faible')">
+    <div class="si-left"><div class="si-icon">📋</div><div><div class="si-text">Questionnaire MENER</div><div class="si-sub">Identifier ton pilier le plus faible</div></div></div>
+    <div class="si-right">→</div>
+  </div>
+
+  <div class="setting-item" onclick="alert('Laisser un avis Amazon — Merci !')">
+    <div class="si-left"><div class="si-icon">⭐</div><div><div class="si-text">Laisser un avis sur le livre</div><div class="si-sub">Aide d'autres athlètes à nous trouver</div></div></div>
+    <div class="si-right">→</div>
+  </div>
+
+  <div class="setting-item" onclick="alert('Support — contact@athletikhub.com')">
+    <div class="si-left"><div class="si-icon">💬</div><div><div class="si-text">Support</div><div class="si-sub">Besoin d'aide ? Contacte-nous</div></div></div>
+    <div class="si-right">→</div>
+  </div>
+
+  
+<!-- ═══ CALENDRIER ═══ -->
+<div style="background:var(--surface);border-radius:16px;padding:16px;margin-bottom:12px">
+  <div style="font-family:'Bebas Neue',sans-serif;font-size:16px;color:var(--gold);letter-spacing:1px;margin-bottom:10px">📅 JOURS D'ENTRAÎNEMENT</div>
+  <div style="display:flex;gap:6px;flex-wrap:wrap" id="calDays">
+    <div class="cal-day" data-day="0" onclick="toggleDay(this)">L</div>
+    <div class="cal-day" data-day="1" onclick="toggleDay(this)">M</div>
+    <div class="cal-day" data-day="2" onclick="toggleDay(this)">Me</div>
+    <div class="cal-day" data-day="3" onclick="toggleDay(this)">J</div>
+    <div class="cal-day" data-day="4" onclick="toggleDay(this)">V</div>
+    <div class="cal-day" data-day="5" onclick="toggleDay(this)">S</div>
+    <div class="cal-day" data-day="6" onclick="toggleDay(this)">D</div>
+  </div>
+  <div style="font-size:11px;color:var(--muted);margin-top:8px" id="calSummary">Aucun jour sélectionné</div>
+</div>
+
+<!-- ═══ HABITUDES MENER ═══ -->
+<div style="background:var(--surface);border-radius:16px;padding:16px;margin-bottom:12px">
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+    <div style="font-family:'Bebas Neue',sans-serif;font-size:16px;color:var(--gold);letter-spacing:1px">🔥 HABITUDES MENER</div>
+    <div style="font-size:11px;color:var(--muted)" id="habitsCount">0 / 3 actives</div>
+  </div>
+  <div id="activeHabits"></div>
+  <button onclick="openHabitsModal()" style="width:100%;padding:12px;background:var(--navy);border:none;border-radius:10px;color:var(--gold);font-family:'Outfit',sans-serif;font-size:13px;font-weight:700;cursor:pointer">+ Ajouter une habitude</button>
+</div>
+
+<!-- MODAL HABITUDES -->
+<div id="habitsModal" style="display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,.85);z-index:500;overflow-y:auto">
+  <div style="background:var(--bg);min-height:100%;padding:24px">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px">
+      <div style="font-family:'Bebas Neue',sans-serif;font-size:22px;color:var(--gold)">CHOISIR UNE HABITUDE</div>
+      <button onclick="closeHabitsModal()" style="background:none;border:none;font-size:28px;color:var(--text);cursor:pointer;line-height:1">×</button>
+    </div>
+    <input type="text" placeholder="🔍 Rechercher..." id="habitSearch" oninput="filterHabits(this.value)"
+      style="width:100%;padding:12px 16px;background:var(--surface);border:1.5px solid var(--border2);border-radius:10px;color:var(--text);font-family:'Outfit',sans-serif;font-size:14px;box-sizing:border-box;margin-bottom:16px">
+    <div style="margin-bottom:16px">
+      <div style="font-size:11px;color:var(--text2);margin-bottom:8px;font-weight:700">DURÉE DU DÉFI</div>
+      <div style="display:flex;gap:8px">
+        <div class="dur-btn on" onclick="selectDuration(this,21)">21 jours</div>
+        <div class="dur-btn" onclick="selectDuration(this,66)">66 jours</div>
+        <div class="dur-btn" onclick="selectDuration(this,90)">90 jours</div>
+      </div>
+    </div>
+    <div id="habitsList"></div>
+    <div id="habitContract" style="display:none;background:var(--surface);border:1.5px solid var(--gold);border-radius:12px;padding:16px;margin-top:16px">
+      <div style="font-family:'Bebas Neue',sans-serif;font-size:16px;color:var(--gold);margin-bottom:8px">📜 CONTRAT D'ENGAGEMENT</div>
+      <div id="contractText" style="font-size:13px;color:var(--text2);line-height:1.6;margin-bottom:12px"></div>
+      <div style="font-size:12px;color:var(--muted);margin-bottom:8px">Ta signature :</div>
+      <input type="text" id="signatureInput" placeholder="Ton prénom..."
+        style="width:100%;padding:10px;background:var(--bg);border:1.5px solid var(--border2);border-radius:8px;color:var(--text);font-family:'Outfit',sans-serif;font-size:14px;margin-bottom:10px;box-sizing:border-box">
+      <button onclick="signAndStartHabit()" style="width:100%;padding:12px;background:var(--gold);border:none;border-radius:10px;color:var(--navy);font-weight:800;font-size:14px;cursor:pointer">✅ Je m'engage</button>
+      <button onclick="shareContractWhatsApp()" style="width:100%;padding:10px;background:none;border:1.5px solid #25D366;border-radius:10px;color:#25D366;font-size:13px;font-weight:700;cursor:pointer;margin-top:8px">📤 Partager sur WhatsApp</button>
+    </div>
+  </div>
+</div>
+
+
+  <!-- FEEDBACK BÊTA -->
+  <!-- EXPORT/IMPORT DATA -->
+  <div style="background:var(--surface);border-radius:14px;padding:14px;margin-bottom:12px">
+    <div style="font-family:'Bebas Neue',sans-serif;font-size:14px;color:var(--text);letter-spacing:1px;margin-bottom:10px">💾 SAUVEGARDE DES DONNÉES</div>
+    <div style="display:flex;gap:8px">
+      <button onclick="exportData()" style="flex:1;padding:10px;background:rgba(197,164,78,.1);border:1px solid rgba(197,164,78,.2);border-radius:10px;color:var(--gold);font-size:12px;font-weight:700;cursor:pointer;font-family:'Outfit',sans-serif">📤 Exporter</button>
+      <label style="flex:1;padding:10px;background:rgba(255,255,255,.05);border:1px solid var(--border2);border-radius:10px;color:var(--text2);font-size:12px;font-weight:700;cursor:pointer;text-align:center;font-family:'Outfit',sans-serif">
+        📥 Importer<input type="file" accept=".json" onchange="importData(this)" style="display:none">
+      </label>
+    </div>
+  </div>
+
+  <!-- FEEDBACK BÊTA -->
+  <div onclick="openFeedback()" style="background:rgba(197,164,78,.06);border:1.5px dashed rgba(197,164,78,.25);border-radius:14px;padding:16px;text-align:center;cursor:pointer;margin-bottom:12px">
+    <div style="font-family:'Bebas Neue',sans-serif;font-size:16px;color:var(--gold);letter-spacing:1px;margin-bottom:4px">💬 DONNER MON AVIS</div>
+    <div style="font-size:12px;color:var(--muted)">Tu utilises l'app depuis quelques jours ? Dis-moi ce qui marche et ce qui ne marche pas.</div>
+  </div>
+
+<div class="logout-btn" onclick="alert('Déconnexion — Firebase Auth')">Se déconnecter</div>
+
+  <div style="text-align:center;padding:10px 0 20px;font-size:10px;color:var(--muted)">
+    ATHLETIK HUB v5.0 • Coach Alassane<br>
+    Titan Engine powered by Anthropic
+  </div>
+
+</div>
+</div>
+
+
+<!-- ═══ VUE NUTRITION ═══ -->
+<div id="vNutri" class="view">
+  <div class="main">
+
+    <!-- Header Nutrition -->
+    <div style="background:var(--navy);padding:20px 22px 16px;border-radius:0 0 24px 24px;position:relative;overflow:hidden">
+      <div style="position:absolute;top:0;left:0;right:0;bottom:0;background:radial-gradient(ellipse at 50% 120%,rgba(197,164,78,.12),transparent 60%);pointer-events:none"></div>
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:14px">
+        <div>
+          <div style="font-family:'Bebas Neue',sans-serif;font-size:28px;color:#fff;letter-spacing:3px">NUTRITION</div>
+          <div style="font-size:11px;color:rgba(255,255,255,.4);letter-spacing:2px;text-transform:uppercase">Mange comme tu t'entraînes</div>
+        </div>
+        <div onclick="openNPI()" style="padding:8px 14px;background:rgba(197,164,78,.15);border:1px solid rgba(197,164,78,.25);border-radius:20px;cursor:pointer">
+          <div style="font-size:10px;font-weight:700;color:var(--gold);letter-spacing:1px">MON NPI</div>
+        </div>
+      </div>
+      <!-- Macros du jour -->
+      <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px">
+        <div style="background:rgba(255,255,255,.05);border-radius:12px;padding:10px;text-align:center">
+          <div style="font-family:'Bebas Neue',sans-serif;font-size:20px;color:var(--gold)" id="nutri-kcal">1240</div>
+          <div style="font-size:9px;color:rgba(255,255,255,.4);font-weight:700;text-transform:uppercase;margin-top:2px">kcal</div>
+        </div>
+        <div style="background:rgba(255,255,255,.05);border-radius:12px;padding:10px;text-align:center">
+          <div style="font-family:'Bebas Neue',sans-serif;font-size:20px;color:#3B82F6" id="nutri-prot">95g</div>
+          <div style="font-size:9px;color:rgba(255,255,255,.4);font-weight:700;text-transform:uppercase;margin-top:2px">Prot</div>
+        </div>
+        <div style="background:rgba(255,255,255,.05);border-radius:12px;padding:10px;text-align:center">
+          <div style="font-family:'Bebas Neue',sans-serif;font-size:20px;color:var(--gold)" id="nutri-carbs">120g</div>
+          <div style="font-size:9px;color:rgba(255,255,255,.4);font-weight:700;text-transform:uppercase;margin-top:2px">Carbs</div>
+        </div>
+        <div style="background:rgba(255,255,255,.05);border-radius:12px;padding:10px;text-align:center">
+          <div style="font-family:'Bebas Neue',sans-serif;font-size:20px;color:#EC4899" id="nutri-fat">42g</div>
+          <div style="font-size:9px;color:rgba(255,255,255,.4);font-weight:700;text-transform:uppercase;margin-top:2px">Fat</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Sous-onglets Nutrition -->
+    <div class="sub-tabs" style="padding:16px 22px 0">
+      <div class="sub-tab on" onclick="showNutriTab(this,'journal')">Journal</div>
+      <div class="sub-tab" onclick="showNutriTab(this,'recettes')">Recettes</div>
+      <div class="sub-tab" onclick="showNutriTab(this,'scan')">Scan</div>
+      <div class="sub-tab" onclick="showNutriTab(this,'courses')">Courses</div>
+    </div>
+
+    <!-- TAB JOURNAL -->
+    <div id="ntab-journal" class="pg on" style="padding:16px 20px">
+
+  <!-- DIAGRAMME CIRCULAIRE style MyFitnessPal -->
+  <div style="background:var(--surface);border:1px solid var(--border);border-radius:20px;padding:20px;margin-bottom:16px">
+    <div style="display:flex;gap:20px;align-items:center">
+      <!-- Cercle SVG -->
+      <div style="position:relative;width:100px;height:100px;flex-shrink:0">
+        <svg viewBox="0 0 100 100" style="width:100px;height:100px;transform:rotate(-90deg)">
+          <circle cx="50" cy="50" r="40" fill="none" stroke="rgba(255,255,255,.06)" stroke-width="10"/>
+          <circle cx="50" cy="50" r="40" fill="none" stroke="var(--gold)" stroke-width="10"
+                  stroke-dasharray="251" stroke-dashoffset="150" stroke-linecap="round"/>
+        </svg>
+        <div style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center">
+          <div style="font-family:'Bebas Neue',sans-serif;font-size:22px;color:#fff;line-height:1">1240</div>
+          <div style="font-size:8px;color:rgba(255,255,255,.35);letter-spacing:1px;text-transform:uppercase">kcal</div>
+        </div>
+      </div>
+      <!-- Macros -->
+      <div style="flex:1">
+        <div style="margin-bottom:10px">
+          <div style="display:flex;justify-content:space-between;margin-bottom:4px">
+            <div style="font-size:11px;color:rgba(255,255,255,.5)">Protéines</div>
+            <div style="font-size:11px;font-weight:700;color:#3B82F6">95 / 145g</div>
+          </div>
+          <div style="height:3px;background:rgba(255,255,255,.08);border-radius:2px">
+            <div style="height:100%;width:65%;background:#3B82F6;border-radius:2px"></div>
+          </div>
+        </div>
+        <div style="margin-bottom:10px">
+          <div style="display:flex;justify-content:space-between;margin-bottom:4px">
+            <div style="font-size:11px;color:rgba(255,255,255,.5)">Glucides</div>
+            <div style="font-size:11px;font-weight:700;color:var(--gold)">120 / 280g</div>
+          </div>
+          <div style="height:3px;background:rgba(255,255,255,.08);border-radius:2px">
+            <div style="height:100%;width:43%;background:var(--gold);border-radius:2px"></div>
+          </div>
+        </div>
+        <div>
+          <div style="display:flex;justify-content:space-between;margin-bottom:4px">
+            <div style="font-size:11px;color:rgba(255,255,255,.5)">Lipides</div>
+            <div style="font-size:11px;font-weight:700;color:#EC4899">42 / 75g</div>
+          </div>
+          <div style="height:3px;background:rgba(255,255,255,.08);border-radius:2px">
+            <div style="height:100%;width:56%;background:#EC4899;border-radius:2px"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Message Titan -->
+  <div style="display:flex;gap:10px;padding:12px 14px;background:rgba(27,42,74,.5);border-left:2px solid var(--gold);border-radius:0 12px 12px 0;margin-bottom:16px">
+    <div style="font-size:10px;font-weight:700;color:var(--gold);letter-spacing:1px;flex-shrink:0;padding-top:1px">T</div>
+    <div style="font-size:12px;color:rgba(255,255,255,.6);line-height:1.5;font-style:italic">Aujourd&#8217;hui c&#8217;est s&#233;ance jambes. Augmente les glucides 2h avant. Post-workout : 30g prot&#233;ines dans les 30 min.</div>
+  </div>
+
+  <!-- Repas par section style MFP -->
+  <div style="font-size:9px;font-weight:700;letter-spacing:2px;color:rgba(255,255,255,.25);text-transform:uppercase;margin-bottom:10px">Repas du jour</div>
+
+  <!-- Petit-déjeuner -->
+  <div style="margin-bottom:12px">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+      <div style="font-size:12px;font-weight:700;color:rgba(255,255,255,.6)">Petit-déjeuner</div>
+      <div style="font-size:11px;color:var(--muted)">520 kcal</div>
+    </div>
+    <div style="display:flex;align-items:center;gap:12px;padding:12px;background:var(--surface);border-radius:12px;cursor:pointer">
+      <img src="https://images.unsplash.com/photo-1511690743698-d9d85f2fbf38?w=400&q=80" style="width:44px;height:44px;border-radius:8px;object-fit:cover" onerror="this.style.background='#1B2A4A';this.src=''">
+      <div style="flex:1">
+        <div style="font-size:13px;font-weight:600;color:var(--text)">Bowl Protéiné Avoine</div>
+        <div style="font-size:11px;color:var(--muted);margin-top:1px">28g prot · 62g carbs</div>
+      </div>
+      <div style="font-size:10px;font-weight:700;padding:3px 8px;background:rgba(34,197,94,.1);color:#22C55E;border-radius:6px">✓</div>
+    </div>
+  </div>
+
+  <!-- Déjeuner -->
+  <div style="margin-bottom:12px">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+      <div style="font-size:12px;font-weight:700;color:rgba(255,255,255,.6)">Déjeuner</div>
+      <div style="font-size:11px;color:var(--muted)">580 kcal</div>
+    </div>
+    <div style="display:flex;align-items:center;gap:12px;padding:12px;background:var(--surface);border-radius:12px;cursor:pointer">
+      <img src="https://images.unsplash.com/photo-1467003909585-2f8a72700288?w=400&q=80" style="width:44px;height:44px;border-radius:8px;object-fit:cover" onerror="this.style.background='#1B2A4A';this.src=''">
+      <div style="flex:1">
+        <div style="font-size:13px;font-weight:600;color:var(--text)">Poulet Quinoa Légumes</div>
+        <div style="font-size:11px;color:var(--muted);margin-top:1px">42g prot · 58g carbs</div>
+      </div>
+      <div style="font-size:10px;font-weight:700;padding:3px 8px;background:var(--gold-dim);color:var(--gold);border-radius:6px">⏳</div>
+    </div>
+  </div>
+
+  <!-- Dîner -->
+  <div style="margin-bottom:12px">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+      <div style="font-size:12px;font-weight:700;color:rgba(255,255,255,.6)">Dîner</div>
+      <div style="font-size:11px;color:var(--muted)">520 kcal</div>
+    </div>
+    <div style="display:flex;align-items:center;gap:12px;padding:12px;background:var(--surface);border-radius:12px;cursor:pointer">
+      <img src="https://images.unsplash.com/photo-1519708227418-c8fd9a32b7a2?w=400&q=80" style="width:44px;height:44px;border-radius:8px;object-fit:cover" onerror="this.style.background='#1B2A4A';this.src=''">
+      <div style="flex:1">
+        <div style="font-size:13px;font-weight:600;color:var(--text)">Saumon Patate Douce</div>
+        <div style="font-size:11px;color:var(--muted);margin-top:1px">38g prot · 48g carbs</div>
+      </div>
+      <div style="font-size:10px;font-weight:700;padding:3px 8px;background:var(--gold-dim);color:var(--gold);border-radius:6px">⏳</div>
+    </div>
+  </div>
+
+  <button onclick="addFood()" style="width:100%;padding:13px;background:transparent;border:1px solid rgba(255,255,255,.08);border-radius:12px;color:rgba(255,255,255,.35);font-family:'Outfit',sans-serif;font-size:13px;font-weight:600;cursor:pointer;touch-action:manipulation">+ Ajouter un aliment</button>
+
+</div>
+
+<div id="ntab-recettes" class="pg" style="padding:16px 22px">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+<div onclick="showRecipe('bowl')" style="background:var(--surface);border:1px solid var(--border);border-radius:14px;overflow:hidden;cursor:pointer;touch-action:manipulation">
+  <div style="height:100px;overflow:hidden;position:relative">
+    <img src="https://images.unsplash.com/photo-1511690743698-d9d85f2fbf38?w=400&q=80" style="width:100%;height:100%;object-fit:cover" onerror="this.style.background='#1B2A4A';this.src=''">
+    <div style="position:absolute;top:8px;left:8px;padding:2px 8px;background:rgba(197,164,78,.15);border:1px solid var(--gold);border-radius:20px;font-size:9px;font-weight:700;color:var(--gold);letter-spacing:1px;backdrop-filter:blur(4px)">PRE</div>
+  </div>
+  <div style="padding:10px">
+    <div style="font-size:12px;font-weight:700;color:var(--text);margin-bottom:3px">Bowl Protéiné</div>
+    <div style="font-size:10px;color:var(--muted)">520 kcal · 28g prot</div>
+  </div>
+</div>
+<div onclick="showRecipe('shake')" style="background:var(--surface);border:1px solid var(--border);border-radius:14px;overflow:hidden;cursor:pointer;touch-action:manipulation">
+  <div style="height:100px;overflow:hidden;position:relative">
+    <img src="https://images.unsplash.com/photo-1553530979-7ee52a2670c4?w=400&q=80" style="width:100%;height:100%;object-fit:cover" onerror="this.style.background='#1B2A4A';this.src=''">
+    <div style="position:absolute;top:8px;left:8px;padding:2px 8px;background:rgba(34,197,94,.1);border:1px solid #22C55E;border-radius:20px;font-size:9px;font-weight:700;color:#22C55E;letter-spacing:1px;backdrop-filter:blur(4px)">POST</div>
+  </div>
+  <div style="padding:10px">
+    <div style="font-size:12px;font-weight:700;color:var(--text);margin-bottom:3px">Shake Whey PB</div>
+    <div style="font-size:10px;color:var(--muted)">320 kcal · 35g prot</div>
+  </div>
+</div>
+<div onclick="showRecipe('poulet')" style="background:var(--surface);border:1px solid var(--border);border-radius:14px;overflow:hidden;cursor:pointer;touch-action:manipulation">
+  <div style="height:100px;overflow:hidden;position:relative">
+    <img src="https://images.unsplash.com/photo-1467003909585-2f8a72700288?w=400&q=80" style="width:100%;height:100%;object-fit:cover" onerror="this.style.background='#1B2A4A';this.src=''">
+    <div style="position:absolute;top:8px;left:8px;padding:2px 8px;background:rgba(59,130,246,.1);border:1px solid #3B82F6;border-radius:20px;font-size:9px;font-weight:700;color:#3B82F6;letter-spacing:1px;backdrop-filter:blur(4px)">REPAS</div>
+  </div>
+  <div style="padding:10px">
+    <div style="font-size:12px;font-weight:700;color:var(--text);margin-bottom:3px">Poulet Quinoa</div>
+    <div style="font-size:10px;color:var(--muted)">580 kcal · 42g prot</div>
+  </div>
+</div>
+<div onclick="showRecipe('saumon')" style="background:var(--surface);border:1px solid var(--border);border-radius:14px;overflow:hidden;cursor:pointer;touch-action:manipulation">
+  <div style="height:100px;overflow:hidden;position:relative">
+    <img src="https://images.unsplash.com/photo-1519708227418-c8fd9a32b7a2?w=400&q=80" style="width:100%;height:100%;object-fit:cover" onerror="this.style.background='#1B2A4A';this.src=''">
+    <div style="position:absolute;top:8px;left:8px;padding:2px 8px;background:rgba(59,130,246,.1);border:1px solid #3B82F6;border-radius:20px;font-size:9px;font-weight:700;color:#3B82F6;letter-spacing:1px;backdrop-filter:blur(4px)">REPAS</div>
+  </div>
+  <div style="padding:10px">
+    <div style="font-size:12px;font-weight:700;color:var(--text);margin-bottom:3px">Saumon Patate</div>
+    <div style="font-size:10px;color:var(--muted)">520 kcal · 38g prot</div>
+  </div>
+</div>
+<div onclick="showRecipe('pates')" style="background:var(--surface);border:1px solid var(--border);border-radius:14px;overflow:hidden;cursor:pointer;touch-action:manipulation">
+  <div style="height:100px;overflow:hidden;position:relative">
+    <img src="https://images.unsplash.com/photo-1621996346565-e3dbc646d9a9?w=400&q=80" style="width:100%;height:100%;object-fit:cover" onerror="this.style.background='#1B2A4A';this.src=''">
+    <div style="position:absolute;top:8px;left:8px;padding:2px 8px;background:rgba(59,130,246,.1);border:1px solid #3B82F6;border-radius:20px;font-size:9px;font-weight:700;color:#3B82F6;letter-spacing:1px;backdrop-filter:blur(4px)">REPAS</div>
+  </div>
+  <div style="padding:10px">
+    <div style="font-size:12px;font-weight:700;color:var(--text);margin-bottom:3px">Pâtes Pesto</div>
+    <div style="font-size:10px;color:var(--muted)">640 kcal · 38g prot</div>
+  </div>
+</div>
+<div onclick="showRecipe('tacos')" style="background:var(--surface);border:1px solid var(--border);border-radius:14px;overflow:hidden;cursor:pointer;touch-action:manipulation">
+  <div style="height:100px;overflow:hidden;position:relative">
+    <img src="https://images.unsplash.com/photo-1565299585323-38d6b0865b47?w=400&q=80" style="width:100%;height:100%;object-fit:cover" onerror="this.style.background='#1B2A4A';this.src=''">
+    <div style="position:absolute;top:8px;left:8px;padding:2px 8px;background:rgba(59,130,246,.1);border:1px solid #3B82F6;border-radius:20px;font-size:9px;font-weight:700;color:#3B82F6;letter-spacing:1px;backdrop-filter:blur(4px)">REPAS</div>
+  </div>
+  <div style="padding:10px">
+    <div style="font-size:12px;font-weight:700;color:var(--text);margin-bottom:3px">Tacos Steak</div>
+    <div style="font-size:10px;color:var(--muted)">580 kcal · 35g prot</div>
+  </div>
+</div>
+</div>
+
+    </div>
+
+    <!-- TAB SCAN -->
+    <div id="ntab-scan" class="pg" style="padding:16px 22px">
+      <div style="display:flex;gap:10px;padding:14px;background:rgba(27,42,74,.6);border:1px solid rgba(197,164,78,.15);border-radius:14px;margin-bottom:20px">
+        <div style="width:28px;height:28px;border-radius:50%;background:var(--navy);border:1.5px solid var(--gold);display:flex;align-items:center;justify-content:center;font-family:'Bebas Neue',sans-serif;font-size:13px;color:var(--gold);flex-shrink:0">T</div>
+        <div style="font-size:12px;color:rgba(255,255,255,.7);line-height:1.5">Scan le code-barre. Je te dis exactement ce que tu manges et si c&#8217;est compatible avec tes objectifs.</div>
+      </div>
+      <div onclick="scanProduct()" style="background:linear-gradient(135deg,#1B2A4A,#0F1A30);border:2px dashed rgba(197,164,78,.3);border-radius:20px;padding:40px 24px;text-align:center;cursor:pointer;margin-bottom:20px">
+        <div style="font-size:48px;margin-bottom:12px">📷</div>
+        <div style="font-family:'Bebas Neue',sans-serif;font-size:20px;color:var(--text);letter-spacing:2px;margin-bottom:6px">SCANNER UN PRODUIT</div>
+        <div style="font-size:12px;color:var(--muted)">Code-barre ou saisie manuelle</div>
+      </div>
+      <div style="display:flex;gap:8px;margin-bottom:20px">
+        <input type="text" id="barcodeInput" placeholder="Code-barre (ex: 3017620422003)" style="flex:1;padding:12px 14px;background:var(--surface);border:1.5px solid var(--border);border-radius:12px;font-family:'Outfit',sans-serif;font-size:13px;color:var(--text);outline:none">
+        <button onclick="lookupBarcode()" style="padding:12px 18px;background:var(--navy);color:var(--gold);border:none;border-radius:12px;font-weight:700;cursor:pointer;font-size:13px">🔍</button>
+      </div>
+      <div id="scanResult" class="hidden">
+        <div style="background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:16px">
+          <div style="display:flex;gap:12px;align-items:center;margin-bottom:12px">
+            <div style="font-size:36px">🥫</div>
+            <div>
+              <div style="font-size:15px;font-weight:700;color:var(--text)" id="productName">Produit</div>
+              <div style="font-size:12px;color:var(--muted)" id="productBrand">Marque</div>
+            </div>
+          </div>
+          <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:12px">
+            <div style="text-align:center;padding:8px;background:var(--surface2);border-radius:10px">
+              <div style="font-family:'Bebas Neue',sans-serif;font-size:18px;color:var(--gold)" id="productCals">-</div>
+              <div style="font-size:9px;color:var(--muted)">kcal</div>
+            </div>
+            <div style="text-align:center;padding:8px;background:var(--surface2);border-radius:10px">
+              <div style="font-family:'Bebas Neue',sans-serif;font-size:18px;color:#3B82F6" id="productProt">-</div>
+              <div style="font-size:9px;color:var(--muted)">prot</div>
+            </div>
+            <div style="text-align:center;padding:8px;background:var(--surface2);border-radius:10px">
+              <div style="font-family:'Bebas Neue',sans-serif;font-size:18px;color:var(--gold)" id="productCarbs">-</div>
+              <div style="font-size:9px;color:var(--muted)">carbs</div>
+            </div>
+            <div style="text-align:center;padding:8px;background:var(--surface2);border-radius:10px">
+              <div style="font-family:'Bebas Neue',sans-serif;font-size:18px;color:#EC4899" id="productFat">-</div>
+              <div style="font-size:9px;color:var(--muted)">fat</div>
+            </div>
+          </div>
+          <div style="font-size:12px;font-weight:700;color:var(--red);font-style:italic" id="titanAnalysis"></div>
+          <button onclick="addScanToJournal()" style="width:100%;margin-top:12px;padding:12px;background:linear-gradient(135deg,var(--gold),var(--gold2));color:var(--navy);border:none;border-radius:12px;font-family:'Outfit',sans-serif;font-size:13px;font-weight:800;cursor:pointer">+ Ajouter au journal</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- TAB COURSES -->
+    <div id="ntab-courses" class="pg" style="padding:16px 22px">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+        <div style="font-family:'Bebas Neue',sans-serif;font-size:20px;color:var(--text);letter-spacing:1px">LISTE DE COURSES</div>
+        <button onclick="generateList()" style="padding:8px 16px;background:linear-gradient(135deg,var(--gold),var(--gold2));border:none;border-radius:10px;color:var(--navy);font-size:12px;font-weight:800;cursor:pointer">G&#233;n&#233;rer 🛒</button>
+      </div>
+      <div style="margin-bottom:16px">
+        <div style="font-size:10px;font-weight:700;color:var(--gold);letter-spacing:1px;margin-bottom:8px">PROT&#201;INES</div>
+        <div style="display:flex;align-items:center;gap:10px;padding:12px 0;border-bottom:1px solid var(--border)"><div class="shop-check on" onclick="toggleShop(this)" style="width:22px;height:22px;border-radius:6px;background:var(--gold);border:2px solid var(--gold);display:flex;align-items:center;justify-content:center;font-size:12px;color:var(--navy);cursor:pointer">&#10003;</div><div style="flex:1;font-size:13px;color:var(--text);text-decoration:line-through;color:var(--muted)">Filets de poulet (1.2kg)</div></div>
+        <div style="display:flex;align-items:center;gap:10px;padding:12px 0;border-bottom:1px solid var(--border)"><div class="shop-check" onclick="toggleShop(this)" style="width:22px;height:22px;border-radius:6px;border:2px solid var(--border2);cursor:pointer"></div><div style="flex:1;font-size:13px;color:var(--text)">Whey Protein Isolate (1kg)</div></div>
+        <div style="display:flex;align-items:center;gap:10px;padding:12px 0;border-bottom:1px solid var(--border)"><div class="shop-check" onclick="toggleShop(this)" style="width:22px;height:22px;border-radius:6px;border:2px solid var(--border2);cursor:pointer"></div><div style="flex:1;font-size:13px;color:var(--text)">Saumon frais (400g)</div></div>
+      </div>
+      <div style="margin-bottom:16px">
+        <div style="font-size:10px;font-weight:700;color:var(--gold);letter-spacing:1px;margin-bottom:8px">GLUCIDES</div>
+        <div style="display:flex;align-items:center;gap:10px;padding:12px 0;border-bottom:1px solid var(--border)"><div class="shop-check" onclick="toggleShop(this)" style="width:22px;height:22px;border-radius:6px;border:2px solid var(--border2);cursor:pointer"></div><div style="flex:1;font-size:13px;color:var(--text)">Quinoa (500g)</div></div>
+        <div style="display:flex;align-items:center;gap:10px;padding:12px 0;border-bottom:1px solid var(--border)"><div class="shop-check" onclick="toggleShop(this)" style="width:22px;height:22px;border-radius:6px;border:2px solid var(--border2);cursor:pointer"></div><div style="flex:1;font-size:13px;color:var(--text)">Patates douces (1.5kg)</div></div>
+        <div style="display:flex;align-items:center;gap:10px;padding:12px 0;border-bottom:1px solid var(--border)"><div class="shop-check on" onclick="toggleShop(this)" style="width:22px;height:22px;border-radius:6px;background:var(--gold);border:2px solid var(--gold);display:flex;align-items:center;justify-content:center;font-size:12px;color:var(--navy);cursor:pointer">&#10003;</div><div style="flex:1;font-size:13px;color:var(--text);text-decoration:line-through;color:var(--muted)">Flocons d&#8217;avoine (1kg)</div></div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<div class="nav" id="mainNav" style="display:none">
+  <div class="nav-item" onclick="switchTab('home')">
+    <svg class="nav-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 12L12 3l9 9"/><path d="M9 21V12h6v9"/><path d="M3 12v9h18v-9"/></svg>
+    <div class="nav-lb">Home</div>
+  </div>
+  <div class="nav-item" onclick="switchTab('tracks')">
+    <svg class="nav-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+    <div class="nav-lb">Tracks</div>
+  </div>
+  <!-- BOUTON TITAN CENTRAL -->
+  <div class="nav-titan" onclick="switchTab('chat')">
+    <div class="nav-titan-btn">
+      <svg width="28" height="28" viewBox="0 0 56 56" fill="none">
+        <ellipse cx="28" cy="20" rx="11" ry="12" fill="#C5A44E" opacity=".9"/>
+        <path d="M8 52c0-11 9-18 20-18s20 7 20 18" fill="#C5A44E" opacity=".7"/>
+        <ellipse cx="28" cy="18" rx="9" ry="10" fill="#0A0F1E"/>
+        <circle cx="24" cy="17" r="2.5" fill="#C5A44E"/>
+        <circle cx="32" cy="17" r="2.5" fill="#C5A44E"/>
+        <path d="M23 23 Q28 27 33 23" stroke="#C5A44E" stroke-width="1.5" fill="none" stroke-linecap="round"/>
+      </svg>
+    </div>
+    <div class="nav-lb" style="color:var(--gold);font-size:8px;margin-top:4px">TITAN</div>
+  </div>
+  <div class="nav-item" onclick="switchTab('train')">
+    <svg class="nav-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M6.5 6.5h11M6.5 12h11M6.5 17.5h11"/><circle cx="3" cy="6.5" r="1.5"/><circle cx="3" cy="12" r="1.5"/><circle cx="3" cy="17.5" r="1.5"/></svg>
+    <div class="nav-lb">Train</div>
+  </div>
+  <div class="nav-item" onclick="switchTab('nutrition')">
+    <svg class="nav-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 2a7 7 0 0 1 7 7c0 4-3 7-7 9-4-2-7-5-7-9a7 7 0 0 1 7-7z"/><path d="M12 6v6M9 9h6"/></svg>
+    <div class="nav-lb">Nutri</div>
+  </div>
+</div>
+
+<!-- ═══ RECIPE MODAL ═══ -->
+<div id="recipeModal" class="recipe-modal">
+  <div class="rm-header">
+    <div class="rm-back" onclick="closeRecipeModal()">←</div>
+    <div class="rm-title" id="rmTitle">RECETTE</div>
+    <div class="rm-tag" id="rmTag">PRE</div>
+  </div>
+  <div class="rm-hero">
+    <img id="rmImg" src="" alt="" onerror="this.style.background='#1B2A4A';this.src=''">
+    <div class="rm-hero-overlay"></div>
+    <div class="rm-hero-cals" id="rmCals">520 kcal</div>
+  </div>
+  <div class="rm-body">
+    <!-- Macros -->
+    <div class="rm-macros">
+      <div class="rm-macro"><div class="rm-macro-v" id="rmProt" style="color:#3B82F6">28g</div><div class="rm-macro-l">Prot</div></div>
+      <div class="rm-macro"><div class="rm-macro-v" id="rmCarbs" style="color:var(--gold)">62g</div><div class="rm-macro-l">Carbs</div></div>
+      <div class="rm-macro"><div class="rm-macro-v" id="rmFat" style="color:#EC4899">14g</div><div class="rm-macro-l">Fat</div></div>
+      <div class="rm-macro"><div class="rm-macro-v" id="rmTime" style="color:var(--muted)">5min</div><div class="rm-macro-l">Prep</div></div>
+    </div>
+    <!-- Titan conseil -->
+    <div class="rm-titan">
+      <div class="rm-titan-av">T</div>
+      <div class="rm-titan-txt" id="rmTitanMsg"></div>
+    </div>
+    <!-- Ingrédients -->
+    <div class="rm-section">
+      <div class="rm-section-title">🛒 Ingrédients</div>
+      <div id="rmIngredients"></div>
+    </div>
+    <!-- Étapes -->
+    <div class="rm-section">
+      <div class="rm-section-title">👨‍🍳 Préparation</div>
+      <div id="rmSteps"></div>
+    </div>
+    <!-- Bouton ajouter -->
+    <button class="rm-add-btn" onclick="addRecipeToJournal()">+ Ajouter au journal du jour</button>
+  </div>
+</div>
+
+</div><!-- /app -->
+
+
+<!-- ═══ FULL NUTRITION MODAL ═══ -->
+<div id="nutritionModal" style="display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:var(--bg);z-index:300;overflow-y:auto">
+
+  <div class="nutri-header" style="position:sticky;top:0;z-index:10">
+    <div class="nh-back" onclick="closeNutritionModal()" style="cursor:pointer">← Retour</div>
+    <div class="nh-title">NUTRITION</div>
+    <div class="nh-sub">Mange comme tu t'entraînes</div>
+    <div class="nh-stats">
+      <div class="nh-stat"><div class="nh-val">1,240</div><div class="nh-label">kcal/jour</div></div>
+      <div class="nh-stat"><div class="nh-val">95g</div><div class="nh-label">Protéines</div></div>
+      <div class="nh-stat"><div class="nh-val">120g</div><div class="nh-label">Glucides</div></div>
+      <div class="nh-stat"><div class="nh-val">42g</div><div class="nh-label">Lipides</div></div>
+    </div>
+  </div>
+
+  <div class="nutri-tabs" style="position:sticky;top:0;z-index:10;background:var(--bg);padding:16px 22px 0">
+    <div class="nutri-tab on" data-tab="journal" onclick="switchNutriTab(this, 'journal')">📅 Journal</div>
+    <div class="nutri-tab" data-tab="recipes" onclick="switchNutriTab(this, 'recipes')">🍳 Recettes</div>
+    <div class="nutri-tab" data-tab="scan" onclick="switchNutriTab(this, 'scan')">📷 Scan</div>
+    <div class="nutri-tab" data-tab="shop" onclick="switchNutriTab(this, 'shop')">🛒 Courses</div>
+  </div>
+
+  <!-- Journal Tab -->
+  <div id="nutriJournal" class="nutri-sec on" style="padding:16px 22px 90px">
+    <div class="titan-nutri">
+      <div class="tn-av">🤖</div>
+      <div class="tn-txt"><strong>Titan :</strong> Aujourd'hui c'est séance jambes lourdes. Tu as besoin de 2.2g de protéines/kg et de glucides complexes 2h avant.</div>
+    </div>
+
+    <div class="daily-card">
+      <div class="dc-date">MARDI 22 AVRIL</div>
+      <div class="dc-cals">
+        <span class="dc-cals-num">1,240</span>
+        <span class="dc-cals-unit">/ 2,400 kcal</span>
+        <span class="dc-cals-target">Objectif : Prise de masse</span>
+      </div>
+
+      <div class="macro-row">
+        <div class="macro-icon macro-prot">🥩</div>
+        <div class="macro-info"><div class="macro-name">Protéines</div><div class="macro-bar"><div class="macro-bar-in" style="width:65%"></div></div></div>
+        <div class="macro-val">95g / 145g</div>
+      </div>
+      <div class="macro-row">
+        <div class="macro-icon macro-carbs">🍚</div>
+        <div class="macro-info"><div class="macro-name">Glucides</div><div class="macro-bar"><div class="macro-bar-in" style="width:45%"></div></div></div>
+        <div class="macro-val">120g / 280g</div>
+      </div>
+      <div class="macro-row">
+        <div class="macro-icon macro-fat">🥑</div>
+        <div class="macro-info"><div class="macro-name">Lipides</div><div class="macro-bar"><div class="macro-bar-in" style="width:55%"></div></div></div>
+        <div class="macro-val">42g / 75g</div>
+      </div>
+    </div>
+
+    <div class="meal-card" onclick="showMealDetail('breakfast')">
+      <div class="meal-time"><div class="meal-time-h">07</div><div class="meal-time-m">30</div></div>
+      <div class="meal-body">
+        <div class="meal-name">🥣 Bowl Protéiné Avoine & Banane</div>
+        <div class="meal-cals">520 kcal • 28g prot • 62g carbs • 14g fat</div>
+      </div>
+      <div class="meal-status done">✓ Fait</div>
+    </div>
+
+    <div class="meal-card" onclick="showMealDetail('snack1')">
+      <div class="meal-time"><div class="meal-time-h">10</div><div class="meal-time-m">30</div></div>
+      <div class="meal-body">
+        <div class="meal-name">🥜 Shake Whey & Beurre de Cacahuète</div>
+        <div class="meal-cals">320 kcal • 35g prot • 12g carbs • 16g fat</div>
+      </div>
+      <div class="meal-status done">✓ Fait</div>
+    </div>
+
+    <div class="meal-card" onclick="showMealDetail('lunch')">
+      <div class="meal-time"><div class="meal-time-h">13</div><div class="meal-time-m">00</div></div>
+      <div class="meal-body">
+        <div class="meal-name">🍗 Poulet Rôti, Quinoa & Légumes</div>
+        <div class="meal-cals">580 kcal • 42g prot • 58g carbs • 22g fat</div>
+      </div>
+      <div class="meal-status planned">⏳ Planifié</div>
+    </div>
+
+    <div class="meal-card" onclick="showMealDetail('snack2')">
+      <div class="meal-time"><div class="meal-time-h">16</div><div class="meal-time-m">30</div></div>
+      <div class="meal-body">
+        <div class="meal-name">🍎 Pomme & Amandes + Créatine</div>
+        <div class="meal-cals">180 kcal • 4g prot • 22g carbs • 8g fat</div>
+      </div>
+      <div class="meal-status planned">⏳ Planifié</div>
+    </div>
+
+    <div class="meal-card" onclick="showMealDetail('dinner')">
+      <div class="meal-time"><div class="meal-time-h">20</div><div class="meal-time-m">00</div></div>
+      <div class="meal-body">
+        <div class="meal-name">🐟 Saumon, Patate Douce & Épinards</div>
+        <div class="meal-cals">520 kcal • 38g prot • 48g carbs • 18g fat</div>
+      </div>
+      <div class="meal-status planned">⏳ Planifié</div>
+    </div>
+
+    <button class="add-food-btn" onclick="addFood()">+ Ajouter un aliment ou une recette</button>
+
+    <div class="daily-card" style="background:var(--navy);border:none">
+      <div style="font-family:'Bebas Neue',sans-serif;font-size:16px;color:var(--gold);letter-spacing:1px;margin-bottom:8px">🔗 LIEN ENTRAÎNEMENT</div>
+      <div style="font-size:13px;color:rgba(255,255,255,.8);line-height:1.5">Séance jambes prévue à 18h00. Dernier repas solide recommandé à 16h30 max. Post-workout : 30g protéines rapides dans les 30 min.</div>
+    </div>
+  </div>
+
+  <!-- Recipes Tab -->
+  <div id="nutriRecipes" class="nutri-sec" style="padding:16px 22px 90px">
+    <div class="titan-nutri">
+      <div class="tn-av">🤖</div>
+      <div class="tn-txt"><strong>Titan :</strong> Tu veux prendre de la masse ? Je t'ai sélectionné des recettes hypercaloriques.</div>
+    </div>
+
+    <div style="display:flex;gap:6px;margin-bottom:14px;overflow-x:auto;scrollbar-width:none;padding-bottom:4px">
+      <div class="recipe-tag" style="background:var(--gold-dim);color:var(--gold);cursor:pointer;padding:4px 12px;font-size:11px" onclick="filterRecipes('all')">Toutes</div>
+      <div class="recipe-tag pre" style="cursor:pointer;padding:4px 12px;font-size:11px" onclick="filterRecipes('pre')">Pre-workout</div>
+      <div class="recipe-tag post" style="cursor:pointer;padding:4px 12px;font-size:11px" onclick="filterRecipes('post')">Post-workout</div>
+      <div class="recipe-tag meal" style="cursor:pointer;padding:4px 12px;font-size:11px" onclick="filterRecipes('meal')">Repas</div>
+    </div>
+
+    <div class="recipe-grid" id="recipeGrid">
+      <div class="recipe-card" onclick="showRecipe('bowl')">
+        <div class="recipe-img">🥣</div>
+        <div class="recipe-body">
+          <div class="recipe-name">Bowl Protéiné Avoine</div>
+          <div class="recipe-meta"><span class="recipe-tag pre">PRE</span><span>520 kcal</span></div>
+        </div>
+      </div>
+      <div class="recipe-card" onclick="showRecipe('shake')">
+        <div class="recipe-img">🥤</div>
+        <div class="recipe-body">
+          <div class="recipe-name">Shake Whey PB</div>
+          <div class="recipe-meta"><span class="recipe-tag post">POST</span><span>320 kcal</span></div>
+        </div>
+      </div>
+      <div class="recipe-card" onclick="showRecipe('poulet')">
+        <div class="recipe-img">🍗</div>
+        <div class="recipe-body">
+          <div class="recipe-name">Poulet Quinoa</div>
+          <div class="recipe-meta"><span class="recipe-tag meal">REPAS</span><span>580 kcal</span></div>
+        </div>
+      </div>
+      <div class="recipe-card" onclick="showRecipe('saumon')">
+        <div class="recipe-img">🐟</div>
+        <div class="recipe-body">
+          <div class="recipe-name">Saumon Patate Douce</div>
+          <div class="recipe-meta"><span class="recipe-tag meal">REPAS</span><span>520 kcal</span></div>
+        </div>
+      </div>
+      <div class="recipe-card" onclick="showRecipe('pates')">
+        <div class="recipe-img">🍝</div>
+        <div class="recipe-body">
+          <div class="recipe-name">Pâtes Pesto Poulet</div>
+          <div class="recipe-meta"><span class="recipe-tag meal">REPAS</span><span>640 kcal</span></div>
+        </div>
+      </div>
+      <div class="recipe-card" onclick="showRecipe('tacos')">
+        <div class="recipe-img">🌮</div>
+        <div class="recipe-body">
+          <div class="recipe-name">Tacos Steak Avocat</div>
+          <div class="recipe-meta"><span class="recipe-tag meal">REPAS</span><span>580 kcal</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Scan Tab -->
+  <div id="nutriScan" class="nutri-sec" style="padding:16px 22px 90px">
+    <div class="titan-nutri">
+      <div class="tn-av">🤖</div>
+      <div class="tn-txt"><strong>Titan :</strong> Scan le code-barre de n'importe quel produit. Je te dis exactement ce que tu manges.</div>
+    </div>
+
+    <div class="scan-area" onclick="scanProduct()">
+      <div class="scan-ic">📷</div>
+      <div class="scan-title">SCANNER UN PRODUIT</div>
+      <div class="scan-sub">Code-barre • QR Code • Manuel</div>
+    </div>
+
+    <div style="margin-bottom:16px">
+      <div style="font-family:'Bebas Neue',sans-serif;font-size:16px;color:var(--text);letter-spacing:1px;margin-bottom:10px">Ou entre le code manuellement</div>
+      <div style="display:flex;gap:8px">
+        <input type="text" id="barcodeInput" placeholder="Ex: 3017620422003" style="flex:1;padding:12px 14px;background:var(--surface2);border:1.5px solid var(--border);border-radius:11px;font-family:'Outfit',sans-serif;font-size:14px;outline:none">
+        <button onclick="lookupBarcode()" style="padding:12px 20px;background:var(--navy);color:#fff;border:none;border-radius:11px;font-family:'Outfit',sans-serif;font-size:13px;font-weight:700;cursor:pointer">🔍</button>
+      </div>
+    </div>
+
+    <div id="scanResult" class="hidden">
+      <div class="product-result">
+        <div class="pr-top">
+          <div class="pr-img" id="productImg">🥫</div>
+          <div class="pr-body">
+            <div class="pr-name" id="productName">Nutella Ferrero</div>
+            <div class="pr-brand" id="productBrand">Ferrero</div>
+          </div>
+        </div>
+        <div class="pr-nutri">
+          <div class="pr-nutri-i">🔥 <span id="productCals">539</span> kcal/100g</div>
+          <div class="pr-nutri-i">🥩 <span id="productProt">6.3</span>g prot</div>
+          <div class="pr-nutri-i">🍚 <span id="productCarbs">57.5</span>g carbs</div>
+          <div class="pr-nutri-i">🥑 <span id="productFat">30.9</span>g fat</div>
+        </div>
+        <div style="margin-top:10px;padding-top:10px;border-top:1px solid var(--border)">
+          <div style="font-size:11px;color:var(--muted);margin-bottom:6px">Titan analyse :</div>
+          <div style="font-size:13px;color:var(--red);font-weight:700" id="titanAnalysis">"54% de sucre. Tu veux dunker ou tu veux manger de la pâte à tartiner ? Choisis."</div>
+        </div>
+        <button onclick="addScanToJournal()" style="width:100%;margin-top:12px;padding:12px;background:linear-gradient(135deg,var(--gold),var(--gold2));color:var(--navy);border:none;border-radius:11px;font-family:'Outfit',sans-serif;font-size:13px;font-weight:800;cursor:pointer">+ Ajouter au journal</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Shopping Tab -->
+  <div id="nutriShop" class="nutri-sec" style="padding:16px 22px 90px">
+    <div class="titan-nutri">
+      <div class="tn-av">🤖</div>
+      <div class="tn-txt"><strong>Titan :</strong> Voici ta liste de courses basée sur tes repas de la semaine. Coche au fur et à mesure.</div>
+    </div>
+
+    <div class="shop-cat">
+      <div class="shop-cat-title">🥩 PROTÉINES</div>
+      <div class="shop-item"><div class="shop-check on" onclick="toggleShop(this)">✓</div><div class="shop-name done">Filets de poulet (x6)</div><div class="shop-qty">1.2kg</div></div>
+      <div class="shop-item"><div class="shop-check on" onclick="toggleShop(this)">✓</div><div class="shop-name done">Saumon frais</div><div class="shop-qty">400g</div></div>
+      <div class="shop-item"><div class="shop-check" onclick="toggleShop(this)">✓</div><div class="shop-name">Whey Protein Isolate</div><div class="shop-qty">1kg</div></div>
+      <div class="shop-item"><div class="shop-check" onclick="toggleShop(this)">✓</div><div class="shop-name">Œufs bio (x12)</div><div class="shop-qty">2 boîtes</div></div>
+    </div>
+
+    <div class="shop-cat">
+      <div class="shop-cat-title">🍚 GLUCIDES</div>
+      <div class="shop-item"><div class="shop-check" onclick="toggleShop(this)">✓</div><div class="shop-name">Quinoa</div><div class="shop-qty">500g</div></div>
+      <div class="shop-item"><div class="shop-check" onclick="toggleShop(this)">✓</div><div class="shop-name">Patates douces</div><div class="shop-qty">1.5kg</div></div>
+      <div class="shop-item"><div class="shop-check on" onclick="toggleShop(this)">✓</div><div class="shop-name done">Avoine en flocons</div><div class="shop-qty">1kg</div></div>
+      <div class="shop-item"><div class="shop-check" onclick="toggleShop(this)">✓</div><div class="shop-name">Riz basmati</div><div class="shop-qty">1kg</div></div>
+    </div>
+
+    <div class="shop-cat">
+      <div class="shop-cat-title">🥑 LIPIDES & AUTRES</div>
+      <div class="shop-item"><div class="shop-check" onclick="toggleShop(this)">✓</div><div class="shop-name">Avocats (x4)</div><div class="shop-qty">4 pièces</div></div>
+      <div class="shop-item"><div class="shop-check on" onclick="toggleShop(this)">✓</div><div class="shop-name done">Beurre de cacahuète</div><div class="shop-qty">500g</div></div>
+      <div class="shop-item"><div class="shop-check" onclick="toggleShop(this)">✓</div><div class="shop-name">Amandes</div><div class="shop-qty">250g</div></div>
+      <div class="shop-item"><div class="shop-check" onclick="toggleShop(this)">✓</div><div class="shop-name">Huile d'olive</div><div class="shop-qty">500ml</div></div>
+    </div>
+
+    <div class="shop-cat">
+      <div class="shop-cat-title">🥦 LÉGUMES & FRUITS</div>
+      <div class="shop-item"><div class="shop-check" onclick="toggleShop(this)">✓</div><div class="shop-name">Épinards frais</div><div class="shop-qty">300g</div></div>
+      <div class="shop-item"><div class="shop-check" onclick="toggleShop(this)">✓</div><div class="shop-name">Brocolis</div><div class="shop-qty">500g</div></div>
+      <div class="shop-item"><div class="shop-check on" onclick="toggleShop(this)">✓</div><div class="shop-name done">Bananes (x6)</div><div class="shop-qty">6 pièces</div></div>
+      <div class="shop-item"><div class="shop-check" onclick="toggleShop(this)">✓</div><div class="shop-name">Pommes (x4)</div><div class="shop-qty">4 pièces</div></div>
+    </div>
+
+    <div style="height:80px"></div>
+  </div>
+
+  <button class="cart-btn" onclick="generateList()" style="position:fixed;bottom:20px;left:50%;transform:translateX(-50%);width:calc(100% - 44px);max-width:386px;padding:14px;background:linear-gradient(135deg,var(--gold),var(--gold2));color:var(--navy);border:none;border-radius:14px;font-family:'Outfit',sans-serif;font-size:14px;font-weight:800;cursor:pointer;box-shadow:0 6px 24px var(--gold-glow);z-index:90;display:flex;align-items:center;justify-content:center;gap:8px">
+    <span>🛒</span>
+    <span>Générer la liste de courses</span>
+    <span class="cart-count" id="cartCount" style="background:var(--navy);color:#fff;width:22px;height:22px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:800">3</span>
+  </button>
+</div>
+
+
+<!-- ═══ INSTALL APP BUTTON & MODAL ═══ -->
+
+<!-- ═══ JS DATA (en premier) ═══ -->
+<script src="js/data/recipes.js"></script>
+<script src="js/data/sat.js"></script>
+
+<!-- ═══ JS MODULES ═══ -->
+<script src="js/storage.js"></script>
+<script src="js/onboarding.js"></script>
+<script src="js/home.js"></script>
+<script src="js/sat.js"></script>
+<script src="js/train.js"></script>
+<script src="js/titan.js"></script>
+<script src="js/tracks.js"></script>
+<script src="js/nutrition.js"></script>
+<script src="js/app.js"></script>
+
+</body>
+</html>
