@@ -4614,6 +4614,9 @@ document.addEventListener('DOMContentLoaded', function() {
   var hasData = false;
   try { hasData = loadData(); } catch(e) { console.warn('loadData error:', e); }
 
+  // Restaurer un onboarding en cours si l'utilisateur avait quitté en pleine saisie
+  try { _restoreOnboarding(); } catch(e) { console.warn('restoreOnboarding error:', e); }
+
   // Override renderUserData pour auto-save
   var origRUD = window.renderUserData;
   if (origRUD) window.renderUserData = function() {
@@ -6263,6 +6266,53 @@ var OB = {
   profilePct: 0
 };
 
+// ═══ Persistance auto de l'onboarding ═══
+// Sauvegarde OB / obChecks / p3Values dans localStorage à chaque changement, et restaure au boot.
+// Permet de reprendre le formulaire à l'endroit où l'utilisateur l'a quitté.
+function _persistOnboarding() {
+  try {
+    var snap = {
+      OB: OB,
+      obChecks: (typeof obChecks !== 'undefined') ? obChecks : null,
+      p3Values: (typeof p3Values !== 'undefined') ? p3Values : null,
+      ts: Date.now()
+    };
+    localStorage.setItem('ah_ob_inprogress', JSON.stringify(snap));
+  } catch(e) {}
+}
+function _restoreOnboarding() {
+  try {
+    var raw = localStorage.getItem('ah_ob_inprogress');
+    if (!raw) return;
+    var snap = JSON.parse(raw);
+    if (snap.OB) Object.assign(OB, snap.OB);
+    if (snap.obChecks && typeof obChecks !== 'undefined') Object.assign(obChecks, snap.obChecks);
+    if (snap.p3Values && typeof p3Values !== 'undefined') Object.assign(p3Values, snap.p3Values);
+  } catch(e) {}
+}
+// Auto-save sur tout input/change dans une zone d'onboarding (profil1/3/4)
+document.addEventListener('input', function(e) {
+  var t = e.target; if (!t || !t.id) return;
+  // Sync les champs profil1/3/4 vers OB
+  var map = {
+    p1Prenom: 'prenom', p1Age: 'age',
+    p4Poids: 'poids', p4Taille: 'taille',
+    p4PoidsCible: 'poidsCible', p4MG: 'masseGrasse'
+  };
+  if (map[t.id]) {
+    OB[map[t.id]] = t.value;
+    _persistOnboarding();
+  } else if (t.id.indexOf('sat') === 0 || t.id.indexOf('set') === 0 || t.id.indexOf('p3') === 0) {
+    // SAT/SET/profil3 inputs : on persiste l'intégralité de p3Values via la prochaine màj
+    if (typeof p3Values !== 'undefined' && t.id) p3Values[t.id] = t.value;
+    _persistOnboarding();
+  }
+}, true);
+// Clear la sauvegarde une fois l'onboarding définitivement terminé
+function _clearOnboardingProgress() {
+  try { localStorage.removeItem('ah_ob_inprogress'); } catch(e) {}
+}
+
 // Q1 — Objectif principal : on envoie l'utilisateur sur la Home en mode "découverte"
 // Le profil reste à compléter pour débloquer les fonctionnalités
 function obPickObj(el, val) {
@@ -6360,6 +6410,7 @@ function obChk(el, group, val) {
   if (group === 'sit') checks.q1 = arr.slice();
   if (group === 'cont') checks.q2 = arr.slice();
   if (group === 'mat') checks.q3 = arr.slice();
+  try { _persistOnboarding(); } catch(e) {}
 }
 
 // Show sub-panel in profil1
@@ -6377,6 +6428,7 @@ function obPickSexe(el, val) {
   document.querySelectorAll('#p1sexeGrid .sport-chip').forEach(function(c){ c.classList.remove('sel'); });
   el.classList.add('sel');
   OB.sexe = val; R.sexe = val;
+  try { _persistOnboarding(); } catch(e) {}
 }
 
 // Submit identité (prénom + sexe + âge)
@@ -6392,6 +6444,7 @@ function obSubmitId() {
   R.age = age;
   user.name = OB.prenom.toUpperCase();
   if(err) err.style.display='none';
+  try { _persistOnboarding(); } catch(e) {}
   obShow('p1_q1', 40);
 }
 
@@ -6731,13 +6784,53 @@ function discoveryGoTo(screenId) {
   }
 
   // 5. Initialiser le profil correspondant si besoin
-  if (screenId === 'profil3') {
+  if (screenId === 'profil1') {
+    try { initProfil1(); } catch(e) { console.warn('initProfil1 error:', e); }
+  } else if (screenId === 'profil3') {
     try { initP3SAT(); } catch(e) { console.warn('initP3SAT error:', e); }
+    try { initProfil3InputsFromOB(); } catch(e) {}
   } else if (screenId === 'profil4') {
     try { initProfil4(); } catch(e) { console.warn('initProfil4 error:', e); }
   }
 
   console.log('[discoveryGoTo] done');
+}
+
+// Pré-remplir les inputs de profil1 depuis OB (reprise post-quit)
+function initProfil1() {
+  var pIn = document.getElementById('p1Prenom');
+  if (pIn && OB.prenom) pIn.value = OB.prenom;
+  var aIn = document.getElementById('p1Age');
+  if (aIn && OB.age) aIn.value = OB.age;
+  // Réappliquer la sélection de sexe
+  if (OB.sexe) {
+    document.querySelectorAll('#p1sexeGrid .sport-chip').forEach(function(c){
+      c.classList.toggle('sel', c.getAttribute('onclick') && c.getAttribute('onclick').indexOf("'" + OB.sexe + "'") > -1);
+    });
+  }
+  // Réappliquer les checkboxes p1_q1/q2/q3
+  ['sit','cont','mat'].forEach(function(group){
+    var arr = (typeof obChecks !== 'undefined' && obChecks[group]) ? obChecks[group] : [];
+    document.querySelectorAll('.ob-chk').forEach(function(btn){
+      var oc = btn.getAttribute('onclick') || '';
+      var m = oc.match(/obChk\(this,'([^']+)','([^']+)'\)/);
+      if (m && m[1] === group) {
+        var isSel = arr.indexOf(m[2]) > -1;
+        btn.classList.toggle('sel', isSel);
+        var box = btn.querySelector('.ob-chk-box');
+        if (box) box.textContent = isSel ? '✓' : '';
+      }
+    });
+  });
+}
+
+// Pré-remplir les inputs SAT/SET de profil3 depuis p3Values
+function initProfil3InputsFromOB() {
+  if (typeof p3Values === 'undefined') return;
+  Object.keys(p3Values).forEach(function(k){
+    var el = document.getElementById(k);
+    if (el && p3Values[k] != null) el.value = p3Values[k];
+  });
 }
 
 // Fonction globale pour la checklist (exposée sur window pour onclick inline)
@@ -9644,6 +9737,7 @@ function obFinish(){
     if (allStepsDone) {
       localStorage.setItem('ah_onboarding_done','1');
       localStorage.removeItem('ah_discovery_mode');
+      try { _clearOnboardingProgress(); } catch(e) {}
     }
 
     // Sync vers Firestore si l'utilisateur est connecté
