@@ -6313,40 +6313,24 @@ function _clearOnboardingProgress() {
   try { localStorage.removeItem('ah_ob_inprogress'); } catch(e) {}
 }
 
-// Q1 — Objectif principal : on envoie l'utilisateur sur la Home en mode "découverte"
-// Le profil reste à compléter pour débloquer les fonctionnalités
+// Q1 — Objectif principal (= Q4 du form Tally "QUEL PROGRAMME POUR TOI ?")
+// On sauvegarde uniquement l'objectif choisi. L'attribution du programme se fait
+// SEULEMENT après les 3 questions suivantes (situation/contraintes/matériel),
+// dans obCalcProg(), via la fonction calcProgramFromTallyAnswers().
 function obPickObj(el, val) {
   try {
     document.querySelectorAll('#obQ1 .ob-opt').forEach(function(o){ o.classList.remove('sel'); });
     if (el && el.classList) el.classList.add('sel');
     if (typeof OB !== 'undefined') OB.objectif = val;
 
-    // Mapper l'objectif vers un programme suggéré
-    var programMap = {
-      'dunker':     { key:'verticalDunk', name:'VERTICAL DUNK', obj:'Apprendre à dunker' },
-      'vertical':   { key:'verticalDunk', name:'VERTICAL DUNK', obj:'Détente verticale pure' },
-      'explosif':   { key:'eliteAthlete', name:'ELITE ATHLETE', obj:'Explosivité globale' },
-      'force':      { key:'microtraining', name:'MICROTRAINING', obj:'Force sans matériel' },
-      'poids':      { key:'shredExplose', name:'SHRED EXPLOSE', obj:'Perte de poids explosive' },
-      'discipline': { key:'triphasique', name:'TRIPHASIQUE', obj:'Discipline et régularité' },
-      'tout':       { key:'explose', name:'EXPLOSE+', obj:'Optimiser tout' }
-    };
-    var prog = programMap[val] || programMap['explosif'];
-    if (typeof OB !== 'undefined') {
-      OB.program = prog.key;
-      OB.programName = prog.name;
-      OB.programObj = prog.obj;
-    }
-
-    // Sauvegarder le programme suggéré + marquer le mode "découverte"
+    // Sauvegarder seulement l'objectif + marquer le mode "découverte".
+    // Pas de programKey/programName encore — sera défini après les 4 questions.
     try {
       var existingProfile = {};
       try { existingProfile = JSON.parse(localStorage.getItem('ah_profile') || '{}'); } catch(e2) {}
       var p = Object.assign({}, existingProfile, {
         name: existingProfile.name || 'Athlète',
-        program: prog.name,
-        programKey: prog.key,
-        programObj: prog.obj,
+        objectif: val,
         phase: existingProfile.phase || 1,
         weekNum: existingProfile.weekNum || 1,
         totalWeeks: existingProfile.totalWeeks || 20,
@@ -6358,11 +6342,8 @@ function obPickObj(el, val) {
       });
       localStorage.setItem('ah_profile', JSON.stringify(p));
       localStorage.setItem('ah_discovery_mode', '1');
-      if (typeof user !== 'undefined') {
-        user.program = prog.name;
-        user.programKey = prog.key;
-      }
     } catch(e3) { console.warn('Save profile failed:', e3); }
+    try { _persistOnboarding(); } catch(e) {}
 
     // Aller directement sur la Home — mode découverte
     setTimeout(function(){
@@ -6374,10 +6355,9 @@ function obPickObj(el, val) {
         try { renderTodayCard(); } catch(e) {}
         try { renderDiscoveryBanner(); } catch(e) {}
         switchTab('home');
-        showToast('Programme suggéré : ' + prog.name, 'info');
+        showToast('Objectif noté. Complète ton profil pour révéler ton programme.', 'info');
       } catch(e4) {
         console.error('Transition failed:', e4);
-        // Fallback : essayer de forcer l'affichage de la home
         var homeView = document.getElementById('vHome');
         if (homeView) {
           homeView.classList.add('on');
@@ -6390,6 +6370,81 @@ function obPickObj(el, val) {
     console.error('obPickObj crashed:', eMain);
     showToast('Erreur. Réessaie ou recharge la page.', 'err');
   }
+}
+
+// ═══ SCORING TALLY EXACT — "QUEL PROGRAMME POUR TOI ?" (form id Pd5KB5) ═══
+// Reproduit en natif la logique du form Tally : 4 questions, 6 programmes.
+// Source de vérité : Pd5KB5, extrait via MCP Tally le 2026-05-16.
+function calcProgramFromTallyAnswers(objectif, sit, cont, mat) {
+  var scores = {
+    microtraining: 0, eliteathlete: 0, verticaldunk: 0,
+    triphasique: 0, shred: 0, explose: 0
+  };
+  var flags = { is_debutant: 0, has_partner: 0, has_gym: 0 };
+
+  function hasIn(arr, v) { return arr && arr.indexOf(v) > -1; }
+  sit  = sit  || []; cont = cont || []; mat = mat || [];
+
+  // Q1 — SITUATION
+  if (hasIn(sit, 'irregulier')) scores.microtraining += 5;
+  if (hasIn(sit, 'surpoids'))   scores.shred += 6;
+  if (hasIn(sit, 'pas_salle'))  { scores.triphasique += 6; flags.has_gym = 0; }
+  if (hasIn(sit, 'regulier'))   { scores.eliteathlete += 2; scores.explose += 1; }
+  if (hasIn(sit, 'debutant'))   { scores.triphasique += 2; flags.is_debutant = 1; }
+  if (hasIn(sit, 'avance'))     scores.explose += 4;
+
+  // Q2 — CONTRAINTES
+  if (hasIn(cont, 'salle'))      { scores.eliteathlete += 2; scores.explose += 2; scores.verticaldunk += 1; flags.has_gym = 1; }
+  if (hasIn(cont, 'pas_salle'))  { scores.triphasique += 6; flags.has_gym = 0; }
+  if (hasIn(cont, 'peu_temps'))    scores.microtraining += 4;
+  if (hasIn(cont, 'temps_ok'))   { scores.eliteathlete += 3; scores.explose += 1; scores.shred += 2; }
+  if (hasIn(cont, 'quotidien'))    scores.microtraining += 4;
+  if (hasIn(cont, 'partenaire')) { scores.explose += 3; flags.has_partner = 1; }
+
+  // Q3 — MATÉRIEL
+  if (hasIn(mat, 'halteres'))   { scores.triphasique += 2; scores.verticaldunk += 1; }
+  if (hasIn(mat, 'barre'))      { scores.triphasique += 2; scores.verticaldunk += 1; }
+  if (hasIn(mat, 'elastiques'))   scores.triphasique += 1;
+  if (hasIn(mat, 'gilet'))        scores.triphasique += 1;
+  // 'rien' : aucune règle de scoring (conforme Tally)
+
+  // Q4 — OBJECTIF (apport décisif, +10)
+  switch (objectif) {
+    case 'dunker':     scores.verticaldunk  += 10; break;
+    case 'vertical':   scores.verticaldunk  += 10; break;
+    case 'explosif':   scores.eliteathlete  += 10; break;
+    case 'force':      scores.triphasique   += 10; break;
+    case 'poids':      scores.shred         += 10; break;
+    case 'discipline': scores.microtraining += 10; break;
+    case 'tout':       scores.explose       += 10; break;
+  }
+
+  // Routing — ordre exact des règles JUMP_TO_PAGE de Tally (first match wins)
+  var progMap = {
+    shredExplose:  { key:'shredExplose',  name:'SHRED EXPLOSE',  obj:'Perte de poids explosive',     dur:'⏱ 12-16 sem' },
+    explose:       { key:'explose',       name:'EXPLOSE+',       obj:'Optimiser tout',               dur:'⏱ 20-24 sem' },
+    verticalDunk:  { key:'verticalDunk',  name:'VERTICAL DUNK',  obj:'Détente verticale pure',       dur:'⏱ 16-20 sem' },
+    microtraining: { key:'microtraining', name:'MICROTRAINING',  obj:'Force sans matériel',          dur:'⏱ Quotidien' },
+    eliteAthlete:  { key:'eliteAthlete',  name:'ELITE ATHLETE',  obj:'Explosivité globale',          dur:'⏱ 16-20 sem' },
+    triphasique:   { key:'triphasique',   name:'TRIPHASIQUE',    obj:'Discipline et régularité',     dur:'⏱ 12-16 sem' }
+  };
+
+  if (scores.shred         >= 10) return progMap.shredExplose;
+  if (scores.explose       >= 10 && flags.is_debutant === 0 && flags.has_partner === 1) return progMap.explose;
+  if (scores.verticaldunk  >= 10) return progMap.verticalDunk;
+  if (scores.microtraining >= 10) return progMap.microtraining;
+  if (scores.eliteathlete  >= 10) return progMap.eliteAthlete;
+  if (scores.triphasique   >= 10) return progMap.triphasique;
+
+  // Fallback : le plus haut score (Tally laisserait fall-through vers SHRED par défaut,
+  // mais on prend le plus haut pour un résultat plus juste)
+  var best = 'eliteAthlete', bestScore = -1;
+  Object.keys(scores).forEach(function(k){
+    if (scores[k] > bestScore) { bestScore = scores[k]; best = k; }
+  });
+  var keyMap = { shred:'shredExplose', explose:'explose', verticaldunk:'verticalDunk',
+                 microtraining:'microtraining', eliteathlete:'eliteAthlete', triphasique:'triphasique' };
+  return progMap[keyMap[best]] || progMap.eliteAthlete;
 }
 
 // Checkbox toggle (situation, contraintes, matériel)
@@ -6448,32 +6503,59 @@ function obSubmitId() {
   obShow('p1_q1', 40);
 }
 
-// Calcul programme après les 3 questions checkbox
+// Calcul programme après les 3 questions checkbox.
+// C'EST ICI que le programme est attribué pour la 1ère fois — sur la base des
+// 4 réponses Tally (objectif + situation + contraintes + matériel).
 function obCalcProg() {
-  // Sync obChecks to scoring checks
+  // Sync obChecks to scoring checks (compat avec le legacy)
   checks.q1 = obChecks.sit.slice();
   checks.q2 = obChecks.cont.slice();
   checks.q3 = obChecks.mat.slice();
 
-  // En mode découverte : sauvegarder le profil et retourner à la Home
-  if (isDiscoveryMode()) {
-    try {
-      var existingProfile = {};
-      try { existingProfile = JSON.parse(localStorage.getItem('ah_profile') || '{}'); } catch(e) {}
-      var p = Object.assign({}, existingProfile, {
-        prenom: OB.prenom || existingProfile.prenom,
-        name: OB.prenom || existingProfile.name,
-        age: OB.age || existingProfile.age,
-        sexe: OB.sexe || existingProfile.sexe,
-        sit: obChecks.sit.slice(),
-        cont: obChecks.cont.slice(),
-        mat: obChecks.mat.slice()
-      });
-      localStorage.setItem('ah_profile', JSON.stringify(p));
-    } catch(e) { console.warn('Save profile1 error:', e); }
+  // Scoring Tally exact
+  var prog = calcProgramFromTallyAnswers(
+    OB.objectif,
+    obChecks.sit,
+    obChecks.cont,
+    obChecks.mat
+  );
 
-    // Retourner sur la Home
+  // Stocker dans OB
+  OB.program = prog.key;
+  OB.programName = prog.name;
+  OB.programObj = prog.obj;
+  if (typeof user !== 'undefined') {
+    user.program = prog.name;
+    user.programKey = prog.key;
+  }
+
+  // Sauvegarder dans ah_profile
+  try {
+    var existingProfile = {};
+    try { existingProfile = JSON.parse(localStorage.getItem('ah_profile') || '{}'); } catch(e) {}
+    var p = Object.assign({}, existingProfile, {
+      prenom: OB.prenom || existingProfile.prenom,
+      name: OB.prenom || existingProfile.name,
+      age: OB.age || existingProfile.age,
+      sexe: OB.sexe || existingProfile.sexe,
+      objectif: OB.objectif || existingProfile.objectif,
+      sit: obChecks.sit.slice(),
+      cont: obChecks.cont.slice(),
+      mat: obChecks.mat.slice(),
+      program: prog.name,
+      programKey: prog.key,
+      programObj: prog.obj
+    });
+    localStorage.setItem('ah_profile', JSON.stringify(p));
+  } catch(e) { console.warn('Save profile1 error:', e); }
+  try { _persistOnboarding(); } catch(e) {}
+
+  // En mode découverte : retour Home avec toast révélation programme
+  if (isDiscoveryMode()) {
     discoveryReturnToHome();
+    setTimeout(function(){
+      showToast('⚡ Ton programme : ' + prog.name, 'ok');
+    }, 200);
     return;
   }
 
@@ -6576,7 +6658,7 @@ function getProfileSteps() {
       label: 'Objectif choisi',
       desc: 'Pourquoi tu es là',
       icon: '🎯',
-      done: !!(p.programKey || p.program),
+      done: !!p.objectif,
       actionKey: null,
       action: null
     },
