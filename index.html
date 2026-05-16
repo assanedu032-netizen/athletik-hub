@@ -5396,9 +5396,18 @@ function renderWeek() {
 
 // ── RENDER USER DATA ──
 function renderUserData() {
-  // Program card
-  document.getElementById('pcName').textContent = user.program;
-  document.getElementById('pcObj').textContent = user.programObj;
+  // Program card — masque le placeholder par défaut tant que Tally n'a pas attribué le programme
+  var profile = {};
+  try { profile = JSON.parse(localStorage.getItem('ah_profile') || '{}'); } catch(e) {}
+  var programAttributed = !!(profile.programKey && profile.program);
+  if (programAttributed) {
+    document.getElementById('pcName').textContent = user.program;
+    document.getElementById('pcObj').textContent = user.programObj;
+  } else {
+    // Pas encore de programme attribué (Q1 fait mais profil1 pas fini)
+    document.getElementById('pcName').textContent = profile.objectif ? 'À DÉTERMINER' : 'PROGRAMME';
+    document.getElementById('pcObj').textContent = 'Complète ton profil pour révéler ton programme';
+  }
   document.getElementById('pcPhase').textContent = `Phase ${user.phase} — Fondations`;
   document.getElementById('pcPct').textContent = user.progressPct + '%';
   document.getElementById('pcBar').style.width = user.progressPct + '%';
@@ -7007,6 +7016,11 @@ function discoveryReturnToHome() {
     e.classList.remove('on', 'out');
     e.style.display = 'none';
   });
+  // CRITIQUE : reset l'inline display:none mis par discoveryGoTo() sur les .view,
+  // sinon switchTab('home') ajoute .on mais l'inline gagne et la home reste blanche.
+  document.querySelectorAll('.view').forEach(function(v) {
+    v.style.display = '';
+  });
   // Réafficher la nav
   var nav = document.getElementById('mainNav');
   if (nav) nav.style.display = 'flex';
@@ -7015,6 +7029,7 @@ function discoveryReturnToHome() {
   try { renderUserData(); } catch(e) {}
   try { renderAthletikScore(); } catch(e) {}
   try { renderDiscoveryBanner(); } catch(e) {}
+  try { renderActiveHabits(); } catch(e) {}
 }
 window.discoveryReturnToHome = discoveryReturnToHome;
 
