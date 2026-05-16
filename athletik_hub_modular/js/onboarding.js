@@ -51,6 +51,9 @@ function go(id) {
   const cur = document.querySelector('.scr.on');
   const nxt = document.getElementById(id);
   if (!nxt || (cur && cur.id === id)) return;
+  // Clear any inline display='none' left over by home/nutrition reset code on every .scr,
+  // otherwise inline style beats the .scr.on CSS rule and the next screen stays hidden.
+  document.querySelectorAll('.scr').forEach(function(s){ s.style.display = ''; });
   if (cur) { cur.classList.remove('on'); cur.classList.add('out'); setTimeout(() => cur.classList.remove('out'), 500); }
   nxt.classList.add('on');
 

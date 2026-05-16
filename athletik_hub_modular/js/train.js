@@ -298,6 +298,186 @@ function updateLiveTimerDisplay() {
   document.getElementById('liveTimer').textContent = (m<10?'0':'')+m+':'+(s<10?'0':'')+s;
 }
 
+// ══════════════════════════════════
+// LIVE SESSION V2 — GBG-style
+// ══════════════════════════════════
+const lv2CatMap = {
+  echauf_gen:{label:'ÉCHAUFF.',cls:'mob'}, echauf_spe:{label:'ÉCHAUFF.',cls:'mob'},
+  mobilite:{label:'MOBILITÉ',cls:'mob'}, recup:{label:'RÉCUP',cls:'mob'},
+  proprio:{label:'STABILITÉ',cls:'core'}, coord:{label:'COORD',cls:'core'},
+  gainage:{label:'CORE',cls:'core'}, abdos:{label:'CORE',cls:'core'},
+  force_pdc:{label:'FORCE',cls:'force'}, force_charge:{label:'FORCE',cls:'force'},
+  olympiques:{label:'FORCE',cls:'force'}, rotation:{label:'FORCE',cls:'force'},
+  plio_ext:{label:'PLIO',cls:'plio'}, plio_int:{label:'PLIO',cls:'plio'},
+  pied:{label:'VITESSE',cls:'sprint'}, sprint:{label:'SPRINT',cls:'sprint'},
+  multi:{label:'AGILITÉ',cls:'sprint'}, saut:{label:'SAUT',cls:'plio'}
+};
+let lv2State = null;
+
+function _lv2CatOf(name) {
+  for (const k in catData) {
+    if (catData[k].some(e => e.name === name)) return lv2CatMap[k] || {label:'EXERCICE', cls:''};
+  }
+  return {label:'EXERCICE', cls:''};
+}
+
+function _lv2ParseRounds(detail) {
+  if (!detail) return {rounds:1, durSec:30};
+  // "3×30s" → rounds=3, dur=30s
+  var mxs = detail.match(/^(\d+)\s*[×x]\s*(\d+)\s*s/i);
+  if (mxs) return {rounds:+mxs[1], durSec:+mxs[2]};
+  // "3×10", "4×5 (75%)" → rounds=3, dur=30
+  var mx = detail.match(/^(\d+)\s*[×x]\s*\d+/);
+  if (mx) return {rounds:+mx[1], durSec:30};
+  // "5 passages", "10×10m"
+  var mp = detail.match(/^(\d+)\s*passages?/);
+  if (mp) return {rounds:+mp[1], durSec:8};
+  // "15 min", "5 min"
+  var mm = detail.match(/^(\d+)\s*min/);
+  if (mm) return {rounds:1, durSec:(+mm[1])*60};
+  return {rounds:1, durSec:30};
+}
+
+function startLiveV2(programKey, phaseIdx) {
+  programKey = programKey || (typeof R !== 'undefined' && R.program) || 'ea';
+  phaseIdx = (typeof phaseIdx === 'number') ? phaseIdx : 0;
+  const prog = progPhases[programKey];
+  if (!prog) { alert('Programme inconnu : ' + programKey); return; }
+  const exs = prog.phases[phaseIdx] || [];
+  if (!exs.length) { alert('Aucun exercice dans cette phase.'); return; }
+  lv2State = { exs:exs, idx:0, roundIdx:0, prog:prog, phaseIdx:phaseIdx,
+               timer:null, secondsLeft:0, durSec:30, totalRounds:1, running:false };
+  document.getElementById('liveStart').classList.add('hidden');
+  document.getElementById('liveSession').classList.add('hidden');
+  document.getElementById('liveSummary').classList.add('hidden');
+  document.getElementById('liveSessionV2').classList.remove('hidden');
+  _lv2BuildProgress();
+  _lv2Render();
+  _lv2StartTimer();
+}
+
+function _lv2BuildProgress() {
+  const wrap = document.getElementById('lv2Progress');
+  wrap.innerHTML = lv2State.exs.map(function(){ return '<div class="lv2-pseg"></div>'; }).join('');
+}
+
+function _lv2UpdateProgress() {
+  const segs = document.querySelectorAll('#lv2Progress .lv2-pseg');
+  segs.forEach(function(s, i) {
+    s.classList.remove('done', 'cur');
+    if (i < lv2State.idx) s.classList.add('done');
+    else if (i === lv2State.idx) s.classList.add('cur');
+  });
+}
+
+function _lv2Render() {
+  const ex = lv2State.exs[lv2State.idx];
+  const next = lv2State.exs[lv2State.idx + 1];
+  const cat = _lv2CatOf(ex.name);
+  const parsed = _lv2ParseRounds(ex.detail);
+  lv2State.totalRounds = parsed.rounds;
+  lv2State.durSec = parsed.durSec;
+
+  const catEl = document.getElementById('lv2Cat');
+  catEl.textContent = cat.label;
+  catEl.className = 'lv2-cat ' + cat.cls;
+
+  document.getElementById('lv2Title').textContent = ex.name.toUpperCase();
+  document.getElementById('lv2TagCircuit').textContent = (ex.detail || '').toUpperCase() || 'EXERCICE';
+  document.getElementById('lv2TagRound').textContent = 'ROUND ' + (lv2State.roundIdx + 1) + '/' + parsed.rounds;
+  document.getElementById('lv2NextName').textContent = next ? next.name : 'Récap séance';
+  document.getElementById('lv2Side').classList.add('hidden');
+  _lv2UpdateProgress();
+  _lv2SetTimer(parsed.durSec);
+}
+
+function _lv2SetTimer(secs) {
+  lv2State.secondsLeft = secs;
+  _lv2RenderTimer();
+}
+
+function _lv2RenderTimer() {
+  const m = Math.floor(lv2State.secondsLeft / 60);
+  const s = lv2State.secondsLeft % 60;
+  document.getElementById('lv2Timer').textContent = (m<10?'0':'') + m + ':' + (s<10?'0':'') + s;
+  const el = document.getElementById('lv2Timer');
+  if (lv2State.secondsLeft <= 5 && lv2State.secondsLeft > 0) el.classList.add('warn');
+  else el.classList.remove('warn');
+}
+
+function _lv2StartTimer() {
+  clearInterval(lv2State.timer);
+  lv2State.running = true;
+  document.getElementById('lv2PauseBtn').textContent = '⏸';
+  lv2State.timer = setInterval(function() {
+    lv2State.secondsLeft--;
+    if (lv2State.secondsLeft <= 0) {
+      lv2State.secondsLeft = 0;
+      _lv2RenderTimer();
+      clearInterval(lv2State.timer);
+      lv2State.running = false;
+      if (navigator.vibrate) navigator.vibrate([200, 80, 200]);
+      _lv2RoundDone();
+      return;
+    }
+    _lv2RenderTimer();
+  }, 1000);
+}
+
+function toggleLv2Pause() {
+  if (!lv2State) return;
+  if (lv2State.running) {
+    clearInterval(lv2State.timer);
+    lv2State.running = false;
+    document.getElementById('lv2PauseBtn').textContent = '▶';
+  } else {
+    _lv2StartTimer();
+  }
+}
+
+function _lv2RoundDone() {
+  if (lv2State.roundIdx + 1 < lv2State.totalRounds) {
+    lv2State.roundIdx++;
+    document.getElementById('lv2TagRound').textContent = 'ROUND ' + (lv2State.roundIdx + 1) + '/' + lv2State.totalRounds;
+    _lv2SetTimer(lv2State.durSec);
+    _lv2StartTimer();
+  } else {
+    nextV2();
+  }
+}
+
+function nextV2() {
+  if (!lv2State) return;
+  clearInterval(lv2State.timer);
+  if (lv2State.idx + 1 < lv2State.exs.length) {
+    lv2State.idx++;
+    lv2State.roundIdx = 0;
+    _lv2Render();
+    _lv2StartTimer();
+  } else {
+    exitLiveV2(true);
+  }
+}
+
+function exitLiveV2(finished) {
+  if (lv2State) clearInterval(lv2State.timer);
+  document.getElementById('liveSessionV2').classList.add('hidden');
+  if (finished && lv2State) {
+    liveData = lv2State.exs.map(function(e){ return {name:e.name, reps:e.detail || '—', load:'—', rpe:'—'}; });
+    document.getElementById('liveSummary').classList.remove('hidden');
+    const list = document.getElementById('summaryList');
+    list.innerHTML = '';
+    liveData.forEach(function(d, i) {
+      list.innerHTML += '<div class="summary-card"><div class="sum-num">' + (i+1) + '</div>'
+        + '<div class="sum-body"><div class="sum-name">' + d.name + '</div>'
+        + '<div class="sum-data">' + (d.reps !== '—' ? d.reps : 'Terminé') + '</div></div></div>';
+    });
+  } else {
+    document.getElementById('liveStart').classList.remove('hidden');
+  }
+  lv2State = null;
+}
+
 const catData={echauf_gen:[{name:'Jumping Jacks',diff:'easy',muscles:['Cardio','Full body'],desc:'Élever la température corporelle.'},{name:'Course sur place',diff:'easy',muscles:['Cardio','Jambes'],desc:'Montée de genoux progressive.'},{name:'Rotations articulaires',diff:'easy',muscles:['Mobilité'],desc:'Rotations lentes.'},{name:'Skip A',diff:'easy',muscles:['Jambes','Coordination'],desc:'Montée de genoux dynamique.'}],echauf_spe:[{name:'Activation fessiers',diff:'easy',muscles:['Fessiers'],desc:'Réveiller les fessiers.'},{name:'Marche latérale élastique',diff:'med',muscles:['Abducteurs'],desc:'Pas latéraux avec élastique.'},{name:'Squat progressif',diff:'easy',muscles:['Quadriceps'],desc:'Squats légers progressifs.'}],mobilite:[{name:'Dorsiflexion cheville',diff:'easy',muscles:['Chevilles'],desc:'Essentiel avant tout saut.'},{name:'90/90 Stretch',diff:'med',muscles:['Hanches'],desc:'Rotations de hanche.'},{name:"World's Greatest Stretch",diff:'med',muscles:['Full body'],desc:'Le stretch le plus complet.'}],recup:[{name:'Foam Rolling Quadriceps',diff:'easy',muscles:['Quadriceps'],desc:'Auto-massage rouleau.'}],proprio:[{name:'Équilibre unipodal',diff:'easy',muscles:['Chevilles','Core'],desc:'Équilibre sur un pied.'}],coord:[{name:'Échelle de rythme',diff:'med',muscles:['Coordination'],desc:'Vitesse des appuis.'}],gainage:[{name:'Planche frontale',diff:'easy',muscles:['Core'],desc:'Gainage statique.'}],abdos:[{name:'V-Ups',diff:'med',muscles:['Abdos'],desc:'Relevé simultané.'}],force_pdc:[{name:'Pompes explosives',diff:'med',muscles:['Pectoraux','Triceps'],desc:'Mains décollent du sol.'}],force_charge:[{name:'Back Squat',diff:'hard',muscles:['Quadriceps','Fessiers','Lombaires'],desc:'Le mouvement roi pour la force.'},{name:'Soulevé de terre',diff:'hard',muscles:['Chaîne postérieure'],desc:'Puissance chaîne postérieure.'},{name:'Hip Thrust',diff:'med',muscles:['Fessiers'],desc:'Extension de hanche explosive.'},{name:'Développé couché',diff:'med',muscles:['Pectoraux','Épaules'],desc:'Force haut du corps.'}],rotation:[{name:'Med Ball Rotational Throw',diff:'med',muscles:['Obliques'],desc:'Lancer rotatif.'}],olympiques:[{name:'Power Clean',diff:'hard',muscles:['Full body'],desc:'Triple extension complète.'}],plio_ext:[{name:'Pogo Jumps',diff:'easy',muscles:['Mollets'],desc:'Réactivité tendon d\'Achille.'},{name:'Squat Jump',diff:'med',muscles:['Quadriceps'],desc:'Puissance concentrique.'}],plio_int:[{name:'Depth Jump',diff:'hard',muscles:['Full body'],desc:'Plus fort impact sur le RFD.'},{name:'Box Jump Max',diff:'hard',muscles:['Explosivité'],desc:'Saut box hauteur max.'}],pied:[{name:'Ankling',diff:'easy',muscles:['Chevilles'],desc:'Rigidité cheville.'}],sprint:[{name:'Sprint 10m',diff:'med',muscles:['Quadriceps'],desc:'Phase de démarrage.'},{name:'Sprint 30m',diff:'med',muscles:['Full body'],desc:'Vitesse de pointe.'},{name:'Sprint 60m',diff:'hard',muscles:['Full body'],desc:'Sprint complet.'}],multi:[{name:'Navette 5-10-5',diff:'med',muscles:['Agilité'],desc:'Changements de direction.'}],saut:[{name:'Counter Movement Jump',diff:'easy',muscles:['Quadriceps','Fessiers'],desc:'Test de référence détente.'},{name:'Approach Jump',diff:'med',muscles:['Full body'],desc:'Saut avec élan.'},{name:'Single Leg Bound',diff:'hard',muscles:['Équilibre'],desc:'Bond unilatéral.'}]};
 const progPhases={ea:{name:'ELITE ATHLETE',obj:'Explosivité globale',phases:[[{name:'Échauffement',detail:'5 min'},{name:'Activation fessiers',detail:'2×12'},{name:'Squat progressif',detail:'3×8 (60%)'},{name:'Pogo Jumps',detail:'3×10'},{name:'Sprint 10m',detail:'5 passages'},{name:'Planche',detail:'3×30s'}],[{name:'Back Squat',detail:'4×5 (75%)'},{name:'Box Jump',detail:'4×5'},{name:'Hip Thrust',detail:'3×8 (70%)'},{name:'Sprint 30m',detail:'4 passages'},{name:'Depth Jump',detail:'3×3'}],[{name:'Power Clean',detail:'5×3 (85%)'},{name:'Back Squat',detail:'5×3 (85%)'},{name:'Depth Jump',detail:'4×3'},{name:'Sprint 60m',detail:'3 passages'},{name:'Box Jump Max',detail:'3×3'}]]},vd:{name:'VERTICAL DUNK',obj:'Dunker + Détente max',phases:[[{name:'CMJ',detail:'5×3'},{name:'Squat Jump',detail:'4×5'},{name:'Pogo Jumps',detail:'3×15'}],[{name:'Depth Jump',detail:'4×3'},{name:'Back Squat',detail:'4×5 (80%)'},{name:'Approach Jump',detail:'5×3'}],[{name:'Box Jump Max',detail:'5×2'},{name:'Single Leg Bound',detail:'3×5/jambe'},{name:'Sprint 10m',detail:'6 passages'}]]},mt:{name:'MICROTRAINING',obj:'Discipline et habitudes',phases:[[{name:'Squat Jump',detail:'3×5'},{name:'Pompes explosives',detail:'3×8'},{name:'Planche',detail:'3×30s'}],[{name:'Pogo Jumps',detail:'3×10'},{name:'V-Ups',detail:'3×12'},{name:'Skip A',detail:'3×15'}],[{name:'Box Jump',detail:'3×5'},{name:'Sprint 10m',detail:'4 passages'}]]},tri:{name:'TRIPHASIQUE',obj:'Force sans salle',phases:[[{name:'Squat PDC',detail:'4×15'},{name:'Fentes',detail:'3×10/jambe'},{name:'Pompes',detail:'4×12'}],[{name:'Squat Jump',detail:'4×8'},{name:'Single Leg Bound',detail:'3×6/jambe'}],[{name:'Pogo Jumps',detail:'4×12'},{name:'Sprint 10m',detail:'5 passages'}]]},se:{name:'SHRED EXPLOSE',obj:'Perdre + Exploser',phases:[[{name:'Circuit cardio',detail:'15 min'},{name:'Squat',detail:'3×12'},{name:'Pogo Jumps',detail:'3×15'}],[{name:'HIIT Sprint',detail:'10×10m'},{name:'Back Squat',detail:'4×8 (65%)'},{name:'Box Jump',detail:'3×8'}],[{name:'Sprint 30m',detail:'6 passages'},{name:'Depth Jump',detail:'3×3'}]]},ep:{name:'EXPLOSE+',obj:'Transformation totale',phases:[[{name:'Questionnaire MENER',detail:'Identifier pilier faible'},{name:'15 engagements',detail:'4 semaines'}],[{name:'Back Squat',detail:'5×5 (80%)'},{name:'Power Clean',detail:'4×3'},{name:'Sprint 30m',detail:'5 passages'}],[{name:'Depth Jump',detail:'5×3'},{name:'Back Squat',detail:'5×3 (90%)'},{name:'Sprint 60m',detail:'4 passages'}]]}};
 function showPg(id){document.querySelectorAll('.pg').forEach(p=>p.classList.remove('on'));document.querySelectorAll('.sub-tab').forEach(t=>t.classList.remove('on'));({lib:'pgLib',prog:'pgProg',builder:'pgBuilder'})[id]&&document.getElementById(({lib:'pgLib',prog:'pgProg',builder:'pgBuilder'})[id]).classList.add('on');event.currentTarget.classList.add('on');var __v=document.getElementById('vTrain');if(__v)__v.scrollTop=0;if(id==='lib'){closeCat();closeDetail()}if(id==='prog')closeProg()}

@@ -1296,6 +1296,46 @@ body{background:var(--bg);color:var(--text);font-family:'Outfit',sans-serif;disp
 .set-ex-target { font-size: 11px; color: var(--muted); margin-top: 2px; }
 .set-ex-input { width: 64px; height: 36px; border-radius: 8px; border: 1.5px solid var(--border); background: var(--surface2); text-align: center; font-family: 'Bebas Neue', sans-serif; font-size: 16px; color: var(--text); outline: none; }
 .set-ex-input:focus { border-color: var(--gold); }
+
+/* ═══ LIVE SESSION V2 (GBG-style) ═══ */
+#liveSessionV2{position:fixed;inset:0;background:#0A0F1E;z-index:200;display:flex;flex-direction:column;color:#fff;padding-top:env(safe-area-inset-top);padding-bottom:env(safe-area-inset-bottom);overflow:hidden}
+#liveSessionV2.hidden{display:none}
+.lv2-header{display:flex;align-items:center;justify-content:space-between;padding:14px 20px}
+.lv2-back{font-size:13px;color:#8a93a8;cursor:pointer;padding:6px 10px;margin-left:-10px}
+.lv2-back:active{opacity:.7}
+.lv2-cat{background:#7C3AED;color:#fff;padding:6px 12px;border-radius:8px;font-family:'Bebas Neue',sans-serif;letter-spacing:1.5px;font-size:12px}
+.lv2-cat.force{background:#7C3AED}
+.lv2-cat.plio{background:#D4AF37;color:#0A0F1E}
+.lv2-cat.sprint{background:#06B6D4;color:#0A0F1E}
+.lv2-cat.mob{background:#10B981;color:#0A0F1E}
+.lv2-cat.core{background:#6B7280}
+.lv2-title-wrap{padding:0 20px;margin-bottom:8px}
+.lv2-title{font-family:'Bebas Neue',sans-serif;font-size:30px;letter-spacing:1.5px;line-height:1.05;color:#fff}
+.lv2-side{color:#D4AF37;font-size:11px;font-weight:700;letter-spacing:2px;margin-top:4px}
+.lv2-side.hidden{display:none}
+.lv2-video{padding:0 20px;margin:10px 0 6px}
+.lv2-video-inner{position:relative;width:100%;aspect-ratio:16/9;background:#060C18;border:1px solid #1B2A4A;border-radius:12px;overflow:hidden;display:flex;align-items:center;justify-content:center}
+.lv2-video-loading{color:#8a93a8;font-size:13px;letter-spacing:3px;font-weight:700;animation:lv2pulse 1.4s ease-in-out infinite}
+@keyframes lv2pulse{0%,100%{opacity:.25}50%{opacity:1}}
+.lv2-instr-btn{margin:6px 20px 10px;padding:11px;border:1px solid #1B2A4A;background:transparent;color:#fff;border-radius:10px;font-size:11px;font-weight:800;letter-spacing:1.5px;display:flex;align-items:center;justify-content:center;gap:8px;cursor:pointer;font-family:'Outfit',sans-serif}
+.lv2-instr-btn:active{background:#101728}
+.lv2-tags{display:flex;gap:8px;padding:0 20px;margin-top:0}
+.lv2-tag{color:#D4AF37;font-size:10px;font-weight:800;letter-spacing:1.5px;background:rgba(212,175,55,.1);padding:5px 10px;border-radius:6px;text-transform:uppercase}
+.lv2-timer{flex:1;display:flex;align-items:center;justify-content:center;font-family:'Bebas Neue',sans-serif;font-size:clamp(72px,22vw,108px);color:#D4AF37;letter-spacing:4px;font-variant-numeric:tabular-nums;line-height:1;text-shadow:0 0 30px rgba(212,175,55,.2);user-select:none}
+.lv2-timer.warn{color:#EF4444;text-shadow:0 0 30px rgba(239,68,68,.3);animation:lv2warn .9s ease-in-out infinite}
+@keyframes lv2warn{0%,100%{transform:scale(1)}50%{transform:scale(1.05)}}
+.lv2-footer{display:flex;align-items:center;gap:10px;padding:12px 20px;background:#0F1626;border-top:1px solid #1B2A4A}
+.lv2-next-wrap{flex:1;min-width:0}
+.lv2-next-label{font-size:9px;color:#8a93a8;letter-spacing:1.5px;font-weight:800;margin-bottom:2px}
+.lv2-next-name{font-size:14px;font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:#fff}
+.lv2-pause-btn{background:#1B2A4A;color:#fff;border:0;border-radius:10px;width:44px;height:44px;font-size:16px;cursor:pointer;flex-shrink:0}
+.lv2-pause-btn:active{opacity:.7}
+.lv2-next-btn{background:#7C3AED;color:#fff;border:0;border-radius:10px;padding:0 18px;height:44px;font-weight:800;font-size:14px;cursor:pointer;flex-shrink:0;font-family:'Outfit',sans-serif}
+.lv2-next-btn:active{opacity:.85}
+.lv2-progress{display:flex;gap:3px;padding:8px 20px 14px;background:#0F1626}
+.lv2-pseg{flex:1;height:4px;background:#1B2A4A;border-radius:2px;overflow:hidden;position:relative}
+.lv2-pseg.done{background:#7C3AED}
+.lv2-pseg.cur::after{content:"";position:absolute;left:0;top:0;bottom:0;width:50%;background:#7C3AED;border-radius:2px}
 </style>
 
 <template id="__bundler_thumbnail" data-bg-color="#1B2A4A">
@@ -1886,8 +1926,43 @@ body{background:var(--bg);color:var(--text);font-family:'Outfit',sans-serif;disp
         <div style="font-size:48px;margin-bottom:12px">🔥</div>
         <div style="font-family:'Bebas Neue',sans-serif;font-size:24px;color:var(--text);letter-spacing:2px">LANCER UNE SÉANCE</div>
         <div style="font-size:13px;color:var(--muted);margin:8px 0 20px;line-height:1.5">Les exercices de ton programme défilent un par un. Tu enregistres tes données en direct.</div>
-        <button class="btn btn-gold" onclick="startLive()">Commencer la séance</button>
+        <button class="btn btn-gold" onclick="startLiveV2()">▶ Mode coaché (GBG)</button>
+        <button class="btn btn-outline" onclick="startLive()" style="margin-top:8px">Mode classique</button>
       </div>
+    </div>
+
+    <!-- Live Session V2 (GBG-style) -->
+    <div id="liveSessionV2" class="hidden">
+      <div class="lv2-header">
+        <div class="lv2-back" onclick="exitLiveV2(false)">← Quitter</div>
+        <div class="lv2-cat" id="lv2Cat">FORCE</div>
+      </div>
+      <div class="lv2-title-wrap">
+        <div class="lv2-title" id="lv2Title">EXERCICE</div>
+        <div class="lv2-side hidden" id="lv2Side">LEFT SIDE</div>
+      </div>
+      <div class="lv2-video">
+        <div class="lv2-video-inner" id="lv2Video">
+          <div class="lv2-video-loading">LOADING…</div>
+        </div>
+      </div>
+      <button class="lv2-instr-btn" onclick="alert('Vidéo d\'instruction à venir')">
+        <span>🎯</span> VOIR L'INSTRUCTION
+      </button>
+      <div class="lv2-tags">
+        <div class="lv2-tag" id="lv2TagCircuit">CIRCUIT</div>
+        <div class="lv2-tag" id="lv2TagRound">ROUND 1/1</div>
+      </div>
+      <div class="lv2-timer" id="lv2Timer">00:30</div>
+      <div class="lv2-footer">
+        <div class="lv2-next-wrap">
+          <div class="lv2-next-label">PROCHAIN</div>
+          <div class="lv2-next-name" id="lv2NextName">—</div>
+        </div>
+        <button class="lv2-pause-btn" id="lv2PauseBtn" onclick="toggleLv2Pause()">⏸</button>
+        <button class="lv2-next-btn" onclick="nextV2()">Next →</button>
+      </div>
+      <div class="lv2-progress" id="lv2Progress"></div>
     </div>
 
     <!-- Active session -->
@@ -3861,6 +3936,9 @@ function go(id) {
   const cur = document.querySelector('.scr.on');
   const nxt = document.getElementById(id);
   if (!nxt || (cur && cur.id === id)) return;
+  // Clear any inline display='none' left over by home/nutrition reset code on every .scr,
+  // otherwise inline style beats the .scr.on CSS rule and the next screen stays hidden.
+  document.querySelectorAll('.scr').forEach(function(s){ s.style.display = ''; });
   if (cur) { cur.classList.remove('on'); cur.classList.add('out'); setTimeout(() => cur.classList.remove('out'), 500); }
   nxt.classList.add('on');
 
@@ -4406,6 +4484,180 @@ function openProg(k){currentProgKey=k;const p=progPhases[k];if(!p)return;documen
 function closeProg(){document.getElementById('progList').classList.remove('hidden');document.getElementById('progDetail').classList.add('hidden')}
 function switchPhase(el,i){document.querySelectorAll('.phase-tab').forEach(t=>t.classList.remove('on'));el.classList.add('on');if(currentProgKey)renderPhase(progPhases[currentProgKey].phases[i]||[])}
 function renderPhase(exs){const l=document.getElementById('phaseExList');l.innerHTML='';exs.forEach((ex,i)=>{l.innerHTML+=`<div class="phase-ex"><div class="pe-num">${i+1}</div><div class="pe-body"><div class="pe-name">${ex.name}</div><div class="pe-detail">${ex.detail}</div></div><div class="pe-video" onclick="alert('Vidéo YouTube')">▶</div></div>`})}
+
+// ══════════════════════════════════
+// LIVE SESSION V2 — GBG-style
+// ══════════════════════════════════
+const lv2CatMap = {
+  echauf_gen:{label:'ÉCHAUFF.',cls:'mob'}, echauf_spe:{label:'ÉCHAUFF.',cls:'mob'},
+  mobilite:{label:'MOBILITÉ',cls:'mob'}, recup:{label:'RÉCUP',cls:'mob'},
+  proprio:{label:'STABILITÉ',cls:'core'}, coord:{label:'COORD',cls:'core'},
+  gainage:{label:'CORE',cls:'core'}, abdos:{label:'CORE',cls:'core'},
+  force_pdc:{label:'FORCE',cls:'force'}, force_charge:{label:'FORCE',cls:'force'},
+  olympiques:{label:'FORCE',cls:'force'}, rotation:{label:'FORCE',cls:'force'},
+  plio_ext:{label:'PLIO',cls:'plio'}, plio_int:{label:'PLIO',cls:'plio'},
+  pied:{label:'VITESSE',cls:'sprint'}, sprint:{label:'SPRINT',cls:'sprint'},
+  multi:{label:'AGILITÉ',cls:'sprint'}, saut:{label:'SAUT',cls:'plio'}
+};
+let lv2State = null;
+
+function _lv2CatOf(name) {
+  for (const k in catData) {
+    if (catData[k].some(e => e.name === name)) return lv2CatMap[k] || {label:'EXERCICE', cls:''};
+  }
+  return {label:'EXERCICE', cls:''};
+}
+
+function _lv2ParseRounds(detail) {
+  if (!detail) return {rounds:1, durSec:30};
+  var mxs = detail.match(/^(\d+)\s*[×x]\s*(\d+)\s*s/i);
+  if (mxs) return {rounds:+mxs[1], durSec:+mxs[2]};
+  var mx = detail.match(/^(\d+)\s*[×x]\s*\d+/);
+  if (mx) return {rounds:+mx[1], durSec:30};
+  var mp = detail.match(/^(\d+)\s*passages?/);
+  if (mp) return {rounds:+mp[1], durSec:8};
+  var mm = detail.match(/^(\d+)\s*min/);
+  if (mm) return {rounds:1, durSec:(+mm[1])*60};
+  return {rounds:1, durSec:30};
+}
+
+function startLiveV2(programKey, phaseIdx) {
+  programKey = programKey || (typeof R !== 'undefined' && R.program) || 'ea';
+  phaseIdx = (typeof phaseIdx === 'number') ? phaseIdx : 0;
+  const prog = progPhases[programKey];
+  if (!prog) { alert('Programme inconnu : ' + programKey); return; }
+  const exs = prog.phases[phaseIdx] || [];
+  if (!exs.length) { alert('Aucun exercice dans cette phase.'); return; }
+  lv2State = { exs:exs, idx:0, roundIdx:0, prog:prog, phaseIdx:phaseIdx,
+               timer:null, secondsLeft:0, durSec:30, totalRounds:1, running:false };
+  document.getElementById('liveStart').classList.add('hidden');
+  document.getElementById('liveSession').classList.add('hidden');
+  document.getElementById('liveSummary').classList.add('hidden');
+  document.getElementById('liveSessionV2').classList.remove('hidden');
+  _lv2BuildProgress();
+  _lv2Render();
+  _lv2StartTimer();
+}
+
+function _lv2BuildProgress() {
+  document.getElementById('lv2Progress').innerHTML = lv2State.exs.map(function(){ return '<div class="lv2-pseg"></div>'; }).join('');
+}
+
+function _lv2UpdateProgress() {
+  document.querySelectorAll('#lv2Progress .lv2-pseg').forEach(function(s, i) {
+    s.classList.remove('done', 'cur');
+    if (i < lv2State.idx) s.classList.add('done');
+    else if (i === lv2State.idx) s.classList.add('cur');
+  });
+}
+
+function _lv2Render() {
+  const ex = lv2State.exs[lv2State.idx];
+  const next = lv2State.exs[lv2State.idx + 1];
+  const cat = _lv2CatOf(ex.name);
+  const parsed = _lv2ParseRounds(ex.detail);
+  lv2State.totalRounds = parsed.rounds;
+  lv2State.durSec = parsed.durSec;
+
+  const catEl = document.getElementById('lv2Cat');
+  catEl.textContent = cat.label;
+  catEl.className = 'lv2-cat ' + cat.cls;
+
+  document.getElementById('lv2Title').textContent = ex.name.toUpperCase();
+  document.getElementById('lv2TagCircuit').textContent = (ex.detail || '').toUpperCase() || 'EXERCICE';
+  document.getElementById('lv2TagRound').textContent = 'ROUND ' + (lv2State.roundIdx + 1) + '/' + parsed.rounds;
+  document.getElementById('lv2NextName').textContent = next ? next.name : 'Récap séance';
+  document.getElementById('lv2Side').classList.add('hidden');
+  _lv2UpdateProgress();
+  _lv2SetTimer(parsed.durSec);
+}
+
+function _lv2SetTimer(secs) {
+  lv2State.secondsLeft = secs;
+  _lv2RenderTimer();
+}
+
+function _lv2RenderTimer() {
+  const m = Math.floor(lv2State.secondsLeft / 60);
+  const s = lv2State.secondsLeft % 60;
+  const el = document.getElementById('lv2Timer');
+  el.textContent = (m<10?'0':'') + m + ':' + (s<10?'0':'') + s;
+  if (lv2State.secondsLeft <= 5 && lv2State.secondsLeft > 0) el.classList.add('warn');
+  else el.classList.remove('warn');
+}
+
+function _lv2StartTimer() {
+  clearInterval(lv2State.timer);
+  lv2State.running = true;
+  document.getElementById('lv2PauseBtn').textContent = '⏸';
+  lv2State.timer = setInterval(function() {
+    lv2State.secondsLeft--;
+    if (lv2State.secondsLeft <= 0) {
+      lv2State.secondsLeft = 0;
+      _lv2RenderTimer();
+      clearInterval(lv2State.timer);
+      lv2State.running = false;
+      if (navigator.vibrate) navigator.vibrate([200, 80, 200]);
+      _lv2RoundDone();
+      return;
+    }
+    _lv2RenderTimer();
+  }, 1000);
+}
+
+function toggleLv2Pause() {
+  if (!lv2State) return;
+  if (lv2State.running) {
+    clearInterval(lv2State.timer);
+    lv2State.running = false;
+    document.getElementById('lv2PauseBtn').textContent = '▶';
+  } else {
+    _lv2StartTimer();
+  }
+}
+
+function _lv2RoundDone() {
+  if (lv2State.roundIdx + 1 < lv2State.totalRounds) {
+    lv2State.roundIdx++;
+    document.getElementById('lv2TagRound').textContent = 'ROUND ' + (lv2State.roundIdx + 1) + '/' + lv2State.totalRounds;
+    _lv2SetTimer(lv2State.durSec);
+    _lv2StartTimer();
+  } else {
+    nextV2();
+  }
+}
+
+function nextV2() {
+  if (!lv2State) return;
+  clearInterval(lv2State.timer);
+  if (lv2State.idx + 1 < lv2State.exs.length) {
+    lv2State.idx++;
+    lv2State.roundIdx = 0;
+    _lv2Render();
+    _lv2StartTimer();
+  } else {
+    exitLiveV2(true);
+  }
+}
+
+function exitLiveV2(finished) {
+  if (lv2State) clearInterval(lv2State.timer);
+  document.getElementById('liveSessionV2').classList.add('hidden');
+  if (finished && lv2State) {
+    liveData = lv2State.exs.map(function(e){ return {name:e.name, reps:e.detail || '—', load:'—', rpe:'—'}; });
+    document.getElementById('liveSummary').classList.remove('hidden');
+    const list = document.getElementById('summaryList');
+    list.innerHTML = '';
+    liveData.forEach(function(d, i) {
+      list.innerHTML += '<div class="summary-card"><div class="sum-num">' + (i+1) + '</div>'
+        + '<div class="sum-body"><div class="sum-name">' + d.name + '</div>'
+        + '<div class="sum-data">' + (d.reps !== '—' ? d.reps : 'Terminé') + '</div></div></div>';
+    });
+  } else {
+    document.getElementById('liveStart').classList.remove('hidden');
+  }
+  lv2State = null;
+}
 
 // ═══════════════════════════════════════
 // ATHLETIK HUB V5 — STEP 5: TITAN CHAT

@@ -608,8 +608,43 @@
         <div style="font-size:48px;margin-bottom:12px">🔥</div>
         <div style="font-family:'Bebas Neue',sans-serif;font-size:24px;color:var(--text);letter-spacing:2px">LANCER UNE SÉANCE</div>
         <div style="font-size:13px;color:var(--muted);margin:8px 0 20px;line-height:1.5">Les exercices de ton programme défilent un par un. Tu enregistres tes données en direct.</div>
-        <button class="btn btn-gold" onclick="startLive()">Commencer la séance</button>
+        <button class="btn btn-gold" onclick="startLiveV2()">▶ Mode coaché (GBG)</button>
+        <button class="btn btn-outline" onclick="startLive()" style="margin-top:8px">Mode classique</button>
       </div>
+    </div>
+
+    <!-- Live Session V2 (GBG-style) -->
+    <div id="liveSessionV2" class="hidden">
+      <div class="lv2-header">
+        <div class="lv2-back" onclick="exitLiveV2(false)">← Quitter</div>
+        <div class="lv2-cat" id="lv2Cat">FORCE</div>
+      </div>
+      <div class="lv2-title-wrap">
+        <div class="lv2-title" id="lv2Title">EXERCICE</div>
+        <div class="lv2-side hidden" id="lv2Side">LEFT SIDE</div>
+      </div>
+      <div class="lv2-video">
+        <div class="lv2-video-inner" id="lv2Video">
+          <div class="lv2-video-loading">LOADING…</div>
+        </div>
+      </div>
+      <button class="lv2-instr-btn" onclick="alert('Vidéo d\'instruction à venir')">
+        <span>🎯</span> VOIR L'INSTRUCTION
+      </button>
+      <div class="lv2-tags">
+        <div class="lv2-tag" id="lv2TagCircuit">CIRCUIT</div>
+        <div class="lv2-tag" id="lv2TagRound">ROUND 1/1</div>
+      </div>
+      <div class="lv2-timer" id="lv2Timer">00:30</div>
+      <div class="lv2-footer">
+        <div class="lv2-next-wrap">
+          <div class="lv2-next-label">PROCHAIN</div>
+          <div class="lv2-next-name" id="lv2NextName">—</div>
+        </div>
+        <button class="lv2-pause-btn" id="lv2PauseBtn" onclick="toggleLv2Pause()">⏸</button>
+        <button class="lv2-next-btn" onclick="nextV2()">Next →</button>
+      </div>
+      <div class="lv2-progress" id="lv2Progress"></div>
     </div>
 
     <!-- Active session -->
