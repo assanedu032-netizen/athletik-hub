@@ -5020,6 +5020,7 @@ function renderSATStep() {
   
   // Fields — si force (kg), afficher reps+charge avec bouton + série
   var isForce = ex.fields.length === 1 && ex.fields[0].unit === 'kg';
+  var isSprint = (ex.id === 'sprint');
   if (isForce) {
     var exId = ex.id;
     if (!window.satSeriesCount) window.satSeriesCount = {};
@@ -5057,6 +5058,20 @@ function renderSATStep() {
     html += '<div><div style="font-size:12px;color:var(--text2);font-weight:600">1RM estimé — charge max sur 1 rep</div>';
     html += '<div style="font-size:10px;color:var(--muted);margin-top:1px">Formule d\'Epley (série la plus lourde)</div></div>';
     html += '<span style="font-family:Bebas Neue,sans-serif;font-size:22px;color:var(--gold)" id="sat_1rm_' + exId + '">— kg</span>';
+    html += '</div>';
+  } else if (isSprint) {
+    // 5 essais — meilleur temps retenu
+    html += '<div style="font-size:10px;color:var(--muted);font-weight:700;letter-spacing:1px;margin-bottom:8px">5 ESSAIS — MEILLEUR TEMPS RETENU</div>';
+    for (var i = 1; i <= 5; i++) {
+      html += '<div style="display:grid;grid-template-columns:50px 1fr 40px;gap:8px;margin-bottom:8px;align-items:center">';
+      html += '<div style="font-family:Bebas Neue,sans-serif;font-size:15px;color:var(--gold);text-align:center">E' + i + '</div>';
+      html += '<input class="fi" type="number" id="trk_sprint_' + i + '" placeholder="' + (i===1?'4.20':'—') + '" step="0.01" style="text-align:center;font-size:15px;font-weight:700;padding:10px 4px" oninput="_trkSprintCalcBest()">';
+      html += '<div style="font-size:11px;color:var(--muted);font-weight:700">sec</div>';
+      html += '</div>';
+    }
+    html += '<div style="background:var(--surface2);border-radius:10px;padding:11px 14px;display:flex;justify-content:space-between;align-items:center;margin-top:6px">';
+    html += '<div style="font-size:12px;color:var(--text2);font-weight:600">🏆 Meilleur temps</div>';
+    html += '<span style="font-family:Bebas Neue,sans-serif;font-size:22px;color:var(--gold)" id="trkSprintBest">— sec</span>';
     html += '</div>';
   } else {
     ex.fields.forEach(function(f) {
@@ -5200,11 +5215,35 @@ function stopStopwatch() {
   var elapsed = ((Date.now() - stopwatchStart) / 1000).toFixed(2);
   var display = document.getElementById('stopwatchDisplay');
   if (display) display.textContent = elapsed;
-  // Injecter dans le champ sprint
+  // Multi-essais : remplir le 1er essai vide
+  var filled = false;
+  for (var i = 1; i <= 5; i++) {
+    var el = document.getElementById('trk_sprint_' + i);
+    if (el && !el.value) {
+      el.value = elapsed;
+      filled = true;
+      break;
+    }
+  }
+  if (filled) { _trkSprintCalcBest(); return; }
+  // Fallback ancien champ single
   var sprintEl = document.getElementById('satSprintTime');
   if (sprintEl) sprintEl.value = elapsed;
   satValues['satSprintTime'] = parseFloat(elapsed);
 }
+
+function _trkSprintCalcBest() {
+  var best = null;
+  for (var i = 1; i <= 5; i++) {
+    var el = document.getElementById('trk_sprint_' + i);
+    var v = el ? parseFloat(el.value) : NaN;
+    if (!isNaN(v) && v > 0 && (best === null || v < best)) best = v;
+  }
+  var disp = document.getElementById('trkSprintBest');
+  if (disp) disp.textContent = best !== null ? best.toFixed(2) + ' sec' : '— sec';
+  satValues['satSprintTime'] = best !== null ? best : 0;
+}
+window._trkSprintCalcBest = _trkSprintCalcBest;
 
 
 // ═══ HOME — SÉANCE DU JOUR ═══
