@@ -745,6 +745,39 @@
 .lv2-next{right:6px}
 .lv2-swipe-hint{position:absolute;bottom:8px;left:0;right:0;text-align:center;font-size:9px;color:#3a4358;letter-spacing:2px;font-weight:700;pointer-events:none;text-transform:uppercase}
 
+/* ═══ MEAL PLAN AUTO ═══ */
+.meal-plan-cta{background:var(--surface,#0F1626);border:1px solid var(--border,#1B2A4A);border-radius:14px;padding:14px;margin-bottom:14px}
+.mpc-head{display:flex;justify-content:space-between;align-items:flex-start;gap:10px}
+.mpc-title{font-family:'Bebas Neue',sans-serif;font-size:14px;letter-spacing:1.5px;color:var(--gold,#D4AF37);margin-bottom:4px}
+.mpc-sub{font-size:11px;color:var(--muted,#8a93a8);line-height:1.4}
+.mpc-btn{width:auto;margin:0;padding:10px 16px;font-size:12px;flex-shrink:0}
+#mealPlanGrid{margin-top:14px}
+#mealPlanGrid.hidden{display:none}
+.mp-head{font-size:12px;color:var(--muted,#8a93a8);margin-bottom:10px;text-align:center}
+.mp-head strong{color:var(--gold,#D4AF37)}
+.mp-day{background:rgba(255,255,255,.02);border:1px solid var(--border,#1B2A4A);border-radius:12px;padding:10px;margin-bottom:8px}
+.mp-day-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;padding-bottom:6px;border-bottom:1px solid var(--border,#1B2A4A)}
+.mp-day-name{font-family:'Bebas Neue',sans-serif;font-size:14px;letter-spacing:1.5px;color:var(--text,#fff)}
+.mp-day-cals{font-size:11px;font-weight:800;color:var(--text,#fff)}
+.mp-day-cals em{font-style:normal;color:var(--muted,#8a93a8);font-weight:600}
+.mp-day-cals.warn em{color:#EF4444}
+.mp-day-cals.ok em{color:#10B981}
+.mp-meal{display:flex;align-items:center;gap:8px;padding:5px 0;font-size:12px}
+.mp-meal-slot{width:46px;font-size:9px;font-weight:800;letter-spacing:1px;color:var(--gold,#D4AF37);flex-shrink:0}
+.mp-meal-name{flex:1;color:var(--text,#fff);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.mp-meal-cals{font-size:11px;color:var(--muted,#8a93a8);flex-shrink:0}
+
+/* ═══ SAT GATE MODAL ═══ */
+.sat-gate-modal{position:fixed;inset:0;background:rgba(6,12,24,.86);backdrop-filter:blur(6px);z-index:9000;display:none;align-items:center;justify-content:center;padding:24px}
+.sat-gate-modal.on{display:flex}
+.sat-gate-inner{max-width:380px;width:100%;background:linear-gradient(180deg,#0F1626,#0A0F1E);border:1px solid #1B2A4A;border-radius:18px;padding:28px 22px;text-align:center;box-shadow:0 20px 60px rgba(0,0,0,.6)}
+.sat-gate-icon{font-size:56px;margin-bottom:8px}
+.sat-gate-title{font-family:'Bebas Neue',sans-serif;font-size:22px;letter-spacing:2px;color:#fff;margin-bottom:10px}
+.sat-gate-msg{font-size:13px;color:#8a93a8;line-height:1.5;margin-bottom:20px}
+.sat-gate-cta{width:100%;padding:14px;background:linear-gradient(135deg,#D4AF37,#E0C25A);color:#0A0F1E;border:0;border-radius:12px;font-family:'Outfit',sans-serif;font-size:14px;font-weight:800;cursor:pointer;margin-bottom:8px}
+.sat-gate-cta:active{transform:scale(.97)}
+.sat-gate-close{width:100%;padding:10px;background:transparent;border:1px solid #1B2A4A;color:#8a93a8;border-radius:12px;font-family:'Outfit',sans-serif;font-size:13px;font-weight:700;cursor:pointer}
+
 /* ═══ LIBRARY FILTERS ═══ */
 .lib-filters{margin:0 0 14px;padding:12px;background:var(--surface2,#0F1626);border:1px solid var(--border,#1B2A4A);border-radius:14px}
 .lib-filter-grp{margin-bottom:10px}

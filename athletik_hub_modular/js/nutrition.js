@@ -307,7 +307,66 @@ window.pickSport = function(el, sport) {
   setTimeout(function() { go("q6"); }, 300);
 };
 
-// LOADING 11 SECONDES
+// \u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550
+// PLAN REPAS AUTO (mode stricte)
+// \u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550
+function generateMealPlan() {
+  if (typeof RECIPES === 'undefined') { alert('Recettes non charg\u00e9es'); return; }
+  // Sort recipes by tag
+  var pres   = [], meals = [], posts = [];
+  Object.keys(RECIPES).forEach(function(k){
+    var r = Object.assign({key:k}, RECIPES[k]);
+    if (r.tag === 'pre')  pres.push(r);
+    else if (r.tag === 'post') posts.push(r);
+    else meals.push(r);
+  });
+  if (!pres.length || !meals.length) { alert('Pas assez de recettes pour g\u00e9n\u00e9rer un plan.'); return; }
+  if (!posts.length) posts = meals.slice();
+
+  // Target daily calories
+  var dailyTarget = (typeof user !== 'undefined' && user.nutriCal) ? user.nutriCal : 2400;
+
+  var days = ['LUNDI','MARDI','MERCREDI','JEUDI','VENDREDI','SAMEDI','DIMANCHE'];
+  var rotate = function(arr, offset) { return arr[offset % arr.length]; };
+
+  var html = '<div class="mp-head">Plan auto pour atteindre <strong>' + dailyTarget + ' kcal/jour</strong></div>';
+  for (var i = 0; i < 7; i++) {
+    var pre   = rotate(pres,  i);
+    var lunch = rotate(meals, i);
+    var diner = rotate(meals, i + 1);
+    var post  = rotate(posts, i);
+    var total = (pre.cals||0) + (lunch.cals||0) + (diner.cals||0) + (post.cals||0);
+    var diff = total - dailyTarget;
+    var diffTxt = diff > 0 ? ('+' + diff) : diff;
+    var diffCls = Math.abs(diff) > 200 ? 'warn' : 'ok';
+    html += '<div class="mp-day">'
+      + '<div class="mp-day-head"><span class="mp-day-name">' + days[i] + '</span>'
+      + '<span class="mp-day-cals ' + diffCls + '">' + total + ' kcal <em>(' + diffTxt + ')</em></span></div>'
+      + _mealRowHtml('PRE',   pre)
+      + _mealRowHtml('MIDI',  lunch)
+      + _mealRowHtml('SOIR',  diner)
+      + _mealRowHtml('POST',  post)
+      + '</div>';
+  }
+  html += '<button class="btn btn-outline" onclick="addMealPlanToShopping()" style="margin-top:8px">\ud83d\uded2 Ajouter \u00e0 la liste de courses</button>';
+  var grid = document.getElementById('mealPlanGrid');
+  grid.innerHTML = html;
+  grid.classList.remove('hidden');
+}
+
+function _mealRowHtml(slot, r) {
+  return '<div class="mp-meal">'
+    + '<div class="mp-meal-slot">' + slot + '</div>'
+    + '<div class="mp-meal-name">' + r.name + '</div>'
+    + '<div class="mp-meal-cals">' + (r.cals || '?') + 'kcal</div>'
+    + '</div>';
+}
+
+function addMealPlanToShopping() {
+  alert('Liste de courses agr\u00e9g\u00e9e (\u00e0 finaliser avec Firebase pour sauvegarder).');
+}
+
+// LOADING 11 SECONDES (1s si programme d\u00e9j\u00e0 calcul\u00e9)
 function startThinking() {
   var messages = [
     "Analyse du profil en cours...",
@@ -321,7 +380,9 @@ function startThinking() {
   var bar = document.getElementById("thinkBar");
   var pct = document.getElementById("thinkPct");
   var msg = document.getElementById("thinkMsg");
-  var duration = 11000;
+  // Fast path: if program already known (refaire onboarding), skip the 11s wait
+  var alreadyCalculated = (typeof R !== 'undefined' && R.program) || (typeof user !== 'undefined' && user.programKey && user.satDone);
+  var duration = alreadyCalculated ? 1200 : 11000;
   var start = Date.now();
   var iv = setInterval(function() {
     var elapsed = Date.now() - start;

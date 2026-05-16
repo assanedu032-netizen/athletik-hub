@@ -13,6 +13,43 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="mobile-web-app-capable" content="yes">
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Outfit:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+
+<!-- ═══ FIREBASE SDK ═══ -->
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-app.js";
+  import { getAuth, setPersistence, browserLocalPersistence, createUserWithEmailAndPassword, signInWithEmailAndPassword, signInWithPopup, GoogleAuthProvider, onAuthStateChanged, signOut, sendPasswordResetEmail } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-auth.js";
+  import { getFirestore, doc, setDoc, getDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore.js";
+
+  const firebaseConfig = {
+    apiKey: "AIzaSyBMeuLan21LGxUKB5XCmLN1110VJWvyM5s",
+    authDomain: "athletik-hub.firebaseapp.com",
+    projectId: "athletik-hub",
+    storageBucket: "athletik-hub.firebasestorage.app",
+    messagingSenderId: "106927728638",
+    appId: "1:106927728638:web:976000a60011dc4004c2af",
+    measurementId: "G-ENR6Y0PESP"
+  };
+
+  const app = initializeApp(firebaseConfig);
+  const auth = getAuth(app);
+  const db = getFirestore(app);
+  const googleProvider = new GoogleAuthProvider();
+  setPersistence(auth, browserLocalPersistence);
+
+  window.fb = {
+    auth, db, googleProvider,
+    createUserWithEmailAndPassword, signInWithEmailAndPassword, signInWithPopup,
+    onAuthStateChanged, signOut, sendPasswordResetEmail,
+    doc, setDoc, getDoc, serverTimestamp
+  };
+
+  onAuthStateChanged(auth, function(user) {
+    window.fbUser = user || null;
+    if (typeof onFirebaseAuthChange === 'function') {
+      try { onFirebaseAuthChange(user); } catch(e) { console.warn(e); }
+    }
+  });
+</script>
 <style>
 :root {
   --bg:#F5F6FA;--surface:#FFFFFF;--surface2:#F0F2F8;
@@ -1346,6 +1383,39 @@ body{background:var(--bg);color:var(--text);font-family:'Outfit',sans-serif;disp
 .lv2-next{right:6px}
 .lv2-swipe-hint{position:absolute;bottom:8px;left:0;right:0;text-align:center;font-size:9px;color:#3a4358;letter-spacing:2px;font-weight:700;pointer-events:none;text-transform:uppercase}
 
+/* ═══ MEAL PLAN AUTO ═══ */
+.meal-plan-cta{background:var(--surface,#0F1626);border:1px solid var(--border,#1B2A4A);border-radius:14px;padding:14px;margin-bottom:14px}
+.mpc-head{display:flex;justify-content:space-between;align-items:flex-start;gap:10px}
+.mpc-title{font-family:'Bebas Neue',sans-serif;font-size:14px;letter-spacing:1.5px;color:var(--gold,#D4AF37);margin-bottom:4px}
+.mpc-sub{font-size:11px;color:var(--muted,#8a93a8);line-height:1.4}
+.mpc-btn{width:auto;margin:0;padding:10px 16px;font-size:12px;flex-shrink:0}
+#mealPlanGrid{margin-top:14px}
+#mealPlanGrid.hidden{display:none}
+.mp-head{font-size:12px;color:var(--muted,#8a93a8);margin-bottom:10px;text-align:center}
+.mp-head strong{color:var(--gold,#D4AF37)}
+.mp-day{background:rgba(255,255,255,.02);border:1px solid var(--border,#1B2A4A);border-radius:12px;padding:10px;margin-bottom:8px}
+.mp-day-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;padding-bottom:6px;border-bottom:1px solid var(--border,#1B2A4A)}
+.mp-day-name{font-family:'Bebas Neue',sans-serif;font-size:14px;letter-spacing:1.5px;color:var(--text,#fff)}
+.mp-day-cals{font-size:11px;font-weight:800;color:var(--text,#fff)}
+.mp-day-cals em{font-style:normal;color:var(--muted,#8a93a8);font-weight:600}
+.mp-day-cals.warn em{color:#EF4444}
+.mp-day-cals.ok em{color:#10B981}
+.mp-meal{display:flex;align-items:center;gap:8px;padding:5px 0;font-size:12px}
+.mp-meal-slot{width:46px;font-size:9px;font-weight:800;letter-spacing:1px;color:var(--gold,#D4AF37);flex-shrink:0}
+.mp-meal-name{flex:1;color:var(--text,#fff);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.mp-meal-cals{font-size:11px;color:var(--muted,#8a93a8);flex-shrink:0}
+
+/* ═══ SAT GATE MODAL ═══ */
+.sat-gate-modal{position:fixed;inset:0;background:rgba(6,12,24,.86);backdrop-filter:blur(6px);z-index:9000;display:none;align-items:center;justify-content:center;padding:24px}
+.sat-gate-modal.on{display:flex}
+.sat-gate-inner{max-width:380px;width:100%;background:linear-gradient(180deg,#0F1626,#0A0F1E);border:1px solid #1B2A4A;border-radius:18px;padding:28px 22px;text-align:center;box-shadow:0 20px 60px rgba(0,0,0,.6)}
+.sat-gate-icon{font-size:56px;margin-bottom:8px}
+.sat-gate-title{font-family:'Bebas Neue',sans-serif;font-size:22px;letter-spacing:2px;color:#fff;margin-bottom:10px}
+.sat-gate-msg{font-size:13px;color:#8a93a8;line-height:1.5;margin-bottom:20px}
+.sat-gate-cta{width:100%;padding:14px;background:linear-gradient(135deg,#D4AF37,#E0C25A);color:#0A0F1E;border:0;border-radius:12px;font-family:'Outfit',sans-serif;font-size:14px;font-weight:800;cursor:pointer;margin-bottom:8px}
+.sat-gate-cta:active{transform:scale(.97)}
+.sat-gate-close{width:100%;padding:10px;background:transparent;border:1px solid #1B2A4A;color:#8a93a8;border-radius:12px;font-family:'Outfit',sans-serif;font-size:13px;font-weight:700;cursor:pointer}
+
 /* ═══ LIBRARY FILTERS ═══ */
 .lib-filters{margin:0 0 14px;padding:12px;background:var(--surface2,#0F1626);border:1px solid var(--border,#1B2A4A);border-radius:14px}
 .lib-filter-grp{margin-bottom:10px}
@@ -1578,7 +1648,7 @@ body.test-mode #testSkipBar{display:flex}
       <div class="ac-t">Rejoins la meute</div>
       <div class="ac-s">Sauvegarde ta progression et accède à ton programme.</div>
       <div id="authMsg" class="msg"></div>
-      <button class="bg" onclick="alert('Google Auth — Firebase à intégrer')">
+      <button class="bg" onclick="fbGoogleSignIn()">
         <svg class="gi" viewBox="0 0 24 24"><path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.07 5.07 0 01-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/><path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/><path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05"/><path d="M12 5.38c1.62 0 3.06.56 4.21 1.66l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/></svg>
         Continuer avec Google
       </button>
@@ -1589,7 +1659,7 @@ body.test-mode #testSkipBar{display:flex}
       <button class="bc" onclick="createAccount()">Créer mon profil</button>
 <button onclick="testMode()" style="width:100%;padding:12px;margin-top:8px;background:none;border:1.5px dashed var(--border2);border-radius:12px;font-family:'Outfit',sans-serif;font-size:13px;font-weight:700;color:var(--muted);cursor:pointer">⚡ Accès Test — Sans compte</button>
     </div>
-    <div class="af">Déjà un compte ? <a href="#" onclick="alert('Connexion — Firebase à intégrer')">Se connecter</a></div>
+    <div class="af">Déjà un compte ? <a href="#" onclick="fbSignIn();return false">Se connecter</a></div>
   </div>
 </div>
 
@@ -2380,7 +2450,12 @@ body.test-mode #testSkipBar{display:flex}
     <div class="si-right">→</div>
   </div>
 
-  
+  <div class="setting-item" onclick="logoutUser()" style="border:1px solid #EF4444;border-radius:14px;margin-top:8px">
+    <div class="si-left"><div class="si-icon" style="color:#EF4444">⎋</div><div><div class="si-text" style="color:#EF4444">Se déconnecter</div><div class="si-sub">Efface la session, garde tes données</div></div></div>
+    <div class="si-right">→</div>
+  </div>
+
+
 <!-- ═══ CALENDRIER ═══ -->
 <div style="background:var(--surface);border-radius:16px;padding:16px;margin-bottom:12px">
   <div style="font-family:'Bebas Neue',sans-serif;font-size:16px;color:var(--gold);letter-spacing:1px;margin-bottom:10px">📅 JOURS D'ENTRAÎNEMENT</div>
@@ -3940,6 +4015,14 @@ function switchTab(tab){
   var titanBtn=document.querySelector('.nav-titan');
   if(titanBtn)titanBtn.style.filter=(tab==='chat')?'drop-shadow(0 0 8px rgba(197,164,78,.6))':'none';
 }
+// Logout: keep onboarding/SAT data but clear session, redirect to auth on next load.
+function logoutUser(){
+  if (!confirm('Se déconnecter ? Tes données restent enregistrées, tu pourras les retrouver à la prochaine connexion.')) return;
+  if (typeof user !== 'undefined') { user.email = ''; user.name = 'ATHLÈTE'; }
+  try { if (typeof saveData === 'function') saveData(); } catch(e) {}
+  try { if (window.fb && window.fb.auth) window.fb.signOut(window.fb.auth); } catch(e) {}
+  setTimeout(function(){ location.reload(); }, 200);
+}
 function restartOnboarding(){
   document.querySelectorAll('.view').forEach(function(v){v.classList.remove('on');});
   document.querySelectorAll('.scr').forEach(function(e){e.style.display='';});
@@ -4321,6 +4404,16 @@ function calculateSAT() {
   document.getElementById('scSprint').textContent = sprintTime > 0 ? sprintTime + 's' : '—';
   document.getElementById('scMobility').textContent = fms > 0 ? fms + '/21' : '—';
   document.getElementById('satTitanMsg').innerHTML = lv.msg;
+
+  // Mark SAT as done so programs are unlocked
+  if (typeof user !== 'undefined') {
+    user.satDone = true;
+    user.athScore = totalScore;
+    user.vertJump = vertJump;
+    user.level = lv.name;
+    user.levelIcon = lv.icon;
+    try { if (typeof saveData === 'function') saveData(); } catch(e) {}
+  }
 
   document.getElementById('satForm').classList.add('hidden');
   document.getElementById('satResult').classList.remove('hidden');
@@ -4747,7 +4840,45 @@ function renderLibrary() {
         + '</div>';
     }).join('');
 }
-function openProg(k){currentProgKey=k;const p=progPhases[k];if(!p)return;document.getElementById('progList').classList.add('hidden');document.getElementById('progDetail').classList.remove('hidden');document.getElementById('progDetailName').textContent=p.name;document.getElementById('progDetailObj').textContent=p.obj;document.querySelectorAll('.phase-tab').forEach((t,i)=>t.classList.toggle('on',i===0));renderPhase(p.phases[0]);var __v=document.getElementById('vTrain');if(__v)__v.scrollTop=0}
+function openProg(k){
+  if (!window.TEST_MODE && typeof user !== 'undefined' && !user.satDone) {
+    showSATGate(k);
+    return;
+  }
+  currentProgKey=k;const p=progPhases[k];if(!p)return;document.getElementById('progList').classList.add('hidden');document.getElementById('progDetail').classList.remove('hidden');document.getElementById('progDetailName').textContent=p.name;document.getElementById('progDetailObj').textContent=p.obj;document.querySelectorAll('.phase-tab').forEach((t,i)=>t.classList.toggle('on',i===0));renderPhase(p.phases[0]);var __v=document.getElementById('vTrain');if(__v)__v.scrollTop=0
+}
+function showSATGate(programKey) {
+  var modal = document.getElementById('satGateModal');
+  if (!modal) {
+    modal = document.createElement('div');
+    modal.id = 'satGateModal';
+    modal.className = 'sat-gate-modal';
+    modal.innerHTML =
+      '<div class="sat-gate-inner">'
+      + '<div class="sat-gate-icon">🔒</div>'
+      + '<div class="sat-gate-title">PROGRAMME VERROUILLÉ</div>'
+      + '<div class="sat-gate-msg">Sans tes données SAT, Titan ne peut pas adapter ce programme à ton niveau. Fais le test d\'abord — c\'est non négociable.</div>'
+      + '<button class="sat-gate-cta" onclick="closeSATGate(true)">Faire le SAT maintenant →</button>'
+      + '<button class="sat-gate-close" onclick="closeSATGate(false)">Annuler</button>'
+      + '</div>';
+    document.body.appendChild(modal);
+  }
+  modal.dataset.program = programKey || '';
+  modal.classList.add('on');
+}
+function closeSATGate(goSat) {
+  var modal = document.getElementById('satGateModal');
+  if (modal) modal.classList.remove('on');
+  if (goSat) {
+    if (typeof switchTab === 'function') switchTab('tracks');
+    if (typeof showSec === 'function') {
+      setTimeout(function(){
+        var satTab = document.querySelector('#vTracks .sub-tab');
+        if (satTab) showSec('sat', satTab);
+      }, 100);
+    }
+  }
+}
 function closeProg(){document.getElementById('progList').classList.remove('hidden');document.getElementById('progDetail').classList.add('hidden')}
 function switchPhase(el,i){document.querySelectorAll('.phase-tab').forEach(t=>t.classList.remove('on'));el.classList.add('on');if(currentProgKey)renderPhase(progPhases[currentProgKey].phases[i]||[])}
 function renderPhase(exs){const l=document.getElementById('phaseExList');l.innerHTML='';exs.forEach((ex,i)=>{l.innerHTML+=`<div class="phase-ex"><div class="pe-num">${i+1}</div><div class="pe-body"><div class="pe-name">${ex.name}</div><div class="pe-detail">${ex.detail}</div></div><div class="pe-video" onclick="alert('Vidéo YouTube')">▶</div></div>`})}
@@ -5624,7 +5755,8 @@ function startThinking() {
   var bar = document.getElementById("thinkBar");
   var pct = document.getElementById("thinkPct");
   var msg = document.getElementById("thinkMsg");
-  var duration = 11000;
+  var alreadyCalculated = (typeof R !== 'undefined' && R.program) || (typeof user !== 'undefined' && user.programKey && user.satDone);
+  var duration = alreadyCalculated ? 1200 : 11000;
   var start = Date.now();
   var iv = setInterval(function() {
     var elapsed = Date.now() - start;
@@ -5783,6 +5915,62 @@ function testSkipScreen() {
       else if (typeof enterApp === 'function') enterApp();
       break;
   }
+}
+
+// ══════════════════════════════════
+// PLAN REPAS AUTO (mode stricte)
+// ══════════════════════════════════
+function generateMealPlan() {
+  if (typeof RECIPES === 'undefined') { alert('Recettes non chargées'); return; }
+  var pres   = [], meals = [], posts = [];
+  Object.keys(RECIPES).forEach(function(k){
+    var r = Object.assign({key:k}, RECIPES[k]);
+    if (r.tag === 'pre')  pres.push(r);
+    else if (r.tag === 'post') posts.push(r);
+    else meals.push(r);
+  });
+  if (!pres.length || !meals.length) { alert('Pas assez de recettes pour générer un plan.'); return; }
+  if (!posts.length) posts = meals.slice();
+
+  var dailyTarget = (typeof user !== 'undefined' && user.nutriCal) ? user.nutriCal : 2400;
+  var days = ['LUNDI','MARDI','MERCREDI','JEUDI','VENDREDI','SAMEDI','DIMANCHE'];
+  var rotate = function(arr, offset) { return arr[offset % arr.length]; };
+
+  var html = '<div class="mp-head">Plan auto pour atteindre <strong>' + dailyTarget + ' kcal/jour</strong></div>';
+  for (var i = 0; i < 7; i++) {
+    var pre   = rotate(pres,  i);
+    var lunch = rotate(meals, i);
+    var diner = rotate(meals, i + 1);
+    var post  = rotate(posts, i);
+    var total = (pre.cals||0) + (lunch.cals||0) + (diner.cals||0) + (post.cals||0);
+    var diff = total - dailyTarget;
+    var diffTxt = diff > 0 ? ('+' + diff) : diff;
+    var diffCls = Math.abs(diff) > 200 ? 'warn' : 'ok';
+    html += '<div class="mp-day">'
+      + '<div class="mp-day-head"><span class="mp-day-name">' + days[i] + '</span>'
+      + '<span class="mp-day-cals ' + diffCls + '">' + total + ' kcal <em>(' + diffTxt + ')</em></span></div>'
+      + _mealRowHtml('PRE',   pre)
+      + _mealRowHtml('MIDI',  lunch)
+      + _mealRowHtml('SOIR',  diner)
+      + _mealRowHtml('POST',  post)
+      + '</div>';
+  }
+  html += '<button class="btn btn-outline" onclick="addMealPlanToShopping()" style="margin-top:8px">🛒 Ajouter à la liste de courses</button>';
+  var grid = document.getElementById('mealPlanGrid');
+  grid.innerHTML = html;
+  grid.classList.remove('hidden');
+}
+
+function _mealRowHtml(slot, r) {
+  return '<div class="mp-meal">'
+    + '<div class="mp-meal-slot">' + slot + '</div>'
+    + '<div class="mp-meal-name">' + r.name + '</div>'
+    + '<div class="mp-meal-cals">' + (r.cals || '?') + 'kcal</div>'
+    + '</div>';
+}
+
+function addMealPlanToShopping() {
+  alert('Liste de courses agrégée (à finaliser avec Firebase pour sauvegarder).');
 }
 
 // CALENDRIER
@@ -6016,6 +6204,133 @@ function openNPI() {
 
 // INIT V6
 
+// ══════════════════════════════════
+// FIREBASE — Auth + Firestore sync
+// ══════════════════════════════════
+function onFirebaseAuthChange(fbUser) {
+  if (fbUser) {
+    if (typeof user !== 'undefined') {
+      user.email = fbUser.email || user.email || '';
+      if (fbUser.displayName && !user.name) user.name = fbUser.displayName;
+    }
+    fbLoadFirestoreToLocal(fbUser).then(function(loaded) {
+      if (loaded && loaded.programKey) {
+        document.querySelectorAll('.scr').forEach(function(e){ e.classList.remove('on','out'); e.style.display='none'; });
+        var nav = document.getElementById('mainNav'); if (nav) nav.style.display='flex';
+        if (typeof switchTab === 'function') switchTab('home');
+        if (typeof renderUserData === 'function') renderUserData();
+      } else {
+        if (typeof go === 'function' && document.getElementById('q0')) go('q0');
+      }
+    });
+  }
+  fbRefreshAccountSection(fbUser);
+}
+
+async function fbLoadFirestoreToLocal(fbUser) {
+  if (!window.fb || !fbUser) return null;
+  try {
+    var ref = window.fb.doc(window.fb.db, 'users', fbUser.uid);
+    var snap = await window.fb.getDoc(ref);
+    if (!snap.exists()) return null;
+    var data = snap.data() || {};
+    var profile = data.profile || {};
+    if (typeof user !== 'undefined') Object.keys(profile).forEach(function(k){ user[k] = profile[k]; });
+    if (typeof R !== 'undefined') ['prenom','age','sexe','q4','sport','program','programName','poste','freq','compet'].forEach(function(k){ if (profile[k] != null) R[k] = profile[k]; });
+    try { if (typeof saveData === 'function') saveData(); } catch(e) {}
+    return profile;
+  } catch (e) { console.warn('fbLoadFirestoreToLocal:', e); return null; }
+}
+
+async function fbSaveProfile() {
+  if (!window.fb || !window.fbUser) return false;
+  try {
+    var ref = window.fb.doc(window.fb.db, 'users', window.fbUser.uid);
+    var profile = Object.assign({}, (typeof user !== 'undefined' ? user : {}));
+    if (typeof R !== 'undefined') ['prenom','age','sexe','q4','sport','program','programName','poste','freq','compet'].forEach(function(k){ if (R[k] != null) profile[k] = R[k]; });
+    await window.fb.setDoc(ref, { profile: profile, updatedAt: window.fb.serverTimestamp() }, { merge: true });
+    return true;
+  } catch (e) { console.warn('fbSaveProfile:', e); return false; }
+}
+
+async function obCreateAccount() {
+  var email = (document.getElementById('aEmail') || {}).value;
+  var pass  = (document.getElementById('aPass')  || {}).value;
+  email = (email || '').trim(); pass = pass || '';
+  if (!email || !pass) { fbShowMsg('Email et mot de passe requis.', 'err'); return; }
+  if (pass.length < 6)  { fbShowMsg('6 caractères minimum.', 'err'); return; }
+  if (!window.fb)       { fbShowMsg('Firebase non chargé.', 'err'); return; }
+  try {
+    await window.fb.createUserWithEmailAndPassword(window.fb.auth, email, pass);
+    if (typeof user !== 'undefined') { user.email = email; user.name = email.split('@')[0].toUpperCase(); }
+    if (typeof R !== 'undefined' && R.programName) user.program = R.programName;
+    await fbSaveProfile();
+    fbShowMsg('Compte créé ! Bienvenue.', 'ok');
+    setTimeout(function(){ if (typeof enterApp === 'function') enterApp(); }, 600);
+  } catch (e) {
+    var m = (e && e.code) ? e.code.replace('auth/','').replace(/-/g,' ') : 'Erreur inconnue.';
+    fbShowMsg('Échec : ' + m, 'err');
+  }
+}
+
+async function fbSignIn() {
+  var email = (document.getElementById('aEmail') || {}).value;
+  var pass  = (document.getElementById('aPass')  || {}).value;
+  email = (email || '').trim(); pass = pass || '';
+  if (!email || !pass) { fbShowMsg('Email et mot de passe requis.', 'err'); return; }
+  if (!window.fb)       { fbShowMsg('Firebase non chargé.', 'err'); return; }
+  try {
+    await window.fb.signInWithEmailAndPassword(window.fb.auth, email, pass);
+    fbShowMsg('Connecté !', 'ok');
+  } catch (e) {
+    var m = (e && e.code) ? e.code.replace('auth/','').replace(/-/g,' ') : 'Erreur';
+    fbShowMsg('Échec : ' + m, 'err');
+  }
+}
+
+async function fbGoogleSignIn() {
+  if (!window.fb) { fbShowMsg('Firebase non chargé.', 'err'); return; }
+  try {
+    await window.fb.signInWithPopup(window.fb.auth, window.fb.googleProvider);
+    fbShowMsg('Connecté via Google !', 'ok');
+  } catch (e) {
+    var m = (e && e.code) ? e.code.replace('auth/','').replace(/-/g,' ') : 'Erreur';
+    fbShowMsg('Échec Google : ' + m, 'err');
+  }
+}
+
+async function fbSignOut() {
+  try { if (window.fb && window.fb.auth) await window.fb.signOut(window.fb.auth); } catch(e) {}
+  try { localStorage.clear(); sessionStorage.clear(); } catch(e) {}
+  try {
+    if (window.caches) {
+      var keys = await caches.keys();
+      await Promise.all(keys.map(function(k){ return caches.delete(k); }));
+    }
+  } catch(e) {}
+  location.replace(location.origin + location.pathname + '?logout=' + Date.now());
+}
+
+function fbShowMsg(msg, type) {
+  var el = document.getElementById('authMsg');
+  if (!el) { console.log('[auth]', type, msg); return; }
+  el.textContent = msg;
+  el.className = 'msg ' + (type === 'ok' ? 'ok' : 'err');
+}
+
+function fbRefreshAccountSection(fbUser) {
+  var emailEl = document.getElementById('profileEmail');
+  if (emailEl) emailEl.textContent = fbUser ? (fbUser.email || '—') : 'Non connecté';
+}
+
+// Override the legacy localStorage-only createAccount once Firebase is ready
+window.createAccount = function() { obCreateAccount(); };
+// Override logoutUser to do a proper Firebase sign-out + cache clear
+window.logoutUser = function() {
+  if (!confirm('Se déconnecter ? Tes données restent enregistrées en cloud, tu pourras les retrouver à la prochaine connexion.')) return;
+  fbSignOut();
+};
+
 </script>
 
 
@@ -6046,6 +6361,18 @@ function openNPI() {
     <div class="titan-nutri">
       <div class="tn-av">🤖</div>
       <div class="tn-txt"><strong>Titan :</strong> Aujourd'hui c'est séance jambes lourdes. Tu as besoin de 2.2g de protéines/kg et de glucides complexes 2h avant.</div>
+    </div>
+
+    <!-- Plan repas auto (mode stricte) -->
+    <div class="meal-plan-cta">
+      <div class="mpc-head">
+        <div>
+          <div class="mpc-title">📋 PLAN REPAS SEMAINE</div>
+          <div class="mpc-sub">Mode stricte — Titan génère 7 jours pour atteindre ton objectif calorique.</div>
+        </div>
+        <button class="btn btn-gold mpc-btn" onclick="generateMealPlan()">Générer →</button>
+      </div>
+      <div id="mealPlanGrid" class="hidden"></div>
     </div>
 
     <div class="daily-card">

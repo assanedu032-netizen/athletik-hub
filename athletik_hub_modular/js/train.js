@@ -82,6 +82,16 @@ function calculateSAT() {
   document.getElementById('scMobility').textContent = fms > 0 ? fms + '/21' : '—';
   document.getElementById('satTitanMsg').innerHTML = lv.msg;
 
+  // Mark SAT as done so programs are unlocked
+  if (typeof user !== 'undefined') {
+    user.satDone = true;
+    user.athScore = totalScore;
+    user.vertJump = vertJump;
+    user.level = lv.name;
+    user.levelIcon = lv.icon;
+    try { if (typeof saveData === 'function') saveData(); } catch(e) {}
+  }
+
   document.getElementById('satForm').classList.add('hidden');
   document.getElementById('satResult').classList.remove('hidden');
 }
@@ -775,7 +785,48 @@ function renderLibrary() {
         + '</div>';
     }).join('');
 }
-function openProg(k){currentProgKey=k;const p=progPhases[k];if(!p)return;document.getElementById('progList').classList.add('hidden');document.getElementById('progDetail').classList.remove('hidden');document.getElementById('progDetailName').textContent=p.name;document.getElementById('progDetailObj').textContent=p.obj;document.querySelectorAll('.phase-tab').forEach((t,i)=>t.classList.toggle('on',i===0));renderPhase(p.phases[0]);var __v=document.getElementById('vTrain');if(__v)__v.scrollTop=0}
+function openProg(k){
+  // Gate: must have completed SAT (test) or have test mode active
+  if (!window.TEST_MODE && typeof user !== 'undefined' && !user.satDone) {
+    showSATGate(k);
+    return;
+  }
+  currentProgKey=k;const p=progPhases[k];if(!p)return;document.getElementById('progList').classList.add('hidden');document.getElementById('progDetail').classList.remove('hidden');document.getElementById('progDetailName').textContent=p.name;document.getElementById('progDetailObj').textContent=p.obj;document.querySelectorAll('.phase-tab').forEach((t,i)=>t.classList.toggle('on',i===0));renderPhase(p.phases[0]);var __v=document.getElementById('vTrain');if(__v)__v.scrollTop=0
+}
+function showSATGate(programKey) {
+  // Build / reuse a SAT-gate modal
+  var modal = document.getElementById('satGateModal');
+  if (!modal) {
+    modal = document.createElement('div');
+    modal.id = 'satGateModal';
+    modal.className = 'sat-gate-modal';
+    modal.innerHTML =
+      '<div class="sat-gate-inner">'
+      + '<div class="sat-gate-icon">🔒</div>'
+      + '<div class="sat-gate-title">PROGRAMME VERROUILLÉ</div>'
+      + '<div class="sat-gate-msg">Sans tes données SAT, Titan ne peut pas adapter ce programme à ton niveau. Fais le test d\'abord — c\'est non négociable.</div>'
+      + '<button class="sat-gate-cta" onclick="closeSATGate(true)">Faire le SAT maintenant →</button>'
+      + '<button class="sat-gate-close" onclick="closeSATGate(false)">Annuler</button>'
+      + '</div>';
+    document.body.appendChild(modal);
+  }
+  modal.dataset.program = programKey || '';
+  modal.classList.add('on');
+}
+function closeSATGate(goSat) {
+  var modal = document.getElementById('satGateModal');
+  if (modal) modal.classList.remove('on');
+  if (goSat) {
+    // Switch to Tracks > SAT
+    if (typeof switchTab === 'function') switchTab('tracks');
+    if (typeof showSec === 'function') {
+      setTimeout(function(){
+        var satTab = document.querySelector('#vTracks .sub-tab');
+        if (satTab) showSec('sat', satTab);
+      }, 100);
+    }
+  }
+}
 function closeProg(){document.getElementById('progList').classList.remove('hidden');document.getElementById('progDetail').classList.add('hidden')}
 function switchPhase(el,i){document.querySelectorAll('.phase-tab').forEach(t=>t.classList.remove('on'));el.classList.add('on');if(currentProgKey)renderPhase(progPhases[currentProgKey].phases[i]||[])}
 function renderPhase(exs){const l=document.getElementById('phaseExList');l.innerHTML='';exs.forEach((ex,i)=>{l.innerHTML+=`<div class="phase-ex"><div class="pe-num">${i+1}</div><div class="pe-body"><div class="pe-name">${ex.name}</div><div class="pe-detail">${ex.detail}</div></div><div class="pe-video" onclick="alert('Vidéo YouTube')">▶</div></div>`})}
