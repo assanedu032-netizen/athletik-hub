@@ -56,6 +56,7 @@ function go(id) {
   document.querySelectorAll('.scr').forEach(function(s){ s.style.display = ''; });
   if (cur) { cur.classList.remove('on'); cur.classList.add('out'); setTimeout(() => cur.classList.remove('out'), 500); }
   nxt.classList.add('on');
+  if (window.TEST_MODE) _testRefreshSkip();
 
   // Trigger typing on Titan intro
   if (id === 'titanIntro') {
@@ -187,5 +188,104 @@ function showResult(key) {
   R.programName = p.name;
   go('result');
   go('result');
+}
+
+// ══════════════════════════════════
+// TEST MODE — skip all onboarding validations
+// ══════════════════════════════════
+(function initTestMode() {
+  try {
+    if (localStorage.getItem('_athletik_test_mode') === '1') {
+      window.TEST_MODE = true;
+    }
+  } catch (e) {}
+  function setup() {
+    if (window.TEST_MODE) document.body.classList.add('test-mode');
+    if (document.getElementById('testSkipBar')) return;
+    var bar = document.createElement('div');
+    bar.id = 'testSkipBar';
+    bar.innerHTML =
+      '<button id="testSkipBtn" onclick="testSkipScreen()">→ SKIP</button>' +
+      '<button id="testOffBtn" onclick="exitTestMode()" title="Désactiver test mode">✕</button>';
+    document.body.appendChild(bar);
+    _testRefreshSkip();
+  }
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', setup);
+  else setup();
+})();
+
+function enterTestMode() {
+  window.TEST_MODE = true;
+  try { localStorage.setItem('_athletik_test_mode', '1'); } catch (e) {}
+  document.body.classList.add('test-mode');
+  _testRefreshSkip();
+}
+function exitTestMode() {
+  window.TEST_MODE = false;
+  try { localStorage.removeItem('_athletik_test_mode'); } catch (e) {}
+  document.body.classList.remove('test-mode');
+}
+
+function _testRefreshSkip() {
+  var cur = document.querySelector('.scr.on');
+  var btn = document.getElementById('testSkipBtn');
+  if (!btn) return;
+  if (!cur) { btn.textContent = '→ SKIP'; return; }
+  var labels = {
+    splash:'⏭ Splash', titanIntro:'⏭ Intro Titan', q0:'⏭ Prénom',
+    qSexe:'⏭ Sexe', q4:'⏭ Objectif', q5:'⏭ Sport',
+    qPoste:'⏭ Poste', qFreq:'⏭ Fréquence', qCompet:'⏭ Compét',
+    q6:'⏭ Âge', thinking:'⏭ Analyse', result:'⏭ Résultat',
+    auth:'⏭ Auth'
+  };
+  btn.textContent = labels[cur.id] || ('→ Skip ' + cur.id);
+}
+
+function testSkipScreen() {
+  var cur = document.querySelector('.scr.on');
+  if (!cur) return;
+  var id = cur.id;
+  // Auto-fill defaults then advance
+  switch (id) {
+    case 'splash':
+      go('titanIntro'); break;
+    case 'titanIntro':
+      go('q0'); break;
+    case 'q0':
+      if (!R.prenom) { R.prenom = 'Test'; }
+      if (typeof user !== 'undefined') user.name = R.prenom.toUpperCase();
+      var pi = document.getElementById('prenomInput'); if (pi && !pi.value) pi.value = 'Test';
+      go('qSexe'); break;
+    case 'qSexe':
+      R.sexe = R.sexe || 'homme'; go('q4'); break;
+    case 'q4':
+      R.q4 = R.q4 || 'vertical'; go('q5'); break;
+    case 'q5':
+      R.sport = R.sport || 'basket'; go('q6'); break;
+    case 'qPoste':
+      R.poste = R.poste || 'Meneur'; go('qFreq'); break;
+    case 'qFreq':
+      R.freq = R.freq || '3'; go('qCompet'); break;
+    case 'qCompet':
+      R.compet = R.compet || 'non'; go('q6'); break;
+    case 'q6':
+      var sel = document.getElementById('ageSelect'); R.age = (sel && sel.value) || '25';
+      if (typeof calcResult === 'function') calcResult();
+      go('thinking');
+      if (typeof startThinking === 'function') startThinking();
+      break;
+    case 'thinking':
+      if (typeof calcResult === 'function' && !R.program) calcResult();
+      go('result'); break;
+    case 'result':
+      go('auth'); break;
+    case 'auth':
+      if (typeof window.testMode === 'function') window.testMode();
+      else if (typeof enterApp === 'function') enterApp();
+      break;
+    default:
+      // Generic: try common "next" patterns
+      break;
+  }
 }
 

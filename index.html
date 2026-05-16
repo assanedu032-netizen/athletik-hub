@@ -1336,6 +1336,14 @@ body{background:var(--bg);color:var(--text);font-family:'Outfit',sans-serif;disp
 .lv2-pseg{flex:1;height:4px;background:#1B2A4A;border-radius:2px;overflow:hidden;position:relative}
 .lv2-pseg.done{background:#7C3AED}
 .lv2-pseg.cur::after{content:"";position:absolute;left:0;top:0;bottom:0;width:50%;background:#7C3AED;border-radius:2px}
+
+/* ═══ TEST MODE skip bar ═══ */
+#testSkipBar{position:fixed;bottom:14px;left:14px;z-index:9999;display:none;gap:6px;background:rgba(220,38,38,.92);padding:6px;border-radius:10px;box-shadow:0 6px 20px rgba(0,0,0,.4);backdrop-filter:blur(8px)}
+body.test-mode #testSkipBar{display:flex}
+#testSkipBtn{background:#fff;color:#DC2626;border:0;border-radius:6px;padding:8px 12px;font-family:'Outfit',sans-serif;font-weight:800;font-size:12px;letter-spacing:.5px;cursor:pointer;white-space:nowrap}
+#testSkipBtn:active{transform:scale(.95)}
+#testOffBtn{background:rgba(255,255,255,.15);color:#fff;border:0;border-radius:6px;width:32px;font-size:14px;cursor:pointer;font-weight:800}
+#testOffBtn:active{opacity:.7}
 </style>
 
 <template id="__bundler_thumbnail" data-bg-color="#1B2A4A">
@@ -3941,6 +3949,7 @@ function go(id) {
   document.querySelectorAll('.scr').forEach(function(s){ s.style.display = ''; });
   if (cur) { cur.classList.remove('on'); cur.classList.add('out'); setTimeout(() => cur.classList.remove('out'), 500); }
   nxt.classList.add('on');
+  if (window.TEST_MODE && typeof _testRefreshSkip === 'function') _testRefreshSkip();
 
   // Trigger typing on Titan intro
   if (id === 'titanIntro') {
@@ -5202,7 +5211,7 @@ function animateTitanText() {
 // PRÉNOM
 function submitPrenom() {
   var val = document.getElementById("prenomInput").value.trim();
-  if (!val) return;
+  if (!val) { if (window.TEST_MODE) val = 'Test'; else return; }
   R.prenom = val.charAt(0).toUpperCase() + val.slice(1);
   user.name = R.prenom.toUpperCase();
   go("qSexe");
@@ -5354,6 +5363,7 @@ window.createAccount = function() {
 
 // OVERRIDE testMode
 window.testMode = function() {
+  if (typeof enterTestMode === 'function') enterTestMode();
   user.name = "TEST";
   user.appMode = "guided";
   document.querySelectorAll(".scr").forEach(function(e) { e.classList.remove("on","out"); e.style.display = "none"; });
@@ -5361,6 +5371,89 @@ window.testMode = function() {
   switchTab("home");
   renderUserData();
 };
+
+// ══════════════════════════════════
+// TEST MODE — skip all onboarding validations
+// ══════════════════════════════════
+(function initTestMode() {
+  try {
+    if (localStorage.getItem('_athletik_test_mode') === '1') window.TEST_MODE = true;
+  } catch (e) {}
+  function setup() {
+    if (window.TEST_MODE) document.body.classList.add('test-mode');
+    if (document.getElementById('testSkipBar')) return;
+    var bar = document.createElement('div');
+    bar.id = 'testSkipBar';
+    bar.innerHTML =
+      '<button id="testSkipBtn" onclick="testSkipScreen()">→ SKIP</button>' +
+      '<button id="testOffBtn" onclick="exitTestMode()" title="Désactiver test mode">✕</button>';
+    document.body.appendChild(bar);
+    _testRefreshSkip();
+  }
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', setup);
+  else setup();
+})();
+
+function enterTestMode() {
+  window.TEST_MODE = true;
+  try { localStorage.setItem('_athletik_test_mode', '1'); } catch (e) {}
+  document.body.classList.add('test-mode');
+  if (typeof _testRefreshSkip === 'function') _testRefreshSkip();
+}
+function exitTestMode() {
+  window.TEST_MODE = false;
+  try { localStorage.removeItem('_athletik_test_mode'); } catch (e) {}
+  document.body.classList.remove('test-mode');
+}
+
+function _testRefreshSkip() {
+  var cur = document.querySelector('.scr.on');
+  var btn = document.getElementById('testSkipBtn');
+  if (!btn) return;
+  if (!cur) { btn.textContent = '→ SKIP'; return; }
+  var labels = {
+    splash:'⏭ Splash', titanIntro:'⏭ Intro Titan', q0:'⏭ Prénom',
+    qSexe:'⏭ Sexe', q4:'⏭ Objectif', q5:'⏭ Sport',
+    qPoste:'⏭ Poste', qFreq:'⏭ Fréquence', qCompet:'⏭ Compét',
+    q6:'⏭ Âge', thinking:'⏭ Analyse', result:'⏭ Résultat',
+    auth:'⏭ Auth'
+  };
+  btn.textContent = labels[cur.id] || ('→ Skip ' + cur.id);
+}
+
+function testSkipScreen() {
+  var cur = document.querySelector('.scr.on');
+  if (!cur) return;
+  switch (cur.id) {
+    case 'splash':       go('titanIntro'); break;
+    case 'titanIntro':   go('q0'); break;
+    case 'q0':
+      if (!R.prenom) R.prenom = 'Test';
+      if (typeof user !== 'undefined') user.name = R.prenom.toUpperCase();
+      var pi = document.getElementById('prenomInput'); if (pi && !pi.value) pi.value = 'Test';
+      go('qSexe'); break;
+    case 'qSexe':        R.sexe = R.sexe || 'homme';   go('q4'); break;
+    case 'q4':           R.q4 = R.q4 || 'vertical';    go('q5'); break;
+    case 'q5':           R.sport = R.sport || 'basket';go('q6'); break;
+    case 'qPoste':       R.poste = R.poste || 'Meneur';go('qFreq'); break;
+    case 'qFreq':        R.freq = R.freq || '3';       go('qCompet'); break;
+    case 'qCompet':      R.compet = R.compet || 'non'; go('q6'); break;
+    case 'q6':
+      var sel = document.getElementById('ageSelect'); R.age = (sel && sel.value) || '25';
+      if (typeof calcResult === 'function') calcResult();
+      go('thinking');
+      if (typeof startThinking === 'function') startThinking();
+      break;
+    case 'thinking':
+      if (typeof calcResult === 'function' && !R.program) calcResult();
+      go('result'); break;
+    case 'result':       go('auth'); break;
+    case 'auth':
+      if (typeof window.testMode === 'function') window.testMode();
+      else if (typeof enterApp === 'function') enterApp();
+      break;
+  }
+}
 
 // CALENDRIER
 var trainingDays = new Set();

@@ -238,7 +238,7 @@ function animateTitanText() {
 // PRÉNOM
 function submitPrenom() {
   var val = document.getElementById("prenomInput").value.trim();
-  if (!val) return;
+  if (!val) { if (window.TEST_MODE) val = 'Test'; else return; }
   R.prenom = val.charAt(0).toUpperCase() + val.slice(1);
   user.name = R.prenom.toUpperCase();
   go("qSexe");
@@ -390,6 +390,7 @@ window.createAccount = function() {
 
 // OVERRIDE testMode
 window.testMode = function() {
+  if (typeof enterTestMode === 'function') enterTestMode();
   user.name = "TEST";
   user.appMode = "guided";
   document.querySelectorAll(".scr").forEach(function(e) { e.classList.remove("on","out"); e.style.display = "none"; });

@@ -735,3 +735,11 @@
 .lv2-pseg{flex:1;height:4px;background:#1B2A4A;border-radius:2px;overflow:hidden;position:relative}
 .lv2-pseg.done{background:#7C3AED}
 .lv2-pseg.cur::after{content:"";position:absolute;left:0;top:0;bottom:0;width:50%;background:#7C3AED;border-radius:2px;transition:width .3s}
+
+/* ═══ TEST MODE skip bar ═══ */
+#testSkipBar{position:fixed;bottom:14px;left:14px;z-index:9999;display:none;gap:6px;background:rgba(220,38,38,.92);padding:6px;border-radius:10px;box-shadow:0 6px 20px rgba(0,0,0,.4);backdrop-filter:blur(8px)}
+body.test-mode #testSkipBar{display:flex}
+#testSkipBtn{background:#fff;color:#DC2626;border:0;border-radius:6px;padding:8px 12px;font-family:'Outfit',sans-serif;font-weight:800;font-size:12px;letter-spacing:.5px;cursor:pointer;white-space:nowrap}
+#testSkipBtn:active{transform:scale(.95)}
+#testOffBtn{background:rgba(255,255,255,.15);color:#fff;border:0;border-radius:6px;width:32px;font-size:14px;cursor:pointer;font-weight:800}
+#testOffBtn:active{opacity:.7}
