@@ -1381,6 +1381,157 @@ body{background:var(--bg);color:var(--text);font-family:'Outfit',sans-serif;disp
 .set-ex-target { font-size: 11px; color: var(--muted); margin-top: 2px; }
 .set-ex-input { width: 64px; height: 36px; border-radius: 8px; border: 1.5px solid var(--border); background: var(--surface2); text-align: center; font-family: 'Bebas Neue', sans-serif; font-size: 16px; color: var(--text); outline: none; }
 .set-ex-input:focus { border-color: var(--gold); }
+
+/* ═══ LIVE SESSION SCREEN ═══ */
+#liveSession {
+  position: fixed; inset: 0; z-index: 9999;
+  background: #080C18;
+  display: flex; flex-direction: column;
+  font-family: 'Outfit', sans-serif;
+  transform: translateY(100%);
+  transition: transform .35s cubic-bezier(.4,0,.2,1);
+}
+#liveSession.ls-open { transform: translateY(0); }
+
+.ls-header {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 14px 16px 10px;
+  background: #080C18;
+  border-bottom: 1px solid rgba(255,255,255,.06);
+  flex-shrink: 0;
+}
+.ls-header-left { display: flex; flex-direction: column; flex: 1; min-width: 0; }
+.ls-header-prog { font-size: 10px; color: var(--gold); font-weight: 800; letter-spacing: 1.5px; text-transform: uppercase; }
+.ls-header-sess { font-size: 12px; color: var(--text2); margin-top: 1px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.ls-header-counter { font-family: 'Bebas Neue', sans-serif; font-size: 20px; color: var(--text); letter-spacing: 1px; margin: 0 12px; }
+.ls-close-btn {
+  width: 36px; height: 36px; border-radius: 50%;
+  background: rgba(255,255,255,.07); border: none; cursor: pointer;
+  color: var(--text); font-size: 18px; display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+}
+
+.ls-body { flex: 1; overflow-y: auto; display: flex; flex-direction: column; }
+
+.ls-ex-info { padding: 14px 16px 8px; }
+.ls-cat-badge {
+  display: inline-block; padding: 3px 10px; border-radius: 20px;
+  font-size: 9px; font-weight: 800; letter-spacing: 1.5px; text-transform: uppercase;
+  background: rgba(197,164,78,.15); color: var(--gold); border: 1px solid rgba(197,164,78,.3);
+  margin-bottom: 8px;
+}
+.ls-ex-name {
+  font-family: 'Bebas Neue', sans-serif; font-size: 30px; color: var(--text);
+  letter-spacing: 1.5px; line-height: 1.05; margin-bottom: 4px;
+}
+.ls-ex-sub { font-size: 11px; color: var(--text2); line-height: 1.5; }
+
+.ls-video-wrap {
+  position: relative; width: 100%; aspect-ratio: 16/9;
+  background: #0E1626; overflow: hidden; flex-shrink: 0;
+}
+.ls-video-placeholder {
+  width: 100%; height: 100%;
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px;
+}
+.ls-play-circle {
+  width: 60px; height: 60px; border-radius: 50%;
+  background: rgba(197,164,78,.18); border: 2px solid rgba(197,164,78,.5);
+  display: flex; align-items: center; justify-content: center; cursor: pointer;
+  transition: transform .15s;
+}
+.ls-play-circle:active { transform: scale(.92); }
+.ls-play-icon { width: 0; height: 0; border-top: 11px solid transparent; border-bottom: 11px solid transparent; border-left: 18px solid var(--gold); margin-left: 4px; }
+.ls-video-label { font-size: 9px; color: rgba(255,255,255,.35); letter-spacing: 1px; text-transform: uppercase; }
+
+.ls-video-btn {
+  width: calc(100% - 32px); margin: 10px 16px 0;
+  padding: 11px; border-radius: 10px;
+  background: rgba(197,164,78,.09); border: 1.5px solid rgba(197,164,78,.25);
+  color: var(--gold); font-size: 11px; font-weight: 700; letter-spacing: 1px;
+  text-transform: uppercase; cursor: pointer; text-align: center;
+}
+
+.ls-metrics {
+  display: grid; grid-template-columns: 1fr 1fr 1fr;
+  gap: 8px; padding: 12px 16px;
+}
+.ls-metric {
+  background: rgba(255,255,255,.04); border: 1px solid rgba(255,255,255,.07);
+  border-radius: 12px; padding: 12px 8px; text-align: center;
+}
+.ls-metric-v { font-family: 'Bebas Neue', sans-serif; font-size: 26px; color: var(--text); letter-spacing: 1px; line-height: 1; }
+.ls-metric-l { font-size: 8px; color: var(--muted); font-weight: 700; letter-spacing: 1px; text-transform: uppercase; margin-top: 4px; }
+
+/* Rest timer */
+.ls-rest-overlay {
+  margin: 0 16px 10px;
+  background: linear-gradient(135deg, rgba(197,164,78,.08), rgba(197,164,78,.04));
+  border: 1.5px solid rgba(197,164,78,.2);
+  border-radius: 16px; padding: 20px 16px 16px;
+  text-align: center; display: none;
+}
+.ls-rest-overlay.ls-rest-active { display: block; }
+.ls-rest-title { font-size: 9px; font-weight: 800; letter-spacing: 2px; color: var(--gold); text-transform: uppercase; margin-bottom: 10px; }
+.ls-rest-countdown { font-family: 'Bebas Neue', sans-serif; font-size: 72px; color: var(--gold); letter-spacing: 4px; line-height: 1; margin-bottom: 12px; text-shadow: 0 0 40px rgba(197,164,78,.3); }
+.ls-rest-bar-wrap { height: 4px; background: rgba(197,164,78,.15); border-radius: 4px; margin-bottom: 14px; overflow: hidden; }
+.ls-rest-bar { height: 100%; background: var(--gold); border-radius: 4px; transition: width .9s linear; }
+.ls-rest-btns { display: flex; gap: 8px; justify-content: center; }
+.ls-rest-btn {
+  padding: 8px 16px; border-radius: 10px; border: none; cursor: pointer;
+  font-size: 11px; font-weight: 700; letter-spacing: .5px;
+}
+.ls-rest-btn-skip { background: var(--gold); color: var(--navy); }
+.ls-rest-btn-plus { background: rgba(255,255,255,.07); color: var(--text); }
+.ls-rest-btn-minus { background: rgba(255,255,255,.07); color: var(--text); }
+
+/* Action buttons row */
+.ls-actions {
+  display: flex; gap: 10px; padding: 4px 16px 12px;
+}
+.ls-btn-prev, .ls-btn-done, .ls-btn-next {
+  flex: 1; padding: 13px 8px; border-radius: 12px; border: none;
+  cursor: pointer; font-size: 12px; font-weight: 700; letter-spacing: .5px;
+}
+.ls-btn-prev { background: rgba(255,255,255,.06); color: var(--text2); }
+.ls-btn-done { background: var(--gold); color: var(--navy); flex: 2; }
+.ls-btn-next { background: rgba(255,255,255,.06); color: var(--text2); }
+
+/* Next exercise preview */
+.ls-next-preview {
+  display: flex; align-items: center; gap: 12px;
+  margin: 0 16px 14px;
+  padding: 12px 14px; border-radius: 12px;
+  background: rgba(255,255,255,.03); border: 1px solid rgba(255,255,255,.06);
+}
+.ls-next-thumb {
+  width: 48px; height: 36px; border-radius: 8px;
+  background: rgba(197,164,78,.1); flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 16px;
+}
+.ls-next-label { font-size: 9px; color: var(--muted); letter-spacing: 1px; font-weight: 700; margin-bottom: 3px; }
+.ls-next-name { font-size: 12px; color: var(--text); font-weight: 700; line-height: 1.3; }
+
+/* Bottom progress bar */
+.ls-progress-wrap { padding: 0 16px 28px; flex-shrink: 0; }
+.ls-progress-label { font-size: 9px; color: var(--muted); font-weight: 700; letter-spacing: 1px; margin-bottom: 6px; }
+.ls-progress-segs { display: flex; gap: 3px; }
+.ls-seg {
+  flex: 1; height: 4px; border-radius: 4px;
+  background: rgba(255,255,255,.1); transition: background .3s;
+}
+.ls-seg.done { background: var(--gold); }
+.ls-seg.current { background: rgba(197,164,78,.55); }
+
+/* Session complete */
+.ls-complete {
+  flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center;
+  padding: 32px 24px; text-align: center;
+}
+.ls-complete-icon { font-size: 64px; margin-bottom: 20px; }
+.ls-complete-title { font-family: 'Bebas Neue', sans-serif; font-size: 38px; color: var(--gold); letter-spacing: 2px; margin-bottom: 8px; }
+.ls-complete-sub { font-size: 14px; color: var(--text2); line-height: 1.6; margin-bottom: 32px; }
 </style>
 
 <template id="__bundler_thumbnail" data-bg-color="#1B2A4A">
@@ -3552,6 +3703,100 @@ body{background:var(--bg);color:var(--text);font-family:'Outfit',sans-serif;disp
     <button class="rm-add-btn" onclick="addRecipeToJournal()" style="background:var(--surface2);color:var(--text);border:1.5px solid var(--border)">+ Ajouter au journal du jour</button>
   </div>
 </div>
+
+<!-- ═══ LIVE SESSION SCREEN ═══ -->
+<div id="liveSession">
+  <!-- Header -->
+  <div class="ls-header">
+    <div class="ls-header-left">
+      <div class="ls-header-prog" id="lsProgName">PROGRAMME</div>
+      <div class="ls-header-sess" id="lsSessName">SÉANCE</div>
+    </div>
+    <div class="ls-header-counter" id="lsCounter">1/10</div>
+    <button class="ls-close-btn" onclick="_lsClose()">✕</button>
+  </div>
+
+  <!-- Scrollable body -->
+  <div class="ls-body" id="lsBody">
+
+    <!-- Exercise info -->
+    <div class="ls-ex-info">
+      <div class="ls-cat-badge" id="lsCatBadge">PLIOMÉTRIE</div>
+      <div class="ls-ex-name" id="lsExName">BROAD JUMPS</div>
+      <div class="ls-ex-sub" id="lsExSub">Bonds en avant — explosivité maximale</div>
+    </div>
+
+    <!-- Video placeholder -->
+    <div class="ls-video-wrap">
+      <div class="ls-video-placeholder" id="lsVideoArea">
+        <div class="ls-play-circle" onclick="_lsOpenVideo()">
+          <div class="ls-play-icon"></div>
+        </div>
+        <div class="ls-video-label">Vidéo démo</div>
+      </div>
+    </div>
+    <div class="ls-video-btn" onclick="_lsOpenVideo()">▶ VOIR LA VIDÉO DÉMO</div>
+
+    <!-- Metrics: Sets / Reps / Rest -->
+    <div class="ls-metrics">
+      <div class="ls-metric">
+        <div class="ls-metric-v" id="lsMetSets">3</div>
+        <div class="ls-metric-l">Séries</div>
+      </div>
+      <div class="ls-metric">
+        <div class="ls-metric-v" id="lsMetReps">12</div>
+        <div class="ls-metric-l">Reps</div>
+      </div>
+      <div class="ls-metric">
+        <div class="ls-metric-v" id="lsMetRest">1'</div>
+        <div class="ls-metric-l">Repos</div>
+      </div>
+    </div>
+
+    <!-- Rest timer overlay -->
+    <div class="ls-rest-overlay" id="lsRestOverlay">
+      <div class="ls-rest-title">⏱ TEMPS DE REPOS</div>
+      <div class="ls-rest-countdown" id="lsRestCountdown">01:00</div>
+      <div class="ls-rest-bar-wrap"><div class="ls-rest-bar" id="lsRestBar" style="width:100%"></div></div>
+      <div class="ls-rest-btns">
+        <button class="ls-rest-btn ls-rest-btn-minus" onclick="_lsAdjustRest(-30)">−30s</button>
+        <button class="ls-rest-btn ls-rest-btn-skip" onclick="_lsSkipRest()">Continuer →</button>
+        <button class="ls-rest-btn ls-rest-btn-plus" onclick="_lsAdjustRest(30)">+30s</button>
+      </div>
+    </div>
+
+    <!-- Action buttons -->
+    <div class="ls-actions">
+      <button class="ls-btn-prev" onclick="_lsPrevEx()">← Préc</button>
+      <button class="ls-btn-done" id="lsBtnDone" onclick="_lsDoneSet()">✓ SÉRIE TERMINÉE</button>
+      <button class="ls-btn-next" onclick="_lsNextEx()">Suiv →</button>
+    </div>
+
+    <!-- Next exercise preview -->
+    <div class="ls-next-preview" id="lsNextPreview">
+      <div class="ls-next-thumb">→</div>
+      <div>
+        <div class="ls-next-label">PROCHAIN EXERCICE</div>
+        <div class="ls-next-name" id="lsNextName">Lateral Bounds</div>
+      </div>
+    </div>
+
+    <!-- Progress bar -->
+    <div class="ls-progress-wrap">
+      <div class="ls-progress-label" id="lsProgressLabel">EXERCICE 1 SUR 10</div>
+      <div class="ls-progress-segs" id="lsProgressSegs"></div>
+    </div>
+
+    <!-- Session complete (hidden until end) -->
+    <div class="ls-complete" id="lsComplete" style="display:none">
+      <div class="ls-complete-icon">🔥</div>
+      <div class="ls-complete-title">SÉANCE TERMINÉE</div>
+      <div class="ls-complete-sub" id="lsCompleteMsg">Tu viens de terminer cette séance.<br>Récupère bien — tu l'as mérité.</div>
+      <button class="btn btn-gold" onclick="_lsClose()" style="width:100%;max-width:280px">← Retour au programme</button>
+    </div>
+
+  </div><!-- /ls-body -->
+</div><!-- /liveSession -->
 
 </div><!-- /app -->
 <script>
@@ -6565,16 +6810,6 @@ function updateStartSessionLock() {
     btn.style.opacity = '.85';
     btn.innerHTML = '🔒 Fais d\'abord tes tests physiques';
   }
-}
-
-function startSessionGuarded() {
-  if (!_userSatDone()) {
-    showToast('Fais d\'abord tes tests physiques dans Tracks.', 'info');
-    try { switchTab('tracks'); } catch(e) {}
-    return;
-  }
-  // TODO: brancher sur le vrai démarrage de séance quand le moteur de séance sera prêt
-  showToast('Séance lancée — moteur en cours de finalisation.', 'info');
 }
 
 // Va sur l'onglet Train et active le sous-onglet "Programmes" (utilisé par le bouton Home)
@@ -11097,4 +11332,297 @@ function obErr(id,msg){
   e.textContent=msg;e.style.display='block';
   setTimeout(function(){e.style.display='none';},3000);
 }
+
+// ═══════════════════════════════════════════════════
+// LIVE SESSION ENGINE — GBG/Gymkee style
+// ═══════════════════════════════════════════════════
+var _LS = {
+  exos: [], idx: 0, setsLeft: 0, progName: '', sessName: '',
+  restSec: 0, restTotal: 0, restInterval: null, restActive: false
+};
+
+// Parse rest string like "1 mn", "2 mn 30", "45 s", "-" → seconds
+function _lsParseRest(str) {
+  if (!str || str === '-') return 60;
+  var s = (str + '').toLowerCase().trim();
+  var mn = 0, sec = 0;
+  var mMatch = s.match(/(\d+)\s*mn/);
+  if (mMatch) mn = parseInt(mMatch[1]);
+  var sMatch = s.match(/(\d+)\s*s(?:ec|$|\s)/);
+  if (sMatch) sec = parseInt(sMatch[1]);
+  if (!mMatch && !sMatch) {
+    var d = parseInt(s); if (!isNaN(d)) return d;
+  }
+  var total = mn * 60 + sec;
+  return total > 0 ? total : 60;
+}
+
+// Infer category from exercise name
+function _lsCategory(name) {
+  var n = (name || '').toLowerCase();
+  if (/squat|press|deadlift|sdt|soulevé|power clean|clean|hip thrust|back squat|barre|haltère|fente|stato/.test(n)) return 'FORCE';
+  if (/sprint|course|cardio|hiit|carioca|skip/.test(n)) return 'VITESSE';
+  if (/broad jump|depth jump|box jump|pogo|split jump|bound|jump|saut|explosion/.test(n)) return 'PLIOMÉTRIE';
+  if (/mobilité|stretch|étirement|90\/90|foam|rotation|mouv/.test(n)) return 'MOBILITÉ';
+  if (/planche|l-sit|v-up|abdos|gainage|barre levé/.test(n)) return 'GAINAGE';
+  if (/échauffement|warm/.test(n)) return 'ÉCHAUFFEMENT';
+  return 'TECHNIQUE';
+}
+
+function _lsFmt(sec) {
+  var m = Math.floor(sec / 60), s = sec % 60;
+  return (m < 10 ? '0' : '') + m + ':' + (s < 10 ? '0' : '') + s;
+}
+
+function launchSession(exos, sessName, progName) {
+  if (!exos || !exos.length) { showToast('Aucun exercice dans cette séance.', 'info'); return; }
+  _LS.exos = exos;
+  _LS.idx = 0;
+  _LS.progName = progName || '';
+  _LS.sessName = sessName || '';
+  _LS.restActive = false;
+  clearInterval(_LS.restInterval);
+  _lsRenderEx();
+  document.getElementById('liveSession').classList.add('ls-open');
+  document.body.style.overflow = 'hidden';
+}
+
+function _lsRenderEx() {
+  var ex = _LS.exos[_LS.idx];
+  if (!ex) return;
+  var total = _LS.exos.length;
+
+  // Header
+  document.getElementById('lsProgName').textContent = _LS.progName;
+  document.getElementById('lsSessName').textContent = _LS.sessName;
+  document.getElementById('lsCounter').textContent = (_LS.idx + 1) + '/' + total;
+
+  // Category + name
+  document.getElementById('lsCatBadge').textContent = _lsCategory(ex.n);
+  document.getElementById('lsExName').textContent = (ex.n || '').toUpperCase();
+
+  // Sub (note if exists, or reps description)
+  var sub = ex.note || '';
+  if (!sub && ex.n.indexOf('—') !== -1) sub = ex.n.split('—').slice(1).join('—').trim();
+  document.getElementById('lsExSub').textContent = sub;
+
+  // Metrics
+  var sets = ex.s && ex.s !== '-' ? ex.s : '—';
+  document.getElementById('lsMetSets').textContent = sets;
+  document.getElementById('lsMetReps').textContent = ex.r && ex.r !== '-' ? ex.r : '—';
+  // Rest display: short format
+  var restSec = _lsParseRest(ex.rest);
+  var rm = Math.floor(restSec / 60), rs = restSec % 60;
+  document.getElementById('lsMetRest').textContent = (rm > 0 ? rm + "'" : '') + (rs > 0 ? rs + '"' : (rm > 0 ? '' : '—'));
+
+  // Hide rest overlay
+  document.getElementById('lsRestOverlay').classList.remove('ls-rest-active');
+  clearInterval(_LS.restInterval);
+  _LS.restActive = false;
+
+  // Done button label
+  var isLast = (_LS.idx === total - 1);
+  document.getElementById('lsBtnDone').textContent = isLast ? '✓ TERMINER LA SÉANCE' : '✓ SÉRIE TERMINÉE';
+
+  // Next preview
+  var nextEl = document.getElementById('lsNextPreview');
+  var nextNameEl = document.getElementById('lsNextName');
+  if (!isLast) {
+    var nx = _LS.exos[_LS.idx + 1];
+    nextNameEl.textContent = (nx && nx.n) ? nx.n.split('—')[0].trim() : '';
+    nextEl.style.display = 'flex';
+  } else {
+    nextEl.style.display = 'none';
+  }
+
+  // Progress bar
+  var segsEl = document.getElementById('lsProgressSegs');
+  var segHtml = '';
+  for (var i = 0; i < total; i++) {
+    var cls = i < _LS.idx ? 'ls-seg done' : (i === _LS.idx ? 'ls-seg current' : 'ls-seg');
+    segHtml += '<div class="' + cls + '"></div>';
+  }
+  segsEl.innerHTML = segHtml;
+  document.getElementById('lsProgressLabel').textContent = 'EXERCICE ' + (_LS.idx + 1) + ' SUR ' + total;
+
+  // Scroll body top
+  var body = document.getElementById('lsBody');
+  if (body) body.scrollTop = 0;
+
+  // Hide complete screen
+  document.getElementById('lsComplete').style.display = 'none';
+}
+
+function _lsDoneSet() {
+  var ex = _LS.exos[_LS.idx];
+  var isLast = (_LS.idx === _LS.exos.length - 1);
+
+  if (isLast) {
+    // Session complete
+    _lsShowComplete();
+    return;
+  }
+
+  // Start rest timer, then auto-advance
+  var restSec = _lsParseRest(ex ? ex.rest : null);
+  if (restSec > 0) {
+    _lsStartRest(restSec);
+  } else {
+    _lsNextEx();
+  }
+}
+
+function _lsStartRest(sec) {
+  clearInterval(_LS.restInterval);
+  _LS.restActive = true;
+  _LS.restSec = sec;
+  _LS.restTotal = sec;
+
+  var overlay = document.getElementById('lsRestOverlay');
+  var countdown = document.getElementById('lsRestCountdown');
+  var bar = document.getElementById('lsRestBar');
+
+  overlay.classList.add('ls-rest-active');
+  countdown.textContent = _lsFmt(sec);
+  bar.style.width = '100%';
+  bar.style.transition = 'none';
+
+  setTimeout(function() {
+    bar.style.transition = 'width ' + (sec > 1 ? (sec - 1) : 1) + 's linear';
+    bar.style.width = '0%';
+  }, 50);
+
+  _LS.restInterval = setInterval(function() {
+    _LS.restSec--;
+    countdown.textContent = _lsFmt(_LS.restSec);
+    if (_LS.restSec <= 0) {
+      clearInterval(_LS.restInterval);
+      _LS.restActive = false;
+      overlay.classList.remove('ls-rest-active');
+      _lsNextEx();
+    }
+  }, 1000);
+}
+
+function _lsSkipRest() {
+  clearInterval(_LS.restInterval);
+  _LS.restActive = false;
+  document.getElementById('lsRestOverlay').classList.remove('ls-rest-active');
+  _lsNextEx();
+}
+
+function _lsAdjustRest(delta) {
+  if (!_LS.restActive) return;
+  _LS.restSec = Math.max(5, _LS.restSec + delta);
+  document.getElementById('lsRestCountdown').textContent = _lsFmt(_LS.restSec);
+}
+
+function _lsNextEx() {
+  clearInterval(_LS.restInterval);
+  _LS.restActive = false;
+  if (_LS.idx < _LS.exos.length - 1) {
+    _LS.idx++;
+    _lsRenderEx();
+  } else {
+    _lsShowComplete();
+  }
+}
+
+function _lsPrevEx() {
+  clearInterval(_LS.restInterval);
+  _LS.restActive = false;
+  if (_LS.idx > 0) {
+    _LS.idx--;
+    _lsRenderEx();
+  }
+}
+
+function _lsShowComplete() {
+  clearInterval(_LS.restInterval);
+  _LS.restActive = false;
+  document.getElementById('lsRestOverlay').classList.remove('ls-rest-active');
+  var body = document.getElementById('lsBody');
+  // Hide all body content except complete
+  var children = body.children;
+  for (var i = 0; i < children.length; i++) {
+    if (children[i].id !== 'lsComplete') children[i].style.display = 'none';
+  }
+  var complete = document.getElementById('lsComplete');
+  complete.style.display = 'flex';
+  var msg = 'Tu viens de terminer <strong>' + _LS.sessName + '</strong>.<br>Récupère bien — tu l\'as mérité, athlète.';
+  document.getElementById('lsCompleteMsg').innerHTML = msg;
+  if (body) body.scrollTop = 0;
+  showToast('Séance terminée 🔥', 'ok');
+}
+
+function _lsClose() {
+  clearInterval(_LS.restInterval);
+  _LS.restActive = false;
+  document.getElementById('liveSession').classList.remove('ls-open');
+  document.body.style.overflow = '';
+  // Restore body content visibility
+  var body = document.getElementById('lsBody');
+  if (body) {
+    var children = body.children;
+    for (var i = 0; i < children.length; i++) {
+      children[i].style.display = '';
+    }
+    document.getElementById('lsComplete').style.display = 'none';
+    document.getElementById('lsRestOverlay').classList.remove('ls-rest-active');
+  }
+}
+
+function _lsOpenVideo() {
+  showToast('Intégration vidéo YouTube à venir.', 'info');
+}
+
+// Wire up startSessionGuarded to launchSession
+function startSessionGuarded() {
+  if (!_userSatDone()) {
+    showToast('Fais d\'abord tes tests physiques dans Tracks.', 'info');
+    try { switchTab('tracks'); } catch(e) {}
+    return;
+  }
+  // Get current session exercises
+  var state = window._progV2State || {};
+  var progKey = state.key || (typeof currentProgKey !== 'undefined' ? currentProgKey : null);
+  var prog = progKey && typeof PROGRAMS_V2 !== 'undefined' ? PROGRAMS_V2[progKey] : null;
+  var exos = null, sessName = '', progName = '';
+
+  if (prog) {
+    progName = prog.name;
+    var ph = prog.phases[state.phaseIdx || 0];
+    if (ph) {
+      var sk = state.sessionKey;
+      if (sk && ph.sessions && ph.sessions[sk]) {
+        var sess = ph.sessions[sk];
+        exos = sess.exos;
+        sessName = sess.name;
+      } else {
+        // No specific session selected: use first session in phase
+        var keys = ph.sessions ? Object.keys(ph.sessions) : [];
+        if (keys.length) {
+          var firstSess = ph.sessions[keys[0]];
+          exos = firstSess.exos;
+          sessName = firstSess.name;
+        }
+      }
+    }
+  }
+
+  if (!exos || !exos.length) {
+    showToast('Sélectionne une séance dans le calendrier.', 'info');
+    return;
+  }
+
+  launchSession(exos, sessName, progName);
+}
+window.launchSession = launchSession;
+window._lsClose = _lsClose;
+window._lsDoneSet = _lsDoneSet;
+window._lsSkipRest = _lsSkipRest;
+window._lsAdjustRest = _lsAdjustRest;
+window._lsNextEx = _lsNextEx;
+window._lsPrevEx = _lsPrevEx;
+window._lsOpenVideo = _lsOpenVideo;
 </script>
