@@ -1744,7 +1744,7 @@ body{background:var(--bg);color:var(--text);font-family:'Outfit',sans-serif;disp
       </div>
       <div class="res-t-txt" id="rMsg"></div>
     </div>
-    <button class="res-btn" onclick="go('profil2')" style="margin-top:20px">Continuer → Nutrition 🥗</button>
+    <button class="res-btn" onclick="go('profil4')" style="margin-top:20px">Continuer → Nutrition 🥗</button>
   </div>
 </div>
 
@@ -2117,9 +2117,53 @@ body{background:var(--bg);color:var(--text);font-family:'Outfit',sans-serif;disp
       <div class="titan-bubble">Si ton NPI est en dessous de 40, t'auras beau avoir le meilleur programme du monde — tes résultats seront mauvais. Le carburant compte autant que le moteur.</div>
     </div>
 
-    <!-- Composition corporelle -->
+    <!-- ÉTAPE 1 : Objectif nutritionnel (à choisir AVANT la composition) -->
     <div style="background:var(--surface);border:1.5px solid var(--border);border-radius:14px;padding:16px;margin-bottom:14px">
-      <div style="font-size:10px;font-weight:700;color:var(--muted);letter-spacing:1.5px;text-transform:uppercase;margin-bottom:12px">📊 Composition corporelle</div>
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">
+        <div style="font-size:10px;font-weight:700;color:var(--muted);letter-spacing:1.5px;text-transform:uppercase">🎯 Étape 1 — Ton objectif nutritionnel</div>
+        <div style="font-size:9px;font-weight:700;color:var(--gold);letter-spacing:1px">1/2</div>
+      </div>
+      <div style="font-size:11px;color:var(--muted);margin-bottom:14px;line-height:1.5">Un seul objectif à la fois. Sois honnête sur ta priorité actuelle.</div>
+
+      <div id="p4ObjGrid" style="display:flex;flex-direction:column;gap:10px">
+        <div class="p4-obj-card" onclick="p4SelectObj(this,'optimisation')" style="background:var(--surface2);border:1.5px solid var(--border);border-radius:12px;padding:14px;cursor:pointer;transition:all .2s">
+          <div style="display:flex;align-items:center;gap:12px">
+            <div style="font-size:28px">⚡</div>
+            <div style="flex:1">
+              <div style="font-family:'Bebas Neue',sans-serif;font-size:16px;letter-spacing:1.5px;color:var(--text);margin-bottom:2px">OPTIMISATION</div>
+              <div style="font-size:11px;color:var(--muted);line-height:1.4">Tu es au bon poids. On maximise ta performance actuelle — qualité, timing, récupération.</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="p4-obj-card" onclick="p4SelectObj(this,'priseMuscle')" style="background:var(--surface2);border:1.5px solid var(--border);border-radius:12px;padding:14px;cursor:pointer;transition:all .2s">
+          <div style="display:flex;align-items:center;gap:12px">
+            <div style="font-size:28px">💪</div>
+            <div style="flex:1">
+              <div style="font-family:'Bebas Neue',sans-serif;font-size:16px;letter-spacing:1.5px;color:var(--text);margin-bottom:2px">PRISE DE MUSCLE</div>
+              <div style="font-size:11px;color:var(--muted);line-height:1.4">Construire du muscle qui produit de la puissance. Surplus calorique contrôlé.</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="p4-obj-card" onclick="p4SelectObj(this,'pertePoids')" style="background:var(--surface2);border:1.5px solid var(--border);border-radius:12px;padding:14px;cursor:pointer;transition:all .2s">
+          <div style="display:flex;align-items:center;gap:12px">
+            <div style="font-size:28px">🔥</div>
+            <div style="flex:1">
+              <div style="font-family:'Bebas Neue',sans-serif;font-size:16px;letter-spacing:1.5px;color:var(--text);margin-bottom:2px">PERTE DE POIDS</div>
+              <div style="font-size:11px;color:var(--muted);line-height:1.4">Gagner en relative strength et exploser plus haut. Déficit contrôlé, protéines hautes.</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ÉTAPE 2 : Composition corporelle -->
+    <div style="background:var(--surface);border:1.5px solid var(--border);border-radius:14px;padding:16px;margin-bottom:14px">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
+        <div style="font-size:10px;font-weight:700;color:var(--muted);letter-spacing:1.5px;text-transform:uppercase">📊 Étape 2 — Composition corporelle</div>
+        <div style="font-size:9px;font-weight:700;color:var(--gold);letter-spacing:1px">2/2</div>
+      </div>
 
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px">
         <div>
@@ -2154,44 +2198,6 @@ body{background:var(--bg);color:var(--text);font-family:'Outfit',sans-serif;disp
           <span style="font-size:12px;font-weight:700;color:var(--muted)">%</span>
         </div>
         <div style="font-size:10px;color:var(--muted);margin-top:5px;line-height:1.4">Si tu ne sais pas, laisse vide. Tu pourras mesurer plus tard (pince à plis, impédancemètre).</div>
-      </div>
-    </div>
-
-    <!-- Objectif nutritionnel -->
-    <div style="background:var(--surface);border:1.5px solid var(--border);border-radius:14px;padding:16px;margin-bottom:14px">
-      <div style="font-size:10px;font-weight:700;color:var(--muted);letter-spacing:1.5px;text-transform:uppercase;margin-bottom:6px">🎯 Ton objectif nutritionnel</div>
-      <div style="font-size:11px;color:var(--muted);margin-bottom:14px;line-height:1.5">Un seul objectif à la fois. Sois honnête sur ta priorité actuelle.</div>
-
-      <div id="p4ObjGrid" style="display:flex;flex-direction:column;gap:10px">
-        <div class="p4-obj-card" onclick="p4SelectObj(this,'optimisation')" style="background:var(--surface2);border:1.5px solid var(--border);border-radius:12px;padding:14px;cursor:pointer;transition:all .2s">
-          <div style="display:flex;align-items:center;gap:12px">
-            <div style="font-size:28px">⚡</div>
-            <div style="flex:1">
-              <div style="font-family:'Bebas Neue',sans-serif;font-size:16px;letter-spacing:1.5px;color:var(--text);margin-bottom:2px">OPTIMISATION</div>
-              <div style="font-size:11px;color:var(--muted);line-height:1.4">Tu es au bon poids. On maximise ta performance actuelle — qualité, timing, récupération.</div>
-            </div>
-          </div>
-        </div>
-
-        <div class="p4-obj-card" onclick="p4SelectObj(this,'priseMuscle')" style="background:var(--surface2);border:1.5px solid var(--border);border-radius:12px;padding:14px;cursor:pointer;transition:all .2s">
-          <div style="display:flex;align-items:center;gap:12px">
-            <div style="font-size:28px">💪</div>
-            <div style="flex:1">
-              <div style="font-family:'Bebas Neue',sans-serif;font-size:16px;letter-spacing:1.5px;color:var(--text);margin-bottom:2px">PRISE DE MUSCLE</div>
-              <div style="font-size:11px;color:var(--muted);line-height:1.4">Construire du muscle qui produit de la puissance. Surplus calorique contrôlé.</div>
-            </div>
-          </div>
-        </div>
-
-        <div class="p4-obj-card" onclick="p4SelectObj(this,'pertePoids')" style="background:var(--surface2);border:1.5px solid var(--border);border-radius:12px;padding:14px;cursor:pointer;transition:all .2s">
-          <div style="display:flex;align-items:center;gap:12px">
-            <div style="font-size:28px">🔥</div>
-            <div style="flex:1">
-              <div style="font-family:'Bebas Neue',sans-serif;font-size:16px;letter-spacing:1.5px;color:var(--text);margin-bottom:2px">PERTE DE POIDS</div>
-              <div style="font-size:11px;color:var(--muted);line-height:1.4">Gagner en relative strength et exploser plus haut. Déficit contrôlé, protéines hautes.</div>
-            </div>
-          </div>
-        </div>
       </div>
     </div>
 
@@ -2288,7 +2294,7 @@ body{background:var(--bg);color:var(--text);font-family:'Outfit',sans-serif;disp
     </div>
 
     <!-- Boutons -->
-    <button onclick="obFinish()" style="width:100%;padding:16px;background:linear-gradient(135deg,var(--gold),#D4B86A);border:none;border-radius:12px;font-family:'Outfit',sans-serif;font-size:15px;font-weight:800;color:var(--navy);cursor:pointer;margin-bottom:10px">Accéder à mon programme 🔥</button>
+    <button onclick="obFinish()" style="width:100%;padding:16px;background:linear-gradient(135deg,var(--gold),#D4B86A);border:none;border-radius:12px;font-family:'Outfit',sans-serif;font-size:15px;font-weight:800;color:var(--navy);cursor:pointer;margin-bottom:10px">Accéder à l'onglet nutrition 🥗</button>
     <button onclick="go('profil4');setTimeout(initProfil4,100)" style="width:100%;padding:13px;background:none;border:1.5px dashed var(--border2);border-radius:12px;font-family:'Outfit',sans-serif;font-size:13px;font-weight:600;color:var(--muted);cursor:pointer">← Modifier mes infos</button>
 
   </div>
@@ -4655,9 +4661,17 @@ document.addEventListener('DOMContentLoaded', function() {
   if (typeof setGreeting === 'function') try { setGreeting(); } catch(e) {}
   if (typeof renderWeek === 'function') try { renderWeek(); } catch(e) {}
 
+  // Si on revient juste d'une déconnexion : aller directement à l'auth en mode "signin"
+  // (le user a déjà un compte, pas besoin de repasser par Welcome + Q1)
+  var justLoggedOut = /[?&]logout=/.test(location.search);
+
   setTimeout(function(){
-    go('welcome');
-  }, 2200);
+    if (justLoggedOut && typeof welcomeLogin === 'function') {
+      welcomeLogin();
+    } else {
+      go('welcome');
+    }
+  }, justLoggedOut ? 600 : 2200);
 
   try { renderActiveHabits(); } catch(e) {}
   try { injectPWA(); } catch(e) {} // PWA en dernier, non-bloquant
@@ -6558,7 +6572,7 @@ function renderDiscoveryBanner() {
       todayBtn2.style.color = 'var(--navy)';
       todayBtn2.style.boxShadow = '0 4px 12px rgba(197,164,78,0.25)';
       todayBtn2.style.border = 'none';
-      todayBtn2.onclick = function() { switchTab('tracks'); };
+      todayBtn2.onclick = function() { switchTab('train'); };
     }
     return;
   }
@@ -6673,7 +6687,7 @@ function renderDiscoveryBanner() {
       todayBtn.style.color = 'var(--navy)';
       todayBtn.style.boxShadow = '0 4px 12px rgba(197,164,78,0.25)';
       todayBtn.style.border = 'none';
-      todayBtn.onclick = function() { switchTab('tracks'); };
+      todayBtn.onclick = function() { switchTab('train'); };
     }
   }
 }
@@ -9660,8 +9674,8 @@ function obFinish(){
   try{renderUserData();}catch(e){}
   try{renderAthletikScore();}catch(e){}
   try{renderDiscoveryBanner();}catch(e){}
-  switchTab('home');
-  showToast('Profil complet. Ton programme est prêt.', 'ok');
+  switchTab('nutrition');
+  showToast('Profil complet. Direction nutrition.', 'ok');
 }
 function obErr(id,msg){
   var e=document.getElementById(id);if(!e)return;
