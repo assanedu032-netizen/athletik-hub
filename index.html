@@ -1336,6 +1336,31 @@ body{background:var(--bg);color:var(--text);font-family:'Outfit',sans-serif;disp
 .lv2-pseg{flex:1;height:4px;background:#1B2A4A;border-radius:2px;overflow:hidden;position:relative}
 .lv2-pseg.done{background:#7C3AED}
 .lv2-pseg.cur::after{content:"";position:absolute;left:0;top:0;bottom:0;width:50%;background:#7C3AED;border-radius:2px}
+.lv2-counter{font-family:'Bebas Neue',sans-serif;color:#8a93a8;letter-spacing:1.5px;font-size:12px}
+.lv2-swipe{flex:1;position:relative;display:flex;flex-direction:column;overflow:hidden;touch-action:pan-y;cursor:grab}
+.lv2-swipe:active{cursor:grabbing}
+.lv2-content{flex:1;display:flex;flex-direction:column;will-change:transform;touch-action:pan-y}
+.lv2-nav-arrow{position:absolute;top:50%;transform:translateY(-50%);background:rgba(15,22,38,.7);color:#fff;border:1px solid #1B2A4A;width:38px;height:54px;border-radius:10px;font-size:30px;font-weight:300;cursor:pointer;z-index:5;display:flex;align-items:center;justify-content:center;padding:0;line-height:1;backdrop-filter:blur(6px);transition:opacity .2s}
+.lv2-nav-arrow:active{transform:translateY(-50%) scale(.92)}
+.lv2-prev{left:6px}
+.lv2-next{right:6px}
+.lv2-swipe-hint{position:absolute;bottom:8px;left:0;right:0;text-align:center;font-size:9px;color:#3a4358;letter-spacing:2px;font-weight:700;pointer-events:none;text-transform:uppercase}
+
+/* ═══ LIBRARY FILTERS ═══ */
+.lib-filters{margin:0 0 14px;padding:12px;background:var(--surface2,#0F1626);border:1px solid var(--border,#1B2A4A);border-radius:14px}
+.lib-filter-grp{margin-bottom:10px}
+.lib-filter-grp:last-of-type{margin-bottom:6px}
+.lib-filter-label{font-size:10px;font-weight:800;letter-spacing:1.5px;color:var(--muted,#8a93a8);text-transform:uppercase;margin-bottom:6px}
+.lib-chips{display:flex;flex-wrap:wrap;gap:6px}
+.lib-chip{background:transparent;border:1px solid var(--border,#1B2A4A);color:var(--text,#fff);padding:7px 12px;border-radius:18px;font-family:'Outfit',sans-serif;font-size:12px;font-weight:600;cursor:pointer;transition:all .15s}
+.lib-chip:active{transform:scale(.96)}
+.lib-chip.on{background:var(--gold,#D4AF37);color:#0A0F1E;border-color:var(--gold,#D4AF37);font-weight:800}
+.lib-filter-actions{display:flex;align-items:center;justify-content:space-between;margin-top:8px;padding-top:8px;border-top:1px solid var(--border,#1B2A4A)}
+.lib-filter-count{font-size:10px;color:var(--muted,#8a93a8);font-weight:700;letter-spacing:.5px}
+.lib-filter-clear{background:transparent;border:0;color:var(--muted,#8a93a8);font-size:11px;font-weight:700;text-decoration:underline;cursor:pointer;padding:4px 0}
+.lib-filter-clear:hover{color:var(--gold,#D4AF37)}
+#libResults.hidden{display:none}
+.lib-results-head{font-size:11px;color:var(--muted,#8a93a8);font-weight:700;letter-spacing:1px;margin:0 0 10px;text-transform:uppercase}
 
 /* ═══ TRACK ESSAIS (multi-attempt) ═══ */
 .tr-essais{display:flex;flex-direction:column;gap:8px;margin-bottom:10px}
@@ -1955,24 +1980,32 @@ body.test-mode #testSkipBar{display:flex}
       <div class="lv2-header">
         <div class="lv2-back" onclick="exitLiveV2(false)">← Quitter</div>
         <div class="lv2-cat" id="lv2Cat">FORCE</div>
+        <div class="lv2-counter" id="lv2Counter">1 / 1</div>
       </div>
-      <div class="lv2-title-wrap">
-        <div class="lv2-title" id="lv2Title">EXERCICE</div>
-        <div class="lv2-side hidden" id="lv2Side">LEFT SIDE</div>
-      </div>
-      <div class="lv2-video">
-        <div class="lv2-video-inner" id="lv2Video">
-          <div class="lv2-video-loading">LOADING…</div>
+      <div class="lv2-swipe" id="lv2Swipe">
+        <button class="lv2-nav-arrow lv2-prev" id="lv2PrevBtn" onclick="prevV2()" aria-label="Précédent">‹</button>
+        <button class="lv2-nav-arrow lv2-next" id="lv2NextArrow" onclick="nextV2()" aria-label="Suivant">›</button>
+        <div class="lv2-content" id="lv2Content">
+          <div class="lv2-title-wrap">
+            <div class="lv2-title" id="lv2Title">EXERCICE</div>
+            <div class="lv2-side hidden" id="lv2Side">LEFT SIDE</div>
+          </div>
+          <div class="lv2-video">
+            <div class="lv2-video-inner" id="lv2Video">
+              <div class="lv2-video-loading">LOADING…</div>
+            </div>
+          </div>
+          <button class="lv2-instr-btn" onclick="alert('Vidéo d\'instruction à venir')">
+            <span>🎯</span> VOIR L'INSTRUCTION
+          </button>
+          <div class="lv2-tags">
+            <div class="lv2-tag" id="lv2TagCircuit">CIRCUIT</div>
+            <div class="lv2-tag" id="lv2TagRound">ROUND 1/1</div>
+          </div>
+          <div class="lv2-timer" id="lv2Timer">00:30</div>
         </div>
+        <div class="lv2-swipe-hint" id="lv2SwipeHint">‹ Glisser pour pré-visualiser ›</div>
       </div>
-      <button class="lv2-instr-btn" onclick="alert('Vidéo d\'instruction à venir')">
-        <span>🎯</span> VOIR L'INSTRUCTION
-      </button>
-      <div class="lv2-tags">
-        <div class="lv2-tag" id="lv2TagCircuit">CIRCUIT</div>
-        <div class="lv2-tag" id="lv2TagRound">ROUND 1/1</div>
-      </div>
-      <div class="lv2-timer" id="lv2Timer">00:30</div>
       <div class="lv2-footer">
         <div class="lv2-next-wrap">
           <div class="lv2-next-label">PROCHAIN</div>
@@ -2072,6 +2105,21 @@ body.test-mode #testSkipBar{display:flex}
 
 <div id="pgLib" class="pg on">
 <div class="search-wrap"><div class="search-ic">🔍</div><input class="search-input" id="libSearch" placeholder="Rechercher un exercice..." oninput="filterLib()"></div>
+<div class="lib-filters" id="libFilters">
+  <div class="lib-filter-grp">
+    <div class="lib-filter-label">Type d'effort</div>
+    <div class="lib-chips" id="libChipsEffort"></div>
+  </div>
+  <div class="lib-filter-grp">
+    <div class="lib-filter-label">Équipement</div>
+    <div class="lib-chips" id="libChipsEquip"></div>
+  </div>
+  <div class="lib-filter-actions">
+    <span class="lib-filter-count" id="libFilterCount">Aucun filtre actif</span>
+    <button class="lib-filter-clear" onclick="clearLibFilters()">Réinitialiser</button>
+  </div>
+</div>
+<div id="libResults" class="hidden"></div>
 <div id="libGrid">
 <div class="grp-title">PRÉPARATION</div><div class="cat-grid"><div class="cat-card" onclick="openCat('Échauffement général','🔥','echauf_gen')"><div class="cat-ic">🔥</div><div class="cat-name">Échauffement général</div><div class="cat-count">4 exercices</div></div><div class="cat-card" onclick="openCat('Échauffement spécifique','🎯','echauf_spe')"><div class="cat-ic">🎯</div><div class="cat-name">Échauffement spécifique</div><div class="cat-count">3 exercices</div></div></div>
 <div class="grp-title">MOBILITÉ & RÉCUP</div><div class="cat-grid"><div class="cat-card" onclick="openCat('Mobilité','🧘','mobilite')"><div class="cat-ic">🧘</div><div class="cat-name">Mobilité</div><div class="cat-count">3 exercices</div></div><div class="cat-card" onclick="openCat('Récupération','💆','recup')"><div class="cat-ic">💆</div><div class="cat-name">Récupération & Étirements</div><div class="cat-count">1 exercice</div></div></div>
@@ -4566,7 +4614,139 @@ function filterCat(el,lv){document.querySelectorAll('.filter-row .fc').forEach(f
 function renderCatEx(){const l=document.getElementById('catExList');l.innerHTML='';const d=currentFilter==='all'?currentCatData:currentCatData.filter(e=>e.diff===currentFilter);if(!d.length){l.innerHTML='<div style="text-align:center;padding:30px;color:var(--muted)">Aucun exercice.</div>';return}d.forEach(ex=>{const dl=ex.diff==='easy'?'Débutant':ex.diff==='med'?'Intermédiaire':'Avancé';l.innerHTML+=`<div class="ex-card" onclick="openDetail('${ex.name.replace(/'/g,"\\'")}')"><div class="ex-thumb"><div class="ex-thumb-play">▶</div></div><div class="ex-body"><div class="ex-name">${ex.name}</div><div class="ex-diff ${ex.diff}">${dl}</div></div></div>`})}
 function openDetail(n){const ex=Object.values(catData).flat().find(e=>e.name===n);if(!ex)return;document.getElementById('detailName').textContent=ex.name.toUpperCase();const dl=ex.diff==='easy'?'Débutant':ex.diff==='med'?'Intermédiaire':'Avancé';const d=document.getElementById('detailDiff');d.textContent=dl;d.className='detail-diff '+ex.diff;document.getElementById('detailDesc').textContent=ex.desc;document.getElementById('detailTags').innerHTML=(ex.muscles||[]).map(m=>`<div class="tag">${m}</div>`).join('');document.getElementById('libCatView').classList.add('hidden');document.getElementById('libDetailView').classList.remove('hidden');var __v=document.getElementById('vTrain');if(__v)__v.scrollTop=0}
 function closeDetail(){document.getElementById('libDetailView').classList.add('hidden');if(currentCat)document.getElementById('libCatView').classList.remove('hidden')}
-function filterLib(){const q=document.getElementById('libSearch').value.toLowerCase().trim();if(q.length<2){closeCat();document.getElementById('libGrid').classList.remove('hidden');return}currentCat='Recherche';currentCatData=Object.values(catData).flat().filter(e=>e.name.toLowerCase().includes(q));document.getElementById('catTitle').textContent='🔍 "'+q+'"';document.getElementById('libGrid').classList.add('hidden');document.getElementById('libCatView').classList.remove('hidden');document.getElementById('libDetailView').classList.add('hidden');currentFilter='all';renderCatEx()}
+function filterLib(){ renderLibrary(); }
+
+// ══════════════════════════════════
+// LIBRARY SMART FILTERS — effort type + equipment, OR logic
+// ══════════════════════════════════
+const LIB_EFFORT = [
+  { key:'prep',    label:'Préparation', cats:['echauf_gen','echauf_spe'] },
+  { key:'mob',     label:'Mobilité',    cats:['mobilite','recup'] },
+  { key:'stab',    label:'Stabilité',   cats:['proprio','coord','gainage','abdos'] },
+  { key:'force',   label:'Force',       cats:['force_pdc','force_charge','rotation','olympiques'] },
+  { key:'plio',    label:'Explosivité', cats:['plio_ext','plio_int'] },
+  { key:'speed',   label:'Vitesse',     cats:['pied','sprint','multi','saut'] }
+];
+const LIB_EQUIP = [
+  { key:'pdc',      label:'PDC / Aucun'  },
+  { key:'barre',    label:'Barre'        },
+  { key:'haltere',  label:'Haltères'     },
+  { key:'box',      label:'Box / Plinth' },
+  { key:'elastique',label:'Élastique'    },
+  { key:'medball',  label:'Med Ball'     }
+];
+const LIB_EQUIP_BY_CAT = {
+  echauf_gen:['pdc'], echauf_spe:['pdc','elastique'],
+  mobilite:['pdc'], recup:['pdc'],
+  proprio:['pdc'], coord:['pdc'], gainage:['pdc'], abdos:['pdc'],
+  force_pdc:['pdc'],
+  force_charge:['barre','haltere'],
+  rotation:['medball','haltere'],
+  olympiques:['barre'],
+  plio_ext:['pdc'], plio_int:['box','pdc'],
+  pied:['pdc'], sprint:['pdc'], multi:['pdc'], saut:['pdc','box']
+};
+function _libEquipOf(name, catKey) {
+  if (!catKey) {
+    for (const k in catData) if (catData[k].some(e => e.name === name)) { catKey = k; break; }
+  }
+  let base = LIB_EQUIP_BY_CAT[catKey] ? LIB_EQUIP_BY_CAT[catKey].slice() : ['pdc'];
+  const lower = (name || '').toLowerCase();
+  if (lower.indexOf('élastique') >= 0) base.push('elastique');
+  if (lower.indexOf('med ball') >= 0)  base.push('medball');
+  if (lower.indexOf('box jump') >= 0 || lower.indexOf('depth jump') >= 0) base.push('box');
+  return Array.from(new Set(base));
+}
+function _libCatKeyOf(name) {
+  for (const k in catData) if (catData[k].some(e => e.name === name)) return k;
+  return null;
+}
+function _libEffortKeyOf(catKey) {
+  for (let i = 0; i < LIB_EFFORT.length; i++) {
+    if (LIB_EFFORT[i].cats.indexOf(catKey) >= 0) return LIB_EFFORT[i].key;
+  }
+  return null;
+}
+
+const libFilters = { effort: new Set(), equip: new Set() };
+
+function _initLibFilters() {
+  const eEffort = document.getElementById('libChipsEffort');
+  const eEquip  = document.getElementById('libChipsEquip');
+  if (!eEffort || eEffort.dataset.init) return;
+  eEffort.innerHTML = LIB_EFFORT.map(function(t){
+    return '<button type="button" class="lib-chip" data-grp="effort" data-key="'+t.key+'" onclick="toggleLibFilter(\'effort\',\''+t.key+'\',this)">'+t.label+'</button>';
+  }).join('');
+  eEquip.innerHTML = LIB_EQUIP.map(function(t){
+    return '<button type="button" class="lib-chip" data-grp="equip" data-key="'+t.key+'" onclick="toggleLibFilter(\'equip\',\''+t.key+'\',this)">'+t.label+'</button>';
+  }).join('');
+  eEffort.dataset.init = '1';
+}
+
+function toggleLibFilter(grp, key, btn) {
+  const set = libFilters[grp];
+  if (set.has(key)) { set.delete(key); btn.classList.remove('on'); }
+  else { set.add(key); btn.classList.add('on'); }
+  renderLibrary();
+}
+
+function clearLibFilters() {
+  libFilters.effort.clear();
+  libFilters.equip.clear();
+  document.querySelectorAll('#libFilters .lib-chip').forEach(function(c){ c.classList.remove('on'); });
+  const s = document.getElementById('libSearch'); if (s) s.value = '';
+  renderLibrary();
+}
+
+function renderLibrary() {
+  _initLibFilters();
+  const q = (document.getElementById('libSearch').value || '').toLowerCase().trim();
+  const hasFilters = libFilters.effort.size > 0 || libFilters.equip.size > 0;
+  const hasSearch  = q.length >= 2;
+  const countEl = document.getElementById('libFilterCount');
+  const total = libFilters.effort.size + libFilters.equip.size;
+  if (countEl) countEl.textContent = total ? (total + ' filtre' + (total>1?'s':'') + ' actif' + (total>1?'s':'')) : 'Aucun filtre actif';
+
+  const grid = document.getElementById('libGrid');
+  const results = document.getElementById('libResults');
+  if (!hasFilters && !hasSearch) {
+    grid.classList.remove('hidden');
+    results.classList.add('hidden');
+    return;
+  }
+  const all = [];
+  for (const k in catData) catData[k].forEach(function(e) { all.push({ ex:e, catKey:k }); });
+  const matched = all.filter(function(it) {
+    const effortKey = _libEffortKeyOf(it.catKey);
+    const equipKeys = _libEquipOf(it.ex.name, it.catKey);
+    let match = !hasFilters;
+    if (libFilters.effort.size && libFilters.effort.has(effortKey)) match = true;
+    if (libFilters.equip.size) {
+      for (const eq of equipKeys) if (libFilters.equip.has(eq)) { match = true; break; }
+    }
+    if (hasSearch) match = match && it.ex.name.toLowerCase().indexOf(q) >= 0;
+    if (hasSearch && !hasFilters) match = it.ex.name.toLowerCase().indexOf(q) >= 0;
+    return match;
+  });
+
+  grid.classList.add('hidden');
+  results.classList.remove('hidden');
+  if (!matched.length) {
+    results.innerHTML = '<div style="text-align:center;padding:30px;color:var(--muted)">Aucun exercice ne correspond.</div>';
+    return;
+  }
+  results.innerHTML = '<div class="lib-results-head">'+matched.length+' exercice'+(matched.length>1?'s':'')+'</div>' +
+    matched.map(function(it){
+      const ex = it.ex;
+      const dl = ex.diff==='easy'?'Débutant':ex.diff==='med'?'Intermédiaire':'Avancé';
+      const safe = ex.name.replace(/'/g,"\\'");
+      return '<div class="ex-card" onclick="openDetail(\''+safe+'\')">'
+        + '<div class="ex-thumb"><div class="ex-thumb-play">▶</div></div>'
+        + '<div class="ex-body"><div class="ex-name">'+ex.name+'</div>'
+        + '<div class="ex-diff '+ex.diff+'">'+dl+'</div></div>'
+        + '</div>';
+    }).join('');
+}
 function openProg(k){currentProgKey=k;const p=progPhases[k];if(!p)return;document.getElementById('progList').classList.add('hidden');document.getElementById('progDetail').classList.remove('hidden');document.getElementById('progDetailName').textContent=p.name;document.getElementById('progDetailObj').textContent=p.obj;document.querySelectorAll('.phase-tab').forEach((t,i)=>t.classList.toggle('on',i===0));renderPhase(p.phases[0]);var __v=document.getElementById('vTrain');if(__v)__v.scrollTop=0}
 function closeProg(){document.getElementById('progList').classList.remove('hidden');document.getElementById('progDetail').classList.add('hidden')}
 function switchPhase(el,i){document.querySelectorAll('.phase-tab').forEach(t=>t.classList.remove('on'));el.classList.add('on');if(currentProgKey)renderPhase(progPhases[currentProgKey].phases[i]||[])}
@@ -4624,6 +4804,72 @@ function startLiveV2(programKey, phaseIdx) {
   _lv2BuildProgress();
   _lv2Render();
   _lv2StartTimer();
+  _lv2BindSwipe();
+}
+
+function prevV2() {
+  if (!lv2State) return;
+  if (lv2State.idx <= 0) return;
+  clearInterval(lv2State.timer);
+  lv2State.idx--;
+  lv2State.roundIdx = 0;
+  _lv2Render();
+  _lv2StartTimer();
+}
+
+function _lv2BindSwipe() {
+  const el = document.getElementById('lv2Swipe');
+  if (!el || el._lv2Bound) return;
+  el._lv2Bound = true;
+  let startX = 0, dx = 0, dragging = false, wasRunning = false;
+  const threshold = 70;
+  const content = document.getElementById('lv2Content');
+
+  function start(x) {
+    dragging = true; startX = x; dx = 0;
+    wasRunning = lv2State && lv2State.running;
+    if (wasRunning) { clearInterval(lv2State.timer); lv2State.running = false; }
+    content.style.transition = 'none';
+  }
+  function move(x) {
+    if (!dragging) return;
+    dx = x - startX;
+    if ((lv2State && lv2State.idx === 0 && dx > 0) ||
+        (lv2State && lv2State.idx === lv2State.exs.length - 1 && dx < 0)) {
+      dx = dx * 0.3;
+    }
+    content.style.transform = 'translateX(' + dx + 'px)';
+  }
+  function end() {
+    if (!dragging) return;
+    dragging = false;
+    content.style.transition = 'transform .25s ease';
+    if (dx <= -threshold && lv2State.idx < lv2State.exs.length - 1) {
+      content.style.transform = 'translateX(-100%)';
+      setTimeout(function() {
+        content.style.transition = 'none';
+        content.style.transform = 'translateX(0)';
+        nextV2();
+      }, 200);
+    } else if (dx >= threshold && lv2State.idx > 0) {
+      content.style.transform = 'translateX(100%)';
+      setTimeout(function() {
+        content.style.transition = 'none';
+        content.style.transform = 'translateX(0)';
+        prevV2();
+      }, 200);
+    } else {
+      content.style.transform = 'translateX(0)';
+      if (wasRunning) _lv2StartTimer();
+    }
+  }
+  el.addEventListener('touchstart', function(e) { start(e.touches[0].clientX); }, {passive:true});
+  el.addEventListener('touchmove',  function(e) { move(e.touches[0].clientX); },  {passive:true});
+  el.addEventListener('touchend',   end);
+  el.addEventListener('touchcancel', end);
+  el.addEventListener('mousedown', function(e) { start(e.clientX); e.preventDefault(); });
+  window.addEventListener('mousemove', function(e) { if (dragging) move(e.clientX); });
+  window.addEventListener('mouseup', end);
 }
 
 function _lv2BuildProgress() {
@@ -4655,6 +4901,12 @@ function _lv2Render() {
   document.getElementById('lv2TagRound').textContent = 'ROUND ' + (lv2State.roundIdx + 1) + '/' + parsed.rounds;
   document.getElementById('lv2NextName').textContent = next ? next.name : 'Récap séance';
   document.getElementById('lv2Side').classList.add('hidden');
+  const counter = document.getElementById('lv2Counter');
+  if (counter) counter.textContent = (lv2State.idx + 1) + ' / ' + lv2State.exs.length;
+  const prevBtn = document.getElementById('lv2PrevBtn');
+  const nextArr = document.getElementById('lv2NextArrow');
+  if (prevBtn) prevBtn.style.opacity = (lv2State.idx === 0) ? '.25' : '1';
+  if (nextArr) nextArr.style.opacity = (lv2State.idx === lv2State.exs.length - 1) ? '.25' : '1';
   _lv2UpdateProgress();
   _lv2SetTimer(parsed.durSec);
 }

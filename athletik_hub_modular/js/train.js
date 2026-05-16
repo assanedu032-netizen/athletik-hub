@@ -427,6 +427,75 @@ function startLiveV2(programKey, phaseIdx) {
   _lv2BuildProgress();
   _lv2Render();
   _lv2StartTimer();
+  _lv2BindSwipe();
+}
+
+function prevV2() {
+  if (!lv2State) return;
+  if (lv2State.idx <= 0) return;
+  clearInterval(lv2State.timer);
+  lv2State.idx--;
+  lv2State.roundIdx = 0;
+  _lv2Render();
+  _lv2StartTimer();
+}
+
+// ── SWIPE GESTURE on lv2-content (preview adjacent exercises) ──
+function _lv2BindSwipe() {
+  const el = document.getElementById('lv2Swipe');
+  if (!el || el._lv2Bound) return;
+  el._lv2Bound = true;
+  let startX = 0, dx = 0, dragging = false, wasRunning = false;
+  const threshold = 70;
+  const content = document.getElementById('lv2Content');
+
+  function start(x) {
+    dragging = true; startX = x; dx = 0;
+    wasRunning = lv2State && lv2State.running;
+    if (wasRunning) { clearInterval(lv2State.timer); lv2State.running = false; }
+    content.style.transition = 'none';
+  }
+  function move(x) {
+    if (!dragging) return;
+    dx = x - startX;
+    // Resistance at edges
+    if ((lv2State && lv2State.idx === 0 && dx > 0) ||
+        (lv2State && lv2State.idx === lv2State.exs.length - 1 && dx < 0)) {
+      dx = dx * 0.3;
+    }
+    content.style.transform = 'translateX(' + dx + 'px)';
+  }
+  function end() {
+    if (!dragging) return;
+    dragging = false;
+    content.style.transition = 'transform .25s ease';
+    if (dx <= -threshold && lv2State.idx < lv2State.exs.length - 1) {
+      content.style.transform = 'translateX(-100%)';
+      setTimeout(function() {
+        content.style.transition = 'none';
+        content.style.transform = 'translateX(0)';
+        nextV2();
+      }, 200);
+    } else if (dx >= threshold && lv2State.idx > 0) {
+      content.style.transform = 'translateX(100%)';
+      setTimeout(function() {
+        content.style.transition = 'none';
+        content.style.transform = 'translateX(0)';
+        prevV2();
+      }, 200);
+    } else {
+      content.style.transform = 'translateX(0)';
+      if (wasRunning) _lv2StartTimer();
+    }
+  }
+  el.addEventListener('touchstart', function(e) { start(e.touches[0].clientX); }, {passive:true});
+  el.addEventListener('touchmove',  function(e) { move(e.touches[0].clientX); },  {passive:true});
+  el.addEventListener('touchend',   end);
+  el.addEventListener('touchcancel', end);
+  // Mouse drag for desktop testing
+  el.addEventListener('mousedown', function(e) { start(e.clientX); e.preventDefault(); });
+  window.addEventListener('mousemove', function(e) { if (dragging) move(e.clientX); });
+  window.addEventListener('mouseup', end);
 }
 
 function _lv2BuildProgress() {
@@ -460,6 +529,12 @@ function _lv2Render() {
   document.getElementById('lv2TagRound').textContent = 'ROUND ' + (lv2State.roundIdx + 1) + '/' + parsed.rounds;
   document.getElementById('lv2NextName').textContent = next ? next.name : 'Récap séance';
   document.getElementById('lv2Side').classList.add('hidden');
+  const counter = document.getElementById('lv2Counter');
+  if (counter) counter.textContent = (lv2State.idx + 1) + ' / ' + lv2State.exs.length;
+  const prevBtn = document.getElementById('lv2PrevBtn');
+  const nextArr = document.getElementById('lv2NextArrow');
+  if (prevBtn) prevBtn.style.opacity = (lv2State.idx === 0) ? '.25' : '1';
+  if (nextArr) nextArr.style.opacity = (lv2State.idx === lv2State.exs.length - 1) ? '.25' : '1';
   _lv2UpdateProgress();
   _lv2SetTimer(parsed.durSec);
 }
@@ -560,7 +635,146 @@ function filterCat(el,lv){document.querySelectorAll('.filter-row .fc').forEach(f
 function renderCatEx(){const l=document.getElementById('catExList');l.innerHTML='';const d=currentFilter==='all'?currentCatData:currentCatData.filter(e=>e.diff===currentFilter);if(!d.length){l.innerHTML='<div style="text-align:center;padding:30px;color:var(--muted)">Aucun exercice.</div>';return}d.forEach(ex=>{const dl=ex.diff==='easy'?'Débutant':ex.diff==='med'?'Intermédiaire':'Avancé';l.innerHTML+=`<div class="ex-card" onclick="openDetail('${ex.name.replace(/'/g,"\\'")}')"><div class="ex-thumb"><div class="ex-thumb-play">▶</div></div><div class="ex-body"><div class="ex-name">${ex.name}</div><div class="ex-diff ${ex.diff}">${dl}</div></div></div>`})}
 function openDetail(n){const ex=Object.values(catData).flat().find(e=>e.name===n);if(!ex)return;document.getElementById('detailName').textContent=ex.name.toUpperCase();const dl=ex.diff==='easy'?'Débutant':ex.diff==='med'?'Intermédiaire':'Avancé';const d=document.getElementById('detailDiff');d.textContent=dl;d.className='detail-diff '+ex.diff;document.getElementById('detailDesc').textContent=ex.desc;document.getElementById('detailTags').innerHTML=(ex.muscles||[]).map(m=>`<div class="tag">${m}</div>`).join('');document.getElementById('libCatView').classList.add('hidden');document.getElementById('libDetailView').classList.remove('hidden');var __v=document.getElementById('vTrain');if(__v)__v.scrollTop=0}
 function closeDetail(){document.getElementById('libDetailView').classList.add('hidden');if(currentCat)document.getElementById('libCatView').classList.remove('hidden')}
-function filterLib(){const q=document.getElementById('libSearch').value.toLowerCase().trim();if(q.length<2){closeCat();document.getElementById('libGrid').classList.remove('hidden');return}currentCat='Recherche';currentCatData=Object.values(catData).flat().filter(e=>e.name.toLowerCase().includes(q));document.getElementById('catTitle').textContent='🔍 "'+q+'"';document.getElementById('libGrid').classList.add('hidden');document.getElementById('libCatView').classList.remove('hidden');document.getElementById('libDetailView').classList.add('hidden');currentFilter='all';renderCatEx()}
+function filterLib(){ renderLibrary(); }
+
+// ══════════════════════════════════
+// LIBRARY SMART FILTERS — effort type + equipment, OR logic
+// ══════════════════════════════════
+const LIB_EFFORT = [
+  { key:'prep',    label:'Préparation', cats:['echauf_gen','echauf_spe'] },
+  { key:'mob',     label:'Mobilité',    cats:['mobilite','recup'] },
+  { key:'stab',    label:'Stabilité',   cats:['proprio','coord','gainage','abdos'] },
+  { key:'force',   label:'Force',       cats:['force_pdc','force_charge','rotation','olympiques'] },
+  { key:'plio',    label:'Explosivité', cats:['plio_ext','plio_int'] },
+  { key:'speed',   label:'Vitesse',     cats:['pied','sprint','multi','saut'] }
+];
+const LIB_EQUIP = [
+  { key:'pdc',      label:'PDC / Aucun'  },
+  { key:'barre',    label:'Barre'        },
+  { key:'haltere',  label:'Haltères'     },
+  { key:'box',      label:'Box / Plinth' },
+  { key:'elastique',label:'Élastique'    },
+  { key:'medball',  label:'Med Ball'     }
+];
+// Equipment inferred from category + name
+const LIB_EQUIP_BY_CAT = {
+  echauf_gen:['pdc'], echauf_spe:['pdc','elastique'],
+  mobilite:['pdc'], recup:['pdc'],
+  proprio:['pdc'], coord:['pdc'], gainage:['pdc'], abdos:['pdc'],
+  force_pdc:['pdc'],
+  force_charge:['barre','haltere'],
+  rotation:['medball','haltere'],
+  olympiques:['barre'],
+  plio_ext:['pdc'], plio_int:['box','pdc'],
+  pied:['pdc'], sprint:['pdc'], multi:['pdc'], saut:['pdc','box']
+};
+function _libEquipOf(name, catKey) {
+  if (!catKey) {
+    // Look up category
+    for (const k in catData) if (catData[k].some(e => e.name === name)) { catKey = k; break; }
+  }
+  let base = LIB_EQUIP_BY_CAT[catKey] ? LIB_EQUIP_BY_CAT[catKey].slice() : ['pdc'];
+  const lower = (name || '').toLowerCase();
+  if (lower.indexOf('élastique') >= 0) base.push('elastique');
+  if (lower.indexOf('med ball') >= 0)  base.push('medball');
+  if (lower.indexOf('box jump') >= 0 || lower.indexOf('depth jump') >= 0) base.push('box');
+  return Array.from(new Set(base));
+}
+function _libCatKeyOf(name) {
+  for (const k in catData) if (catData[k].some(e => e.name === name)) return k;
+  return null;
+}
+function _libEffortKeyOf(catKey) {
+  for (let i = 0; i < LIB_EFFORT.length; i++) {
+    if (LIB_EFFORT[i].cats.indexOf(catKey) >= 0) return LIB_EFFORT[i].key;
+  }
+  return null;
+}
+
+const libFilters = { effort: new Set(), equip: new Set() };
+
+function _initLibFilters() {
+  const eEffort = document.getElementById('libChipsEffort');
+  const eEquip  = document.getElementById('libChipsEquip');
+  if (!eEffort || eEffort.dataset.init) return;
+  eEffort.innerHTML = LIB_EFFORT.map(function(t){
+    return '<button type="button" class="lib-chip" data-grp="effort" data-key="'+t.key+'" onclick="toggleLibFilter(\'effort\',\''+t.key+'\',this)">'+t.label+'</button>';
+  }).join('');
+  eEquip.innerHTML = LIB_EQUIP.map(function(t){
+    return '<button type="button" class="lib-chip" data-grp="equip" data-key="'+t.key+'" onclick="toggleLibFilter(\'equip\',\''+t.key+'\',this)">'+t.label+'</button>';
+  }).join('');
+  eEffort.dataset.init = '1';
+}
+
+function toggleLibFilter(grp, key, btn) {
+  const set = libFilters[grp];
+  if (set.has(key)) { set.delete(key); btn.classList.remove('on'); }
+  else { set.add(key); btn.classList.add('on'); }
+  renderLibrary();
+}
+
+function clearLibFilters() {
+  libFilters.effort.clear();
+  libFilters.equip.clear();
+  document.querySelectorAll('#libFilters .lib-chip').forEach(function(c){ c.classList.remove('on'); });
+  const s = document.getElementById('libSearch'); if (s) s.value = '';
+  renderLibrary();
+}
+
+function renderLibrary() {
+  _initLibFilters();
+  const q = (document.getElementById('libSearch').value || '').toLowerCase().trim();
+  const hasFilters = libFilters.effort.size > 0 || libFilters.equip.size > 0;
+  const hasSearch  = q.length >= 2;
+  const countEl = document.getElementById('libFilterCount');
+  const total = libFilters.effort.size + libFilters.equip.size;
+  if (countEl) countEl.textContent = total ? (total + ' filtre' + (total>1?'s':'') + ' actif' + (total>1?'s':'')) : 'Aucun filtre actif';
+
+  const grid = document.getElementById('libGrid');
+  const results = document.getElementById('libResults');
+  if (!hasFilters && !hasSearch) {
+    grid.classList.remove('hidden');
+    results.classList.add('hidden');
+    return;
+  }
+  // Build flat list with OR logic
+  const all = [];
+  for (const k in catData) {
+    catData[k].forEach(function(e) { all.push({ ex:e, catKey:k }); });
+  }
+  const matched = all.filter(function(it) {
+    const effortKey = _libEffortKeyOf(it.catKey);
+    const equipKeys = _libEquipOf(it.ex.name, it.catKey);
+    let match = false;
+    // OR logic: any active filter that matches → include
+    if (libFilters.effort.size && libFilters.effort.has(effortKey)) match = true;
+    if (libFilters.equip.size) {
+      for (const eq of equipKeys) if (libFilters.equip.has(eq)) { match = true; break; }
+    }
+    if (!hasFilters) match = true;
+    if (hasSearch && match) match = it.ex.name.toLowerCase().indexOf(q) >= 0;
+    if (hasSearch && !hasFilters) match = it.ex.name.toLowerCase().indexOf(q) >= 0;
+    return match;
+  });
+
+  grid.classList.add('hidden');
+  results.classList.remove('hidden');
+  if (!matched.length) {
+    results.innerHTML = '<div style="text-align:center;padding:30px;color:var(--muted)">Aucun exercice ne correspond.</div>';
+    return;
+  }
+  results.innerHTML = '<div class="lib-results-head">'+matched.length+' exercice'+(matched.length>1?'s':'')+'</div>' +
+    matched.map(function(it){
+      const ex = it.ex;
+      const dl = ex.diff==='easy'?'Débutant':ex.diff==='med'?'Intermédiaire':'Avancé';
+      const safe = ex.name.replace(/'/g,"\\'");
+      return '<div class="ex-card" onclick="openDetail(\''+safe+'\')">'
+        + '<div class="ex-thumb"><div class="ex-thumb-play">▶</div></div>'
+        + '<div class="ex-body"><div class="ex-name">'+ex.name+'</div>'
+        + '<div class="ex-diff '+ex.diff+'">'+dl+'</div></div>'
+        + '</div>';
+    }).join('');
+}
 function openProg(k){currentProgKey=k;const p=progPhases[k];if(!p)return;document.getElementById('progList').classList.add('hidden');document.getElementById('progDetail').classList.remove('hidden');document.getElementById('progDetailName').textContent=p.name;document.getElementById('progDetailObj').textContent=p.obj;document.querySelectorAll('.phase-tab').forEach((t,i)=>t.classList.toggle('on',i===0));renderPhase(p.phases[0]);var __v=document.getElementById('vTrain');if(__v)__v.scrollTop=0}
 function closeProg(){document.getElementById('progList').classList.remove('hidden');document.getElementById('progDetail').classList.add('hidden')}
 function switchPhase(el,i){document.querySelectorAll('.phase-tab').forEach(t=>t.classList.remove('on'));el.classList.add('on');if(currentProgKey)renderPhase(progPhases[currentProgKey].phases[i]||[])}

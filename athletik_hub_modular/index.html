@@ -618,24 +618,32 @@
       <div class="lv2-header">
         <div class="lv2-back" onclick="exitLiveV2(false)">← Quitter</div>
         <div class="lv2-cat" id="lv2Cat">FORCE</div>
+        <div class="lv2-counter" id="lv2Counter">1 / 1</div>
       </div>
-      <div class="lv2-title-wrap">
-        <div class="lv2-title" id="lv2Title">EXERCICE</div>
-        <div class="lv2-side hidden" id="lv2Side">LEFT SIDE</div>
-      </div>
-      <div class="lv2-video">
-        <div class="lv2-video-inner" id="lv2Video">
-          <div class="lv2-video-loading">LOADING…</div>
+      <div class="lv2-swipe" id="lv2Swipe">
+        <button class="lv2-nav-arrow lv2-prev" id="lv2PrevBtn" onclick="prevV2()" aria-label="Précédent">‹</button>
+        <button class="lv2-nav-arrow lv2-next" id="lv2NextArrow" onclick="nextV2()" aria-label="Suivant">›</button>
+        <div class="lv2-content" id="lv2Content">
+          <div class="lv2-title-wrap">
+            <div class="lv2-title" id="lv2Title">EXERCICE</div>
+            <div class="lv2-side hidden" id="lv2Side">LEFT SIDE</div>
+          </div>
+          <div class="lv2-video">
+            <div class="lv2-video-inner" id="lv2Video">
+              <div class="lv2-video-loading">LOADING…</div>
+            </div>
+          </div>
+          <button class="lv2-instr-btn" onclick="alert('Vidéo d\'instruction à venir')">
+            <span>🎯</span> VOIR L'INSTRUCTION
+          </button>
+          <div class="lv2-tags">
+            <div class="lv2-tag" id="lv2TagCircuit">CIRCUIT</div>
+            <div class="lv2-tag" id="lv2TagRound">ROUND 1/1</div>
+          </div>
+          <div class="lv2-timer" id="lv2Timer">00:30</div>
         </div>
+        <div class="lv2-swipe-hint" id="lv2SwipeHint">‹ Glisser pour pré-visualiser ›</div>
       </div>
-      <button class="lv2-instr-btn" onclick="alert('Vidéo d\'instruction à venir')">
-        <span>🎯</span> VOIR L'INSTRUCTION
-      </button>
-      <div class="lv2-tags">
-        <div class="lv2-tag" id="lv2TagCircuit">CIRCUIT</div>
-        <div class="lv2-tag" id="lv2TagRound">ROUND 1/1</div>
-      </div>
-      <div class="lv2-timer" id="lv2Timer">00:30</div>
       <div class="lv2-footer">
         <div class="lv2-next-wrap">
           <div class="lv2-next-label">PROCHAIN</div>
@@ -735,6 +743,21 @@
 
 <div id="pgLib" class="pg on">
 <div class="search-wrap"><div class="search-ic">🔍</div><input class="search-input" id="libSearch" placeholder="Rechercher un exercice..." oninput="filterLib()"></div>
+<div class="lib-filters" id="libFilters">
+  <div class="lib-filter-grp">
+    <div class="lib-filter-label">Type d'effort</div>
+    <div class="lib-chips" id="libChipsEffort"></div>
+  </div>
+  <div class="lib-filter-grp">
+    <div class="lib-filter-label">Équipement</div>
+    <div class="lib-chips" id="libChipsEquip"></div>
+  </div>
+  <div class="lib-filter-actions">
+    <span class="lib-filter-count" id="libFilterCount">Aucun filtre actif</span>
+    <button class="lib-filter-clear" onclick="clearLibFilters()">Réinitialiser</button>
+  </div>
+</div>
+<div id="libResults" class="hidden"></div>
 <div id="libGrid">
 <div class="grp-title">PRÉPARATION</div><div class="cat-grid"><div class="cat-card" onclick="openCat('Échauffement général','🔥','echauf_gen')"><div class="cat-ic">🔥</div><div class="cat-name">Échauffement général</div><div class="cat-count">4 exercices</div></div><div class="cat-card" onclick="openCat('Échauffement spécifique','🎯','echauf_spe')"><div class="cat-ic">🎯</div><div class="cat-name">Échauffement spécifique</div><div class="cat-count">3 exercices</div></div></div>
 <div class="grp-title">MOBILITÉ & RÉCUP</div><div class="cat-grid"><div class="cat-card" onclick="openCat('Mobilité','🧘','mobilite')"><div class="cat-ic">🧘</div><div class="cat-name">Mobilité</div><div class="cat-count">3 exercices</div></div><div class="cat-card" onclick="openCat('Récupération','💆','recup')"><div class="cat-ic">💆</div><div class="cat-name">Récupération & Étirements</div><div class="cat-count">1 exercice</div></div></div>
