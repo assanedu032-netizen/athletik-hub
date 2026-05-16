@@ -2787,7 +2787,7 @@ body{background:var(--bg);color:var(--text);font-family:'Outfit',sans-serif;disp
   </div>
 </div>
 </div>
-<div id="progDetail" class="hidden"><div class="back-btn" onclick="closeProg()">← Retour Programmes</div><div style="font-family:'Bebas Neue',sans-serif;font-size:28px;color:var(--text);letter-spacing:2px" id="progDetailName">PROGRAMME</div><div style="font-size:12px;color:var(--muted);margin:4px 0 10px" id="progDetailObj">Objectif</div><div class="phase-tabs"><div class="phase-tab on" onclick="switchPhase(this,0)">Fondations</div><div class="phase-tab" onclick="switchPhase(this,1)">Intensification</div><div class="phase-tab" onclick="switchPhase(this,2)">Peak</div></div><div id="phaseExList"></div><button class="btn btn-gold" onclick="alert('→ Séance Live')" style="margin-top:12px">Commencer la séance 🔥</button></div>
+<div id="progDetail" class="hidden"><div class="back-btn" onclick="closeProg()">← Retour Programmes</div><div style="font-family:'Bebas Neue',sans-serif;font-size:28px;color:var(--text);letter-spacing:2px" id="progDetailName">PROGRAMME</div><div style="font-size:12px;color:var(--muted);margin:4px 0 10px" id="progDetailObj">Objectif</div><div class="phase-tabs"><div class="phase-tab on" onclick="switchPhase(this,0)">Fondations</div><div class="phase-tab" onclick="switchPhase(this,1)">Intensification</div><div class="phase-tab" onclick="switchPhase(this,2)">Peak</div></div><div id="phaseExList"></div><button class="btn btn-gold" id="startSessionBtn" onclick="startSessionGuarded()" style="margin-top:12px">Commencer la séance 🔥</button></div>
 </div>
 
 <div id="pgBuilder" class="pg"><div class="builder-locked"><div class="bl-ic">🔒</div><div class="bl-title">WORKOUT BUILDER</div><div class="bl-sub">Crée tes propres séances. Débloqué après 2 programmes terminés.</div><div class="bl-bar"><div class="bl-bar-in" style="width:0%"></div></div><div class="bl-count">0 / 2 programmes terminés</div></div></div>
@@ -4705,6 +4705,8 @@ function switchTab(tab){
     try { initSATv7(); } catch(e) { console.warn('initSATv7 error:', e); }
     try { initTracksSAT(); } catch(e) { console.warn('initTracksSAT error:', e); }
   }
+  // Quand on entre dans Train : rafraîchir le verrouillage des cartes
+  if (tab === 'train') { try { updateProgrammeLocks(); } catch(e) {} }
   // Init Scan check API key + restore form
   if (tab === 'nutrition') { try { scanCheckApiKey(); scanUpdateMacros(); renderJournalToday(); } catch(e) {} }
   if (tab === 'moi') { try { apiKeyRestore(); fbRefreshAccountSection(window.fbUser); } catch(e) {} }
@@ -5309,7 +5311,7 @@ function saveTrack() {
 
 const catData={echauf_gen:[{name:'Jumping Jacks',diff:'easy',muscles:['Cardio','Full body'],desc:'Élever la température corporelle.'},{name:'Course sur place',diff:'easy',muscles:['Cardio','Jambes'],desc:'Montée de genoux progressive.'},{name:'Rotations articulaires',diff:'easy',muscles:['Mobilité'],desc:'Rotations lentes.'},{name:'Skip A',diff:'easy',muscles:['Jambes','Coordination'],desc:'Montée de genoux dynamique.'}],echauf_spe:[{name:'Activation fessiers',diff:'easy',muscles:['Fessiers'],desc:'Réveiller les fessiers.'},{name:'Marche latérale élastique',diff:'med',muscles:['Abducteurs'],desc:'Pas latéraux avec élastique.'},{name:'Squat progressif',diff:'easy',muscles:['Quadriceps'],desc:'Squats légers progressifs.'}],mobilite:[{name:'Dorsiflexion cheville',diff:'easy',muscles:['Chevilles'],desc:'Essentiel avant tout saut.'},{name:'90/90 Stretch',diff:'med',muscles:['Hanches'],desc:'Rotations de hanche.'},{name:"World's Greatest Stretch",diff:'med',muscles:['Full body'],desc:'Le stretch le plus complet.'}],recup:[{name:'Foam Rolling Quadriceps',diff:'easy',muscles:['Quadriceps'],desc:'Auto-massage rouleau.'}],proprio:[{name:'Équilibre unipodal',diff:'easy',muscles:['Chevilles','Core'],desc:'Équilibre sur un pied.'}],coord:[{name:'Échelle de rythme',diff:'med',muscles:['Coordination'],desc:'Vitesse des appuis.'}],gainage:[{name:'Planche frontale',diff:'easy',muscles:['Core'],desc:'Gainage statique.'}],abdos:[{name:'V-Ups',diff:'med',muscles:['Abdos'],desc:'Relevé simultané.'}],force_pdc:[{name:'Pompes explosives',diff:'med',muscles:['Pectoraux','Triceps'],desc:'Mains décollent du sol.'}],force_charge:[{name:'Back Squat',diff:'hard',muscles:['Quadriceps','Fessiers','Lombaires'],desc:'Le mouvement roi pour la force.'},{name:'Soulevé de terre',diff:'hard',muscles:['Chaîne postérieure'],desc:'Puissance chaîne postérieure.'},{name:'Hip Thrust',diff:'med',muscles:['Fessiers'],desc:'Extension de hanche explosive.'},{name:'Développé couché',diff:'med',muscles:['Pectoraux','Épaules'],desc:'Force haut du corps.'}],rotation:[{name:'Med Ball Rotational Throw',diff:'med',muscles:['Obliques'],desc:'Lancer rotatif.'}],olympiques:[{name:'Power Clean',diff:'hard',muscles:['Full body'],desc:'Triple extension complète.'}],plio_ext:[{name:'Pogo Jumps',diff:'easy',muscles:['Mollets'],desc:'Réactivité tendon d\'Achille.'},{name:'Squat Jump',diff:'med',muscles:['Quadriceps'],desc:'Puissance concentrique.'}],plio_int:[{name:'Depth Jump',diff:'hard',muscles:['Full body'],desc:'Plus fort impact sur le RFD.'},{name:'Box Jump Max',diff:'hard',muscles:['Explosivité'],desc:'Saut box hauteur max.'}],pied:[{name:'Ankling',diff:'easy',muscles:['Chevilles'],desc:'Rigidité cheville.'}],sprint:[{name:'Sprint 10m',diff:'med',muscles:['Quadriceps'],desc:'Phase de démarrage.'},{name:'Sprint 30m',diff:'med',muscles:['Full body'],desc:'Vitesse de pointe.'},{name:'Sprint 60m',diff:'hard',muscles:['Full body'],desc:'Sprint complet.'}],multi:[{name:'Navette 5-10-5',diff:'med',muscles:['Agilité'],desc:'Changements de direction.'}],saut:[{name:'Counter Movement Jump',diff:'easy',muscles:['Quadriceps','Fessiers'],desc:'Test de référence détente.'},{name:'Approach Jump',diff:'med',muscles:['Full body'],desc:'Saut avec élan.'},{name:'Single Leg Bound',diff:'hard',muscles:['Équilibre'],desc:'Bond unilatéral.'}]};
 const progPhases={ea:{name:'ELITE ATHLETE',obj:'Explosivité globale',phases:[[{name:'Échauffement',detail:'5 min'},{name:'Activation fessiers',detail:'2×12'},{name:'Squat progressif',detail:'3×8 (60%)'},{name:'Pogo Jumps',detail:'3×10'},{name:'Sprint 10m',detail:'5 passages'},{name:'Planche',detail:'3×30s'}],[{name:'Back Squat',detail:'4×5 (75%)'},{name:'Box Jump',detail:'4×5'},{name:'Hip Thrust',detail:'3×8 (70%)'},{name:'Sprint 30m',detail:'4 passages'},{name:'Depth Jump',detail:'3×3'}],[{name:'Power Clean',detail:'5×3 (85%)'},{name:'Back Squat',detail:'5×3 (85%)'},{name:'Depth Jump',detail:'4×3'},{name:'Sprint 60m',detail:'3 passages'},{name:'Box Jump Max',detail:'3×3'}]]},vd:{name:'VERTICAL DUNK',obj:'Dunker + Détente max',phases:[[{name:'CMJ',detail:'5×3'},{name:'Squat Jump',detail:'4×5'},{name:'Pogo Jumps',detail:'3×15'}],[{name:'Depth Jump',detail:'4×3'},{name:'Back Squat',detail:'4×5 (80%)'},{name:'Approach Jump',detail:'5×3'}],[{name:'Box Jump Max',detail:'5×2'},{name:'Single Leg Bound',detail:'3×5/jambe'},{name:'Sprint 10m',detail:'6 passages'}]]},mt:{name:'MICROTRAINING',obj:'Discipline et habitudes',phases:[[{name:'Squat Jump',detail:'3×5'},{name:'Pompes explosives',detail:'3×8'},{name:'Planche',detail:'3×30s'}],[{name:'Pogo Jumps',detail:'3×10'},{name:'V-Ups',detail:'3×12'},{name:'Skip A',detail:'3×15'}],[{name:'Box Jump',detail:'3×5'},{name:'Sprint 10m',detail:'4 passages'}]]},tri:{name:'TRIPHASIQUE',obj:'Force sans salle',phases:[[{name:'Squat PDC',detail:'4×15'},{name:'Fentes',detail:'3×10/jambe'},{name:'Pompes',detail:'4×12'}],[{name:'Squat Jump',detail:'4×8'},{name:'Single Leg Bound',detail:'3×6/jambe'}],[{name:'Pogo Jumps',detail:'4×12'},{name:'Sprint 10m',detail:'5 passages'}]]},se:{name:'SHRED EXPLOSE',obj:'Perdre + Exploser',phases:[[{name:'Circuit cardio',detail:'15 min'},{name:'Squat',detail:'3×12'},{name:'Pogo Jumps',detail:'3×15'}],[{name:'HIIT Sprint',detail:'10×10m'},{name:'Back Squat',detail:'4×8 (65%)'},{name:'Box Jump',detail:'3×8'}],[{name:'Sprint 30m',detail:'6 passages'},{name:'Depth Jump',detail:'3×3'}]]},ep:{name:'EXPLOSE+',obj:'Transformation totale',phases:[[{name:'Questionnaire MENER',detail:'Identifier pilier faible'},{name:'15 engagements',detail:'4 semaines'}],[{name:'Back Squat',detail:'5×5 (80%)'},{name:'Power Clean',detail:'4×3'},{name:'Sprint 30m',detail:'5 passages'}],[{name:'Depth Jump',detail:'5×3'},{name:'Back Squat',detail:'5×3 (90%)'},{name:'Sprint 60m',detail:'4 passages'}]]}};
-function showPg(id){document.querySelectorAll('.pg').forEach(p=>p.classList.remove('on'));document.querySelectorAll('.sub-tab').forEach(t=>t.classList.remove('on'));({lib:'pgLib',prog:'pgProg',builder:'pgBuilder'})[id]&&document.getElementById(({lib:'pgLib',prog:'pgProg',builder:'pgBuilder'})[id]).classList.add('on');event.currentTarget.classList.add('on');var __v=document.getElementById('vTrain');if(__v)__v.scrollTop=0;if(id==='lib'){closeCat();closeDetail()}if(id==='prog')closeProg()}
+function showPg(id){document.querySelectorAll('.pg').forEach(p=>p.classList.remove('on'));document.querySelectorAll('.sub-tab').forEach(t=>t.classList.remove('on'));({lib:'pgLib',prog:'pgProg',builder:'pgBuilder'})[id]&&document.getElementById(({lib:'pgLib',prog:'pgProg',builder:'pgBuilder'})[id]).classList.add('on');event.currentTarget.classList.add('on');var __v=document.getElementById('vTrain');if(__v)__v.scrollTop=0;if(id==='lib'){closeCat();closeDetail()}if(id==='prog'){closeProg();try{updateProgrammeLocks();}catch(e){}}}
 function openCat(n,ic,k){currentCat=n;currentCatData=catData[k]||[];document.getElementById('catTitle').textContent=ic+' '+n.toUpperCase();document.getElementById('libGrid').classList.add('hidden');document.getElementById('libCatView').classList.remove('hidden');document.getElementById('libDetailView').classList.add('hidden');currentFilter='all';renderCatEx();var __v=document.getElementById('vTrain');if(__v)__v.scrollTop=0}
 function closeCat(){document.getElementById('libGrid').classList.remove('hidden');document.getElementById('libCatView').classList.add('hidden');document.getElementById('libDetailView').classList.add('hidden')}
 function filterCat(el,lv){document.querySelectorAll('.filter-row .fc').forEach(f=>f.classList.remove('on'));el.classList.add('on');currentFilter=lv;renderCatEx()}
@@ -5317,7 +5319,129 @@ function renderCatEx(){const l=document.getElementById('catExList');l.innerHTML=
 function openDetail(n){const ex=Object.values(catData).flat().find(e=>e.name===n);if(!ex)return;document.getElementById('detailName').textContent=ex.name.toUpperCase();const dl=ex.diff==='easy'?'Débutant':ex.diff==='med'?'Intermédiaire':'Avancé';const d=document.getElementById('detailDiff');d.textContent=dl;d.className='detail-diff '+ex.diff;document.getElementById('detailDesc').textContent=ex.desc;document.getElementById('detailTags').innerHTML=(ex.muscles||[]).map(m=>`<div class="tag">${m}</div>`).join('');document.getElementById('libCatView').classList.add('hidden');document.getElementById('libDetailView').classList.remove('hidden');var __v=document.getElementById('vTrain');if(__v)__v.scrollTop=0}
 function closeDetail(){document.getElementById('libDetailView').classList.add('hidden');if(currentCat)document.getElementById('libCatView').classList.remove('hidden')}
 function filterLib(){const q=document.getElementById('libSearch').value.toLowerCase().trim();if(q.length<2){closeCat();document.getElementById('libGrid').classList.remove('hidden');return}currentCat='Recherche';currentCatData=Object.values(catData).flat().filter(e=>e.name.toLowerCase().includes(q));document.getElementById('catTitle').textContent='🔍 "'+q+'"';document.getElementById('libGrid').classList.add('hidden');document.getElementById('libCatView').classList.remove('hidden');document.getElementById('libDetailView').classList.add('hidden');currentFilter='all';renderCatEx()}
-function openProg(k){currentProgKey=k;const p=progPhases[k];if(!p)return;document.getElementById('progList').classList.add('hidden');document.getElementById('progDetail').classList.remove('hidden');document.getElementById('progDetailName').textContent=p.name;document.getElementById('progDetailObj').textContent=p.obj;document.querySelectorAll('.phase-tab').forEach((t,i)=>t.classList.toggle('on',i===0));renderPhase(p.phases[0]);var __v=document.getElementById('vTrain');if(__v)__v.scrollTop=0}
+function openProg(k){
+  // Verrouillage : un user ne peut ouvrir QUE son programme attribué
+  var myKey = _userTrainKey();
+  if (!myKey) {
+    showToast('Termine ton onboarding pour débloquer ton programme.', 'info');
+    return;
+  }
+  if (k !== myKey) {
+    showToast('🔒 Ce programme est verrouillé — il ne correspond pas à ton profil.', 'info');
+    return;
+  }
+  currentProgKey=k;const p=progPhases[k];if(!p)return;document.getElementById('progList').classList.add('hidden');document.getElementById('progDetail').classList.remove('hidden');document.getElementById('progDetailName').textContent=p.name;document.getElementById('progDetailObj').textContent=p.obj;document.querySelectorAll('.phase-tab').forEach((t,i)=>t.classList.toggle('on',i===0));renderPhase(p.phases[0]);
+  try { updateStartSessionLock(); } catch(e) {}
+  var __v=document.getElementById('vTrain');if(__v)__v.scrollTop=0;
+}
+
+// Helper : retourne la clé COURTE du programme du user ('ea','vd','mt','tri','se','ep') ou '' si pas encore attribué
+function _userTrainKey() {
+  var raw = '';
+  try { raw = (window.user && (window.user.programKey || window.user.program)) || ''; } catch(e) {}
+  if (!raw && typeof OB !== 'undefined') raw = OB.program || OB.programName || '';
+  if (!raw) {
+    try { var p = JSON.parse(localStorage.getItem('ah_profile') || '{}'); raw = p.programKey || p.program || ''; } catch(e) {}
+  }
+  if (!raw) return '';
+  var k = String(raw).toLowerCase().replace(/\s+/g,'');
+  if (k === 'ea' || k === 'vd' || k === 'mt' || k === 'tri' || k === 'se' || k === 'ep') return k;
+  if (k.indexOf('micro') > -1) return 'mt';
+  if (k.indexOf('triphas') > -1) return 'tri';
+  if (k.indexOf('vertical') > -1 || k.indexOf('dunk') > -1) return 'vd';
+  if (k.indexOf('shred') > -1) return 'se';
+  if (k.indexOf('explose+') > -1 || k === 'explose' || k.indexOf('explose+') > -1) return 'ep';
+  if (k.indexOf('elite') > -1) return 'ea';
+  if (k.indexOf('explose') > -1) return 'ep';
+  return '';
+}
+
+// Met à jour visuellement le verrouillage des 6 cartes programmes
+function updateProgrammeLocks() {
+  var myKey = _userTrainKey();
+  var cards = document.querySelectorAll('#progList > div[onclick^="openProg"]');
+  cards.forEach(function(card){
+    var m = (card.getAttribute('onclick') || '').match(/openProg\('([^']+)'\)/);
+    if (!m) return;
+    var k = m[1];
+    var isMine = !!myKey && k === myKey;
+    card.style.opacity = isMine ? '1' : '0.5';
+    card.style.filter = isMine ? 'none' : 'grayscale(0.6)';
+    // Badge top-right
+    var badge = card.querySelector('div[style*="border-radius:20px"]');
+    if (badge) {
+      if (isMine) {
+        badge.style.background = 'rgba(197,164,78,.15)';
+        badge.style.border = '1px solid var(--gold)';
+        badge.style.color = 'var(--gold)';
+        badge.textContent = 'EN COURS';
+      } else {
+        badge.style.background = 'rgba(255,255,255,.06)';
+        badge.style.border = '1px solid rgba(255,255,255,.3)';
+        badge.style.color = 'rgba(255,255,255,.6)';
+        badge.textContent = myKey ? '🔒 VERROUILLÉ' : '🔒 PROFIL INCOMPLET';
+      }
+    }
+  });
+}
+
+// Le user a-t-il fait ses tests physiques ?
+function _userSatDone() {
+  try {
+    if (typeof OB !== 'undefined' && OB.satDone) return true;
+    if (window.user && window.user.satDone) return true;
+    var p = JSON.parse(localStorage.getItem('ah_profile') || '{}');
+    return !!p.satDone;
+  } catch(e) { return false; }
+}
+
+// Verrouille / déverrouille le bouton "Commencer la séance" en fonction des tests faits
+function updateStartSessionLock() {
+  var btn = document.getElementById('startSessionBtn');
+  if (!btn) return;
+  var done = _userSatDone();
+  if (done) {
+    btn.disabled = false;
+    btn.style.background = '';
+    btn.style.color = '';
+    btn.style.cursor = '';
+    btn.style.opacity = '';
+    btn.innerHTML = 'Commencer la séance 🔥';
+  } else {
+    btn.disabled = true;
+    btn.style.background = 'var(--surface2)';
+    btn.style.color = 'var(--muted)';
+    btn.style.cursor = 'not-allowed';
+    btn.style.opacity = '.85';
+    btn.innerHTML = '🔒 Fais d\'abord tes tests physiques';
+  }
+}
+
+function startSessionGuarded() {
+  if (!_userSatDone()) {
+    showToast('Fais d\'abord tes tests physiques dans Tracks.', 'info');
+    try { switchTab('tracks'); } catch(e) {}
+    return;
+  }
+  // TODO: brancher sur le vrai démarrage de séance quand le moteur de séance sera prêt
+  showToast('Séance lancée — moteur en cours de finalisation.', 'info');
+}
+
+// Va sur l'onglet Train et active le sous-onglet "Programmes" (utilisé par le bouton Home)
+function goToProgrammes() {
+  try { switchTab('train'); } catch(e) {}
+  setTimeout(function(){
+    try {
+      document.querySelectorAll('#vTrain .pg').forEach(function(p){ p.classList.remove('on'); });
+      document.querySelectorAll('#vTrain .sub-tab').forEach(function(t){ t.classList.remove('on'); });
+      var prog = document.getElementById('pgProg'); if (prog) prog.classList.add('on');
+      var tabBtn = document.querySelector('#vTrain .sub-tab[onclick*="\'prog\'"]'); if (tabBtn) tabBtn.classList.add('on');
+      try { closeProg(); } catch(e) {}
+      try { updateProgrammeLocks(); } catch(e) {}
+    } catch(e) {}
+  }, 80);
+}
+window.goToProgrammes = goToProgrammes;
 function closeProg(){document.getElementById('progList').classList.remove('hidden');document.getElementById('progDetail').classList.add('hidden')}
 function switchPhase(el,i){document.querySelectorAll('.phase-tab').forEach(t=>t.classList.remove('on'));el.classList.add('on');if(currentProgKey)renderPhase(progPhases[currentProgKey].phases[i]||[])}
 function renderPhase(exs){const l=document.getElementById('phaseExList');l.innerHTML='';exs.forEach((ex,i)=>{l.innerHTML+=`<div class="phase-ex"><div class="pe-num">${i+1}</div><div class="pe-body"><div class="pe-name">${ex.name}</div><div class="pe-detail">${ex.detail}</div></div><div class="pe-video" onclick="alert('Vidéo YouTube')">▶</div></div>`})}
@@ -6658,7 +6782,7 @@ function renderDiscoveryBanner() {
       todayBtn2.style.color = 'var(--navy)';
       todayBtn2.style.boxShadow = '0 4px 12px rgba(197,164,78,0.25)';
       todayBtn2.style.border = 'none';
-      todayBtn2.onclick = function() { switchTab('train'); };
+      todayBtn2.onclick = function() { goToProgrammes(); };
     }
     return;
   }
@@ -6773,7 +6897,7 @@ function renderDiscoveryBanner() {
       todayBtn.style.color = 'var(--navy)';
       todayBtn.style.boxShadow = '0 4px 12px rgba(197,164,78,0.25)';
       todayBtn.style.border = 'none';
-      todayBtn.onclick = function() { switchTab('train'); };
+      todayBtn.onclick = function() { goToProgrammes(); };
     }
   }
 }
