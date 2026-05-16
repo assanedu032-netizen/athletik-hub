@@ -5757,6 +5757,695 @@ function saveTrack() {
 // ══════════════════════════════════
 
 const catData={echauf_gen:[{name:'Jumping Jacks',diff:'easy',muscles:['Cardio','Full body'],desc:'Élever la température corporelle.'},{name:'Course sur place',diff:'easy',muscles:['Cardio','Jambes'],desc:'Montée de genoux progressive.'},{name:'Rotations articulaires',diff:'easy',muscles:['Mobilité'],desc:'Rotations lentes.'},{name:'Skip A',diff:'easy',muscles:['Jambes','Coordination'],desc:'Montée de genoux dynamique.'}],echauf_spe:[{name:'Activation fessiers',diff:'easy',muscles:['Fessiers'],desc:'Réveiller les fessiers.'},{name:'Marche latérale élastique',diff:'med',muscles:['Abducteurs'],desc:'Pas latéraux avec élastique.'},{name:'Squat progressif',diff:'easy',muscles:['Quadriceps'],desc:'Squats légers progressifs.'}],mobilite:[{name:'Dorsiflexion cheville',diff:'easy',muscles:['Chevilles'],desc:'Essentiel avant tout saut.'},{name:'90/90 Stretch',diff:'med',muscles:['Hanches'],desc:'Rotations de hanche.'},{name:"World's Greatest Stretch",diff:'med',muscles:['Full body'],desc:'Le stretch le plus complet.'}],recup:[{name:'Foam Rolling Quadriceps',diff:'easy',muscles:['Quadriceps'],desc:'Auto-massage rouleau.'}],proprio:[{name:'Équilibre unipodal',diff:'easy',muscles:['Chevilles','Core'],desc:'Équilibre sur un pied.'}],coord:[{name:'Échelle de rythme',diff:'med',muscles:['Coordination'],desc:'Vitesse des appuis.'}],gainage:[{name:'Planche frontale',diff:'easy',muscles:['Core'],desc:'Gainage statique.'}],abdos:[{name:'V-Ups',diff:'med',muscles:['Abdos'],desc:'Relevé simultané.'}],force_pdc:[{name:'Pompes explosives',diff:'med',muscles:['Pectoraux','Triceps'],desc:'Mains décollent du sol.'}],force_charge:[{name:'Back Squat',diff:'hard',muscles:['Quadriceps','Fessiers','Lombaires'],desc:'Le mouvement roi pour la force.'},{name:'Soulevé de terre',diff:'hard',muscles:['Chaîne postérieure'],desc:'Puissance chaîne postérieure.'},{name:'Hip Thrust',diff:'med',muscles:['Fessiers'],desc:'Extension de hanche explosive.'},{name:'Développé couché',diff:'med',muscles:['Pectoraux','Épaules'],desc:'Force haut du corps.'}],rotation:[{name:'Med Ball Rotational Throw',diff:'med',muscles:['Obliques'],desc:'Lancer rotatif.'}],olympiques:[{name:'Power Clean',diff:'hard',muscles:['Full body'],desc:'Triple extension complète.'}],plio_ext:[{name:'Pogo Jumps',diff:'easy',muscles:['Mollets'],desc:'Réactivité tendon d\'Achille.'},{name:'Squat Jump',diff:'med',muscles:['Quadriceps'],desc:'Puissance concentrique.'}],plio_int:[{name:'Depth Jump',diff:'hard',muscles:['Full body'],desc:'Plus fort impact sur le RFD.'},{name:'Box Jump Max',diff:'hard',muscles:['Explosivité'],desc:'Saut box hauteur max.'}],pied:[{name:'Ankling',diff:'easy',muscles:['Chevilles'],desc:'Rigidité cheville.'}],sprint:[{name:'Sprint 10m',diff:'med',muscles:['Quadriceps'],desc:'Phase de démarrage.'},{name:'Sprint 30m',diff:'med',muscles:['Full body'],desc:'Vitesse de pointe.'},{name:'Sprint 60m',diff:'hard',muscles:['Full body'],desc:'Sprint complet.'}],multi:[{name:'Navette 5-10-5',diff:'med',muscles:['Agilité'],desc:'Changements de direction.'}],saut:[{name:'Counter Movement Jump',diff:'easy',muscles:['Quadriceps','Fessiers'],desc:'Test de référence détente.'},{name:'Approach Jump',diff:'med',muscles:['Full body'],desc:'Saut avec élan.'},{name:'Single Leg Bound',diff:'hard',muscles:['Équilibre'],desc:'Bond unilatéral.'}]};
+// ════════════════════════════════════════════════════════════════════════════
+// PROGRAMS_V2 — Données complètes extraites des PDFs (Les Secrets de la Détente
+// Verticale). Format : 1 entrée par programme avec phases, sessions, exercices.
+// Quand une clé existe dans PROGRAMS_V2, openProg() utilise la nouvelle UI V2.
+// Sinon il fallback sur progPhases (legacy, placeholder).
+// ════════════════════════════════════════════════════════════════════════════
+var PROGRAMS_V2 = (function(){
+  // Helper compact : exercice = {n: nom, s: séries, r: reps/durée, rest: repos, note}
+  function e(n, s, r, rest, note) { return {n:n, s:s||'-', r:r||'-', rest:rest||'-', note:note||''}; }
+  // Helper jour-semaine : d=label, s=clé session ou 'rest' ou 'opt'
+  function d(label, sessKey) { return {d:label, s:sessKey}; }
+
+  return {
+    // ─────────────────────────────────────────────────────────
+    // VERTICAL DUNK — Données complètes (2 phases / 10 semaines)
+    // ─────────────────────────────────────────────────────────
+    vd: {
+      name: 'VERTICAL DUNK',
+      tagline: 'Apprendre à dunker et augmenter ta détente verticale',
+      totalWeeks: 10,
+      level: 'Tous niveaux',
+      img: 'https://images.unsplash.com/photo-1518611012118-696072aa579a?w=900&q=80',
+      phases: [
+        {
+          n: 1, title: 'PHASE 1 — VERTICAL TEST',
+          subtitle: 'Construire les bases de l\'explosivité — Sans matériel',
+          weeks: 4, frequency: '4 jours / semaine', location: 'Extérieur / Sans salle',
+          objective: 'Poser les bases neuromusculaires indispensables avant d\'attaquer le travail de force. Coordination, mobilité et premières qualités explosives.',
+          progression: [
+            {w:'SEM. 1', v:'5 séries', f:'Apprentissage — qualité de mouvement avant tout'},
+            {w:'SEM. 2', v:'4 séries', f:'Consolidation — légère réduction du volume'},
+            {w:'SEM. 3', v:'3 séries', f:'Affûtage — intensité maximale'},
+            {w:'SEM. 4', v:'—', f:'Transmission Force + Test de détente verticale'}
+          ],
+          note: 'Semaine 4 : Jour 1 et Jour 3 = Transmission Force (sauts libres 100%, 6-12 mn). Jour 5 = Test de détente verticale. Filme-toi et compare.',
+          weekDays: [d('Lun','j1'),d('Mar','rest'),d('Mer','j2'),d('Jeu','rest'),d('Ven','j3'),d('Sam','j4'),d('Dim','rest')],
+          sessions: {
+            j1: { name:'Jour 1 — Pliométrie extensive + Mobilité', exos: [
+              e('Échauffement dynamique général — Cardio léger + articulations','-','8-10 mn','-'),
+              e('Broad jumps — bonds en avant','Var.*','12-15 reps','1 mn'),
+              e('Lateral bounds — bonds latéraux','Var.*','12-15 reps','1 mn'),
+              e('Split jumps — Alterner les jambes','Var.*','12-15 reps','1 mn'),
+              e('Carioca','3','20 m aller-retour','45 s'),
+              e('Mobilité mouv','3','8 reps','45 s'),
+              e('90/90','3','8 reps / côté','45 s'),
+              e('Élévation orteils','3','15 reps','30 s'),
+              e('Travail tibial antérieur','3','15 reps','30 s'),
+              e('Étirements légers','-','5-10 mn','-')
+            ]},
+            j2: { name:'Jour 2 — Pliométrie extensive & intensive + Mobilité', exos: [
+              e('Échauffement dynamique général','-','8-10 mn','-'),
+              e('Broad jumps — bonds en avant','Var.*','12-15 reps','1 mn'),
+              e('Split jumps','Var.*','12-15 reps','1 mn'),
+              e('Depth jumps — Hauteur adaptée','Var.*','6-8 reps','2 mn 30'),
+              e('Box squat jumps — assis-debout — Explosion max','Var.*','6-8 reps','2 mn 30'),
+              e('Nordic hamstring — Contrôle excentrique','Var.*','30 s → 1 mn 30','2 mn 30'),
+              e('Reverse nordic — Renforcement quadriceps','Var.*','30 s → 1 mn 30','2 mn 30'),
+              e('Carioca','3','20 m aller-retour','45 s'),
+              e('Mobilité mouv','3','8 reps','45 s'),
+              e('90/90','3','8 reps / côté','45 s'),
+              e('Élévation orteils','3','15 reps','30 s'),
+              e('Travail tibial antérieur','3','15 reps','30 s'),
+              e('Étirements légers','-','5-10 mn','-')
+            ]},
+            j3: { name:'Jour 3 — Pliométrie extensive + Mobilité (idem Jour 1)', exos: [
+              e('Échauffement dynamique général','-','8-10 mn','-'),
+              e('Broad jumps — bonds en avant','Var.*','12-15 reps','1 mn'),
+              e('Lateral bounds — bonds latéraux','Var.*','12-15 reps','1 mn'),
+              e('Split jumps','Var.*','12-15 reps','1 mn'),
+              e('Carioca','3','20 m aller-retour','45 s'),
+              e('Mobilité mouv','3','8 reps','45 s'),
+              e('90/90','3','8 reps / côté','45 s'),
+              e('Élévation orteils','3','15 reps','30 s'),
+              e('Travail tibial antérieur','3','15 reps','30 s'),
+              e('Étirements légers','-','5-10 mn','-')
+            ]},
+            j4: { name:'Jour 4 — Pliométrie intensive + Stato-dynamique + Sprint 20m', exos: [
+              e('Échauffement dynamique général','-','8-10 mn','-'),
+              e('Broad jumps','Var.*','12-15 reps','1 mn'),
+              e('Split jumps','Var.*','12-15 reps','1 mn'),
+              e('Depth jumps','Var.*','6-8 reps','2 mn 30'),
+              e('Box squat jumps — assis-debout','Var.*','6-8 reps','2 mn 30'),
+              e('Squat stato-dynamique — Iso profonde puis explosion','Var.*','6 s min → explosion','2 mn 30'),
+              e('Split stance — Maintien fente profonde','Var.*','30 s → 1 mn 30','2 mn 30'),
+              e('Sprint 20 m — Vitesse maximale','4','1 rep','2 mn 30'),
+              e('Élévation orteils','3','15 reps','30 s'),
+              e('Travail tibial antérieur','3','15 reps','30 s'),
+              e('Étirements légers','-','5-10 mn','-')
+            ]}
+          }
+        },
+        {
+          n: 2, title: 'PHASE 2 — VERTICAL DUNK',
+          subtitle: 'Force explosive pour maximiser ta détente — Salle recommandée',
+          weeks: 6, frequency: '4 jours / semaine', location: 'Salle recommandée',
+          objective: 'Développer la force explosive au maximum pour augmenter ta détente verticale et atteindre l\'objectif dunk. Le travail de force avec barre est la clé.',
+          progression: [
+            {w:'SEM. 1', v:'5 séries', f:'85% 1RM — Adaptation à la charge lourde'},
+            {w:'SEM. 2', v:'4 séries', f:'85% 1RM — Consolidation force'},
+            {w:'SEM. 3', v:'3 séries', f:'60% 1RM — Vitesse d\'exécution maximale'},
+            {w:'SEM. 4', v:'5 séries', f:'85% 1RM — Nouveau cycle de force'},
+            {w:'SEM. 5', v:'4 séries', f:'85% 1RM — Consolidation'},
+            {w:'SEM. 6', v:'3 séries', f:'60% 1RM — Pic d\'explosivité + Test final'}
+          ],
+          note: 'Tests obligatoires avant de démarrer : Squat 1RM + SDT 1RM. 48h de repos entre Jour 2 et Jour 3. Jour 4 = Transmission Force (sauts libres 100%, 6-12 mn, visualise le dunk).',
+          weekDays: [d('Lun','j1'),d('Mar','rest'),d('Mer','j2'),d('Jeu','j3'),d('Ven','rest'),d('Sam','j4'),d('Dim','rest')],
+          sessions: {
+            j1: { name:'Jour 1 — Pliométrie extensive et intensive + Mobilité', exos: [
+              e('Échauffement dynamique général','-','8-10 mn','-'),
+              e('Broad jumps','Var.*','12-15 reps','1 mn'),
+              e('Lateral bounds','Var.*','12-15 reps','1 mn'),
+              e('Split jumps','Var.*','12-15 reps','1 mn'),
+              e('Depth jumps','Var.*','6-8 reps','2 mn 30'),
+              e('Box squat jumps — assis-debout','Var.*','6-8 reps','2 mn 30'),
+              e('Carioca','3','20 m aller-retour','45 s'),
+              e('Mobilité mouv','3','8 reps','45 s'),
+              e('90/90','3','8 reps / côté','45 s'),
+              e('Élévation orteils','3','15 reps','30 s'),
+              e('Travail tibial antérieur','3','15 reps','30 s'),
+              e('Étirements légers','-','5-10 mn','-')
+            ]},
+            j2: { name:'Jour 2 — Force explosive (Squat + Power Clean + Fente bulgare)', exos: [
+              e('Échauffement général + mobilité — Focus bas du corps','-','10 mn','-'),
+              e('Montée en charge progressive','3-4','5-3 reps','1-2 mn'),
+              e('Squat à la barre explosive — Sem.1-2: 85% 1RM | Sem.3-6: 60% 1RM','Var.*','3 reps','2 mn 30'),
+              e('Power clean — Charge légère, explosivité max','Var.*','3 reps','2 mn 30'),
+              e('Fente bulgare — Poids du corps ou haltères','Var.*','8-12 reps / jambe','2 mn 30'),
+              e('L-sit (ou progression) — Maintien max','3','À l\'échec','1 mn'),
+              e('Barre levé genoux','3','À l\'échec','1 mn'),
+              e('Élévation orteils','3','15 reps','30 s'),
+              e('Travail tibial antérieur','3','15 reps','30 s'),
+              e('Étirements — Focus hanches et quadriceps','-','8 mn','-')
+            ]},
+            j3: { name:'Jour 3 — Force explosive (Squat + Power Clean + Fente stato-dyn)', exos: [
+              e('Échauffement général + mobilité','-','10 mn','-'),
+              e('Montée en charge progressive','3-4','5-3 reps','1-2 mn'),
+              e('Squat à la barre explosive — Sem.1-2: 85% | Sem.3-6: 60%','Var.*','3 reps','2 mn 30'),
+              e('Power clean — Charge légère, explosivité max','Var.*','3 reps','2 mn 30'),
+              e('Fente bulgare stato-dynamique — Iso profonde puis explosion','Var.*','Maintien 6 s min','2 mn 30'),
+              e('L-sit (ou progression)','3','À l\'échec','1 mn'),
+              e('Barre levé genoux','3','À l\'échec','1 mn'),
+              e('Élévation orteils','3','15 reps','30 s'),
+              e('Travail tibial antérieur','3','15 reps','30 s'),
+              e('Étirements — Focus hanches et quadriceps','-','8 mn','-')
+            ]},
+            j4: { name:'Jour 4 — Power Rotation + Mobilité + Transmission Force', exos: [
+              e('Échauffement dynamique — Focus rotation et mobilité','-','8-10 mn','-'),
+              e('Rotation buste et extension bras — Explosivité rotative','4','8-12 reps','1 mn'),
+              e('Rotation buste unipodal — Équilibre + rotation','3','8-12 reps / côté','1 mn'),
+              e('Carioca','3','20 m aller-retour','45 s'),
+              e('Mobilité mouv','3','8 reps','45 s'),
+              e('90/90','3','8 reps / côté','45 s'),
+              e('Sauts libres à 100% — EXPLOSIVITÉ MAXIMALE','-','6-12 mn','-'),
+              e('Élévation orteils','3','15 reps','30 s'),
+              e('Travail tibial antérieur','3','15 reps','30 s'),
+              e('Étirements légers','-','5-10 mn','-')
+            ]}
+          }
+        }
+      ],
+      finalNote: 'Phase 2 terminée : +5-10 cm | Force explosive max | Objectif DUNK accessible. Test final : Repos 2 jours avant, échauffement 15-20 mn, 3-5 essais, filme.'
+    },
+
+    // ─────────────────────────────────────────────────────────
+    // ELITE ATHLÈTE — Données complètes (3 phases / 18 semaines)
+    // ─────────────────────────────────────────────────────────
+    ea: {
+      name: 'ELITE ATHLETE',
+      tagline: 'Le programme complet pour devenir un athlète explosif',
+      totalWeeks: 18,
+      level: 'Tous niveaux',
+      img: 'https://images.unsplash.com/photo-1534438327276-14e5300c3a48?w=900&q=80',
+      phases: [
+        {
+          n: 1, title: 'PHASE 1 — VERTICAL TEST',
+          subtitle: 'Construire les bases de l\'explosivité — Sans matériel',
+          weeks: 4, frequency: '4 jours / semaine', location: 'Extérieur / Sans salle',
+          objective: 'Développer la coordination neuromusculaire, la mobilité articulaire et les premières bases d\'explosivité. Tu vas poser les fondations sur lesquelles reposera tout le reste du programme.',
+          progression: [
+            {w:'SEM. 1', v:'5 séries', f:'Apprentissage des mouvements — qualité avant tout'},
+            {w:'SEM. 2', v:'4 séries', f:'Consolidation — légère réduction du volume'},
+            {w:'SEM. 3', v:'3 séries', f:'Affûtage — intensité maximale'},
+            {w:'SEM. 4', v:'—', f:'Transmission Force + Test de détente verticale'}
+          ],
+          note: 'Semaine 4 : Jour 1 et 3 = Transmission Force (sauts libres 100%, 6-12 mn — box jumps, dunks, broad jumps). Jour 5 = Test de détente. Mesure et filme.',
+          weekDays: [d('Lun','j1'),d('Mar','rest'),d('Mer','j2'),d('Jeu','rest'),d('Ven','j3'),d('Sam','j4'),d('Dim','rest')],
+          sessions: {
+            j1: { name:'Jour 1 — Pliométrie extensive + Mobilité', exos: [
+              e('Échauffement dynamique général','-','8-10 mn','-'),
+              e('Broad jumps — bonds en avant','Var.*','12-15 reps','1 mn'),
+              e('Lateral bounds — bonds latéraux','Var.*','12-15 reps','1 mn'),
+              e('Split jumps','Var.*','12-15 reps','1 mn'),
+              e('Carioca — Coordination latérale','3','20 m aller-retour','45 s'),
+              e('Mobilité mouv','3','8 reps','45 s'),
+              e('90/90 — Rotation hanches','3','8 reps / côté','45 s'),
+              e('Élévation orteils','3','15 reps','30 s'),
+              e('Travail tibial antérieur','3','15 reps','30 s'),
+              e('Étirements légers','-','5-10 mn','-')
+            ]},
+            j2: { name:'Jour 2 — Pliométrie extensive & intensive + Mobilité', exos: [
+              e('Échauffement dynamique général','-','8-10 mn','-'),
+              e('Broad jumps','Var.*','12-15 reps','1 mn'),
+              e('Split jumps','Var.*','12-15 reps','1 mn'),
+              e('Depth jumps — Hauteur adaptée','Var.*','6-8 reps','2 mn 30'),
+              e('Box squat jumps — Explosion max','Var.*','6-8 reps','2 mn 30'),
+              e('Nordic hamstring — Contrôle excentrique','Var.*','30 s → 1 mn 30','2 mn 30'),
+              e('Reverse nordic — Quadriceps','Var.*','30 s → 1 mn 30','2 mn 30'),
+              e('Carioca','3','20 m aller-retour','45 s'),
+              e('Mobilité mouv','3','8 reps','45 s'),
+              e('90/90','3','8 reps / côté','45 s'),
+              e('Élévation orteils','3','15 reps','30 s'),
+              e('Travail tibial antérieur','3','15 reps','30 s'),
+              e('Étirements légers','-','5-10 mn','-')
+            ]},
+            j3: { name:'Jour 3 — Pliométrie extensive + Mobilité (idem Jour 1)', exos: [
+              e('Échauffement dynamique général','-','8-10 mn','-'),
+              e('Broad jumps','Var.*','12-15 reps','1 mn'),
+              e('Lateral bounds','Var.*','12-15 reps','1 mn'),
+              e('Split jumps','Var.*','12-15 reps','1 mn'),
+              e('Carioca','3','20 m aller-retour','45 s'),
+              e('Mobilité mouv','3','8 reps','45 s'),
+              e('90/90','3','8 reps / côté','45 s'),
+              e('Élévation orteils','3','15 reps','30 s'),
+              e('Travail tibial antérieur','3','15 reps','30 s'),
+              e('Étirements légers','-','5-10 mn','-')
+            ]},
+            j4: { name:'Jour 4 — Pliométrie intensive + Stato-dynamique + Sprint 20m', exos: [
+              e('Échauffement dynamique général','-','8-10 mn','-'),
+              e('Broad jumps','Var.*','12-15 reps','1 mn'),
+              e('Split jumps','Var.*','12-15 reps','1 mn'),
+              e('Depth jumps','Var.*','6-8 reps','2 mn 30'),
+              e('Box squat jumps — Explosion max','Var.*','6-8 reps','2 mn 30'),
+              e('Squat stato-dynamique — Iso profonde puis explosion','Var.*','6 s min → explosion','2 mn 30'),
+              e('Split stance — Maintien fente profonde','Var.*','30 s → 1 mn 30','2 mn 30'),
+              e('Sprint 20 m — Vitesse max, qualité > quantité','4','1 rep','2 mn 30'),
+              e('Élévation orteils','3','15 reps','30 s'),
+              e('Travail tibial antérieur','3','15 reps','30 s'),
+              e('Étirements légers','-','5-10 mn','-')
+            ]}
+          }
+        },
+        {
+          n: 2, title: 'PHASE 2 — DETOX TURBO',
+          subtitle: 'Conditionnement + Isométrique + Cardio — Sans matériel',
+          weeks: 6, frequency: '6 jours / semaine', location: 'Sans matériel | Max 1h/séance',
+          objective: 'Améliorer le conditionnement physique général, renforcer la structure isométrique et développer la capacité cardio tout en maintenant l\'explosivité. La nutrition représente 70-80% des résultats.',
+          progression: [
+            {w:'SEM. 1', v:'6 séries', f:'Adaptation — maîtriser exos et volume'},
+            {w:'SEM. 2', v:'6 séries', f:'Intensification — réduire les temps de repos'},
+            {w:'SEM. 3', v:'6 séries', f:'Surcharge — volume maximal'},
+            {w:'SEM. 4', v:'6 séries', f:'Surcharge — repousser les limites'},
+            {w:'SEM. 5', v:'6 séries', f:'Records aux challenges'},
+            {w:'SEM. 6', v:'6 séries', f:'Affûtage — réduction légère volume'}
+          ],
+          note: 'Challenges tous les 2 jours en rotation : Bring Sally Up → Pompes max 2 mn → Burpees max 3 mn. Note tes scores.',
+          weekDays: [d('Lun','j1'),d('Mar','j2'),d('Mer','j3'),d('Jeu','j4'),d('Ven','j5'),d('Sam','j6'),d('Dim','rest')],
+          sessions: {
+            j1: { name:'Jour 1 — UPPER : Challenge + Circuit Cluster + Épaules', exos: [
+              e('Bring Sally Up — pompes — Chanson Flower de Moby','1','Suivre la chanson','-'),
+              e('1) Pompes diamant — cluster','4','2-3 reps','2 mn après les 4'),
+              e('2) Dips sur chaise / banc','4','2-3 reps cluster','-'),
+              e('3) Pompes déclinées — pieds surélevés','4','2-3 reps cluster','-'),
+              e('4) Pike push-ups — pompes en V','4','2-3 reps cluster','-'),
+              e('Rotation explosive du buste en planche','3','10 reps','1 mn'),
+              e('Rock Back breathing — Respiration diaphragmatique','-','2-5 mn','-'),
+              e('Visualisation — Visualise ta prochaine performance','-','1-2 mn','-')
+            ]},
+            j2: { name:'Jour 2 — LOWER : Isométrique + Sprint', exos: [
+              e('Échauffement dynamique','-','5-10 mn','-'),
+              e('Squat isométrique — mur ou air','4','30-45 s','1 mn'),
+              e('Fente isométrique — Genou à 90°','3','30 s / jambe','45 s'),
+              e('Single leg squat hold','3','20-30 s / jambe','45 s'),
+              e('Relevé de pointe unipodal','3','15 reps / jambe','30 s'),
+              e('Marche sur pointe de pieds','2','1 mn','30 s'),
+              e('Marche sur les talons — Activation tibial','2','1 mn','30 s'),
+              e('Dorsiflexion résistée','3','15 reps','30 s'),
+              e('Équilibre yeux fermés','3','30 s / jambe','30 s'),
+              e('Marche en arrière en colline','1','10 mn minimum','-'),
+              e('Sprint 10s + Jogging 30s + Marche 20s — ALL OUT','8 cycles','Cycle complet','-'),
+              e('Étirements légers','-','5-10 mn','-')
+            ]},
+            j3: { name:'Jour 3 — UPPER : Focus épaules + Proprioception', exos: [
+              e('Échauffement dynamique haut du corps','-','5-10 mn','-'),
+              e('Pike push-ups','4','8-12 reps','1 mn'),
+              e('Handstand hold — poirier contre mur','4','20-40 s','1 mn 30'),
+              e('Pompes hindou — Épaules dynamiques','3','8-10 reps','1 mn'),
+              e('Shoulder taps en planche','3','20 reps (10/côté)','45 s'),
+              e('Planche avant-bras + touche épaule','3','12 reps (6/côté)','45 s'),
+              e('T-hold — équilibre en T','3','20-30 s / jambe','45 s'),
+              e('Fractionné : 1 mn (80%) + 1 mn marche','8 cycles','Cycle complet','-'),
+              e('Rock Back breathing','-','2-5 mn','-')
+            ]},
+            j4: { name:'Jour 4 — LOWER : Cardio 35 mn', exos: [
+              e('Échauffement dynamique','-','5-10 mn','-'),
+              e('Course à pied — 60% Vmax — allure conversationnelle','-','35 mn','-'),
+              e('Étirements légers','-','5-10 mn','-')
+            ]},
+            j5: { name:'Jour 5 — UPPER : Focus épaules + Sprint haute intensité', exos: [
+              e('Échauffement dynamique haut du corps','-','5-10 mn','-'),
+              e('Pike push-ups — Progression vs Jour 3','4','10-15 reps','1 mn'),
+              e('Pseudo planche push-ups — Force épaules','4','5-8 reps','1 mn 30'),
+              e('Pompes archer — Unilatéral','3','6-8 reps / côté','1 mn'),
+              e('Handstand progression','4','15-30 s','1 mn 30'),
+              e('Fractionné : 15 s sprint (100%) + 15 s repos — ALL OUT','8 cycles','Cycle complet','-'),
+              e('Rock Back breathing','-','2-5 mn','-')
+            ]},
+            j6: { name:'Jour 6 — LOWER : Isométrique + Pied', exos: [
+              e('Échauffement dynamique — Mobilité complète','-','5-10 mn','-'),
+              e('Squat isométrique (90°) — Progresser le temps','4','30-60 s','1 mn'),
+              e('Fente isométrique','3','30-45 s / jambe','1 mn'),
+              e('Single leg squat hold','3','20-40 s / jambe','1 mn'),
+              e('Relevé de pointe unipodal','3','15 reps / jambe','30 s'),
+              e('Marche sur pointe de pieds','2','1 mn','30 s'),
+              e('Marche sur les talons','2','1 mn','30 s'),
+              e('Dorsiflexion résistée','3','15 reps','30 s'),
+              e('Équilibre yeux fermés','3','30 s / jambe','30 s'),
+              e('Toe taps — Coordination tibial','3','20 reps','30 s'),
+              e('Marche en arrière en colline','1','10 mn minimum','-'),
+              e('Étirements légers','-','5-10 mn','-')
+            ]}
+          }
+        },
+        {
+          n: 3, title: 'PHASE 3 — EXPLOSIVE MUSCLE',
+          subtitle: 'Force maximale + Explosivité — Salle obligatoire',
+          weeks: 8, frequency: '4 jours / semaine', location: 'Salle de sport obligatoire',
+          objective: 'Transformer la base construite en phases 1 et 2 en puissance explosive pure. Travail avec charges lourdes pour maximiser la détente verticale. C\'est la phase où les gains les plus importants se produisent.',
+          progression: [
+            {w:'SEM. 1-2', v:'—', f:'70-75% 1RM — Adaptation technique + volume'},
+            {w:'SEM. 3-4', v:'—', f:'75-85% 1RM — Intensification'},
+            {w:'SEM. 5-6', v:'—', f:'80-90% 1RM — Surcharge maximale'},
+            {w:'SEM. 7-8', v:'—', f:'Affûtage — Réduction volume -20-30% + Retest final'}
+          ],
+          note: 'Tests obligatoires avant : Squat 1RM | SDT 1RM | Hip Thrust 1RM | DC 1RM | Détente verticale. Ces mesures déterminent toutes tes charges.',
+          weekDays: [d('Lun','j1'),d('Mar','rest'),d('Mer','j2'),d('Jeu','rest'),d('Ven','j3'),d('Sam','j4'),d('Dim','rest')],
+          sessions: {
+            j1: { name:'Jour 1 — Force pure + Pliométrie (dernière série échec)', exos: [
+              e('Échauffement général + mobilité','-','10 mn','-'),
+              e('Activation neuromusculaire — Squats poids du corps','2','10 reps','30 s'),
+              e('Box jumps — Explosivité max','4','5 reps','2 mn'),
+              e('Depth jumps — Hauteur adaptée','3','4 reps','2 mn 30'),
+              e('Broad jumps — Distance maximale','3','5 reps','2 mn'),
+              e('Squat à la barre — Dernière série → échec total','4','6-8 reps','3 mn'),
+              e('Soulevé de terre — Dernière série → échec','4','5-6 reps','3 mn'),
+              e('A) Fentes bulgares — Enchaîner avec B','3','8 reps / jambe','-'),
+              e('B) Leg curl — Repos 2 mn après B','3','10-12 reps','2 mn'),
+              e('Calf raises debout','4','15-20 reps','1 mn'),
+              e('Calf raises unipodal','3','12 reps / jambe','1 mn'),
+              e('Étirements — Focus bas du corps','-','10 mn','-')
+            ]},
+            j2: { name:'Jour 2 — Puissance haut du corps + Explosivité', exos: [
+              e('Échauffement général + mobilité épaules','-','10 mn','-'),
+              e('Pompes claquées','4','6 reps','2 mn'),
+              e('Medicine ball slams — Puissance','3','8 reps','1 mn 30'),
+              e('Pompes pliométriques','3','5 reps','2 mn'),
+              e('Développé couché','4','6-8 reps','3 mn'),
+              e('Développé incliné haltères','3','8-10 reps','2 mn 30'),
+              e('A) Tractions lestées ou assistées — avec B','4','6-8 reps','-'),
+              e('B) Rowing barre','4','8-10 reps','2 mn'),
+              e('A) Dips lestés — avec B','3','8-10 reps','-'),
+              e('B) Curl biceps haltères','3','10-12 reps','1 mn 30'),
+              e('Planche avec tap épaules','3','20 reps','1 mn'),
+              e('Dead bug explosif','3','12 reps','1 mn'),
+              e('Étirements haut du corps','-','8 mn','-')
+            ]},
+            j3: { name:'Jour 3 — Explosivité bas du corps + Pliométrie', exos: [
+              e('Échauffement dynamique — Skipping, talons-fesses','-','10 mn','-'),
+              e('Squats sautés légers — Activation neuro','2','8 reps','1 mn'),
+              e('Hurdle hops — sauts de haies, hauteur progressive','4','6 reps','2 mn 30'),
+              e('Single leg box jumps','3','4 reps / jambe','2 mn'),
+              e('Tuck jumps — Genoux à la poitrine','3','6 reps','2 mn'),
+              e('Hip Thrust — Charge lourde','4','8-10 reps','2 mn 30'),
+              e('Squat jump avec charge — 20-30% du 1RM squat','4','5 reps','2 mn 30'),
+              e('Power clean ou clean pull','3','5 reps','3 mn'),
+              e('A) Step-ups explosifs — avec B','3','8 reps / jambe','-'),
+              e('B) Goblet squat — Tempo contrôlé','3','12 reps','2 mn'),
+              e('Sauts à la corde','3','1 mn','1 mn'),
+              e('Équilibre unipodal — surface instable','3','30 s / jambe','45 s'),
+              e('Étirements + foam rolling','-','10 mn','-')
+            ]},
+            j4: { name:'Jour 4 — Force complète + Conditionnement', exos: [
+              e('Échauffement général corps complet','-','10 mn','-'),
+              e('Front squat','4','6-8 reps','3 mn'),
+              e('Romanian deadlift — Focus ischio','4','8 reps','2 mn 30'),
+              e('A) Leg press — avec B','3','10-12 reps','-'),
+              e('B) Leg extension','3','12-15 reps','2 mn'),
+              e('Développé militaire','4','6-8 reps','2 mn 30'),
+              e('Rowing haltères','4','8-10 reps','2 mn'),
+              e('A) Élévations latérales — avec B','3','12 reps','-'),
+              e('B) Face pulls','3','15 reps','1 mn 30'),
+              e('Pallof press — Anti-rotation','3','10 reps / côté','1 mn'),
+              e('Russian twists — Avec charge','3','20 reps totales','1 mn'),
+              e('Planche latérale','2','30-45 s / côté','1 mn'),
+              e('Burpees','3','10 reps','1 mn 30'),
+              e('Battle ropes — Intensité max','3','30 s','1 mn'),
+              e('Retour au calme','-','5 mn','-'),
+              e('Étirements complets','-','10 mn','-')
+            ]}
+          }
+        }
+      ],
+      finalNote: 'Phase 3 terminée : +5-10 cm de détente | Force +10-15% | Explosivité athlétique complète.'
+    },
+
+    // ─────────────────────────────────────────────────────────
+    // STUBS PROGRAMMES — données partielles, à compléter (commit suivant)
+    // ─────────────────────────────────────────────────────────
+    se: {
+      name: 'SHRED EXPLOSE', tagline: 'Perdre du gras ET gagner en explosivité',
+      totalWeeks: 16, level: 'Tous niveaux',
+      img: 'https://images.unsplash.com/photo-1517836357463-d25dfeac3438?w=900&q=80',
+      phases: [
+        { n:1, title:'PHASE 1 — DETOX TURBO (Sem 1-8)', subtitle:'Brûler un max de gras + gagner en explosivité',
+          weeks:8, frequency:'6 jours / semaine', location:'Sans matériel | Max 1h/séance',
+          objective:'Perdre de la masse grasse significative tout en construisant une base d\'explosivité. La nutrition représente 70-80% des résultats.',
+          progression:[{w:'SEM. 1-2',v:'6',f:'Adaptation'},{w:'SEM. 3-4',v:'6',f:'Intensification'},{w:'SEM. 5-6',v:'6',f:'Surcharge'},{w:'SEM. 7-8',v:'6',f:'Affûtage + Super Explosif Test'}],
+          note:'⏳ Détail des sessions à venir — référence PDF en attendant.',
+          weekDays:[d('Lun','j1'),d('Mar','j2'),d('Mer','j3'),d('Jeu','j4'),d('Ven','j5'),d('Sam','j6'),d('Dim','rest')],
+          sessions:{ j1:{name:'Jour 1 — UPPER',exos:[e('Détail à venir — voir PDF programme')]} }
+        },
+        { n:2, title:'PHASE 2 — EXPLOSIVE MUSCLE (Sem 9-16)', subtitle:'Explosivité max + Maintien perte poids',
+          weeks:8, frequency:'4-5 jours / semaine', location:'Salle recommandée | Max 1h',
+          objective:'Développer l\'explosivité athlétique au max tout en maintenant la perte de poids.',
+          progression:[{w:'SEM. 9-10',v:'-',f:'Sprints 30m x 6'},{w:'SEM. 11-12',v:'-',f:'Sprints 40m x 6'},{w:'SEM. 13-14',v:'-',f:'Sprints 50m x 6 + fartlek 25 mn'},{w:'SEM. 15-16',v:'-',f:'Super Explosif Test Final sem 16'}],
+          note:'⏳ Détail des sessions à venir.',
+          weekDays:[d('Lun','j1'),d('Mar','j2'),d('Mer','rest'),d('Jeu','j3'),d('Ven','j4'),d('Sam','opt'),d('Dim','rest')],
+          sessions:{ j1:{name:'Jour 1 — Full Body Explosif',exos:[e('Détail à venir — voir PDF programme')]} }
+        }
+      ],
+      finalNote:'16 semaines terminées : Perte 6-12 kg | Détente +5-10 cm | Physique athlétique.'
+    },
+    tri: {
+      name: 'TRIPHASIQUE', tagline: 'Force complète sans salle — Iso → Excentrique → Explosif',
+      totalWeeks: 12, level: 'Intermédiaire à avancé',
+      img: 'https://images.unsplash.com/photo-1574680096145-d05b474e2155?w=900&q=80',
+      phases: [
+        { n:1, title:'PHASE 1 — ISOMÉTRIQUE (Sem 1-4)', subtitle:'Renforcer les tendons et les structures profondes',
+          weeks:4, frequency:'3 + 1 optionnelle / semaine', location:'Sans salle',
+          objective:'Développer la force statique en maintenant des positions fixes. Cette phase renforce les tendons, améliore la stabilité articulaire et prépare le corps pour le travail excentrique.',
+          progression:[{w:'SEM. 1',v:'2',f:'15-30 s maintien — apprentissage'},{w:'SEM. 2',v:'3-4',f:'30-45 s maintien — consolidation'},{w:'SEM. 3',v:'4-5',f:'45-60 s maintien'},{w:'SEM. 4',v:'5-6',f:'60-90 s maintien — force max'}],
+          note:'Transmission Force 9 mn OBLIGATOIRE à chaque séance : mouvements spécifiques à ton objectif à 100%.',
+          weekDays:[d('Lun','j1'),d('Mar','rest'),d('Mer','j2'),d('Jeu','rest'),d('Ven','j3'),d('Sam','opt'),d('Dim','rest')],
+          sessions:{ j1:{name:'Jour 1 — Isométrique bas + haut du corps',exos:[e('Détail à venir — voir PDF programme')]} }
+        },
+        { n:2, title:'PHASE 2 — EXCENTRIQUE (Sem 5-8)', subtitle:'Force maximale par contrôle de la descente',
+          weeks:4, frequency:'3 + 1 optionnelle / semaine', location:'Sans salle',
+          objective:'Développer la force maximale en contrôlant la phase de descente. Phase qui construit la vraie force — les gains se révèlent en Phase 3.',
+          progression:[{w:'SEM. 5',v:'2',f:'8-10 reps — tempo 5s+3s'},{w:'SEM. 6',v:'3-4',f:'8-10 reps — consolidation'},{w:'SEM. 7',v:'4-5',f:'10-12 reps — progression'},{w:'SEM. 8',v:'5-6',f:'10-12 reps + charge possible'}],
+          note:'Tempo STRICT : 5 s descente (compter 1-2-3-4-5), 3 s montée. Ne jamais lâcher la descente.',
+          weekDays:[d('Lun','j1'),d('Mar','rest'),d('Mer','j2'),d('Jeu','rest'),d('Ven','j3'),d('Sam','opt'),d('Dim','rest')],
+          sessions:{ j1:{name:'Jour 1 — Excentrique bas + haut du corps',exos:[e('Détail à venir — voir PDF programme')]} }
+        },
+        { n:3, title:'PHASE 3 — EXPLOSIVE (Sem 9-12)', subtitle:'Transformer la force en puissance explosive',
+          weeks:4, frequency:'4 jours / semaine', location:'Sans salle',
+          objective:'Convertir la force construite en phases 1 et 2 en puissance explosive pure. C\'est la phase où les gains des 8 semaines précédentes se révèlent.',
+          progression:[{w:'SEM. 9',v:'2',f:'Focus technique explosive'},{w:'SEM. 10',v:'3-4',f:'Augmentation vitesse exécution'},{w:'SEM. 11',v:'4-5',f:'Charge légère + survitesse'},{w:'SEM. 12',v:'5-6',f:'EXPLOSIVITÉ MAXIMALE'}],
+          note:'Descente 1-2 s contrôlée → Montée EXPLOSION MAXIMALE. Arrêter si vitesse diminue.',
+          weekDays:[d('Lun','j1'),d('Mar','rest'),d('Mer','j2'),d('Jeu','rest'),d('Ven','j3'),d('Sam','j4'),d('Dim','rest')],
+          sessions:{ j1:{name:'Jour 1 — Bas du corps explosif + Haut du corps',exos:[e('Détail à venir — voir PDF programme')]} }
+        }
+      ],
+      finalNote:'12 semaines terminées : Force explosive max | Puissance athlétique optimale | Transformation complète sans salle.'
+    },
+    mt: {
+      name: 'MICROTRAINING', tagline: 'Discipline | Régularité | 9 micro-séances/sem | 10-18 mn/séance',
+      totalWeeks: 6, level: 'Tous niveaux',
+      img: 'https://images.unsplash.com/photo-1552674605-db6ffd4facb5?w=900&q=80',
+      phases: [
+        { n:1, title:'CYCLE HEBDOMADAIRE — 9 micros', subtitle:'Entraîner ta discipline autant que ta performance',
+          weeks:6, frequency:'9 micro-séances / semaine', location:'Sans matériel | 10-18 mn/séance',
+          objective:'Créer une habitude d\'entraînement inébranlable en combinant des séances courtes et une fréquence élevée. Chaque semaine est validée uniquement si les 9 micro-séances sont complètes. 8/9 = semaine recommencée.',
+          progression:[{w:'SEM. 1-6',v:'9/9',f:'Même structure 6 semaines de suite — validation stricte'}],
+          note:'RÈGLE ABSOLUE : 8/9 = échec, tu recommences la semaine. Max 2 micros par jour. La flexibilité c\'est QUAND tu t\'entraînes — pas SI tu t\'entraînes.',
+          weekDays:[d('Lun','m12'),d('Mar','m34'),d('Mer','m56'),d('Jeu','m78'),d('Ven','m9'),d('Sam','rest'),d('Dim','bilan')],
+          sessions:{ m12:{name:'Micro 1 (Jeûne) + Micro 2 (Circuit Athlétique)',exos:[e('Détail à venir — voir PDF programme')]} }
+        }
+      ],
+      finalNote:'6 semaines validées 9/9 — tu as créé une discipline inébranlable. Prêt pour le programme suivant.'
+    },
+    ep: {
+      name: 'EXPLOSE+', tagline: 'Méthode MENER | Partenaire | 18 semaines | 4 phases',
+      totalWeeks: 18, level: 'Avancé',
+      img: 'https://images.unsplash.com/photo-1526506118085-60ce8714f8c5?w=900&q=80',
+      phases: [
+        { n:1, title:'PHASE 1 — POIDS DU CORPS (Sem 1-4)', subtitle:'Maîtriser les patterns de mouvement',
+          weeks:4, frequency:'3-4 jours / semaine', location:'Sans salle possible',
+          objective:'Apprendre à bouger correctement avant de bouger lourd. Cette phase construit la base technique. Squats, fentes, hinges, poussées, tractions — tu maîtrises chaque mouvement à la perfection avant d\'y ajouter de la charge.',
+          progression:[{w:'SEM. 1',v:'PDC',f:'Apprentissage — qualité absolue'},{w:'SEM. 2',v:'PDC',f:'Consolidation — réduire repos'},{w:'SEM. 3',v:'PDC',f:'Intensification — dernière série à l\'échec'},{w:'SEM. 4',v:'PDC',f:'Affûtage + Super Explosif Test'}],
+          note:'Partenaire de résultats OBLIGATOIRE. RDV hebdo. 1-3 engagements MENER / semaine.',
+          weekDays:[d('Lun','j1'),d('Mar','mener'),d('Mer','j2'),d('Jeu','rest'),d('Ven','j3'),d('Sam','j4'),d('Dim','bilan')],
+          sessions:{ j1:{name:'Jour 1 — Force corps complet poids du corps',exos:[e('Détail à venir — voir PDF programme')]} }
+        },
+        { n:2, title:'PHASE 2 — CHARGES LÉGÈRES + PLIOMÉTRIE (Sem 5-9)', subtitle:'Introduire les charges et la plio intensive',
+          weeks:5, frequency:'4 jours / semaine', location:'Salle recommandée',
+          objective:'On introduit les charges à la barre et aux haltères sur les mouvements maîtrisés. Pliométrie monte en intensité.',
+          progression:[{w:'SEM. 5',v:'50-60%',f:'Adaptation'},{w:'SEM. 6',v:'60-70%',f:'Consolidation'},{w:'SEM. 7',v:'70-75%',f:'Intensification'},{w:'SEM. 8',v:'75-80%',f:'Surcharge — records'},{w:'SEM. 9',v:'-',f:'Affûtage + Super Explosif Test'}],
+          note:'Tests 1RM obligatoires début Phase 2 : Squat / SDT / Hip Thrust / DC.',
+          weekDays:[d('Lun','j1'),d('Mar','mener'),d('Mer','j2'),d('Jeu','rest'),d('Ven','j3'),d('Sam','j4'),d('Dim','bilan')],
+          sessions:{ j1:{name:'Jour 1 — Force bas du corps + Pliométrie',exos:[e('Détail à venir — voir PDF programme')]} }
+        },
+        { n:3, title:'PHASE 3 — CHARGES PROGRESSIVES + PLIO AVANCÉE (Sem 10-14)', subtitle:'Pousser au niveau supérieur',
+          weeks:5, frequency:'4-5 jours / semaine', location:'Salle obligatoire',
+          objective:'Les charges atteignent leur niveau optimal (80-90% 1RM). La pliométrie devient avancée. La vitesse s\'intègre pleinement.',
+          progression:[{w:'SEM. 10',v:'70-75%',f:'Adaptation'},{w:'SEM. 11',v:'75-85%',f:'Force maximale'},{w:'SEM. 12',v:'80-90%',f:'Surcharge max — records'},{w:'SEM. 13',v:'80-90%',f:'+ vitesse avancée'},{w:'SEM. 14',v:'-',f:'Affûtage + Super Explosif Test'}],
+          note:'Phase pivot — c\'est ici que la plupart des athlètes voient leurs gains les plus importants.',
+          weekDays:[d('Lun','j1'),d('Mar','mener'),d('Mer','j2'),d('Jeu','j3'),d('Ven','rest'),d('Sam','j4'),d('Dim','bilan')],
+          sessions:{ j1:{name:'Jour 1 — Force pure + Pliométrie',exos:[e('Détail à venir — voir PDF programme')]} }
+        },
+        { n:4, title:'PHASE 4 — PEAK PERFORMANCE (Sem 15-18)', subtitle:'Tout ce que tu as construit arrive ici',
+          weeks:4, frequency:'4-5 jours / semaine', location:'Salle obligatoire',
+          objective:'Phase finale. Volume légèrement réduit en sem 17-18 pour l\'affûtage, intensité au max. Super Explosif Test Final en sem 18.',
+          progression:[{w:'SEM. 15',v:'85-90%',f:'Peak force — records charge'},{w:'SEM. 16',v:'85-90%',f:'Peak explosivité — records détente'},{w:'SEM. 17',v:'60-70%',f:'Affûtage — maintien intensité'},{w:'SEM. 18',v:'-',f:'Super Explosif Test Final'}],
+          note:'Sem 18 : Repos 2 jours avant le test. Donne tout. Compare avec ta baseline initiale.',
+          weekDays:[d('Lun','j1'),d('Mar','mener'),d('Mer','j2'),d('Jeu','rest'),d('Ven','j3'),d('Sam','j4'),d('Dim','bilan')],
+          sessions:{ j1:{name:'Jour 1 — Force maximale + Plio intensive',exos:[e('Détail à venir — voir PDF programme')]} }
+        }
+      ],
+      finalNote:'18 SEMAINES TERMINÉES. Tu n\'es plus la même personne. Compare chaque chiffre avec ta baseline.'
+    }
+  };
+})();
+
+// ─────────────────────────────────────────────────────────
+// UI V2 — Rendu du détail programme (phases tabs + calendrier + détail session)
+// ─────────────────────────────────────────────────────────
+window._progV2State = { key: null, phaseIdx: 0, sessionKey: null };
+
+function renderProgramV2(key) {
+  var p = PROGRAMS_V2[key];
+  if (!p) return;
+  window._progV2State = { key: key, phaseIdx: 0, sessionKey: null };
+  var container = document.getElementById('progDetail');
+  if (!container) return;
+  container.classList.remove('hidden');
+  document.getElementById('progList').classList.add('hidden');
+  container.innerHTML = _renderProgHeader(p) + _renderPhaseTabs(p, 0) + '<div id="pgV2Body"></div>';
+  _renderPhaseBody(p, 0);
+  var v = document.getElementById('vTrain'); if (v) v.scrollTop = 0;
+}
+
+function _renderProgHeader(p) {
+  return '<div class="back-btn" onclick="closeProg()">← Retour Programmes</div>'
+    + '<div style="display:flex;gap:14px;align-items:center;margin-bottom:8px">'
+    +   '<img src="' + (p.img||'') + '" style="width:64px;height:64px;border-radius:12px;object-fit:cover;background:#1B2A4A;flex-shrink:0" onerror="this.style.display=\'none\'">'
+    +   '<div style="flex:1;min-width:0">'
+    +     '<div style="font-family:\'Bebas Neue\',sans-serif;font-size:24px;color:var(--text);letter-spacing:1.5px;line-height:1.05">' + p.name + '</div>'
+    +     '<div style="font-size:11px;color:var(--muted);margin-top:3px;line-height:1.4">' + (p.tagline||'') + '</div>'
+    +     '<div style="font-size:10px;color:var(--gold);margin-top:4px;font-weight:700;letter-spacing:1px">' + p.totalWeeks + ' SEMAINES · ' + p.phases.length + ' PHASE' + (p.phases.length>1?'S':'') + ' · ' + (p.level||'') + '</div>'
+    +   '</div>'
+    + '</div>';
+}
+
+function _renderPhaseTabs(p, activeIdx) {
+  var h = '<div style="display:flex;gap:6px;margin:12px 0 14px;overflow-x:auto;padding-bottom:4px">';
+  p.phases.forEach(function(ph, i){
+    var on = (i === activeIdx);
+    h += '<div onclick="_switchPhaseV2(' + i + ')" style="flex-shrink:0;padding:8px 14px;border-radius:8px;font-size:11px;font-weight:700;letter-spacing:.5px;cursor:pointer;background:' + (on?'var(--navy)':'var(--surface2)') + ';color:' + (on?'var(--gold)':'var(--text2)') + ';border:1.5px solid ' + (on?'var(--navy)':'var(--border)') + '">PHASE ' + ph.n + '</div>';
+  });
+  h += '</div>';
+  return h;
+}
+
+function _switchPhaseV2(idx) {
+  var p = PROGRAMS_V2[window._progV2State.key]; if (!p) return;
+  window._progV2State.phaseIdx = idx;
+  window._progV2State.sessionKey = null;
+  // Re-render tabs (update active)
+  var container = document.getElementById('progDetail');
+  if (!container) return;
+  container.innerHTML = _renderProgHeader(p) + _renderPhaseTabs(p, idx) + '<div id="pgV2Body"></div>';
+  _renderPhaseBody(p, idx);
+}
+
+function _renderPhaseBody(p, idx) {
+  var body = document.getElementById('pgV2Body');
+  if (!body) return;
+  var ph = p.phases[idx]; if (!ph) return;
+  var h = '';
+  h += '<div style="font-family:\'Bebas Neue\',sans-serif;font-size:20px;color:var(--text);letter-spacing:1.5px;line-height:1.05">' + ph.title + '</div>';
+  h += '<div style="font-size:12px;color:var(--muted);margin:3px 0 14px;font-style:italic">' + ph.subtitle + '</div>';
+
+  // Encart durée / fréquence / lieu
+  h += '<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:14px;background:var(--surface2);border-radius:12px;padding:12px 10px;text-align:center">';
+  h += '<div><div style="font-size:9px;color:var(--muted);letter-spacing:1px">DURÉE</div><div style="font-size:13px;font-weight:800;color:var(--text);margin-top:3px">' + ph.weeks + ' sem</div></div>';
+  h += '<div><div style="font-size:9px;color:var(--muted);letter-spacing:1px">FRÉQUENCE</div><div style="font-size:11px;font-weight:700;color:var(--text);margin-top:3px;line-height:1.2">' + ph.frequency + '</div></div>';
+  h += '<div><div style="font-size:9px;color:var(--muted);letter-spacing:1px">LIEU</div><div style="font-size:11px;font-weight:700;color:var(--text);margin-top:3px;line-height:1.2">' + ph.location + '</div></div>';
+  h += '</div>';
+
+  // Objectif
+  h += '<div style="background:rgba(197,164,78,.06);border-left:3px solid var(--gold);border-radius:0 10px 10px 0;padding:11px 13px;margin-bottom:14px">';
+  h += '<div style="font-size:9px;color:var(--gold);font-weight:800;letter-spacing:1.5px;margin-bottom:5px">🎯 OBJECTIF</div>';
+  h += '<div style="font-size:12px;color:var(--text2);line-height:1.55">' + ph.objective + '</div>';
+  h += '</div>';
+
+  // Progression semaine par semaine
+  h += '<div style="margin-bottom:14px">';
+  h += '<div style="font-size:9px;color:var(--muted);font-weight:800;letter-spacing:1.5px;margin-bottom:8px">📈 PROGRESSION SEMAINE PAR SEMAINE</div>';
+  (ph.progression||[]).forEach(function(pr){
+    h += '<div style="display:flex;gap:10px;padding:8px 10px;margin-bottom:5px;background:var(--surface);border:1px solid var(--border);border-radius:8px;font-size:11px;align-items:center">';
+    h += '<div style="font-weight:800;color:var(--gold);min-width:62px">' + pr.w + '</div>';
+    h += '<div style="font-weight:700;color:var(--text);min-width:54px">' + pr.v + '</div>';
+    h += '<div style="flex:1;color:var(--text2);line-height:1.4">' + pr.f + '</div>';
+    h += '</div>';
+  });
+  h += '</div>';
+
+  // Calendrier semaine
+  h += '<div style="margin-bottom:14px">';
+  h += '<div style="font-size:9px;color:var(--muted);font-weight:800;letter-spacing:1.5px;margin-bottom:8px">📅 SEMAINE TYPE — clique sur un jour pour voir la séance</div>';
+  h += '<div style="display:grid;grid-template-columns:repeat(7,1fr);gap:5px">';
+  (ph.weekDays||[]).forEach(function(day){
+    var sk = day.s;
+    var sess = ph.sessions ? ph.sessions[sk] : null;
+    var isRest = (sk === 'rest');
+    var isMener = (sk === 'mener' || sk === 'bilan');
+    var isOpt = (sk === 'opt');
+    var bg = isRest ? 'var(--surface2)' : (isMener ? 'rgba(108,99,255,.10)' : (isOpt ? 'rgba(245,158,11,.10)' : 'rgba(197,164,78,.10)'));
+    var border = isRest ? 'var(--border)' : (isMener ? 'rgba(108,99,255,.35)' : (isOpt ? 'rgba(245,158,11,.35)' : 'rgba(197,164,78,.35)'));
+    var color = isRest ? 'var(--muted)' : (isMener ? '#6C63FF' : (isOpt ? '#F59E0B' : 'var(--gold)'));
+    var label = isRest ? 'Repos' : (isMener ? (sk==='bilan'?'Bilan':'MENER') : (isOpt ? 'Optionnel' : (sess ? sess.name.split('—')[0].trim() : sk.toUpperCase())));
+    var clickable = !!sess && !isRest;
+    var oc = clickable ? ' onclick="_openSessionV2(\'' + sk + '\')"' : '';
+    h += '<div' + oc + ' style="background:' + bg + ';border:1px solid ' + border + ';border-radius:8px;padding:8px 4px;text-align:center;cursor:' + (clickable?'pointer':'default') + ';min-height:62px;display:flex;flex-direction:column;justify-content:space-between">';
+    h +=   '<div style="font-size:9px;font-weight:800;color:var(--muted);letter-spacing:1px">' + day.d.toUpperCase() + '</div>';
+    h +=   '<div style="font-size:10px;font-weight:700;color:' + color + ';line-height:1.15;margin-top:4px">' + label + '</div>';
+    h += '</div>';
+  });
+  h += '</div>';
+  h += '</div>';
+
+  // Note de phase
+  if (ph.note) {
+    h += '<div style="padding:10px 13px;background:var(--surface2);border-radius:10px;font-size:11px;color:var(--text2);line-height:1.5;margin-bottom:14px">📌 ' + ph.note + '</div>';
+  }
+
+  // Bouton commencer la séance (gated par SAT done)
+  h += '<button class="btn btn-gold" id="startSessionBtn" onclick="startSessionGuarded()" style="width:100%;margin-top:8px">Commencer la séance 🔥</button>';
+
+  body.innerHTML = h;
+  try { updateStartSessionLock(); } catch(e) {}
+}
+
+// Affiche le détail d'une séance (table d'exercices) en pleine page
+function _openSessionV2(sessKey) {
+  var p = PROGRAMS_V2[window._progV2State.key]; if (!p) return;
+  var ph = p.phases[window._progV2State.phaseIdx]; if (!ph) return;
+  var sess = ph.sessions && ph.sessions[sessKey]; if (!sess) return;
+  window._progV2State.sessionKey = sessKey;
+
+  var container = document.getElementById('progDetail');
+  if (!container) return;
+  var h = '';
+  h += '<div class="back-btn" onclick="_backToPhaseV2()">← Retour Phase ' + ph.n + '</div>';
+  h += '<div style="font-family:\'Bebas Neue\',sans-serif;font-size:18px;color:var(--gold);letter-spacing:1px;margin-bottom:4px">' + p.name + ' · ' + ph.title.replace(/^PHASE \d+ — /, 'Phase ' + ph.n + ' — ') + '</div>';
+  h += '<div style="font-family:\'Bebas Neue\',sans-serif;font-size:22px;color:var(--text);letter-spacing:1.5px;line-height:1.05;margin-bottom:14px">' + sess.name + '</div>';
+
+  // Table d'exercices style PDF
+  h += '<div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;overflow:hidden">';
+  h += '<div style="display:grid;grid-template-columns:24px 1fr 50px 70px 60px;gap:8px;padding:10px 12px;background:var(--navy);color:var(--gold);font-size:9px;font-weight:800;letter-spacing:1px">';
+  h += '<div>#</div><div>EXERCICE</div><div style="text-align:center">SÉRIES</div><div style="text-align:center">REPS</div><div style="text-align:right">REPOS</div>';
+  h += '</div>';
+  (sess.exos||[]).forEach(function(ex, i){
+    var alt = (i % 2 === 0) ? 'var(--surface)' : 'var(--surface2)';
+    h += '<div style="display:grid;grid-template-columns:24px 1fr 50px 70px 60px;gap:8px;padding:11px 12px;background:' + alt + ';font-size:12px;border-top:1px solid var(--border);align-items:center">';
+    h +=   '<div style="font-weight:800;color:var(--gold)">' + (i+1) + '</div>';
+    h +=   '<div style="color:var(--text);line-height:1.35;font-weight:600">' + ex.n + '</div>';
+    h +=   '<div style="text-align:center;color:var(--text2);font-weight:700">' + ex.s + '</div>';
+    h +=   '<div style="text-align:center;color:var(--text2);font-weight:700">' + ex.r + '</div>';
+    h +=   '<div style="text-align:right;color:var(--muted);font-weight:600">' + ex.rest + '</div>';
+    h += '</div>';
+  });
+  h += '</div>';
+
+  h += '<button class="btn btn-gold" id="startSessionBtn" onclick="startSessionGuarded()" style="width:100%;margin-top:14px">Commencer cette séance 🔥</button>';
+
+  container.innerHTML = h;
+  var v = document.getElementById('vTrain'); if (v) v.scrollTop = 0;
+  try { updateStartSessionLock(); } catch(e) {}
+}
+
+function _backToPhaseV2() {
+  var p = PROGRAMS_V2[window._progV2State.key]; if (!p) return;
+  var container = document.getElementById('progDetail');
+  if (!container) return;
+  container.innerHTML = _renderProgHeader(p) + _renderPhaseTabs(p, window._progV2State.phaseIdx) + '<div id="pgV2Body"></div>';
+  _renderPhaseBody(p, window._progV2State.phaseIdx);
+  var v = document.getElementById('vTrain'); if (v) v.scrollTop = 0;
+}
+
 const progPhases={ea:{name:'ELITE ATHLETE',obj:'Explosivité globale',phases:[[{name:'Échauffement',detail:'5 min'},{name:'Activation fessiers',detail:'2×12'},{name:'Squat progressif',detail:'3×8 (60%)'},{name:'Pogo Jumps',detail:'3×10'},{name:'Sprint 10m',detail:'5 passages'},{name:'Planche',detail:'3×30s'}],[{name:'Back Squat',detail:'4×5 (75%)'},{name:'Box Jump',detail:'4×5'},{name:'Hip Thrust',detail:'3×8 (70%)'},{name:'Sprint 30m',detail:'4 passages'},{name:'Depth Jump',detail:'3×3'}],[{name:'Power Clean',detail:'5×3 (85%)'},{name:'Back Squat',detail:'5×3 (85%)'},{name:'Depth Jump',detail:'4×3'},{name:'Sprint 60m',detail:'3 passages'},{name:'Box Jump Max',detail:'3×3'}]]},vd:{name:'VERTICAL DUNK',obj:'Dunker + Détente max',phases:[[{name:'CMJ',detail:'5×3'},{name:'Squat Jump',detail:'4×5'},{name:'Pogo Jumps',detail:'3×15'}],[{name:'Depth Jump',detail:'4×3'},{name:'Back Squat',detail:'4×5 (80%)'},{name:'Approach Jump',detail:'5×3'}],[{name:'Box Jump Max',detail:'5×2'},{name:'Single Leg Bound',detail:'3×5/jambe'},{name:'Sprint 10m',detail:'6 passages'}]]},mt:{name:'MICROTRAINING',obj:'Discipline et habitudes',phases:[[{name:'Squat Jump',detail:'3×5'},{name:'Pompes explosives',detail:'3×8'},{name:'Planche',detail:'3×30s'}],[{name:'Pogo Jumps',detail:'3×10'},{name:'V-Ups',detail:'3×12'},{name:'Skip A',detail:'3×15'}],[{name:'Box Jump',detail:'3×5'},{name:'Sprint 10m',detail:'4 passages'}]]},tri:{name:'TRIPHASIQUE',obj:'Force sans salle',phases:[[{name:'Squat PDC',detail:'4×15'},{name:'Fentes',detail:'3×10/jambe'},{name:'Pompes',detail:'4×12'}],[{name:'Squat Jump',detail:'4×8'},{name:'Single Leg Bound',detail:'3×6/jambe'}],[{name:'Pogo Jumps',detail:'4×12'},{name:'Sprint 10m',detail:'5 passages'}]]},se:{name:'SHRED EXPLOSE',obj:'Perdre + Exploser',phases:[[{name:'Circuit cardio',detail:'15 min'},{name:'Squat',detail:'3×12'},{name:'Pogo Jumps',detail:'3×15'}],[{name:'HIIT Sprint',detail:'10×10m'},{name:'Back Squat',detail:'4×8 (65%)'},{name:'Box Jump',detail:'3×8'}],[{name:'Sprint 30m',detail:'6 passages'},{name:'Depth Jump',detail:'3×3'}]]},ep:{name:'EXPLOSE+',obj:'Transformation totale',phases:[[{name:'Questionnaire MENER',detail:'Identifier pilier faible'},{name:'15 engagements',detail:'4 semaines'}],[{name:'Back Squat',detail:'5×5 (80%)'},{name:'Power Clean',detail:'4×3'},{name:'Sprint 30m',detail:'5 passages'}],[{name:'Depth Jump',detail:'5×3'},{name:'Back Squat',detail:'5×3 (90%)'},{name:'Sprint 60m',detail:'4 passages'}]]}};
 function showPg(id){document.querySelectorAll('.pg').forEach(p=>p.classList.remove('on'));document.querySelectorAll('.sub-tab').forEach(t=>t.classList.remove('on'));({lib:'pgLib',prog:'pgProg',builder:'pgBuilder'})[id]&&document.getElementById(({lib:'pgLib',prog:'pgProg',builder:'pgBuilder'})[id]).classList.add('on');event.currentTarget.classList.add('on');var __v=document.getElementById('vTrain');if(__v)__v.scrollTop=0;if(id==='lib'){closeCat();closeDetail()}if(id==='prog'){closeProg();try{updateProgrammeLocks();}catch(e){}}}
 function openCat(n,ic,k){currentCat=n;currentCatData=catData[k]||[];document.getElementById('catTitle').textContent=ic+' '+n.toUpperCase();document.getElementById('libGrid').classList.add('hidden');document.getElementById('libCatView').classList.remove('hidden');document.getElementById('libDetailView').classList.add('hidden');currentFilter='all';renderCatEx();var __v=document.getElementById('vTrain');if(__v)__v.scrollTop=0}
@@ -5777,7 +6466,18 @@ function openProg(k){
     showToast('🔒 Ce programme est verrouillé — il ne correspond pas à ton profil.', 'info');
     return;
   }
-  currentProgKey=k;const p=progPhases[k];if(!p)return;document.getElementById('progList').classList.add('hidden');document.getElementById('progDetail').classList.remove('hidden');document.getElementById('progDetailName').textContent=p.name;document.getElementById('progDetailObj').textContent=p.obj;document.querySelectorAll('.phase-tab').forEach((t,i)=>t.classList.toggle('on',i===0));renderPhase(p.phases[0]);
+  currentProgKey = k;
+  // Dispatch : si PROGRAMS_V2 a la donnée riche, on utilise la nouvelle UI
+  if (typeof PROGRAMS_V2 !== 'undefined' && PROGRAMS_V2[k]) {
+    renderProgramV2(k);
+    return;
+  }
+  // Fallback legacy
+  var p = progPhases[k]; if (!p) return;
+  document.getElementById('progList').classList.add('hidden');
+  document.getElementById('progDetail').classList.remove('hidden');
+  document.getElementById('progDetail').innerHTML = '<div class="back-btn" onclick="closeProg()">← Retour Programmes</div><div style="font-family:\'Bebas Neue\',sans-serif;font-size:28px;color:var(--text);letter-spacing:2px" id="progDetailName">' + p.name + '</div><div style="font-size:12px;color:var(--muted);margin:4px 0 10px" id="progDetailObj">' + (p.obj||'') + '</div><div class="phase-tabs"><div class="phase-tab on" onclick="switchPhase(this,0)">Fondations</div><div class="phase-tab" onclick="switchPhase(this,1)">Intensification</div><div class="phase-tab" onclick="switchPhase(this,2)">Peak</div></div><div id="phaseExList"></div><button class="btn btn-gold" id="startSessionBtn" onclick="startSessionGuarded()" style="margin-top:12px">Commencer la séance 🔥</button>';
+  renderPhase(p.phases[0]);
   try { updateStartSessionLock(); } catch(e) {}
   var __v=document.getElementById('vTrain');if(__v)__v.scrollTop=0;
 }
