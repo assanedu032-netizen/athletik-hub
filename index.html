@@ -8271,8 +8271,20 @@ function p3AddSerie(exoId) {
 }
 
 function p3NextStep() {
-  // Save values from current step
-  var ex = p3SatExercices[p3CurrentStep];
+  _p3SaveCurrentStep();
+  p3CurrentStep++;
+  // Reset series count for new exercise
+  var nextEx = p3SatExercices[p3CurrentStep];
+  if (nextEx && window.p3SeriesCount) window.p3SeriesCount[nextEx.id] = 1;
+  renderP3SATStep();
+}
+
+// Sauvegarde les valeurs typées dans l'étape courante de profil3 SAT.
+// Utilisé par p3NextStep ET par obSubmitSAT (sinon les valeurs du DERNIER test
+// ne sont jamais persistées dans p3Values avant validation).
+function _p3SaveCurrentStep() {
+  var ex = p3SatExercices && p3SatExercices[p3CurrentStep];
+  if (!ex) return;
   if (ex.hasSeries) {
     var count = (window.p3SeriesCount && window.p3SeriesCount[ex.id]) || 1;
     var max = 0;
@@ -8289,11 +8301,6 @@ function p3NextStep() {
       if (el) p3Values[f.id] = parseFloat(el.value) || 0;
     });
   }
-  p3CurrentStep++;
-  // Reset series count for new exercise
-  var nextEx = p3SatExercices[p3CurrentStep];
-  if (nextEx && window.p3SeriesCount) window.p3SeriesCount[nextEx.id] = 1;
-  renderP3SATStep();
 }
 
 function p3PrevStep() {
@@ -10013,6 +10020,11 @@ document.addEventListener('input', function(e) {
 });
 
 function obSubmitSAT(){
+  // CRITIQUE : sauvegarder les valeurs du DERNIER step avant la lecture, sinon
+  // les inputs typés sur ce step ne sont jamais persistés dans p3Values (pas de
+  // Suivant à cliquer sur la dernière étape, seulement Valider).
+  try { _p3SaveCurrentStep(); } catch(e) {}
+
   var prog = OB.program || '';
   var isSET = (prog === 'explose' || prog === 'shred');
 
@@ -10040,14 +10052,12 @@ function obSubmitSAT(){
     OB.satSDT     = p3Values['sdt_1rm']   || null;
     OB.satDC      = p3Values['dc_1rm']    || null;
     if (!OB.satDetente && !OB.satForce) { obErr('p3err', 'Entre au moins ta détente verticale ou ta force au squat.'); return; }
-    var sd = document.getElementById('satSprintDist') ? document.getElementById('satSprintDist').value : '';
-    var st = document.getElementById('satSprintTime') ? document.getElementById('satSprintTime').value : '';
-    OB.satSprintDist = parseFloat(sd) || 30;
-    OB.satVitesse = parseFloat(st) || null;
-    var tt = document.getElementById('satTTest') ? document.getElementById('satTTest').value : '';
-    OB.satTTest = parseFloat(tt) || null;
-    var fms = document.getElementById('satFMS') ? document.getElementById('satFMS').value : '';
-    OB.satFMS = parseInt(fms) || null;
+    // FIX : lire depuis les IDs du profil3 (p3SprintDist/Time, p3TTest, p3FMS),
+    // pas ceux du Tracks tab. p3Values aura été rempli par _p3SaveCurrentStep().
+    OB.satSprintDist = parseFloat(p3Values['p3SprintDist']) || 30;
+    OB.satVitesse    = parseFloat(p3Values['p3SprintTime']) || null;
+    OB.satTTest      = parseFloat(p3Values['p3TTest'])      || null;
+    OB.satFMS        = parseInt(p3Values['p3FMS'])          || null;
   }
   OB.satDone = true; OB.profilePct = 80;
 
