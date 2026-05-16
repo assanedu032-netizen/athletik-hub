@@ -2112,47 +2112,42 @@ body{background:var(--bg);color:var(--text);font-family:'Outfit',sans-serif;disp
 <div id="profil4" class="scr">
   <div class="scr-inner" style="padding:20px 22px 100px">
 
-    <!-- Progress 100% -->
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:18px">
-      <div style="font-size:11px;color:var(--muted);font-weight:700;letter-spacing:1.5px">PROFIL 4/4</div>
-      <div style="font-size:11px;color:var(--gold);font-weight:700">100%</div>
-    </div>
-    <div style="height:4px;background:var(--border);border-radius:2px;overflow:hidden;margin-bottom:24px">
-      <div style="height:100%;background:linear-gradient(90deg,var(--gold),#D4B86A);border-radius:2px;width:100%;transition:width .6s ease"></div>
+    <!-- Header (commun aux 3 pages) -->
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
+      <div style="font-size:11px;color:var(--muted);font-weight:700;letter-spacing:1.5px">PROFIL 4/4 — NUTRITION</div>
+      <div id="p4StepLabel" style="font-size:11px;color:var(--gold);font-weight:700">1 / 3</div>
     </div>
 
-    <!-- Titre -->
-    <div style="margin-bottom:24px">
-      <div style="font-family:'Bebas Neue',sans-serif;font-size:32px;letter-spacing:2px;color:var(--text);line-height:1.05">TA NUTRITION</div>
-      <div style="font-size:14px;color:var(--muted);margin-top:6px;line-height:1.5">Le moteur le plus puissant si l'entraînement est mal alimenté, c'est zéro. On cale tes besoins maintenant.</div>
+    <!-- Progress bar dynamique -->
+    <div style="height:4px;background:var(--border);border-radius:2px;overflow:hidden;margin-bottom:20px">
+      <div id="p4ProgressBar" style="height:100%;background:linear-gradient(90deg,var(--gold),#D4B86A);border-radius:2px;width:33%;transition:width .35s ease"></div>
     </div>
 
-    <!-- Bandeau Titan -->
-    <div class="titan-msg" style="margin-bottom:24px">
-      <div class="titan-avatar">T</div>
-      <div class="titan-bubble">Si ton NPI est en dessous de 40, t'auras beau avoir le meilleur programme du monde — tes résultats seront mauvais. Le carburant compte autant que le moteur.</div>
-    </div>
-
-    <!-- ÉTAPE 1 : Objectif nutritionnel (à choisir AVANT la composition) -->
-    <div style="background:var(--surface);border:1.5px solid var(--border);border-radius:14px;padding:16px;margin-bottom:14px">
-      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">
-        <div style="font-size:10px;font-weight:700;color:var(--muted);letter-spacing:1.5px;text-transform:uppercase">🎯 Étape 1 — Ton objectif nutritionnel</div>
-        <div style="font-size:9px;font-weight:700;color:var(--gold);letter-spacing:1px">1/2</div>
+    <!-- ═══════════════════════════ -->
+    <!-- PAGE 1 — Objectif nutritionnel  -->
+    <!-- ═══════════════════════════ -->
+    <div id="p4_step1" class="p4-step">
+      <div style="margin-bottom:20px">
+        <div style="font-family:'Bebas Neue',sans-serif;font-size:30px;letter-spacing:2px;color:var(--text);line-height:1.05">TON OBJECTIF</div>
+        <div style="font-size:13px;color:var(--muted);margin-top:6px;line-height:1.5">Un seul objectif à la fois. Sois honnête sur ta priorité actuelle.</div>
       </div>
-      <div style="font-size:11px;color:var(--muted);margin-bottom:14px;line-height:1.5">Un seul objectif à la fois. Sois honnête sur ta priorité actuelle.</div>
 
-      <div id="p4ObjGrid" style="display:flex;flex-direction:column;gap:10px">
-        <div class="p4-obj-card" onclick="p4SelectObj(this,'optimisation')" style="background:var(--surface2);border:1.5px solid var(--border);border-radius:12px;padding:14px;cursor:pointer;transition:all .2s">
+      <div class="titan-msg" style="margin-bottom:20px">
+        <div class="titan-avatar">T</div>
+        <div class="titan-bubble">Le carburant compte autant que le moteur. Choisis bien ce que tu veux, c'est de là qu'on part.</div>
+      </div>
+
+      <div id="p4ObjGrid" style="display:flex;flex-direction:column;gap:10px;margin-bottom:24px">
+        <div class="p4-obj-card" data-obj="optimisation" onclick="p4SelectObj(this,'optimisation')" style="background:var(--surface2);border:1.5px solid var(--border);border-radius:12px;padding:14px;cursor:pointer;transition:all .2s">
           <div style="display:flex;align-items:center;gap:12px">
             <div style="font-size:28px">⚡</div>
             <div style="flex:1">
               <div style="font-family:'Bebas Neue',sans-serif;font-size:16px;letter-spacing:1.5px;color:var(--text);margin-bottom:2px">OPTIMISATION</div>
-              <div style="font-size:11px;color:var(--muted);line-height:1.4">Tu es au bon poids. On maximise ta performance actuelle — qualité, timing, récupération.</div>
+              <div style="font-size:11px;color:var(--muted);line-height:1.4">Tu es au bon poids. On maximise ta performance — qualité, timing, récupération.</div>
             </div>
           </div>
         </div>
-
-        <div class="p4-obj-card" onclick="p4SelectObj(this,'priseMuscle')" style="background:var(--surface2);border:1.5px solid var(--border);border-radius:12px;padding:14px;cursor:pointer;transition:all .2s">
+        <div class="p4-obj-card" data-obj="priseMuscle" onclick="p4SelectObj(this,'priseMuscle')" style="background:var(--surface2);border:1.5px solid var(--border);border-radius:12px;padding:14px;cursor:pointer;transition:all .2s">
           <div style="display:flex;align-items:center;gap:12px">
             <div style="font-size:28px">💪</div>
             <div style="flex:1">
@@ -2161,8 +2156,7 @@ body{background:var(--bg);color:var(--text);font-family:'Outfit',sans-serif;disp
             </div>
           </div>
         </div>
-
-        <div class="p4-obj-card" onclick="p4SelectObj(this,'pertePoids')" style="background:var(--surface2);border:1.5px solid var(--border);border-radius:12px;padding:14px;cursor:pointer;transition:all .2s">
+        <div class="p4-obj-card" data-obj="pertePoids" onclick="p4SelectObj(this,'pertePoids')" style="background:var(--surface2);border:1.5px solid var(--border);border-radius:12px;padding:14px;cursor:pointer;transition:all .2s">
           <div style="display:flex;align-items:center;gap:12px">
             <div style="font-size:28px">🔥</div>
             <div style="flex:1">
@@ -2172,119 +2166,131 @@ body{background:var(--bg);color:var(--text);font-family:'Outfit',sans-serif;disp
           </div>
         </div>
       </div>
+
+      <button id="p4NextStep1" onclick="p4GoStep(2)" disabled style="width:100%;padding:16px;background:rgba(197,164,78,.3);border:none;border-radius:12px;font-family:'Outfit',sans-serif;font-size:15px;font-weight:800;color:rgba(6,12,24,.4);cursor:not-allowed;transition:all .2s">Continuer →</button>
     </div>
 
-    <!-- ÉTAPE 2 : Composition corporelle -->
-    <div style="background:var(--surface);border:1.5px solid var(--border);border-radius:14px;padding:16px;margin-bottom:14px">
-      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
-        <div style="font-size:10px;font-weight:700;color:var(--muted);letter-spacing:1.5px;text-transform:uppercase">📊 Étape 2 — Composition corporelle</div>
-        <div style="font-size:9px;font-weight:700;color:var(--gold);letter-spacing:1px">2/2</div>
+    <!-- ═══════════════════════════ -->
+    <!-- PAGE 2 — Composition corporelle  -->
+    <!-- ═══════════════════════════ -->
+    <div id="p4_step2" class="p4-step" style="display:none">
+      <div style="margin-bottom:20px">
+        <div style="font-family:'Bebas Neue',sans-serif;font-size:30px;letter-spacing:2px;color:var(--text);line-height:1.05">TES MESURES</div>
+        <div style="font-size:13px;color:var(--muted);margin-top:6px;line-height:1.5">On cale tes besoins en kcal et macros sur tes vraies données.</div>
       </div>
 
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px">
-        <div>
-          <label style="font-size:11px;color:var(--text2);font-weight:600;display:block;margin-bottom:5px">Poids actuel</label>
+      <div style="background:var(--surface);border:1.5px solid var(--border);border-radius:14px;padding:16px;margin-bottom:14px">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px">
+          <div>
+            <label style="font-size:11px;color:var(--text2);font-weight:600;display:block;margin-bottom:5px">Poids actuel</label>
+            <div style="display:flex;align-items:center;gap:6px">
+              <input class="fi" type="number" id="p4Poids" placeholder="75" step="0.1" style="flex:1;text-align:center;font-size:16px;font-weight:700" oninput="p4UpdateValid();p4CalcBesoins()">
+              <span style="font-size:12px;font-weight:700;color:var(--muted)">kg</span>
+            </div>
+          </div>
+          <div>
+            <label style="font-size:11px;color:var(--text2);font-weight:600;display:block;margin-bottom:5px">Taille</label>
+            <div style="display:flex;align-items:center;gap:6px">
+              <input class="fi" type="number" id="p4Taille" placeholder="178" style="flex:1;text-align:center;font-size:16px;font-weight:700" oninput="p4UpdateValid();p4CalcBesoins()">
+              <span style="font-size:12px;font-weight:700;color:var(--muted)">cm</span>
+            </div>
+          </div>
+        </div>
+
+        <div style="margin-bottom:12px">
+          <label style="font-size:11px;color:var(--text2);font-weight:600;display:block;margin-bottom:5px">🎯 Poids cible <span style="color:var(--muted);font-weight:400">(où tu veux arriver)</span></label>
           <div style="display:flex;align-items:center;gap:6px">
-            <input class="fi" type="number" id="p4Poids" placeholder="75" step="0.1" style="flex:1;text-align:center;font-size:16px;font-weight:700" oninput="p4UpdateValid();p4CalcBesoins()">
+            <input class="fi" type="number" id="p4PoidsCible" placeholder="78" step="0.1" style="flex:1;text-align:center;font-size:16px;font-weight:700" oninput="p4CalcBesoins()">
             <span style="font-size:12px;font-weight:700;color:var(--muted)">kg</span>
           </div>
+          <div id="p4DeltaPoids" style="display:none;font-size:11px;margin-top:6px;font-weight:600"></div>
         </div>
+
         <div>
-          <label style="font-size:11px;color:var(--text2);font-weight:600;display:block;margin-bottom:5px">Taille</label>
+          <label style="font-size:11px;color:var(--text2);font-weight:600;display:block;margin-bottom:5px">Masse grasse estimée <span style="color:var(--muted);font-weight:400">(optionnel)</span></label>
           <div style="display:flex;align-items:center;gap:6px">
-            <input class="fi" type="number" id="p4Taille" placeholder="178" style="flex:1;text-align:center;font-size:16px;font-weight:700" oninput="p4UpdateValid();p4CalcBesoins()">
-            <span style="font-size:12px;font-weight:700;color:var(--muted)">cm</span>
+            <input class="fi" type="number" id="p4MG" placeholder="15" step="0.1" style="flex:1;text-align:center;font-size:16px;font-weight:700" oninput="p4CalcBesoins()">
+            <span style="font-size:12px;font-weight:700;color:var(--muted)">%</span>
+          </div>
+          <div style="font-size:10px;color:var(--muted);margin-top:5px;line-height:1.4">Si tu ne sais pas, laisse vide. Tu pourras mesurer plus tard.</div>
+        </div>
+      </div>
+
+      <!-- Aperçu besoins calculés (live) -->
+      <div id="p4Besoins" style="display:none;background:linear-gradient(135deg,rgba(197,164,78,.06),rgba(27,42,74,.06));border:1.5px solid rgba(197,164,78,.2);border-radius:14px;padding:16px;margin-bottom:18px">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+          <div style="font-size:10px;font-weight:700;color:var(--gold);letter-spacing:1.5px">📐 TES BESOINS QUOTIDIENS</div>
+          <div style="font-size:9px;color:var(--muted)">Calcul Mifflin-St Jeor</div>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px">
+          <div style="background:var(--surface2);border-radius:10px;padding:11px;text-align:center">
+            <div style="font-family:'Bebas Neue',sans-serif;font-size:24px;color:var(--gold);line-height:1" id="p4Cal">—</div>
+            <div style="font-size:10px;color:var(--muted);letter-spacing:1px;margin-top:3px">KCAL/JOUR</div>
+          </div>
+          <div style="background:var(--surface2);border-radius:10px;padding:11px;text-align:center">
+            <div style="font-family:'Bebas Neue',sans-serif;font-size:24px;color:#22C55E;line-height:1" id="p4Prot">—</div>
+            <div style="font-size:10px;color:var(--muted);letter-spacing:1px;margin-top:3px">G PROTÉINES</div>
+          </div>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+          <div style="background:var(--surface2);border-radius:10px;padding:11px;text-align:center">
+            <div style="font-family:'Bebas Neue',sans-serif;font-size:20px;color:#5B9CF6;line-height:1" id="p4Gluc">—</div>
+            <div style="font-size:10px;color:var(--muted);letter-spacing:1px;margin-top:3px">G GLUCIDES</div>
+          </div>
+          <div style="background:var(--surface2);border-radius:10px;padding:11px;text-align:center">
+            <div style="font-family:'Bebas Neue',sans-serif;font-size:20px;color:#F59E0B;line-height:1" id="p4Lip">—</div>
+            <div style="font-size:10px;color:var(--muted);letter-spacing:1px;margin-top:3px">G LIPIDES</div>
           </div>
         </div>
       </div>
 
-      <div style="margin-bottom:12px">
-        <label style="font-size:11px;color:var(--text2);font-weight:600;display:block;margin-bottom:5px">🎯 Poids cible <span style="color:var(--muted);font-weight:400">(où tu veux arriver)</span></label>
-        <div style="display:flex;align-items:center;gap:6px">
-          <input class="fi" type="number" id="p4PoidsCible" placeholder="78" step="0.1" style="flex:1;text-align:center;font-size:16px;font-weight:700" oninput="p4CalcBesoins()">
-          <span style="font-size:12px;font-weight:700;color:var(--muted)">kg</span>
-        </div>
-        <div id="p4DeltaPoids" style="display:none;font-size:11px;margin-top:6px;font-weight:600"></div>
-      </div>
-
-      <div>
-        <label style="font-size:11px;color:var(--text2);font-weight:600;display:block;margin-bottom:5px">Masse grasse estimée <span style="color:var(--muted);font-weight:400">(optionnel)</span></label>
-        <div style="display:flex;align-items:center;gap:6px">
-          <input class="fi" type="number" id="p4MG" placeholder="15" step="0.1" style="flex:1;text-align:center;font-size:16px;font-weight:700" oninput="p4CalcBesoins()">
-          <span style="font-size:12px;font-weight:700;color:var(--muted)">%</span>
-        </div>
-        <div style="font-size:10px;color:var(--muted);margin-top:5px;line-height:1.4">Si tu ne sais pas, laisse vide. Tu pourras mesurer plus tard (pince à plis, impédancemètre).</div>
+      <div style="display:flex;gap:10px">
+        <button onclick="p4GoStep(1)" style="flex:0 0 auto;padding:16px 18px;background:var(--surface2);border:1.5px solid var(--border);border-radius:12px;font-family:'Outfit',sans-serif;font-size:14px;font-weight:700;color:var(--text2);cursor:pointer">← Retour</button>
+        <button id="p4NextStep2" onclick="p4GoStep(3)" disabled style="flex:1;padding:16px;background:rgba(197,164,78,.3);border:none;border-radius:12px;font-family:'Outfit',sans-serif;font-size:15px;font-weight:800;color:rgba(6,12,24,.4);cursor:not-allowed;transition:all .2s">Continuer →</button>
       </div>
     </div>
 
-    <!-- Aperçu besoins calculés -->
-    <div id="p4Besoins" style="display:none;background:linear-gradient(135deg,rgba(197,164,78,.06),rgba(27,42,74,.4));border:1.5px solid rgba(197,164,78,.2);border-radius:14px;padding:16px;margin-bottom:14px">
-      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
-        <div style="font-size:10px;font-weight:700;color:var(--gold);letter-spacing:1.5px">📐 TES BESOINS QUOTIDIENS</div>
-        <div style="font-size:9px;color:var(--muted)">Calcul Mifflin-St Jeor</div>
+    <!-- ═══════════════════════════ -->
+    <!-- PAGE 3 — Type de suivi (Flux)    -->
+    <!-- ═══════════════════════════ -->
+    <div id="p4_step3" class="p4-step" style="display:none">
+      <div style="margin-bottom:20px">
+        <div style="font-family:'Bebas Neue',sans-serif;font-size:30px;letter-spacing:2px;color:var(--text);line-height:1.05">TON SUIVI</div>
+        <div style="font-size:13px;color:var(--muted);margin-top:6px;line-height:1.5">Comment tu veux gérer ta nutrition au quotidien.</div>
       </div>
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px">
-        <div style="background:var(--surface2);border-radius:10px;padding:11px;text-align:center">
-          <div style="font-family:'Bebas Neue',sans-serif;font-size:24px;color:var(--gold);line-height:1" id="p4Cal">—</div>
-          <div style="font-size:10px;color:var(--muted);letter-spacing:1px;margin-top:3px">KCAL/JOUR</div>
-        </div>
-        <div style="background:var(--surface2);border-radius:10px;padding:11px;text-align:center">
-          <div style="font-family:'Bebas Neue',sans-serif;font-size:24px;color:#22C55E;line-height:1" id="p4Prot">—</div>
-          <div style="font-size:10px;color:var(--muted);letter-spacing:1px;margin-top:3px">G PROTÉINES</div>
-        </div>
-      </div>
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
-        <div style="background:var(--surface2);border-radius:10px;padding:11px;text-align:center">
-          <div style="font-family:'Bebas Neue',sans-serif;font-size:20px;color:#5B9CF6;line-height:1" id="p4Gluc">—</div>
-          <div style="font-size:10px;color:var(--muted);letter-spacing:1px;margin-top:3px">G GLUCIDES</div>
-        </div>
-        <div style="background:var(--surface2);border-radius:10px;padding:11px;text-align:center">
-          <div style="font-family:'Bebas Neue',sans-serif;font-size:20px;color:#F59E0B;line-height:1" id="p4Lip">—</div>
-          <div style="font-size:10px;color:var(--muted);letter-spacing:1px;margin-top:3px">G LIPIDES</div>
-        </div>
-      </div>
-    </div>
 
-    <!-- ÉTAPE 3 : Type de suivi (Strict / Flexible) -->
-    <div style="background:var(--surface);border:1.5px solid var(--border);border-radius:14px;padding:16px;margin-bottom:14px">
-      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">
-        <div style="font-size:10px;font-weight:700;color:var(--muted);letter-spacing:1.5px;text-transform:uppercase">⚙️ Étape 3 — Type de suivi</div>
-        <div style="font-size:9px;font-weight:700;color:var(--gold);letter-spacing:1px">FACULTATIF</div>
-      </div>
-      <div style="font-size:11px;color:var(--muted);margin-bottom:14px;line-height:1.5">Choisis comment tu veux gérer ta nutrition au quotidien.</div>
-
-      <div style="display:flex;flex-direction:column;gap:10px">
-        <div class="p4-flux-card" data-flux="strict" onclick="p4SelectFlux(this,'strict')" style="background:var(--surface2);border:1.5px solid var(--border);border-radius:12px;padding:14px;cursor:pointer;transition:all .2s">
-          <div style="display:flex;align-items:center;gap:12px">
-            <div style="font-size:24px">📐</div>
+      <div style="display:flex;flex-direction:column;gap:12px;margin-bottom:18px">
+        <div class="p4-flux-card" data-flux="strict" onclick="p4SelectFlux(this,'strict')" style="background:var(--surface2);border:1.5px solid var(--border);border-radius:14px;padding:16px;cursor:pointer;transition:all .2s">
+          <div style="display:flex;align-items:center;gap:14px">
+            <div style="font-size:32px">📐</div>
             <div style="flex:1">
-              <div style="font-family:'Bebas Neue',sans-serif;font-size:15px;letter-spacing:1.5px;color:var(--text);margin-bottom:2px">STRICT</div>
-              <div style="font-size:11px;color:var(--muted);line-height:1.4">L'app génère ton plan repas exact. Aucune décision à prendre, tu suis.</div>
+              <div style="font-family:'Bebas Neue',sans-serif;font-size:18px;letter-spacing:1.5px;color:var(--text);margin-bottom:3px">STRICT</div>
+              <div style="font-size:12px;color:var(--muted);line-height:1.5">L'app génère ton plan repas exact. Aucune décision à prendre, tu suis.</div>
             </div>
           </div>
         </div>
-        <div class="p4-flux-card" data-flux="flexible" onclick="p4SelectFlux(this,'flexible')" style="background:var(--surface2);border:1.5px solid var(--border);border-radius:12px;padding:14px;cursor:pointer;transition:all .2s">
-          <div style="display:flex;align-items:center;gap:12px">
-            <div style="font-size:24px">🎨</div>
+        <div class="p4-flux-card" data-flux="flexible" onclick="p4SelectFlux(this,'flexible')" style="background:var(--surface2);border:1.5px solid var(--border);border-radius:14px;padding:16px;cursor:pointer;transition:all .2s">
+          <div style="display:flex;align-items:center;gap:14px">
+            <div style="font-size:32px">🎨</div>
             <div style="flex:1">
-              <div style="font-family:'Bebas Neue',sans-serif;font-size:15px;letter-spacing:1.5px;color:var(--text);margin-bottom:2px">FLEXIBLE</div>
-              <div style="font-size:11px;color:var(--muted);line-height:1.4">Tu utilises les recettes de l'app + tes propres repas, tu calibres comme tu veux.</div>
+              <div style="font-family:'Bebas Neue',sans-serif;font-size:18px;letter-spacing:1.5px;color:var(--text);margin-bottom:3px">FLEXIBLE</div>
+              <div style="font-size:12px;color:var(--muted);line-height:1.5">Recettes de l'app + tes propres repas, tu calibres comme tu veux.</div>
             </div>
           </div>
         </div>
       </div>
+
+      <div style="padding:12px 14px;background:rgba(197,164,78,.04);border-left:3px solid rgba(197,164,78,.4);border-radius:0 10px 10px 0;margin-bottom:18px;font-size:11px;color:var(--text2);line-height:1.55">
+        <strong style="color:var(--gold)">📓 Étape suivante :</strong> dans une semaine, Titan te proposera l'enquête alimentaire 3-7 jours pour calculer ton score NPI précis.
+      </div>
+
+      <div id="p4err" style="color:#E05252;font-size:12px;margin-bottom:12px;display:none"></div>
+
+      <div style="display:flex;gap:10px">
+        <button onclick="p4GoStep(2)" style="flex:0 0 auto;padding:16px 18px;background:var(--surface2);border:1.5px solid var(--border);border-radius:12px;font-family:'Outfit',sans-serif;font-size:14px;font-weight:700;color:var(--text2);cursor:pointer">← Retour</button>
+        <button id="p4Btn" onclick="p4ShowPlan()" style="flex:1;padding:16px;background:linear-gradient(135deg,var(--gold),#D4B86A);border:none;border-radius:12px;font-family:'Outfit',sans-serif;font-size:15px;font-weight:800;color:var(--navy);cursor:pointer;transition:all .2s">Calculer mon plan 🚀</button>
+      </div>
     </div>
-
-    <!-- Note enquête future -->
-    <div style="padding:12px 14px;background:rgba(197,164,78,.04);border-left:3px solid rgba(197,164,78,.4);border-radius:0 10px 10px 0;margin-bottom:18px;font-size:11px;color:var(--text2);line-height:1.55">
-      <strong style="color:var(--gold)">📓 Étape suivante :</strong> dans une semaine, Titan te proposera l'enquête alimentaire 3-7 jours pour calculer ton score NPI précis et tes alertes par pilier.
-    </div>
-
-    <!-- Erreur -->
-    <div id="p4err" style="color:#E05252;font-size:12px;margin-bottom:12px;display:none"></div>
-
-    <!-- Bouton final -->
-    <button id="p4Btn" onclick="p4ShowPlan()" disabled style="width:100%;padding:16px;background:rgba(197,164,78,.3);border:none;border-radius:12px;font-family:'Outfit',sans-serif;font-size:15px;font-weight:800;color:rgba(6,12,24,.4);cursor:not-allowed;transition:all .2s">Calculer mon plan 🚀</button>
 
   </div>
 </div>
@@ -10090,7 +10096,6 @@ function initProfil4() {
   if (OB.taille) document.getElementById('p4Taille').value = OB.taille;
   // Reset
   OB.objNutri = OB.objNutri || null;
-  p4UpdateValid();
   if (OB.objNutri) {
     var card = document.querySelector('.p4-obj-card[data-obj="' + OB.objNutri + '"]');
     if (card) p4SelectObj(card, OB.objNutri);
@@ -10104,6 +10109,24 @@ function initProfil4() {
       if (fcard) p4SelectFlux(fcard, saved);
     }
   } catch(e) {}
+  // Démarre toujours sur la page 1, met à jour les boutons "Continuer"
+  p4GoStep(1);
+  p4UpdateValid();
+}
+
+// Navigation entre les 3 sous-pages de profil4
+function p4GoStep(n) {
+  for (var i = 1; i <= 3; i++) {
+    var el = document.getElementById('p4_step' + i);
+    if (el) el.style.display = (i === n) ? 'block' : 'none';
+  }
+  var lbl = document.getElementById('p4StepLabel');
+  if (lbl) lbl.textContent = n + ' / 3';
+  var bar = document.getElementById('p4ProgressBar');
+  if (bar) bar.style.width = (n * 33.34) + '%';
+  // Scroll en haut de la zone
+  var scr = document.getElementById('profil4');
+  if (scr) scr.scrollTop = 0;
 }
 
 function p4SelectFlux(card, flux) {
@@ -10141,21 +10164,38 @@ function p4SelectObj(card, obj) {
 }
 
 function p4UpdateValid() {
-  var poids = parseFloat(document.getElementById('p4Poids').value);
-  var taille = parseFloat(document.getElementById('p4Taille').value);
+  var poids = parseFloat((document.getElementById('p4Poids')||{}).value);
+  var taille = parseFloat((document.getElementById('p4Taille')||{}).value);
   var obj = OB.objNutri;
-  var btn = document.getElementById('p4Btn');
-  if (!btn) return;
-  if (poids > 0 && taille > 0 && obj) {
-    btn.disabled = false;
-    btn.style.background = 'linear-gradient(135deg,var(--gold),#D4B86A)';
-    btn.style.color = 'var(--navy)';
-    btn.style.cursor = 'pointer';
-  } else {
-    btn.disabled = true;
-    btn.style.background = 'rgba(197,164,78,.3)';
-    btn.style.color = 'rgba(6,12,24,.4)';
-    btn.style.cursor = 'not-allowed';
+  // Bouton "Continuer →" de l'étape 1 (Objectif) — activé dès qu'un objectif est choisi
+  var btn1 = document.getElementById('p4NextStep1');
+  if (btn1) {
+    if (obj) {
+      btn1.disabled = false;
+      btn1.style.background = 'linear-gradient(135deg,var(--gold),#D4B86A)';
+      btn1.style.color = 'var(--navy)';
+      btn1.style.cursor = 'pointer';
+    } else {
+      btn1.disabled = true;
+      btn1.style.background = 'rgba(197,164,78,.3)';
+      btn1.style.color = 'rgba(6,12,24,.4)';
+      btn1.style.cursor = 'not-allowed';
+    }
+  }
+  // Bouton "Continuer →" de l'étape 2 (Composition) — activé quand poids+taille remplis
+  var btn2 = document.getElementById('p4NextStep2');
+  if (btn2) {
+    if (poids > 0 && taille > 0) {
+      btn2.disabled = false;
+      btn2.style.background = 'linear-gradient(135deg,var(--gold),#D4B86A)';
+      btn2.style.color = 'var(--navy)';
+      btn2.style.cursor = 'pointer';
+    } else {
+      btn2.disabled = true;
+      btn2.style.background = 'rgba(197,164,78,.3)';
+      btn2.style.color = 'rgba(6,12,24,.4)';
+      btn2.style.cursor = 'not-allowed';
+    }
   }
 }
 
