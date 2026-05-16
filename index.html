@@ -503,6 +503,18 @@ body{background:var(--bg);color:var(--text);font-family:'Outfit',sans-serif;disp
 /* ═══ SECTIONS ═══ */
 .sec{display:none;padding:16px 22px;animation:fadeUp .3s ease both}
 .sec.on{display:block}
+.recipe-fc{padding:8px 14px;border:1.5px solid var(--border);border-radius:20px;font-size:11px;font-weight:700;color:var(--text2);cursor:pointer;background:var(--surface);user-select:none;transition:all .15s;white-space:nowrap}
+.recipe-fc.on{background:var(--navy);border-color:var(--navy);color:var(--gold)}
+.recipe-card{position:relative;border-radius:14px;overflow:hidden;cursor:pointer;background:var(--surface);border:1px solid var(--border);box-shadow:0 2px 8px rgba(0,0,0,.04);transition:transform .15s}
+.recipe-card:active{transform:scale(0.97)}
+.recipe-card-img{width:100%;height:90px;object-fit:cover;display:block;background:#1B2A4A}
+.recipe-card-body{padding:8px 10px 10px}
+.recipe-card-name{font-family:'Bebas Neue',sans-serif;font-size:13px;letter-spacing:.5px;color:var(--text);line-height:1.15;margin-bottom:3px;min-height:30px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.recipe-card-meta{display:flex;justify-content:space-between;align-items:center;font-size:10px;color:var(--muted);font-weight:600}
+.recipe-card-cals{color:var(--gold);font-weight:800}
+.recipe-card-fav{position:absolute;top:6px;right:6px;width:30px;height:30px;border-radius:50%;background:rgba(0,0,0,.55);backdrop-filter:blur(8px);display:flex;align-items:center;justify-content:center;font-size:16px;color:#fff;cursor:pointer;z-index:2;border:1.5px solid rgba(255,255,255,.15)}
+.recipe-card-fav.on{background:linear-gradient(135deg,var(--gold),#D4B86A);color:var(--navy);border-color:var(--gold)}
+.recipe-card-tag{position:absolute;top:6px;left:6px;font-size:8px;font-weight:800;letter-spacing:1px;padding:3px 7px;border-radius:10px;background:rgba(0,0,0,.55);color:#fff;backdrop-filter:blur(4px)}
 .test-video-wrap{margin:-4px 0 14px;border-radius:10px;overflow:hidden;background:#0a0f1e;position:relative;padding-top:56.25%;border:1px solid var(--border)}
 .test-video-wrap iframe,.test-video-wrap .tvw-ph{position:absolute;inset:0;width:100%;height:100%;border:0}
 .test-video-wrap .tvw-ph{display:flex;align-items:center;justify-content:center;flex-direction:column;background:linear-gradient(135deg,#1B2A4A,#0A0F1E);color:rgba(255,255,255,.5);font-size:12px;letter-spacing:1px;font-weight:600;cursor:pointer;text-align:center;padding:12px}
@@ -2233,6 +2245,36 @@ body{background:var(--bg);color:var(--text);font-family:'Outfit',sans-serif;disp
       </div>
     </div>
 
+    <!-- ÉTAPE 3 : Type de suivi (Strict / Flexible) -->
+    <div style="background:var(--surface);border:1.5px solid var(--border);border-radius:14px;padding:16px;margin-bottom:14px">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">
+        <div style="font-size:10px;font-weight:700;color:var(--muted);letter-spacing:1.5px;text-transform:uppercase">⚙️ Étape 3 — Type de suivi</div>
+        <div style="font-size:9px;font-weight:700;color:var(--gold);letter-spacing:1px">FACULTATIF</div>
+      </div>
+      <div style="font-size:11px;color:var(--muted);margin-bottom:14px;line-height:1.5">Choisis comment tu veux gérer ta nutrition au quotidien.</div>
+
+      <div style="display:flex;flex-direction:column;gap:10px">
+        <div class="p4-flux-card" data-flux="strict" onclick="p4SelectFlux(this,'strict')" style="background:var(--surface2);border:1.5px solid var(--border);border-radius:12px;padding:14px;cursor:pointer;transition:all .2s">
+          <div style="display:flex;align-items:center;gap:12px">
+            <div style="font-size:24px">📐</div>
+            <div style="flex:1">
+              <div style="font-family:'Bebas Neue',sans-serif;font-size:15px;letter-spacing:1.5px;color:var(--text);margin-bottom:2px">STRICT</div>
+              <div style="font-size:11px;color:var(--muted);line-height:1.4">L'app génère ton plan repas exact. Aucune décision à prendre, tu suis.</div>
+            </div>
+          </div>
+        </div>
+        <div class="p4-flux-card" data-flux="flexible" onclick="p4SelectFlux(this,'flexible')" style="background:var(--surface2);border:1.5px solid var(--border);border-radius:12px;padding:14px;cursor:pointer;transition:all .2s">
+          <div style="display:flex;align-items:center;gap:12px">
+            <div style="font-size:24px">🎨</div>
+            <div style="flex:1">
+              <div style="font-family:'Bebas Neue',sans-serif;font-size:15px;letter-spacing:1.5px;color:var(--text);margin-bottom:2px">FLEXIBLE</div>
+              <div style="font-size:11px;color:var(--muted);line-height:1.4">Tu utilises les recettes de l'app + tes propres repas, tu calibres comme tu veux.</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
     <!-- Note enquête future -->
     <div style="padding:12px 14px;background:rgba(197,164,78,.04);border-left:3px solid rgba(197,164,78,.4);border-radius:0 10px 10px 0;margin-bottom:18px;font-size:11px;color:var(--text2);line-height:1.55">
       <strong style="color:var(--gold)">📓 Étape suivante :</strong> dans une semaine, Titan te proposera l'enquête alimentaire 3-7 jours pour calculer ton score NPI précis et tes alertes par pilier.
@@ -3358,22 +3400,50 @@ body{background:var(--bg);color:var(--text);font-family:'Outfit',sans-serif;disp
     </div>
 
     <!-- TAB COURSES -->
+    <!-- ═══ RECETTES (40) ═══ -->
+    <div id="ntab-recettes" class="pg" style="padding:16px 22px">
+      <div style="margin-bottom:12px">
+        <div style="font-family:'Bebas Neue',sans-serif;font-size:22px;color:var(--text);letter-spacing:1.5px;margin-bottom:4px">RECETTES ATHLÈTE</div>
+        <div style="font-size:12px;color:var(--muted);line-height:1.5">40 recettes calibrées athlète. Ajoute aux <strong style="color:var(--gold)">favoris ⭐</strong> pour générer ta liste de courses.</div>
+      </div>
+
+      <!-- Filtres -->
+      <div id="recipeFilters" style="display:flex;gap:8px;margin:14px 0 16px;flex-wrap:wrap">
+        <div class="recipe-fc on" data-cat="all" onclick="filterRecipeCat(this,'all')">Tout</div>
+        <div class="recipe-fc" data-cat="breakfast" onclick="filterRecipeCat(this,'breakfast')">🥞 Petit-déj</div>
+        <div class="recipe-fc" data-cat="smoothie" onclick="filterRecipeCat(this,'smoothie')">🥤 Smoothies</div>
+        <div class="recipe-fc" data-cat="meal" onclick="filterRecipeCat(this,'meal')">🍽️ Plats</div>
+        <div class="recipe-fc" data-cat="favorites" onclick="filterRecipeCat(this,'favorites')">⭐ Favoris</div>
+      </div>
+
+      <!-- Search -->
+      <div style="position:relative;margin-bottom:14px">
+        <input id="recipeSearch" type="text" placeholder="Chercher une recette..." oninput="renderRecipesList()" style="width:100%;padding:11px 14px 11px 38px;background:var(--surface2);border:1.5px solid var(--border);border-radius:12px;color:var(--text);font-family:'Outfit',sans-serif;font-size:13px;font-weight:600;outline:none">
+        <div style="position:absolute;left:13px;top:50%;transform:translateY(-50%);font-size:13px;color:var(--muted)">🔍</div>
+      </div>
+
+      <!-- Compteur favoris -->
+      <div id="recipeFavCount" style="display:none;font-size:11px;color:var(--gold);font-weight:700;letter-spacing:1px;margin-bottom:10px"></div>
+
+      <!-- Grille des recettes -->
+      <div id="recipeGrid" style="display:grid;grid-template-columns:1fr 1fr;gap:10px"></div>
+    </div>
+
     <div id="ntab-courses" class="pg" style="padding:16px 22px">
-      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
         <div style="font-family:'Bebas Neue',sans-serif;font-size:20px;color:var(--text);letter-spacing:1px">LISTE DE COURSES</div>
-        <button onclick="generateList()" style="padding:8px 16px;background:linear-gradient(135deg,var(--gold),var(--gold2));border:none;border-radius:10px;color:var(--navy);font-size:12px;font-weight:800;cursor:pointer">G&#233;n&#233;rer 🛒</button>
+        <button onclick="generateList()" style="padding:8px 16px;background:linear-gradient(135deg,var(--gold),var(--gold2));border:none;border-radius:10px;color:var(--navy);font-size:12px;font-weight:800;cursor:pointer">Générer 🛒</button>
       </div>
-      <div style="margin-bottom:16px">
-        <div style="font-size:10px;font-weight:700;color:var(--gold);letter-spacing:1px;margin-bottom:8px">PROT&#201;INES</div>
-        <div style="display:flex;align-items:center;gap:10px;padding:12px 0;border-bottom:1px solid var(--border)"><div class="shop-check on" onclick="toggleShop(this)" style="width:22px;height:22px;border-radius:6px;background:var(--gold);border:2px solid var(--gold);display:flex;align-items:center;justify-content:center;font-size:12px;color:var(--navy);cursor:pointer">&#10003;</div><div style="flex:1;font-size:13px;color:var(--text);text-decoration:line-through;color:var(--muted)">Filets de poulet (1.2kg)</div></div>
-        <div style="display:flex;align-items:center;gap:10px;padding:12px 0;border-bottom:1px solid var(--border)"><div class="shop-check" onclick="toggleShop(this)" style="width:22px;height:22px;border-radius:6px;border:2px solid var(--border2);cursor:pointer"></div><div style="flex:1;font-size:13px;color:var(--text)">Whey Protein Isolate (1kg)</div></div>
-        <div style="display:flex;align-items:center;gap:10px;padding:12px 0;border-bottom:1px solid var(--border)"><div class="shop-check" onclick="toggleShop(this)" style="width:22px;height:22px;border-radius:6px;border:2px solid var(--border2);cursor:pointer"></div><div style="flex:1;font-size:13px;color:var(--text)">Saumon frais (400g)</div></div>
-      </div>
-      <div style="margin-bottom:16px">
-        <div style="font-size:10px;font-weight:700;color:var(--gold);letter-spacing:1px;margin-bottom:8px">GLUCIDES</div>
-        <div style="display:flex;align-items:center;gap:10px;padding:12px 0;border-bottom:1px solid var(--border)"><div class="shop-check" onclick="toggleShop(this)" style="width:22px;height:22px;border-radius:6px;border:2px solid var(--border2);cursor:pointer"></div><div style="flex:1;font-size:13px;color:var(--text)">Quinoa (500g)</div></div>
-        <div style="display:flex;align-items:center;gap:10px;padding:12px 0;border-bottom:1px solid var(--border)"><div class="shop-check" onclick="toggleShop(this)" style="width:22px;height:22px;border-radius:6px;border:2px solid var(--border2);cursor:pointer"></div><div style="flex:1;font-size:13px;color:var(--text)">Patates douces (1.5kg)</div></div>
-        <div style="display:flex;align-items:center;gap:10px;padding:12px 0;border-bottom:1px solid var(--border)"><div class="shop-check on" onclick="toggleShop(this)" style="width:22px;height:22px;border-radius:6px;background:var(--gold);border:2px solid var(--gold);display:flex;align-items:center;justify-content:center;font-size:12px;color:var(--navy);cursor:pointer">&#10003;</div><div style="flex:1;font-size:13px;color:var(--text);text-decoration:line-through;color:var(--muted)">Flocons d&#8217;avoine (1kg)</div></div>
+      <div id="coursesSource" style="font-size:11px;color:var(--muted);line-height:1.5;margin-bottom:14px">Agrège les ingrédients de tes <strong style="color:var(--gold)">recettes favorites ⭐</strong>. Ajoute des recettes via l'onglet Recettes.</div>
+
+      <!-- Zone dynamique : remplie par renderShoppingList() -->
+      <div id="shoppingList"></div>
+
+      <!-- État vide -->
+      <div id="shoppingEmpty" style="display:none;text-align:center;padding:40px 20px;color:var(--muted)">
+        <div style="font-size:42px;margin-bottom:10px">🛒</div>
+        <div style="font-size:14px;font-weight:700;color:var(--text);margin-bottom:6px">Ta liste est vide</div>
+        <div style="font-size:12px;line-height:1.5;max-width:240px;margin:0 auto">Va dans <strong style="color:var(--gold)">Recettes</strong>, ajoute des recettes en favoris, puis reviens ici.</div>
       </div>
     </div>
 
@@ -3424,8 +3494,12 @@ body{background:var(--bg);color:var(--text);font-family:'Outfit',sans-serif;disp
     <img id="rmImg" src="" alt="" onerror="this.style.background='#1B2A4A';this.src=''">
     <div class="rm-hero-overlay"></div>
     <div class="rm-hero-cals" id="rmCals">520 kcal</div>
+    <!-- Favorite star (top right of hero) -->
+    <div id="rmFavStar" onclick="toggleCurrentRecipeFavorite()" style="position:absolute;top:14px;right:14px;width:44px;height:44px;border-radius:50%;background:rgba(0,0,0,.6);backdrop-filter:blur(10px);display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:22px;color:#fff;border:1.5px solid rgba(255,255,255,.2);z-index:5;transition:transform .15s">☆</div>
   </div>
   <div class="rm-body">
+    <!-- Tagline -->
+    <div id="rmTagline" style="font-size:12px;color:var(--muted);line-height:1.5;margin-bottom:14px;font-style:italic"></div>
     <!-- Macros -->
     <div class="rm-macros">
       <div class="rm-macro"><div class="rm-macro-v" id="rmProt" style="color:#3B82F6">28g</div><div class="rm-macro-l">Prot</div></div>
@@ -3448,8 +3522,9 @@ body{background:var(--bg);color:var(--text);font-family:'Outfit',sans-serif;disp
       <div class="rm-section-title">👨‍🍳 Préparation</div>
       <div id="rmSteps"></div>
     </div>
-    <!-- Bouton ajouter -->
-    <button class="rm-add-btn" onclick="addRecipeToJournal()">+ Ajouter au journal du jour</button>
+    <!-- Boutons -->
+    <button id="rmAddFavBtn" class="rm-add-btn" onclick="toggleCurrentRecipeFavorite()" style="background:linear-gradient(135deg,var(--gold),#D4B86A);color:var(--navy);margin-bottom:8px">⭐ Ajouter aux favoris (+ liste de courses)</button>
+    <button class="rm-add-btn" onclick="addRecipeToJournal()" style="background:var(--surface2);color:var(--text);border:1.5px solid var(--border)">+ Ajouter au journal du jour</button>
   </div>
 </div>
 
@@ -3461,135 +3536,236 @@ function showNutriTab(el, tab) {
   el.classList.add('on');
   var target = document.getElementById('ntab-' + tab);
   if (target) target.classList.add('on');
+  // Init dynamique par tab
+  if (tab === 'recettes') { try { renderRecipesList(); } catch(e) {} }
+  if (tab === 'courses')  { try { renderShoppingList(); } catch(e) {} }
 }
 
-// ═══ RECIPE DATA ═══
-var RECIPES = {
-  bowl: {
-    name: 'BOWL PROTÉINÉ AVOINE', tag: 'pre', tagLabel: 'PRE',
-    img: 'https://images.unsplash.com/photo-1511690743698-d9d85f2fbf38?w=800&q=80',
-    cals: 520, prot: 28, carbs: 62, fat: 14, time: '5min',
-    titan: '"Mange ça 90 min avant ta séance. Les flocons d\'avoine libèrent l\'énergie progressivement. Le whey garantit que tes muscles ont ce qu\'il faut."',
-    ingredients: [
-      { name: 'Flocons d\'avoine', qty: '80g' },
-      { name: 'Protéine Whey Vanille', qty: '30g' },
-      { name: 'Banane', qty: '1 moyenne' },
-      { name: 'Lait d\'amande', qty: '200ml' },
-      { name: 'Beurre de cacahuète', qty: '1 c.à.s' },
-      { name: 'Miel', qty: '1 c.à.c' },
-    ],
-    steps: [
-      'Mélange les flocons d\'avoine avec le lait d\'amande chaud (pas bouillant — le whey ne supporte pas la chaleur excessive).',
-      'Laisse gonfler 2-3 minutes puis ajoute la protéine Whey et mélange vigoureusement.',
-      'Tranche la banane et dispose-la par-dessus.',
-      'Ajoute le beurre de cacahuète et le filet de miel.',
-      'Consomme dans les 30 min pour un effet pre-workout optimal.'
-    ]
-  },
-  shake: {
-    name: 'SHAKE WHEY PB', tag: 'post', tagLabel: 'POST',
-    img: 'https://images.unsplash.com/photo-1553530979-7ee52a2670c4?w=800&q=80',
-    cals: 320, prot: 35, carbs: 18, fat: 12, time: '2min',
-    titan: '"Post-workout : la fenêtre anabolique est ouverte 30 min après l\'effort. Ce shake ferme la fenêtre correctement. Prends-le sans excuses."',
-    ingredients: [
-      { name: 'Whey Isolate Chocolat', qty: '40g (2 scoops)' },
-      { name: 'Beurre de cacahuète', qty: '15g' },
-      { name: 'Lait écrémé', qty: '250ml' },
-      { name: 'Glace', qty: '4-5 glaçons' },
-      { name: 'Créatine monohydrate', qty: '5g (optionnel)' },
-    ],
-    steps: [
-      'Mets tous les ingrédients dans un blender ou shaker.',
-      'Mixe 30 secondes à vitesse maximale pour une texture lisse.',
-      'Si shaker : ferme bien, agite 20 secondes vigoureusement.',
-      'Consomme immédiatement après la séance, idéalement dans les 20 min.'
-    ]
-  },
-  poulet: {
-    name: 'POULET QUINOA LÉGUMES', tag: 'meal', tagLabel: 'REPAS',
-    img: 'https://images.unsplash.com/photo-1467003909585-2f8a72700288?w=800&q=80',
-    cals: 580, prot: 42, carbs: 58, fat: 12, time: '25min',
-    titan: '"Le repas parfait. Protéines complètes, glucides complexes, légumes. Si t\'es sérieux dans ta progression, ce plat est ton meilleur allié."',
-    ingredients: [
-      { name: 'Blanc de poulet', qty: '200g' },
-      { name: 'Quinoa cuit', qty: '150g' },
-      { name: 'Brocoli', qty: '100g' },
-      { name: 'Poivrons colorés', qty: '80g' },
-      { name: 'Huile d\'olive', qty: '1 c.à.s' },
-      { name: 'Herbes de provence, sel, poivre', qty: 'à goût' },
-    ],
-    steps: [
-      'Fais cuire le quinoa selon les instructions (ratio 1:2 avec l\'eau, 15min à feu doux).',
-      'Assaisonne le poulet et fais-le cuire à la poêle avec l\'huile d\'olive — 6min par face à feu moyen.',
-      'Cuit les légumes à la vapeur ou à la poêle 5-7 min en gardant du croquant.',
-      'Repose le poulet 2-3 min avant de trancher pour conserver les jus.',
-      'Dresse : quinoa en base, légumes, poulet tranché par-dessus.'
-    ]
-  },
-  saumon: {
-    name: 'SAUMON PATATE DOUCE', tag: 'meal', tagLabel: 'REPAS',
-    img: 'https://images.unsplash.com/photo-1519708227418-c8fd9a32b7a2?w=800&q=80',
-    cals: 520, prot: 38, carbs: 48, fat: 18, time: '30min',
-    titan: '"Omega-3 pour la récupération musculaire. Patate douce pour l\'énergie de qualité. Ce repas appartient à ta liste de base. Point."',
-    ingredients: [
-      { name: 'Filet de saumon', qty: '180g' },
-      { name: 'Patate douce', qty: '200g' },
-      { name: 'Épinards frais', qty: '60g' },
-      { name: 'Citron', qty: '½' },
-      { name: 'Ail', qty: '2 gousses' },
-      { name: 'Huile d\'olive', qty: '1 c.à.s' },
-    ],
-    steps: [
-      'Précuire la patate douce au four 200°C pendant 25min ou à la vapeur 15min.',
-      'Assaisonne le saumon avec citron, ail haché, sel et poivre.',
-      'Fais cuire le saumon à la poêle — 3min côté peau, 2min côté chair. Le centre doit rester rosé.',
-      'Saute les épinards à l\'huile d\'olive 2 min jusqu\'à ce qu\'ils tombent.',
-      'Dresse et sers immédiatement.'
-    ]
-  },
-  pates: {
-    name: 'PÂTES PESTO POULET', tag: 'meal', tagLabel: 'REPAS',
-    img: 'https://images.unsplash.com/photo-1621996346565-e3dbc646d9a9?w=800&q=80',
-    cals: 640, prot: 38, carbs: 82, fat: 16, time: '20min',
-    titan: '"Repas de charge. Mange ça la veille d\'une grosse séance. Les glucides complexes constituent ta réserve glycogène pour le lendemain."',
-    ingredients: [
-      { name: 'Pâtes complètes (sèches)', qty: '120g' },
-      { name: 'Blanc de poulet', qty: '150g' },
-      { name: 'Pesto verde', qty: '2 c.à.s' },
-      { name: 'Parmesan râpé', qty: '20g' },
-      { name: 'Huile d\'olive', qty: '1 c.à.c' },
-      { name: 'Basilic frais', qty: 'quelques feuilles' },
-    ],
-    steps: [
-      'Cuis les pâtes al dente selon les instructions, garde ½ tasse d\'eau de cuisson.',
-      'Grille le poulet à la poêle avec l\'huile d\'olive jusqu\'à cuisson complète. Tranche en lanières.',
-      'Égoutte les pâtes et remets-les dans la casserole hors feu.',
-      'Ajoute le pesto, l\'eau de cuisson, mélange pour bien enrober.',
-      'Ajoute le poulet, parsème de parmesan et basilic.'
-    ]
-  },
-  tacos: {
-    name: 'TACOS STEAK AVOCAT', tag: 'meal', tagLabel: 'REPAS',
-    img: 'https://images.unsplash.com/photo-1565299585323-38d6b0865b47?w=800&q=80',
-    cals: 580, prot: 35, carbs: 52, fat: 22, time: '20min',
-    titan: '"La version athlète des tacos. L\'avocat apporte des graisses mono-insaturées pour les articulations. Mange ça un jour de repos — tu mérites ça après une semaine solide."',
-    ingredients: [
-      { name: 'Steak haché 5% MG', qty: '150g' },
-      { name: 'Tortillas complètes', qty: '3 petites' },
-      { name: 'Avocat mûr', qty: '½' },
-      { name: 'Salade iceberg', qty: '40g' },
-      { name: 'Tomate', qty: '1' },
-      { name: 'Citron vert, cumin, paprika', qty: 'à goût' },
-    ],
-    steps: [
-      'Assaisonne le steak haché avec cumin, paprika, sel et poivre.',
-      'Fais cuire la viande à la poêle en l\'émiettant — 7-8 min à feu vif.',
-      'Prépare le guacamole express : avocat écrasé à la fourchette avec citron vert et sel.',
-      'Chauffe les tortillas 30 sec à sec dans une poêle.',
-      'Dresse : tortilla, guacamole, salade, viande, tomate en dés.'
-    ]
+// ═══ RECIPE DATA — 40 recettes (Athletik Hub premium content) ═══
+// Catégories : breakfast (petit-déj, 10) · smoothie (smoothies/shakes, 10) · meal (plats, 20)
+// Pour éditer une recette : modifie l'objet correspondant ci-dessous.
+(function(){
+  var IMG = {
+    pancakes:  'https://images.unsplash.com/photo-1567620905732-2d1ec7ab7445?w=800&q=80',
+    oats:      'https://images.unsplash.com/photo-1511690743698-d9d85f2fbf38?w=800&q=80',
+    eggs:      'https://images.unsplash.com/photo-1493770348161-369560ae357d?w=800&q=80',
+    avocado:   'https://images.unsplash.com/photo-1525351484163-7529414344d8?w=800&q=80',
+    muffins:   'https://images.unsplash.com/photo-1481070555726-e2fe8357725c?w=800&q=80',
+    yogurt:    'https://images.unsplash.com/photo-1488477181946-6428a0291777?w=800&q=80',
+    painperdu: 'https://images.unsplash.com/photo-1543339531-7cd05dbb1cee?w=800&q=80',
+    burrito:   'https://images.unsplash.com/photo-1626700051175-6818013e1d4f?w=800&q=80',
+    gaufres:   'https://images.unsplash.com/photo-1568051243851-f9b136146e97?w=800&q=80',
+    chia:      'https://images.unsplash.com/photo-1505252585461-04db1eb84625?w=800&q=80',
+    shakeChoc: 'https://images.unsplash.com/photo-1553530979-7ee52a2670c4?w=800&q=80',
+    smGreen:   'https://images.unsplash.com/photo-1502741338009-cac2772e18bc?w=800&q=80',
+    smBerry:   'https://images.unsplash.com/photo-1505252585461-04db1eb84625?w=800&q=80',
+    smTrop:    'https://images.unsplash.com/photo-1623218960095-2c2c1cd8e6bb?w=800&q=80',
+    smCafe:    'https://images.unsplash.com/photo-1556881124-91d2c4d97b34?w=800&q=80',
+    shakeMass: 'https://images.unsplash.com/photo-1572490122747-3968b75cc699?w=800&q=80',
+    smCoco:    'https://images.unsplash.com/photo-1505252585461-04db1eb84625?w=800&q=80',
+    smBetter:  'https://images.unsplash.com/photo-1610970881699-44a5587cabec?w=800&q=80',
+    shakeVan:  'https://images.unsplash.com/photo-1572490122747-3968b75cc699?w=800&q=80',
+    poulet:    'https://images.unsplash.com/photo-1467003909585-2f8a72700288?w=800&q=80',
+    saumon:    'https://images.unsplash.com/photo-1519708227418-c8fd9a32b7a2?w=800&q=80',
+    lentilles: 'https://images.unsplash.com/photo-1604908176997-125f25cc6f3d?w=800&q=80',
+    pates:     'https://images.unsplash.com/photo-1621996346565-e3dbc646d9a9?w=800&q=80',
+    dinde:     'https://images.unsplash.com/photo-1532550907401-a500c9a57435?w=800&q=80',
+    chili:     'https://images.unsplash.com/photo-1547592180-85f173990554?w=800&q=80',
+    poisChiches:'https://images.unsplash.com/photo-1604908176997-125f25cc6f3d?w=800&q=80',
+    curry:     'https://images.unsplash.com/photo-1604908554007-9b00d68e7c5f?w=800&q=80',
+    tofu:      'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=800&q=80',
+    cabillaud: 'https://images.unsplash.com/photo-1551183053-bf91a1d81141?w=800&q=80',
+    boulettes: 'https://images.unsplash.com/photo-1565958011703-44f9829ba187?w=800&q=80',
+    filet:     'https://images.unsplash.com/photo-1558030006-450675393462?w=800&q=80',
+    maquereau: 'https://images.unsplash.com/photo-1559847844-5315695dadae?w=800&q=80',
+    crevettes: 'https://images.unsplash.com/photo-1599487488170-d11ec9c172f0?w=800&q=80',
+    bowlPoul:  'https://images.unsplash.com/photo-1565299585323-38d6b0865b47?w=800&q=80',
+    soupe:     'https://images.unsplash.com/photo-1547592180-85f173990554?w=800&q=80',
+    poke:      'https://images.unsplash.com/photo-1546833999-b9f581a1996d?w=800&q=80',
+    pouletRoti:'https://images.unsplash.com/photo-1598103442097-8b74394b95c6?w=800&q=80',
+    thonAsp:   'https://images.unsplash.com/photo-1551183053-bf91a1d81141?w=800&q=80',
+    lasagnes:  'https://images.unsplash.com/photo-1619895092538-128f4d8c8b88?w=800&q=80'
+  };
+
+  // Helper compact pour définir une recette
+  function R(name, cat, tagline, cals, prot, carbs, fat, time, img, ingredients, steps, titan) {
+    var tagLabelMap = { breakfast: 'PETIT-DÉJ', smoothie: 'SMOOTHIE', meal: 'REPAS' };
+    return {
+      name: name, tag: cat, tagLabel: tagLabelMap[cat] || 'REPAS',
+      tagline: tagline, cals: cals, prot: prot, carbs: carbs, fat: fat,
+      time: time, img: img, titan: titan || tagline,
+      ingredients: ingredients, steps: steps
+    };
   }
-};
+
+  window.RECIPES = {
+    // ─── PETITS-DÉJEUNERS ÉNERGÉTIQUES (10) ───
+    pancakesBanane: R('PANCAKES PROT BANANE', 'breakfast', 'Sans sucre ajouté, riche en potassium.', 380, 30, 48, 8, '12min', IMG.pancakes,
+      [{name:'Banane mûre',qty:'1'},{name:'Œufs',qty:'2'},{name:'Whey vanille',qty:'30g'},{name:'Flocons d\'avoine',qty:'40g'},{name:'Levure',qty:'1 c.à.c'}],
+      ['Écrase la banane à la fourchette, ajoute œufs + whey + avoine + levure, fouette.','Cuis 2 min par face à feu moyen dans une poêle anti-adhésive.','Empile et sers avec un fruit frais.'],
+      '"Pas de sucre, pas d\'excuse. Glucides complexes + protéines complètes pour démarrer la journée."'),
+    overnightOats: R('OVERNIGHT OATS', 'breakfast', 'Flocons d\'avoine, lait d\'amande et protéines.', 410, 28, 56, 9, '5min + nuit', IMG.oats,
+      [{name:'Flocons d\'avoine',qty:'60g'},{name:'Lait d\'amande',qty:'200ml'},{name:'Whey',qty:'25g'},{name:'Graines de chia',qty:'10g'},{name:'Fruits rouges',qty:'80g'}],
+      ['Mélange tout dans un bocal hermétique le soir.','Laisse au frigo toute la nuit.','Mange direct au réveil, ajoute les fruits rouges.'],
+      '"Tu prépares ton carburant la veille. Discipline = résultats."'),
+    omeletteFeta: R('OMELETTE ÉPINARDS FETA', 'breakfast', 'Protéines rapides et fer.', 360, 28, 6, 24, '8min', IMG.eggs,
+      [{name:'Œufs',qty:'3'},{name:'Épinards frais',qty:'50g'},{name:'Feta',qty:'40g'},{name:'Huile d\'olive',qty:'1 c.à.c'}],
+      ['Bats les œufs avec sel/poivre.','Fais tomber les épinards 1 min dans l\'huile.','Verse les œufs, ajoute la feta, plie en omelette. 3 min.'],
+      '"Pas le temps de discuter. Œufs, fer, gras de qualité. Tu manges et tu bouges."'),
+    tartineAvocat: R('TARTINE AVOCAT ŒUF POCHÉ', 'breakfast', 'Bons lipides et énergie durable.', 420, 22, 38, 22, '10min', IMG.avocado,
+      [{name:'Pain complet',qty:'2 tranches'},{name:'Avocat mûr',qty:'½'},{name:'Œuf',qty:'1'},{name:'Citron',qty:'¼'},{name:'Piment fumé',qty:'pincée'}],
+      ['Toaste les tranches de pain.','Écrase l\'avocat avec citron, sel, piment.','Poche l\'œuf 3 min dans eau frémissante + vinaigre. Pose sur la tartine.'],
+      '"Bons gras + protéines. Le brunch ennemi de la flemme."'),
+    muffinsOeufs: R('MUFFINS ŒUFS BACON DINDE', 'breakfast', 'Snack salé protéiné pour le matin.', 220, 22, 4, 13, '25min', IMG.muffins,
+      [{name:'Œufs',qty:'6'},{name:'Bacon de dinde',qty:'4 tranches'},{name:'Fromage allégé',qty:'40g'},{name:'Ciboulette',qty:'qq brins'}],
+      ['Préchauffe le four à 180°C.','Tapisse 6 moules à muffins de bacon, verse les œufs battus + fromage.','Cuis 18-20 min. Conserve 3 jours au frigo.'],
+      '"Prépare 6 portions le dimanche, oublie la flemme du lundi."'),
+    bowlSkyr: R('BOWL SKYR PB GRANOLA', 'breakfast', 'Très riche en protéines.', 460, 38, 48, 14, '3min', IMG.yogurt,
+      [{name:'Skyr nature',qty:'200g'},{name:'Beurre de cacahuète',qty:'15g'},{name:'Granola',qty:'40g'},{name:'Fruits rouges',qty:'60g'}],
+      ['Verse le skyr dans un bol.','Ajoute le PB, le granola et les fruits.','Mange immédiatement.'],
+      '"38g de protéines en 3 minutes. Aucune excuse."'),
+    painPerdu: R('PAIN PERDU FIT FROMAGE BLANC', 'breakfast', 'Version saine du classique.', 380, 26, 52, 8, '12min', IMG.painperdu,
+      [{name:'Pain complet rassis',qty:'2 tranches'},{name:'Œuf',qty:'1'},{name:'Lait écrémé',qty:'80ml'},{name:'Cannelle',qty:'pincée'},{name:'Fromage blanc 0%',qty:'150g'}],
+      ['Mélange œuf + lait + cannelle.','Trempe les tranches, cuis 2 min/face à la poêle.','Sers avec fromage blanc et un peu de miel.'],
+      '"Le pain perdu de ta grand-mère, recalibré pour ton corps d\'athlète."'),
+    burritoPDej: R('BURRITO PETIT-DÉJ', 'breakfast', 'Œufs brouillés, haricots noirs et avocat.', 480, 28, 52, 18, '12min', IMG.burrito,
+      [{name:'Tortilla complète',qty:'1 grande'},{name:'Œufs',qty:'2'},{name:'Haricots noirs',qty:'80g'},{name:'Avocat',qty:'¼'},{name:'Salsa',qty:'2 c.à.s'}],
+      ['Brouille les œufs 2 min.','Garnis la tortilla : œufs, haricots tièdes, avocat, salsa.','Plie en burrito et toaste 1 min à la poêle.'],
+      '"Carbs + prot + bons gras. Petit-déj de combat."'),
+    gaufresPatate: R('GAUFRES PATATE DOUCE', 'breakfast', 'Glucides complexes pour les grosses journées.', 440, 22, 58, 14, '20min', IMG.gaufres,
+      [{name:'Patate douce cuite',qty:'150g'},{name:'Œufs',qty:'2'},{name:'Farine d\'avoine',qty:'40g'},{name:'Cannelle',qty:'1 c.à.c'},{name:'Levure',qty:'½ c.à.c'}],
+      ['Mixe patate douce + œufs + farine + cannelle + levure.','Verse dans le gaufrier chaud, cuis 4-5 min.','Sers avec sirop d\'érable ou fruits.'],
+      '"Si tu t\'entraînes 2x aujourd\'hui, c\'est ça que tu manges."'),
+    chiaPudding: R('CHIA PUDDING EXOTIQUE', 'breakfast', 'Oméga-3 et fibres.', 340, 18, 36, 14, '5min + nuit', IMG.chia,
+      [{name:'Graines de chia',qty:'30g'},{name:'Lait de coco',qty:'200ml'},{name:'Mangue',qty:'80g'},{name:'Ananas',qty:'60g'}],
+      ['Mélange chia + lait de coco, repos 8h au frigo.','Coupe la mangue et l\'ananas en dés.','Dresse en couches dans un verre.'],
+      '"Tu prépares la veille, tu manges au réveil. Fibres + oméga-3 = digestion clean."'),
+
+    // ─── SMOOTHIES & SHAKES PERFORMANCE (10) ───
+    smoothieExpl: R('SMOOTHIE EXPLOSIVITÉ', 'smoothie', 'Banane, whey, beurre d\'amande et avoine.', 420, 35, 48, 12, '3min', IMG.shakeChoc,
+      [{name:'Banane',qty:'1'},{name:'Whey vanille',qty:'30g'},{name:'Beurre d\'amande',qty:'15g'},{name:'Flocons d\'avoine',qty:'30g'},{name:'Lait',qty:'250ml'}],
+      ['Mets tout dans le blender.','Mixe 45 secondes.','Bois 30 min avant la séance.'],
+      '"30 min avant ta séance. Tu vas exploser."'),
+    shakeRecupChoco: R('SHAKE RÉCUP CHOCO-NOISETTE', 'smoothie', 'Protéines et magnésium.', 380, 32, 38, 14, '3min', IMG.shakeChoc,
+      [{name:'Whey chocolat',qty:'30g'},{name:'Pâte de noisette',qty:'15g'},{name:'Banane',qty:'½'},{name:'Lait',qty:'300ml'},{name:'Cacao non sucré',qty:'1 c.à.c'}],
+      ['Tout au blender, mixe 30 secondes.','Bois dans les 30 min post-effort.'],
+      '"Fenêtre anabolique. Pas de débat. Tu bois."'),
+    smoothieDetox: R('SMOOTHIE VERT DÉTOX', 'smoothie', 'Épinards, pomme, gingembre et spiruline.', 240, 18, 30, 6, '3min', IMG.smGreen,
+      [{name:'Épinards',qty:'80g'},{name:'Pomme verte',qty:'1'},{name:'Gingembre',qty:'2cm'},{name:'Spiruline',qty:'1 c.à.c'},{name:'Eau de coco',qty:'200ml'}],
+      ['Tout au blender, mixe 1 min.','Bois immédiatement.'],
+      '"Tu rinces ton corps. Repos actif et nettoyage interne."'),
+    smoothieBaies: R('SMOOTHIE BAIES ÉNERGIE', 'smoothie', 'Myrtilles, framboises et graines de lin.', 310, 22, 38, 9, '3min', IMG.smBerry,
+      [{name:'Myrtilles surgelées',qty:'100g'},{name:'Framboises',qty:'80g'},{name:'Whey neutre',qty:'25g'},{name:'Graines de lin',qty:'1 c.à.c'},{name:'Lait',qty:'250ml'}],
+      ['Blender 30s.','Antioxydants en mode shotgun.'],
+      '"Antioxydants. Récupération cellulaire. Anti-inflammation."'),
+    shakeTropical: R('SHAKE TROPICAL PROT', 'smoothie', 'Mangue, ananas et isolat de whey.', 360, 30, 46, 4, '3min', IMG.smTrop,
+      [{name:'Mangue',qty:'120g'},{name:'Ananas',qty:'100g'},{name:'Whey isolate vanille',qty:'30g'},{name:'Eau de coco',qty:'250ml'}],
+      ['Mixe le tout 30s.','Bois bien frais.'],
+      '"Goût soleil, macros sérieuses."'),
+    smoothieCafe: R('SMOOTHIE CAFÉ-PROT', 'smoothie', 'Idéal en pré-workout.', 280, 26, 22, 9, '3min', IMG.smCafe,
+      [{name:'Espresso refroidi',qty:'40ml'},{name:'Whey chocolat',qty:'25g'},{name:'Banane',qty:'½'},{name:'Lait',qty:'250ml'},{name:'Glaçons',qty:'4'}],
+      ['Blender 30s avec glace.','Bois 20 min avant l\'effort.'],
+      '"Caféine + protéine. Le combo qui fait taper plus fort."'),
+    shakeMasse: R('SHAKE MASSE PROPRE', 'smoothie', 'Avoine, beurre de cacahuète, lait et whey.', 620, 42, 68, 18, '3min', IMG.shakeMass,
+      [{name:'Whey',qty:'40g'},{name:'Flocons d\'avoine',qty:'60g'},{name:'Beurre de cacahuète',qty:'20g'},{name:'Banane',qty:'1'},{name:'Lait',qty:'400ml'}],
+      ['Tout dans le blender, mixe 1 min.','Bois en collation entre deux repas.'],
+      '"Si tu prends pas de muscle, c\'est que tu manges pas assez. Ce shake corrige ça."'),
+    smoothieCoco: R('SMOOTHIE COCO-PASTÈQUE', 'smoothie', 'Riche en électrolytes.', 220, 6, 36, 6, '3min', IMG.smCoco,
+      [{name:'Pastèque',qty:'250g'},{name:'Eau de coco',qty:'200ml'},{name:'Citron vert',qty:'¼'},{name:'Menthe',qty:'qq feuilles'}],
+      ['Blender 30s.','Sers très frais avec glace pilée.'],
+      '"Tu transpires, tu rééquilibres. Électrolytes naturels."'),
+    smoothieBetterave: R('SMOOTHIE BETTERAVE-ORANGE', 'smoothie', 'Pour l\'endurance et l\'oxygénation.', 260, 8, 48, 4, '3min', IMG.smBetter,
+      [{name:'Betterave cuite',qty:'100g'},{name:'Orange pressée',qty:'200ml'},{name:'Gingembre',qty:'1cm'},{name:'Citron',qty:'¼'}],
+      ['Blender 45s.','Bois 1h avant ta séance d\'endurance.'],
+      '"Les nitrates de la betterave boostent ton oxygénation. Science, pas marketing."'),
+    shakeVanille: R('SHAKE VANILLE-AMANDE', 'smoothie', 'Récupération légère.', 280, 28, 22, 8, '3min', IMG.shakeVan,
+      [{name:'Whey vanille',qty:'30g'},{name:'Lait d\'amande',qty:'300ml'},{name:'Beurre d\'amande',qty:'10g'},{name:'Cannelle',qty:'pincée'}],
+      ['Shaker ou blender 30s.','Sers frais.'],
+      '"Simple. Efficace. Pas besoin de plus."'),
+
+    // ─── PLATS PRINCIPAUX (20) ───
+    bowlPouletQuinoa: R('BOWL POULET QUINOA', 'meal', 'Équilibre parfait macros.', 580, 42, 58, 12, '25min', IMG.poulet,
+      [{name:'Blanc de poulet',qty:'200g'},{name:'Quinoa cuit',qty:'150g'},{name:'Brocoli',qty:'100g'},{name:'Huile d\'olive',qty:'1 c.à.s'},{name:'Herbes',qty:'à goût'}],
+      ['Cuis le quinoa selon notice.','Poêle le poulet 6 min/face.','Cuis le brocoli à la vapeur 5 min. Dresse en bowl.'],
+      '"Le repas parfait. Protéines, glucides complexes, légumes. Ton meilleur allié."'),
+    saumonTeriyaki: R('SAUMON TERIYAKI RIZ NOIR', 'meal', 'Oméga-3 et antioxydants.', 620, 38, 64, 18, '25min', IMG.saumon,
+      [{name:'Saumon',qty:'180g'},{name:'Riz noir',qty:'70g'},{name:'Sauce teriyaki',qty:'2 c.à.s'},{name:'Edamames',qty:'80g'},{name:'Sésame',qty:'1 c.à.c'}],
+      ['Cuis le riz 25 min.','Marine le saumon dans la sauce 10 min, poêle 3 min/face.','Cuis les edamames 4 min. Dresse avec sésame.'],
+      '"Oméga-3 + glucides denses. Repas du jour de combat."'),
+    saladeLentilles: R('SALADE LENTILLES AVOCAT', 'meal', 'Protéines végétales.', 480, 22, 52, 18, '15min', IMG.lentilles,
+      [{name:'Lentilles cuites',qty:'180g'},{name:'Avocat',qty:'½'},{name:'Tomate',qty:'1'},{name:'Oignon rouge',qty:'¼'},{name:'Vinaigrette',qty:'1 c.à.s'}],
+      ['Mélange lentilles + tomate + oignon.','Ajoute avocat coupé et vinaigrette.','Sers frais.'],
+      '"Repas plant-based qui tient au corps. Discipline > viande tous les jours."'),
+    patesThon: R('PÂTES THON & CÂPRES', 'meal', 'Carb loading efficace.', 560, 32, 78, 8, '15min', IMG.pates,
+      [{name:'Pâtes complètes',qty:'100g'},{name:'Thon au naturel',qty:'1 boîte'},{name:'Câpres',qty:'1 c.à.s'},{name:'Tomates cerises',qty:'100g'},{name:'Persil',qty:'qq brins'}],
+      ['Cuis les pâtes al dente.','Mélange avec thon, câpres, tomates coupées, persil.','Filet d\'huile d\'olive.'],
+      '"Carb load. La veille d\'une grosse séance. Pas négociable."'),
+    dindeEpicesPatateDouce: R('DINDE ÉPICES PATATE DOUCE', 'meal', 'Faible en gras, riche en nutriments.', 510, 40, 52, 10, '30min', IMG.dinde,
+      [{name:'Escalope de dinde',qty:'200g'},{name:'Patate douce',qty:'200g'},{name:'Paprika fumé',qty:'1 c.à.c'},{name:'Cumin',qty:'½ c.à.c'},{name:'Huile d\'olive',qty:'1 c.à.c'}],
+      ['Four 200°C. Coupe la patate douce en cubes, enfourne 25 min avec huile et épices.','Poêle la dinde 5 min/face.','Dresse ensemble.'],
+      '"Protéines lean, glucides denses, micronutriments. Cliché qui marche."'),
+    chiliAthlete: R('CHILI ATHLÈTE', 'meal', 'Riche en fer.', 540, 34, 58, 14, '40min', IMG.chili,
+      [{name:'Bœuf haché 5%',qty:'150g'},{name:'Haricots rouges',qty:'150g'},{name:'Tomates concassées',qty:'200g'},{name:'Oignon',qty:'½'},{name:'Cumin/paprika',qty:'à goût'}],
+      ['Fais revenir oignon + bœuf 5 min.','Ajoute tomates, haricots, épices. Mijote 25 min.','Sers chaud.'],
+      '"Mijote, ça encaisse. Fer + protéines + fibres."'),
+    saladePoisChiches: R('SALADE POIS CHICHES FETA', 'meal', 'Énergie stable.', 460, 22, 48, 18, '12min', IMG.poisChiches,
+      [{name:'Pois chiches',qty:'180g'},{name:'Feta',qty:'40g'},{name:'Concombre',qty:'½'},{name:'Tomate',qty:'1'},{name:'Citron + huile d\'olive',qty:'1 c.à.s'}],
+      ['Mélange pois chiches égouttés + concombre + tomate en dés + feta.','Assaisonne avec jus de citron et huile d\'olive.'],
+      '"Sans cuisson, 12 minutes. Tu sors le tupperware, tu manges."'),
+    pouletCurryCoco: R('POULET CURRY COCO', 'meal', 'Anti-inflammatoire.', 580, 38, 38, 26, '25min', IMG.curry,
+      [{name:'Blanc de poulet',qty:'200g'},{name:'Lait de coco',qty:'150ml'},{name:'Curry en poudre',qty:'2 c.à.c'},{name:'Riz basmati',qty:'60g'},{name:'Coriandre',qty:'qq brins'}],
+      ['Saute le poulet en dés 5 min.','Ajoute curry + lait de coco. Mijote 12 min.','Sers sur lit de riz.'],
+      '"Curcuma + protéines. Anti-inflammatoire post-grosse séance."'),
+    tofuMarine: R('TOFU MARINÉ EDAMAMES', 'meal', 'Option végétale haute performance.', 480, 30, 38, 22, '20min', IMG.tofu,
+      [{name:'Tofu ferme',qty:'200g'},{name:'Sauce soja',qty:'2 c.à.s'},{name:'Gingembre',qty:'1cm'},{name:'Edamames',qty:'120g'},{name:'Riz complet',qty:'60g'}],
+      ['Marine le tofu en cubes dans soja + gingembre 10 min.','Poêle le tofu 6 min en le retournant.','Cuis riz + edamames. Dresse.'],
+      '"Plant-based mais athlète. Soja complet, edamames, riz."'),
+    cabillaudVapeur: R('CABILLAUD VAPEUR BROCOLIS', 'meal', 'Digestion facile pour le soir.', 380, 38, 22, 12, '15min', IMG.cabillaud,
+      [{name:'Cabillaud',qty:'200g'},{name:'Brocoli',qty:'200g'},{name:'Citron',qty:'½'},{name:'Aneth',qty:'qq brins'},{name:'Huile d\'olive',qty:'1 c.à.c'}],
+      ['Vapeur 10 min cabillaud + brocoli.','Assaisonne avec citron, aneth, huile d\'olive.','Sers immédiatement.'],
+      '"Repas du soir. Léger, digeste, tu dors mieux."'),
+    boulettesSpaghettiCourgette: R('BOULETTES BŒUF SPAGHETTI COURGETTE', 'meal', 'High protein.', 460, 36, 26, 22, '25min', IMG.boulettes,
+      [{name:'Bœuf haché 5%',qty:'180g'},{name:'Courgette',qty:'2 grandes'},{name:'Œuf',qty:'1'},{name:'Tomates concassées',qty:'200g'},{name:'Ail/origan',qty:'à goût'}],
+      ['Forme des boulettes avec bœuf + œuf + épices. Poêle 8 min.','Mijote dans la sauce tomate 10 min.','Spiralise la courgette, sers les boulettes par-dessus.'],
+      '"Boulettes spaghetti version athlète. Carbs en moins, prot en plus."'),
+    filetMignonPoisCasses: R('FILET MIGNON PURÉE POIS CASSÉS', 'meal', 'Zinc et magnésium.', 520, 38, 42, 18, '40min', IMG.filet,
+      [{name:'Filet mignon de porc',qty:'200g'},{name:'Pois cassés',qty:'80g'},{name:'Échalote',qty:'1'},{name:'Thym',qty:'qq brins'},{name:'Beurre',qty:'10g'}],
+      ['Cuis pois cassés 25 min avec échalote.','Saisis le filet 4 min/face puis four 200°C 10 min.','Mixe pois cassés en purée. Tranche le filet.'],
+      '"Repas dimanche soir. Zinc, magnésium, classe."'),
+    saladeRizMaquereau: R('SALADE RIZ MAQUEREAU', 'meal', 'Énergie longue durée.', 540, 28, 52, 22, '15min', IMG.maquereau,
+      [{name:'Riz complet cuit',qty:'150g'},{name:'Filets de maquereau',qty:'1 boîte'},{name:'Œuf dur',qty:'1'},{name:'Cornichons',qty:'qq'},{name:'Vinaigrette',qty:'1 c.à.s'}],
+      ['Mélange riz + maquereau émietté + œuf coupé + cornichons.','Vinaigrette.','Mange tiède ou froid.'],
+      '"Oméga-3 + glucides longs. Boîte de la lunchbox parfaite."'),
+    crevettesAilQuinoa: R('CREVETTES À L\'AIL QUINOA', 'meal', 'Minéralisant.', 460, 36, 48, 12, '15min', IMG.crevettes,
+      [{name:'Crevettes décortiquées',qty:'200g'},{name:'Quinoa cuit',qty:'150g'},{name:'Ail',qty:'2 gousses'},{name:'Persil',qty:'qq brins'},{name:'Huile d\'olive',qty:'1 c.à.s'}],
+      ['Cuis le quinoa.','Saute les crevettes + ail 3 min.','Mélange, parsème de persil.'],
+      '"15 minutes, 36g de protéines. Iode + zinc + magnésium."'),
+    burritoBowlPoulet: R('BURRITO BOWL POULET', 'meal', 'Personnalisable selon les besoins.', 620, 38, 68, 18, '25min', IMG.bowlPoul,
+      [{name:'Poulet émincé',qty:'180g'},{name:'Riz brun',qty:'70g'},{name:'Haricots noirs',qty:'80g'},{name:'Maïs',qty:'60g'},{name:'Avocat',qty:'¼'}],
+      ['Cuis le riz.','Poêle le poulet épicé 6 min.','Dresse en bowl : riz, haricots, maïs, poulet, avocat.'],
+      '"Customise selon tes macros du jour. Modulaire, scalable."'),
+    soupeLentillesCurcuma: R('SOUPE LENTILLES CURCUMA', 'meal', 'Récupération musculaire.', 380, 22, 48, 10, '30min', IMG.soupe,
+      [{name:'Lentilles corail',qty:'120g'},{name:'Carottes',qty:'2'},{name:'Curcuma',qty:'1 c.à.c'},{name:'Bouillon de légumes',qty:'700ml'},{name:'Lait de coco',qty:'80ml'}],
+      ['Saute carottes en dés 3 min.','Ajoute lentilles, bouillon, curcuma. Mijote 20 min.','Mixe avec lait de coco.'],
+      '"Anti-inflammatoire. Soir de séance lourde, c\'est ça."'),
+    pokeBowlThon: R('POKE BOWL THON ROUGE', 'meal', 'Frais et dense en nutriments.', 580, 38, 62, 16, '20min', IMG.poke,
+      [{name:'Thon rouge frais',qty:'150g'},{name:'Riz sushi',qty:'80g'},{name:'Avocat',qty:'¼'},{name:'Edamames',qty:'60g'},{name:'Sauce soja + sésame',qty:'à goût'}],
+      ['Cuis le riz selon notice.','Coupe le thon en dés, marine 5 min dans soja + sésame.','Dresse en bowl avec avocat et edamames.'],
+      '"Cru, frais, dense. Le repas qui te fait sentir vivant."'),
+    pouletRotiRatatouille: R('POULET RÔTI RATATOUILLE', 'meal', 'Classique équilibré.', 540, 42, 36, 22, '45min', IMG.pouletRoti,
+      [{name:'Cuisses de poulet',qty:'2'},{name:'Aubergine',qty:'1'},{name:'Courgette',qty:'1'},{name:'Tomates',qty:'2'},{name:'Herbes de Provence',qty:'1 c.à.s'}],
+      ['Four 200°C. Légumes en cubes dans un plat avec huile + herbes, 35 min.','Pose les cuisses sur les légumes au milieu, finis au four.','Sers chaud.'],
+      '"Dimanche midi. Repas en famille version athlète."'),
+    steakThonAsperges: R('STEAK DE THON ASPERGES', 'meal', 'Protéines pures.', 420, 42, 16, 18, '15min', IMG.thonAsp,
+      [{name:'Steak de thon',qty:'180g'},{name:'Asperges vertes',qty:'200g'},{name:'Citron',qty:'½'},{name:'Huile d\'olive',qty:'1 c.à.c'},{name:'Sel/poivre',qty:'à goût'}],
+      ['Grille les asperges 6 min.','Saisis le thon 1.5 min/face (rosé au centre).','Citron + huile + sel.'],
+      '"Repas du jour de pesée. Protéines max, calories contrôlées."'),
+    lasagnesLegumesRicotta: R('LASAGNES LÉGUMES RICOTTA', 'meal', 'Confort et nutriments.', 580, 30, 58, 22, '50min', IMG.lasagnes,
+      [{name:'Plaques de lasagne',qty:'6'},{name:'Ricotta',qty:'200g'},{name:'Épinards',qty:'200g'},{name:'Sauce tomate',qty:'300ml'},{name:'Parmesan',qty:'40g'}],
+      ['Four 200°C. Saute les épinards 3 min, mélange avec ricotta.','Alterne plaques + sauce + mélange épinards-ricotta. Termine par sauce + parmesan.','Cuis 30 min.'],
+      '"Repas comfort qui n\'est pas une trahison. Veggie, protéiné, satiété."')
+  };
+})();
 
 function showRecipe(key) {
   var r = RECIPES[key];
@@ -3605,6 +3781,12 @@ function showRecipe(key) {
   document.getElementById('rmFat').textContent = r.fat + 'g';
   document.getElementById('rmTime').textContent = r.time;
   document.getElementById('rmTitanMsg').textContent = r.titan;
+  // Tagline (1-liner sous le hero)
+  var tagline = document.getElementById('rmTagline');
+  if (tagline) tagline.textContent = r.tagline || '';
+  // État favoris (étoile + bouton)
+  window._currentRecipeKey = key;
+  _refreshRecipeModalFavUI();
   // Ingrédients
   var ingrHtml = r.ingredients.map(function(i) {
     return '<div class="rm-ingr"><div class="rm-ingr-dot"></div><div class="rm-ingr-name">' + i.name + '</div><div class="rm-ingr-qty">' + i.qty + '</div></div>';
@@ -3627,18 +3809,247 @@ function closeRecipeModal() {
   document.getElementById('recipeModal').classList.remove('open');
 }
 
+// ═══════════════════════════════════════
+// FAVORIS + RENDER RECETTES + SHOPPING LIST
+// ═══════════════════════════════════════
+
+function _getRecipeFavorites() {
+  try { return JSON.parse(localStorage.getItem('ah_recipe_favorites') || '[]'); } catch(e) { return []; }
+}
+function _setRecipeFavorites(arr) {
+  try { localStorage.setItem('ah_recipe_favorites', JSON.stringify(arr)); } catch(e) {}
+}
+function isRecipeFavorite(key) { return _getRecipeFavorites().indexOf(key) > -1; }
+function toggleRecipeFavorite(key) {
+  var favs = _getRecipeFavorites();
+  var idx = favs.indexOf(key);
+  if (idx > -1) { favs.splice(idx, 1); }
+  else { favs.push(key); }
+  _setRecipeFavorites(favs);
+  return idx === -1; // true si vient d'être ajouté
+}
+
+// Bouton/étoile du modal — synchronisé avec l'état actuel
+function _refreshRecipeModalFavUI() {
+  var key = window._currentRecipeKey;
+  if (!key) return;
+  var fav = isRecipeFavorite(key);
+  var star = document.getElementById('rmFavStar');
+  if (star) {
+    star.textContent = fav ? '⭐' : '☆';
+    star.style.background = fav ? 'linear-gradient(135deg,var(--gold),#D4B86A)' : 'rgba(0,0,0,.6)';
+    star.style.color = fav ? 'var(--navy)' : '#fff';
+    star.style.borderColor = fav ? 'var(--gold)' : 'rgba(255,255,255,.2)';
+  }
+  var btn = document.getElementById('rmAddFavBtn');
+  if (btn) {
+    btn.textContent = fav ? '✓ Dans tes favoris — retirer' : '⭐ Ajouter aux favoris (+ liste de courses)';
+    btn.style.background = fav ? 'var(--surface2)' : 'linear-gradient(135deg,var(--gold),#D4B86A)';
+    btn.style.color = fav ? 'var(--text)' : 'var(--navy)';
+    btn.style.border = fav ? '1.5px solid var(--border)' : 'none';
+  }
+}
+
+function toggleCurrentRecipeFavorite() {
+  var key = window._currentRecipeKey;
+  if (!key) return;
+  var added = toggleRecipeFavorite(key);
+  _refreshRecipeModalFavUI();
+  showToast(added ? '⭐ Ajouté à tes favoris' : 'Retiré des favoris', added ? 'ok' : 'info');
+  // Refresh la liste recettes ET la liste courses si visibles
+  try { renderRecipesList(); } catch(e) {}
+  try { renderShoppingList(); } catch(e) {}
+}
+
+// Filtres + rendu grille recettes
+window._recipeFilterCat = 'all';
+function filterRecipeCat(el, cat) {
+  document.querySelectorAll('#recipeFilters .recipe-fc').forEach(function(f){ f.classList.remove('on'); });
+  if (el) el.classList.add('on');
+  window._recipeFilterCat = cat;
+  renderRecipesList();
+}
+
+function renderRecipesList() {
+  var grid = document.getElementById('recipeGrid');
+  if (!grid || !window.RECIPES) return;
+  var cat = window._recipeFilterCat || 'all';
+  var q = '';
+  var sIn = document.getElementById('recipeSearch'); if (sIn) q = (sIn.value || '').toLowerCase().trim();
+  var favs = _getRecipeFavorites();
+  var html = '';
+  var count = 0;
+  Object.keys(RECIPES).forEach(function(key){
+    var r = RECIPES[key]; if (!r) return;
+    if (cat === 'favorites' && favs.indexOf(key) === -1) return;
+    if (cat !== 'all' && cat !== 'favorites' && r.tag !== cat) return;
+    if (q && r.name.toLowerCase().indexOf(q) === -1 && (r.tagline||'').toLowerCase().indexOf(q) === -1) return;
+    var isFav = favs.indexOf(key) > -1;
+    html += '<div class="recipe-card" onclick="showRecipe(\'' + key + '\')">';
+    html +=   '<div class="recipe-card-tag">' + r.tagLabel + '</div>';
+    html +=   '<div class="recipe-card-fav ' + (isFav?'on':'') + '" onclick="event.stopPropagation();toggleRecipeFavoriteFromCard(\'' + key + '\',this)">' + (isFav?'⭐':'☆') + '</div>';
+    html +=   '<img class="recipe-card-img" src="' + r.img + '" alt="" onerror="this.style.background=\'#1B2A4A\';this.src=\'\'">';
+    html +=   '<div class="recipe-card-body">';
+    html +=     '<div class="recipe-card-name">' + r.name + '</div>';
+    html +=     '<div class="recipe-card-meta"><span class="recipe-card-cals">' + r.cals + ' kcal</span><span>⏱ ' + r.time + '</span></div>';
+    html +=   '</div>';
+    html += '</div>';
+    count++;
+  });
+  if (count === 0) {
+    html = '<div style="grid-column:1/-1;text-align:center;padding:36px 16px;color:var(--muted);font-size:13px">Aucune recette ne correspond. Essaie un autre filtre.</div>';
+  }
+  grid.innerHTML = html;
+  // Compteur favoris
+  var fc = document.getElementById('recipeFavCount');
+  if (fc) {
+    if (favs.length > 0) {
+      fc.style.display = 'block';
+      fc.textContent = '⭐ ' + favs.length + ' favori' + (favs.length>1?'s':'') + ' — ' + (favs.length>0?'tap "Courses" pour générer ta liste':'');
+    } else { fc.style.display = 'none'; }
+  }
+}
+
+function toggleRecipeFavoriteFromCard(key, el) {
+  var added = toggleRecipeFavorite(key);
+  if (el) {
+    el.classList.toggle('on', added);
+    el.textContent = added ? '⭐' : '☆';
+  }
+  showToast(added ? '⭐ Ajouté à tes favoris' : 'Retiré des favoris', added ? 'ok' : 'info');
+  try { renderShoppingList(); } catch(e) {}
+  // Si on est sur le filtre "favoris", refresh complet
+  if (window._recipeFilterCat === 'favorites') renderRecipesList();
+}
+
+// ─── Shopping list dynamique depuis favoris ───
+
+// Catégorise un ingrédient (heuristique simple sur le nom)
+function _categorizeIngredient(name) {
+  var n = name.toLowerCase();
+  if (/poulet|dinde|b[oeœ]uf|porc|steak|saumon|thon|cabillaud|maquereau|crevett|tofu|œuf|oeuf|bacon|whey|ricotta|feta|fromage|skyr|parmesan|lait|coco/.test(n)) return 'PROTÉINES & LAITAGES';
+  if (/quinoa|riz|p[âa]te|pain|tortilla|avoine|flocons|farine|gaufre|granola|patate|patates|lentille|haricot|pois chich|chia|graines de lin|graines/.test(n)) return 'GLUCIDES & FÉCULENTS';
+  if (/avocat|huile|beurre|amande|cacahu[èe]te|noisette|s[ée]same|chia/.test(n)) return 'BONS GRAS';
+  if (/[ée]pinard|brocoli|courgette|tomate|salade|oignon|ail|carotte|aubergine|poivron|asperge|menthe|persil|coriandre|basilic|cornichon|c[âa]pres|gingembre|betterave|edamame|ma[ïi]s|champignon|piment|herbe/.test(n)) return 'LÉGUMES & HERBES';
+  if (/banane|fruit|baie|myrtill|framboise|mangue|ananas|orange|pomme|past[èe]que|coco|citron/.test(n)) return 'FRUITS';
+  return 'ÉPICES & DIVERS';
+}
+
+function renderShoppingList() {
+  var container = document.getElementById('shoppingList');
+  var empty = document.getElementById('shoppingEmpty');
+  if (!container || !window.RECIPES) return;
+  var favs = _getRecipeFavorites();
+  if (favs.length === 0) {
+    container.innerHTML = '';
+    if (empty) empty.style.display = 'block';
+    return;
+  }
+  if (empty) empty.style.display = 'none';
+
+  // Agrège : chaque ingrédient ⇒ {name, qtys[], recipes[]}
+  var agg = {};
+  favs.forEach(function(key){
+    var r = RECIPES[key]; if (!r) return;
+    (r.ingredients||[]).forEach(function(ing){
+      var k = ing.name.toLowerCase().trim();
+      if (!agg[k]) agg[k] = { name: ing.name, qtys: [], recipes: [], cat: _categorizeIngredient(ing.name) };
+      agg[k].qtys.push(ing.qty);
+      agg[k].recipes.push(r.name);
+    });
+  });
+
+  // Regroupe par catégorie
+  var byCat = {};
+  Object.keys(agg).forEach(function(k){
+    var it = agg[k];
+    if (!byCat[it.cat]) byCat[it.cat] = [];
+    byCat[it.cat].push(it);
+  });
+
+  var checked = {};
+  try { checked = JSON.parse(localStorage.getItem('ah_shopping_checks') || '{}'); } catch(e) {}
+
+  // Ordre stable des catégories
+  var catOrder = ['PROTÉINES & LAITAGES','GLUCIDES & FÉCULENTS','LÉGUMES & HERBES','FRUITS','BONS GRAS','ÉPICES & DIVERS'];
+  var html = '';
+  catOrder.forEach(function(cat){
+    var items = byCat[cat]; if (!items || !items.length) return;
+    html += '<div style="margin-bottom:16px">';
+    html +=   '<div style="font-size:10px;font-weight:700;color:var(--gold);letter-spacing:1px;margin-bottom:8px">' + cat + '</div>';
+    items.forEach(function(it){
+      var checkKey = it.name.toLowerCase().trim();
+      var isChecked = !!checked[checkKey];
+      var qtyTxt = it.qtys.slice(0, 3).join(' + ') + (it.qtys.length > 3 ? ' + …' : '');
+      html += '<div style="display:flex;align-items:center;gap:10px;padding:11px 0;border-bottom:1px solid var(--border)">';
+      html +=   '<div class="shop-check ' + (isChecked?'on':'') + '" onclick="toggleShopItem(\'' + checkKey.replace(/'/g,"\\'") + '\',this)" style="width:22px;height:22px;border-radius:6px;' + (isChecked?'background:var(--gold);border:2px solid var(--gold);color:var(--navy);display:flex;align-items:center;justify-content:center;font-size:12px':'border:2px solid var(--border2)') + ';cursor:pointer;flex-shrink:0">' + (isChecked?'✓':'') + '</div>';
+      html +=   '<div style="flex:1;font-size:13px;' + (isChecked?'color:var(--muted);text-decoration:line-through':'color:var(--text)') + '">';
+      html +=     '<div style="font-weight:600">' + it.name + '</div>';
+      html +=     '<div style="font-size:10px;color:var(--muted);margin-top:2px">' + qtyTxt + '</div>';
+      html +=   '</div>';
+      html += '</div>';
+    });
+    html += '</div>';
+  });
+  container.innerHTML = html;
+}
+
+function toggleShopItem(name, el) {
+  var checked = {};
+  try { checked = JSON.parse(localStorage.getItem('ah_shopping_checks') || '{}'); } catch(e) {}
+  if (checked[name]) delete checked[name]; else checked[name] = true;
+  try { localStorage.setItem('ah_shopping_checks', JSON.stringify(checked)); } catch(e) {}
+  renderShoppingList();
+}
+
+// Remplace l'ancien toggleShop (qui était sur des items statiques) — désormais alias
+function toggleShop(el) {
+  // Compat : si toggleShop est appelé sur des items statiques persistants, on no-op
+  if (el && el.classList) el.classList.toggle('on');
+}
+
+// "Générer 🛒" — re-render simplement (la génération est instantanée depuis favoris)
+function generateList() {
+  renderShoppingList();
+  var favs = _getRecipeFavorites();
+  if (favs.length === 0) {
+    showToast('Ajoute d\'abord des recettes en favoris.', 'info');
+  } else {
+    showToast('🛒 Liste générée à partir de ' + favs.length + ' recette' + (favs.length>1?'s':''), 'ok');
+  }
+}
+
+// Ajoute la recette courante dans le journal du jour (action séparée des favoris)
 function addRecipeToJournal() {
   var r = window._currentRecipe;
   if (!r) return;
-  // Feedback visuel
-  var btn = document.querySelector('.rm-add-btn');
-  btn.textContent = '✅ Ajouté au journal !';
-  btn.style.background = 'linear-gradient(135deg, #22C55E, #16A34A)';
-  setTimeout(function() {
-    btn.textContent = '+ Ajouter au journal du jour';
-    btn.style.background = '';
-    closeRecipeModal();
-  }, 1500);
+  var btns = document.querySelectorAll('#recipeModal .rm-add-btn');
+  var btn = btns[btns.length - 1]; // le dernier bouton = "journal"
+  if (btn) {
+    var prev = btn.textContent;
+    btn.textContent = '✅ Ajouté au journal !';
+    btn.style.background = 'linear-gradient(135deg, #22C55E, #16A34A)';
+    btn.style.color = '#fff';
+    setTimeout(function() {
+      btn.textContent = '+ Ajouter au journal du jour';
+      btn.style.background = 'var(--surface2)';
+      btn.style.color = 'var(--text)';
+      closeRecipeModal();
+    }, 1200);
+  }
+  // Ajout effectif au journal localStorage
+  try {
+    var key = 'ah_nutri_journal';
+    var arr = []; try { arr = JSON.parse(localStorage.getItem(key) || '[]'); } catch(e) {}
+    arr.push({
+      ts: Date.now(),
+      date: new Date().toISOString().slice(0,10),
+      name: r.name,
+      cals: r.cals, prot: r.prot, carbs: r.carbs, fat: r.fat,
+      source: 'recipe'
+    });
+    localStorage.setItem(key, JSON.stringify(arr));
+  } catch(e) {}
 }
 
 // ═══ SET — SESSION D'ÉVALUATION TERRAIN ═══
@@ -5794,92 +6205,8 @@ function addFood() {
   alert('Ajouter un aliment : scanne un produit ou choisis une recette.');
 }
 
-function showRecipe(key) {
-  const recipes = {
-    bowl: {name: 'Bowl Protéiné Avoine', emoji: '🥣', cals: 520, prot: 28, carbs: 62, fat: 14, time: '10 min', diff: 'Facile', 
-           ingredients: ['80g flocons d’avoine', '200ml lait', '30g whey', '1 banane', '15g beurre de cacahuète', '10g graines de chia'],
-           instructions: ['Chauffer le lait 1 min', 'Ajouter flocons, laisser gonfler 2 min', 'Ajouter whey et mélanger', 'Couper la banane', 'Ajouter beurre de cacahuète et chia']},
-    shake: {name: 'Shake Whey PB', emoji: '🥤', cals: 320, prot: 35, carbs: 12, fat: 16, time: '3 min', diff: 'Facile',
-            ingredients: ['40g whey isolate', '20g beurre de cacahuète', '300ml lait', '3 glaçons'],
-            instructions: ['Tout mettre dans le blender', 'Mixer 30 secondes', 'Boire dans les 30 min post-workout']},
-    poulet: {name: 'Poulet Quinoa', emoji: '🍗', cals: 580, prot: 42, carbs: 58, fat: 22, time: '35 min', diff: 'Moyenne',
-             ingredients: ['200g filet de poulet', '150g quinoa cuit', '150g brocolis', '10ml huile d’olive', 'Ail, herbes'],
-             instructions: ['Préchauffer four à 200°C', 'Assaisonner le poulet, enfourner 25 min', 'Cuire quinoa 12 min', 'Steam brocolis 5 min', 'Assembler']},
-    saumon: {name: 'Saumon Patate Douce', emoji: '🐟', cals: 520, prot: 38, carbs: 48, fat: 18, time: '30 min', diff: 'Moyenne',
-             ingredients: ['180g pavé de saumon', '200g patate douce', '100g épinards', '10ml huile d’olive', '1/2 citron'],
-             instructions: ['Patate douce au four 25 min à 200°C', 'Saumon poêlé 4 min/côté', 'Épinards sautés 2 min', 'Assaisonner au citron']},
-    pates: {name: 'Pâtes Pesto Poulet', emoji: '🍝', cals: 640, prot: 38, carbs: 72, fat: 24, time: '20 min', diff: 'Facile',
-            ingredients: ['100g pâtes complètes', '150g poulet sauté', '30g pesto', '100g tomates cerises', '15g parmesan'],
-            instructions: ['Cuire pâtes al dente', 'Saisir poulet en dés', 'Mélanger pesto + pâtes + poulet', 'Ajouter tomates et parmesan']},
-    tacos: {name: 'Tacos Steak Avocat', emoji: '🌮', cals: 580, prot: 35, carbs: 48, fat: 26, time: '15 min', diff: 'Facile',
-            ingredients: ['2 tortillas blé complet', '200g steak haché 5%', '1/2 avocat', '100g poivron/oignon', '30g fromage blanc'],
-            instructions: ['Faire revenir steak avec légumes', 'Chauffer tortillas 30 sec', 'Garnir : steak + avocat + fromage blanc', 'Rouler']}
-  };
-
-  const r = recipes[key];
-  if (!r) return;
-
-  let html = '<div style="padding:20px">';
-  html += '<div style="font-size:64px;text-align:center;margin-bottom:16px">' + r.emoji + '</div>';
-  html += '<div style="font-family:Bebas Neue;font-size:28px;letter-spacing:2px;margin-bottom:8px">' + r.name + '</div>';
-  html += '<div style="display:flex;gap:16px;margin-bottom:16px;flex-wrap:wrap">';
-  html += '<div style="font-size:11px;color:var(--muted);font-weight:600">⏱ ' + r.time + '</div>';
-  html += '<div style="font-size:11px;color:var(--muted);font-weight:600">🔥 ' + r.cals + ' kcal</div>';
-  html += '<div style="font-size:11px;color:var(--muted);font-weight:600">🥩 ' + r.prot + 'g prot</div>';
-  html += '<div style="font-size:11px;color:var(--muted);font-weight:600">Difficulté : ' + r.diff + '</div>';
-  html += '</div>';
-
-  html += '<div style="font-family:Bebas Neue;font-size:16px;color:var(--navy);letter-spacing:1px;margin:16px 0 10px">📝 INGRÉDIENTS</div>';
-  r.ingredients.forEach(ing => {
-    html += '<div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--border)">';
-    html += '<div style="width:20px;height:20px;border-radius:5px;border:2px solid var(--border2);cursor:pointer"></div>';
-    html += '<div style="flex:1;font-size:13px">' + ing + '</div>';
-    html += '</div>';
-  });
-
-  html += '<div style="font-family:Bebas Neue;font-size:16px;color:var(--navy);letter-spacing:1px;margin:16px 0 10px">👨‍🍳 PRÉPARATION</div>';
-  r.instructions.forEach((inst, i) => {
-    html += '<div style="display:flex;gap:10px;margin-bottom:12px">';
-    html += '<div style="width:24px;height:24px;border-radius:50%;background:var(--gold);color:#fff;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:800;flex-shrink:0">' + (i+1) + '</div>';
-    html += '<div style="font-size:13px;color:var(--text2);line-height:1.6">' + inst + '</div>';
-    html += '</div>';
-  });
-
-  html += '<div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:8px;text-align:center;margin-top:16px">';
-  html += '<div style="background:var(--surface2);border-radius:10px;padding:10px"><div style="font-family:Bebas Neue;font-size:20px;color:var(--gold)">' + r.cals + '</div><div style="font-size:10px;color:var(--muted);font-weight:700">kcal</div></div>';
-  html += '<div style="background:var(--surface2);border-radius:10px;padding:10px"><div style="font-family:Bebas Neue;font-size:20px;color:#3B82F6">' + r.prot + 'g</div><div style="font-size:10px;color:var(--muted);font-weight:700">prot</div></div>';
-  html += '<div style="background:var(--surface2);border-radius:10px;padding:10px"><div style="font-family:Bebas Neue;font-size:20px;color:var(--gold)">' + r.carbs + 'g</div><div style="font-size:10px;color:var(--muted);font-weight:700">carbs</div></div>';
-  html += '<div style="background:var(--surface2);border-radius:10px;padding:10px"><div style="font-family:Bebas Neue;font-size:20px;color:#EC4899">' + r.fat + 'g</div><div style="font-size:10px;color:var(--muted);font-weight:700">fat</div></div>';
-  html += '</div>';
-
-  html += '<button onclick="addRecipeToCart()" style="width:100%;margin-top:16px;padding:14px;background:linear-gradient(135deg,var(--gold),var(--gold2));color:var(--navy);border:none;border-radius:14px;font-family:Outfit;font-size:14px;font-weight:800;cursor:pointer;box-shadow:0 4px 16px var(--gold-glow)">🛒 Ajouter au panier de courses</button>';
-  html += '</div>';
-
-  const modal = document.createElement('div');
-  modal.style.cssText = 'position:fixed;top:0;left:0;right:0;bottom:0;background:var(--bg);z-index:400;overflow-y:auto';
-  modal.innerHTML = '<div style="position:sticky;top:0;background:var(--surface);padding:16px 22px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:12px;z-index:10"><div onclick="this.parentElement.parentElement.remove()" style="cursor:pointer;font-size:20px;color:var(--muted)">←</div><div style="font-family:Bebas Neue;font-size:20px;letter-spacing:2px">RECETTE</div></div>' + html;
-  document.body.appendChild(modal);
-}
-
-function addRecipeToCart() {
-  alert('Ingrédients ajoutés à la liste de courses !');
-}
-
-function filterRecipes(type) {
-  const grid = document.getElementById('recipeGrid');
-  if (!grid) return;
-  const cards = grid.querySelectorAll('.recipe-card');
-  cards.forEach(card => {
-    const tag = card.querySelector('.recipe-tag');
-    if (!tag) return;
-    const cardType = tag.textContent.toLowerCase();
-    if (type === 'all' || cardType.includes(type === 'pre' ? 'pre' : type === 'post' ? 'post' : 'repas')) {
-      card.style.display = '';
-    } else {
-      card.style.display = 'none';
-    }
-  });
-}
+// (Legacy showRecipe / addRecipeToCart / filterRecipes supprimés — la version moderne
+// vit dans le bloc Recettes plus haut, autour de RECIPES + showRecipe()/modal.)
 
 function scanProduct() {
   document.getElementById('barcodeInput').value = '3017620422003';
@@ -9718,6 +10045,34 @@ function initProfil4() {
     var card = document.querySelector('.p4-obj-card[data-obj="' + OB.objNutri + '"]');
     if (card) p4SelectObj(card, OB.objNutri);
   }
+  // Restaurer le flux nutrition s'il existe déjà
+  try {
+    var saved = OB.fluxNutri;
+    if (!saved) { try { saved = (JSON.parse(localStorage.getItem('ah_profile')||'{}').fluxNutri); } catch(e){} }
+    if (saved) {
+      var fcard = document.querySelector('.p4-flux-card[data-flux="' + saved + '"]');
+      if (fcard) p4SelectFlux(fcard, saved);
+    }
+  } catch(e) {}
+}
+
+function p4SelectFlux(card, flux) {
+  OB.fluxNutri = flux;
+  document.querySelectorAll('.p4-flux-card').forEach(function(c){
+    c.style.background = 'var(--surface2)';
+    c.style.borderColor = 'var(--border)';
+  });
+  if (card) {
+    card.style.background = 'rgba(197,164,78,.12)';
+    card.style.borderColor = 'var(--gold)';
+  }
+  // Persiste dans ah_profile (clé séparée pour ne pas casser le flow d'attribution programme)
+  try {
+    var p = JSON.parse(localStorage.getItem('ah_profile') || '{}');
+    p.fluxNutri = flux;
+    localStorage.setItem('ah_profile', JSON.stringify(p));
+  } catch(e) {}
+  try { _persistOnboarding(); } catch(e) {}
 }
 
 function p4SelectObj(card, obj) {
