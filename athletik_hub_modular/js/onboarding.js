@@ -191,6 +191,85 @@ function showResult(key) {
 }
 
 // ══════════════════════════════════
+// ÉTAPE 3/3 — NUTRITION (Mifflin-St Jeor + ajustement objectif)
+// ══════════════════════════════════
+function pickNutriObj(el, val) {
+  document.querySelectorAll('#qNutriObjOpts .ob-opt').forEach(function(o){ o.classList.remove('sel'); });
+  el.classList.add('sel');
+  R.nutriObj = val;
+  _refreshNutriCalcBtn();
+}
+function pickNutriMode(el, val) {
+  document.querySelectorAll('#qNutri .sport-chip').forEach(function(c){ c.classList.remove('on'); });
+  el.classList.add('on');
+  R.nutriMode = val;
+  _refreshNutriCalcBtn();
+}
+function _refreshNutriCalcBtn() {
+  var poids  = parseFloat((document.getElementById('nutriPoids')  || {}).value || 0);
+  var taille = parseFloat((document.getElementById('nutriTaille') || {}).value || 0);
+  var ready = R.nutriObj && R.nutriMode && poids > 0 && taille > 0;
+  var btn = document.getElementById('btnNutriCalc');
+  if (!btn) return;
+  if (ready) { btn.style.opacity = '1'; btn.style.pointerEvents = 'auto'; btn.classList.add('ready'); }
+  else { btn.style.opacity = '.4'; btn.style.pointerEvents = 'none'; btn.classList.remove('ready'); }
+}
+// Wire input changes
+document.addEventListener('input', function(e) {
+  if (e.target && (e.target.id === 'nutriPoids' || e.target.id === 'nutriTaille')) _refreshNutriCalcBtn();
+});
+
+function submitNutri() {
+  var poids  = parseFloat(document.getElementById('nutriPoids').value || 0);
+  var taille = parseFloat(document.getElementById('nutriTaille').value || 0);
+  if (!poids || !taille) { alert('Renseigne ton poids et ta taille.'); return; }
+  if (!R.nutriObj)  { alert('Choisis ton objectif nutrition.'); return; }
+  if (!R.nutriMode) { alert('Choisis ton mode de suivi.'); return; }
+  R.poids  = poids;
+  R.taille = taille;
+
+  // Mifflin-St Jeor (homme par défaut, féminin -161 vs +5)
+  var age = parseInt(R.age) || 25;
+  var sex = R.sexe || 'homme';
+  var bmr = sex === 'femme'
+    ? (10 * poids + 6.25 * taille - 5 * age - 161)
+    : (10 * poids + 6.25 * taille - 5 * age + 5);
+  // TDEE — facteur d'activité modéré (athlète régulier)
+  var tdee = bmr * 1.6;
+  // Ajustement selon objectif
+  var adj = { perf: 1.0, muscle: 1.10, cut: 0.85 };
+  var cal = Math.round(tdee * (adj[R.nutriObj] || 1.0));
+  // Macros : prot ~2.0g/kg, lip 25% des cal, gluc le reste
+  var prot = Math.round(poids * 2.0);
+  var lip  = Math.round((cal * 0.25) / 9);
+  var gluc = Math.round((cal - prot*4 - lip*9) / 4);
+  R.nutriCal  = cal;
+  R.nutriProt = prot;
+  R.nutriGluc = gluc;
+  R.nutriLip  = lip;
+
+  // Push to user object for Firestore sync
+  if (typeof user !== 'undefined') {
+    user.poids = poids; user.taille = taille;
+    user.nutriObj = R.nutriObj; user.nutriMode = R.nutriMode;
+    user.nutriCal = cal; user.nutriProt = prot; user.nutriGluc = gluc; user.nutriLip = lip;
+  }
+
+  document.getElementById('nrCal').textContent  = cal;
+  document.getElementById('nrProt').textContent = prot;
+  document.getElementById('nrGluc').textContent = gluc;
+  document.getElementById('nrLip').textContent  = lip;
+  var msgs = {
+    perf:   '"Tes besoins sont calibrés pour soutenir tes séances. Pas plus, pas moins."',
+    muscle: '"Surplus de ' + Math.round(cal - tdee) + ' kcal/jour. La fibre se construit avec du carburant."',
+    cut:    '"Déficit de ' + Math.round(tdee - cal) + ' kcal/jour. Ça va piquer. C\'est normal."'
+  };
+  document.getElementById('nrMsg').innerHTML = msgs[R.nutriObj] || msgs.perf;
+
+  go('nutriResult');
+}
+
+// ══════════════════════════════════
 // TEST MODE — skip all onboarding validations
 // ══════════════════════════════════
 (function initTestMode() {
@@ -236,6 +315,7 @@ function _testRefreshSkip() {
     qSexe:'⏭ Sexe', q4:'⏭ Objectif', q5:'⏭ Sport',
     qPoste:'⏭ Poste', qFreq:'⏭ Fréquence', qCompet:'⏭ Compét',
     q6:'⏭ Âge', thinking:'⏭ Analyse', result:'⏭ Résultat',
+    qSATIntro:'⏭ Étape 2/3 SAT', qNutri:'⏭ Étape 3/3 Nutri', nutriResult:'⏭ Plan nutri',
     auth:'⏭ Auth'
   };
   btn.textContent = labels[cur.id] || ('→ Skip ' + cur.id);
@@ -278,6 +358,17 @@ function testSkipScreen() {
       if (typeof calcResult === 'function' && !R.program) calcResult();
       go('result'); break;
     case 'result':
+      go('qSATIntro'); break;
+    case 'qSATIntro':
+      go('qNutri'); break;
+    case 'qNutri':
+      R.nutriObj = R.nutriObj || 'perf';
+      R.nutriMode = R.nutriMode || 'flexible';
+      var p = document.getElementById('nutriPoids'); if (p && !p.value) p.value = 75;
+      var t = document.getElementById('nutriTaille'); if (t && !t.value) t.value = 178;
+      submitNutri();
+      break;
+    case 'nutriResult':
       go('auth'); break;
     case 'auth':
       if (typeof window.testMode === 'function') window.testMode();

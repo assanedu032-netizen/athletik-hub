@@ -237,6 +237,74 @@
       <img class="res-t-av" id="rTitanImg" src="" alt="T">
       <div class="res-t-txt" id="rMsg">"Ton profil montre que tu as besoin d'un programme complet."</div>
     </div>
+    <button class="res-btn" onclick="go('qSATIntro')">Étape 2/3 — Test physique →</button>
+  </div>
+</div>
+
+<!-- ═══ ÉTAPE 2/3 — TEST SAT (présentation) ═══ -->
+<div id="qSATIntro" class="scr">
+  <div class="ob">
+    <div class="ob-step">Étape 2 / 3 — Test physique</div>
+    <div class="ob-q">On va mesurer ton niveau réel.</div>
+    <div class="ob-sub">Le SAT mesure 5 choses : détente, force, sprint, agilité, mobilité. Sans ça, Titan ne sait pas où tu es. Tu peux le faire maintenant dans Tracks &gt; SAT, ou plus tard — mais sans SAT, tes programmes restent verrouillés.</div>
+    <div style="margin-top:24px;display:flex;flex-direction:column;gap:10px">
+      <button class="ob-next ready" style="position:static;opacity:1;pointer-events:auto" onclick="go('qNutri')">Je le ferai plus tard →</button>
+      <button class="btn btn-outline" onclick="go('qNutri')" style="margin:0">Continuer vers nutrition →</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ ÉTAPE 3/3 — NUTRITION ═══ -->
+<div id="qNutri" class="scr">
+  <div class="ob" style="overflow-y:auto">
+    <div class="ob-step">Étape 3 / 3 — Nutrition</div>
+    <div class="ob-q">Ton corps + ton objectif.</div>
+    <div class="ob-sub">Titan calcule tes besoins caloriques et macros. Tout est automatique.</div>
+
+    <div style="margin-top:18px">
+      <label class="fl">Objectif nutrition</label>
+      <div class="ob-opts" id="qNutriObjOpts" style="margin-top:6px">
+        <button class="ob-opt" onclick="pickNutriObj(this,'perf')"><div class="ob-opt-ltr">A</div><div class="ob-opt-txt">Performance (entretien)</div></button>
+        <button class="ob-opt" onclick="pickNutriObj(this,'muscle')"><div class="ob-opt-ltr">B</div><div class="ob-opt-txt">Prise de muscle (+10%)</div></button>
+        <button class="ob-opt" onclick="pickNutriObj(this,'cut')"><div class="ob-opt-ltr">C</div><div class="ob-opt-txt">Perte de gras (-15%)</div></button>
+      </div>
+    </div>
+
+    <div class="fi-row" style="margin-top:14px">
+      <div class="fg"><label class="fl">Poids (kg)</label><input class="fi" type="number" id="nutriPoids" placeholder="75" min="30" max="200"></div>
+      <div class="fg"><label class="fl">Taille (cm)</label><input class="fi" type="number" id="nutriTaille" placeholder="178" min="120" max="230"></div>
+    </div>
+
+    <div style="margin-top:14px">
+      <label class="fl">Mode de suivi</label>
+      <div style="display:flex;gap:8px;margin-top:6px">
+        <button class="sport-chip" onclick="pickNutriMode(this,'strict')" style="flex:1"><div class="sport-name">📋 Stricte</div><div style="font-size:10px;color:var(--muted);margin-top:2px">Plan auto</div></button>
+        <button class="sport-chip" onclick="pickNutriMode(this,'flexible')" style="flex:1"><div class="sport-name">🍴 Flexible</div><div style="font-size:10px;color:var(--muted);margin-top:2px">Catalogue libre</div></button>
+      </div>
+    </div>
+
+    <button class="ob-next" id="btnNutriCalc" style="position:static;opacity:.4;pointer-events:none;margin-top:22px" onclick="submitNutri()">Calculer mes besoins →</button>
+  </div>
+</div>
+
+<!-- ═══ NUTRITION RESULT ═══ -->
+<div id="nutriResult" class="scr">
+  <div style="flex:1;display:flex;flex-direction:column;align-items:center;padding:28px 24px;text-align:center;overflow-y:auto">
+    <div class="res-badge">⚡ Plan nutrition calibré</div>
+    <div class="res-title">TES BESOINS QUOTIDIENS</div>
+    <div class="res-card">
+      <div style="font-family:'Bebas Neue',sans-serif;font-size:48px;color:var(--gold);letter-spacing:2px" id="nrCal">2400</div>
+      <div style="font-size:11px;color:var(--muted);letter-spacing:1.5px;text-transform:uppercase;margin-top:-6px">kcal / jour</div>
+      <div style="display:flex;justify-content:space-around;margin-top:18px;padding-top:14px;border-top:1px solid var(--border)">
+        <div><div style="font-family:'Bebas Neue',sans-serif;font-size:22px;color:var(--text)" id="nrProt">160</div><div style="font-size:9px;color:var(--muted);letter-spacing:1px">PROT (g)</div></div>
+        <div><div style="font-family:'Bebas Neue',sans-serif;font-size:22px;color:var(--text)" id="nrGluc">280</div><div style="font-size:9px;color:var(--muted);letter-spacing:1px">GLUC (g)</div></div>
+        <div><div style="font-family:'Bebas Neue',sans-serif;font-size:22px;color:var(--text)" id="nrLip">80</div><div style="font-size:9px;color:var(--muted);letter-spacing:1px">LIP (g)</div></div>
+      </div>
+    </div>
+    <div class="res-titan">
+      <div class="res-t-av"></div>
+      <div class="res-t-txt" id="nrMsg">"Voilà tes chiffres. Suis-les. Pas plus, pas moins."</div>
+    </div>
     <button class="res-btn" onclick="go('auth')">Crée ton compte pour sauvegarder</button>
   </div>
 </div>

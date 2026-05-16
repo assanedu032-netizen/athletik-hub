@@ -1632,6 +1632,74 @@ body.test-mode #testSkipBar{display:flex}
       <img class="res-t-av" id="rTitanImg" src="" alt="T">
       <div class="res-t-txt" id="rMsg">"Ton profil montre que tu as besoin d'un programme complet."</div>
     </div>
+    <button class="res-btn" onclick="go('qSATIntro')">Étape 2/3 — Test physique →</button>
+  </div>
+</div>
+
+<!-- ═══ ÉTAPE 2/3 — TEST SAT (présentation) ═══ -->
+<div id="qSATIntro" class="scr">
+  <div class="ob">
+    <div class="ob-step">Étape 2 / 3 — Test physique</div>
+    <div class="ob-q">On va mesurer ton niveau réel.</div>
+    <div class="ob-sub">Le SAT mesure 5 choses : détente, force, sprint, agilité, mobilité. Sans ça, Titan ne sait pas où tu es. Tu peux le faire maintenant dans Tracks &gt; SAT, ou plus tard — mais sans SAT, tes programmes restent verrouillés.</div>
+    <div style="margin-top:24px;display:flex;flex-direction:column;gap:10px">
+      <button class="ob-next ready" style="position:static;opacity:1;pointer-events:auto" onclick="go('qNutri')">Je le ferai plus tard →</button>
+      <button class="btn btn-outline" onclick="go('qNutri')" style="margin:0">Continuer vers nutrition →</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ ÉTAPE 3/3 — NUTRITION ═══ -->
+<div id="qNutri" class="scr">
+  <div class="ob" style="overflow-y:auto">
+    <div class="ob-step">Étape 3 / 3 — Nutrition</div>
+    <div class="ob-q">Ton corps + ton objectif.</div>
+    <div class="ob-sub">Titan calcule tes besoins caloriques et macros. Tout est automatique.</div>
+
+    <div style="margin-top:18px">
+      <label class="fl">Objectif nutrition</label>
+      <div class="ob-opts" id="qNutriObjOpts" style="margin-top:6px">
+        <button class="ob-opt" onclick="pickNutriObj(this,'perf')"><div class="ob-opt-ltr">A</div><div class="ob-opt-txt">Performance (entretien)</div></button>
+        <button class="ob-opt" onclick="pickNutriObj(this,'muscle')"><div class="ob-opt-ltr">B</div><div class="ob-opt-txt">Prise de muscle (+10%)</div></button>
+        <button class="ob-opt" onclick="pickNutriObj(this,'cut')"><div class="ob-opt-ltr">C</div><div class="ob-opt-txt">Perte de gras (-15%)</div></button>
+      </div>
+    </div>
+
+    <div class="fi-row" style="margin-top:14px">
+      <div class="fg"><label class="fl">Poids (kg)</label><input class="fi" type="number" id="nutriPoids" placeholder="75" min="30" max="200"></div>
+      <div class="fg"><label class="fl">Taille (cm)</label><input class="fi" type="number" id="nutriTaille" placeholder="178" min="120" max="230"></div>
+    </div>
+
+    <div style="margin-top:14px">
+      <label class="fl">Mode de suivi</label>
+      <div style="display:flex;gap:8px;margin-top:6px">
+        <button class="sport-chip" onclick="pickNutriMode(this,'strict')" style="flex:1"><div class="sport-name">📋 Stricte</div><div style="font-size:10px;color:var(--muted);margin-top:2px">Plan auto</div></button>
+        <button class="sport-chip" onclick="pickNutriMode(this,'flexible')" style="flex:1"><div class="sport-name">🍴 Flexible</div><div style="font-size:10px;color:var(--muted);margin-top:2px">Catalogue libre</div></button>
+      </div>
+    </div>
+
+    <button class="ob-next" id="btnNutriCalc" style="position:static;opacity:.4;pointer-events:none;margin-top:22px" onclick="submitNutri()">Calculer mes besoins →</button>
+  </div>
+</div>
+
+<!-- ═══ NUTRITION RESULT ═══ -->
+<div id="nutriResult" class="scr">
+  <div style="flex:1;display:flex;flex-direction:column;align-items:center;padding:28px 24px;text-align:center;overflow-y:auto">
+    <div class="res-badge">⚡ Plan nutrition calibré</div>
+    <div class="res-title">TES BESOINS QUOTIDIENS</div>
+    <div class="res-card">
+      <div style="font-family:'Bebas Neue',sans-serif;font-size:48px;color:var(--gold);letter-spacing:2px" id="nrCal">2400</div>
+      <div style="font-size:11px;color:var(--muted);letter-spacing:1.5px;text-transform:uppercase;margin-top:-6px">kcal / jour</div>
+      <div style="display:flex;justify-content:space-around;margin-top:18px;padding-top:14px;border-top:1px solid var(--border)">
+        <div><div style="font-family:'Bebas Neue',sans-serif;font-size:22px;color:var(--text)" id="nrProt">160</div><div style="font-size:9px;color:var(--muted);letter-spacing:1px">PROT (g)</div></div>
+        <div><div style="font-family:'Bebas Neue',sans-serif;font-size:22px;color:var(--text)" id="nrGluc">280</div><div style="font-size:9px;color:var(--muted);letter-spacing:1px">GLUC (g)</div></div>
+        <div><div style="font-family:'Bebas Neue',sans-serif;font-size:22px;color:var(--text)" id="nrLip">80</div><div style="font-size:9px;color:var(--muted);letter-spacing:1px">LIP (g)</div></div>
+      </div>
+    </div>
+    <div class="res-titan">
+      <div class="res-t-av"></div>
+      <div class="res-t-txt" id="nrMsg">"Voilà tes chiffres. Suis-les. Pas plus, pas moins."</div>
+    </div>
     <button class="res-btn" onclick="go('auth')">Crée ton compte pour sauvegarder</button>
   </div>
 </div>
@@ -5868,6 +5936,75 @@ function exitTestMode() {
   document.body.classList.remove('test-mode');
 }
 
+// ══════════════════════════════════
+// ÉTAPE 3/3 — NUTRITION (Mifflin-St Jeor + ajustement objectif)
+// ══════════════════════════════════
+function pickNutriObj(el, val) {
+  document.querySelectorAll('#qNutriObjOpts .ob-opt').forEach(function(o){ o.classList.remove('sel'); });
+  el.classList.add('sel');
+  R.nutriObj = val;
+  _refreshNutriCalcBtn();
+}
+function pickNutriMode(el, val) {
+  document.querySelectorAll('#qNutri .sport-chip').forEach(function(c){ c.classList.remove('on'); });
+  el.classList.add('on');
+  R.nutriMode = val;
+  _refreshNutriCalcBtn();
+}
+function _refreshNutriCalcBtn() {
+  var poids  = parseFloat((document.getElementById('nutriPoids')  || {}).value || 0);
+  var taille = parseFloat((document.getElementById('nutriTaille') || {}).value || 0);
+  var ready = R.nutriObj && R.nutriMode && poids > 0 && taille > 0;
+  var btn = document.getElementById('btnNutriCalc');
+  if (!btn) return;
+  if (ready) { btn.style.opacity = '1'; btn.style.pointerEvents = 'auto'; btn.classList.add('ready'); }
+  else { btn.style.opacity = '.4'; btn.style.pointerEvents = 'none'; btn.classList.remove('ready'); }
+}
+document.addEventListener('input', function(e) {
+  if (e.target && (e.target.id === 'nutriPoids' || e.target.id === 'nutriTaille')) _refreshNutriCalcBtn();
+});
+
+function submitNutri() {
+  var poids  = parseFloat(document.getElementById('nutriPoids').value || 0);
+  var taille = parseFloat(document.getElementById('nutriTaille').value || 0);
+  if (!poids || !taille) { alert('Renseigne ton poids et ta taille.'); return; }
+  if (!R.nutriObj)  { alert('Choisis ton objectif nutrition.'); return; }
+  if (!R.nutriMode) { alert('Choisis ton mode de suivi.'); return; }
+  R.poids = poids; R.taille = taille;
+
+  var age = parseInt(R.age) || 25;
+  var sex = R.sexe || 'homme';
+  var bmr = sex === 'femme'
+    ? (10 * poids + 6.25 * taille - 5 * age - 161)
+    : (10 * poids + 6.25 * taille - 5 * age + 5);
+  var tdee = bmr * 1.6;
+  var adj = { perf: 1.0, muscle: 1.10, cut: 0.85 };
+  var cal = Math.round(tdee * (adj[R.nutriObj] || 1.0));
+  var prot = Math.round(poids * 2.0);
+  var lip  = Math.round((cal * 0.25) / 9);
+  var gluc = Math.round((cal - prot*4 - lip*9) / 4);
+  R.nutriCal=cal; R.nutriProt=prot; R.nutriGluc=gluc; R.nutriLip=lip;
+
+  if (typeof user !== 'undefined') {
+    user.poids = poids; user.taille = taille;
+    user.nutriObj = R.nutriObj; user.nutriMode = R.nutriMode;
+    user.nutriCal = cal; user.nutriProt = prot; user.nutriGluc = gluc; user.nutriLip = lip;
+  }
+
+  document.getElementById('nrCal').textContent  = cal;
+  document.getElementById('nrProt').textContent = prot;
+  document.getElementById('nrGluc').textContent = gluc;
+  document.getElementById('nrLip').textContent  = lip;
+  var msgs = {
+    perf:   '"Tes besoins sont calibrés pour soutenir tes séances. Pas plus, pas moins."',
+    muscle: '"Surplus de ' + Math.round(cal - tdee) + ' kcal/jour. La fibre se construit avec du carburant."',
+    cut:    '"Déficit de ' + Math.round(tdee - cal) + ' kcal/jour. Ça va piquer. C\'est normal."'
+  };
+  document.getElementById('nrMsg').innerHTML = msgs[R.nutriObj] || msgs.perf;
+
+  go('nutriResult');
+}
+
 function _testRefreshSkip() {
   var cur = document.querySelector('.scr.on');
   var btn = document.getElementById('testSkipBtn');
@@ -5878,6 +6015,7 @@ function _testRefreshSkip() {
     qSexe:'⏭ Sexe', q4:'⏭ Objectif', q5:'⏭ Sport',
     qPoste:'⏭ Poste', qFreq:'⏭ Fréquence', qCompet:'⏭ Compét',
     q6:'⏭ Âge', thinking:'⏭ Analyse', result:'⏭ Résultat',
+    qSATIntro:'⏭ Étape 2/3 SAT', qNutri:'⏭ Étape 3/3 Nutri', nutriResult:'⏭ Plan nutri',
     auth:'⏭ Auth'
   };
   btn.textContent = labels[cur.id] || ('→ Skip ' + cur.id);
@@ -5909,7 +6047,16 @@ function testSkipScreen() {
     case 'thinking':
       if (typeof calcResult === 'function' && !R.program) calcResult();
       go('result'); break;
-    case 'result':       go('auth'); break;
+    case 'result':       go('qSATIntro'); break;
+    case 'qSATIntro':    go('qNutri'); break;
+    case 'qNutri':
+      R.nutriObj = R.nutriObj || 'perf';
+      R.nutriMode = R.nutriMode || 'flexible';
+      var pp = document.getElementById('nutriPoids'); if (pp && !pp.value) pp.value = 75;
+      var tt = document.getElementById('nutriTaille'); if (tt && !tt.value) tt.value = 178;
+      submitNutri();
+      break;
+    case 'nutriResult':  go('auth'); break;
     case 'auth':
       if (typeof window.testMode === 'function') window.testMode();
       else if (typeof enterApp === 'function') enterApp();
