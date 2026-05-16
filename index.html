@@ -5215,6 +5215,9 @@ function go(id) {
   const nxt = document.getElementById(id);
   if (!nxt || (cur && cur.id === id)) return;
   if (cur) { cur.classList.remove('on'); cur.classList.add('out'); setTimeout(() => cur.classList.remove('out'), 500); }
+  // CRITIQUE : reset l'inline display:none mis par discoveryGoTo() sur toutes les .scr,
+  // sinon l'inline gagne sur le CSS de .scr (display:flex) et l'écran reste blanc.
+  nxt.style.display = '';
   nxt.classList.add('on');
 
   // Trigger typing on Titan intro
