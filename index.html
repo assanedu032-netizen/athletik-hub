@@ -503,6 +503,10 @@ body{background:var(--bg);color:var(--text);font-family:'Outfit',sans-serif;disp
 /* ═══ SECTIONS ═══ */
 .sec{display:none;padding:16px 22px;animation:fadeUp .3s ease both}
 .sec.on{display:block}
+.test-video-wrap{margin:-4px 0 14px;border-radius:10px;overflow:hidden;background:#0a0f1e;position:relative;padding-top:56.25%;border:1px solid var(--border)}
+.test-video-wrap iframe,.test-video-wrap .tvw-ph{position:absolute;inset:0;width:100%;height:100%;border:0}
+.test-video-wrap .tvw-ph{display:flex;align-items:center;justify-content:center;flex-direction:column;background:linear-gradient(135deg,#1B2A4A,#0A0F1E);color:rgba(255,255,255,.5);font-size:12px;letter-spacing:1px;font-weight:600;cursor:pointer;text-align:center;padding:12px}
+.test-video-wrap .tvw-ph-play{font-size:38px;color:var(--gold);margin-bottom:6px}
 
 /* ═══ PAGE HEADER ═══ */
 .pg-head{padding:20px 22px 0}
@@ -2464,7 +2468,6 @@ body{background:var(--bg);color:var(--text);font-family:'Outfit',sans-serif;disp
     <div class="sub-tab on" onclick="showSec('sat',this)">SAT</div>
     <div class="sub-tab" onclick="showSec('set',this)">SET</div>
     <div class="sub-tab" onclick="showSec('track',this)">Track</div>
-    <div class="sub-tab" onclick="showSec('live',this)">Live</div>
   </div>
 
   <!-- ══════════════════════════════════════════ -->
@@ -2479,9 +2482,16 @@ body{background:var(--bg);color:var(--text);font-family:'Outfit',sans-serif;disp
     </div>
 
     <div id="satForm">
+      <!-- Banner reprise (affiché si test en cours) -->
+      <div id="satResumeBanner" style="display:none;background:rgba(197,164,78,.08);border:1px solid rgba(197,164,78,.3);border-radius:10px;padding:10px 14px;margin-bottom:14px;font-size:12px;color:var(--text2);line-height:1.5">
+        ↩️ Tes valeurs ont été restaurées. Continue où tu en étais.
+        <a href="#" onclick="clearSATInProgress();return false;" style="color:var(--gold);font-weight:700;text-decoration:none;margin-left:6px">Recommencer à zéro</a>
+      </div>
+
       <!-- Test 1: Détente -->
       <div class="card">
         <div class="card-title"><span>🦘</span> Test 1 — Détente verticale</div>
+        <div id="satVid_detente" class="test-video-wrap"></div>
         <div class="fi-row">
           <div class="fg"><label class="fl">Taille bras levés</label><input class="fi" type="number" id="satReach" placeholder="230" step="1"></div>
           <div class="fi-unit">cm</div>
@@ -2496,6 +2506,7 @@ body{background:var(--bg);color:var(--text);font-family:'Outfit',sans-serif;disp
       <!-- Test 2: Force -->
       <div class="card">
         <div class="card-title"><span>🏋️</span> Test 2 — Force (5RM)</div>
+        <div id="satVid_force" class="test-video-wrap"></div>
         <div class="fi-row">
           <div class="fg"><label class="fl">Squat 5RM</label><input class="fi" type="number" id="satSquat" placeholder="100" step="1"></div>
           <div class="fi-unit">kg</div>
@@ -2515,31 +2526,60 @@ body{background:var(--bg);color:var(--text);font-family:'Outfit',sans-serif;disp
         <div style="font-size:12px;color:var(--muted);margin-top:6px">1RM estimé = 5RM × 1.15</div>
       </div>
 
-      <!-- Test 3: Sprint -->
+      <!-- Test 3: Sprint (multi-essais + distance libre) -->
       <div class="card">
         <div class="card-title"><span>⚡</span> Test 3 — Sprint</div>
+        <div id="satVid_sprint" class="test-video-wrap"></div>
+
         <div class="fi-row">
-          <div class="fg"><label class="fl">Distance</label><input class="fi" type="number" id="satSprintDist" placeholder="30" step="1"></div>
-          <div class="fi-unit">m</div>
+          <div class="fg">
+            <label class="fl">Distance</label>
+            <select class="fi-select" id="satSprintDist" onchange="onSprintDistChange()">
+              <option value="10">10 m</option>
+              <option value="20">20 m</option>
+              <option value="30" selected>30 m</option>
+              <option value="40">40 m</option>
+              <option value="50">50 m</option>
+              <option value="60">60 m</option>
+              <option value="80">80 m</option>
+              <option value="100">100 m</option>
+              <option value="150">150 m</option>
+              <option value="200">200 m</option>
+            </select>
+          </div>
         </div>
-        <div class="fi-row">
-          <div class="fg"><label class="fl">Temps</label><input class="fi" type="number" id="satSprintTime" placeholder="4.2" step="0.01"></div>
-          <div class="fi-unit">sec</div>
+
+        <div style="font-size:10px;font-weight:700;color:var(--muted);letter-spacing:1.5px;text-transform:uppercase;margin:14px 0 8px">Essais (jusqu'à 5) — meilleur temps retenu</div>
+        <div id="satSprintAttempts">
+          <div class="fi-row"><div class="fg"><label class="fl">Essai 1</label><input class="fi" type="number" id="satSprint1" placeholder="4.20" step="0.01"></div><div class="fi-unit">sec</div></div>
+          <div class="fi-row"><div class="fg"><label class="fl">Essai 2</label><input class="fi" type="number" id="satSprint2" placeholder="—" step="0.01"></div><div class="fi-unit">sec</div></div>
+          <div class="fi-row"><div class="fg"><label class="fl">Essai 3</label><input class="fi" type="number" id="satSprint3" placeholder="—" step="0.01"></div><div class="fi-unit">sec</div></div>
+          <div class="fi-row"><div class="fg"><label class="fl">Essai 4</label><input class="fi" type="number" id="satSprint4" placeholder="—" step="0.01"></div><div class="fi-unit">sec</div></div>
+          <div class="fi-row"><div class="fg"><label class="fl">Essai 5</label><input class="fi" type="number" id="satSprint5" placeholder="—" step="0.01"></div><div class="fi-unit">sec</div></div>
         </div>
+        <div id="satSprintBest" style="font-size:12px;font-weight:700;color:var(--green);margin-top:8px;min-height:18px"></div>
       </div>
 
-      <!-- Test 4: Agilité -->
+      <!-- Test 4: Agilité T-Test (multi-essais) -->
       <div class="card">
         <div class="card-title"><span>🔄</span> Test 4 — Agilité T-Test</div>
-        <div class="fi-row">
-          <div class="fg"><label class="fl">Temps T-Test</label><input class="fi" type="number" id="satTTest" placeholder="9.5" step="0.01"></div>
-          <div class="fi-unit">sec</div>
+        <div id="satVid_ttest" class="test-video-wrap"></div>
+
+        <div style="font-size:10px;font-weight:700;color:var(--muted);letter-spacing:1.5px;text-transform:uppercase;margin:0 0 8px">Essais (jusqu'à 5) — meilleur temps retenu</div>
+        <div id="satTTestAttempts">
+          <div class="fi-row"><div class="fg"><label class="fl">Essai 1</label><input class="fi" type="number" id="satTTest1" placeholder="9.5" step="0.01"></div><div class="fi-unit">sec</div></div>
+          <div class="fi-row"><div class="fg"><label class="fl">Essai 2</label><input class="fi" type="number" id="satTTest2" placeholder="—" step="0.01"></div><div class="fi-unit">sec</div></div>
+          <div class="fi-row"><div class="fg"><label class="fl">Essai 3</label><input class="fi" type="number" id="satTTest3" placeholder="—" step="0.01"></div><div class="fi-unit">sec</div></div>
+          <div class="fi-row"><div class="fg"><label class="fl">Essai 4</label><input class="fi" type="number" id="satTTest4" placeholder="—" step="0.01"></div><div class="fi-unit">sec</div></div>
+          <div class="fi-row"><div class="fg"><label class="fl">Essai 5</label><input class="fi" type="number" id="satTTest5" placeholder="—" step="0.01"></div><div class="fi-unit">sec</div></div>
         </div>
+        <div id="satTTestBest" style="font-size:12px;font-weight:700;color:var(--green);margin-top:8px;min-height:18px"></div>
       </div>
 
       <!-- Test 5: Mobilité -->
       <div class="card">
         <div class="card-title"><span>🧘</span> Test 5 — Mobilité</div>
+        <div id="satVid_fms" class="test-video-wrap"></div>
         <div class="fi-row">
           <div class="fg"><label class="fl">Score FMS</label><input class="fi" type="number" id="satFMS" placeholder="14" step="1" min="0" max="21"></div>
           <div class="fi-unit">/21</div>
@@ -2666,98 +2706,7 @@ body{background:var(--bg);color:var(--text);font-family:'Outfit',sans-serif;disp
     </div>
   </div>
 
-  <!-- ══════════════════════════════════════════ -->
-  <!-- SECTION 3: SÉANCE LIVE                     -->
-  <!-- ══════════════════════════════════════════ -->
-  <div id="secLive" class="sec">
-
-    <!-- Start screen -->
-    <div id="liveStart">
-      <div class="card" style="text-align:center;padding:28px">
-        <div style="font-size:48px;margin-bottom:12px">🔥</div>
-        <div style="font-family:'Bebas Neue',sans-serif;font-size:24px;color:var(--text);letter-spacing:2px">LANCER UNE SÉANCE</div>
-        <div style="font-size:13px;color:var(--muted);margin:8px 0 20px;line-height:1.5">Les exercices de ton programme défilent un par un. Tu enregistres tes données en direct.</div>
-        <button class="btn btn-gold" onclick="startLive()">Commencer la séance</button>
-      </div>
-    </div>
-
-    <!-- Active session -->
-    <div id="liveSession" class="hidden">
-      <div class="live-header">
-        <div class="lh-step" id="liveStep">EXERCICE 1 / 4</div>
-        <div class="lh-name" id="liveName">BOX JUMPS</div>
-        <div class="lh-target" id="liveTarget">Objectif : 3 séries × 5 reps</div>
-      </div>
-
-      <!-- Quick inputs -->
-      <div style="padding:0 22px">
-        <div class="fi-row">
-          <div class="fg"><label class="fl">Reps effectuées</label><input class="fi" type="number" id="liveReps" placeholder="5"></div>
-          <div class="fg"><label class="fl">Charge (kg)</label><input class="fi" type="number" id="liveLoad" placeholder="0"></div>
-        </div>
-
-        <!-- RPE -->
-        <div class="rpe-wrap">
-          <label class="fl">RPE</label>
-          <div class="rpe-row">
-            <div class="rpe-btn" onclick="setLiveRPE(this,1)">1</div>
-            <div class="rpe-btn" onclick="setLiveRPE(this,2)">2</div>
-            <div class="rpe-btn" onclick="setLiveRPE(this,3)">3</div>
-            <div class="rpe-btn" onclick="setLiveRPE(this,4)">4</div>
-            <div class="rpe-btn" onclick="setLiveRPE(this,5)">5</div>
-            <div class="rpe-btn" onclick="setLiveRPE(this,6)">6</div>
-            <div class="rpe-btn" onclick="setLiveRPE(this,7)">7</div>
-            <div class="rpe-btn" onclick="setLiveRPE(this,8)">8</div>
-            <div class="rpe-btn" onclick="setLiveRPE(this,9)">9</div>
-            <div class="rpe-btn" onclick="setLiveRPE(this,10)">10</div>
-          </div>
-        </div>
-
-        <!-- Timer -->
-        <div class="timer-wrap">
-          <div style="font-size:10px;font-weight:700;color:var(--muted);letter-spacing:1.5px;text-transform:uppercase;margin-bottom:6px">Temps de repos</div>
-          <div class="timer-display" id="liveTimer">02:00</div>
-          <div class="timer-presets">
-            <div class="tp" onclick="setTimerPreset(this,30)">30s</div>
-            <div class="tp" onclick="setTimerPreset(this,60)">1:00</div>
-            <div class="tp on" onclick="setTimerPreset(this,120)">2:00</div>
-            <div class="tp" onclick="setTimerPreset(this,180)">3:00</div>
-            <div class="tp" onclick="setTimerPreset(this,300)">5:00</div>
-          </div>
-          <div class="timer-btns">
-            <button class="timer-btn start" id="timerBtn" onclick="toggleLiveTimer()">▶ START</button>
-            <button class="timer-btn reset" onclick="resetLiveTimer()">↺ RESET</button>
-          </div>
-        </div>
-
-        <button class="btn btn-navy" onclick="nextLiveExercise()" style="margin-top:12px">Exercice suivant →</button>
-      </div>
-    </div>
-
-    <!-- Session summary -->
-    <div id="liveSummary" class="hidden" style="padding:0 22px">
-      <div style="text-align:center;margin:20px 0">
-        <div style="font-size:48px">🏆</div>
-        <div style="font-family:'Bebas Neue',sans-serif;font-size:28px;color:var(--text);letter-spacing:2px;margin-top:8px">SÉANCE TERMINÉE</div>
-      </div>
-
-      <div id="summaryList"></div>
-
-      <!-- Post-session feedback -->
-      <div class="card" style="margin-top:16px">
-        <div class="card-title"><span>💬</span> Feedback de séance</div>
-        <div style="font-size:12px;color:var(--muted);margin-bottom:10px">Comment tu t'es senti ? (optionnel)</div>
-        <textarea class="fb-area" id="sessionFeedback" placeholder="Ex: Bonne séance mais fatigue sur les dernières séries de squat..."></textarea>
-      </div>
-
-      <div class="titan-fb">
-        <div class="tf-av"></div>
-        <div class="tf-txt">"C'est comme ça qu'on progresse. Repose-toi bien. On remet ça demain."</div>
-      </div>
-
-      <button class="btn btn-gold" onclick="endLive()" style="margin-top:12px">Terminer et sauvegarder</button>
-    </div>
-  </div>
+  <!-- (Section "Live" supprimée — feedback utilisateur du 2026-05-16) -->
 
 </div>
 </div>
@@ -4752,7 +4701,10 @@ function switchTab(tab){
   var titanBtn=document.querySelector('.nav-titan');
   if(titanBtn)titanBtn.style.filter=(tab==='chat')?'drop-shadow(0 0 8px rgba(197,164,78,.6))':'none';
   // Init SAT step-by-step quand on entre dans Tracks
-  if (tab === 'tracks') { try { initSATv7(); } catch(e) { console.warn('initSATv7 error:', e); } }
+  if (tab === 'tracks') {
+    try { initSATv7(); } catch(e) { console.warn('initSATv7 error:', e); }
+    try { initTracksSAT(); } catch(e) { console.warn('initTracksSAT error:', e); }
+  }
   // Init Scan check API key + restore form
   if (tab === 'nutrition') { try { scanCheckApiKey(); scanUpdateMacros(); renderJournalToday(); } catch(e) {} }
   if (tab === 'moi') { try { apiKeyRestore(); fbRefreshAccountSection(window.fbUser); } catch(e) {} }
@@ -5079,6 +5031,8 @@ function showSec(id,_el) {
   var vt=document.getElementById('vTracks');if(vt)vt.scrollTop=0;
   // Init SET step-by-step quand on entre dans l'onglet SET
   if(id==='set') { try { initSET(); } catch(e) { console.warn('initSET error:', e); } }
+  // Init Tracks > SAT : restaure les valeurs et rend les vidéos
+  if(id==='sat') { try { initTracksSAT(); } catch(e) { console.warn('initTracksSAT error:', e); } }
 }
 
 // ══════════════════════════════════
@@ -5091,6 +5045,28 @@ function setSatPhase(el, phase) {
   satPhase = phase;
 }
 
+// Helper : meilleur (= plus petit) temps parmi N essais. 0 si aucun.
+function _bestSprintTime(prefix, n) {
+  var best = 0;
+  for (var i = 1; i <= n; i++) {
+    var v = parseFloat((document.getElementById(prefix + i) || {}).value) || 0;
+    if (v > 0 && (best === 0 || v < best)) best = v;
+  }
+  return best;
+}
+function updateSprintBest() {
+  var b = _bestSprintTime('satSprint', 5);
+  var d = parseFloat((document.getElementById('satSprintDist') || {}).value) || 0;
+  var el = document.getElementById('satSprintBest');
+  if (el) el.textContent = b > 0 ? '✓ Meilleur essai retenu : ' + b.toFixed(2) + 's' + (d ? ' / ' + d + 'm' : '') : '';
+}
+function updateTTestBest() {
+  var b = _bestSprintTime('satTTest', 5);
+  var el = document.getElementById('satTTestBest');
+  if (el) el.textContent = b > 0 ? '✓ Meilleur essai retenu : ' + b.toFixed(2) + 's' : '';
+}
+function onSprintDistChange() { updateSprintBest(); persistSATInProgress(); }
+
 function calculateSAT() {
   const reach = parseFloat(document.getElementById('satReach').value) || 0;
   const jump = parseFloat(document.getElementById('satJump').value) || 0;
@@ -5098,7 +5074,8 @@ function calculateSAT() {
   const dl = parseFloat(document.getElementById('satDL').value) || 0;
   const ht = parseFloat(document.getElementById('satHT').value) || 0;
   const dc = parseFloat(document.getElementById('satDC').value) || 0;
-  const sprintTime = parseFloat(document.getElementById('satSprintTime').value) || 0;
+  const sprintTime = _bestSprintTime('satSprint', 5); // meilleur des 5 essais
+  const tTest = _bestSprintTime('satTTest', 5);       // meilleur des 5 essais
   const fms = parseFloat(document.getElementById('satFMS').value) || 0;
 
   if (!reach || !jump) { alert('Saisis au moins tes données de détente.'); return; }
@@ -5142,11 +5119,123 @@ function calculateSAT() {
 
   document.getElementById('satForm').classList.add('hidden');
   document.getElementById('satResult').classList.remove('hidden');
+
+  // Test terminé : effacer l'état "en cours" (mais conserver les valeurs comme dernier score)
+  try {
+    if (typeof OB !== 'undefined') {
+      OB.satReach = reach; OB.satJump = jump; OB.satDetente = vertJump;
+      OB.satSprintTime = sprintTime; OB.satSprintDist = parseFloat((document.getElementById('satSprintDist')||{}).value) || 0;
+      OB.satTTest = tTest; OB.satFMS = fms; OB.satForce = squat1RM;
+      OB.athletikScore = totalScore; OB.satDone = true;
+    }
+    clearSATInProgress();
+  } catch(e){}
 }
 
 function resetSAT() {
   document.getElementById('satForm').classList.remove('hidden');
   document.getElementById('satResult').classList.add('hidden');
+}
+
+// ══════════════════════════════════
+// Tracks SAT — Persistance + Reprise + Vidéos
+// ══════════════════════════════════
+
+// Tous les inputs SAT à sauvegarder (incluant essais multiples)
+var SAT_INPUT_IDS = [
+  'satReach','satJump',
+  'satSquat','satDL','satHT','satDC',
+  'satSprintDist',
+  'satSprint1','satSprint2','satSprint3','satSprint4','satSprint5',
+  'satTTest1','satTTest2','satTTest3','satTTest4','satTTest5',
+  'satFMS'
+];
+
+function persistSATInProgress() {
+  try {
+    var data = {};
+    SAT_INPUT_IDS.forEach(function(id){
+      var el = document.getElementById(id);
+      if (el && el.value !== '') data[id] = el.value;
+    });
+    if (Object.keys(data).length) {
+      localStorage.setItem('ah_sat_inprogress', JSON.stringify({ values: data, ts: Date.now() }));
+    } else {
+      localStorage.removeItem('ah_sat_inprogress');
+    }
+  } catch(e) {}
+}
+
+function restoreSATInProgress() {
+  try {
+    var raw = localStorage.getItem('ah_sat_inprogress');
+    if (!raw) return false;
+    var snap = JSON.parse(raw);
+    if (!snap || !snap.values) return false;
+    var restored = 0;
+    Object.keys(snap.values).forEach(function(id){
+      var el = document.getElementById(id);
+      if (el) { el.value = snap.values[id]; restored++; }
+    });
+    if (restored > 0) {
+      var banner = document.getElementById('satResumeBanner');
+      if (banner) banner.style.display = 'block';
+      updateSprintBest(); updateTTestBest();
+    }
+    return restored > 0;
+  } catch(e) { return false; }
+}
+
+function clearSATInProgress() {
+  try { localStorage.removeItem('ah_sat_inprogress'); } catch(e) {}
+  SAT_INPUT_IDS.forEach(function(id){
+    var el = document.getElementById(id);
+    if (el && id !== 'satSprintDist') el.value = '';
+  });
+  var banner = document.getElementById('satResumeBanner');
+  if (banner) banner.style.display = 'none';
+  updateSprintBest(); updateTTestBest();
+}
+window.clearSATInProgress = clearSATInProgress;
+
+// Auto-save sur input dans le SAT (Tracks tab)
+document.addEventListener('input', function(e) {
+  if (!e.target || !e.target.id) return;
+  if (SAT_INPUT_IDS.indexOf(e.target.id) === -1) return;
+  persistSATInProgress();
+  if (e.target.id.indexOf('satSprint') === 0) updateSprintBest();
+  if (e.target.id.indexOf('satTTest') === 0) updateTTestBest();
+});
+
+// ── Vidéos YouTube par test (placeholders éditables) ──
+// Remplace les ID YouTube ci-dessous par les vraies vidéos après tournage (23 mai).
+var SAT_TEST_VIDEOS = {
+  detente: { yt: '', label: 'Démo — Test de détente verticale' },
+  force:   { yt: '', label: 'Démo — Tests de force (Squat / SDT / HT / DC)' },
+  sprint:  { yt: '', label: 'Démo — Test de sprint (départ, technique)' },
+  ttest:   { yt: '', label: 'Démo — Agilité T-Test' },
+  fms:     { yt: '', label: 'Démo — FMS (7 mouvements)' }
+};
+
+function renderTestVideos() {
+  Object.keys(SAT_TEST_VIDEOS).forEach(function(key){
+    var wrap = document.getElementById('satVid_' + key);
+    if (!wrap) return;
+    var v = SAT_TEST_VIDEOS[key];
+    if (v.yt) {
+      wrap.innerHTML = '<iframe src="https://www.youtube.com/embed/' + v.yt + '" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope" allowfullscreen></iframe>';
+    } else {
+      wrap.innerHTML = '<div class="tvw-ph"><div class="tvw-ph-play">▶</div><div>' + v.label + '</div><div style="font-size:10px;color:rgba(255,255,255,.35);margin-top:6px">Vidéo à venir</div></div>';
+    }
+  });
+}
+
+// Init Tracks > SAT : restaure les valeurs en cours + rend les vidéos
+function initTracksSAT() {
+  try { renderTestVideos(); } catch(e) {}
+  try { restoreSATInProgress(); } catch(e) {}
+  try { updateSprintBest(); } catch(e) {}
+  try { updateTTestBest(); } catch(e) {}
 }
 
 // ══════════════════════════════════
@@ -5215,146 +5304,8 @@ function saveTrack() {
 }
 
 // ══════════════════════════════════
-// SÉANCE LIVE
+// SÉANCE LIVE — Supprimée (feedback utilisateur 2026-05-16)
 // ══════════════════════════════════
-
-const liveExercises = [
-  { name:'Box Jumps', target:'3 séries × 5 reps' },
-  { name:'Back Squat', target:'4 séries × 3 reps (85%)' },
-  { name:'Pogo Jumps', target:'3 séries × 10 reps' },
-  { name:'Sprint 10m', target:'5 passages' }
-];
-
-function startLive() {
-  document.getElementById('liveStart').classList.add('hidden');
-  document.getElementById('liveSession').classList.remove('hidden');
-  currentLiveEx = 0;
-  liveData = [];
-  updateLiveExercise();
-}
-
-function updateLiveExercise() {
-  const ex = liveExercises[currentLiveEx];
-  document.getElementById('liveStep').textContent = `EXERCICE ${currentLiveEx+1} / ${liveExercises.length}`;
-  document.getElementById('liveName').textContent = ex.name.toUpperCase();
-  document.getElementById('liveTarget').textContent = `Objectif : ${ex.target}`;
-  document.getElementById('liveReps').value = '';
-  document.getElementById('liveLoad').value = '';
-  liveRPE = 0;
-  document.querySelectorAll('#liveSession .rpe-btn').forEach(b => b.classList.remove('on','high'));
-  resetLiveTimer();
-}
-
-function setLiveRPE(el, val) {
-  document.querySelectorAll('#liveSession .rpe-btn').forEach(b => b.classList.remove('on','high'));
-  el.classList.add(val >= 9 ? 'high' : 'on');
-  liveRPE = val;
-}
-
-function nextLiveExercise() {
-  // Save current exercise data
-  liveData.push({
-    name: liveExercises[currentLiveEx].name,
-    reps: document.getElementById('liveReps').value || '—',
-    load: document.getElementById('liveLoad').value || '—',
-    rpe: liveRPE || '—'
-  });
-
-  currentLiveEx++;
-  if (currentLiveEx < liveExercises.length) {
-    updateLiveExercise();
-  } else {
-    showLiveSummary();
-  }
-}
-
-function showLiveSummary() {
-  document.getElementById('liveSession').classList.add('hidden');
-  document.getElementById('liveSummary').classList.remove('hidden');
-
-  const list = document.getElementById('summaryList');
-  list.innerHTML = '';
-  liveData.forEach((d, i) => {
-    const loadTxt = d.load !== '—' ? d.load + 'kg' : '';
-    const repsTxt = d.reps !== '—' ? d.reps + ' reps' : '';
-    const rpeTxt = d.rpe !== '—' ? 'RPE ' + d.rpe : '';
-    const parts = [repsTxt, loadTxt, rpeTxt].filter(Boolean).join(' • ');
-
-    list.innerHTML += '<div class="summary-card">'
-      + '<div class="sum-num">' + i+1 + '</div>'
-      + '<div class="sum-body">'
-      + '<div class="sum-name">' + d.name + '</div>'
-      + '<div class="sum-data">' + parts || 'Pas de données' + '</div>'
-      + '</div>'
-      + '</div>';
-  });
-}
-
-function endLive() {
-  const feedback = document.getElementById('sessionFeedback').value;
-  const sessionData = { exercises: liveData, feedback, date: new Date().toISOString() };
-  console.log('Session to save to Firebase:', sessionData);
-  alert('Séance sauvegardée ! 💪');
-  document.getElementById('liveStart').classList.remove('hidden');
-  document.getElementById('liveSummary').classList.add('hidden');
-  currentLiveEx = 0;
-  liveData = [];
-}
-
-// ── LIVE TIMER ──
-function setTimerPreset(el, secs) {
-  document.querySelectorAll('.timer-presets .tp').forEach(t => t.classList.remove('on'));
-  el.classList.add('on');
-  timerTarget = secs;
-  timerSeconds = secs;
-  timerRunning = false;
-  clearInterval(timerInterval);
-  document.getElementById('timerBtn').textContent = '▶ START';
-  document.getElementById('timerBtn').className = 'timer-btn start';
-  updateLiveTimerDisplay();
-}
-
-function toggleLiveTimer() {
-  const btn = document.getElementById('timerBtn');
-  if (timerRunning) {
-    clearInterval(timerInterval);
-    btn.textContent = '▶ REPRENDRE';
-    btn.className = 'timer-btn start';
-    timerRunning = false;
-  } else {
-    timerRunning = true;
-    btn.textContent = '⏸ PAUSE';
-    btn.className = 'timer-btn pause';
-    timerInterval = setInterval(() => {
-      timerSeconds--;
-      if (timerSeconds <= 0) {
-        timerSeconds = 0;
-        clearInterval(timerInterval);
-        timerRunning = false;
-        btn.textContent = '▶ START';
-        btn.className = 'timer-btn start';
-        if (navigator.vibrate) navigator.vibrate([300,100,300]);
-        alert('⏰ Repos terminé ! Au boulot !');
-      }
-      updateLiveTimerDisplay();
-    }, 1000);
-  }
-}
-
-function resetLiveTimer() {
-  clearInterval(timerInterval);
-  timerRunning = false;
-  timerSeconds = timerTarget;
-  document.getElementById('timerBtn').textContent = '▶ START';
-  document.getElementById('timerBtn').className = 'timer-btn start';
-  updateLiveTimerDisplay();
-}
-
-function updateLiveTimerDisplay() {
-  const m = Math.floor(timerSeconds / 60);
-  const s = timerSeconds % 60;
-  document.getElementById('liveTimer').textContent = (m<10?'0':'')+m+':'+(s<10?'0':'')+s;
-}
 
 const catData={echauf_gen:[{name:'Jumping Jacks',diff:'easy',muscles:['Cardio','Full body'],desc:'Élever la température corporelle.'},{name:'Course sur place',diff:'easy',muscles:['Cardio','Jambes'],desc:'Montée de genoux progressive.'},{name:'Rotations articulaires',diff:'easy',muscles:['Mobilité'],desc:'Rotations lentes.'},{name:'Skip A',diff:'easy',muscles:['Jambes','Coordination'],desc:'Montée de genoux dynamique.'}],echauf_spe:[{name:'Activation fessiers',diff:'easy',muscles:['Fessiers'],desc:'Réveiller les fessiers.'},{name:'Marche latérale élastique',diff:'med',muscles:['Abducteurs'],desc:'Pas latéraux avec élastique.'},{name:'Squat progressif',diff:'easy',muscles:['Quadriceps'],desc:'Squats légers progressifs.'}],mobilite:[{name:'Dorsiflexion cheville',diff:'easy',muscles:['Chevilles'],desc:'Essentiel avant tout saut.'},{name:'90/90 Stretch',diff:'med',muscles:['Hanches'],desc:'Rotations de hanche.'},{name:"World's Greatest Stretch",diff:'med',muscles:['Full body'],desc:'Le stretch le plus complet.'}],recup:[{name:'Foam Rolling Quadriceps',diff:'easy',muscles:['Quadriceps'],desc:'Auto-massage rouleau.'}],proprio:[{name:'Équilibre unipodal',diff:'easy',muscles:['Chevilles','Core'],desc:'Équilibre sur un pied.'}],coord:[{name:'Échelle de rythme',diff:'med',muscles:['Coordination'],desc:'Vitesse des appuis.'}],gainage:[{name:'Planche frontale',diff:'easy',muscles:['Core'],desc:'Gainage statique.'}],abdos:[{name:'V-Ups',diff:'med',muscles:['Abdos'],desc:'Relevé simultané.'}],force_pdc:[{name:'Pompes explosives',diff:'med',muscles:['Pectoraux','Triceps'],desc:'Mains décollent du sol.'}],force_charge:[{name:'Back Squat',diff:'hard',muscles:['Quadriceps','Fessiers','Lombaires'],desc:'Le mouvement roi pour la force.'},{name:'Soulevé de terre',diff:'hard',muscles:['Chaîne postérieure'],desc:'Puissance chaîne postérieure.'},{name:'Hip Thrust',diff:'med',muscles:['Fessiers'],desc:'Extension de hanche explosive.'},{name:'Développé couché',diff:'med',muscles:['Pectoraux','Épaules'],desc:'Force haut du corps.'}],rotation:[{name:'Med Ball Rotational Throw',diff:'med',muscles:['Obliques'],desc:'Lancer rotatif.'}],olympiques:[{name:'Power Clean',diff:'hard',muscles:['Full body'],desc:'Triple extension complète.'}],plio_ext:[{name:'Pogo Jumps',diff:'easy',muscles:['Mollets'],desc:'Réactivité tendon d\'Achille.'},{name:'Squat Jump',diff:'med',muscles:['Quadriceps'],desc:'Puissance concentrique.'}],plio_int:[{name:'Depth Jump',diff:'hard',muscles:['Full body'],desc:'Plus fort impact sur le RFD.'},{name:'Box Jump Max',diff:'hard',muscles:['Explosivité'],desc:'Saut box hauteur max.'}],pied:[{name:'Ankling',diff:'easy',muscles:['Chevilles'],desc:'Rigidité cheville.'}],sprint:[{name:'Sprint 10m',diff:'med',muscles:['Quadriceps'],desc:'Phase de démarrage.'},{name:'Sprint 30m',diff:'med',muscles:['Full body'],desc:'Vitesse de pointe.'},{name:'Sprint 60m',diff:'hard',muscles:['Full body'],desc:'Sprint complet.'}],multi:[{name:'Navette 5-10-5',diff:'med',muscles:['Agilité'],desc:'Changements de direction.'}],saut:[{name:'Counter Movement Jump',diff:'easy',muscles:['Quadriceps','Fessiers'],desc:'Test de référence détente.'},{name:'Approach Jump',diff:'med',muscles:['Full body'],desc:'Saut avec élan.'},{name:'Single Leg Bound',diff:'hard',muscles:['Équilibre'],desc:'Bond unilatéral.'}]};
 const progPhases={ea:{name:'ELITE ATHLETE',obj:'Explosivité globale',phases:[[{name:'Échauffement',detail:'5 min'},{name:'Activation fessiers',detail:'2×12'},{name:'Squat progressif',detail:'3×8 (60%)'},{name:'Pogo Jumps',detail:'3×10'},{name:'Sprint 10m',detail:'5 passages'},{name:'Planche',detail:'3×30s'}],[{name:'Back Squat',detail:'4×5 (75%)'},{name:'Box Jump',detail:'4×5'},{name:'Hip Thrust',detail:'3×8 (70%)'},{name:'Sprint 30m',detail:'4 passages'},{name:'Depth Jump',detail:'3×3'}],[{name:'Power Clean',detail:'5×3 (85%)'},{name:'Back Squat',detail:'5×3 (85%)'},{name:'Depth Jump',detail:'4×3'},{name:'Sprint 60m',detail:'3 passages'},{name:'Box Jump Max',detail:'3×3'}]]},vd:{name:'VERTICAL DUNK',obj:'Dunker + Détente max',phases:[[{name:'CMJ',detail:'5×3'},{name:'Squat Jump',detail:'4×5'},{name:'Pogo Jumps',detail:'3×15'}],[{name:'Depth Jump',detail:'4×3'},{name:'Back Squat',detail:'4×5 (80%)'},{name:'Approach Jump',detail:'5×3'}],[{name:'Box Jump Max',detail:'5×2'},{name:'Single Leg Bound',detail:'3×5/jambe'},{name:'Sprint 10m',detail:'6 passages'}]]},mt:{name:'MICROTRAINING',obj:'Discipline et habitudes',phases:[[{name:'Squat Jump',detail:'3×5'},{name:'Pompes explosives',detail:'3×8'},{name:'Planche',detail:'3×30s'}],[{name:'Pogo Jumps',detail:'3×10'},{name:'V-Ups',detail:'3×12'},{name:'Skip A',detail:'3×15'}],[{name:'Box Jump',detail:'3×5'},{name:'Sprint 10m',detail:'4 passages'}]]},tri:{name:'TRIPHASIQUE',obj:'Force sans salle',phases:[[{name:'Squat PDC',detail:'4×15'},{name:'Fentes',detail:'3×10/jambe'},{name:'Pompes',detail:'4×12'}],[{name:'Squat Jump',detail:'4×8'},{name:'Single Leg Bound',detail:'3×6/jambe'}],[{name:'Pogo Jumps',detail:'4×12'},{name:'Sprint 10m',detail:'5 passages'}]]},se:{name:'SHRED EXPLOSE',obj:'Perdre + Exploser',phases:[[{name:'Circuit cardio',detail:'15 min'},{name:'Squat',detail:'3×12'},{name:'Pogo Jumps',detail:'3×15'}],[{name:'HIIT Sprint',detail:'10×10m'},{name:'Back Squat',detail:'4×8 (65%)'},{name:'Box Jump',detail:'3×8'}],[{name:'Sprint 30m',detail:'6 passages'},{name:'Depth Jump',detail:'3×3'}]]},ep:{name:'EXPLOSE+',obj:'Transformation totale',phases:[[{name:'Questionnaire MENER',detail:'Identifier pilier faible'},{name:'15 engagements',detail:'4 semaines'}],[{name:'Back Squat',detail:'5×5 (80%)'},{name:'Power Clean',detail:'4×3'},{name:'Sprint 30m',detail:'5 passages'}],[{name:'Depth Jump',detail:'5×3'},{name:'Back Squat',detail:'5×3 (90%)'},{name:'Sprint 60m',detail:'4 passages'}]]}};
