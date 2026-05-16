@@ -5128,7 +5128,9 @@ function createAccount(){
   setTimeout(function(){enterApp();},800);
 }
 function switchTab(tab){
-  document.querySelectorAll('.view').forEach(function(v){v.classList.remove('on');});
+  // Reset l'inline display que discoveryGoTo() peut avoir posé sur les .view
+  // (sinon switchTab ajoute .on mais l'inline display:none gagne → écran blanc)
+  document.querySelectorAll('.view').forEach(function(v){v.classList.remove('on');v.style.display='';});
   document.querySelectorAll('.nav-item').forEach(function(n){n.classList.remove('on');});
   var map={home:'vHome',tracks:'vTracks',train:'vTrain',chat:'vChat',moi:'vMoi',nutrition:'vNutri'},navIdx={home:0,tracks:1,train:3,nutrition:4};
   var v=document.getElementById(map[tab]);if(v){v.classList.add('on');v.scrollTop=0;}
@@ -10366,10 +10368,14 @@ function obFinish(){
   var pn=document.getElementById('pcName');if(pn&&OB.programName)pn.textContent=OB.programName;
   // Transition
   document.querySelectorAll('.scr').forEach(function(e){e.classList.remove('on','out');e.style.display='none';});
+  // CRITIQUE : reset l'inline display:none mis par discoveryGoTo() sur les .view,
+  // sinon switchTab('nutrition') ajoute .on mais l'inline gagne et la vue reste blanche.
+  document.querySelectorAll('.view').forEach(function(v){ v.style.display=''; });
   var nav=document.getElementById('mainNav');if(nav)nav.style.display='flex';
   try{renderUserData();}catch(e){}
   try{renderAthletikScore();}catch(e){}
   try{renderDiscoveryBanner();}catch(e){}
+  try{renderActiveHabits();}catch(e){}
   switchTab('nutrition');
   showToast('Profil complet. Direction nutrition.', 'ok');
 }
