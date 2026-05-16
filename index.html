@@ -690,12 +690,35 @@ body{background:var(--bg);color:var(--text);font-family:'Outfit',sans-serif;disp
 .pg{display:none;padding:16px 22px;animation:fadeUp .3s ease both}.pg.on{display:block}
 .pg-head{padding:20px 22px 0}.pg-title{font-family:'Bebas Neue',sans-serif;font-size:32px;color:var(--text);letter-spacing:2px}.pg-sub{font-size:12px;color:var(--muted);margin-top:2px}
 .search-wrap{margin-bottom:16px;position:relative}.search-input{width:100%;padding:12px 14px 12px 40px;background:var(--surface);border:1.5px solid var(--border);border-radius:12px;font-family:'Outfit',sans-serif;font-size:14px;font-weight:500;color:var(--text);outline:none}.search-input:focus{border-color:var(--gold)}.search-input::placeholder{color:var(--muted);opacity:.6}.search-ic{position:absolute;left:14px;top:50%;transform:translateY(-50%);font-size:16px;color:var(--muted)}
-.grp-title{font-family:'Bebas Neue',sans-serif;font-size:16px;color:var(--navy);letter-spacing:1px;margin:20px 0 10px;padding-bottom:4px;border-bottom:2px solid var(--gold);display:inline-block}
-.cat-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:4px}.cat-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:14px 12px;box-shadow:var(--card-shadow);cursor:pointer;transition:all .2s;display:flex;flex-direction:column;gap:6px}.cat-card:active{transform:scale(.97)}.cat-ic{font-size:26px}.cat-name{font-size:13px;font-weight:700;color:var(--text);line-height:1.2}.cat-count{font-size:11px;color:var(--muted)}
 .back-btn{display:inline-flex;align-items:center;gap:6px;color:var(--gold);font-size:13px;font-weight:700;cursor:pointer;margin-bottom:14px}
-.filter-row{display:flex;gap:6px;margin-bottom:14px;overflow-x:auto;scrollbar-width:none}.filter-row::-webkit-scrollbar{display:none}.fc{padding:7px 14px;border-radius:20px;background:var(--surface);border:1px solid var(--border);font-size:12px;font-weight:700;color:var(--text2);white-space:nowrap;cursor:pointer}.fc.on{background:var(--navy);color:#fff;border-color:var(--navy)}.fc:active{transform:scale(.95)}
-.ex-card{display:flex;gap:12px;background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:12px;margin-bottom:10px;box-shadow:var(--card-shadow);cursor:pointer}.ex-card:active{transform:scale(.98)}.ex-thumb{width:90px;height:64px;background:var(--navy);border-radius:10px;flex-shrink:0;display:flex;align-items:center;justify-content:center}.ex-thumb-play{color:var(--gold);font-size:20px}.ex-body{flex:1;display:flex;flex-direction:column;justify-content:center}.ex-name{font-size:14px;font-weight:700;color:var(--text)}.ex-diff{display:inline-block;padding:2px 8px;border-radius:6px;font-size:10px;font-weight:700;margin-top:4px;width:fit-content}.ex-diff.easy{background:#D1FAE5;color:#065F46}.ex-diff.med{background:#FEF3C7;color:#92400E}.ex-diff.hard{background:#FEE2E2;color:#991B1B}
-.detail-video{width:100%;aspect-ratio:16/9;background:var(--navy);border-radius:var(--r2);margin-bottom:16px;display:flex;align-items:center;justify-content:center;color:var(--gold);font-size:14px;font-weight:700}.detail-name{font-family:'Bebas Neue',sans-serif;font-size:28px;color:var(--text);letter-spacing:2px}.detail-diff{display:inline-block;padding:4px 12px;border-radius:8px;font-size:11px;font-weight:700;margin-top:6px}.detail-diff.easy{background:#D1FAE5;color:#065F46}.detail-diff.med{background:#FEF3C7;color:#92400E}.detail-diff.hard{background:#FEE2E2;color:#991B1B}.detail-desc{font-size:13px;color:var(--text2);line-height:1.6;margin:14px 0}.tag-row{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:16px}.tag{padding:4px 10px;background:var(--surface2);border:1px solid var(--border);border-radius:8px;font-size:11px;font-weight:700;color:var(--text2)}
+/* ─── Library YouTube-style ─── */
+.lib-chips{display:flex;gap:7px;overflow-x:auto;scrollbar-width:none;padding:10px 0 4px;margin-bottom:2px}.lib-chips::-webkit-scrollbar{display:none}
+.lib-chip{flex-shrink:0;padding:7px 14px;border-radius:20px;background:var(--surface2);border:1.5px solid var(--border);font-size:11px;font-weight:700;color:var(--text2);white-space:nowrap;cursor:pointer;letter-spacing:.3px;transition:all .15s}.lib-chip.on{background:var(--gold);color:var(--navy);border-color:var(--gold)}.lib-chip:active{transform:scale(.94)}
+.yt-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;padding-bottom:20px}
+.yt-card{cursor:pointer;border-radius:12px;overflow:hidden;background:var(--surface);border:1px solid var(--border);transition:transform .15s}.yt-card:active{transform:scale(.96)}
+.yt-thumb{width:100%;aspect-ratio:16/9;position:relative;display:flex;align-items:center;justify-content:center;overflow:hidden}
+.yt-play-btn{width:36px;height:36px;border-radius:50%;background:rgba(0,0,0,.55);border:2px solid rgba(255,255,255,.7);display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.yt-play-tri{width:0;height:0;border-top:7px solid transparent;border-bottom:7px solid transparent;border-left:12px solid #fff;margin-left:3px}
+.yt-cat-pill{position:absolute;bottom:6px;left:6px;padding:2px 7px;border-radius:6px;font-size:8px;font-weight:800;letter-spacing:.8px;color:#fff;background:rgba(0,0,0,.55);backdrop-filter:blur(4px)}
+.yt-info{padding:9px 10px 11px}
+.yt-title{font-size:12px;font-weight:700;color:var(--text);line-height:1.35;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.yt-sub{display:flex;align-items:center;gap:5px;margin-top:5px}
+.yt-diff{padding:2px 7px;border-radius:5px;font-size:9px;font-weight:700}.yt-diff.easy{background:#D1FAE5;color:#065F46}.yt-diff.med{background:#FEF3C7;color:#92400E}.yt-diff.hard{background:#FEE2E2;color:#991B1B}
+.yt-muscle{font-size:9px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+/* ─── Exercise detail full-screen ─── */
+.yt-detail-view{position:absolute;inset:0;background:var(--bg);z-index:50;overflow-y:auto;display:none}
+.yt-detail-video{width:100%;aspect-ratio:16/9;background:#0E1626;position:relative;overflow:hidden;display:flex;align-items:center;justify-content:center}
+.yt-detail-video iframe{width:100%;height:100%;border:none;position:absolute;inset:0}
+.yt-detail-video-placeholder{display:flex;flex-direction:column;align-items:center;gap:8px;cursor:pointer}
+.yt-detail-play{width:60px;height:60px;border-radius:50%;background:rgba(197,164,78,.18);border:2px solid rgba(197,164,78,.5);display:flex;align-items:center;justify-content:center}
+.yt-detail-play-tri{width:0;height:0;border-top:11px solid transparent;border-bottom:11px solid transparent;border-left:18px solid var(--gold);margin-left:4px}
+.yt-detail-body{padding:16px 16px 100px}
+.yt-detail-cat{font-size:9px;font-weight:800;letter-spacing:1.5px;color:var(--gold);margin-bottom:6px;text-transform:uppercase}
+.yt-detail-name{font-family:'Bebas Neue',sans-serif;font-size:28px;color:var(--text);letter-spacing:2px;line-height:1.05;margin-bottom:8px}
+.yt-detail-diff{display:inline-block;padding:4px 12px;border-radius:8px;font-size:11px;font-weight:700;margin-bottom:14px}.yt-detail-diff.easy{background:#D1FAE5;color:#065F46}.yt-detail-diff.med{background:#FEF3C7;color:#92400E}.yt-detail-diff.hard{background:#FEE2E2;color:#991B1B}
+.yt-detail-desc{font-size:13px;color:var(--text2);line-height:1.65;margin-bottom:16px}
+.yt-detail-section{font-family:'Bebas Neue',sans-serif;font-size:14px;color:var(--text);letter-spacing:1px;margin-bottom:8px}
+.tag-row{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:20px}.tag{padding:4px 10px;background:var(--surface2);border:1px solid var(--border);border-radius:8px;font-size:11px;font-weight:700;color:var(--text2)}
 .btn{font-family:'Outfit',sans-serif;padding:14px;border-radius:var(--r);border:none;font-size:14px;font-weight:800;cursor:pointer;width:100%;transition:all .2s;margin-bottom:10px}.btn:active{transform:scale(.97)}.btn-gold{background:linear-gradient(135deg,var(--gold),var(--gold2));color:var(--navy);box-shadow:0 4px 16px var(--gold-glow)}.btn-outline{background:transparent;border:1.5px solid var(--border);color:var(--text2)}.btn-disabled{opacity:.4;pointer-events:none}
 .prog-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r2);padding:18px;margin-bottom:12px;box-shadow:var(--card-shadow);cursor:pointer;transition:all .2s;position:relative;overflow:hidden}.prog-card:active{transform:scale(.98)}.prog-card::before{content:'';position:absolute;top:0;left:0;width:4px;height:100%;background:var(--gold)}.prog-card.locked::before{background:var(--border2)}.prog-card.locked{opacity:.6}.pc-emoji{font-size:28px;margin-bottom:6px}.pc-name{font-family:'Bebas Neue',sans-serif;font-size:22px;color:var(--text);letter-spacing:1.5px}.pc-obj{font-size:12px;color:var(--muted);margin-top:2px}.pc-meta{display:flex;gap:14px;margin-top:10px;flex-wrap:wrap}.pc-meta-i{font-size:11px;color:var(--muted);font-weight:600}.pc-status{position:absolute;top:16px;right:16px;padding:4px 10px;border-radius:8px;font-size:10px;font-weight:700}.pc-status.active{background:var(--gold-dim);color:var(--gold)}.pc-status.locked{background:var(--surface2);color:var(--muted)}
 .phase-tabs{display:flex;gap:4px;margin:14px 0}.phase-tab{flex:1;padding:10px 0;text-align:center;font-size:11px;font-weight:700;color:var(--muted);background:var(--surface);border:1px solid var(--border);border-radius:10px;cursor:pointer}.phase-tab.on{background:var(--navy);color:#fff;border-color:var(--navy)}.phase-tab:active{transform:scale(.97)}
@@ -2934,18 +2957,49 @@ body{background:var(--bg);color:var(--text);font-family:'Outfit',sans-serif;disp
 <div class="pg-head"><div class="pg-title">TRAIN</div><div class="pg-sub">Librairie, programmes et construction.</div></div>
 <div class="sub-tabs"><div class="sub-tab on" onclick="showPg('lib')">Librairie</div><div class="sub-tab" onclick="showPg('prog')">Programmes</div><div class="sub-tab" onclick="showPg('builder')">Builder</div></div>
 
-<div id="pgLib" class="pg on">
-<div class="search-wrap"><div class="search-ic">🔍</div><input class="search-input" id="libSearch" placeholder="Rechercher un exercice..." oninput="filterLib()"></div>
-<div id="libGrid">
-<div class="grp-title">PRÉPARATION</div><div class="cat-grid"><div class="cat-card" onclick="openCat('Échauffement général','🔥','echauf_gen')"><div class="cat-ic">🔥</div><div class="cat-name">Échauffement général</div><div class="cat-count">4 exercices</div></div><div class="cat-card" onclick="openCat('Échauffement spécifique','🎯','echauf_spe')"><div class="cat-ic">🎯</div><div class="cat-name">Échauffement spécifique</div><div class="cat-count">3 exercices</div></div></div>
-<div class="grp-title">MOBILITÉ & RÉCUP</div><div class="cat-grid"><div class="cat-card" onclick="openCat('Mobilité','🧘','mobilite')"><div class="cat-ic">🧘</div><div class="cat-name">Mobilité</div><div class="cat-count">3 exercices</div></div><div class="cat-card" onclick="openCat('Récupération','💆','recup')"><div class="cat-ic">💆</div><div class="cat-name">Récupération & Étirements</div><div class="cat-count">1 exercice</div></div></div>
-<div class="grp-title">STABILITÉ</div><div class="cat-grid"><div class="cat-card" onclick="openCat('Proprioception','⚖️','proprio')"><div class="cat-ic">⚖️</div><div class="cat-name">Proprioception</div><div class="cat-count">1 exercice</div></div><div class="cat-card" onclick="openCat('Coordination','🔄','coord')"><div class="cat-ic">🔄</div><div class="cat-name">Coordination</div><div class="cat-count">1 exercice</div></div><div class="cat-card" onclick="openCat('Gainage','🧱','gainage')"><div class="cat-ic">🧱</div><div class="cat-name">Gainage</div><div class="cat-count">1 exercice</div></div><div class="cat-card" onclick="openCat('Abdos dynamiques','💥','abdos')"><div class="cat-ic">💥</div><div class="cat-name">Abdos dynamiques</div><div class="cat-count">1 exercice</div></div></div>
-<div class="grp-title">FORCE</div><div class="cat-grid"><div class="cat-card" onclick="openCat('Force PDC','🤸','force_pdc')"><div class="cat-ic">🤸</div><div class="cat-name">Force PDC</div><div class="cat-count">1 exercice</div></div><div class="cat-card" onclick="openCat('Force Charge','🏋️','force_charge')"><div class="cat-ic">🏋️</div><div class="cat-name">Force Charge</div><div class="cat-count">4 exercices</div></div><div class="cat-card" onclick="openCat('Puissance rotation','🔁','rotation')"><div class="cat-ic">🔁</div><div class="cat-name">Puissance rotation</div><div class="cat-count">1 exercice</div></div><div class="cat-card" onclick="openCat('Mvts olympiques','🥇','olympiques')"><div class="cat-ic">🥇</div><div class="cat-name">Mouvements olympiques</div><div class="cat-count">1 exercice</div></div></div>
-<div class="grp-title">EXPLOSIVITÉ</div><div class="cat-grid"><div class="cat-card" onclick="openCat('Pliométrie extensive','📈','plio_ext')"><div class="cat-ic">📈</div><div class="cat-name">Pliométrie extensive</div><div class="cat-count">2 exercices</div></div><div class="cat-card" onclick="openCat('Pliométrie intensive','⚡','plio_int')"><div class="cat-ic">⚡</div><div class="cat-name">Pliométrie intensive</div><div class="cat-count">2 exercices</div></div></div>
-<div class="grp-title">VITESSE & SAUT</div><div class="cat-grid"><div class="cat-card" onclick="openCat('Entraînement pied','👟','pied')"><div class="cat-ic">👟</div><div class="cat-name">Entraînement pied</div><div class="cat-count">1 exercice</div></div><div class="cat-card" onclick="openCat('Sprint','🏃','sprint')"><div class="cat-ic">🏃</div><div class="cat-name">Sprint</div><div class="cat-count">3 exercices</div></div><div class="cat-card" onclick="openCat('Vitesse multi','↗️','multi')"><div class="cat-ic">↗️</div><div class="cat-name">Vitesse multidirectionnelle</div><div class="cat-count">1 exercice</div></div><div class="cat-card" onclick="openCat('Technique de saut','🦘','saut')"><div class="cat-ic">🦘</div><div class="cat-name">Technique de saut</div><div class="cat-count">3 exercices</div></div></div>
+<div id="pgLib" class="pg on" style="position:relative;overflow:hidden">
+
+<!-- Search bar -->
+<div class="search-wrap"><div class="search-ic">🔍</div><input class="search-input" id="libSearch" placeholder="Rechercher un exercice..." oninput="_libSearchInput()"></div>
+
+<!-- Category chips -->
+<div class="lib-chips" id="libChips">
+  <div class="lib-chip on" onclick="_libFilter(this,'all')">⚡ Tous</div>
+  <div class="lib-chip" onclick="_libFilter(this,'echauf')">🔥 Échauffement</div>
+  <div class="lib-chip" onclick="_libFilter(this,'mobilite')">🧘 Mobilité</div>
+  <div class="lib-chip" onclick="_libFilter(this,'stabilite')">🧱 Stabilité</div>
+  <div class="lib-chip" onclick="_libFilter(this,'force')">🏋️ Force</div>
+  <div class="lib-chip" onclick="_libFilter(this,'plio')">📈 Pliométrie</div>
+  <div class="lib-chip" onclick="_libFilter(this,'sprint')">🏃 Sprint</div>
+  <div class="lib-chip" onclick="_libFilter(this,'saut')">🦘 Saut</div>
 </div>
-<div id="libCatView" class="hidden"><div class="back-btn" onclick="closeCat()">← Retour Librairie</div><div style="font-family:'Bebas Neue',sans-serif;font-size:24px;color:var(--text);letter-spacing:1.5px;margin-bottom:12px" id="catTitle">CATÉGORIE</div><div class="filter-row"><div class="fc on" onclick="filterCat(this,'all')">Tous</div><div class="fc" onclick="filterCat(this,'easy')">Débutant</div><div class="fc" onclick="filterCat(this,'med')">Intermédiaire</div><div class="fc" onclick="filterCat(this,'hard')">Avancé</div></div><div id="catExList"></div></div>
-<div id="libDetailView" class="hidden"><div class="back-btn" onclick="closeDetail()">← Retour Liste</div><div class="detail-video">▶ Vidéo YouTube (placeholder)</div><div class="detail-name" id="detailName">EXERCICE</div><div class="detail-diff easy" id="detailDiff">Débutant</div><div class="detail-desc" id="detailDesc">Description.</div><div style="font-family:'Bebas Neue',sans-serif;font-size:14px;color:var(--text);margin:10px 0 6px">MUSCLES CIBLÉS</div><div class="tag-row" id="detailTags"></div><button class="btn btn-gold" onclick="alert('→ Tracks')">Tracker cet exercice</button><button class="btn btn-outline btn-disabled">Ajouter au Workout Builder 🔒</button><div style="font-size:11px;color:var(--muted);text-align:center">Débloqué après 2 programmes terminés</div></div>
+
+<!-- Exercise grid (YouTube-style 2 col) -->
+<div class="yt-grid" id="libYtGrid"></div>
+
+<!-- Exercise detail (full overlay inside #pgLib) -->
+<div class="yt-detail-view" id="libDetailView">
+  <div class="back-btn" onclick="_libCloseDetail()" style="padding:14px 16px 0;display:flex">← Retour</div>
+  <!-- Video -->
+  <div class="yt-detail-video" id="ytDetailVideo">
+    <div class="yt-detail-video-placeholder" id="ytDetailPlaceholder" onclick="_libPlayVideo()">
+      <div class="yt-detail-play"><div class="yt-detail-play-tri"></div></div>
+      <div style="font-size:9px;color:rgba(255,255,255,.4);letter-spacing:1px;text-transform:uppercase;margin-top:4px">Voir la vidéo</div>
+    </div>
+  </div>
+  <!-- Body -->
+  <div class="yt-detail-body">
+    <div class="yt-detail-cat" id="ytDetailCat">PLIOMÉTRIE</div>
+    <div class="yt-detail-name" id="ytDetailName">EXERCICE</div>
+    <div class="yt-detail-diff easy" id="ytDetailDiff">Débutant</div>
+    <div class="yt-detail-desc" id="ytDetailDesc">Description de l'exercice.</div>
+    <div class="yt-detail-section">MUSCLES CIBLÉS</div>
+    <div class="tag-row" id="ytDetailTags"></div>
+    <button class="btn btn-gold" style="width:100%;margin-bottom:10px" onclick="showToast('Fonctionnalité Tracks à venir.','info')">📊 Tracker cet exercice</button>
+    <button class="btn btn-outline btn-disabled" style="width:100%;opacity:.5;cursor:not-allowed">🔒 Workout Builder (après 2 programmes)</button>
+  </div>
+</div>
+
 </div>
 
 <div id="pgProg" class="pg">
@@ -5388,8 +5442,11 @@ function switchTab(tab){
     try { initSATv7(); } catch(e) { console.warn('initSATv7 error:', e); }
     try { initTracksSAT(); } catch(e) { console.warn('initTracksSAT error:', e); }
   }
-  // Quand on entre dans Train : rafraîchir le verrouillage des cartes
-  if (tab === 'train') { try { updateProgrammeLocks(); } catch(e) {} }
+  // Quand on entre dans Train : rafraîchir le verrouillage des cartes + init lib
+  if (tab === 'train') {
+    try { updateProgrammeLocks(); } catch(e) {}
+    try { _libInit(); } catch(e) {}
+  }
   // Init Scan check API key + restore form
   if (tab === 'nutrition') { try { scanCheckApiKey(); scanUpdateMacros(); renderJournalToday(); } catch(e) {} }
   if (tab === 'moi') { try { apiKeyRestore(); fbRefreshAccountSection(window.fbUser); } catch(e) {} }
@@ -6695,14 +6752,164 @@ function _backToPhaseV2() {
 }
 
 const progPhases={ea:{name:'ELITE ATHLETE',obj:'Explosivité globale',phases:[[{name:'Échauffement',detail:'5 min'},{name:'Activation fessiers',detail:'2×12'},{name:'Squat progressif',detail:'3×8 (60%)'},{name:'Pogo Jumps',detail:'3×10'},{name:'Sprint 10m',detail:'5 passages'},{name:'Planche',detail:'3×30s'}],[{name:'Back Squat',detail:'4×5 (75%)'},{name:'Box Jump',detail:'4×5'},{name:'Hip Thrust',detail:'3×8 (70%)'},{name:'Sprint 30m',detail:'4 passages'},{name:'Depth Jump',detail:'3×3'}],[{name:'Power Clean',detail:'5×3 (85%)'},{name:'Back Squat',detail:'5×3 (85%)'},{name:'Depth Jump',detail:'4×3'},{name:'Sprint 60m',detail:'3 passages'},{name:'Box Jump Max',detail:'3×3'}]]},vd:{name:'VERTICAL DUNK',obj:'Dunker + Détente max',phases:[[{name:'CMJ',detail:'5×3'},{name:'Squat Jump',detail:'4×5'},{name:'Pogo Jumps',detail:'3×15'}],[{name:'Depth Jump',detail:'4×3'},{name:'Back Squat',detail:'4×5 (80%)'},{name:'Approach Jump',detail:'5×3'}],[{name:'Box Jump Max',detail:'5×2'},{name:'Single Leg Bound',detail:'3×5/jambe'},{name:'Sprint 10m',detail:'6 passages'}]]},mt:{name:'MICROTRAINING',obj:'Discipline et habitudes',phases:[[{name:'Squat Jump',detail:'3×5'},{name:'Pompes explosives',detail:'3×8'},{name:'Planche',detail:'3×30s'}],[{name:'Pogo Jumps',detail:'3×10'},{name:'V-Ups',detail:'3×12'},{name:'Skip A',detail:'3×15'}],[{name:'Box Jump',detail:'3×5'},{name:'Sprint 10m',detail:'4 passages'}]]},tri:{name:'TRIPHASIQUE',obj:'Force sans salle',phases:[[{name:'Squat PDC',detail:'4×15'},{name:'Fentes',detail:'3×10/jambe'},{name:'Pompes',detail:'4×12'}],[{name:'Squat Jump',detail:'4×8'},{name:'Single Leg Bound',detail:'3×6/jambe'}],[{name:'Pogo Jumps',detail:'4×12'},{name:'Sprint 10m',detail:'5 passages'}]]},se:{name:'SHRED EXPLOSE',obj:'Perdre + Exploser',phases:[[{name:'Circuit cardio',detail:'15 min'},{name:'Squat',detail:'3×12'},{name:'Pogo Jumps',detail:'3×15'}],[{name:'HIIT Sprint',detail:'10×10m'},{name:'Back Squat',detail:'4×8 (65%)'},{name:'Box Jump',detail:'3×8'}],[{name:'Sprint 30m',detail:'6 passages'},{name:'Depth Jump',detail:'3×3'}]]},ep:{name:'EXPLOSE+',obj:'Transformation totale',phases:[[{name:'Questionnaire MENER',detail:'Identifier pilier faible'},{name:'15 engagements',detail:'4 semaines'}],[{name:'Back Squat',detail:'5×5 (80%)'},{name:'Power Clean',detail:'4×3'},{name:'Sprint 30m',detail:'5 passages'}],[{name:'Depth Jump',detail:'5×3'},{name:'Back Squat',detail:'5×3 (90%)'},{name:'Sprint 60m',detail:'4 passages'}]]}};
-function showPg(id){document.querySelectorAll('.pg').forEach(p=>p.classList.remove('on'));document.querySelectorAll('.sub-tab').forEach(t=>t.classList.remove('on'));({lib:'pgLib',prog:'pgProg',builder:'pgBuilder'})[id]&&document.getElementById(({lib:'pgLib',prog:'pgProg',builder:'pgBuilder'})[id]).classList.add('on');event.currentTarget.classList.add('on');var __v=document.getElementById('vTrain');if(__v)__v.scrollTop=0;if(id==='lib'){closeCat();closeDetail()}if(id==='prog'){closeProg();try{updateProgrammeLocks();}catch(e){}}}
-function openCat(n,ic,k){currentCat=n;currentCatData=catData[k]||[];document.getElementById('catTitle').textContent=ic+' '+n.toUpperCase();document.getElementById('libGrid').classList.add('hidden');document.getElementById('libCatView').classList.remove('hidden');document.getElementById('libDetailView').classList.add('hidden');currentFilter='all';renderCatEx();var __v=document.getElementById('vTrain');if(__v)__v.scrollTop=0}
-function closeCat(){document.getElementById('libGrid').classList.remove('hidden');document.getElementById('libCatView').classList.add('hidden');document.getElementById('libDetailView').classList.add('hidden')}
-function filterCat(el,lv){document.querySelectorAll('.filter-row .fc').forEach(f=>f.classList.remove('on'));el.classList.add('on');currentFilter=lv;renderCatEx()}
-function renderCatEx(){const l=document.getElementById('catExList');l.innerHTML='';const d=currentFilter==='all'?currentCatData:currentCatData.filter(e=>e.diff===currentFilter);if(!d.length){l.innerHTML='<div style="text-align:center;padding:30px;color:var(--muted)">Aucun exercice.</div>';return}d.forEach(ex=>{const dl=ex.diff==='easy'?'Débutant':ex.diff==='med'?'Intermédiaire':'Avancé';l.innerHTML+=`<div class="ex-card" onclick="openDetail('${ex.name.replace(/'/g,"\\'")}')"><div class="ex-thumb"><div class="ex-thumb-play">▶</div></div><div class="ex-body"><div class="ex-name">${ex.name}</div><div class="ex-diff ${ex.diff}">${dl}</div></div></div>`})}
-function openDetail(n){const ex=Object.values(catData).flat().find(e=>e.name===n);if(!ex)return;document.getElementById('detailName').textContent=ex.name.toUpperCase();const dl=ex.diff==='easy'?'Débutant':ex.diff==='med'?'Intermédiaire':'Avancé';const d=document.getElementById('detailDiff');d.textContent=dl;d.className='detail-diff '+ex.diff;document.getElementById('detailDesc').textContent=ex.desc;document.getElementById('detailTags').innerHTML=(ex.muscles||[]).map(m=>`<div class="tag">${m}</div>`).join('');document.getElementById('libCatView').classList.add('hidden');document.getElementById('libDetailView').classList.remove('hidden');var __v=document.getElementById('vTrain');if(__v)__v.scrollTop=0}
-function closeDetail(){document.getElementById('libDetailView').classList.add('hidden');if(currentCat)document.getElementById('libCatView').classList.remove('hidden')}
-function filterLib(){const q=document.getElementById('libSearch').value.toLowerCase().trim();if(q.length<2){closeCat();document.getElementById('libGrid').classList.remove('hidden');return}currentCat='Recherche';currentCatData=Object.values(catData).flat().filter(e=>e.name.toLowerCase().includes(q));document.getElementById('catTitle').textContent='🔍 "'+q+'"';document.getElementById('libGrid').classList.add('hidden');document.getElementById('libCatView').classList.remove('hidden');document.getElementById('libDetailView').classList.add('hidden');currentFilter='all';renderCatEx()}
+function showPg(id){document.querySelectorAll('.pg').forEach(p=>p.classList.remove('on'));document.querySelectorAll('.sub-tab').forEach(t=>t.classList.remove('on'));({lib:'pgLib',prog:'pgProg',builder:'pgBuilder'})[id]&&document.getElementById(({lib:'pgLib',prog:'pgProg',builder:'pgBuilder'})[id]).classList.add('on');event.currentTarget.classList.add('on');var __v=document.getElementById('vTrain');if(__v)__v.scrollTop=0;if(id==='lib'){_libCloseDetail();_libRender('all');}if(id==='prog'){closeProg();try{updateProgrammeLocks();}catch(e){}}}
+
+// ── Library YouTube-style engine ──
+var _LIB_CAT_MAP = {
+  echauf:   {keys:['echauf_gen','echauf_spe'], label:'Échauffement', color:'linear-gradient(135deg,#FF6B35,#C93400)'},
+  mobilite: {keys:['mobilite','recup'],        label:'Mobilité',      color:'linear-gradient(135deg,#7C3AED,#4C1D95)'},
+  stabilite:{keys:['proprio','coord','gainage','abdos'], label:'Stabilité', color:'linear-gradient(135deg,#0891B2,#164E63)'},
+  force:    {keys:['force_pdc','force_charge','rotation','olympiques'], label:'Force', color:'linear-gradient(135deg,#DC2626,#7F1D1D)'},
+  plio:     {keys:['plio_ext','plio_int'],     label:'Pliométrie',    color:'linear-gradient(135deg,#C5A44E,#92400E)'},
+  sprint:   {keys:['sprint','multi','pied'],   label:'Sprint',        color:'linear-gradient(135deg,#2563EB,#1E3A8A)'},
+  saut:     {keys:['saut'],                    label:'Saut',          color:'linear-gradient(135deg,#059669,#064E3B)'}
+};
+var _LIB_VIDEO_MAP = {
+  'Counter Movement Jump':'R4fjUyP2xuo','Back Squat':'gsNoPYwWXeM',
+  'Soulevé de terre':'op9kVnSso6Q','Hip Thrust':'xDmFkJxPzeM',
+  'Développé couché':'vcBig73ojpE','Sprint 30m':'4N4MFqo2J8c',
+  'Depth Jump':'oPWZatCRCKY','Box Jump Max':'WBuKfR9lc0o',
+  'Pogo Jumps':'TFkYrGKyNSE','Power Clean':'e7ND8Wm67sg',
+  'Squat Jump':'U4s4mEQ5VqU','Approach Jump':'lSMn7mYVVm0',
+  'Ankling':'xhOs_tFmTdk','Sprint 10m':'N_YCQQ4DFRI',
+  'Planche frontale':'ASdvN_XEl_c','V-Ups':'iP2fjvG0g3w'
+};
+var _libCurrentFilter = 'all';
+var _libCurrentVideo = null;
+
+function _libFlatExos(filterKey) {
+  var result = [];
+  if (filterKey === 'all') {
+    Object.keys(_LIB_CAT_MAP).forEach(function(ck) {
+      var cfg = _LIB_CAT_MAP[ck];
+      cfg.keys.forEach(function(dk) {
+        (catData[dk]||[]).forEach(function(ex) {
+          result.push({ex:ex, catKey:ck, catLabel:cfg.label, color:cfg.color});
+        });
+      });
+    });
+  } else {
+    var cfg = _LIB_CAT_MAP[filterKey]; if (!cfg) return result;
+    cfg.keys.forEach(function(dk) {
+      (catData[dk]||[]).forEach(function(ex) {
+        result.push({ex:ex, catKey:filterKey, catLabel:cfg.label, color:cfg.color});
+      });
+    });
+  }
+  return result;
+}
+
+function _libRender(filterKey) {
+  _libCurrentFilter = filterKey || 'all';
+  var grid = document.getElementById('libYtGrid'); if (!grid) return;
+  var items = _libFlatExos(_libCurrentFilter);
+  if (!items.length) { grid.innerHTML = '<div style="text-align:center;padding:40px 20px;color:var(--muted);grid-column:1/-1">Aucun exercice.</div>'; return; }
+  var h = '';
+  items.forEach(function(it) {
+    var ex = it.ex;
+    var dl = ex.diff==='easy'?'Débutant':ex.diff==='med'?'Intermédiaire':'Avancé';
+    var mus = (ex.muscles||[])[0] || '';
+    var nm = ex.name.replace(/'/g,"\\'");
+    h += '<div class="yt-card" onclick="_libOpenDetail(\'' + nm + '\',\'' + it.catKey + '\')">';
+    h +=   '<div class="yt-thumb" style="background:' + it.color + '">';
+    h +=     '<div class="yt-play-btn"><div class="yt-play-tri"></div></div>';
+    h +=     '<div class="yt-cat-pill">' + it.catLabel.toUpperCase() + '</div>';
+    h +=   '</div>';
+    h +=   '<div class="yt-info">';
+    h +=     '<div class="yt-title">' + ex.name + '</div>';
+    h +=     '<div class="yt-sub"><div class="yt-diff ' + ex.diff + '">' + dl + '</div><div class="yt-muscle">' + mus + '</div></div>';
+    h +=   '</div>';
+    h += '</div>';
+  });
+  grid.innerHTML = h;
+}
+
+function _libFilter(el, key) {
+  document.querySelectorAll('#libChips .lib-chip').forEach(function(c){ c.classList.remove('on'); });
+  el.classList.add('on');
+  _libRender(key);
+  var v = document.getElementById('vTrain'); if (v) v.scrollTop = 0;
+}
+
+function _libSearchInput() {
+  var q = document.getElementById('libSearch').value.toLowerCase().trim();
+  if (q.length < 2) { _libRender(_libCurrentFilter); return; }
+  var grid = document.getElementById('libYtGrid'); if (!grid) return;
+  var all = _libFlatExos('all');
+  var filtered = all.filter(function(it){ return it.ex.name.toLowerCase().includes(q); });
+  if (!filtered.length) { grid.innerHTML = '<div style="text-align:center;padding:40px 20px;color:var(--muted);grid-column:1/-1">Aucun résultat pour "' + q + '".</div>'; return; }
+  var h = '';
+  filtered.forEach(function(it) {
+    var ex = it.ex;
+    var dl = ex.diff==='easy'?'Débutant':ex.diff==='med'?'Intermédiaire':'Avancé';
+    var mus = (ex.muscles||[])[0] || '';
+    var nm = ex.name.replace(/'/g,"\\'");
+    h += '<div class="yt-card" onclick="_libOpenDetail(\'' + nm + '\',\'' + it.catKey + '\')">';
+    h +=   '<div class="yt-thumb" style="background:' + it.color + '">';
+    h +=     '<div class="yt-play-btn"><div class="yt-play-tri"></div></div>';
+    h +=     '<div class="yt-cat-pill">' + it.catLabel.toUpperCase() + '</div>';
+    h +=   '</div>';
+    h +=   '<div class="yt-info">';
+    h +=     '<div class="yt-title">' + ex.name + '</div>';
+    h +=     '<div class="yt-sub"><div class="yt-diff ' + ex.diff + '">' + dl + '</div><div class="yt-muscle">' + mus + '</div></div>';
+    h +=   '</div>';
+    h += '</div>';
+  });
+  grid.innerHTML = h;
+}
+
+function _libOpenDetail(name, catKey) {
+  var all = _libFlatExos('all');
+  var item = all.find(function(it){ return it.ex.name === name; });
+  if (!item) return;
+  var ex = item.ex;
+  var cat = catKey ? (_LIB_CAT_MAP[catKey]||{}).label || catKey : item.catLabel;
+  var dl = ex.diff==='easy'?'Débutant':ex.diff==='med'?'Intermédiaire':'Avancé';
+  document.getElementById('ytDetailCat').textContent = cat.toUpperCase();
+  document.getElementById('ytDetailName').textContent = ex.name.toUpperCase();
+  var dEl = document.getElementById('ytDetailDiff'); dEl.textContent = dl; dEl.className = 'yt-detail-diff ' + ex.diff;
+  document.getElementById('ytDetailDesc').textContent = ex.desc || '';
+  document.getElementById('ytDetailTags').innerHTML = (ex.muscles||[]).map(function(m){ return '<div class="tag">' + m + '</div>'; }).join('');
+  // Video
+  _libCurrentVideo = _LIB_VIDEO_MAP[ex.name] || null;
+  var placeholder = document.getElementById('ytDetailPlaceholder');
+  placeholder.style.display = 'flex';
+  var existingIframe = document.getElementById('ytDetailIframe');
+  if (existingIframe) existingIframe.remove();
+  var videoArea = document.getElementById('ytDetailVideo');
+  videoArea.style.background = item.color;
+  // Show detail
+  var detail = document.getElementById('libDetailView');
+  detail.style.display = 'block';
+  detail.scrollTop = 0;
+  var v = document.getElementById('vTrain'); if (v) v.scrollTop = 0;
+}
+
+function _libPlayVideo() {
+  if (!_libCurrentVideo) { showToast('Vidéo à venir pour cet exercice.', 'info'); return; }
+  var placeholder = document.getElementById('ytDetailPlaceholder');
+  placeholder.style.display = 'none';
+  var iframe = document.createElement('iframe');
+  iframe.id = 'ytDetailIframe';
+  iframe.src = 'https://www.youtube.com/embed/' + _libCurrentVideo + '?autoplay=1&rel=0';
+  iframe.allow = 'accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture';
+  iframe.allowFullscreen = true;
+  document.getElementById('ytDetailVideo').appendChild(iframe);
+}
+
+function _libCloseDetail() {
+  var detail = document.getElementById('libDetailView'); if (!detail) return;
+  detail.style.display = 'none';
+  var existingIframe = document.getElementById('ytDetailIframe');
+  if (existingIframe) existingIframe.remove();
+  _libCurrentVideo = null;
+}
+
+// Init lib on first load (called when vTrain becomes active)
+function _libInit() {
+  var grid = document.getElementById('libYtGrid');
+  if (grid && !grid.innerHTML.trim()) _libRender('all');
+}
 function openProg(k){
   // Verrouillage : un user ne peut ouvrir QUE son programme attribué
   var myKey = _userTrainKey();
@@ -6827,6 +7034,12 @@ function goToProgrammes() {
   }, 80);
 }
 window.goToProgrammes = goToProgrammes;
+window._libFilter = _libFilter;
+window._libOpenDetail = _libOpenDetail;
+window._libCloseDetail = _libCloseDetail;
+window._libPlayVideo = _libPlayVideo;
+window._libInit = _libInit;
+window._libSearchInput = _libSearchInput;
 function closeProg(){document.getElementById('progList').classList.remove('hidden');document.getElementById('progDetail').classList.add('hidden')}
 function switchPhase(el,i){document.querySelectorAll('.phase-tab').forEach(t=>t.classList.remove('on'));el.classList.add('on');if(currentProgKey)renderPhase(progPhases[currentProgKey].phases[i]||[])}
 function renderPhase(exs){const l=document.getElementById('phaseExList');l.innerHTML='';exs.forEach((ex,i)=>{l.innerHTML+=`<div class="phase-ex"><div class="pe-num">${i+1}</div><div class="pe-body"><div class="pe-name">${ex.name}</div><div class="pe-detail">${ex.detail}</div></div><div class="pe-video" onclick="alert('Vidéo YouTube')">▶</div></div>`})}
