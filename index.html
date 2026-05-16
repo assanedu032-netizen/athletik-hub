@@ -2469,6 +2469,25 @@ body{background:var(--bg);color:var(--text);font-family:'Outfit',sans-serif;disp
       <div class="streak-flame" style="font-size:44px">🔥</div>
     </div>
 
+    <!-- ═══ HABITUDES (sur Home, plus dans les paramètres) ═══ -->
+    <div style="padding:18px 20px;border-bottom:1px solid var(--border);background:var(--surface)">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+        <div>
+          <div style="font-size:10px;font-weight:700;letter-spacing:2px;color:var(--muted);text-transform:uppercase">Mes habitudes</div>
+          <div id="habitsCountHome" style="font-size:11px;color:var(--muted);margin-top:2px">0 / 3 actives</div>
+        </div>
+        <button onclick="openHabitsModal()" style="padding:8px 14px;background:linear-gradient(135deg,var(--gold),#D4B86A);border:none;border-radius:10px;color:var(--navy);font-size:11px;font-weight:800;cursor:pointer;letter-spacing:.5px">+ AJOUTER</button>
+      </div>
+
+      <!-- Bandeau rappel si habitudes non-checkées aujourd'hui -->
+      <div id="habitsReminderBanner" style="display:none;padding:10px 12px;background:rgba(197,164,78,.10);border:1px solid rgba(197,164,78,.3);border-radius:10px;margin-bottom:10px;font-size:11px;color:var(--text2);line-height:1.5">
+        🔔 <strong style="color:var(--gold)" id="habitsReminderText">Tu as 2 habitudes à cocher aujourd'hui.</strong>
+      </div>
+
+      <!-- Zone rendue par renderActiveHabits() — version Home -->
+      <div id="activeHabitsHome"></div>
+    </div>
+
     <!-- QUICK ACTIONS — 4 boutons épurés -->
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:1px;background:rgba(255,255,255,.05);margin-top:1px">
       <div onclick="switchTab('tracks')" style="background:#060C18;padding:20px;cursor:pointer;touch-action:manipulation" ontouchstart="">
@@ -6613,31 +6632,47 @@ function shareContractWhatsApp() {
 }
 
 function renderActiveHabits() {
-  var container = document.getElementById("activeHabits");
-  var countEl = document.getElementById("habitsCount");
-  if (!container) return;
-  if (countEl) countEl.textContent = activeHabits.length + " / 3 actives";
-  if (!activeHabits.length) {
-    container.innerHTML = "<div style=\"font-size:13px;color:var(--muted);text-align:center;padding:12px\">Aucune habitude active. Commence ton premier d\u00e9fi.</div>";
-    return;
-  }
+  // Rendu HTML partag\u00e9 entre les deux containers (Home + Moi/Settings)
   var html = "";
-  for (var i = 0; i < activeHabits.length; i++) {
-    var h = activeHabits[i];
-    var pct = Math.round((h.daysCompleted / h.duration) * 100);
+  if (!activeHabits.length) {
+    html = "<div style=\"font-size:13px;color:var(--muted);text-align:center;padding:14px;background:var(--surface);border:1.5px dashed var(--border2);border-radius:12px\">Aucune habitude active. Tape <strong style='color:var(--gold)'>+ Ajouter</strong> pour d\u00e9marrer ton premier d\u00e9fi.</div>";
+  } else {
     var today = new Date().toDateString();
-    var done = h.lastChecked === today;
-    var col = CAT_COLORS[h.cat] || "#C5A44E";
-    html += "<div style=\"background:var(--surface);border-radius:12px;padding:12px;margin-bottom:8px;border:1.5px solid var(--border2)\">";
-    html += "<div style=\"display:flex;justify-content:space-between;align-items:flex-start\">";
-    html += "<div style=\"flex:1\"><div style=\"font-size:10px;font-weight:700;color:" + col + ";letter-spacing:1px;margin-bottom:2px\">" + h.cat.toUpperCase() + "</div>";
-    html += "<div style=\"font-size:13px;font-weight:600;margin-bottom:2px\">" + h.name + "</div>";
-    html += "<div style=\"font-size:11px;color:var(--muted)\">" + h.daysCompleted + "/" + h.duration + " jours \u2022 \uD83D\uDD25 " + h.streak + "</div></div>";
-    html += "<button onclick=\"checkHabit(" + h.id + ")\" style=\"background:" + (done ? "var(--border)" : col) + ";border:none;border-radius:8px;padding:8px 10px;font-size:11px;font-weight:700;color:" + (done ? "var(--muted)" : "#fff") + ";cursor:" + (done ? "default" : "pointer") + "\">" + (done ? "\u2705 Fait" : "+ Cocher") + "</button></div>";
-    html += "<div style=\"height:3px;background:var(--border);border-radius:2px;overflow:hidden;margin-top:8px\"><div style=\"height:100%;background:" + col + ";width:" + pct + "%\"></div></div>";
-    html += "</div>";
+    var pending = 0;
+    for (var i = 0; i < activeHabits.length; i++) {
+      var h = activeHabits[i];
+      var pct = Math.round((h.daysCompleted / h.duration) * 100);
+      var done = h.lastChecked === today;
+      if (!done) pending++;
+      var col = CAT_COLORS[h.cat] || "#C5A44E";
+      html += "<div style=\"background:var(--surface);border-radius:12px;padding:12px;margin-bottom:8px;border:1.5px solid var(--border2)\">";
+      html += "<div style=\"display:flex;justify-content:space-between;align-items:flex-start\">";
+      html += "<div style=\"flex:1\"><div style=\"font-size:10px;font-weight:700;color:" + col + ";letter-spacing:1px;margin-bottom:2px\">" + h.cat.toUpperCase() + "</div>";
+      html += "<div style=\"font-size:13px;font-weight:600;margin-bottom:2px;color:var(--text)\">" + h.name + "</div>";
+      html += "<div style=\"font-size:11px;color:var(--muted)\">" + h.daysCompleted + "/" + h.duration + " jours \u2022 \uD83D\uDD25 " + h.streak + "</div></div>";
+      html += "<button onclick=\"checkHabit(" + h.id + ")\" style=\"background:" + (done ? "var(--border)" : col) + ";border:none;border-radius:8px;padding:8px 10px;font-size:11px;font-weight:700;color:" + (done ? "var(--muted)" : "#fff") + ";cursor:" + (done ? "default" : "pointer") + "\">" + (done ? "\u2705 Fait" : "+ Cocher") + "</button></div>";
+      html += "<div style=\"height:3px;background:var(--border);border-radius:2px;overflow:hidden;margin-top:8px\"><div style=\"height:100%;background:" + col + ";width:" + pct + "%\"></div></div>";
+      html += "</div>";
+    }
+    // Bandeau rappel (Home uniquement)
+    var banner = document.getElementById('habitsReminderBanner');
+    var btxt = document.getElementById('habitsReminderText');
+    if (banner) {
+      if (pending > 0) {
+        banner.style.display = 'block';
+        if (btxt) btxt.textContent = pending === 1 ? 'Tu as 1 habitude \u00E0 cocher aujourd\'hui.' : 'Tu as ' + pending + ' habitudes \u00E0 cocher aujourd\'hui.';
+      } else {
+        banner.style.display = 'none';
+      }
+    }
   }
-  container.innerHTML = html;
+  // Peuple les deux containers (Home + Moi)
+  var c1 = document.getElementById("activeHabits"); if (c1) c1.innerHTML = html;
+  var c2 = document.getElementById("activeHabitsHome"); if (c2) c2.innerHTML = html;
+  // Compteurs (les deux versions)
+  var label = activeHabits.length + " / 3 actives";
+  var cnt1 = document.getElementById("habitsCount"); if (cnt1) cnt1.textContent = label;
+  var cnt2 = document.getElementById("habitsCountHome"); if (cnt2) cnt2.textContent = label;
 }
 
 function checkHabit(id) {
