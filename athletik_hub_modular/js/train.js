@@ -102,35 +102,89 @@ function updateTrackFields() {
   const fields = document.getElementById('trackFields');
   document.getElementById('trackLastWrap').classList.remove('hidden');
 
-  let html = '';
-  if (type === 'force') {
-    html = '<div class="fi-row">'
-      + '<div class="fg"><label class="fl">Poids</label><input class="fi" type="number" id="tVal1" placeholder="100"></div>'
-      + '<div class="fi-unit">kg</div>'
-      + '</div>'
-      + '<div class="fi-row">'
-      + '<div class="fg"><label class="fl">Reps</label><input class="fi" type="number" id="tVal2" placeholder="5"></div>'
-      + '<div class="fi-unit">reps</div>'
-      + '</div>';
-    document.getElementById('trackLast').textContent = '95kg × 5 reps • RPE 7';
-  } else if (type === 'sprint') {
-    html = '<div class="fi-row">'
-      + '<div class="fg"><label class="fl">Temps</label><input class="fi" type="number" id="tVal1" step="0.01" placeholder="4.20"></div>'
-      + '<div class="fi-unit">sec</div>'
-      + '</div>';
-    document.getElementById('trackLast').textContent = '4.35s';
-  } else if (type === 'saut') {
-    html = '<div class="fi-row">'
-      + '<div class="fg"><label class="fl">Hauteur</label><input class="fi" type="number" id="tVal1" placeholder="60"></div>'
-      + '<div class="fi-unit">cm</div>'
-      + '</div>'
-      + '<div class="fi-row">'
-      + '<div class="fg"><label class="fl">Reps</label><input class="fi" type="number" id="tVal2" placeholder="3"></div>'
-      + '<div class="fi-unit">reps</div>'
-      + '</div>';
-    document.getElementById('trackLast').textContent = '55cm × 3 reps';
-  }
+  // Last-score teaser (mock)
+  const lastByType = { force:'95kg × 5 reps • RPE 7', sprint:'Meilleur 4.35s (3 essais)', saut:'55cm × 3 reps' };
+  document.getElementById('trackLast').textContent = lastByType[type] || '—';
+
+  // Default essais count: 3 for sprint (typical 3-5 passages), 1 for force/saut
+  const defaultCount = (type === 'sprint') ? 3 : 1;
+  window._trackType = type;
+  let html = '<div id="trackEssaisList" class="tr-essais"></div>'
+    + '<button type="button" class="btn btn-outline btn-sm" onclick="addEssai()" style="margin-bottom:12px">+ Ajouter un essai</button>';
   fields.innerHTML = html;
+  // Seed default rows
+  for (let i = 0; i < defaultCount; i++) addEssai();
+}
+
+function _essaiRowHtml(type, idx) {
+  if (type === 'force') {
+    return '<div class="tr-essai" data-idx="'+idx+'">'
+      + '<div class="tr-essai-num">'+(idx+1)+'</div>'
+      + '<div class="tr-essai-inputs">'
+      +   '<input class="fi tr-essai-input" data-key="load" type="number" placeholder="100"><span class="tr-essai-unit">kg</span>'
+      +   '<span class="tr-essai-x">×</span>'
+      +   '<input class="fi tr-essai-input" data-key="reps" type="number" placeholder="5"><span class="tr-essai-unit">reps</span>'
+      + '</div>'
+      + '<button type="button" class="tr-essai-rm" onclick="removeEssai(this)" aria-label="Supprimer">✕</button>'
+      + '</div>';
+  }
+  if (type === 'sprint') {
+    return '<div class="tr-essai" data-idx="'+idx+'">'
+      + '<div class="tr-essai-num">'+(idx+1)+'</div>'
+      + '<div class="tr-essai-inputs">'
+      +   '<input class="fi tr-essai-input" data-key="time" type="number" step="0.01" placeholder="4.20"><span class="tr-essai-unit">sec</span>'
+      + '</div>'
+      + '<button type="button" class="tr-essai-rm" onclick="removeEssai(this)" aria-label="Supprimer">✕</button>'
+      + '</div>';
+  }
+  if (type === 'saut') {
+    return '<div class="tr-essai" data-idx="'+idx+'">'
+      + '<div class="tr-essai-num">'+(idx+1)+'</div>'
+      + '<div class="tr-essai-inputs">'
+      +   '<input class="fi tr-essai-input" data-key="height" type="number" placeholder="60"><span class="tr-essai-unit">cm</span>'
+      +   '<span class="tr-essai-x">×</span>'
+      +   '<input class="fi tr-essai-input" data-key="reps" type="number" placeholder="3"><span class="tr-essai-unit">reps</span>'
+      + '</div>'
+      + '<button type="button" class="tr-essai-rm" onclick="removeEssai(this)" aria-label="Supprimer">✕</button>'
+      + '</div>';
+  }
+  return '';
+}
+
+function addEssai() {
+  const list = document.getElementById('trackEssaisList');
+  if (!list || !window._trackType) return;
+  const idx = list.children.length;
+  const row = document.createElement('div');
+  row.innerHTML = _essaiRowHtml(window._trackType, idx);
+  list.appendChild(row.firstChild);
+}
+
+function removeEssai(btn) {
+  const list = document.getElementById('trackEssaisList');
+  if (!list) return;
+  if (list.children.length <= 1) return; // keep at least one
+  btn.closest('.tr-essai').remove();
+  // Renumber
+  Array.prototype.forEach.call(list.children, function(row, i) {
+    row.dataset.idx = i;
+    const num = row.querySelector('.tr-essai-num');
+    if (num) num.textContent = (i+1);
+  });
+}
+
+function _collectEssais() {
+  const list = document.getElementById('trackEssaisList');
+  if (!list) return [];
+  const rows = Array.prototype.slice.call(list.children);
+  return rows.map(function(row) {
+    const data = {};
+    row.querySelectorAll('.tr-essai-input').forEach(function(inp) {
+      const v = inp.value.trim();
+      if (v !== '') data[inp.dataset.key] = parseFloat(v);
+    });
+    return data;
+  }).filter(function(d) { return Object.keys(d).length > 0; });
 }
 
 function setRPE(el, val) {
@@ -141,7 +195,26 @@ function setRPE(el, val) {
 
 function saveTrack() {
   const sel = document.getElementById('trackExSelect');
-  if (!sel.value) { alert('Choisis un exercice d\'abord.'); return; }
+  if (!sel.value) {
+    if (!window.TEST_MODE) { alert('Choisis un exercice d\'abord.'); return; }
+  }
+  const type = window._trackType;
+  const essais = _collectEssais();
+  if (!essais.length && !window.TEST_MODE) { alert('Renseigne au moins un essai.'); return; }
+
+  // Compute best
+  let bestTxt = '';
+  if (type === 'sprint' && essais.length) {
+    const times = essais.map(function(e){ return e.time; }).filter(function(t){ return !isNaN(t); });
+    if (times.length) bestTxt = 'Meilleur : ' + Math.min.apply(null, times).toFixed(2) + 's sur ' + times.length + ' essai' + (times.length>1?'s':'');
+  } else if (type === 'force' && essais.length) {
+    let best = essais[0]; let bestLoad = essais[0].load || 0;
+    essais.forEach(function(e){ if ((e.load||0) > bestLoad) { best = e; bestLoad = e.load; } });
+    bestTxt = 'Meilleur : ' + (best.load||'—') + 'kg × ' + (best.reps||'—') + ' reps';
+  } else if (type === 'saut' && essais.length) {
+    const hs = essais.map(function(e){ return e.height; }).filter(function(h){ return !isNaN(h); });
+    if (hs.length) bestTxt = 'Meilleur : ' + Math.max.apply(null, hs) + 'cm sur ' + hs.length + ' essai' + (hs.length>1?'s':'');
+  }
 
   const feedbacks = [
     '"Enregistré. Ton système nerveux s\'adapte. Continue."',
@@ -152,7 +225,7 @@ function saveTrack() {
   const msg = feedbacks[Math.floor(Math.random() * feedbacks.length)];
 
   document.getElementById('trackTitanFb').classList.remove('hidden');
-  document.getElementById('trackTitanMsg').innerHTML = msg;
+  document.getElementById('trackTitanMsg').innerHTML = bestTxt ? (bestTxt + '<br>' + msg) : msg;
   currentRPE = 0;
 }
 

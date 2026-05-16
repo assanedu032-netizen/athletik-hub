@@ -736,6 +736,17 @@
 .lv2-pseg.done{background:#7C3AED}
 .lv2-pseg.cur::after{content:"";position:absolute;left:0;top:0;bottom:0;width:50%;background:#7C3AED;border-radius:2px;transition:width .3s}
 
+/* ═══ TRACK ESSAIS (multi-attempt) ═══ */
+.tr-essais{display:flex;flex-direction:column;gap:8px;margin-bottom:10px}
+.tr-essai{display:flex;align-items:center;gap:8px;background:var(--surface2,#0F1626);border:1px solid var(--border,#1B2A4A);border-radius:10px;padding:8px 10px}
+.tr-essai-num{width:26px;height:26px;border-radius:50%;background:var(--gold,#D4AF37);color:#0A0F1E;display:flex;align-items:center;justify-content:center;font-family:'Bebas Neue',sans-serif;font-size:14px;flex-shrink:0}
+.tr-essai-inputs{flex:1;display:flex;align-items:center;gap:6px;min-width:0}
+.tr-essai-input{flex:1;min-width:0;height:36px;padding:0 10px;font-size:14px;text-align:center}
+.tr-essai-unit{font-size:10px;color:var(--muted,#8a93a8);font-weight:700;letter-spacing:.5px;text-transform:uppercase;flex-shrink:0}
+.tr-essai-x{color:var(--muted,#8a93a8);font-size:12px;font-weight:700;flex-shrink:0}
+.tr-essai-rm{background:transparent;border:0;color:var(--muted,#8a93a8);font-size:14px;width:28px;height:28px;border-radius:6px;cursor:pointer;flex-shrink:0}
+.tr-essai-rm:hover{background:rgba(239,68,68,.1);color:#EF4444}
+
 /* ═══ TEST MODE skip bar ═══ */
 #testSkipBar{position:fixed;bottom:14px;left:14px;z-index:9999;display:none;gap:6px;background:rgba(220,38,38,.92);padding:6px;border-radius:10px;box-shadow:0 6px 20px rgba(0,0,0,.4);backdrop-filter:blur(8px)}
 body.test-mode #testSkipBar{display:flex}
