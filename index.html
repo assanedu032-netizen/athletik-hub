@@ -1966,13 +1966,29 @@ body.test-mode #testSkipBar{display:flex}
 
 <!-- ═══ ÉTAPE 2/3 — TEST SAT (présentation) ═══ -->
 <div id="qSATIntro" class="scr">
-  <div class="ob">
+  <div class="ob" style="overflow-y:auto">
     <div class="ob-step">Étape 2 / 3 — Test physique</div>
     <div class="ob-q">On va mesurer ton niveau réel.</div>
-    <div class="ob-sub">Le SAT mesure 5 choses : détente, force, sprint, agilité, mobilité. Sans ça, Titan ne sait pas où tu es. Tu peux le faire maintenant dans Tracks &gt; SAT, ou plus tard — mais sans SAT, tes programmes restent verrouillés.</div>
-    <div style="margin-top:24px;display:flex;flex-direction:column;gap:10px">
-      <button class="ob-next ready" style="position:static;opacity:1;pointer-events:auto" onclick="go('qNutri')">Je le ferai plus tard →</button>
-      <button class="btn btn-outline" onclick="go('qNutri')" style="margin:0">Continuer vers nutrition →</button>
+    <div class="ob-sub">Le SAT mesure 5 choses : détente, force, sprint, agilité, mobilité. Le vrai test demande 30 min + un peu de matériel. Tu peux le faire maintenant dans Tracks &gt; SAT, ou faire une <strong style="color:var(--gold)">estimation rapide</strong> ici pour que Titan puisse t'orienter en attendant.</div>
+
+    <div style="margin-top:22px">
+      <label class="fl">Estimation rapide — où tu en es ?</label>
+      <div class="ob-opts" id="qSATSelfOpts" style="margin-top:6px">
+        <button class="ob-opt" onclick="pickSATSelf(this,'debut')"><div class="ob-opt-ltr">A</div><div class="ob-opt-txt">Débutant — moins de 6 mois de muscu structurée</div></button>
+        <button class="ob-opt" onclick="pickSATSelf(this,'inter')"><div class="ob-opt-ltr">B</div><div class="ob-opt-txt">Intermédiaire — 1-3 ans, je connais les bases</div></button>
+        <button class="ob-opt" onclick="pickSATSelf(this,'avance')"><div class="ob-opt-ltr">C</div><div class="ob-opt-txt">Avancé — 3+ ans, je sais ce que je fais</div></button>
+        <button class="ob-opt" onclick="pickSATSelf(this,'elite')"><div class="ob-opt-ltr">D</div><div class="ob-opt-txt">Élite — compétiteur ou semi-pro</div></button>
+      </div>
+    </div>
+
+    <div id="qSATEstimate" style="margin-top:14px;padding:12px 14px;background:rgba(197,164,78,.08);border:1px solid rgba(197,164,78,.3);border-radius:10px;display:none">
+      <div style="font-size:11px;color:var(--gold);font-weight:700;letter-spacing:1px;margin-bottom:6px">ESTIMATION TITAN</div>
+      <div id="qSATEstimateText" style="font-size:12px;color:var(--text2);line-height:1.5">—</div>
+    </div>
+
+    <div style="margin-top:22px;display:flex;flex-direction:column;gap:10px">
+      <button id="qSATContinueBtn" class="ob-next" style="position:static;opacity:.5;pointer-events:none" onclick="submitSATSelf()">Continuer vers nutrition →</button>
+      <button class="btn btn-outline" onclick="submitSATSelfAndOpenSAT()" style="margin:0">Faire le vrai SAT maintenant →</button>
     </div>
   </div>
 </div>
@@ -3274,8 +3290,12 @@ body.test-mode #testSkipBar{display:flex}
       <div class="lv2-header">
         <div class="lv2-back" onclick="exitLiveV2(false)">← Quitter</div>
         <div class="lv2-cat" id="lv2Cat">FORCE</div>
-        <div class="lv2-counter" id="lv2Counter">1 / 1</div>
+        <div style="display:flex;align-items:center;gap:8px">
+          <button id="lv2VoiceBtn" onclick="lv2ToggleVoice()" title="Commandes vocales" aria-label="Vocal" style="background:rgba(212,175,55,0.15);border:1px solid rgba(212,175,55,0.4);color:#D4AF37;width:32px;height:32px;border-radius:50%;font-size:14px;cursor:pointer;display:flex;align-items:center;justify-content:center;padding:0">🎙</button>
+          <div class="lv2-counter" id="lv2Counter">1 / 1</div>
+        </div>
       </div>
+      <div id="lv2VoiceFb" style="display:none;text-align:center;padding:4px 14px;font-size:10px;color:#D4AF37;letter-spacing:1px;font-weight:700;background:rgba(212,175,55,0.08)">🎙 ÉCOUTE — dis "suivant", "précédent", "pause", "reprendre"</div>
       <div class="lv2-swipe" id="lv2Swipe">
         <button class="lv2-nav-arrow lv2-prev" id="lv2PrevBtn" onclick="prevV2()" aria-label="Précédent">‹</button>
         <button class="lv2-nav-arrow lv2-next" id="lv2NextArrow" onclick="nextV2()" aria-label="Suivant">›</button>
@@ -5931,6 +5951,15 @@ function testMode(){user.name='TEST';enterApp();}
 function enterApp(){
   document.querySelectorAll('.scr').forEach(function(e){e.classList.remove('on','out');e.style.display='none';});
   document.getElementById('mainNav').style.display='flex';
+  // Honor pending post-onboarding action (e.g. open SAT after qSATIntro choice)
+  var postAction = null;
+  try { postAction = localStorage.getItem('ah_post_onb_action'); } catch(e) {}
+  if (postAction === 'open_sat') {
+    try { localStorage.removeItem('ah_post_onb_action'); } catch(e) {}
+    switchTab('tracks'); renderUserData();
+    setTimeout(function(){ try { if (typeof showSec === 'function') showSec('sat'); } catch(e) {} }, 100);
+    return;
+  }
   switchTab('home'); renderUserData();
 }
 function createAccount(){
@@ -8199,8 +8228,96 @@ function nextV2() {
   }
 }
 
+// ═══ VOICE CONTROL — Web Speech API in liveSessionV2 ═══
+var lv2Voice = { rec: null, on: false };
+
+function lv2ToggleVoice() {
+  if (lv2Voice.on) { lv2StopVoice(); return; }
+  lv2StartVoice();
+}
+
+function lv2StartVoice() {
+  var SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+  if (!SR) {
+    alert('Reconnaissance vocale non supportée sur ce navigateur. Utilise Chrome sur Android.');
+    return;
+  }
+  try {
+    var rec = new SR();
+    rec.lang = 'fr-FR';
+    rec.continuous = true;
+    rec.interimResults = false;
+
+    rec.onresult = function(ev) {
+      var i = ev.resultIndex;
+      var transcript = ev.results[i][0].transcript.trim().toLowerCase();
+      lv2HandleVoiceCommand(transcript);
+    };
+    rec.onerror = function(ev) {
+      console.warn('[voice]', ev.error);
+      if (ev.error === 'not-allowed' || ev.error === 'service-not-allowed') {
+        alert('Accès au micro refusé. Active-le dans les paramètres du navigateur.');
+        lv2StopVoice();
+      }
+    };
+    rec.onend = function() {
+      // Auto-restart if still active (browsers cut continuous recognition after a while)
+      if (lv2Voice.on) { try { rec.start(); } catch(e) {} }
+    };
+    rec.start();
+    lv2Voice.rec = rec;
+    lv2Voice.on = true;
+    var btn = document.getElementById('lv2VoiceBtn');
+    if (btn) { btn.style.background = '#D4AF37'; btn.style.color = '#0A0F1E'; }
+    var fb = document.getElementById('lv2VoiceFb');
+    if (fb) fb.style.display = '';
+  } catch (e) {
+    console.warn('[voice start]', e);
+  }
+}
+
+function lv2StopVoice() {
+  if (lv2Voice.rec) {
+    try { lv2Voice.rec.stop(); } catch(e) {}
+    lv2Voice.rec = null;
+  }
+  lv2Voice.on = false;
+  var btn = document.getElementById('lv2VoiceBtn');
+  if (btn) { btn.style.background = 'rgba(212,175,55,0.15)'; btn.style.color = '#D4AF37'; }
+  var fb = document.getElementById('lv2VoiceFb');
+  if (fb) fb.style.display = 'none';
+}
+
+function lv2HandleVoiceCommand(t) {
+  // Show a brief feedback of what was heard
+  var fb = document.getElementById('lv2VoiceFb');
+  if (fb) {
+    fb.textContent = '🎙 « ' + t + ' »';
+    setTimeout(function(){ if (lv2Voice.on && fb) fb.textContent = '🎙 ÉCOUTE — dis "suivant", "précédent", "pause", "reprendre"'; }, 1500);
+  }
+
+  // Match keywords
+  var matched = false;
+  if (/\b(suivant|next|prochain|après)\b/.test(t))         { try { nextV2(); } catch(e){} matched = true; }
+  else if (/\b(précédent|previous|avant|retour)\b/.test(t)){ try { prevV2(); } catch(e){} matched = true; }
+  else if (/\b(pause|stop|arrête)\b/.test(t))              { try { _lv2TogglePause(true); } catch(e){} matched = true; }
+  else if (/\b(reprendre|continue|repart|repars)\b/.test(t)){ try { _lv2TogglePause(false); } catch(e){} matched = true; }
+  else if (/\b(terminé|fini|done|valid)/.test(t))          { try { _lv2RoundDone(); } catch(e){} matched = true; }
+  else if (/\b(quitter|exit|sortir|fin)\b/.test(t))        { try { exitLiveV2(false); } catch(e){} matched = true; }
+
+  if (matched && navigator.vibrate) navigator.vibrate(40);
+}
+
+function _lv2TogglePause(forcePause) {
+  if (!lv2State) return;
+  if (forcePause === true && !lv2State.paused) lv2State.paused = true;
+  else if (forcePause === false && lv2State.paused) lv2State.paused = false;
+  else lv2State.paused = !lv2State.paused;
+}
+
 function exitLiveV2(finished) {
   if (lv2State) clearInterval(lv2State.timer);
+  try { lv2StopVoice(); } catch(e) {}
   document.getElementById('liveSessionV2').classList.add('hidden');
   if (finished && lv2State) {
     liveData = lv2State.exs.map(function(e){ return {name:e.name, reps:e.detail || '—', load:'—', rpe:'—'}; });
@@ -8894,6 +9011,56 @@ function exitTestMode() {
 // ══════════════════════════════════
 // ÉTAPE 3/3 — NUTRITION (Mifflin-St Jeor + ajustement objectif)
 // ══════════════════════════════════
+// ═══ SAT SELF-ASSESSMENT (étape 2/3 onboarding) ═══
+function pickSATSelf(el, level) {
+  // Highlight chosen option
+  var opts = document.querySelectorAll('#qSATSelfOpts .ob-opt');
+  opts.forEach(function(o){ o.classList.remove('on'); });
+  el.classList.add('on');
+
+  // Persist
+  if (typeof R !== 'undefined') R.satSelfLevel = level;
+  if (typeof user !== 'undefined') user.satSelfLevel = level;
+
+  // Map level → estimated athScore + Titan blurb
+  var map = {
+    debut:  { score: 35, txt: 'Débutant. On part des fondations. Programme adapté pour construire la base avant l\'explosivité.' },
+    inter:  { score: 55, txt: 'Intermédiaire. Tu connais. On va structurer pour passer un cap.' },
+    avance: { score: 72, txt: 'Avancé. Tu sais déjà bouger. Le programme va affiner ton point faible — c\'est ce qui va débloquer ton plafond.' },
+    elite:  { score: 85, txt: 'Élite. Pas besoin de te faire un dessin. Discipline + détails. Le SAT précis est obligatoire dès que tu peux.' },
+  };
+  var info = map[level];
+  if (typeof user !== 'undefined') user.athScoreSelf = info.score;
+  if (typeof R !== 'undefined') R.athScoreSelf = info.score;
+
+  var box = document.getElementById('qSATEstimate');
+  var txt = document.getElementById('qSATEstimateText');
+  if (box) box.style.display = '';
+  if (txt) txt.textContent = info.txt;
+
+  // Enable continue button
+  var btn = document.getElementById('qSATContinueBtn');
+  if (btn) { btn.classList.add('ready'); btn.style.opacity = '1'; btn.style.pointerEvents = 'auto'; }
+}
+
+function submitSATSelf() {
+  // Persist self-assessment but do NOT mark satDone (real SAT still required to unlock programs)
+  if (typeof user !== 'undefined') user.satDone = false;
+  try { if (typeof saveData === 'function') saveData(); } catch(e) {}
+  try { if (typeof fbSaveProfile === 'function') fbSaveProfile(); } catch(e) {}
+  go('qNutri');
+}
+
+function submitSATSelfAndOpenSAT() {
+  // Self-assessment is saved, but also send user to the real SAT now
+  if (typeof user !== 'undefined') user.satDone = false;
+  try { if (typeof saveData === 'function') saveData(); } catch(e) {}
+  // Continue to nutrition first so onboarding completes properly,
+  // then jump to Tracks > SAT after enterApp
+  try { localStorage.setItem('ah_post_onb_action', 'open_sat'); } catch(e) {}
+  go('qNutri');
+}
+
 function pickNutriObj(el, val) {
   document.querySelectorAll('#qNutriObjOpts .ob-opt').forEach(function(o){ o.classList.remove('sel'); });
   el.classList.add('sel');
