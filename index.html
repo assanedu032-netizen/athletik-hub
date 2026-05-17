@@ -5839,16 +5839,16 @@ function getTodaySession() {
   var dayN = new Date().getDay(); // 0=dim, 1=lun...
   // Mapper notre trainingDays (0=Lun)
   var tdDay = dayN === 0 ? 6 : dayN - 1;
-  
+
   var isTrainingDay = trainingDays.size === 0 || trainingDays.has(tdDay);
-  
+
   if (isTrainingDay) {
     return {
       type: 'training',
       title: 'SÉANCE DU JOUR',
       subtitle: 'Phase ' + user.phase + ' — ' + user.program,
       duration: '45 min',
-      action: "switchTab('tracks')",
+      action: 'launchTodaySession()',
       btnLabel: 'LANCER LA SÉANCE ⚡'
     };
   } else {
@@ -5862,6 +5862,70 @@ function getTodaySession() {
     };
   }
 }
+
+// Lance directement la séance du jour à partir du programme attribué.
+// Mappe le jour de la semaine sur le weekDays du programme pour trouver
+// la session correspondante, puis appelle launchSession() en plein écran.
+function launchTodaySession() {
+  // SAT obligatoire
+  if (typeof _userSatDone === 'function' && !_userSatDone()) {
+    if (typeof showToast === 'function') showToast('Fais d\'abord tes tests physiques dans Tracks.', 'info');
+    try { switchTab('tracks'); } catch(e) {}
+    return;
+  }
+
+  // Récupère la clé programme
+  var prof = {};
+  try { prof = JSON.parse(localStorage.getItem('ah_profile') || '{}'); } catch(e) {}
+  var key = prof.programKey;
+
+  if (!key || typeof PROGRAMS_V2 === 'undefined' || !PROGRAMS_V2[key]) {
+    if (typeof showToast === 'function') showToast('Pas de programme attribué. Choisis-en un dans Train → Programmes.', 'info');
+    try { if (typeof goToProgrammes === 'function') goToProgrammes(); else switchTab('train'); } catch(e) {}
+    return;
+  }
+
+  var prog = PROGRAMS_V2[key];
+  var phaseIdx = prof.phaseIdx || 0;
+  if (phaseIdx >= prog.phases.length) phaseIdx = 0;
+  var phase = prog.phases[phaseIdx];
+  if (!phase) {
+    if (typeof showToast === 'function') showToast('Phase introuvable.', 'info');
+    return;
+  }
+
+  // Jour de la semaine (0=Lun, 6=Dim)
+  var dayN = new Date().getDay();
+  var tdDay = dayN === 0 ? 6 : dayN - 1;
+  var todayMap = phase.weekDays && phase.weekDays[tdDay];
+  var sessKey = todayMap && todayMap.s;
+
+  // Repos ou jour non programmé : pas de séance
+  if (!sessKey || sessKey === 'rest') {
+    if (typeof showToast === 'function') showToast('Aujourd\'hui c\'est repos. Récup active 🧘', 'info');
+    return;
+  }
+  // Optionnel : prendre quand même la 1re session du programme
+  if (sessKey === 'opt' || sessKey === 'mener' || sessKey === 'bilan') {
+    var optKeys = phase.sessions ? Object.keys(phase.sessions) : [];
+    if (!phase.sessions[sessKey] && optKeys.length) sessKey = optKeys[0];
+  }
+
+  var sess = phase.sessions && phase.sessions[sessKey];
+  if (!sess || !sess.exos || !sess.exos.length) {
+    if (typeof showToast === 'function') showToast('Pas de séance définie pour aujourd\'hui dans ton programme.', 'info');
+    return;
+  }
+
+  // Met à jour l'état pour cohérence avec la page Programmes
+  window._progV2State = { key: key, phaseIdx: phaseIdx, sessionKey: sessKey };
+
+  // Lance la séance plein écran
+  if (typeof launchSession === 'function') {
+    launchSession(sess.exos, sess.name, prog.name);
+  }
+}
+window.launchTodaySession = launchTodaySession;
 
 function renderTodayCard() {
   var container = document.getElementById('todayCard');
