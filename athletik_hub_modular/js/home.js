@@ -220,9 +220,24 @@ function switchTab(tab){
   if(titanBtn)titanBtn.style.filter=(tab==='chat')?'drop-shadow(0 0 8px rgba(197,164,78,.6))':'none';
 }
 function restartOnboarding(){
+  if (!confirm('Refaire l\'onboarding ? Tes réponses actuelles seront écrasées par les nouvelles, mais ton SAT et tes données sont conservés.')) return;
   document.querySelectorAll('.view').forEach(function(v){v.classList.remove('on');});
   document.querySelectorAll('.scr').forEach(function(e){e.style.display='';});
-  document.getElementById('mainNav').style.display='none'; go('titanIntro');
+  document.getElementById('mainNav').style.display='none';
+  // Clear onboarding answers so user starts fresh
+  for (var k in R) delete R[k];
+  go('titanIntro');
+}
+
+// Logout: keep onboarding/SAT data but clear session, redirect to auth on next load.
+// With Firebase plugged in, this will also signOut from Firebase Auth.
+function logoutUser(){
+  if (!confirm('Se déconnecter ? Tes données restent enregistrées, tu pourras les retrouver à la prochaine connexion.')) return;
+  if (typeof user !== 'undefined') { user.email = ''; user.name = 'ATHLÈTE'; }
+  try { if (typeof saveData === 'function') saveData(); } catch(e) {}
+  try { if (typeof firebase !== 'undefined' && firebase.auth) firebase.auth().signOut(); } catch(e) {}
+  // Reload so the boot logic re-evaluates and shows the auth screen
+  setTimeout(function(){ location.reload(); }, 200);
 }
 function toggleTheme(){
   darkMode=!darkMode;
