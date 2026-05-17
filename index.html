@@ -3542,7 +3542,57 @@ body.test-mode #testSkipBar{display:flex}
 <div id="progDetail" class="hidden"><div class="back-btn" onclick="closeProg()">← Retour Programmes</div><div style="font-family:'Bebas Neue',sans-serif;font-size:28px;color:var(--text);letter-spacing:2px" id="progDetailName">PROGRAMME</div><div style="font-size:12px;color:var(--muted);margin:4px 0 10px" id="progDetailObj">Objectif</div><div class="phase-tabs"><div class="phase-tab on" onclick="switchPhase(this,0)">Fondations</div><div class="phase-tab" onclick="switchPhase(this,1)">Intensification</div><div class="phase-tab" onclick="switchPhase(this,2)">Peak</div></div><div id="phaseExList"></div><button class="btn btn-gold" id="startSessionBtn" onclick="startSessionGuarded()" style="margin-top:12px">Commencer la séance 🔥</button></div>
 </div>
 
-<div id="pgBuilder" class="pg"><div class="builder-locked"><div class="bl-ic">🔒</div><div class="bl-title">WORKOUT BUILDER</div><div class="bl-sub">Crée tes propres séances. Débloqué après 2 programmes terminés.</div><div class="bl-bar"><div class="bl-bar-in" style="width:0%"></div></div><div class="bl-count">0 / 2 programmes terminés</div></div></div>
+<div id="pgBuilder" class="pg">
+  <!-- État verrouillé (par défaut, montré si !hasAccessTier ou sessionsDone < 10) -->
+  <div id="builderLocked" class="builder-locked">
+    <div class="bl-ic">🔒</div>
+    <div class="bl-title">WORKOUT BUILDER</div>
+    <div class="bl-sub">Crée tes propres séances. Débloqué à partir de 10 séances réalisées.</div>
+    <div class="bl-bar"><div id="builderBar" class="bl-bar-in" style="width:0%"></div></div>
+    <div class="bl-count" id="builderCount">0 / 10 séances réalisées</div>
+  </div>
+
+  <!-- État débloqué : éditeur de séance -->
+  <div id="builderUnlocked" style="display:none">
+    <div style="padding:14px 20px 8px;display:flex;justify-content:space-between;align-items:center">
+      <div>
+        <div style="font-family:'Bebas Neue',sans-serif;font-size:20px;letter-spacing:1.5px;color:var(--text)">MA SÉANCE</div>
+        <div style="font-size:11px;color:var(--muted);margin-top:2px" id="builderMeta">0 exercice · 0 min</div>
+      </div>
+      <button onclick="builderClear()" style="padding:7px 12px;background:transparent;border:1px solid var(--border);border-radius:8px;color:var(--muted);font-size:11px;cursor:pointer">Vider</button>
+    </div>
+
+    <!-- Liste exos sélectionnés -->
+    <div id="builderList" style="padding:6px 20px;display:flex;flex-direction:column;gap:8px"></div>
+
+    <div id="builderEmpty" style="padding:24px 20px;text-align:center;color:var(--muted);font-size:12px">
+      <div style="font-size:36px;margin-bottom:8px">🧱</div>
+      <div>Ta séance est vide.<br>Tape l'icône <strong style="color:var(--gold)">+</strong> ci-dessous pour ajouter un exercice depuis la librairie.</div>
+    </div>
+
+    <!-- Bouton ajout -->
+    <div style="padding:14px 20px">
+      <button onclick="builderOpenAdd()" style="width:100%;padding:13px;background:var(--surface);border:1.5px dashed var(--border);border-radius:12px;color:var(--gold);font-family:'Outfit',sans-serif;font-weight:800;font-size:13px;cursor:pointer">+ AJOUTER UN EXERCICE</button>
+    </div>
+
+    <!-- Action : lancer la séance -->
+    <div style="padding:6px 20px 24px">
+      <button onclick="builderStart()" id="builderStartBtn" style="width:100%;padding:15px;background:linear-gradient(135deg,var(--gold),var(--gold2));border:0;border-radius:12px;color:var(--navy);font-family:'Bebas Neue',sans-serif;font-size:18px;letter-spacing:2px;cursor:pointer;opacity:.5;pointer-events:none">▶ LANCER MA SÉANCE</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal de sélection d'exercice pour le Builder -->
+<div id="builderAddModal" style="display:none;position:fixed;inset:0;background:rgba(6,12,24,.92);backdrop-filter:blur(6px);z-index:9400;align-items:center;justify-content:center;padding:24px">
+  <div style="max-width:420px;width:100%;max-height:80vh;background:#0F1626;border:1px solid #1B2A4A;border-radius:16px;padding:18px;display:flex;flex-direction:column">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+      <div style="font-family:'Bebas Neue',sans-serif;font-size:16px;color:#fff;letter-spacing:1.5px">CHOISIS UN EXERCICE</div>
+      <button onclick="builderCloseAdd()" style="background:transparent;border:0;color:#8a93a8;font-size:20px;cursor:pointer">×</button>
+    </div>
+    <input id="builderAddSearch" type="search" placeholder="Rechercher…" oninput="builderRenderAddList()" style="width:100%;padding:10px;background:#0A0F1E;border:1px solid #1B2A4A;border-radius:8px;color:#fff;font-size:13px;outline:none;box-sizing:border-box;margin-bottom:8px">
+    <div id="builderAddList" style="flex:1;overflow-y:auto"></div>
+  </div>
+</div>
 
 </div>
 </div>
@@ -4273,13 +4323,13 @@ body.test-mode #testSkipBar{display:flex}
 
     <div style="margin-bottom:14px">
       <label style="font-size:10px;font-weight:800;letter-spacing:1.5px;color:#D4AF37;text-transform:uppercase">Code d'accès</label>
-      <input id="accessCodeInput" type="text" placeholder="BETA / VIP / MASTER" style="width:100%;margin-top:6px;padding:12px 14px;background:#0A0F1E;border:1.5px solid #1B2A4A;border-radius:10px;font-family:'Outfit',sans-serif;font-size:14px;color:#fff;letter-spacing:1px;text-transform:uppercase;outline:none;box-sizing:border-box">
-      <div style="font-size:10px;color:#8a93a8;line-height:1.5;margin-top:4px">Le code se trouve à la fin du livre.</div>
+      <input id="accessCodeInput" type="text" placeholder="Ex : AL-88ND89" style="width:100%;margin-top:6px;padding:12px 14px;background:#0A0F1E;border:1.5px solid #1B2A4A;border-radius:10px;font-family:'Outfit',sans-serif;font-size:14px;color:#fff;letter-spacing:1px;text-transform:uppercase;outline:none;box-sizing:border-box">
+      <div style="font-size:10px;color:#8a93a8;line-height:1.5;margin-top:4px">Le code se trouve dans l'Avant-Propos du livre.</div>
     </div>
 
     <div style="margin-bottom:14px">
       <label style="font-size:10px;font-weight:800;letter-spacing:1.5px;color:#D4AF37;text-transform:uppercase">Question livre</label>
-      <div id="accessCodeQuestion" style="font-size:13px;color:#fff;line-height:1.5;margin:6px 0">Quelle est la phrase écrite à la fin du chapitre 3 ?</div>
+      <div id="accessCodeQuestion" style="font-size:13px;color:#fff;line-height:1.5;margin:6px 0">Quel est le prénom de l'ami qui a écrit la Préface du livre ?</div>
       <input id="accessQuestionInput" type="text" placeholder="Ta réponse..." style="width:100%;padding:12px 14px;background:#0A0F1E;border:1.5px solid #1B2A4A;border-radius:10px;font-family:'Outfit',sans-serif;font-size:14px;color:#fff;outline:none;box-sizing:border-box">
     </div>
 
@@ -9181,17 +9231,228 @@ function exitTestMode() {
 // ══════════════════════════════════
 // ÉTAPE 3/3 — NUTRITION (Mifflin-St Jeor + ajustement objectif)
 // ══════════════════════════════════
+// ═══ WORKOUT BUILDER ═══
+var BUILDER_UNLOCK_AFTER = 10; // séances complétées pour débloquer
+var builderState = { exos: [] };
+
+function _builderLoad() {
+  try {
+    var saved = JSON.parse(localStorage.getItem('ah_builder_session') || '{"exos":[]}');
+    if (saved && Array.isArray(saved.exos)) builderState = saved;
+  } catch(e) {}
+}
+
+function _builderPersist() {
+  try { localStorage.setItem('ah_builder_session', JSON.stringify(builderState)); } catch(e) {}
+}
+
+function _builderCheckUnlock() {
+  // VIP/MASTER tier unlocks immediately + 10 sessions also unlocks
+  if (typeof window.hasAccessTier === 'function' && window.hasAccessTier('VIP')) return true;
+  try {
+    var prof = JSON.parse(localStorage.getItem('ah_profile') || '{}');
+    return (prof.sessionsDone || 0) >= BUILDER_UNLOCK_AFTER;
+  } catch(e) { return false; }
+}
+
+function renderBuilder() {
+  var locked = document.getElementById('builderLocked');
+  var unlocked = document.getElementById('builderUnlocked');
+  if (!locked || !unlocked) return;
+
+  if (!_builderCheckUnlock()) {
+    locked.style.display = '';
+    unlocked.style.display = 'none';
+    // Progress
+    var done = 0;
+    try { done = JSON.parse(localStorage.getItem('ah_profile') || '{}').sessionsDone || 0; } catch(e) {}
+    var pct = Math.min(100, (done / BUILDER_UNLOCK_AFTER) * 100);
+    var bar = document.getElementById('builderBar');
+    var cnt = document.getElementById('builderCount');
+    if (bar) bar.style.width = pct + '%';
+    if (cnt) cnt.textContent = done + ' / ' + BUILDER_UNLOCK_AFTER + ' séances réalisées';
+    return;
+  }
+  locked.style.display = 'none';
+  unlocked.style.display = '';
+  _builderLoad();
+  _builderRenderList();
+}
+
+function _builderRenderList() {
+  var list = document.getElementById('builderList');
+  var empty = document.getElementById('builderEmpty');
+  var meta = document.getElementById('builderMeta');
+  var startBtn = document.getElementById('builderStartBtn');
+  if (!list) return;
+
+  if (!builderState.exos.length) {
+    list.innerHTML = '';
+    if (empty) empty.style.display = '';
+    if (meta) meta.textContent = '0 exercice · 0 min';
+    if (startBtn) { startBtn.style.opacity = '.5'; startBtn.style.pointerEvents = 'none'; }
+    return;
+  }
+  if (empty) empty.style.display = 'none';
+
+  var html = '';
+  builderState.exos.forEach(function(ex, i){
+    html += '<div style="display:flex;align-items:center;gap:10px;background:var(--surface2);border:1px solid var(--border);border-radius:12px;padding:10px 12px">'
+      + '<div style="width:28px;height:28px;border-radius:50%;background:var(--gold);color:var(--navy);display:flex;align-items:center;justify-content:center;font-family:\'Bebas Neue\',sans-serif;font-size:13px">' + (i+1) + '</div>'
+      + '<div style="flex:1;min-width:0">'
+      +   '<div style="font-size:13px;font-weight:700;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">' + ex.name + '</div>'
+      +   '<div style="font-size:11px;color:var(--muted);margin-top:2px">'
+      +     '<input type="number" min="1" max="10" value="' + (ex.sets || 3) + '" onchange="builderSetField(' + i + ',\'sets\',this.value)" style="width:40px;padding:2px 4px;background:transparent;border:1px solid var(--border);border-radius:4px;color:var(--text);font-size:11px;text-align:center"> séries · '
+      +     '<input type="text" value="' + (ex.reps || '10') + '" onchange="builderSetField(' + i + ',\'reps\',this.value)" style="width:54px;padding:2px 4px;background:transparent;border:1px solid var(--border);border-radius:4px;color:var(--text);font-size:11px;text-align:center"> reps · '
+      +     '<input type="text" value="' + (ex.rest || '60s') + '" onchange="builderSetField(' + i + ',\'rest\',this.value)" style="width:50px;padding:2px 4px;background:transparent;border:1px solid var(--border);border-radius:4px;color:var(--text);font-size:11px;text-align:center"> repos'
+      +   '</div>'
+      + '</div>'
+      + '<button onclick="builderMove(' + i + ',-1)" style="background:transparent;border:0;color:var(--muted);font-size:14px;cursor:pointer;width:24px">↑</button>'
+      + '<button onclick="builderMove(' + i + ',1)" style="background:transparent;border:0;color:var(--muted);font-size:14px;cursor:pointer;width:24px">↓</button>'
+      + '<button onclick="builderRemove(' + i + ')" style="background:transparent;border:0;color:#EF4444;font-size:16px;cursor:pointer;width:28px">×</button>'
+      + '</div>';
+  });
+  list.innerHTML = html;
+  if (meta) {
+    var minutes = builderState.exos.reduce(function(acc, e){
+      return acc + (parseInt(e.sets || 3) * 2);
+    }, 0);
+    meta.textContent = builderState.exos.length + ' exercice' + (builderState.exos.length > 1 ? 's' : '') + ' · ~' + minutes + ' min';
+  }
+  if (startBtn) { startBtn.style.opacity = '1'; startBtn.style.pointerEvents = 'auto'; }
+}
+
+function builderSetField(i, key, val) {
+  if (!builderState.exos[i]) return;
+  builderState.exos[i][key] = val;
+  _builderPersist();
+  _builderRenderList();
+}
+
+function builderMove(i, dir) {
+  var ni = i + dir;
+  if (ni < 0 || ni >= builderState.exos.length) return;
+  var tmp = builderState.exos[i];
+  builderState.exos[i] = builderState.exos[ni];
+  builderState.exos[ni] = tmp;
+  _builderPersist();
+  _builderRenderList();
+}
+
+function builderRemove(i) {
+  builderState.exos.splice(i, 1);
+  _builderPersist();
+  _builderRenderList();
+}
+
+function builderClear() {
+  if (!confirm('Vider toute la séance ?')) return;
+  builderState.exos = [];
+  _builderPersist();
+  _builderRenderList();
+}
+
+function builderOpenAdd() {
+  var m = document.getElementById('builderAddModal');
+  if (m) m.style.display = 'flex';
+  builderRenderAddList();
+}
+
+function builderCloseAdd() {
+  var m = document.getElementById('builderAddModal');
+  if (m) m.style.display = 'none';
+}
+
+function builderRenderAddList() {
+  var list = document.getElementById('builderAddList');
+  var search = (document.getElementById('builderAddSearch') || {}).value || '';
+  if (!list) return;
+  if (typeof catData === 'undefined') {
+    list.innerHTML = '<div style="color:#8a93a8;padding:20px;text-align:center;font-size:12px">Bibliothèque non chargée.</div>';
+    return;
+  }
+  // Flatten all categories
+  var all = [];
+  Object.keys(catData).forEach(function(catKey){
+    var items = catData[catKey] || [];
+    items.forEach(function(it){
+      all.push({ name: it.name, cat: catKey });
+    });
+  });
+  var q = search.trim().toLowerCase();
+  if (q) all = all.filter(function(it){ return it.name.toLowerCase().indexOf(q) !== -1; });
+  if (!all.length) {
+    list.innerHTML = '<div style="color:#8a93a8;padding:20px;text-align:center;font-size:12px">Aucun exercice trouvé.</div>';
+    return;
+  }
+  var html = '';
+  all.slice(0, 60).forEach(function(it){
+    var safeName = it.name.replace(/"/g, '&quot;').replace(/'/g, "\\'");
+    html += '<div onclick="builderAddExo(\'' + safeName + '\')" style="padding:10px;border-bottom:1px solid #1B2A4A;cursor:pointer;color:#fff;font-size:13px"><strong>' + it.name + '</strong><div style="font-size:10px;color:#8a93a8;margin-top:2px">' + it.cat + '</div></div>';
+  });
+  list.innerHTML = html;
+}
+
+function builderAddExo(name) {
+  builderState.exos.push({ name: name, sets: 3, reps: '10', rest: '60s' });
+  _builderPersist();
+  builderCloseAdd();
+  _builderRenderList();
+}
+
+function builderStart() {
+  if (!builderState.exos.length) return;
+  // Launch via the existing liveSession entry point
+  var exos = builderState.exos.map(function(e){
+    return {
+      n: e.name,
+      s: e.sets || 3,
+      r: e.reps || '10',
+      rest: e.rest || '60s',
+      detail: e.sets + '×' + e.reps + (e.rest ? ' (repos ' + e.rest + ')' : ''),
+      name: e.name
+    };
+  });
+  try {
+    if (typeof launchSession === 'function') {
+      launchSession(exos, 'Ma séance custom', 'WORKOUT BUILDER');
+    } else if (typeof startLive === 'function') {
+      window._customSessionExos = exos;
+      startLive();
+    } else {
+      alert('Lancement de séance non disponible. Va dans Programmes pour lancer.');
+    }
+  } catch(e) {
+    console.warn('builderStart:', e);
+    alert('Erreur au lancement de la séance.');
+  }
+}
+
+// Hook : refresh builder when pgBuilder tab is shown
+(function(){
+  var origShowPg = window.showPg;
+  if (typeof origShowPg === 'function') {
+    window.showPg = function(id) {
+      try { origShowPg.apply(this, arguments); } catch(e) {}
+      if (id === 'builder') { try { renderBuilder(); } catch(e) {} }
+    };
+  }
+})();
+
 // ═══ ACCÈS POST-LIVRE (codes + question) ═══
-// Codes valides à modifier quand Alassane communique les vrais codes
+// Vrais codes du livre "Les Secrets de la Détente Verticale" (Alassane Dia)
+// Stored lowercased; comparison is case-insensitive
 var ACCESS_CODES = {
-  // tier : "essai 14 jours" / "à vie premium" / "à vie premium + Titan illimité"
-  'BETA':   { tier:'BETA',   label:'BETA',   color:'#10B981', valid: 14, msg:'Accès BETA — 14 jours d\'essai.' },
-  'VIP':    { tier:'VIP',    label:'VIP',    color:'#D4AF37', valid: null, msg:'Accès VIP — à vie. Bienvenue, athlète.' },
-  'MASTER': { tier:'MASTER', label:'MASTER', color:'#EF4444', valid: null, msg:'Accès MASTER — Titan illimité + tout débloqué.' },
+  'AL-88ND89':       { tier:'BETA',   label:'BETA',   color:'#10B981', valid: 14,   msg:'Accès BETA — 14 jours d\'essai.' },
+  'KEVIN-JEAN2478':  { tier:'VIP',    label:'VIP',    color:'#D4AF37', valid: null, msg:'Accès VIP — à vie. Bienvenue, athlète.' },
+  'ONANDULU78':      { tier:'MASTER', label:'MASTER', color:'#EF4444', valid: null, msg:'Accès MASTER — Titan illimité + tout débloqué.' },
 };
-// Réponse acceptée à la question livre (placeholder — remplace par la vraie quand Alassane l'envoie)
-// La comparaison est insensible à la casse + accents et tolère les espaces multiples.
-var ACCESS_BOOK_ANSWER = 'la motivation cest des conneries cest la discipline qui fait la difference';
+
+// Question livre — basée sur la Préface (texte fixe, ne change pas avec la pagination)
+// Réponse acceptée : "Loïc" (avec/sans accents, casse libre)
+// Plusieurs orthographes tolérées dans _checkBookAnswer
+var ACCESS_BOOK_QUESTION = 'Quel est le prénom de l\'ami qui a écrit la Préface du livre ?';
+var ACCESS_BOOK_ANSWERS = ['loic', 'loïc'];
 
 function openAccessCode() {
   var modal = document.getElementById('accessCodeModal');
@@ -9217,6 +9478,14 @@ function _normalise(str) {
     .trim();
 }
 
+function _checkBookAnswer(input) {
+  var n = _normalise(input);
+  for (var i = 0; i < ACCESS_BOOK_ANSWERS.length; i++) {
+    if (n === _normalise(ACCESS_BOOK_ANSWERS[i])) return true;
+  }
+  return false;
+}
+
 function submitAccessCode() {
   var codeEl = document.getElementById('accessCodeInput');
   var qEl    = document.getElementById('accessQuestionInput');
@@ -9240,8 +9509,8 @@ function submitAccessCode() {
 
   // Question livre obligatoire pour valider
   if (!ans) { showMsg('Réponds à la question livre.', false); return; }
-  if (_normalise(ans).indexOf(_normalise(ACCESS_BOOK_ANSWER).slice(0, 20)) === -1) {
-    showMsg('Réponse incorrecte. Relis attentivement le chapitre.', false);
+  if (!_checkBookAnswer(ans)) {
+    showMsg('Réponse incorrecte. Relis la Préface.', false);
     return;
   }
 
