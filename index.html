@@ -2794,6 +2794,80 @@ body.test-mode #testSkipBar{display:flex}
       </button>
     </div>
 
+    <!-- ═══ AGENDA HEBDO (style Eklo) ═══ -->
+    <div style="padding:18px 20px;border-bottom:1px solid var(--border)">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+        <div style="font-size:10px;font-weight:700;letter-spacing:2px;color:var(--muted);text-transform:uppercase">Cette semaine</div>
+        <div style="font-size:11px;color:var(--gold);font-weight:600;cursor:pointer" onclick="switchTab('train')">Voir programme →</div>
+      </div>
+      <div id="homeAgendaRow" style="display:flex;gap:6px;overflow-x:auto;-webkit-overflow-scrolling:touch;padding-bottom:4px">
+        <!-- Injecté par renderHomeAgenda() -->
+      </div>
+    </div>
+
+    <!-- ═══ CERCLES MACROS (style Eklo) ═══ -->
+    <div id="homeMacros" style="padding:18px 20px;border-bottom:1px solid var(--border);display:none">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
+        <div style="font-size:10px;font-weight:700;letter-spacing:2px;color:var(--muted);text-transform:uppercase">Nutrition du jour</div>
+        <div style="font-size:11px;color:var(--gold);font-weight:600;cursor:pointer" onclick="switchTab('nutrition')">Journal →</div>
+      </div>
+      <div style="display:grid;grid-template-columns:1.4fr 1fr 1fr 1fr;gap:10px;align-items:center">
+        <!-- Cercle Calories (gros) -->
+        <div style="display:flex;flex-direction:column;align-items:center">
+          <div style="position:relative;width:88px;height:88px">
+            <svg width="88" height="88" viewBox="0 0 88 88" style="transform:rotate(-90deg)">
+              <circle cx="44" cy="44" r="38" fill="none" stroke="var(--border)" stroke-width="7"/>
+              <circle id="hmCalRing" cx="44" cy="44" r="38" fill="none" stroke="var(--gold)" stroke-width="7" stroke-linecap="round" stroke-dasharray="239" stroke-dashoffset="239" style="transition:stroke-dashoffset .6s ease"/>
+            </svg>
+            <div style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center">
+              <div id="hmCalLeft" style="font-family:'Bebas Neue',sans-serif;font-size:20px;color:var(--text);line-height:1">0</div>
+              <div style="font-size:8px;color:var(--muted);font-weight:700;letter-spacing:1px;margin-top:1px">RESTANT</div>
+            </div>
+          </div>
+          <div style="font-size:9px;color:var(--muted);font-weight:700;letter-spacing:1.5px;margin-top:6px">KCAL</div>
+        </div>
+        <!-- Cercle Protéines -->
+        <div style="display:flex;flex-direction:column;align-items:center">
+          <div style="position:relative;width:62px;height:62px">
+            <svg width="62" height="62" viewBox="0 0 62 62" style="transform:rotate(-90deg)">
+              <circle cx="31" cy="31" r="26" fill="none" stroke="var(--border)" stroke-width="5"/>
+              <circle id="hmProtRing" cx="31" cy="31" r="26" fill="none" stroke="#EF4444" stroke-width="5" stroke-linecap="round" stroke-dasharray="163" stroke-dashoffset="163" style="transition:stroke-dashoffset .6s ease"/>
+            </svg>
+            <div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center">
+              <div id="hmProtVal" style="font-family:'Bebas Neue',sans-serif;font-size:14px;color:var(--text)">0g</div>
+            </div>
+          </div>
+          <div style="font-size:9px;color:#EF4444;font-weight:700;letter-spacing:1px;margin-top:6px">PROT</div>
+        </div>
+        <!-- Cercle Glucides -->
+        <div style="display:flex;flex-direction:column;align-items:center">
+          <div style="position:relative;width:62px;height:62px">
+            <svg width="62" height="62" viewBox="0 0 62 62" style="transform:rotate(-90deg)">
+              <circle cx="31" cy="31" r="26" fill="none" stroke="var(--border)" stroke-width="5"/>
+              <circle id="hmGlucRing" cx="31" cy="31" r="26" fill="none" stroke="#10B981" stroke-width="5" stroke-linecap="round" stroke-dasharray="163" stroke-dashoffset="163" style="transition:stroke-dashoffset .6s ease"/>
+            </svg>
+            <div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center">
+              <div id="hmGlucVal" style="font-family:'Bebas Neue',sans-serif;font-size:14px;color:var(--text)">0g</div>
+            </div>
+          </div>
+          <div style="font-size:9px;color:#10B981;font-weight:700;letter-spacing:1px;margin-top:6px">GLUC</div>
+        </div>
+        <!-- Cercle Lipides -->
+        <div style="display:flex;flex-direction:column;align-items:center">
+          <div style="position:relative;width:62px;height:62px">
+            <svg width="62" height="62" viewBox="0 0 62 62" style="transform:rotate(-90deg)">
+              <circle cx="31" cy="31" r="26" fill="none" stroke="var(--border)" stroke-width="5"/>
+              <circle id="hmLipRing" cx="31" cy="31" r="26" fill="none" stroke="#F59E0B" stroke-width="5" stroke-linecap="round" stroke-dasharray="163" stroke-dashoffset="163" style="transition:stroke-dashoffset .6s ease"/>
+            </svg>
+            <div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center">
+              <div id="hmLipVal" style="font-family:'Bebas Neue',sans-serif;font-size:14px;color:var(--text)">0g</div>
+            </div>
+          </div>
+          <div style="font-size:9px;color:#F59E0B;font-weight:700;letter-spacing:1px;margin-top:6px">LIP</div>
+        </div>
+      </div>
+    </div>
+
     <!-- BANNIÈRE PROFIL COMPLÉTION — Style Tinder/Bumble -->
     <div id="discoveryBanner" style="display:none;background:var(--surface);margin:16px 20px 0;border-radius:18px;padding:0;overflow:hidden;box-shadow:var(--card-shadow);border:1px solid var(--border)">
 
@@ -6219,6 +6293,154 @@ function renderUserData() {
   else if (user.satDone) titanMsg = titanMsgs.normal;
   else if (user.streak < 2) titanMsg = titanMsgs.lowStreak;
   document.getElementById('titanHomeMsg').textContent = getTitanContextualMessage();
+
+  // Eklo-style additions
+  try { renderHomeAgenda(); } catch(e) { console.warn('agenda render:', e); }
+  try { renderHomeMacros(); } catch(e) { console.warn('macros render:', e); }
+}
+
+// ═══ HOME AGENDA HEBDO (style Eklo) ═══
+function renderHomeAgenda() {
+  var row = document.getElementById('homeAgendaRow');
+  if (!row) return;
+
+  var profile = {};
+  try { profile = JSON.parse(localStorage.getItem('ah_profile') || '{}'); } catch(e) {}
+
+  // Build week schedule from PROGRAMS_V2 if available
+  var weekDays = null;
+  var progKey = profile.programKey || user.programKey;
+  if (progKey && typeof PROGRAMS_V2 !== 'undefined' && PROGRAMS_V2[progKey]) {
+    var p = PROGRAMS_V2[progKey];
+    var firstPhase = p.phases && p.phases[0];
+    if (firstPhase && firstPhase.weekDays) weekDays = firstPhase.weekDays;
+  }
+  // Fallback : standard 4-day split
+  if (!weekDays) {
+    weekDays = [
+      {day:'Lun',key:'j1'},{day:'Mar',key:'rest'},{day:'Mer',key:'j2'},
+      {day:'Jeu',key:'rest'},{day:'Ven',key:'j3'},{day:'Sam',key:'j4'},{day:'Dim',key:'rest'}
+    ];
+  }
+
+  // Get completed sessions from history
+  var doneDays = {};
+  try {
+    var hist = JSON.parse(localStorage.getItem('ah_set_history') || '[]');
+    var startOfWeek = new Date();
+    startOfWeek.setDate(startOfWeek.getDate() - ((startOfWeek.getDay() + 6) % 7));
+    startOfWeek.setHours(0,0,0,0);
+    hist.forEach(function(h){
+      if (!h.date) return;
+      var d = new Date(h.date);
+      if (d >= startOfWeek) {
+        var dayIdx = (d.getDay() + 6) % 7; // Lun=0 ... Dim=6
+        doneDays[dayIdx] = true;
+      }
+    });
+  } catch(e) {}
+
+  var todayIdx = (new Date().getDay() + 6) % 7; // Lun=0 ... Dim=6
+  var html = '';
+  weekDays.forEach(function(w, i){
+    var isToday = i === todayIdx;
+    var isRest = w.key === 'rest';
+    var isDone = doneDays[i];
+    var bg, border, label, dotColor;
+
+    if (isRest) {
+      bg = 'var(--surface)'; border = '1px solid var(--border)'; label = 'REPOS'; dotColor = 'transparent';
+    } else if (isDone) {
+      bg = 'rgba(16,185,129,.12)'; border = '1px solid rgba(16,185,129,.4)'; label = '✓'; dotColor = '#10B981';
+    } else {
+      bg = 'var(--surface2)'; border = '1px solid var(--border)'; label = w.key.toUpperCase(); dotColor = 'var(--gold)';
+    }
+
+    if (isToday) {
+      bg = isDone ? 'rgba(16,185,129,.18)' : 'linear-gradient(135deg,var(--gold),var(--gold2))';
+      border = isDone ? '2px solid #10B981' : '2px solid var(--gold)';
+    }
+
+    var dayColor = isToday && !isDone ? 'var(--navy)' : 'var(--text)';
+    var labelColor = isToday && !isDone ? 'var(--navy)' : (isRest ? 'var(--muted)' : 'var(--gold)');
+
+    html += '<div onclick="homeAgendaClick(' + i + ',\'' + w.key + '\')" '
+      + 'style="flex:0 0 56px;min-width:56px;background:' + bg + ';border:' + border + ';border-radius:12px;padding:10px 4px;text-align:center;cursor:pointer;transition:transform .15s">'
+      + '<div style="font-family:\'Bebas Neue\',sans-serif;font-size:13px;letter-spacing:1px;color:' + dayColor + ';line-height:1">' + w.day.toUpperCase() + '</div>'
+      + '<div style="width:5px;height:5px;border-radius:50%;background:' + dotColor + ';margin:6px auto 4px"></div>'
+      + '<div style="font-size:9px;font-weight:800;letter-spacing:.5px;color:' + labelColor + '">' + label + '</div>'
+      + '</div>';
+  });
+  row.innerHTML = html;
+}
+
+function homeAgendaClick(dayIdx, key) {
+  if (key === 'rest') {
+    if (typeof toast === 'function') toast('Jour de repos — récupère bien.');
+    return;
+  }
+  // Open the program tab and let user pick the right day
+  if (typeof switchTab === 'function') switchTab('train');
+  if (typeof showPg === 'function') showPg('pgProg');
+}
+
+// ═══ HOME MACROS CIRCLES (style Eklo) ═══
+function renderHomeMacros() {
+  var box = document.getElementById('homeMacros');
+  if (!box) return;
+
+  var profile = {};
+  try { profile = JSON.parse(localStorage.getItem('ah_profile') || '{}'); } catch(e) {}
+
+  var calTarget = profile.nutriCal || 0;
+  // Hide block if no nutrition target set yet
+  if (!calTarget) { box.style.display = 'none'; return; }
+  box.style.display = '';
+
+  var protTarget = profile.nutriProt || 0;
+  var glucTarget = profile.nutriGluc || 0;
+  var lipTarget  = profile.nutriLip  || 0;
+
+  // Today's consumption from journal
+  var journal = [];
+  try { journal = JSON.parse(localStorage.getItem('ah_nutri_journal') || '[]'); } catch(e) {}
+  var today = new Date().toISOString().split('T')[0];
+  var todayMeals = journal.filter(function(m){ return m.date && m.date.split('T')[0] === today; });
+  var t = { cal:0, p:0, g:0, l:0 };
+  todayMeals.forEach(function(m){
+    if (m.totals) {
+      t.cal += m.totals.cal || 0;
+      t.p   += m.totals.p   || 0;
+      t.g   += m.totals.g   || 0;
+      t.l   += m.totals.l   || 0;
+    }
+  });
+
+  // Big circle: calories remaining
+  var calLeft = Math.max(0, calTarget - t.cal);
+  var calPct = calTarget > 0 ? Math.min(1, t.cal / calTarget) : 0;
+  var C_big = 2 * Math.PI * 38; // ≈239
+  var $ = function(id){ return document.getElementById(id); };
+  if ($('hmCalLeft')) $('hmCalLeft').textContent = Math.round(calLeft);
+  if ($('hmCalRing')) {
+    $('hmCalRing').setAttribute('stroke-dasharray', C_big);
+    $('hmCalRing').setAttribute('stroke-dashoffset', C_big * (1 - calPct));
+  }
+
+  // Small circles : macros remaining
+  var C_sm = 2 * Math.PI * 26; // ≈163
+  function setMacro(ringId, valId, used, target, color) {
+    var left = Math.max(0, target - used);
+    var pct = target > 0 ? Math.min(1, used / target) : 0;
+    if ($(valId)) $(valId).textContent = Math.round(left) + 'g';
+    if ($(ringId)) {
+      $(ringId).setAttribute('stroke-dasharray', C_sm);
+      $(ringId).setAttribute('stroke-dashoffset', C_sm * (1 - pct));
+    }
+  }
+  setMacro('hmProtRing', 'hmProtVal', t.p, protTarget);
+  setMacro('hmGlucRing', 'hmGlucVal', t.g, glucTarget);
+  setMacro('hmLipRing',  'hmLipVal',  t.l, lipTarget);
 }
 
 
