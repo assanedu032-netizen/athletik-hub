@@ -4345,7 +4345,7 @@ body.test-mode #testSkipBar{display:flex}
 
     <div id="accessCodeMsg" style="font-size:12px;line-height:1.5;margin-bottom:12px;display:none"></div>
 
-    <button onclick="submitAccessCode()" style="width:100%;padding:14px;background:linear-gradient(135deg,#D4AF37,#E0C25A);color:#0A0F1E;border:0;border-radius:12px;font-family:'Outfit',sans-serif;font-size:14px;font-weight:800;cursor:pointer;letter-spacing:1px">DÉBLOQUER MON ACCÈS</button>
+    <button id="accessCodeSubmitBtn" onclick="submitAccessCode()" style="width:100%;padding:14px;background:linear-gradient(135deg,#D4AF37,#E0C25A);color:#0A0F1E;border:0;border-radius:12px;font-family:'Outfit',sans-serif;font-size:14px;font-weight:800;cursor:pointer;letter-spacing:1px">DÉBLOQUER MON ACCÈS</button>
     <button onclick="closeAccessCode()" style="width:100%;margin-top:8px;padding:10px;background:transparent;border:1px solid #1B2A4A;color:#8a93a8;border-radius:12px;font-family:'Outfit',sans-serif;font-size:12px;font-weight:700;cursor:pointer">Plus tard</button>
   </div>
 </div>
@@ -10044,18 +10044,20 @@ function builderStart() {
   }
 })();
 
-// ═══ ACCÈS POST-LIVRE (codes + question) ═══
-// Vrais codes du livre "Les Secrets de la Détente Verticale" (Alassane Dia)
-// Stored lowercased; comparison is case-insensitive
-var ACCESS_CODES = {
-  'AL-88ND89':       { tier:'BETA',   label:'BETA',   color:'#10B981', valid: 14,   msg:'Accès BETA — 14 jours d\'essai.' },
-  'KEVIN-JEAN2478':  { tier:'VIP',    label:'VIP',    color:'#D4AF37', valid: null, msg:'Accès VIP — à vie. Bienvenue, athlète.' },
-  'ONANDULU78':      { tier:'MASTER', label:'MASTER', color:'#EF4444', valid: null, msg:'Accès MASTER — Titan illimité + tout débloqué.' },
+// ═══ ACCÈS POST-LIVRE (codes HMAC + question livre) ═══
+// Codes générés aléatoirement et signés HMAC côté serveur (Netlify function).
+// Format : LETTRE-RANDOM6-CHECK4 (B/V/M = BETA/VIP/MASTER)
+// Génération : scripts/gen-codes.js avec ACCESS_CODE_SECRET (env Netlify).
+// Validation : POST /.netlify/functions/check-code → { ok, tier, meta }
+// 3 codes legacy (AL-88ND89, KEVIN-JEAN2478, ONANDULU78) toujours acceptés serveur-side.
+var ACCESS_TIER_META = {
+  BETA:   { label:'BETA',   color:'#10B981', valid: 14,   msg:'Accès BETA — 14 jours d\'essai.' },
+  VIP:    { label:'VIP',    color:'#D4AF37', valid: null, msg:'Accès VIP — à vie. Bienvenue, athlète.' },
+  MASTER: { label:'MASTER', color:'#EF4444', valid: null, msg:'Accès MASTER — Titan illimité + tout débloqué.' },
 };
 
-// Question livre — basée sur la Préface (texte fixe, ne change pas avec la pagination)
+// Question livre — basée sur la Préface (texte fixe, identique pour TOUS)
 // Réponse acceptée : "Loïc" (avec/sans accents, casse libre)
-// Plusieurs orthographes tolérées dans _checkBookAnswer
 var ACCESS_BOOK_QUESTION = 'Quel est le prénom de l\'ami qui a écrit la Préface du livre ?';
 var ACCESS_BOOK_ANSWERS = ['loic', 'loïc'];
 
@@ -10096,6 +10098,7 @@ function submitAccessCode() {
   var qEl    = document.getElementById('accessQuestionInput');
   var orderEl= document.getElementById('accessOrderInput');
   var msg    = document.getElementById('accessCodeMsg');
+  var btn    = document.getElementById('accessCodeSubmitBtn');
 
   var code  = (codeEl.value || '').trim().toUpperCase();
   var ans   = (qEl.value || '').trim();
@@ -10108,51 +10111,72 @@ function submitAccessCode() {
   }
 
   if (!code) { showMsg('Saisis ton code d\'accès.', false); return; }
-
-  var def = ACCESS_CODES[code];
-  if (!def) { showMsg('Code invalide. Vérifie sur le rabat du livre.', false); return; }
-
-  // Question livre obligatoire pour valider
-  if (!ans) { showMsg('Réponds à la question livre.', false); return; }
+  if (!ans)  { showMsg('Réponds à la question livre.', false); return; }
   if (!_checkBookAnswer(ans)) {
     showMsg('Réponse incorrecte. Relis la Préface.', false);
     return;
   }
-
-  // Format Amazon : optional but validated if present
   if (order && !/^\d{3}-\d{7}-\d{7}$/.test(order)) {
     showMsg('Format n° commande Amazon invalide. Ex : 123-1234567-1234567.', false);
     return;
   }
 
-  // Sauve l'accès
-  var data = {
-    tier: def.tier,
-    code: code,
-    amazonOrder: order || null,
-    grantedAt: new Date().toISOString(),
-    expiresAt: def.valid ? new Date(Date.now() + def.valid * 86400000).toISOString() : null,
-  };
-  try { localStorage.setItem('ah_access_data', JSON.stringify(data)); } catch(e) {}
-  try { localStorage.setItem('ah_access_tier', def.tier); } catch(e) {}
+  showMsg('Vérification du code...', true);
+  if (btn) btn.disabled = true;
 
-  // Sync to Firestore profile
-  try {
-    var prof = JSON.parse(localStorage.getItem('ah_profile') || '{}');
-    prof.accessTier = def.tier;
-    prof.accessGrantedAt = data.grantedAt;
-    prof.accessExpiresAt = data.expiresAt;
-    localStorage.setItem('ah_profile', JSON.stringify(prof));
-    if (typeof fbSaveProfile === 'function') fbSaveProfile();
-  } catch(e) {}
+  fetch('/.netlify/functions/check-code', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ code: code })
+  })
+  .then(function(r) { return r.json().then(function(j){ return { status: r.status, data: j }; }); })
+  .then(function(res) {
+    if (btn) btn.disabled = false;
+    var data = res.data || {};
+    if (!data.ok) {
+      if (data.error === 'server_not_configured') {
+        showMsg('Service indisponible. Réessaie plus tard.', false);
+      } else {
+        showMsg('Code invalide. Vérifie sur le rabat du livre.', false);
+      }
+      return;
+    }
 
-  showMsg('✓ ' + def.msg, true);
-  if (typeof toast === 'function') toast('🔓 Accès ' + def.label + ' débloqué');
+    var tier = data.tier;
+    var meta = data.meta || ACCESS_TIER_META[tier] || { label: tier, msg: 'Accès débloqué.', valid: null };
 
-  setTimeout(function(){
-    closeAccessCode();
-    refreshAccessTierUI();
-  }, 1400);
+    var saved = {
+      tier: tier,
+      code: code,
+      amazonOrder: order || null,
+      grantedAt: new Date().toISOString(),
+      expiresAt: meta.valid ? new Date(Date.now() + meta.valid * 86400000).toISOString() : null,
+    };
+    try { localStorage.setItem('ah_access_data', JSON.stringify(saved)); } catch(e) {}
+    try { localStorage.setItem('ah_access_tier', tier); } catch(e) {}
+
+    try {
+      var prof = JSON.parse(localStorage.getItem('ah_profile') || '{}');
+      prof.accessTier = tier;
+      prof.accessGrantedAt = saved.grantedAt;
+      prof.accessExpiresAt = saved.expiresAt;
+      localStorage.setItem('ah_profile', JSON.stringify(prof));
+      if (typeof fbSaveProfile === 'function') fbSaveProfile();
+    } catch(e) {}
+
+    showMsg('✓ ' + meta.msg, true);
+    if (typeof toast === 'function') toast('🔓 Accès ' + meta.label + ' débloqué');
+
+    setTimeout(function(){
+      closeAccessCode();
+      refreshAccessTierUI();
+    }, 1400);
+  })
+  .catch(function(err) {
+    if (btn) btn.disabled = false;
+    console.error('[access-code]', err);
+    showMsg('Erreur réseau. Vérifie ta connexion.', false);
+  });
 }
 
 function refreshAccessTierUI() {
@@ -10165,7 +10189,7 @@ function refreshAccessTierUI() {
     if (sub) sub.textContent = 'Saisis ton code pour débloquer ton accès';
     return;
   }
-  var def = ACCESS_CODES[tier] || { color:'#D4AF37', label:tier };
+  var def = ACCESS_TIER_META[tier] || { color:'#D4AF37', label:tier };
   if (badge) {
     badge.textContent = def.label;
     badge.style.background = def.color + '22';
