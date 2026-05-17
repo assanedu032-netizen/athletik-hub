@@ -3708,6 +3708,18 @@ body.test-mode #testSkipBar{display:flex}
   <!-- Settings -->
   <div class="sec-title">⚙️ PARAMÈTRES</div>
 
+  <!-- Accès post-livre -->
+  <div class="setting-item" onclick="openAccessCode()" id="accessCodeItem">
+    <div class="si-left">
+      <div class="si-icon">📕</div>
+      <div>
+        <div class="si-text">J'ai le livre</div>
+        <div class="si-sub" id="accessCodeSub">Saisis ton code pour débloquer ton accès</div>
+      </div>
+    </div>
+    <div id="accessTierBadge" style="font-size:10px;font-weight:800;letter-spacing:1px;padding:4px 10px;border-radius:12px;background:transparent;color:var(--muted);text-transform:uppercase">—</div>
+  </div>
+
   <div class="setting-item" onclick="toggleDark()">
     <div class="si-left"><div class="si-icon">🌙</div><div><div class="si-text">Mode sombre</div></div></div>
     <div class="toggle" id="darkToggle"><div class="toggle-knob"></div></div>
@@ -4244,6 +4256,43 @@ body.test-mode #testSkipBar{display:flex}
     <!-- Boutons -->
     <button id="rmAddFavBtn" class="rm-add-btn" onclick="toggleCurrentRecipeFavorite()" style="background:linear-gradient(135deg,var(--gold),#D4B86A);color:var(--navy);margin-bottom:8px">⭐ Ajouter aux favoris (+ liste de courses)</button>
     <button class="rm-add-btn" onclick="addRecipeToJournal()" style="background:var(--surface2);color:var(--text);border:1.5px solid var(--border)">+ Ajouter au journal du jour</button>
+  </div>
+</div>
+
+<!-- ═══ ACCÈS POST-LIVRE — modal de saisie code/question ═══ -->
+<div id="accessCodeModal" style="display:none;position:fixed;inset:0;background:rgba(6,12,24,.92);backdrop-filter:blur(8px);z-index:9500;align-items:center;justify-content:center;padding:24px">
+  <div style="max-width:420px;width:100%;background:linear-gradient(180deg,#0F1626,#0A0F1E);border:1px solid #1B2A4A;border-radius:18px;padding:24px 22px;max-height:90vh;overflow-y:auto">
+    <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:14px">
+      <div>
+        <div style="font-size:42px;line-height:1">📕</div>
+        <div style="font-family:'Bebas Neue',sans-serif;font-size:22px;letter-spacing:2px;color:#fff;margin-top:6px">J'AI LE LIVRE</div>
+        <div style="font-size:11px;color:#8a93a8;line-height:1.5;margin-top:4px">Débloque ton accès Athletik Hub en validant ton achat.</div>
+      </div>
+      <button onclick="closeAccessCode()" style="background:transparent;border:0;color:#8a93a8;font-size:22px;cursor:pointer;padding:4px 8px">×</button>
+    </div>
+
+    <div style="margin-bottom:14px">
+      <label style="font-size:10px;font-weight:800;letter-spacing:1.5px;color:#D4AF37;text-transform:uppercase">Code d'accès</label>
+      <input id="accessCodeInput" type="text" placeholder="BETA / VIP / MASTER" style="width:100%;margin-top:6px;padding:12px 14px;background:#0A0F1E;border:1.5px solid #1B2A4A;border-radius:10px;font-family:'Outfit',sans-serif;font-size:14px;color:#fff;letter-spacing:1px;text-transform:uppercase;outline:none;box-sizing:border-box">
+      <div style="font-size:10px;color:#8a93a8;line-height:1.5;margin-top:4px">Le code se trouve à la fin du livre.</div>
+    </div>
+
+    <div style="margin-bottom:14px">
+      <label style="font-size:10px;font-weight:800;letter-spacing:1.5px;color:#D4AF37;text-transform:uppercase">Question livre</label>
+      <div id="accessCodeQuestion" style="font-size:13px;color:#fff;line-height:1.5;margin:6px 0">Quelle est la phrase écrite à la fin du chapitre 3 ?</div>
+      <input id="accessQuestionInput" type="text" placeholder="Ta réponse..." style="width:100%;padding:12px 14px;background:#0A0F1E;border:1.5px solid #1B2A4A;border-radius:10px;font-family:'Outfit',sans-serif;font-size:14px;color:#fff;outline:none;box-sizing:border-box">
+    </div>
+
+    <div style="margin-bottom:18px">
+      <label style="font-size:10px;font-weight:800;letter-spacing:1.5px;color:#D4AF37;text-transform:uppercase">N° commande Amazon (optionnel)</label>
+      <input id="accessOrderInput" type="text" placeholder="123-1234567-1234567" style="width:100%;margin-top:6px;padding:12px 14px;background:#0A0F1E;border:1.5px solid #1B2A4A;border-radius:10px;font-family:'Outfit',sans-serif;font-size:14px;color:#fff;outline:none;box-sizing:border-box">
+      <div style="font-size:10px;color:#8a93a8;line-height:1.5;margin-top:4px">Format : 3 chiffres - 7 chiffres - 7 chiffres</div>
+    </div>
+
+    <div id="accessCodeMsg" style="font-size:12px;line-height:1.5;margin-bottom:12px;display:none"></div>
+
+    <button onclick="submitAccessCode()" style="width:100%;padding:14px;background:linear-gradient(135deg,#D4AF37,#E0C25A);color:#0A0F1E;border:0;border-radius:12px;font-family:'Outfit',sans-serif;font-size:14px;font-weight:800;cursor:pointer;letter-spacing:1px">DÉBLOQUER MON ACCÈS</button>
+    <button onclick="closeAccessCode()" style="width:100%;margin-top:8px;padding:10px;background:transparent;border:1px solid #1B2A4A;color:#8a93a8;border-radius:12px;font-family:'Outfit',sans-serif;font-size:12px;font-weight:700;cursor:pointer">Plus tard</button>
   </div>
 </div>
 
@@ -5989,7 +6038,7 @@ function switchTab(tab){
   }
   // Init Scan check API key + restore form
   if (tab === 'nutrition') { try { scanCheckApiKey(); scanUpdateMacros(); renderJournalToday(); } catch(e) {} }
-  if (tab === 'moi') { try { apiKeyRestore(); fbRefreshAccountSection(window.fbUser); renderBadges(); } catch(e) {} }
+  if (tab === 'moi') { try { apiKeyRestore(); fbRefreshAccountSection(window.fbUser); renderBadges(); refreshAccessTierUI(); } catch(e) {} }
   // Refresh Athletik Score on Home
   if (tab === 'home') { try { renderAthletikScore(); } catch(e) { console.warn('renderAthletikScore error:', e); } }
 }
@@ -8672,8 +8721,115 @@ function toggleDark() {
 
 function toggleNotif() {
   notifOn = !notifOn;
-  document.getElementById('notifToggle').classList.toggle('on', notifOn);
+  var toggleEl = document.getElementById('notifToggle');
+  if (toggleEl) toggleEl.classList.toggle('on', notifOn);
+
+  if (notifOn) {
+    // Request browser notification permission
+    if (!('Notification' in window)) {
+      alert('Les notifications ne sont pas supportées par ce navigateur.');
+      notifOn = false;
+      if (toggleEl) toggleEl.classList.remove('on');
+      return;
+    }
+    if (Notification.permission === 'default') {
+      Notification.requestPermission().then(function(perm){
+        if (perm !== 'granted') {
+          notifOn = false;
+          if (toggleEl) toggleEl.classList.remove('on');
+          alert('Permission refusée. Active les notifications dans les paramètres du navigateur pour recevoir les rappels.');
+        } else {
+          _enableTitanReminders();
+        }
+      });
+    } else if (Notification.permission === 'granted') {
+      _enableTitanReminders();
+    } else {
+      alert('Permission refusée. Va dans les paramètres du navigateur pour autoriser les notifications.');
+      notifOn = false;
+      if (toggleEl) toggleEl.classList.remove('on');
+      return;
+    }
+  } else {
+    _disableTitanReminders();
+  }
+  try { localStorage.setItem('ah_notif_on', notifOn ? '1' : '0'); } catch(e) {}
 }
+
+// ═══ LOCAL NOTIFICATIONS — Titan reminders ═══
+var _notifTimers = [];
+
+function _enableTitanReminders() {
+  _disableTitanReminders();
+  // Daily reminder at 19:00 if no session done today
+  _scheduleDailyAt(19, 0, function(){
+    _showTitanNotif(
+      'Tu as une séance prévue 🏋️',
+      'Termine ta journée comme tu l\'as commencée. — Titan'
+    );
+  });
+  // Habit check at 21:00 if any active habit not checked today
+  _scheduleDailyAt(21, 0, function(){
+    try {
+      var habits = JSON.parse(localStorage.getItem('ah_habits') || '[]');
+      var today = new Date().toISOString().split('T')[0];
+      var pending = habits.filter(function(h){ return h.active && (!h.lastCheck || h.lastCheck.split('T')[0] !== today); });
+      if (pending.length > 0) {
+        _showTitanNotif(
+          'Habitudes 🔔',
+          'Tu as ' + pending.length + ' habitude(s) à cocher avant la fin de la journée.'
+        );
+      }
+    } catch(e) {}
+  });
+  // Welcome notif to confirm
+  setTimeout(function(){
+    _showTitanNotif('Rappels activés ✓', 'Titan te ping pour les séances et habitudes.');
+  }, 600);
+}
+
+function _disableTitanReminders() {
+  _notifTimers.forEach(function(t){ clearTimeout(t); });
+  _notifTimers = [];
+}
+
+function _scheduleDailyAt(hour, minute, cb) {
+  var now = new Date();
+  var next = new Date();
+  next.setHours(hour, minute, 0, 0);
+  if (next <= now) next.setDate(next.getDate() + 1);
+  var delay = next - now;
+  var t = setTimeout(function(){
+    try { cb(); } catch(e) {}
+    // Re-schedule for next day
+    _scheduleDailyAt(hour, minute, cb);
+  }, delay);
+  _notifTimers.push(t);
+}
+
+function _showTitanNotif(title, body) {
+  if (!('Notification' in window) || Notification.permission !== 'granted') return;
+  try {
+    var n = new Notification(title, {
+      body: body,
+      icon: '/icons/icon-192.png',
+      badge: '/icons/icon-192.png',
+      tag: 'athletik-titan',
+      vibrate: [120, 60, 120],
+    });
+    n.onclick = function(){ window.focus(); n.close(); };
+  } catch(e) { console.warn('notif:', e); }
+}
+
+// Restore notif state on boot
+(function(){
+  try {
+    if (localStorage.getItem('ah_notif_on') === '1' && 'Notification' in window && Notification.permission === 'granted') {
+      // Don't auto-enable on every page load, but resume the timers
+      setTimeout(_enableTitanReminders, 1500);
+    }
+  } catch(e) {}
+})();
 
 
 // ═══ NUTRITION MODULE ═══
@@ -9025,6 +9181,155 @@ function exitTestMode() {
 // ══════════════════════════════════
 // ÉTAPE 3/3 — NUTRITION (Mifflin-St Jeor + ajustement objectif)
 // ══════════════════════════════════
+// ═══ ACCÈS POST-LIVRE (codes + question) ═══
+// Codes valides à modifier quand Alassane communique les vrais codes
+var ACCESS_CODES = {
+  // tier : "essai 14 jours" / "à vie premium" / "à vie premium + Titan illimité"
+  'BETA':   { tier:'BETA',   label:'BETA',   color:'#10B981', valid: 14, msg:'Accès BETA — 14 jours d\'essai.' },
+  'VIP':    { tier:'VIP',    label:'VIP',    color:'#D4AF37', valid: null, msg:'Accès VIP — à vie. Bienvenue, athlète.' },
+  'MASTER': { tier:'MASTER', label:'MASTER', color:'#EF4444', valid: null, msg:'Accès MASTER — Titan illimité + tout débloqué.' },
+};
+// Réponse acceptée à la question livre (placeholder — remplace par la vraie quand Alassane l'envoie)
+// La comparaison est insensible à la casse + accents et tolère les espaces multiples.
+var ACCESS_BOOK_ANSWER = 'la motivation cest des conneries cest la discipline qui fait la difference';
+
+function openAccessCode() {
+  var modal = document.getElementById('accessCodeModal');
+  if (modal) modal.style.display = 'flex';
+  // Pré-rempli si déjà saisi
+  try {
+    var saved = JSON.parse(localStorage.getItem('ah_access_data') || '{}');
+    if (saved.code) (document.getElementById('accessCodeInput') || {}).value = saved.code;
+    if (saved.amazonOrder) (document.getElementById('accessOrderInput') || {}).value = saved.amazonOrder;
+  } catch(e) {}
+}
+
+function closeAccessCode() {
+  var modal = document.getElementById('accessCodeModal');
+  if (modal) modal.style.display = 'none';
+}
+
+function _normalise(str) {
+  return (str || '').toString().toLowerCase()
+    .normalize('NFD').replace(/[̀-ͯ]/g, '')
+    .replace(/[^a-z0-9\s]/g, '')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+function submitAccessCode() {
+  var codeEl = document.getElementById('accessCodeInput');
+  var qEl    = document.getElementById('accessQuestionInput');
+  var orderEl= document.getElementById('accessOrderInput');
+  var msg    = document.getElementById('accessCodeMsg');
+
+  var code  = (codeEl.value || '').trim().toUpperCase();
+  var ans   = (qEl.value || '').trim();
+  var order = (orderEl.value || '').trim();
+
+  function showMsg(text, ok) {
+    msg.style.display = '';
+    msg.textContent = text;
+    msg.style.color = ok ? '#10B981' : '#EF4444';
+  }
+
+  if (!code) { showMsg('Saisis ton code d\'accès.', false); return; }
+
+  var def = ACCESS_CODES[code];
+  if (!def) { showMsg('Code invalide. Vérifie sur le rabat du livre.', false); return; }
+
+  // Question livre obligatoire pour valider
+  if (!ans) { showMsg('Réponds à la question livre.', false); return; }
+  if (_normalise(ans).indexOf(_normalise(ACCESS_BOOK_ANSWER).slice(0, 20)) === -1) {
+    showMsg('Réponse incorrecte. Relis attentivement le chapitre.', false);
+    return;
+  }
+
+  // Format Amazon : optional but validated if present
+  if (order && !/^\d{3}-\d{7}-\d{7}$/.test(order)) {
+    showMsg('Format n° commande Amazon invalide. Ex : 123-1234567-1234567.', false);
+    return;
+  }
+
+  // Sauve l'accès
+  var data = {
+    tier: def.tier,
+    code: code,
+    amazonOrder: order || null,
+    grantedAt: new Date().toISOString(),
+    expiresAt: def.valid ? new Date(Date.now() + def.valid * 86400000).toISOString() : null,
+  };
+  try { localStorage.setItem('ah_access_data', JSON.stringify(data)); } catch(e) {}
+  try { localStorage.setItem('ah_access_tier', def.tier); } catch(e) {}
+
+  // Sync to Firestore profile
+  try {
+    var prof = JSON.parse(localStorage.getItem('ah_profile') || '{}');
+    prof.accessTier = def.tier;
+    prof.accessGrantedAt = data.grantedAt;
+    prof.accessExpiresAt = data.expiresAt;
+    localStorage.setItem('ah_profile', JSON.stringify(prof));
+    if (typeof fbSaveProfile === 'function') fbSaveProfile();
+  } catch(e) {}
+
+  showMsg('✓ ' + def.msg, true);
+  if (typeof toast === 'function') toast('🔓 Accès ' + def.label + ' débloqué');
+
+  setTimeout(function(){
+    closeAccessCode();
+    refreshAccessTierUI();
+  }, 1400);
+}
+
+function refreshAccessTierUI() {
+  var tier = null;
+  try { tier = localStorage.getItem('ah_access_tier'); } catch(e) {}
+  var badge = document.getElementById('accessTierBadge');
+  var sub = document.getElementById('accessCodeSub');
+  if (!tier) {
+    if (badge) { badge.textContent = '—'; badge.style.background = 'transparent'; badge.style.color = 'var(--muted)'; }
+    if (sub) sub.textContent = 'Saisis ton code pour débloquer ton accès';
+    return;
+  }
+  var def = ACCESS_CODES[tier] || { color:'#D4AF37', label:tier };
+  if (badge) {
+    badge.textContent = def.label;
+    badge.style.background = def.color + '22';
+    badge.style.color = def.color;
+    badge.style.border = '1px solid ' + def.color;
+  }
+  // Check expiration
+  try {
+    var data = JSON.parse(localStorage.getItem('ah_access_data') || '{}');
+    if (data.expiresAt && new Date(data.expiresAt) < new Date()) {
+      if (sub) sub.textContent = 'Ton accès ' + tier + ' a expiré. Renouvelle pour continuer.';
+      if (badge) { badge.style.opacity = '.5'; }
+    } else if (data.expiresAt) {
+      var daysLeft = Math.ceil((new Date(data.expiresAt) - new Date()) / 86400000);
+      if (sub) sub.textContent = 'Accès ' + tier + ' — ' + daysLeft + ' jour(s) restants';
+    } else {
+      if (sub) sub.textContent = 'Accès ' + tier + ' — à vie ✓';
+    }
+  } catch(e) {}
+}
+
+// Helper public : check si l'utilisateur a au moins un certain tier d'accès
+window.hasAccessTier = function(minTier) {
+  var order = ['BETA','VIP','MASTER'];
+  var tier = null;
+  try { tier = localStorage.getItem('ah_access_tier'); } catch(e) {}
+  if (!tier) return false;
+  // Check expiration
+  try {
+    var data = JSON.parse(localStorage.getItem('ah_access_data') || '{}');
+    if (data.expiresAt && new Date(data.expiresAt) < new Date()) return false;
+  } catch(e) {}
+  return order.indexOf(tier) >= order.indexOf(minTier);
+};
+
+// Refresh UI on boot
+(function(){ try { setTimeout(refreshAccessTierUI, 600); } catch(e) {} })();
+
 // ═══ BADGES (logique d'unlock) ═══
 var BADGES_DEF = [
   { id:'firstStep',  icon:'🔥', name:'Premier Pas',  desc:'1ère séance terminée',     check: function(s){ return (s.sessionsDone||0) >= 1; } },
