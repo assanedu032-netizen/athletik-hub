@@ -1874,8 +1874,11 @@ body.test-mode #testSkipBar{display:flex}
       <button onclick="welcomeStart()" style="width:100%;padding:17px;background:linear-gradient(135deg,var(--gold),#D4B86A);border:none;border-radius:14px;font-family:'Outfit',sans-serif;font-size:15px;font-weight:800;color:var(--navy);cursor:pointer;letter-spacing:.5px;box-shadow:0 8px 24px rgba(197,164,78,.25);margin-bottom:10px">
         Commencer mon parcours →
       </button>
-      <button onclick="welcomeLogin()" style="width:100%;padding:15px;background:transparent;border:1.5px solid rgba(255,255,255,.15);border-radius:14px;font-family:'Outfit',sans-serif;font-size:13px;font-weight:600;color:rgba(255,255,255,.7);cursor:pointer">
+      <button onclick="welcomeLogin()" style="width:100%;padding:15px;background:transparent;border:1.5px solid rgba(255,255,255,.15);border-radius:14px;font-family:'Outfit',sans-serif;font-size:13px;font-weight:600;color:rgba(255,255,255,.7);cursor:pointer;margin-bottom:10px">
         J'ai déjà un compte
+      </button>
+      <button onclick="openAccessCode()" style="width:100%;padding:13px;background:rgba(197,164,78,.08);border:1.5px solid rgba(197,164,78,.35);border-radius:14px;font-family:'Outfit',sans-serif;font-size:13px;font-weight:700;color:var(--gold);cursor:pointer;letter-spacing:.3px">
+        📕 J'ai le livre — Saisir mon code
       </button>
     </div>
 
@@ -2071,6 +2074,7 @@ body.test-mode #testSkipBar{display:flex}
         <a href="#" onclick="fbToggleAuthMode();return false;" id="toggleAuthMode" style="color:var(--gold);text-decoration:none;font-weight:600">Déjà un compte ? Se connecter</a>
       </div>
       <button onclick="obTestMode()" style="width:100%;padding:12px;margin-top:12px;background:none;border:1.5px dashed var(--border2);border-radius:12px;font-family:'Outfit',sans-serif;font-size:12px;font-weight:700;color:var(--muted);cursor:pointer">⚡ Accès Test — Sans compte</button>
+      <button onclick="openAccessCode()" style="width:100%;padding:12px;margin-top:8px;background:rgba(197,164,78,.08);border:1.5px solid rgba(197,164,78,.35);border-radius:12px;font-family:'Outfit',sans-serif;font-size:12px;font-weight:700;color:var(--gold);cursor:pointer;letter-spacing:.3px">📕 J'ai le livre — Saisir mon code</button>
     </div>
     <div class="af">Déjà un compte ? <a href="#" onclick="fbSignIn();return false">Se connecter</a></div>
     <div class="af"><a href="#" onclick="fbForgotPassword();return false;" style="color:var(--muted)">Mot de passe oublié ?</a></div>
