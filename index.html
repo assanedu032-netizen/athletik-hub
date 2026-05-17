@@ -3645,20 +3645,9 @@ body.test-mode #testSkipBar{display:flex}
   </div>
 
   <!-- Achievement Badges -->
-  <div class="sec-title">🎖️ BADGES</div>
-  <div class="badge-grid">
-    <div class="badge earned"><div class="badge-icon">🔥</div><div class="badge-name">Premier Pas</div><div class="badge-desc">1ère séance terminée</div></div>
-    <div class="badge earned"><div class="badge-icon">📊</div><div class="badge-name">Data Driven</div><div class="badge-desc">1er exercice tracké</div></div>
-    <div class="badge locked"><div class="badge-icon">🏆</div><div class="badge-name">Testeur</div><div class="badge-desc">SAT complété</div></div>
-    <div class="badge locked"><div class="badge-icon">⚡</div><div class="badge-name">Streak 7</div><div class="badge-desc">7 jours consécutifs</div></div>
-    <div class="badge locked"><div class="badge-icon">🦅</div><div class="badge-name">Streak 30</div><div class="badge-desc">30 jours consécutifs</div></div>
-    <div class="badge locked"><div class="badge-icon">💪</div><div class="badge-name">Phase 1</div><div class="badge-desc">Fondations terminées</div></div>
-    <div class="badge locked"><div class="badge-icon">🏀</div><div class="badge-name">Programme 1</div><div class="badge-desc">1er programme fini</div></div>
-    <div class="badge locked"><div class="badge-icon">🛠️</div><div class="badge-name">Builder</div><div class="badge-desc">Workout Builder débloqué</div></div>
-    <div class="badge locked"><div class="badge-icon">🔱</div><div class="badge-name">Surhumain</div><div class="badge-desc">Score 91+/100</div></div>
-    <div class="badge locked"><div class="badge-icon">📈</div><div class="badge-name">PR Hunter</div><div class="badge-desc">5 records personnels</div></div>
-    <div class="badge locked"><div class="badge-icon">🧘</div><div class="badge-name">Zen Master</div><div class="badge-desc">Protocole Flow 10 fois</div></div>
-    <div class="badge locked"><div class="badge-icon">👑</div><div class="badge-name">Légende</div><div class="badge-desc">2 programmes terminés</div></div>
+  <div class="sec-title">🎖️ BADGES <span id="badgesCount" style="font-size:11px;color:var(--muted);font-weight:600;margin-left:8px">0 / 12</span></div>
+  <div class="badge-grid" id="badgeGrid">
+    <!-- Injecté par renderBadges() -->
   </div>
 
   <!-- Titan Engine Mode -->
@@ -4166,11 +4155,14 @@ body.test-mode #testSkipBar{display:flex}
       <!-- Zone dynamique : remplie par renderShoppingList() -->
       <div id="shoppingList"></div>
 
+      <!-- Liste depuis le plan repas auto -->
+      <div id="mealPlanShoppingList"></div>
+
       <!-- État vide -->
       <div id="shoppingEmpty" style="display:none;text-align:center;padding:40px 20px;color:var(--muted)">
         <div style="font-size:42px;margin-bottom:10px">🛒</div>
         <div style="font-size:14px;font-weight:700;color:var(--text);margin-bottom:6px">Ta liste est vide</div>
-        <div style="font-size:12px;line-height:1.5;max-width:240px;margin:0 auto">Va dans <strong style="color:var(--gold)">Recettes</strong>, ajoute des recettes en favoris, puis reviens ici.</div>
+        <div style="font-size:12px;line-height:1.5;max-width:240px;margin:0 auto">Va dans <strong style="color:var(--gold)">Recettes</strong>, ajoute des recettes en favoris, puis reviens ici. Ou utilise le <strong style="color:var(--gold)">Plan repas auto</strong> dans Journal.</div>
       </div>
     </div>
 
@@ -4359,7 +4351,10 @@ function showNutriTab(el, tab) {
   if (target) target.classList.add('on');
   // Init dynamique par tab
   if (tab === 'recettes') { try { renderRecipesList(); } catch(e) {} }
-  if (tab === 'courses')  { try { renderShoppingList(); } catch(e) {} }
+  if (tab === 'courses')  {
+    try { renderShoppingList(); } catch(e) {}
+    try { renderMealPlanShoppingList(); } catch(e) {}
+  }
 }
 
 // ═══ RECIPE DATA — 40 recettes (Athletik Hub premium content) ═══
@@ -5994,7 +5989,7 @@ function switchTab(tab){
   }
   // Init Scan check API key + restore form
   if (tab === 'nutrition') { try { scanCheckApiKey(); scanUpdateMacros(); renderJournalToday(); } catch(e) {} }
-  if (tab === 'moi') { try { apiKeyRestore(); fbRefreshAccountSection(window.fbUser); } catch(e) {} }
+  if (tab === 'moi') { try { apiKeyRestore(); fbRefreshAccountSection(window.fbUser); renderBadges(); } catch(e) {} }
   // Refresh Athletik Score on Home
   if (tab === 'home') { try { renderAthletikScore(); } catch(e) { console.warn('renderAthletikScore error:', e); } }
 }
@@ -6585,6 +6580,17 @@ function calculateSAT() {
     user.levelIcon = lv.icon;
     try { if (typeof saveData === 'function') saveData(); } catch(e) {}
   }
+
+  // Persist to profile + trigger badge re-check
+  try {
+    var prof = JSON.parse(localStorage.getItem('ah_profile') || '{}');
+    prof.satDone = true;
+    prof.athScore = totalScore;
+    prof.vertJump = vertJump;
+    localStorage.setItem('ah_profile', JSON.stringify(prof));
+    if (typeof fbSaveProfile === 'function') fbSaveProfile();
+  } catch(e) {}
+  try { renderBadges(); } catch(e) {}
 
   document.getElementById('satForm').classList.add('hidden');
   document.getElementById('satResult').classList.remove('hidden');
@@ -8329,6 +8335,14 @@ function exitLiveV2(finished) {
         + '<div class="sum-body"><div class="sum-name">' + d.name + '</div>'
         + '<div class="sum-data">' + (d.reps !== '—' ? d.reps : 'Terminé') + '</div></div></div>';
     });
+    // Badge hooks : count completed session
+    try {
+      _bumpProfileCounter('sessionsDone', 1);
+      var hist = JSON.parse(localStorage.getItem('ah_set_history') || '[]');
+      hist.push({ type:'session', sessName: lv2State.sessName || 'Séance', date: new Date().toISOString() });
+      localStorage.setItem('ah_set_history', JSON.stringify(hist));
+      renderBadges();
+    } catch(e) {}
   } else {
     document.getElementById('liveStart').classList.remove('hidden');
   }
@@ -9011,6 +9025,91 @@ function exitTestMode() {
 // ══════════════════════════════════
 // ÉTAPE 3/3 — NUTRITION (Mifflin-St Jeor + ajustement objectif)
 // ══════════════════════════════════
+// ═══ BADGES (logique d'unlock) ═══
+var BADGES_DEF = [
+  { id:'firstStep',  icon:'🔥', name:'Premier Pas',  desc:'1ère séance terminée',     check: function(s){ return (s.sessionsDone||0) >= 1; } },
+  { id:'dataDriven', icon:'📊', name:'Data Driven',  desc:'1er exercice tracké',      check: function(s){ return (s.trackEntries||0) >= 1; } },
+  { id:'tester',     icon:'🏆', name:'Testeur',      desc:'SAT complété',             check: function(s){ return !!s.satDone; } },
+  { id:'streak7',    icon:'⚡', name:'Streak 7',     desc:'7 jours consécutifs',      check: function(s){ return (s.streak||0) >= 7; } },
+  { id:'streak30',   icon:'🦅', name:'Streak 30',    desc:'30 jours consécutifs',     check: function(s){ return (s.streak||0) >= 30; } },
+  { id:'phase1',     icon:'💪', name:'Phase 1',      desc:'Fondations terminées',     check: function(s){ return (s.phasesDone||0) >= 1; } },
+  { id:'prog1',      icon:'🏀', name:'Programme 1',  desc:'1er programme fini',       check: function(s){ return (s.programsDone||0) >= 1; } },
+  { id:'builder',    icon:'🛠️', name:'Builder',      desc:'Workout Builder débloqué', check: function(s){ return (s.sessionsDone||0) >= 10; } },
+  { id:'surhumain',  icon:'🔱', name:'Surhumain',    desc:'Score 91+/100',            check: function(s){ return (s.athScore||0) >= 91; } },
+  { id:'prHunter',   icon:'📈', name:'PR Hunter',    desc:'5 records personnels',     check: function(s){ return (s.prs||0) >= 5; } },
+  { id:'zenMaster',  icon:'🧘', name:'Zen Master',   desc:'Protocole Flow 10 fois',   check: function(s){ return (s.flowDone||0) >= 10; } },
+  { id:'legende',    icon:'👑', name:'Légende',      desc:'2 programmes terminés',    check: function(s){ return (s.programsDone||0) >= 2; } },
+];
+
+function _badgeState() {
+  var profile = {};
+  try { profile = JSON.parse(localStorage.getItem('ah_profile') || '{}'); } catch(e) {}
+  var hist = [];
+  try { hist = JSON.parse(localStorage.getItem('ah_set_history') || '[]'); } catch(e) {}
+  // Count unique session-completion events
+  var sessionsDone = hist.filter(function(h){ return h.type === 'session' || h.sessName; }).length;
+  // Count tracked entries (SET history, SAT, set history)
+  var trackEntries = hist.filter(function(h){ return h.exo || h.type === 'track'; }).length;
+  return {
+    sessionsDone: profile.sessionsDone != null ? profile.sessionsDone : sessionsDone,
+    trackEntries: profile.trackEntries != null ? profile.trackEntries : trackEntries,
+    satDone:      !!(profile.satDone || (typeof user !== 'undefined' && user.satDone)),
+    streak:       profile.streak || (typeof user !== 'undefined' ? user.streak : 0) || 0,
+    phasesDone:   profile.phasesDone || 0,
+    programsDone: profile.programsDone || 0,
+    athScore:     profile.athScore || (typeof user !== 'undefined' ? user.athScore : 0) || 0,
+    prs:          profile.prs || 0,
+    flowDone:     profile.flowDone || 0,
+  };
+}
+
+function renderBadges() {
+  var grid = document.getElementById('badgeGrid');
+  if (!grid) return;
+  var s = _badgeState();
+  var earnedCount = 0;
+  var html = '';
+  BADGES_DEF.forEach(function(b){
+    var earned = false;
+    try { earned = !!b.check(s); } catch(e) {}
+    if (earned) earnedCount++;
+    html += '<div class="badge ' + (earned ? 'earned' : 'locked') + '" data-bid="' + b.id + '">'
+      + '<div class="badge-icon">' + b.icon + '</div>'
+      + '<div class="badge-name">' + b.name + '</div>'
+      + '<div class="badge-desc">' + b.desc + '</div></div>';
+  });
+  grid.innerHTML = html;
+  var cnt = document.getElementById('badgesCount');
+  if (cnt) cnt.textContent = earnedCount + ' / ' + BADGES_DEF.length;
+  var psBadges = document.getElementById('psBadges');
+  if (psBadges) psBadges.textContent = earnedCount;
+
+  // Trigger badge-earned celebration if any new ones were unlocked since last render
+  try {
+    var prev = JSON.parse(localStorage.getItem('ah_badges_earned') || '[]');
+    var nowEarned = BADGES_DEF.filter(function(b){
+      try { return !!b.check(s); } catch(e) { return false; }
+    }).map(function(b){ return b.id; });
+    var newly = nowEarned.filter(function(id){ return prev.indexOf(id) === -1; });
+    localStorage.setItem('ah_badges_earned', JSON.stringify(nowEarned));
+    if (newly.length && prev.length > 0) {
+      // Don't celebrate on first ever render
+      var b = BADGES_DEF.find(function(b){ return b.id === newly[0]; });
+      if (b && typeof toast === 'function') toast('🎖️ Badge débloqué : ' + b.icon + ' ' + b.name);
+    }
+  } catch(e) {}
+}
+
+// Increment a counter in the profile (used by session/track completion hooks)
+function _bumpProfileCounter(key, delta) {
+  try {
+    var profile = JSON.parse(localStorage.getItem('ah_profile') || '{}');
+    profile[key] = (profile[key] || 0) + (delta || 1);
+    localStorage.setItem('ah_profile', JSON.stringify(profile));
+    try { if (typeof fbSaveProfile === 'function') fbSaveProfile(); } catch(e) {}
+  } catch(e) {}
+}
+
 // ═══ SAT SELF-ASSESSMENT (étape 2/3 onboarding) ═══
 function pickSATSelf(el, level) {
   // Highlight chosen option
@@ -9239,7 +9338,111 @@ function _mealRowHtml(slot, r) {
 }
 
 function addMealPlanToShopping() {
-  alert('Liste de courses agrégée (à finaliser avec Firebase pour sauvegarder).');
+  if (typeof RECIPES === 'undefined') { alert('Recettes non chargées'); return; }
+  // Re-run the same rotation as generateMealPlan() to know which recipes are in the week
+  var pres = [], meals = [], posts = [];
+  Object.keys(RECIPES).forEach(function(k){
+    var r = Object.assign({key:k}, RECIPES[k]);
+    if (r.tag === 'pre')  pres.push(r);
+    else if (r.tag === 'post') posts.push(r);
+    else meals.push(r);
+  });
+  if (!pres.length || !meals.length) { alert('Pas assez de recettes pour générer le plan.'); return; }
+  if (!posts.length) posts = meals.slice();
+
+  var rotate = function(arr, offset) { return arr[offset % arr.length]; };
+  var weekRecipes = [];
+  for (var i = 0; i < 7; i++) {
+    weekRecipes.push(rotate(pres,  i));
+    weekRecipes.push(rotate(meals, i));
+    weekRecipes.push(rotate(meals, i + 1));
+    weekRecipes.push(rotate(posts, i));
+  }
+
+  // Aggregate ingredients across all recipes — sum quantities when same name
+  var agg = {};
+  weekRecipes.forEach(function(r){
+    if (!r.ingredients || !Array.isArray(r.ingredients)) return;
+    r.ingredients.forEach(function(ing){
+      var name, qty, unit;
+      if (typeof ing === 'string') {
+        // String format : try to parse "100g poulet" or "2 oeufs"
+        var m = ing.match(/^([\d.,]+)\s*([a-zA-Zàâéèêëîïôûùç]*)\s+(.+)$/);
+        if (m) { qty = parseFloat(m[1].replace(',', '.')); unit = m[2] || ''; name = m[3].trim().toLowerCase(); }
+        else { qty = 1; unit = ''; name = ing.trim().toLowerCase(); }
+      } else if (typeof ing === 'object') {
+        name = (ing.name || ing.n || '').toLowerCase();
+        qty  = ing.qty  || ing.q || 1;
+        unit = ing.unit || ing.u || '';
+      } else { return; }
+      if (!name) return;
+      var key = name + '|' + unit;
+      if (!agg[key]) agg[key] = { name: name, qty: 0, unit: unit };
+      agg[key].qty += qty;
+    });
+  });
+
+  var items = Object.values(agg);
+  if (!items.length) {
+    alert('Les recettes n\'ont pas d\'ingrédients détaillés. Liste vide.');
+    return;
+  }
+
+  // Save to shopping list state (the existing ah_shopping_checks system uses item names as keys)
+  try {
+    var existing = JSON.parse(localStorage.getItem('ah_shopping_meal_plan') || '[]');
+    items.forEach(function(it){
+      var line = (Math.round(it.qty * 10) / 10) + (it.unit ? it.unit : 'x') + ' ' + it.name;
+      if (existing.indexOf(line) === -1) existing.push(line);
+    });
+    localStorage.setItem('ah_shopping_meal_plan', JSON.stringify(existing));
+  } catch(e) { console.warn('shopping save:', e); }
+
+  // Sync to Firestore profile if logged in
+  try { if (typeof fbSaveProfile === 'function') fbSaveProfile(); } catch(e) {}
+
+  if (typeof toast === 'function') toast('🛒 ' + items.length + ' ingrédients ajoutés à la liste de courses');
+  else alert('🛒 ' + items.length + ' ingrédients agrégés depuis le plan repas. Va dans Nutrition > Courses pour les voir.');
+
+  // If a shopping list renderer exists, refresh it
+  try { if (typeof renderMealPlanShoppingList === 'function') renderMealPlanShoppingList(); } catch(e) {}
+}
+
+function renderMealPlanShoppingList() {
+  var el = document.getElementById('mealPlanShoppingList');
+  if (!el) return;
+  var items = [];
+  try { items = JSON.parse(localStorage.getItem('ah_shopping_meal_plan') || '[]'); } catch(e) {}
+  if (!items.length) { el.innerHTML = ''; return; }
+  var checked = {};
+  try { checked = JSON.parse(localStorage.getItem('ah_shopping_meal_plan_checks') || '{}'); } catch(e) {}
+  var html = '<div style="margin-top:12px;padding:12px;background:var(--surface);border:1px solid var(--border);border-radius:10px"><div style="font-size:10px;color:var(--gold);font-weight:800;letter-spacing:1.5px;margin-bottom:8px">DEPUIS LE PLAN REPAS</div>';
+  items.forEach(function(line, i){
+    var isChecked = !!checked[i];
+    html += '<label style="display:flex;align-items:center;gap:8px;padding:5px 0;cursor:pointer;font-size:13px;color:' + (isChecked ? 'var(--muted)' : 'var(--text)') + ';text-decoration:' + (isChecked ? 'line-through' : 'none') + '">'
+      + '<input type="checkbox" ' + (isChecked ? 'checked' : '') + ' onchange="_toggleMealPlanCheck(' + i + ')" style="cursor:pointer">'
+      + line + '</label>';
+  });
+  html += '<button onclick="_clearMealPlanShoppingList()" style="margin-top:8px;padding:6px 12px;background:transparent;color:var(--muted);border:1px solid var(--border);border-radius:8px;font-size:11px;cursor:pointer">Vider la liste</button>';
+  html += '</div>';
+  el.innerHTML = html;
+}
+
+function _toggleMealPlanCheck(i) {
+  var checked = {};
+  try { checked = JSON.parse(localStorage.getItem('ah_shopping_meal_plan_checks') || '{}'); } catch(e) {}
+  checked[i] = !checked[i];
+  try { localStorage.setItem('ah_shopping_meal_plan_checks', JSON.stringify(checked)); } catch(e) {}
+  renderMealPlanShoppingList();
+}
+
+function _clearMealPlanShoppingList() {
+  if (!confirm('Vider la liste agrégée du plan repas ?')) return;
+  try {
+    localStorage.removeItem('ah_shopping_meal_plan');
+    localStorage.removeItem('ah_shopping_meal_plan_checks');
+  } catch(e) {}
+  renderMealPlanShoppingList();
 }
 
 // CALENDRIER
