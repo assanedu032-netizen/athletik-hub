@@ -11365,8 +11365,17 @@ function obSubmitId() {
   var prenom = document.getElementById('p1Prenom') ? document.getElementById('p1Prenom').value.trim() : '';
   var age = document.getElementById('p1Age') ? document.getElementById('p1Age').value : '';
   var err = document.getElementById('p1err');
-  if (!prenom) { if(err){err.textContent='Entre ton prénom.';err.style.display='block';} return; }
-  if (!age) { if(err){err.textContent='Choisis ton âge.';err.style.display='block';} return; }
+  function showErr(msg) { if (err) { err.textContent = msg; err.style.display = 'block'; } }
+  if (!prenom) { showErr('Entre ton prénom.'); return; }
+  if (prenom.length < 2) { showErr('Ton prénom doit faire au moins 2 caractères.'); return; }
+  if (prenom.length > 30) { showErr('Ton prénom est trop long (30 caractères max).'); return; }
+  // Accepte lettres + accents + apostrophe + tiret + espace (ex: Jean-Loïc, D'Aurélien)
+  if (!/^[A-Za-zÀ-ÖØ-öø-ÿ\s'\-]+$/.test(prenom)) {
+    showErr('Prénom invalide. Utilise uniquement des lettres.');
+    return;
+  }
+  if (!OB.sexe && !R.sexe) { showErr('Choisis ton sexe.'); return; }
+  if (!age) { showErr('Choisis ton âge.'); return; }
   OB.prenom = prenom.charAt(0).toUpperCase() + prenom.slice(1);
   OB.age = age;
   R.prenom = OB.prenom;
@@ -12023,8 +12032,18 @@ async function fbHandleEmailAuth() {
       await fbLoadFirestoreToLocal(cred2.user);
       fbShowMsg('Connexion établie. Accès au programme ouvert.', 'ok');
       setTimeout(function(){
-        // Si profil complet → home, sinon → reprendre onboarding au début
-        if (localStorage.getItem('ah_onboarding_done')) {
+        // Aiguillage post-signin avec reprise intelligente :
+        // - programKey défini → onboarding complet → home
+        // - objectif défini (mais pas programKey) → mode découverte → home
+        //   avec discoveryBanner qui guide les étapes restantes
+        // - rien → première fois sur ce device → obQ1
+        var prof = {};
+        try { prof = JSON.parse(localStorage.getItem('ah_profile') || '{}'); } catch(e) {}
+        var hasProgram = !!(prof.programKey || localStorage.getItem('ah_onboarding_done'));
+        var hasObjectif = !!prof.objectif;
+        if (hasProgram || hasObjectif) {
+          // En cas d'objectif sans programKey, on s'assure que discovery mode est on
+          if (hasObjectif && !hasProgram) localStorage.setItem('ah_discovery_mode', '1');
           document.querySelectorAll('.scr').forEach(function(e){ e.classList.remove('on','out'); e.style.display='none'; });
           var nav = document.getElementById('mainNav'); if (nav) nav.style.display='flex';
           try { renderUserData(); } catch(e) {}
@@ -12074,7 +12093,13 @@ async function fbGoogleSignIn() {
       await fbLoadFirestoreToLocal(cred.user);
       fbShowMsg('Connexion Google établie.', 'ok');
       setTimeout(function(){
-        if (localStorage.getItem('ah_onboarding_done')) {
+        // Reprise intelligente comme pour l'email signin
+        var prof = {};
+        try { prof = JSON.parse(localStorage.getItem('ah_profile') || '{}'); } catch(e) {}
+        var hasProgram = !!(prof.programKey || localStorage.getItem('ah_onboarding_done'));
+        var hasObjectif = !!prof.objectif;
+        if (hasProgram || hasObjectif) {
+          if (hasObjectif && !hasProgram) localStorage.setItem('ah_discovery_mode', '1');
           document.querySelectorAll('.scr').forEach(function(e){ e.classList.remove('on','out'); e.style.display='none'; });
           var nav = document.getElementById('mainNav'); if (nav) nav.style.display='flex';
           try { renderUserData(); } catch(e) {}
@@ -12201,6 +12226,16 @@ async function fbSignOut() {
   // On déclenche directement la déconnexion
   console.log('[SignOut] Starting...');
   showToast('Déconnexion en cours...', 'info');
+
+  // 0. Sync final vers Firestore AVANT de vider le localStorage,
+  // sinon les dernières modifs locales (nutrition, badges, séance en cours…)
+  // sont perdues si le user n'avait pas rechargé Home pour déclencher fbSaveProfile.
+  if (window.fb && window.fbUser && typeof fbSaveProfile === 'function') {
+    try {
+      await fbSaveProfile();
+      console.log('[SignOut] Final sync to Firestore done');
+    } catch(e) { console.warn('[SignOut] Final sync failed:', e); }
+  }
 
   // 1. Sign out Firebase si connecté
   if (window.fb && window.fb.auth) {
