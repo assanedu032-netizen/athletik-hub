@@ -5973,9 +5973,9 @@ function launchTodaySession() {
   // Met à jour l'état pour cohérence avec la page Programmes
   window._progV2State = { key: key, phaseIdx: phaseIdx, sessionKey: sessKey };
 
-  // Lance la séance plein écran
+  // Lance la séance plein écran avec la clé programme pour tracking complétion
   if (typeof launchSession === 'function') {
-    launchSession(sess.exos, sess.name, prog.name);
+    launchSession(sess.exos, sess.name, prog.name, key);
   }
 }
 window.launchTodaySession = launchTodaySession;
@@ -14976,7 +14976,7 @@ function obErr(id,msg){
 // LIVE SESSION ENGINE — GBG/Gymkee style
 // ═══════════════════════════════════════════════════
 var _LS = {
-  exos: [], idx: 0, setsLeft: 0, progName: '', sessName: '',
+  exos: [], idx: 0, setsLeft: 0, progKey: '', progName: '', sessName: '',
   restSec: 0, restTotal: 0, restInterval: null, restActive: false
 };
 
@@ -14988,6 +14988,7 @@ function _lsPersist() {
   try {
     localStorage.setItem('ah_live_session', JSON.stringify({
       exos: _LS.exos, idx: _LS.idx,
+      progKey: _LS.progKey || '',
       progName: _LS.progName, sessName: _LS.sessName,
       ts: Date.now()
     }));
@@ -15011,6 +15012,7 @@ window.resumeLiveSession = function() {
   if (!d) { renderResumeSessionBanner(); return; }
   _LS.exos = d.exos;
   _LS.idx = Math.max(0, Math.min(d.idx || 0, d.exos.length - 1));
+  _LS.progKey = d.progKey || '';
   _LS.progName = d.progName || '';
   _LS.sessName = d.sessName || '';
   _LS.restActive = false;
@@ -15084,12 +15086,15 @@ function _lsFmt(sec) {
   return (m < 10 ? '0' : '') + m + ':' + (s < 10 ? '0' : '') + s;
 }
 
-function launchSession(exos, sessName, progName) {
+function launchSession(exos, sessName, progName, progKey) {
   if (!exos || !exos.length) { showToast('Aucun exercice dans cette séance.', 'info'); return; }
   _LS.exos = exos;
   _LS.idx = 0;
   _LS.progName = progName || '';
   _LS.sessName = sessName || '';
+  // progKey explicite si fourni, sinon fallback sur l'état programme courant.
+  // Sert ensuite à _lsShowComplete pour incrémenter le bon compteur programme.
+  _LS.progKey = progKey || (window._progV2State && window._progV2State.key) || '';
   _LS.restActive = false;
   clearInterval(_LS.restInterval);
   _lsRenderEx();
@@ -15250,6 +15255,57 @@ function _lsPrevEx() {
   }
 }
 
+// Calcule le total de séances attendues pour un programme (somme des jours
+// d'entraînement non-repos sur toutes les phases × leur durée en semaines).
+// Sert à déterminer quand on peut considérer le programme comme "terminé".
+function _programExpectedSessions(progKey) {
+  if (!progKey || typeof PROGRAMS_V2 === 'undefined') return 0;
+  var p = PROGRAMS_V2[progKey];
+  if (!p || !p.phases) return 0;
+  var total = 0;
+  p.phases.forEach(function(phase) {
+    var trainingDays = 0;
+    if (phase.weekDays && phase.weekDays.length) {
+      phase.weekDays.forEach(function(d) {
+        if (d && d.s && d.s !== 'rest' && d.s !== 'bilan') trainingDays++;
+      });
+    }
+    total += (phase.weeks || 1) * trainingDays;
+  });
+  return total;
+}
+
+function _countSessionsForProgram(progKey) {
+  try {
+    var hist = JSON.parse(localStorage.getItem('ah_set_history') || '[]');
+    return hist.filter(function(h) {
+      return h && h.progKey === progKey && (h.type === 'session' || h.sessName);
+    }).length;
+  } catch(e) { return 0; }
+}
+
+// Si le programme atteint 80% des séances attendues, on l'ajoute à la liste
+// completedPrograms et on incrémente programsDone. Idempotent (n'incrémente
+// qu'une fois par progKey).
+function _checkProgramCompletion(progKey) {
+  if (!progKey) return false;
+  var expected = _programExpectedSessions(progKey);
+  if (!expected) return false;
+  var done = _countSessionsForProgram(progKey);
+  if (done < Math.ceil(expected * 0.8)) return false;
+  try {
+    var prof = JSON.parse(localStorage.getItem('ah_profile') || '{}');
+    var completed = prof.completedPrograms || [];
+    if (completed.indexOf(progKey) > -1) return false;
+    completed.push(progKey);
+    prof.completedPrograms = completed;
+    prof.programsDone = completed.length;
+    localStorage.setItem('ah_profile', JSON.stringify(prof));
+    if (typeof fbSaveProfile === 'function') fbSaveProfile();
+    return true;
+  } catch(e) { return false; }
+}
+
 function _lsShowComplete() {
   clearInterval(_LS.restInterval);
   _LS.restActive = false;
@@ -15266,6 +15322,27 @@ function _lsShowComplete() {
   document.getElementById('lsCompleteMsg').innerHTML = msg;
   if (body) body.scrollTop = 0;
   showToast('Séance terminée 🔥', 'ok');
+
+  // Tracking complétion : sessionsDone + historique + check programme terminé.
+  try {
+    _bumpProfileCounter('sessionsDone', 1);
+    var hist = JSON.parse(localStorage.getItem('ah_set_history') || '[]');
+    hist.push({
+      type: 'session',
+      progKey: _LS.progKey || '',
+      progName: _LS.progName || '',
+      sessName: _LS.sessName || '',
+      date: new Date().toISOString()
+    });
+    localStorage.setItem('ah_set_history', JSON.stringify(hist));
+    if (typeof renderBadges === 'function') renderBadges();
+    if (_LS.progKey && _checkProgramCompletion(_LS.progKey)) {
+      setTimeout(function() {
+        showToast('🏆 Programme ' + (_LS.progName || _LS.progKey) + ' terminé !', 'ok');
+      }, 1800);
+    }
+  } catch(e) { console.warn('session tracking error', e); }
+
   _lsClearPersist();
   try { renderResumeSessionBanner(); } catch(e) {}
 }
@@ -15335,7 +15412,7 @@ function startSessionGuarded() {
     return;
   }
 
-  launchSession(exos, sessName, progName);
+  launchSession(exos, sessName, progName, progKey);
 }
 window.launchSession = launchSession;
 window._lsClose = _lsClose;
