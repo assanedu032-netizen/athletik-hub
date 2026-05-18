@@ -2122,7 +2122,7 @@ body.test-mode #testSkipBar{display:flex}
         <button class="ob-chk" onclick="obChk(this,'sit','debutant')"><div class="ob-chk-box"></div><div class="ob-chk-txt">Je suis débutant (jamais fait de programme structuré)</div></button>
         <button class="ob-chk" onclick="obChk(this,'sit','avance')"><div class="ob-chk-box"></div><div class="ob-chk-txt">Je suis avancé (squat 1.8x poids de corps)</div></button>
       </div>
-      <button class="bc" onclick="obShow('p1_q2',60)">Continuer →</button>
+      <button class="bc" onclick="obContinueQ('sit','p1_q2',60)">Continuer →</button>
     </div>
 
     <!-- Q2 Contraintes -->
@@ -2137,7 +2137,7 @@ body.test-mode #testSkipBar{display:flex}
         <button class="ob-chk" onclick="obChk(this,'cont','quotidien')"><div class="ob-chk-box"></div><div class="ob-chk-txt">Disponible tous les jours 10-15 min</div></button>
         <button class="ob-chk" onclick="obChk(this,'cont','partenaire')"><div class="ob-chk-box"></div><div class="ob-chk-txt">J'ai un partenaire d'entraînement</div></button>
       </div>
-      <button class="bc" onclick="obShow('p1_q3',80)">Continuer →</button>
+      <button class="bc" onclick="obContinueQ('cont','p1_q3',80)">Continuer →</button>
     </div>
 
     <!-- Q3 Matériel -->
@@ -2151,7 +2151,7 @@ body.test-mode #testSkipBar{display:flex}
         <button class="ob-chk" onclick="obChk(this,'mat','gilet')"><div class="ob-chk-box"></div><div class="ob-chk-txt">Gilet lesté</div></button>
         <button class="ob-chk" onclick="obChk(this,'mat','rien')"><div class="ob-chk-box"></div><div class="ob-chk-txt">Rien (poids du corps uniquement)</div></button>
       </div>
-      <button class="bc" onclick="obCalcProg()">Calculer mon programme →</button>
+      <button class="bc" onclick="obContinueQ('mat',null,100)">Calculer mon programme →</button>
     </div>
   </div>
 </div>
@@ -5919,8 +5919,22 @@ function launchTodaySession() {
   var key = prof.programKey;
 
   if (!key || typeof PROGRAMS_V2 === 'undefined' || !PROGRAMS_V2[key]) {
-    if (typeof showToast === 'function') showToast('Pas de programme attribué. Choisis-en un dans Train → Programmes.', 'info');
-    try { if (typeof goToProgrammes === 'function') goToProgrammes(); else switchTab('train'); } catch(e) {}
+    // Programme pas encore attribué → l'utilisateur doit compléter le questionnaire.
+    // En mode découverte, on l'envoie sur profil1 (sit/cont/mat) plutôt qu'un toast
+    // qui le perd. Si l'onboarding est censé être fini mais programKey absent
+    // (état corrompu), fallback sur Train → Programmes.
+    if (typeof isDiscoveryMode === 'function' && isDiscoveryMode()) {
+      if (typeof showToast === 'function') showToast('Complète d\'abord ton profil pour révéler ton programme.', 'info');
+      try {
+        if (typeof discoveryGoTo === 'function') discoveryGoTo('profil1');
+        else go('profil1');
+      } catch(e) {}
+    } else {
+      if (typeof showToast === 'function') showToast('Pas de programme attribué. Termine ton onboarding.', 'info');
+      try { go('profil1'); } catch(e) {
+        try { if (typeof goToProgrammes === 'function') goToProgrammes(); else switchTab('train'); } catch(e2) {}
+      }
+    }
     return;
   }
 
@@ -10550,6 +10564,15 @@ function pickSATSelf(el, level) {
   if (typeof user !== 'undefined') user.athScoreSelf = info.score;
   if (typeof R !== 'undefined') R.athScoreSelf = info.score;
 
+  // Persiste dans ah_profile pour éviter de redemander à la reconnexion
+  try {
+    var prof = JSON.parse(localStorage.getItem('ah_profile') || '{}');
+    prof.satSelfLevel = level;
+    prof.athScoreSelf = info.score;
+    localStorage.setItem('ah_profile', JSON.stringify(prof));
+    if (typeof fbSaveProfile === 'function') fbSaveProfile();
+  } catch(e) {}
+
   var box = document.getElementById('qSATEstimate');
   var txt = document.getElementById('qSATEstimateText');
   if (box) box.style.display = '';
@@ -10629,6 +10652,25 @@ function submitNutri() {
     user.nutriObj = R.nutriObj; user.nutriMode = R.nutriMode;
     user.nutriCal = cal; user.nutriProt = prot; user.nutriGluc = gluc; user.nutriLip = lip;
   }
+
+  // Persiste dans ah_profile (source de vérité) + sync Firestore.
+  // Sans ça, à la déconnexion/reconnexion la nutrition réapparaît dans l'onboarding.
+  try {
+    var prof = JSON.parse(localStorage.getItem('ah_profile') || '{}');
+    prof.poids = poids;
+    prof.taille = taille;
+    prof.nutriObj = R.nutriObj;
+    prof.nutriMode = R.nutriMode;
+    prof.nutriCal = cal;
+    prof.nutriProt = prot;
+    prof.nutriGluc = gluc;
+    prof.nutriLip = lip;
+    prof.nutriDoneAt = new Date().toISOString();
+    // objNutri alias rétro-compat (utilisé par renderUserData/Titan ctx)
+    prof.objNutri = R.nutriObj;
+    localStorage.setItem('ah_profile', JSON.stringify(prof));
+    if (typeof fbSaveProfile === 'function') fbSaveProfile();
+  } catch(e) { console.warn('submitNutri save error:', e); }
 
   document.getElementById('nrCal').textContent  = cal;
   document.getElementById('nrProt').textContent = prot;
@@ -11273,6 +11315,26 @@ function obChk(el, group, val) {
   try { _persistOnboarding(); } catch(e) {}
 }
 
+// Valide qu'au moins 1 case est cochée avant de passer à la question suivante.
+// Sans ça, l'utilisateur peut cliquer "Continuer" sans rien sélectionner et le
+// scoring Tally se fait avec des arrays vides → résultat moins précis.
+function obContinueQ(group, nextPanelId, barPct) {
+  var arr = (typeof obChecks !== 'undefined' && obChecks[group]) ? obChecks[group] : [];
+  var err = document.getElementById('p1err');
+  if (!arr.length) {
+    if (err) {
+      var labels = { sit: 'ta situation', cont: 'tes contraintes', mat: 'ton matériel' };
+      err.textContent = 'Coche au moins une option sur ' + (labels[group] || 'cette question') + '.';
+      err.style.display = 'block';
+    }
+    return;
+  }
+  if (err) err.style.display = 'none';
+  // mat = dernière question → on calcule le programme
+  if (group === 'mat') { obCalcProg(); return; }
+  obShow(nextPanelId, barPct);
+}
+
 // Show sub-panel in profil1
 function obShow(id, barPct) {
   ['p1_id','p1_q1','p1_q2','p1_q3'].forEach(function(pid){
@@ -11288,6 +11350,13 @@ function obPickSexe(el, val) {
   document.querySelectorAll('#p1sexeGrid .sport-chip').forEach(function(c){ c.classList.remove('sel'); });
   el.classList.add('sel');
   OB.sexe = val; R.sexe = val;
+  // Persiste dans ah_profile pour éviter de redemander à la reconnexion
+  try {
+    var prof = JSON.parse(localStorage.getItem('ah_profile') || '{}');
+    prof.sexe = val;
+    localStorage.setItem('ah_profile', JSON.stringify(prof));
+    if (typeof fbSaveProfile === 'function') fbSaveProfile();
+  } catch(e) {}
   try { _persistOnboarding(); } catch(e) {}
 }
 
@@ -11296,13 +11365,31 @@ function obSubmitId() {
   var prenom = document.getElementById('p1Prenom') ? document.getElementById('p1Prenom').value.trim() : '';
   var age = document.getElementById('p1Age') ? document.getElementById('p1Age').value : '';
   var err = document.getElementById('p1err');
-  if (!prenom) { if(err){err.textContent='Entre ton prénom.';err.style.display='block';} return; }
-  if (!age) { if(err){err.textContent='Choisis ton âge.';err.style.display='block';} return; }
+  function showErr(msg) { if (err) { err.textContent = msg; err.style.display = 'block'; } }
+  if (!prenom) { showErr('Entre ton prénom.'); return; }
+  if (prenom.length < 2) { showErr('Ton prénom doit faire au moins 2 caractères.'); return; }
+  if (prenom.length > 30) { showErr('Ton prénom est trop long (30 caractères max).'); return; }
+  // Accepte lettres + accents + apostrophe + tiret + espace (ex: Jean-Loïc, D'Aurélien)
+  if (!/^[A-Za-zÀ-ÖØ-öø-ÿ\s'\-]+$/.test(prenom)) {
+    showErr('Prénom invalide. Utilise uniquement des lettres.');
+    return;
+  }
+  if (!OB.sexe && !R.sexe) { showErr('Choisis ton sexe.'); return; }
+  if (!age) { showErr('Choisis ton âge.'); return; }
   OB.prenom = prenom.charAt(0).toUpperCase() + prenom.slice(1);
   OB.age = age;
   R.prenom = OB.prenom;
   R.age = age;
   user.name = OB.prenom.toUpperCase();
+  // Persiste dans ah_profile pour éviter la perte sur déconnexion
+  try {
+    var prof = JSON.parse(localStorage.getItem('ah_profile') || '{}');
+    prof.prenom = OB.prenom;
+    prof.name = OB.prenom;
+    prof.age = age;
+    localStorage.setItem('ah_profile', JSON.stringify(prof));
+    if (typeof fbSaveProfile === 'function') fbSaveProfile();
+  } catch(e) {}
   if(err) err.style.display='none';
   try { _persistOnboarding(); } catch(e) {}
   obShow('p1_q1', 40);
@@ -11544,6 +11631,12 @@ function getProfileSteps() {
       action: function(){ discoveryGoTo('profil4'); }
     }
   ];
+  // Verrouille tests/nutri tant que profil1 n'est pas validé.
+  // Un user qui fait SAT avant profil1 aurait un score athScore sans programme
+  // attribué → données orphelines + UX confuse.
+  var profil1Done = steps[1].done;
+  steps[2].locked = !profil1Done;
+  steps[3].locked = !profil1Done;
   return steps;
 }
 
@@ -11620,24 +11713,31 @@ function renderDiscoveryBanner() {
         textColor = 'var(--text)';
       }
 
-      // Click handler inline : utilise window.openStep pour éviter tout problème de scope
-      var clickable = !step.done && !!step.actionKey;
-      var onclickAttr = clickable ? ' onclick="openProfileStep(\'' + step.actionKey + '\')"' : '';
-      var cursor = clickable ? 'pointer' : 'default';
+      // Verrouillage : si step.locked, on désactive le click et on affiche un cadenas.
+      // Évite que l'utilisateur fasse SAT/nutrition avant l'étape profil1.
+      var clickable = !step.done && !!step.actionKey && !step.locked;
+      var onclickAttr = clickable
+        ? ' onclick="openProfileStep(\'' + step.actionKey + '\')"'
+        : (step.locked ? ' onclick="showToast(\'Termine d\\\'abord ton profil personnel pour débloquer cette étape.\',\'info\')"' : '');
+      var cursor = clickable ? 'pointer' : (step.locked ? 'not-allowed' : 'default');
+      var opacity = step.locked ? '0.5' : '1';
 
-      html += '<div data-step-key="' + step.key + '"' + onclickAttr + ' style="display:flex;align-items:center;gap:12px;padding:14px 18px;cursor:' + cursor + ';transition:background .15s;' + (isLast ? '' : 'border-bottom:1px solid var(--border);') + '">';
+      html += '<div data-step-key="' + step.key + '"' + onclickAttr + ' style="display:flex;align-items:center;gap:12px;padding:14px 18px;cursor:' + cursor + ';opacity:' + opacity + ';transition:background .15s;' + (isLast ? '' : 'border-bottom:1px solid var(--border);') + '">';
 
       // Icon
-      html += '<div style="width:36px;height:36px;border-radius:50%;background:' + bgColor + ';display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0;border:1.5px solid ' + (step.done ? 'rgba(16,185,129,.25)' : 'var(--border)') + '">' + step.icon + '</div>';
+      html += '<div style="width:36px;height:36px;border-radius:50%;background:' + bgColor + ';display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0;border:1.5px solid ' + (step.done ? 'rgba(16,185,129,.25)' : 'var(--border)') + '">' + (step.locked ? '🔒' : step.icon) + '</div>';
 
       // Texte
       html += '<div style="flex:1;min-width:0">';
       html += '<div style="font-size:13px;font-weight:700;color:' + textColor + ';margin-bottom:1px;' + (step.done ? 'text-decoration:line-through;text-decoration-color:var(--muted);text-decoration-thickness:1.5px;' : '') + '">' + step.label + '</div>';
-      html += '<div style="font-size:11px;color:var(--muted);font-weight:500">' + step.desc + '</div>';
+      html += '<div style="font-size:11px;color:var(--muted);font-weight:500">' + (step.locked ? 'Termine ton profil personnel d\'abord' : step.desc) + '</div>';
       html += '</div>';
 
       // Statut à droite
-      html += '<div style="width:24px;height:24px;border-radius:50%;background:' + (step.done ? 'var(--green)' : 'transparent') + ';display:flex;align-items:center;justify-content:center;color:' + (step.done ? '#fff' : statusColor) + ';font-size:' + (step.done ? '14px' : '16px') + ';font-weight:800;flex-shrink:0">' + statusIcon + '</div>';
+      var rightIcon = step.locked ? '🔒' : statusIcon;
+      var rightBg = step.done ? 'var(--green)' : 'transparent';
+      var rightColor = step.done ? '#fff' : (step.locked ? 'var(--muted)' : statusColor);
+      html += '<div style="width:24px;height:24px;border-radius:50%;background:' + rightBg + ';display:flex;align-items:center;justify-content:center;color:' + rightColor + ';font-size:' + (step.done ? '14px' : (step.locked ? '12px' : '16px')) + ';font-weight:800;flex-shrink:0">' + rightIcon + '</div>';
 
       html += '</div>';
     });
@@ -11913,16 +12013,37 @@ async function fbHandleEmailAuth() {
       await fbMigrateLocalToFirestore(cred.user);
       fbShowMsg('Compte créé. Vérifie ton email pour activer ton compte.', 'ok');
       setTimeout(function(){
-        go('thinking');
-        setTimeout(function(){ startThinking(); }, 400);
+        // Aiguillage après signup : si le questionnaire est déjà fait (flow normal
+        // welcome → obQ1-Q4 → calcul programme → auth signup), on lance Titan analyse.
+        // Sinon (user qui crée son compte direct sans questionnaire), on l'envoie
+        // sur obQ1 pour qu'il fasse le parcours d'attribution.
+        var prof = {};
+        try { prof = JSON.parse(localStorage.getItem('ah_profile') || '{}'); } catch(e) {}
+        var hasProgram = !!(prof.programKey || (typeof OB !== 'undefined' && OB.programKey));
+        if (hasProgram) {
+          go('thinking');
+          setTimeout(function(){ startThinking(); }, 400);
+        } else {
+          go('obQ1');
+        }
       }, 1200);
     } else {
       var cred2 = await window.fb.signInWithEmailAndPassword(window.fb.auth, email, pass);
       await fbLoadFirestoreToLocal(cred2.user);
       fbShowMsg('Connexion établie. Accès au programme ouvert.', 'ok');
       setTimeout(function(){
-        // Si profil complet → home, sinon → reprendre onboarding au début
-        if (localStorage.getItem('ah_onboarding_done')) {
+        // Aiguillage post-signin avec reprise intelligente :
+        // - programKey défini → onboarding complet → home
+        // - objectif défini (mais pas programKey) → mode découverte → home
+        //   avec discoveryBanner qui guide les étapes restantes
+        // - rien → première fois sur ce device → obQ1
+        var prof = {};
+        try { prof = JSON.parse(localStorage.getItem('ah_profile') || '{}'); } catch(e) {}
+        var hasProgram = !!(prof.programKey || localStorage.getItem('ah_onboarding_done'));
+        var hasObjectif = !!prof.objectif;
+        if (hasProgram || hasObjectif) {
+          // En cas d'objectif sans programKey, on s'assure que discovery mode est on
+          if (hasObjectif && !hasProgram) localStorage.setItem('ah_discovery_mode', '1');
           document.querySelectorAll('.scr').forEach(function(e){ e.classList.remove('on','out'); e.style.display='none'; });
           var nav = document.getElementById('mainNav'); if (nav) nav.style.display='flex';
           try { renderUserData(); } catch(e) {}
@@ -11956,14 +12077,29 @@ async function fbGoogleSignIn() {
       await fbMigrateLocalToFirestore(cred.user);
       fbShowMsg('Compte Google créé. Bienvenue.', 'ok');
       setTimeout(function(){
-        go('thinking');
-        setTimeout(function(){ startThinking(); }, 400);
+        // Même aiguillage que fbHandleEmailAuth : pas de Titan analyse tant que
+        // le questionnaire d'attribution n'est pas terminé.
+        var prof = {};
+        try { prof = JSON.parse(localStorage.getItem('ah_profile') || '{}'); } catch(e) {}
+        var hasProgram = !!(prof.programKey || (typeof OB !== 'undefined' && OB.programKey));
+        if (hasProgram) {
+          go('thinking');
+          setTimeout(function(){ startThinking(); }, 400);
+        } else {
+          go('obQ1');
+        }
       }, 800);
     } else {
       await fbLoadFirestoreToLocal(cred.user);
       fbShowMsg('Connexion Google établie.', 'ok');
       setTimeout(function(){
-        if (localStorage.getItem('ah_onboarding_done')) {
+        // Reprise intelligente comme pour l'email signin
+        var prof = {};
+        try { prof = JSON.parse(localStorage.getItem('ah_profile') || '{}'); } catch(e) {}
+        var hasProgram = !!(prof.programKey || localStorage.getItem('ah_onboarding_done'));
+        var hasObjectif = !!prof.objectif;
+        if (hasProgram || hasObjectif) {
+          if (hasObjectif && !hasProgram) localStorage.setItem('ah_discovery_mode', '1');
           document.querySelectorAll('.scr').forEach(function(e){ e.classList.remove('on','out'); e.style.display='none'; });
           var nav = document.getElementById('mainNav'); if (nav) nav.style.display='flex';
           try { renderUserData(); } catch(e) {}
@@ -12090,6 +12226,16 @@ async function fbSignOut() {
   // On déclenche directement la déconnexion
   console.log('[SignOut] Starting...');
   showToast('Déconnexion en cours...', 'info');
+
+  // 0. Sync final vers Firestore AVANT de vider le localStorage,
+  // sinon les dernières modifs locales (nutrition, badges, séance en cours…)
+  // sont perdues si le user n'avait pas rechargé Home pour déclencher fbSaveProfile.
+  if (window.fb && window.fbUser && typeof fbSaveProfile === 'function') {
+    try {
+      await fbSaveProfile();
+      console.log('[SignOut] Final sync to Firestore done');
+    } catch(e) { console.warn('[SignOut] Final sync failed:', e); }
+  }
 
   // 1. Sign out Firebase si connecté
   if (window.fb && window.fb.auth) {
@@ -15205,10 +15351,29 @@ async function fbSaveProfile() {
     var ref = window.fb.doc(window.fb.db, 'users', window.fbUser.uid);
     // Construit le payload depuis localStorage (source de vérité côté client)
     var payload = _fbCollectPayload();
-    // Fallback : injecte les champs window.user qui ne seraient pas encore dans ah_profile
+    payload.profile = payload.profile || {};
+    // Filet de sécurité : récupère les champs window.user qui ne seraient pas encore
+    // dans ah_profile (cas legacy submitNutri/pickSATSelf qui n'écrivaient que sur user).
+    // Sans ça, à la reconnexion la nutrition / SAT self level réapparaissent dans
+    // l'onboarding parce que ah_profile manque ces champs.
     try {
-      if (typeof user !== 'undefined' && user && (!payload.profile || Object.keys(payload.profile).length < 3)) {
-        payload.profile = Object.assign({}, payload.profile || {}, user);
+      if (typeof user !== 'undefined' && user) {
+        var augmentFields = [
+          'poids','taille','nutriObj','objNutri','nutriMode',
+          'nutriCal','nutriProt','nutriGluc','nutriLip',
+          'satSelfLevel','athScoreSelf','sport','phase','phaseIdx',
+          'streak','level','levelIcon','weekNum','totalWeeks',
+          'lastActive','progressPct'
+        ];
+        augmentFields.forEach(function(k) {
+          if (payload.profile[k] == null && user[k] != null) {
+            payload.profile[k] = user[k];
+          }
+        });
+      }
+      // Premier write pour un user qui n'a rien dans ah_profile : fusion totale
+      if (Object.keys(payload.profile).length < 3 && typeof user !== 'undefined' && user) {
+        payload.profile = Object.assign({}, user, payload.profile);
       }
     } catch(e) {}
     payload.updatedAt = window.fb.serverTimestamp();
