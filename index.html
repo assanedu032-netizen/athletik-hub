@@ -1972,7 +1972,7 @@ body.test-mode #testSkipBar{display:flex}
   <div class="ob" style="overflow-y:auto">
     <div class="ob-step">Étape 2 / 3 — Test physique</div>
     <div class="ob-q">On va mesurer ton niveau réel.</div>
-    <div class="ob-sub">Le SAT mesure 5 choses : détente, force, sprint, agilité, mobilité. Le vrai test demande 30 min + un peu de matériel. Tu peux le faire maintenant dans Tracks &gt; SAT, ou faire une <strong style="color:var(--gold)">estimation rapide</strong> ici pour que Titan puisse t'orienter en attendant.</div>
+    <div id="qSATIntroDesc" class="ob-sub">Le SAT mesure 5 choses : détente, force, sprint, agilité, mobilité. Le vrai test demande 30 min + un peu de matériel. Tu peux le faire maintenant dans Tracks &gt; SAT, ou faire une <strong style="color:var(--gold)">estimation rapide</strong> ici pour que Titan puisse t'orienter en attendant.</div>
 
     <div style="margin-top:22px">
       <label class="fl">Estimation rapide — où tu en es ?</label>
@@ -6314,6 +6314,26 @@ function go(id) {
 
   // Trigger thinking → result
   // thinking handled by startThinking()
+
+  // Adapte le sous-titre de qSATIntro selon le programme (SAT / SET / PDC).
+  // À ce stade l'utilisateur a déjà choisi son objectif (sur obQ1) mais pas
+  // forcément validé le programme — on prend ce qu'on a, fallback SAT.
+  if (id === 'qSATIntro') {
+    try {
+      var desc = document.getElementById('qSATIntroDesc');
+      if (desc && typeof window.getTestTypeLabel === 'function') {
+        var t = window.getTestTypeLabel();
+        var blurbs = {
+          SAT: 'Le SAT mesure 5 choses : détente, force, sprint, agilité, mobilité.',
+          SET: 'Le SET mesure ton explosivité globale : vitesse, agilité, détente, conditioning.',
+          PDC: 'Tests poids du corps : pas de matériel, on évalue ton niveau brut.'
+        };
+        desc.innerHTML = (blurbs[t.short] || blurbs.SAT)
+          + ' Tu peux le faire complet dans Tracks &gt; ' + t.short
+          + ', ou faire une <strong style="color:var(--gold)">estimation rapide</strong> ici pour que Titan puisse t\'orienter en attendant.';
+      }
+    } catch(e) {}
+  }
 }
 
 // ── CHECKBOX TOGGLE ──
@@ -11614,15 +11634,21 @@ function getProfileSteps() {
       actionKey: 'profil1',
       action: function(){ discoveryGoTo('profil1'); }
     },
-    {
-      key: 'tests',
-      label: 'Tests physiques (SAT)',
-      desc: 'Pour ton Athletik Score',
-      icon: '🏋️',
-      done: !!(p.satDone || p.satDetente),
-      actionKey: 'profil3',
-      action: function(){ discoveryGoTo('profil3'); }
-    },
+    (function(){
+      // Label dynamique selon le programme attribué : SAT / SET / PDC
+      var t = (typeof window.getTestTypeLabel === 'function')
+        ? window.getTestTypeLabel(p.programKey)
+        : { short:'SAT', icon:'🏋️' };
+      return {
+        key: 'tests',
+        label: 'Tests physiques (' + t.short + ')',
+        desc: 'Pour ton Athletik Score',
+        icon: t.icon || '🏋️',
+        done: !!(p.satDone || p.satDetente),
+        actionKey: 'profil3',
+        action: function(){ discoveryGoTo('profil3'); }
+      };
+    })(),
     {
       key: 'nutri',
       label: 'Profil nutrition',
@@ -12620,6 +12646,16 @@ function renderP3SATStep() {
   }
   var ex = p3SatExercices[p3CurrentStep];
   if (!ex) return;
+
+  // Met à jour le badge type de test (SAT / SET / PDC) selon le programme attribué
+  try {
+    var badge = document.getElementById('p3testBadge');
+    if (badge && typeof window.getTestTypeLabel === 'function') {
+      var t = window.getTestTypeLabel();
+      badge.textContent = (t.icon || '🏋️') + ' ' + t.short + ' — ' + t.long;
+    }
+  } catch(e) {}
+
   var total = p3SatExercices.length;
   var prog = Math.round((p3CurrentStep / total) * 100);
   var html = '';
@@ -15254,6 +15290,39 @@ function _lsPrevEx() {
     _lsPersist();
   }
 }
+
+// Type de test selon le programme attribué.
+// SAT (Super Athlétique Test) = VD, EA, EXPLOSE+ — détente + force + sprint
+// SET (Super Explosif Test)   = SHRED EXPLOSE — vitesse + agilité + explosivité
+// PDC (Tests Poids du Corps)  = MICROTRAINING, TRIPHASIQUE — pas de matériel
+// Retourné par getTestTypeLabel(progKey) pour adapter les libellés UI.
+window.getTestTypeLabel = function(progKeyArg) {
+  var progKey = progKeyArg;
+  if (!progKey) {
+    try {
+      var prof = JSON.parse(localStorage.getItem('ah_profile') || '{}');
+      progKey = prof.programKey || (typeof OB !== 'undefined' && OB.program) || '';
+    } catch(e) {}
+  }
+  var norm = (typeof p3NormalizeProgram === 'function')
+    ? p3NormalizeProgram(progKey)
+    : (progKey || '').toLowerCase();
+  var map = {
+    microtraining: { short:'PDC', long:'Tests Poids du Corps', icon:'💪',
+                     desc:'Tests poids du corps — pas besoin de matos.' },
+    triphasique:   { short:'PDC', long:'Tests Poids du Corps', icon:'💪',
+                     desc:'Tests poids du corps — pas besoin de matos.' },
+    verticalDunk:  { short:'SAT', long:'Super Athlétique Test', icon:'🏋️',
+                     desc:'Détente + force max sur 3 exos clés.' },
+    eliteAthlete:  { short:'SAT', long:'Super Athlétique Test', icon:'🏋️',
+                     desc:'Tests complets de force + détente.' },
+    explose:       { short:'SAT', long:'Super Athlétique Test', icon:'🏋️',
+                     desc:'Tests complets de force + détente.' },
+    shredExplose:  { short:'SET', long:'Super Explosif Test', icon:'⚡',
+                     desc:'Tests d\'explosivité globale (vitesse, agilité).' }
+  };
+  return map[norm] || map.eliteAthlete;
+};
 
 // Calcule le total de séances attendues pour un programme (somme des jours
 // d'entraînement non-repos sur toutes les phases × leur durée en semaines).
