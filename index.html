@@ -8849,10 +8849,27 @@ function _libOpenDetail(name, catKey) {
   var dEl = document.getElementById('ytDetailDiff'); dEl.textContent = dl; dEl.className = 'yt-detail-diff ' + ex.diff;
   document.getElementById('ytDetailDesc').textContent = ex.desc || '';
   document.getElementById('ytDetailTags').innerHTML = (ex.muscles||[]).map(function(m){ return '<div class="tag">' + m + '</div>'; }).join('');
-  // Video
-  _libCurrentVideo = _LIB_VIDEO_MAP[ex.name] || null;
+  // Video : priorité ex.video (futur champ inline) puis _LIB_VIDEO_MAP[name]
+  _libCurrentVideo = ex.video || _LIB_VIDEO_MAP[ex.name] || null;
   var placeholder = document.getElementById('ytDetailPlaceholder');
   placeholder.style.display = 'flex';
+  // Adapte le placeholder selon disponibilité de la vidéo. Quand pas de vidéo,
+  // on indique clairement "à venir" et on propose une recherche YouTube en fallback.
+  if (_libCurrentVideo) {
+    placeholder.innerHTML =
+      '<div class="yt-detail-play"><div class="yt-detail-play-tri"></div></div>' +
+      '<div style="font-size:9px;color:rgba(255,255,255,.55);letter-spacing:1px;text-transform:uppercase;margin-top:4px">Voir la démo</div>';
+    placeholder.style.cursor = 'pointer';
+    placeholder.onclick = function(){ _libPlayVideo(); };
+  } else {
+    var q = encodeURIComponent(ex.name + ' technique tutoriel');
+    placeholder.innerHTML =
+      '<div style="font-size:36px;opacity:.5">🎬</div>' +
+      '<div style="font-size:10px;color:rgba(255,255,255,.45);letter-spacing:1px;text-transform:uppercase;margin-top:6px">Vidéo de démo à venir</div>' +
+      '<a href="https://www.youtube.com/results?search_query=' + q + '" target="_blank" rel="noopener" style="margin-top:8px;font-size:10px;color:rgba(255,255,255,.7);text-decoration:underline;letter-spacing:.5px" onclick="event.stopPropagation()">Chercher sur YouTube ↗</a>';
+    placeholder.style.cursor = 'default';
+    placeholder.onclick = null;
+  }
   var existingIframe = document.getElementById('ytDetailIframe');
   if (existingIframe) existingIframe.remove();
   var videoArea = document.getElementById('ytDetailVideo');
