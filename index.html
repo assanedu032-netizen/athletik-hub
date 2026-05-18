@@ -3553,13 +3553,13 @@ body.test-mode #testSkipBar{display:flex}
 </div>
 
 <div id="pgBuilder" class="pg">
-  <!-- État verrouillé (par défaut, montré si !hasAccessTier ou sessionsDone < 10) -->
+  <!-- État verrouillé (par défaut, montré si !hasAccessTier ou programsDone < 2) -->
   <div id="builderLocked" class="builder-locked">
     <div class="bl-ic">🔒</div>
     <div class="bl-title">WORKOUT BUILDER</div>
-    <div class="bl-sub">Crée tes propres séances. Débloqué à partir de 10 séances réalisées.</div>
+    <div class="bl-sub">Crée tes propres séances. Débloqué après <strong>2 programmes terminés</strong>.</div>
     <div class="bl-bar"><div id="builderBar" class="bl-bar-in" style="width:0%"></div></div>
-    <div class="bl-count" id="builderCount">0 / 10 séances réalisées</div>
+    <div class="bl-count" id="builderCount">0 / 2 programmes terminés</div>
   </div>
 
   <!-- État débloqué : éditeur de séance -->
@@ -9989,7 +9989,9 @@ function exitTestMode() {
 // ÉTAPE 3/3 — NUTRITION (Mifflin-St Jeor + ajustement objectif)
 // ══════════════════════════════════
 // ═══ WORKOUT BUILDER ═══
-var BUILDER_UNLOCK_AFTER = 10; // séances complétées pour débloquer
+// Débloqué après 2 programmes terminés (ou tier VIP/MASTER pour skip).
+// programsDone est incrémenté quand un programme entier est complété.
+var BUILDER_UNLOCK_PROGRAMS = 2;
 var builderState = { exos: [] };
 
 function _builderLoad() {
@@ -10004,11 +10006,11 @@ function _builderPersist() {
 }
 
 function _builderCheckUnlock() {
-  // VIP/MASTER tier unlocks immediately + 10 sessions also unlocks
+  // VIP/MASTER tier unlocks immediately + 2 programmes complétés débloquent aussi
   if (typeof window.hasAccessTier === 'function' && window.hasAccessTier('VIP')) return true;
   try {
     var prof = JSON.parse(localStorage.getItem('ah_profile') || '{}');
-    return (prof.sessionsDone || 0) >= BUILDER_UNLOCK_AFTER;
+    return (prof.programsDone || 0) >= BUILDER_UNLOCK_PROGRAMS;
   } catch(e) { return false; }
 }
 
@@ -10020,14 +10022,14 @@ function renderBuilder() {
   if (!_builderCheckUnlock()) {
     locked.style.display = '';
     unlocked.style.display = 'none';
-    // Progress
+    // Progression : programmes terminés (pas séances)
     var done = 0;
-    try { done = JSON.parse(localStorage.getItem('ah_profile') || '{}').sessionsDone || 0; } catch(e) {}
-    var pct = Math.min(100, (done / BUILDER_UNLOCK_AFTER) * 100);
+    try { done = JSON.parse(localStorage.getItem('ah_profile') || '{}').programsDone || 0; } catch(e) {}
+    var pct = Math.min(100, (done / BUILDER_UNLOCK_PROGRAMS) * 100);
     var bar = document.getElementById('builderBar');
     var cnt = document.getElementById('builderCount');
     if (bar) bar.style.width = pct + '%';
-    if (cnt) cnt.textContent = done + ' / ' + BUILDER_UNLOCK_AFTER + ' séances réalisées';
+    if (cnt) cnt.textContent = done + ' / ' + BUILDER_UNLOCK_PROGRAMS + ' programmes terminés';
     return;
   }
   locked.style.display = 'none';
@@ -10466,7 +10468,7 @@ var BADGES_DEF = [
   { id:'streak30',   icon:'🦅', name:'Streak 30',    desc:'30 jours consécutifs',     check: function(s){ return (s.streak||0) >= 30; } },
   { id:'phase1',     icon:'💪', name:'Phase 1',      desc:'Fondations terminées',     check: function(s){ return (s.phasesDone||0) >= 1; } },
   { id:'prog1',      icon:'🏀', name:'Programme 1',  desc:'1er programme fini',       check: function(s){ return (s.programsDone||0) >= 1; } },
-  { id:'builder',    icon:'🛠️', name:'Builder',      desc:'Workout Builder débloqué', check: function(s){ return (s.sessionsDone||0) >= 10; } },
+  { id:'builder',    icon:'🛠️', name:'Builder',      desc:'Workout Builder débloqué', check: function(s){ return (s.programsDone||0) >= 2; } },
   { id:'surhumain',  icon:'🔱', name:'Surhumain',    desc:'Score 91+/100',            check: function(s){ return (s.athScore||0) >= 91; } },
   { id:'prHunter',   icon:'📈', name:'PR Hunter',    desc:'5 records personnels',     check: function(s){ return (s.prs||0) >= 5; } },
   { id:'zenMaster',  icon:'🧘', name:'Zen Master',   desc:'Protocole Flow 10 fois',   check: function(s){ return (s.flowDone||0) >= 10; } },
