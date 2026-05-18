@@ -6248,10 +6248,65 @@ function logoutUser(){
   try { if (window.fb && window.fb.auth) window.fb.signOut(window.fb.auth); } catch(e) {}
   setTimeout(function(){ location.reload(); }, 200);
 }
+// Refaire le questionnaire d'attribution programme.
+// Conserve l'historique (sessions, PRs, badges) et l'identité (prenom, age, sexe),
+// mais reset les champs de l'onboarding pour permettre une nouvelle attribution.
 function restartOnboarding(){
-  document.querySelectorAll('.view').forEach(function(v){v.classList.remove('on');});
-  document.querySelectorAll('.scr').forEach(function(e){e.style.display='';});
-  document.getElementById('mainNav').style.display='none'; go('titanIntro');
+  var ok = window.confirm(
+    'Refaire le questionnaire ?\n\n' +
+    'Tu vas répondre à nouveau aux questions d\'attribution. ' +
+    'Ton historique (séances, records, badges) est conservé.'
+  );
+  if (!ok) return;
+
+  // Reset ah_profile : on ne touche QUE les champs de l'attribution programme
+  try {
+    var prof = JSON.parse(localStorage.getItem('ah_profile') || '{}');
+    delete prof.programKey;
+    delete prof.program;
+    delete prof.programName;
+    delete prof.programObj;
+    delete prof.objectif;
+    delete prof.sit;
+    delete prof.cont;
+    delete prof.mat;
+    delete prof.phase;
+    delete prof.phaseIdx;
+    localStorage.setItem('ah_profile', JSON.stringify(prof));
+  } catch(e) { console.warn('restartOnboarding profile reset:', e); }
+
+  // Reset OB et obChecks en mémoire
+  try {
+    if (typeof OB !== 'undefined') {
+      OB.objectif = ''; OB.program = ''; OB.programKey = ''; OB.programName = '';
+      OB.programObj = '';
+    }
+    if (typeof obChecks !== 'undefined') {
+      obChecks.sit = []; obChecks.cont = []; obChecks.mat = [];
+    }
+    if (typeof user !== 'undefined') {
+      user.program = ''; user.programKey = ''; user.programObj = '';
+    }
+  } catch(e) {}
+
+  // Clear les flags d'état onboarding
+  try {
+    localStorage.removeItem('ah_onboarding_done');
+    localStorage.removeItem('ah_ob_inprogress');
+    localStorage.setItem('ah_discovery_mode', '1');
+  } catch(e) {}
+
+  // Sync Firestore (efface aussi les champs côté serveur)
+  try { if (typeof fbSaveProfile === 'function') fbSaveProfile(); } catch(e) {}
+
+  // Cache la nav + retourne sur obQ1 (pas titanIntro — l'user a déjà vu l'intro)
+  document.querySelectorAll('.view').forEach(function(v){ v.classList.remove('on'); });
+  document.querySelectorAll('.scr').forEach(function(e){ e.style.display = ''; });
+  var nav = document.getElementById('mainNav');
+  if (nav) nav.style.display = 'none';
+
+  if (typeof showToast === 'function') showToast('Questionnaire réinitialisé. Refais tes choix.', 'info');
+  setTimeout(function(){ go('obQ1'); }, 300);
 }
 function toggleTheme(){
   darkMode=!darkMode;
