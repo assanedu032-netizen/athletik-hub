@@ -11913,8 +11913,19 @@ async function fbHandleEmailAuth() {
       await fbMigrateLocalToFirestore(cred.user);
       fbShowMsg('Compte créé. Vérifie ton email pour activer ton compte.', 'ok');
       setTimeout(function(){
-        go('thinking');
-        setTimeout(function(){ startThinking(); }, 400);
+        // Aiguillage après signup : si le questionnaire est déjà fait (flow normal
+        // welcome → obQ1-Q4 → calcul programme → auth signup), on lance Titan analyse.
+        // Sinon (user qui crée son compte direct sans questionnaire), on l'envoie
+        // sur obQ1 pour qu'il fasse le parcours d'attribution.
+        var prof = {};
+        try { prof = JSON.parse(localStorage.getItem('ah_profile') || '{}'); } catch(e) {}
+        var hasProgram = !!(prof.programKey || (typeof OB !== 'undefined' && OB.programKey));
+        if (hasProgram) {
+          go('thinking');
+          setTimeout(function(){ startThinking(); }, 400);
+        } else {
+          go('obQ1');
+        }
       }, 1200);
     } else {
       var cred2 = await window.fb.signInWithEmailAndPassword(window.fb.auth, email, pass);
@@ -11956,8 +11967,17 @@ async function fbGoogleSignIn() {
       await fbMigrateLocalToFirestore(cred.user);
       fbShowMsg('Compte Google créé. Bienvenue.', 'ok');
       setTimeout(function(){
-        go('thinking');
-        setTimeout(function(){ startThinking(); }, 400);
+        // Même aiguillage que fbHandleEmailAuth : pas de Titan analyse tant que
+        // le questionnaire d'attribution n'est pas terminé.
+        var prof = {};
+        try { prof = JSON.parse(localStorage.getItem('ah_profile') || '{}'); } catch(e) {}
+        var hasProgram = !!(prof.programKey || (typeof OB !== 'undefined' && OB.programKey));
+        if (hasProgram) {
+          go('thinking');
+          setTimeout(function(){ startThinking(); }, 400);
+        } else {
+          go('obQ1');
+        }
       }, 800);
     } else {
       await fbLoadFirestoreToLocal(cred.user);
