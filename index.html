@@ -6689,7 +6689,14 @@ function updateSprintBest() {
   var b = _bestSprintTime('satSprint', 5);
   var d = parseFloat((document.getElementById('satSprintDist') || {}).value) || 0;
   var el = document.getElementById('satSprintBest');
-  if (el) el.textContent = b > 0 ? '✓ Meilleur essai retenu : ' + b.toFixed(2) + 's' + (d ? ' / ' + d + 'm' : '') : '';
+  if (!el) return;
+  if (b <= 0) { el.textContent = ''; return; }
+  var txt = '✓ Meilleur essai : ' + b.toFixed(2) + 's';
+  if (d > 0) {
+    var speed = d / b;
+    txt += ' / ' + d + 'm — ' + speed.toFixed(2) + ' m/s';
+  }
+  el.textContent = txt;
 }
 function updateTTestBest() {
   var b = _bestSprintTime('satTTest', 5);
@@ -6764,6 +6771,12 @@ function calculateSAT() {
     prof.satDone = true;
     prof.athScore = totalScore;
     prof.vertJump = vertJump;
+    prof.satSprintTime = sprintTime;
+    prof.satSprintDist = parseFloat((document.getElementById('satSprintDist')||{}).value) || 30;
+    prof.satTTest = tTest;
+    prof.satFMS = fms;
+    prof.satForce1RM = squat1RM;
+    prof.satCompletedAt = new Date().toISOString();
     localStorage.setItem('ah_profile', JSON.stringify(prof));
     if (typeof fbSaveProfile === 'function') fbSaveProfile();
   } catch(e) {}
