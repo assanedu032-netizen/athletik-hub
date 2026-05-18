@@ -2807,6 +2807,9 @@ body.test-mode #testSkipBar{display:flex}
     <!-- Bannière reprendre séance — affichée si _LS persisté en localStorage -->
     <div id="resumeSessionBanner" style="display:none"></div>
 
+    <!-- Bannière reprendre tests — affichée si ah_sat_inprogress existe -->
+    <div id="resumeTestsBanner" style="display:none"></div>
+
     <!-- CARTE SÉANCE — collée sous la photo, style FizzUp TODAY -->
     <div id="todayCard" style="margin:-1px 0 0;background:var(--surface);border-bottom:1px solid var(--border);padding:20px 20px">
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
@@ -6058,6 +6061,7 @@ document.addEventListener('DOMContentLoaded', function() {
     origRUD(); renderTodayCard(); saveData();
     try { renderTrialBanner(); } catch(e) {}
     try { renderResumeSessionBanner(); } catch(e) {}
+    try { renderResumeTestsBanner(); } catch(e) {}
   };
 
   // Splash bar animation
@@ -15088,6 +15092,67 @@ function renderResumeSessionBanner() {
     '</div>';
 }
 window.renderResumeSessionBanner = renderResumeSessionBanner;
+
+// Bannière "Reprendre tes tests" — affichée si ah_sat_inprogress existe et < 7 jours.
+// Cliquer "▶ Reprendre" envoie vers Tracks tab, qui restaure les valeurs via
+// restoreSATInProgress() au chargement de l'onglet. Label dynamique SAT/SET/PDC.
+function renderResumeTestsBanner() {
+  var el = document.getElementById('resumeTestsBanner');
+  if (!el) return;
+  // Pas de bannière si le SAT est déjà marqué fait
+  try {
+    var prof = JSON.parse(localStorage.getItem('ah_profile') || '{}');
+    if (prof.satDone) { el.style.display = 'none'; el.innerHTML = ''; return; }
+  } catch(e) {}
+  var raw = null;
+  try { raw = localStorage.getItem('ah_sat_inprogress'); } catch(e) {}
+  if (!raw) { el.style.display = 'none'; el.innerHTML = ''; return; }
+  var snap = null;
+  try { snap = JSON.parse(raw); } catch(e) {}
+  if (!snap || !snap.values) { el.style.display = 'none'; el.innerHTML = ''; return; }
+  // Drop si > 7 jours (au-delà : autant tout refaire)
+  if (Date.now() - (snap.ts || 0) > 7 * 86400000) {
+    try { localStorage.removeItem('ah_sat_inprogress'); } catch(e) {}
+    el.style.display = 'none'; el.innerHTML = ''; return;
+  }
+  var filled = Object.keys(snap.values).filter(function(k){
+    var v = snap.values[k];
+    return v != null && v !== '';
+  }).length;
+  if (filled === 0) { el.style.display = 'none'; el.innerHTML = ''; return; }
+  var total = (typeof SAT_INPUT_IDS !== 'undefined' && SAT_INPUT_IDS.length) ? SAT_INPUT_IDS.length : filled;
+  var label = 'SAT';
+  try {
+    if (typeof window.getTestTypeLabel === 'function') label = window.getTestTypeLabel().short;
+  } catch(e) {}
+  el.style.display = '';
+  el.innerHTML =
+    '<div style="background:linear-gradient(135deg,rgba(197,164,78,.10),rgba(197,164,78,.04));border:1px solid rgba(197,164,78,.35);border-radius:12px;padding:12px 14px;margin:12px 16px;display:flex;align-items:center;justify-content:space-between;gap:10px">' +
+      '<div style="flex:1;min-width:0">' +
+        '<div style="font-size:11px;letter-spacing:1.5px;font-weight:800;color:var(--gold);text-transform:uppercase">Tests en cours</div>' +
+        '<div style="font-size:13px;color:var(--text);font-weight:600;margin-top:2px">' + label + ' • ' + filled + ' / ' + total + ' champs remplis</div>' +
+      '</div>' +
+      '<div style="display:flex;gap:6px">' +
+        '<button onclick="goToTracksSAT()" style="background:var(--gold);color:#0A0F1E;border:0;padding:8px 12px;border-radius:10px;font-family:\'Outfit\',sans-serif;font-size:12px;font-weight:800;cursor:pointer;white-space:nowrap">▶ Reprendre</button>' +
+        '<button onclick="dismissResumeTests()" style="background:transparent;color:var(--muted);border:1px solid var(--border);padding:8px 10px;border-radius:10px;font-family:\'Outfit\',sans-serif;font-size:12px;font-weight:600;cursor:pointer">✕</button>' +
+      '</div>' +
+    '</div>';
+}
+window.renderResumeTestsBanner = renderResumeTestsBanner;
+
+window.goToTracksSAT = function() {
+  try { switchTab('tracks'); } catch(e) {}
+  try { renderResumeTestsBanner(); } catch(e) {}
+};
+
+window.dismissResumeTests = function() {
+  if (typeof clearSATInProgress === 'function') {
+    clearSATInProgress();
+  } else {
+    try { localStorage.removeItem('ah_sat_inprogress'); } catch(e) {}
+  }
+  try { renderResumeTestsBanner(); } catch(e) {}
+};
 
 // Parse rest string like "1 mn", "2 mn 30", "45 s", "-" → seconds
 function _lsParseRest(str) {
