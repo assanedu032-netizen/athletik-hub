@@ -3667,6 +3667,12 @@ body.test-mode #testSkipBar{display:flex}
     </div>
   </div>
 
+  <!-- Progression card — barres séances/semaine + PRs (rendu par renderProgression) -->
+  <div class="sec-title">📈 PROGRESSION</div>
+  <div id="progressionCard" style="background:var(--surface);border-radius:14px;padding:16px;margin-bottom:16px;border:1px solid var(--border)">
+    <div style="font-size:11px;color:var(--muted);text-align:center;padding:20px">Pas encore de données. Termine ta première séance pour voir ta progression.</div>
+  </div>
+
   <!-- Level Card -->
   <div class="level-card">
     <div class="lc-icon" id="lcIcon">🥉</div>
@@ -6230,7 +6236,7 @@ function switchTab(tab){
   }
   // Init Scan check API key + restore form
   if (tab === 'nutrition') { try { scanCheckApiKey(); scanUpdateMacros(); renderJournalToday(); } catch(e) {} }
-  if (tab === 'moi') { try { apiKeyRestore(); fbRefreshAccountSection(window.fbUser); renderBadges(); refreshAccessTierUI(); } catch(e) {} }
+  if (tab === 'moi') { try { apiKeyRestore(); fbRefreshAccountSection(window.fbUser); renderBadges(); refreshAccessTierUI(); renderProgression(); } catch(e) {} }
   // Refresh Athletik Score on Home
   if (tab === 'home') { try { renderAthletikScore(); } catch(e) { console.warn('renderAthletikScore error:', e); } }
 }
@@ -11186,6 +11192,131 @@ window.abandonHabit = function(id) {
   _persistActiveHabits();
   renderActiveHabits();
 };
+
+// ═══════════════════════════════════════════════
+// PROGRESSION — vue chiffrée + courbe séances/semaine + records personnels
+// ═══════════════════════════════════════════════
+
+// Compte les séances complétées par semaine sur les N dernières semaines.
+// Retourne un tableau de { weekStart: 'YYYY-MM-DD', count: N } indexé du plus
+// ancien au plus récent.
+function _progressionWeeklySessions(nbWeeks) {
+  nbWeeks = nbWeeks || 8;
+  var hist = [];
+  try { hist = JSON.parse(localStorage.getItem('ah_set_history') || '[]'); } catch(e) { return []; }
+  var weeks = [];
+  // Calcule le lundi de la semaine courante (0=dim → on retombe à -6 jours)
+  var now = new Date();
+  var dow = now.getDay(); // 0=dim..6=sam
+  var diff = (dow === 0 ? -6 : 1 - dow);
+  var monday = new Date(now.getFullYear(), now.getMonth(), now.getDate() + diff);
+  for (var i = nbWeeks - 1; i >= 0; i--) {
+    var ws = new Date(monday.getTime() - i * 7 * 86400000);
+    var we = new Date(ws.getTime() + 7 * 86400000);
+    var count = hist.filter(function(h) {
+      if (!h || !h.date) return false;
+      var d = new Date(h.date);
+      return d >= ws && d < we && (h.type === 'session' || h.sessName);
+    }).length;
+    weeks.push({ weekStart: ws.toISOString().slice(0,10), count: count });
+  }
+  return weeks;
+}
+
+function renderProgression() {
+  var el = document.getElementById('progressionCard');
+  if (!el) return;
+  var prof = {};
+  try { prof = JSON.parse(localStorage.getItem('ah_profile') || '{}'); } catch(e) {}
+
+  var weeks = _progressionWeeklySessions(8);
+  var maxCount = Math.max.apply(null, weeks.map(function(w){ return w.count; }).concat([1]));
+  var totalSessions = weeks.reduce(function(acc, w){ return acc + w.count; }, 0);
+
+  var athScore = prof.athScore != null ? prof.athScore : null;
+  var vertJump = prof.vertJump != null ? prof.vertJump : null;
+  var sprintTime = prof.satSprintTime != null ? prof.satSprintTime : null;
+  var sprintDist = prof.satSprintDist != null ? prof.satSprintDist : null;
+  var tTest = prof.satTTest != null ? prof.satTTest : null;
+  var force1RM = prof.satForce1RM != null ? prof.satForce1RM : null;
+
+  var html = '';
+
+  // Bandeau score + total séances 8 sem
+  html += '<div style="display:flex;gap:10px;margin-bottom:14px">';
+  html += '<div style="flex:1;background:linear-gradient(135deg,rgba(197,164,78,.10),rgba(197,164,78,.04));border:1px solid rgba(197,164,78,.30);border-radius:10px;padding:10px 12px">';
+  html += '<div style="font-size:10px;color:var(--gold);font-weight:700;letter-spacing:1.5px;text-transform:uppercase">Score actuel</div>';
+  html += '<div style="font-size:22px;font-weight:800;color:var(--text);line-height:1.1;margin-top:2px">' + (athScore != null ? athScore + '<span style="font-size:11px;color:var(--muted);font-weight:600">/100</span>' : '—') + '</div>';
+  html += '</div>';
+  html += '<div style="flex:1;background:linear-gradient(135deg,rgba(16,185,129,.10),rgba(16,185,129,.04));border:1px solid rgba(16,185,129,.30);border-radius:10px;padding:10px 12px">';
+  html += '<div style="font-size:10px;color:#10B981;font-weight:700;letter-spacing:1.5px;text-transform:uppercase">Séances 8 sem</div>';
+  html += '<div style="font-size:22px;font-weight:800;color:var(--text);line-height:1.1;margin-top:2px">' + totalSessions + '</div>';
+  html += '</div>';
+  html += '</div>';
+
+  // Mini-graphique barres séances/semaine
+  if (weeks.length) {
+    html += '<div style="font-size:11px;color:var(--muted);font-weight:700;letter-spacing:1px;text-transform:uppercase;margin-bottom:8px">Séances par semaine</div>';
+    html += '<div style="display:flex;align-items:flex-end;gap:4px;height:60px;margin-bottom:14px">';
+    weeks.forEach(function(w, idx) {
+      var pct = maxCount > 0 ? Math.max(4, Math.round((w.count / maxCount) * 100)) : 4;
+      var isCurrent = idx === weeks.length - 1;
+      var bg = isCurrent ? 'var(--gold)' : 'rgba(197,164,78,.40)';
+      var label = 'S' + (idx + 1);
+      html += '<div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:3px">';
+      html += '<div style="font-size:9px;color:var(--text);font-weight:700;line-height:1">' + (w.count > 0 ? w.count : '') + '</div>';
+      html += '<div style="width:100%;height:' + pct + '%;background:' + bg + ';border-radius:3px;min-height:4px"></div>';
+      html += '<div style="font-size:9px;color:var(--muted);line-height:1">' + label + '</div>';
+      html += '</div>';
+    });
+    html += '</div>';
+  }
+
+  // Records personnels
+  var hasAnyPR = vertJump != null || sprintTime != null || tTest != null || force1RM != null;
+  if (hasAnyPR) {
+    html += '<div style="font-size:11px;color:var(--muted);font-weight:700;letter-spacing:1px;text-transform:uppercase;margin-bottom:8px">Records personnels</div>';
+    html += '<div style="display:grid;grid-template-columns:repeat(2,1fr);gap:8px">';
+    if (vertJump != null) {
+      html += '<div style="background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:10px 12px">';
+      html += '<div style="font-size:10px;color:var(--muted);font-weight:700;letter-spacing:1px;text-transform:uppercase">🦘 Détente</div>';
+      html += '<div style="font-size:18px;font-weight:800;color:var(--text);margin-top:2px">' + vertJump + ' cm</div>';
+      html += '</div>';
+    }
+    if (sprintTime != null) {
+      var speedTxt = '';
+      if (sprintDist) {
+        var speed = (sprintDist / sprintTime).toFixed(2);
+        speedTxt = ' <span style="font-size:10px;color:var(--muted);font-weight:600">/ ' + sprintDist + 'm — ' + speed + ' m/s</span>';
+      }
+      html += '<div style="background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:10px 12px">';
+      html += '<div style="font-size:10px;color:var(--muted);font-weight:700;letter-spacing:1px;text-transform:uppercase">⚡ Sprint</div>';
+      html += '<div style="font-size:18px;font-weight:800;color:var(--text);margin-top:2px">' + sprintTime + 's' + speedTxt + '</div>';
+      html += '</div>';
+    }
+    if (tTest != null) {
+      html += '<div style="background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:10px 12px">';
+      html += '<div style="font-size:10px;color:var(--muted);font-weight:700;letter-spacing:1px;text-transform:uppercase">🔄 T-Test</div>';
+      html += '<div style="font-size:18px;font-weight:800;color:var(--text);margin-top:2px">' + tTest + 's</div>';
+      html += '</div>';
+    }
+    if (force1RM != null) {
+      html += '<div style="background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:10px 12px">';
+      html += '<div style="font-size:10px;color:var(--muted);font-weight:700;letter-spacing:1px;text-transform:uppercase">🏋️ Squat 1RM</div>';
+      html += '<div style="font-size:18px;font-weight:800;color:var(--text);margin-top:2px">' + force1RM + ' kg</div>';
+      html += '</div>';
+    }
+    html += '</div>';
+  }
+
+  // Fallback si rien à montrer
+  if (athScore == null && !hasAnyPR && totalSessions === 0) {
+    html = '<div style="font-size:13px;color:var(--muted);text-align:center;padding:24px 14px;line-height:1.5">Pas encore de données.<br>Termine ta première séance ou tes tests pour voir ta progression.</div>';
+  }
+
+  el.innerHTML = html;
+}
+window.renderProgression = renderProgression;
 
 
 // ═══════════════════════════════════════════════
