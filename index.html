@@ -19,6 +19,7 @@
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-app.js";
   import { getAuth, setPersistence, browserLocalPersistence, createUserWithEmailAndPassword, signInWithEmailAndPassword, signInWithPopup, GoogleAuthProvider, onAuthStateChanged, signOut, sendPasswordResetEmail } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-auth.js";
   import { getFirestore, doc, setDoc, getDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore.js";
+  import { getMessaging, getToken, onMessage, isSupported } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-messaging.js";
 
   const firebaseConfig = {
     apiKey: "AIzaSyBMeuLan21LGxUKB5XCmLN1110VJWvyM5s",
@@ -35,6 +36,30 @@
   const db = getFirestore(app);
   const googleProvider = new GoogleAuthProvider();
   setPersistence(auth, browserLocalPersistence);
+
+  // Cloud Messaging — initialisé seulement si supporté par le navigateur.
+  // iOS < 16.4 ne supporte pas → on garde l'ancien fallback setTimeout.
+  let messaging = null;
+  isSupported().then(function(ok) {
+    if (!ok) { console.warn('FCM non supporté sur ce navigateur'); return; }
+    try {
+      messaging = getMessaging(app);
+      window.fb.messaging = messaging;
+      window.fb.getToken = getToken;
+      window.fb.onMessage = onMessage;
+      // Notif reçue alors que l'app est au foreground : on l'affiche manuellement
+      onMessage(messaging, function(payload) {
+        try {
+          if (typeof _showTitanNotif === 'function') {
+            _showTitanNotif(
+              (payload.notification && payload.notification.title) || 'Titan',
+              (payload.notification && payload.notification.body) || ''
+            );
+          }
+        } catch(e) {}
+      });
+    } catch(e) { console.warn('FCM init:', e); }
+  });
 
   window.fb = {
     auth, db, googleProvider,
@@ -3797,6 +3822,12 @@ body.test-mode #testSkipBar{display:flex}
   <div class="setting-item" onclick="toggleNotif()">
     <div class="si-left"><div class="si-icon">🔔</div><div><div class="si-text">Notifications</div><div class="si-sub">Rappels de Titan par WhatsApp-style</div></div></div>
     <div class="toggle on" id="notifToggle"><div class="toggle-knob"></div></div>
+  </div>
+
+  <!-- Test push notif (n'apparaît qu'après activation notif + FCM token) -->
+  <div class="setting-item" onclick="sendTestNotif()">
+    <div class="si-left"><div class="si-icon">🧪</div><div><div class="si-text">Envoyer un test</div><div class="si-sub">Vérifie que les push notifs arrivent</div></div></div>
+    <div class="si-right">→</div>
   </div>
 
   <div class="setting-item" onclick="alert('Jours d\'entraînement — Firebase à intégrer')">
@@ -9641,10 +9672,12 @@ function toggleNotif() {
           if (toggleEl) toggleEl.classList.remove('on');
           alert('Permission refusée. Active les notifications dans les paramètres du navigateur pour recevoir les rappels.');
         } else {
+          _registerFCMToken();
           _enableTitanReminders();
         }
       });
     } else if (Notification.permission === 'granted') {
+      _registerFCMToken();
       _enableTitanReminders();
     } else {
       alert('Permission refusée. Va dans les paramètres du navigateur pour autoriser les notifications.');
@@ -9658,7 +9691,91 @@ function toggleNotif() {
   try { localStorage.setItem('ah_notif_on', notifOn ? '1' : '0'); } catch(e) {}
 }
 
-// ═══ LOCAL NOTIFICATIONS — Titan reminders ═══
+// ═══ FCM — Firebase Cloud Messaging ═══
+// Récupère le token push de l'appareil + le sauvegarde dans ah_profile + Firestore.
+// La clé VAPID est servie via /.netlify/functions/notif-config pour ne pas la coder
+// en dur dans le HTML public. Fallback : utilise la chaîne window.FCM_VAPID_KEY si
+// définie côté HTML (utile en dev local).
+async function _registerFCMToken() {
+  if (!window.fb || !window.fb.messaging || !window.fb.getToken) {
+    console.log('FCM pas dispo (navigateur non supporté ou pas encore init).');
+    return null;
+  }
+  try {
+    var vapidKey = window.FCM_VAPID_KEY || null;
+    if (!vapidKey) {
+      // Tente de récupérer la clé publique depuis la Netlify function
+      try {
+        var r = await fetch('/.netlify/functions/notif-config');
+        if (r.ok) {
+          var j = await r.json();
+          vapidKey = j.vapidKey || null;
+        }
+      } catch(e) {}
+    }
+    if (!vapidKey) {
+      console.warn('FCM VAPID key absente — notif push background désactivé. ' +
+        'Définis FIREBASE_VAPID_KEY sur Netlify ou window.FCM_VAPID_KEY en local.');
+      return null;
+    }
+    // Service Worker doit être enregistré à la racine
+    var reg = await navigator.serviceWorker.register('/firebase-messaging-sw.js');
+    var token = await window.fb.getToken(window.fb.messaging, {
+      vapidKey: vapidKey,
+      serviceWorkerRegistration: reg
+    });
+    if (!token) {
+      console.warn('FCM token vide — permission probablement refusée.');
+      return null;
+    }
+    // Sauvegarde token dans ah_profile (sync Firestore automatique)
+    try {
+      var prof = JSON.parse(localStorage.getItem('ah_profile') || '{}');
+      prof.fcmToken = token;
+      prof.fcmTokenAt = new Date().toISOString();
+      localStorage.setItem('ah_profile', JSON.stringify(prof));
+      if (typeof fbSaveProfile === 'function') fbSaveProfile();
+    } catch(e) {}
+    console.log('FCM token enregistré:', token.slice(0, 16) + '…');
+    return token;
+  } catch(err) {
+    console.warn('_registerFCMToken:', err);
+    return null;
+  }
+}
+window._registerFCMToken = _registerFCMToken;
+
+// Bouton "Envoyer un test" — appelle la Netlify function send-notif avec le token
+// stocké dans ah_profile. Permet à l'utilisateur de vérifier que tout marche.
+window.sendTestNotif = async function() {
+  var prof = {};
+  try { prof = JSON.parse(localStorage.getItem('ah_profile') || '{}'); } catch(e) {}
+  if (!prof.fcmToken) {
+    if (typeof showToast === 'function') showToast('Active d\'abord les notifications dans Paramètres.', 'info');
+    return;
+  }
+  try {
+    var r = await fetch('/.netlify/functions/send-notif', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        token: prof.fcmToken,
+        title: 'Test Titan 🔔',
+        body: 'Si tu vois cette notif, le push background est bien actif.'
+      })
+    });
+    var j = await r.json();
+    if (j.ok) {
+      if (typeof showToast === 'function') showToast('Notif envoyée. Vérifie le centre de notif du téléphone.', 'ok');
+    } else {
+      if (typeof showToast === 'function') showToast('Erreur : ' + (j.error || 'inconnue'), 'err');
+    }
+  } catch(e) {
+    if (typeof showToast === 'function') showToast('Réseau indisponible.', 'err');
+  }
+};
+
+// ═══ LOCAL NOTIFICATIONS — Titan reminders (fallback PWA ouverte) ═══
 var _notifTimers = [];
 
 function _enableTitanReminders() {
