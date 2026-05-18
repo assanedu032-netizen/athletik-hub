@@ -11423,8 +11423,50 @@ function obTestMode() {
 // WELCOME PAGE — Landing pour visiteurs
 // ═══════════════════════════════════════════════
 
+// Détermine l'écran le plus avancé atteint dans l'onboarding en cours,
+// à partir de OB (déjà restauré par _restoreOnboarding au boot).
+// Retourne l'id de la screen à afficher pour reprendre, ou null si rien à reprendre.
+function _inferOnboardingResumeScreen() {
+  try {
+    var raw = localStorage.getItem('ah_ob_inprogress');
+    if (!raw) return null;
+    var snap = JSON.parse(raw); if (!snap || !snap.OB) return null;
+    var ob = snap.OB;
+    var checks = snap.obChecks || (typeof obChecks !== 'undefined' ? obChecks : {});
+    var hasObj = !!ob.objectif;
+    var hasSit = checks && checks.sit && checks.sit.length > 0;
+    var hasCont = checks && checks.cont && checks.cont.length > 0;
+    var hasMat = checks && checks.mat && checks.mat.length > 0;
+    var hasPrenom = !!ob.prenom;
+    var hasProgram = !!ob.program || !!ob.programKey;
+    var hasPoids = !!ob.poids || !!ob.taille;
+    // Aucune donnée significative
+    if (!hasObj && !hasPrenom) return null;
+    if (hasProgram && hasPoids) return 'profil4plan';
+    if (hasProgram && hasPrenom) return 'profil1';
+    if (hasObj && hasSit && hasCont && hasMat) return 'obQ1'; // prêt pour calcul mais reste à valider
+    if (hasObj) return 'obQ1';
+    return null;
+  } catch(e) { return null; }
+}
+
 function welcomeStart() {
-  // Nouveau visiteur : on commence le parcours d'onboarding
+  // Vérifie un onboarding en cours
+  var resumeId = _inferOnboardingResumeScreen();
+  if (resumeId) {
+    var ok = window.confirm('Tu as un onboarding en cours. Reprendre où tu en étais ?');
+    if (ok) {
+      go(resumeId);
+      return;
+    }
+    // L'utilisateur choisit de tout recommencer : reset
+    try { localStorage.removeItem('ah_ob_inprogress'); } catch(e) {}
+    try {
+      if (typeof OB !== 'undefined') Object.keys(OB).forEach(function(k){ if (k !== 'init') delete OB[k]; });
+      if (typeof obChecks !== 'undefined') { obChecks.sit = []; obChecks.cont = []; obChecks.mat = []; }
+    } catch(e) {}
+  }
+  // Nouveau visiteur (ou reset) : on commence le parcours d'onboarding
   go('titanIntro');
   setTimeout(function() {
     try { animateTitanText(); } catch(e) { console.warn(e); }
