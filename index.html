@@ -2804,6 +2804,9 @@ body.test-mode #testSkipBar{display:flex}
     <!-- Bannière essai 3 jours — affichée si trial actif/expiré et pas de tier payant -->
     <div id="trialBanner" style="display:none"></div>
 
+    <!-- Bannière reprendre séance — affichée si _LS persisté en localStorage -->
+    <div id="resumeSessionBanner" style="display:none"></div>
+
     <!-- CARTE SÉANCE — collée sous la photo, style FizzUp TODAY -->
     <div id="todayCard" style="margin:-1px 0 0;background:var(--surface);border-bottom:1px solid var(--border);padding:20px 20px">
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
@@ -6012,6 +6015,7 @@ document.addEventListener('DOMContentLoaded', function() {
   if (origRUD) window.renderUserData = function() {
     origRUD(); renderTodayCard(); saveData();
     try { renderTrialBanner(); } catch(e) {}
+    try { renderResumeSessionBanner(); } catch(e) {}
   };
 
   // Splash bar animation
@@ -14695,6 +14699,77 @@ var _LS = {
   restSec: 0, restTotal: 0, restInterval: null, restActive: false
 };
 
+// Persistance de la séance live — permet de reprendre après fermeture app
+// Clé : ah_live_session  | Forme : { exos, idx, progName, sessName, ts }
+// Expiration : 24h (au-delà on drop, on ne veut pas proposer une vieille séance)
+function _lsPersist() {
+  if (!_LS.exos || !_LS.exos.length) { try { localStorage.removeItem('ah_live_session'); } catch(e) {} return; }
+  try {
+    localStorage.setItem('ah_live_session', JSON.stringify({
+      exos: _LS.exos, idx: _LS.idx,
+      progName: _LS.progName, sessName: _LS.sessName,
+      ts: Date.now()
+    }));
+  } catch(e) {}
+}
+function _lsClearPersist() { try { localStorage.removeItem('ah_live_session'); } catch(e) {} }
+
+window.getStoredLiveSession = function() {
+  try {
+    var raw = localStorage.getItem('ah_live_session');
+    if (!raw) return null;
+    var d = JSON.parse(raw);
+    if (!d || !d.exos || !d.exos.length) return null;
+    if (Date.now() - (d.ts || 0) > 86400000) { _lsClearPersist(); return null; }
+    return d;
+  } catch(e) { return null; }
+};
+
+window.resumeLiveSession = function() {
+  var d = window.getStoredLiveSession();
+  if (!d) { renderResumeSessionBanner(); return; }
+  _LS.exos = d.exos;
+  _LS.idx = Math.max(0, Math.min(d.idx || 0, d.exos.length - 1));
+  _LS.progName = d.progName || '';
+  _LS.sessName = d.sessName || '';
+  _LS.restActive = false;
+  clearInterval(_LS.restInterval);
+  _lsRenderEx();
+  document.getElementById('liveSession').classList.add('ls-open');
+  document.body.style.overflow = 'hidden';
+  _lsPersist();
+};
+
+window.dismissStoredLiveSession = function() {
+  _lsClearPersist();
+  try { renderResumeSessionBanner(); } catch(e) {}
+};
+
+function renderResumeSessionBanner() {
+  var el = document.getElementById('resumeSessionBanner');
+  if (!el) return;
+  var d = window.getStoredLiveSession();
+  if (!d) { el.style.display = 'none'; el.innerHTML = ''; return; }
+  var exoName = (d.exos[d.idx || 0] && d.exos[d.idx || 0].n) || '';
+  var progress = ((d.idx || 0) + 1) + '/' + d.exos.length;
+  var title = d.sessName || d.progName || 'Séance en cours';
+  el.style.display = '';
+  el.innerHTML =
+    '<div style="background:linear-gradient(135deg,rgba(16,185,129,.10),rgba(16,185,129,.04));border:1px solid rgba(16,185,129,.4);border-radius:12px;padding:12px 14px;margin:12px 16px;display:flex;align-items:center;justify-content:space-between;gap:10px">' +
+      '<div style="flex:1;min-width:0">' +
+        '<div style="font-size:11px;letter-spacing:1.5px;font-weight:800;color:#10B981;text-transform:uppercase">Séance en cours</div>' +
+        '<div style="font-size:13px;color:var(--text);font-weight:600;margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">' +
+          title + ' • exo ' + progress +
+        '</div>' +
+      '</div>' +
+      '<div style="display:flex;gap:6px">' +
+        '<button onclick="resumeLiveSession()" style="background:#10B981;color:#fff;border:0;padding:8px 12px;border-radius:10px;font-family:\'Outfit\',sans-serif;font-size:12px;font-weight:800;cursor:pointer;white-space:nowrap">▶ Reprendre</button>' +
+        '<button onclick="dismissStoredLiveSession()" style="background:transparent;color:var(--muted);border:1px solid var(--border);padding:8px 10px;border-radius:10px;font-family:\'Outfit\',sans-serif;font-size:12px;font-weight:600;cursor:pointer">✕</button>' +
+      '</div>' +
+    '</div>';
+}
+window.renderResumeSessionBanner = renderResumeSessionBanner;
+
 // Parse rest string like "1 mn", "2 mn 30", "45 s", "-" → seconds
 function _lsParseRest(str) {
   if (!str || str === '-') return 60;
@@ -14739,6 +14814,7 @@ function launchSession(exos, sessName, progName) {
   _lsRenderEx();
   document.getElementById('liveSession').classList.add('ls-open');
   document.body.style.overflow = 'hidden';
+  _lsPersist();
 }
 
 function _lsRenderEx() {
@@ -14877,6 +14953,7 @@ function _lsNextEx() {
   if (_LS.idx < _LS.exos.length - 1) {
     _LS.idx++;
     _lsRenderEx();
+    _lsPersist();
   } else {
     _lsShowComplete();
   }
@@ -14888,6 +14965,7 @@ function _lsPrevEx() {
   if (_LS.idx > 0) {
     _LS.idx--;
     _lsRenderEx();
+    _lsPersist();
   }
 }
 
@@ -14907,6 +14985,8 @@ function _lsShowComplete() {
   document.getElementById('lsCompleteMsg').innerHTML = msg;
   if (body) body.scrollTop = 0;
   showToast('Séance terminée 🔥', 'ok');
+  _lsClearPersist();
+  try { renderResumeSessionBanner(); } catch(e) {}
 }
 
 function _lsClose() {
