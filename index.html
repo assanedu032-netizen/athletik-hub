@@ -10630,6 +10630,25 @@ function submitNutri() {
     user.nutriCal = cal; user.nutriProt = prot; user.nutriGluc = gluc; user.nutriLip = lip;
   }
 
+  // Persiste dans ah_profile (source de vérité) + sync Firestore.
+  // Sans ça, à la déconnexion/reconnexion la nutrition réapparaît dans l'onboarding.
+  try {
+    var prof = JSON.parse(localStorage.getItem('ah_profile') || '{}');
+    prof.poids = poids;
+    prof.taille = taille;
+    prof.nutriObj = R.nutriObj;
+    prof.nutriMode = R.nutriMode;
+    prof.nutriCal = cal;
+    prof.nutriProt = prot;
+    prof.nutriGluc = gluc;
+    prof.nutriLip = lip;
+    prof.nutriDoneAt = new Date().toISOString();
+    // objNutri alias rétro-compat (utilisé par renderUserData/Titan ctx)
+    prof.objNutri = R.nutriObj;
+    localStorage.setItem('ah_profile', JSON.stringify(prof));
+    if (typeof fbSaveProfile === 'function') fbSaveProfile();
+  } catch(e) { console.warn('submitNutri save error:', e); }
+
   document.getElementById('nrCal').textContent  = cal;
   document.getElementById('nrProt').textContent = prot;
   document.getElementById('nrGluc').textContent = gluc;
@@ -11288,6 +11307,13 @@ function obPickSexe(el, val) {
   document.querySelectorAll('#p1sexeGrid .sport-chip').forEach(function(c){ c.classList.remove('sel'); });
   el.classList.add('sel');
   OB.sexe = val; R.sexe = val;
+  // Persiste dans ah_profile pour éviter de redemander à la reconnexion
+  try {
+    var prof = JSON.parse(localStorage.getItem('ah_profile') || '{}');
+    prof.sexe = val;
+    localStorage.setItem('ah_profile', JSON.stringify(prof));
+    if (typeof fbSaveProfile === 'function') fbSaveProfile();
+  } catch(e) {}
   try { _persistOnboarding(); } catch(e) {}
 }
 
@@ -11303,6 +11329,15 @@ function obSubmitId() {
   R.prenom = OB.prenom;
   R.age = age;
   user.name = OB.prenom.toUpperCase();
+  // Persiste dans ah_profile pour éviter la perte sur déconnexion
+  try {
+    var prof = JSON.parse(localStorage.getItem('ah_profile') || '{}');
+    prof.prenom = OB.prenom;
+    prof.name = OB.prenom;
+    prof.age = age;
+    localStorage.setItem('ah_profile', JSON.stringify(prof));
+    if (typeof fbSaveProfile === 'function') fbSaveProfile();
+  } catch(e) {}
   if(err) err.style.display='none';
   try { _persistOnboarding(); } catch(e) {}
   obShow('p1_q1', 40);
@@ -15225,10 +15260,29 @@ async function fbSaveProfile() {
     var ref = window.fb.doc(window.fb.db, 'users', window.fbUser.uid);
     // Construit le payload depuis localStorage (source de vérité côté client)
     var payload = _fbCollectPayload();
-    // Fallback : injecte les champs window.user qui ne seraient pas encore dans ah_profile
+    payload.profile = payload.profile || {};
+    // Filet de sécurité : récupère les champs window.user qui ne seraient pas encore
+    // dans ah_profile (cas legacy submitNutri/pickSATSelf qui n'écrivaient que sur user).
+    // Sans ça, à la reconnexion la nutrition / SAT self level réapparaissent dans
+    // l'onboarding parce que ah_profile manque ces champs.
     try {
-      if (typeof user !== 'undefined' && user && (!payload.profile || Object.keys(payload.profile).length < 3)) {
-        payload.profile = Object.assign({}, payload.profile || {}, user);
+      if (typeof user !== 'undefined' && user) {
+        var augmentFields = [
+          'poids','taille','nutriObj','objNutri','nutriMode',
+          'nutriCal','nutriProt','nutriGluc','nutriLip',
+          'satSelfLevel','athScoreSelf','sport','phase','phaseIdx',
+          'streak','level','levelIcon','weekNum','totalWeeks',
+          'lastActive','progressPct'
+        ];
+        augmentFields.forEach(function(k) {
+          if (payload.profile[k] == null && user[k] != null) {
+            payload.profile[k] = user[k];
+          }
+        });
+      }
+      // Premier write pour un user qui n'a rien dans ah_profile : fusion totale
+      if (Object.keys(payload.profile).length < 3 && typeof user !== 'undefined' && user) {
+        payload.profile = Object.assign({}, user, payload.profile);
       }
     } catch(e) {}
     payload.updatedAt = window.fb.serverTimestamp();
