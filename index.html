@@ -3478,6 +3478,7 @@ body.test-mode #testSkipBar{display:flex}
 
 <!-- Category chips -->
 <div class="lib-chips" id="libChips">
+  <div class="lib-chip" id="libChipMyProgram" onclick="_libFilter(this,'myprogram')" style="display:none">🎯 Mon programme</div>
   <div class="lib-chip on" onclick="_libFilter(this,'all')">⚡ Tous (198)</div>
   <div class="lib-chip" onclick="_libFilter(this,'echauf')">🔥 Échauffement</div>
   <div class="lib-chip" onclick="_libFilter(this,'mobi')">🧘 Mobilité</div>
@@ -8707,8 +8708,60 @@ var _LIB_VIDEO_MAP = {
 var _libCurrentFilter = 'all';
 var _libCurrentVideo = null;
 
+// Retourne la liste des noms d'exercices utilisés dans le programme attribué.
+// Parse PROGRAMS_V2[programKey].phases[*].sessions[*].exos et collecte les noms
+// uniques. Utilisé pour le filtre "🎯 Mon programme" de la librairie.
+function _libProgramExoNames() {
+  try {
+    var prof = JSON.parse(localStorage.getItem('ah_profile') || '{}');
+    var key = prof.programKey;
+    if (!key || typeof PROGRAMS_V2 === 'undefined' || !PROGRAMS_V2[key]) return [];
+    var prog = PROGRAMS_V2[key];
+    var names = {};
+    if (prog.phases) {
+      prog.phases.forEach(function(phase) {
+        if (!phase.sessions) return;
+        Object.keys(phase.sessions).forEach(function(sk) {
+          var sess = phase.sessions[sk];
+          if (!sess || !sess.exos) return;
+          sess.exos.forEach(function(e) {
+            if (e && e.n) names[e.n.toLowerCase()] = true;
+          });
+        });
+      });
+    }
+    return Object.keys(names);
+  } catch(e) { return []; }
+}
+
 function _libFlatExos(filterKey) {
   var result = [];
+  if (filterKey === 'myprogram') {
+    // Tous les exos de la librairie dont le nom matche (substring) au moins
+    // un nom d'exo du programme attribué. Substring car PROGRAMS_V2 contient
+    // des descriptions élargies ("Squat à la barre — Charge lourde") vs
+    // catData qui a des noms courts ("Squat").
+    var progNames = _libProgramExoNames();
+    if (!progNames.length) return result;
+    Object.keys(_LIB_CAT_MAP).forEach(function(ck) {
+      var cfg = _LIB_CAT_MAP[ck];
+      cfg.keys.forEach(function(dk) {
+        (catData[dk]||[]).forEach(function(ex) {
+          var exName = (ex.name || '').toLowerCase();
+          if (!exName) return;
+          var hit = false;
+          for (var i = 0; i < progNames.length; i++) {
+            var pn = progNames[i];
+            // Match bidirectionnel : exName dans pn (cas Squat ⊂ Squat à la barre)
+            // ou pn dans exName (cas Box jumps ⊂ Box jumps adapté).
+            if (pn.indexOf(exName) > -1 || exName.indexOf(pn) > -1) { hit = true; break; }
+          }
+          if (hit) result.push({ex:ex, catKey:ck, catLabel:cfg.label, color:cfg.color});
+        });
+      });
+    });
+    return result;
+  }
   if (filterKey === 'all') {
     Object.keys(_LIB_CAT_MAP).forEach(function(ck) {
       var cfg = _LIB_CAT_MAP[ck];
@@ -8835,6 +8888,12 @@ function _libCloseDetail() {
 function _libInit() {
   var grid = document.getElementById('libYtGrid');
   if (grid && !grid.innerHTML.trim()) _libRender('all');
+  // Affiche le chip "🎯 Mon programme" si un programKey est attribué
+  try {
+    var prof = JSON.parse(localStorage.getItem('ah_profile') || '{}');
+    var chip = document.getElementById('libChipMyProgram');
+    if (chip) chip.style.display = prof.programKey ? '' : 'none';
+  } catch(e) {}
 }
 function openProg(k){
   // SAT gate : si pas de SAT et pas test mode, on bloque
