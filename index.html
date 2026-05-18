@@ -2801,6 +2801,9 @@ body.test-mode #testSkipBar{display:flex}
       </div>
     </div>
 
+    <!-- Bannière essai 3 jours — affichée si trial actif/expiré et pas de tier payant -->
+    <div id="trialBanner" style="display:none"></div>
+
     <!-- CARTE SÉANCE — collée sous la photo, style FizzUp TODAY -->
     <div id="todayCard" style="margin:-1px 0 0;background:var(--surface);border-bottom:1px solid var(--border);padding:20px 20px">
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
@@ -5867,6 +5870,11 @@ function getTodaySession() {
 // Mappe le jour de la semaine sur le weekDays du programme pour trouver
 // la session correspondante, puis appelle launchSession() en plein écran.
 function launchTodaySession() {
+  // Gate trial 3j : si essai expiré et pas de tier payant → bloque
+  if (typeof window.hasValidAccess === 'function' && !window.hasValidAccess()) {
+    window._showAccessRequired();
+    return;
+  }
   // SAT obligatoire
   if (typeof _userSatDone === 'function' && !_userSatDone()) {
     if (typeof showToast === 'function') showToast('Fais d\'abord tes tests physiques dans Tracks.', 'info');
@@ -6003,6 +6011,7 @@ document.addEventListener('DOMContentLoaded', function() {
   var origRUD = window.renderUserData;
   if (origRUD) window.renderUserData = function() {
     origRUD(); renderTodayCard(); saveData();
+    try { renderTrialBanner(); } catch(e) {}
   };
 
   // Splash bar animation
@@ -6134,6 +6143,11 @@ function createAccount(){
   setTimeout(function(){enterApp();},800);
 }
 function switchTab(tab){
+  // Gate trial 3j sur Titan chat : si expiré → bloque + ouvre modal code
+  if (tab === 'chat' && typeof window.hasValidAccess === 'function' && !window.hasValidAccess()) {
+    window._showAccessRequired();
+    return;
+  }
   // Reset l'inline display que discoveryGoTo() peut avoir posé sur les .view
   // (sinon switchTab ajoute .on mais l'inline display:none gagne → écran blanc)
   document.querySelectorAll('.view').forEach(function(v){v.classList.remove('on');v.style.display='';});
@@ -10292,6 +10306,83 @@ window.hasAccessTier = function(minTier) {
 // Refresh UI on boot
 (function(){ try { setTimeout(refreshAccessTierUI, 600); } catch(e) {} })();
 
+// ═══ TRIAL 3 JOURS — accès gratuit limité avant code livre ═══
+// L'utilisateur a 3 jours d'accès gratuit dès la fin de l'onboarding.
+// Passé ce délai, il doit saisir un code livre (BETA/VIP/MASTER) pour continuer.
+// Les features gated : launchTodaySession, startSessionGuarded, Titan chat.
+window.TRIAL_MS = 3 * 86400000; // 72h
+
+window.getTrialInfo = function() {
+  try {
+    var prof = JSON.parse(localStorage.getItem('ah_profile') || '{}');
+    if (!prof.trialStartedAt) {
+      // Premier check pour un user existant sans champ : démarre maintenant
+      prof.trialStartedAt = Date.now();
+      try { localStorage.setItem('ah_profile', JSON.stringify(prof)); } catch(e) {}
+      try { if (typeof fbSaveProfile === 'function') fbSaveProfile(); } catch(e) {}
+    }
+    var elapsed = Date.now() - prof.trialStartedAt;
+    var remaining = window.TRIAL_MS - elapsed;
+    return { started: prof.trialStartedAt, elapsed: elapsed, remaining: remaining, active: remaining > 0 };
+  } catch(e) { return { active: false, remaining: 0 }; }
+};
+
+window.hasValidAccess = function() {
+  if (window.hasAccessTier && window.hasAccessTier('BETA')) return true;
+  var t = window.getTrialInfo();
+  return !!t.active;
+};
+
+window._showAccessRequired = function() {
+  if (typeof showToast === 'function') {
+    showToast('⏰ Ton essai de 3 jours est terminé. Saisis ton code livre pour continuer.', 'info');
+  }
+  setTimeout(function() { try { openAccessCode(); } catch(e) {} }, 700);
+};
+
+// Formate le restant : "2j 4h" / "3h 12mn" / "23 mn"
+window._formatTrialRemaining = function(ms) {
+  if (ms <= 0) return 'Expiré';
+  var totalMin = Math.floor(ms / 60000);
+  var days = Math.floor(totalMin / 1440);
+  var hours = Math.floor((totalMin % 1440) / 60);
+  var mins = totalMin % 60;
+  if (days > 0) return days + 'j ' + hours + 'h';
+  if (hours > 0) return hours + 'h ' + mins + 'mn';
+  return mins + ' mn';
+};
+
+// Bannière sur Home : affichée seulement si trial actif (et pas de tier payant)
+function renderTrialBanner() {
+  var el = document.getElementById('trialBanner');
+  if (!el) return;
+  // Tier payant → pas de bannière
+  if (window.hasAccessTier && window.hasAccessTier('BETA')) { el.innerHTML = ''; el.style.display = 'none'; return; }
+  var t = window.getTrialInfo();
+  el.style.display = '';
+  if (t.active) {
+    var rem = window._formatTrialRemaining(t.remaining);
+    el.innerHTML =
+      '<div style="background:linear-gradient(135deg,rgba(197,164,78,.10),rgba(197,164,78,.04));border:1px solid rgba(197,164,78,.35);border-radius:12px;padding:12px 14px;margin:12px 16px;display:flex;align-items:center;justify-content:space-between;gap:10px">' +
+        '<div style="flex:1;min-width:0">' +
+          '<div style="font-size:11px;letter-spacing:1.5px;font-weight:800;color:var(--gold);text-transform:uppercase">Essai gratuit</div>' +
+          '<div style="font-size:13px;color:var(--text);font-weight:600;margin-top:2px">Reste <strong>' + rem + '</strong> avant blocage</div>' +
+        '</div>' +
+        '<button onclick="openAccessCode()" style="background:var(--gold);color:#0A0F1E;border:0;padding:8px 14px;border-radius:10px;font-family:\'Outfit\',sans-serif;font-size:12px;font-weight:800;cursor:pointer;white-space:nowrap;letter-spacing:.3px">📕 J\'ai le livre</button>' +
+      '</div>';
+  } else {
+    el.innerHTML =
+      '<div style="background:linear-gradient(135deg,rgba(239,68,68,.12),rgba(239,68,68,.04));border:1px solid rgba(239,68,68,.4);border-radius:12px;padding:12px 14px;margin:12px 16px;display:flex;align-items:center;justify-content:space-between;gap:10px">' +
+        '<div style="flex:1;min-width:0">' +
+          '<div style="font-size:11px;letter-spacing:1.5px;font-weight:800;color:#EF4444;text-transform:uppercase">Essai expiré</div>' +
+          '<div style="font-size:13px;color:var(--text);font-weight:600;margin-top:2px">Accès bloqué. Saisis ton code livre.</div>' +
+        '</div>' +
+        '<button onclick="openAccessCode()" style="background:#EF4444;color:#fff;border:0;padding:8px 14px;border-radius:10px;font-family:\'Outfit\',sans-serif;font-size:12px;font-weight:800;cursor:pointer;white-space:nowrap;letter-spacing:.3px">📕 Débloquer</button>' +
+      '</div>';
+  }
+}
+window.renderTrialBanner = renderTrialBanner;
+
 // ═══ BADGES (logique d'unlock) ═══
 var BADGES_DEF = [
   { id:'firstStep',  icon:'🔥', name:'Premier Pas',  desc:'1ère séance terminée',     check: function(s){ return (s.sessionsDone||0) >= 1; } },
@@ -11198,7 +11289,8 @@ function obCalcProg() {
       mat: obChecks.mat.slice(),
       program: prog.name,
       programKey: prog.key,
-      programObj: prog.obj
+      programObj: prog.obj,
+      trialStartedAt: existingProfile.trialStartedAt || Date.now()
     });
     localStorage.setItem('ah_profile', JSON.stringify(p));
   } catch(e) { console.warn('Save profile1 error:', e); }
@@ -14840,6 +14932,11 @@ function _lsOpenVideo() {
 
 // Wire up startSessionGuarded to launchSession
 function startSessionGuarded() {
+  // Gate trial 3j
+  if (typeof window.hasValidAccess === 'function' && !window.hasValidAccess()) {
+    window._showAccessRequired();
+    return;
+  }
   if (!_userSatDone()) {
     showToast('Fais d\'abord tes tests physiques dans Tracks.', 'info');
     try { switchTab('tracks'); } catch(e) {}
