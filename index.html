@@ -5563,6 +5563,40 @@ function satCalc1RM(exoId) {
   satValues[exoId + '_max'] = max;
 }
 
+// Mapping ids p3 → ids legacy satExercices (pour aligner le filtre PROGRAM_TESTS)
+var SAT_LEGACY_ID_MAP = {
+  jump: 'jump', squat: 'squat', sdt: 'dl', ht: 'ht', dc: 'dc',
+  sprint30: 'sprint', sprint60: 'sprint',
+  ttest: 'ttest', fms: 'fms'
+  // pdcSquatBulgare / pdcPompes / pdcWallSit / pdcFentesSautees / feet94 / laneAgility :
+  // pas d'équivalent legacy → ignorés (l'utilisateur fait ces tests via le flow p3 onboarding)
+};
+
+// Sous-ensemble de satExercices applicable au programme de l'utilisateur.
+// Permet aux users VD de ne voir que jump/squat/sdt/ht au lieu des 7 tests.
+function getActiveSatExercices() {
+  try {
+    var prof = JSON.parse(localStorage.getItem('ah_profile') || '{}');
+    var progKey = prof.programKey;
+    if (!progKey || typeof PROGRAM_TESTS === 'undefined' || typeof p3NormalizeProgram !== 'function') {
+      return satExercices;
+    }
+    var norm = p3NormalizeProgram(progKey);
+    var allowed = PROGRAM_TESTS[norm];
+    if (!allowed || !allowed.length) return satExercices;
+    var legacySet = {};
+    allowed.forEach(function(id) {
+      var leg = SAT_LEGACY_ID_MAP[id];
+      if (leg) legacySet[leg] = true;
+    });
+    // T-Test n'est PAS dans satExercices (rendu séparément en HTML statique)
+    // → on garde quand même la projection sur satExercices
+    var filtered = satExercices.filter(function(ex){ return legacySet[ex.id]; });
+    return filtered.length > 0 ? filtered : satExercices;
+  } catch(e) { return satExercices; }
+}
+window.getActiveSatExercices = getActiveSatExercices;
+
 function initSATv7() {
   currentSatStep = 0;
   satValues = {};
@@ -5572,8 +5606,9 @@ function initSATv7() {
 function renderSATStep() {
   var container = document.getElementById('satForm');
   if (!container) return;
-  var ex = satExercices[currentSatStep];
-  var total = satExercices.length;
+  var active = getActiveSatExercices();
+  var ex = active[currentSatStep];
+  var total = active.length;
   var prog = Math.round((currentSatStep / total) * 100);
   
   var html = '';
@@ -5692,18 +5727,19 @@ function renderSATStep() {
   if (currentSatStep > 0) {
     html += '<button onclick="prevSATStep()" style="padding:14px 20px;background:var(--surface);border:1.5px solid var(--border2);border-radius:12px;font-weight:700;color:var(--text2);cursor:pointer;font-family:Outfit,sans-serif">← Retour</button>';
   }
-  if (currentSatStep < satExercices.length - 1) {
+  if (currentSatStep < active.length - 1) {
     html += '<button onclick="nextSATStep()" style="flex:1;padding:14px;background:linear-gradient(135deg,#C5A44E,#D4B86A);border:none;border-radius:12px;font-weight:800;color:#0A0F1E;cursor:pointer;font-family:Outfit,sans-serif;font-size:15px">Suivant →</button>';
   } else {
     html += '<button onclick="finalizeSAT()" style="flex:1;padding:14px;background:linear-gradient(135deg,#C5A44E,#D4B86A);border:none;border-radius:12px;font-weight:800;color:#0A0F1E;cursor:pointer;font-family:Outfit,sans-serif;font-size:15px">Calculer mon score 🏆</button>';
   }
   html += '</div>';
-  
+
   container.innerHTML = html;
 }
 
 function nextSATStep() {
-  var ex = satExercices[currentSatStep];
+  var active = getActiveSatExercices();
+  var ex = active[currentSatStep];
   // Enregistrer les valeurs
   ex.fields.forEach(function(f) {
     var el = document.getElementById(f.id);
@@ -5721,10 +5757,10 @@ function nextSATStep() {
     satValues[ex.id + '_1rm'] = max > 0 ? Math.round(max * 1.15) : 0;
   }
 
-  if (currentSatStep < satExercices.length - 1) {
+  if (currentSatStep < active.length - 1) {
     currentSatStep++;
     // Reset series count for next exercise
-    var nextEx = satExercices[currentSatStep];
+    var nextEx = active[currentSatStep];
     if (nextEx && window.satSeriesCount) window.satSeriesCount[nextEx.id] = 1;
     renderSATStep();
     document.getElementById('vTracks').scrollTop = 0;
