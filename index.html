@@ -5456,9 +5456,7 @@ var satExercices = [
     id: 'squat', name: 'Back Squat 5RM', emoji: '🏋️',
     desc: 'Charge maximale pour 5 répétitions strictes. Prends le temps de te chauffer.',
     libraryName: 'Back Squat',
-    libraryName: 'Back Squat',
     video: 'https://www.youtube.com/embed/gsNoPYwWXeM',
-    video: 'https://www.youtube.com/results?search_query=back+squat+technique+tutorial',
     fields: [{id:'satSquat', label:'Charge 5RM', unit:'kg', placeholder:'80'}],
     hint: '1RM estimé = 5RM × 1.15',
     hasTimer: true, timerSec: 180, timerLabel: 'Repos entre séries'
@@ -5476,9 +5474,7 @@ var satExercices = [
     id: 'ht', name: 'Hip Thrust 5RM', emoji: '🍑',
     desc: 'Charge maximale pour 5 répétitions. Dos sur le banc, poussée des hanches.',
     libraryName: 'Hip Thrust',
-    libraryName: 'Hip Thrust',
     video: 'https://www.youtube.com/embed/xDmFkJxPzeM',
-    video: 'https://www.youtube.com/results?search_query=hip+thrust+barbell+technique',
     fields: [{id:'satHT', label:'Charge 5RM', unit:'kg', placeholder:'80'}],
     hint: 'Muscle ciblé : Fessiers / Ischios',
     hasTimer: true, timerSec: 120, timerLabel: 'Repos entre séries'
@@ -5487,9 +5483,7 @@ var satExercices = [
     id: 'dc', name: 'Développé Couché 5RM', emoji: '💪',
     desc: 'Charge maximale pour 5 répétitions. Barre en contact avec la poitrine.',
     libraryName: 'Développé couché',
-    libraryName: 'Développé couché',
     video: 'https://www.youtube.com/embed/vcBig73ojpE',
-    video: 'https://www.youtube.com/results?search_query=bench+press+technique+tutorial',
     fields: [{id:'satDC', label:'Charge 5RM', unit:'kg', placeholder:'60'}],
     hint: 'Prise large, coudes à 45°',
     hasTimer: true, timerSec: 120, timerLabel: 'Repos entre séries'
@@ -5498,9 +5492,7 @@ var satExercices = [
     id: 'sprint', name: 'Sprint 30m', emoji: '⚡',
     desc: 'Sprint maximal sur 30 mètres. Départ depuis position debout.',
     libraryName: 'Sprint 30m',
-    libraryName: 'Sprint 30m',
     video: 'https://www.youtube.com/embed/4N4MFqo2J8c',
-    video: 'https://www.youtube.com/results?search_query=sprint+30m+technique',
     fields: [{id:'satSprintTime', label:'Temps', unit:'sec', placeholder:'4.2'}],
     hint: 'Chronomètre intégré disponible',
     hasTimer: true, timerSec: 300, timerLabel: 'Récupération sprint', hasStopwatch: true
@@ -5508,8 +5500,8 @@ var satExercices = [
   {
     id: 'fms', name: 'FMS Mobilité', emoji: '🧘',
     desc: 'Score ton niveau de mobilité sur 21 points (7 mouvements × 3 points max).',
+    libraryName: 'FMS',
     video: 'https://www.youtube.com/embed/4dsrMFf_SRY',
-    video: 'https://www.youtube.com/results?search_query=fms+functional+movement+screen+test',
     fields: [{id:'satFMS', label:'Score FMS', unit:'/21', placeholder:'14'}],
     hint: '< 14 = risque blessure. Travaille la mobilité en priorité.',
     hasTimer: false
@@ -6868,13 +6860,14 @@ document.addEventListener('input', function(e) {
 });
 
 // ── Vidéos YouTube par test (placeholders éditables) ──
-// Remplace les ID YouTube ci-dessous par les vraies vidéos après tournage (23 mai).
+// IDs publics utilisés comme placeholders en attendant le tournage final.
+// Remplace par les vraies vidéos une fois disponibles.
 var SAT_TEST_VIDEOS = {
-  detente: { yt: '', label: 'Démo — Test de détente verticale' },
-  force:   { yt: '', label: 'Démo — Tests de force (Squat / SDT / HT / DC)' },
-  sprint:  { yt: '', label: 'Démo — Test de sprint (départ, technique)' },
-  ttest:   { yt: '', label: 'Démo — Agilité T-Test' },
-  fms:     { yt: '', label: 'Démo — FMS (7 mouvements)' }
+  detente: { yt: 'R4fjUyP2xuo', label: 'Démo — Test de détente verticale' },
+  force:   { yt: 'gsNoPYwWXeM', label: 'Démo — Tests de force (Squat / SDT / HT / DC)' },
+  sprint:  { yt: '4N4MFqo2J8c', label: 'Démo — Test de sprint (départ, technique)' },
+  ttest:   { yt: 'Cy7HUcZ5HxI', label: 'Démo — Agilité T-Test' },
+  fms:     { yt: '4dsrMFf_SRY', label: 'Démo — FMS (7 mouvements)' }
 };
 
 function renderTestVideos() {
