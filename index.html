@@ -5272,6 +5272,16 @@ function loadData() {
     activeHabits = validateHabits(raw.activeHabits);
     if (activeHabits.length !== (raw.activeHabits || []).length) repaired = true;
   }
+  // Override avec ah_active_habits si présent (priorité car sync Firestore).
+  // Évite que loadData() ne restaure une version stale depuis ah_v8 alors que
+  // ah_active_habits est plus à jour (cas reconnexion sur autre device).
+  try {
+    var habRaw = localStorage.getItem('ah_active_habits');
+    if (habRaw) {
+      var habArr = JSON.parse(habRaw);
+      if (Array.isArray(habArr)) activeHabits = validateHabits(habArr);
+    }
+  } catch(e) {}
   
   if (Array.isArray(raw.trainingDays)) {
     raw.trainingDays.forEach(function(d) {
@@ -11047,6 +11057,26 @@ function selectHabitItem(el) {
   contractEl.scrollIntoView({ behavior: "smooth" });
 }
 
+// Sauvegarde d\u00e9di\u00e9e activeHabits dans son propre localStorage key + Firestore.
+// Avant : seulement dans ah_v8 (saveData) qui n'est PAS sync Firestore \u2192 perte
+// au change de device.
+function _persistActiveHabits() {
+  try { localStorage.setItem('ah_active_habits', JSON.stringify(activeHabits)); } catch(e) {}
+  try { if (typeof fbSaveProfile === 'function') fbSaveProfile(); } catch(e) {}
+}
+
+// Restaure activeHabits depuis localStorage (pr\u00e9f\u00e8re ah_active_habits, fallback
+// sur l'\u00e9ventuel ah_v8 h\u00e9rit\u00e9 de saveData).
+function _restoreActiveHabits() {
+  try {
+    var raw = localStorage.getItem('ah_active_habits');
+    if (raw) {
+      var arr = JSON.parse(raw);
+      if (Array.isArray(arr)) activeHabits = arr;
+    }
+  } catch(e) {}
+}
+
 function signAndStartHabit() {
   if (!selectedHabit) return;
   var sig = document.getElementById("signatureInput").value.trim();
@@ -11056,6 +11086,7 @@ function signAndStartHabit() {
     duration: selectedDuration, startDate: new Date().toISOString(),
     daysCompleted: 0, signature: sig, streak: 0, lastChecked: null
   });
+  _persistActiveHabits();
   closeHabitsModal();
   renderActiveHabits();
 }
@@ -11115,14 +11146,46 @@ function checkHabit(id) {
   var h = activeHabits.find(function(a) { return a.id === id; });
   if (!h) return;
   var today = new Date().toDateString();
-  if (h.lastChecked === today) return;
-  h.daysCompleted++; h.streak++; h.lastChecked = today;
-  if (h.daysCompleted >= h.duration) {
-    activeHabits = activeHabits.filter(function(a) { return a.id !== id; });
-    alert("\uD83C\uDFC6 D\u00e9fi termin\u00e9 ! Titan est fier.");
+  if (h.lastChecked === today) return; // d\u00e9j\u00E0 coch\u00e9 aujourd'hui
+
+  // D\u00e9tection du gap : si lastChecked != hier (ou null), on reset la streak.
+  // Sinon on incr\u00e9mente normalement. \u00C9vite que la streak monte alors que l'user
+  // a saut\u00e9 plusieurs jours.
+  var yesterday = new Date(Date.now() - 86400000).toDateString();
+  if (h.lastChecked && h.lastChecked !== yesterday) {
+    h.streak = 1; // gap d\u00e9tect\u00e9 \u2192 on repart \u00E0 1 (le check d'aujourd'hui compte)
+  } else {
+    h.streak = (h.streak || 0) + 1;
   }
+
+  h.daysCompleted++;
+  h.lastChecked = today;
+
+  if (h.daysCompleted >= h.duration) {
+    // D\u00e9fi termin\u00e9 : bump compteur global pour les badges (zenMaster: flowDone 10x,
+    // etc. d\u00e9pendent de habitsDone). Retire l'habitude de la liste active.
+    try {
+      if (typeof _bumpProfileCounter === 'function') _bumpProfileCounter('habitsDone', 1);
+    } catch(e) {}
+    activeHabits = activeHabits.filter(function(a) { return a.id !== id; });
+    try { if (typeof renderBadges === 'function') renderBadges(); } catch(e) {}
+    if (typeof showToast === 'function') {
+      showToast('\uD83C\uDFC6 D\u00e9fi "' + h.name + '" termin\u00e9 ! Titan est fier.', 'ok');
+    } else {
+      alert('\uD83C\uDFC6 D\u00e9fi termin\u00e9 ! Titan est fier.');
+    }
+  }
+
+  _persistActiveHabits();
   renderActiveHabits();
 }
+
+// Abandon manuel d'une habitude (si l'UI ajoute un bouton plus tard)
+window.abandonHabit = function(id) {
+  activeHabits = activeHabits.filter(function(a) { return a.id !== id; });
+  _persistActiveHabits();
+  renderActiveHabits();
+};
 
 
 // ═══════════════════════════════════════════════
@@ -12166,7 +12229,8 @@ var FB_SYNC_KEYS = [
   ['ah_shopping_meal_plan_checks','shoppingMealChecks',  true],
   ['ah_sat_inprogress',           'satInProgress',       true],
   ['ah_live_session',             'liveSession',         true],
-  ['ah_access_data',              'accessData',          true]
+  ['ah_access_data',              'accessData',          true],
+  ['ah_active_habits',            'activeHabits',        true]
 ];
 
 function _fbCollectPayload() {
