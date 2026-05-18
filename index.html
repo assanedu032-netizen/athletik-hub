@@ -9663,8 +9663,18 @@ var _notifTimers = [];
 
 function _enableTitanReminders() {
   _disableTitanReminders();
-  // Daily reminder at 19:00 if no session done today
+  // Daily reminder at 19:00 — uniquement si la séance du jour n'a pas été faite.
   _scheduleDailyAt(19, 0, function(){
+    try {
+      // Skip si l'utilisateur a complété au moins une séance aujourd'hui
+      var today = new Date().toDateString();
+      var hist = JSON.parse(localStorage.getItem('ah_set_history') || '[]');
+      var doneToday = hist.some(function(h){
+        if (!h || !h.date) return false;
+        return new Date(h.date).toDateString() === today && (h.type === 'session' || h.sessName);
+      });
+      if (doneToday) return;
+    } catch(e) {}
     _showTitanNotif(
       'Tu as une séance prévue 🏋️',
       'Termine ta journée comme tu l\'as commencée. — Titan'
@@ -9673,13 +9683,16 @@ function _enableTitanReminders() {
   // Habit check at 21:00 if any active habit not checked today
   _scheduleDailyAt(21, 0, function(){
     try {
-      var habits = JSON.parse(localStorage.getItem('ah_habits') || '[]');
-      var today = new Date().toISOString().split('T')[0];
-      var pending = habits.filter(function(h){ return h.active && (!h.lastCheck || h.lastCheck.split('T')[0] !== today); });
+      // Lit la bonne clé (ah_active_habits) — pas ah_habits qui n'existe pas.
+      var habits = JSON.parse(localStorage.getItem('ah_active_habits') || '[]');
+      var today = new Date().toDateString();
+      var pending = habits.filter(function(h){
+        return h && (!h.lastChecked || h.lastChecked !== today);
+      });
       if (pending.length > 0) {
         _showTitanNotif(
           'Habitudes 🔔',
-          'Tu as ' + pending.length + ' habitude(s) à cocher avant la fin de la journée.'
+          'Tu as ' + pending.length + ' habitude' + (pending.length > 1 ? 's' : '') + ' à cocher avant la fin de la journée.'
         );
       }
     } catch(e) {}
