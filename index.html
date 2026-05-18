@@ -2122,7 +2122,7 @@ body.test-mode #testSkipBar{display:flex}
         <button class="ob-chk" onclick="obChk(this,'sit','debutant')"><div class="ob-chk-box"></div><div class="ob-chk-txt">Je suis débutant (jamais fait de programme structuré)</div></button>
         <button class="ob-chk" onclick="obChk(this,'sit','avance')"><div class="ob-chk-box"></div><div class="ob-chk-txt">Je suis avancé (squat 1.8x poids de corps)</div></button>
       </div>
-      <button class="bc" onclick="obShow('p1_q2',60)">Continuer →</button>
+      <button class="bc" onclick="obContinueQ('sit','p1_q2',60)">Continuer →</button>
     </div>
 
     <!-- Q2 Contraintes -->
@@ -2137,7 +2137,7 @@ body.test-mode #testSkipBar{display:flex}
         <button class="ob-chk" onclick="obChk(this,'cont','quotidien')"><div class="ob-chk-box"></div><div class="ob-chk-txt">Disponible tous les jours 10-15 min</div></button>
         <button class="ob-chk" onclick="obChk(this,'cont','partenaire')"><div class="ob-chk-box"></div><div class="ob-chk-txt">J'ai un partenaire d'entraînement</div></button>
       </div>
-      <button class="bc" onclick="obShow('p1_q3',80)">Continuer →</button>
+      <button class="bc" onclick="obContinueQ('cont','p1_q3',80)">Continuer →</button>
     </div>
 
     <!-- Q3 Matériel -->
@@ -2151,7 +2151,7 @@ body.test-mode #testSkipBar{display:flex}
         <button class="ob-chk" onclick="obChk(this,'mat','gilet')"><div class="ob-chk-box"></div><div class="ob-chk-txt">Gilet lesté</div></button>
         <button class="ob-chk" onclick="obChk(this,'mat','rien')"><div class="ob-chk-box"></div><div class="ob-chk-txt">Rien (poids du corps uniquement)</div></button>
       </div>
-      <button class="bc" onclick="obCalcProg()">Calculer mon programme →</button>
+      <button class="bc" onclick="obContinueQ('mat',null,100)">Calculer mon programme →</button>
     </div>
   </div>
 </div>
@@ -5919,8 +5919,22 @@ function launchTodaySession() {
   var key = prof.programKey;
 
   if (!key || typeof PROGRAMS_V2 === 'undefined' || !PROGRAMS_V2[key]) {
-    if (typeof showToast === 'function') showToast('Pas de programme attribué. Choisis-en un dans Train → Programmes.', 'info');
-    try { if (typeof goToProgrammes === 'function') goToProgrammes(); else switchTab('train'); } catch(e) {}
+    // Programme pas encore attribué → l'utilisateur doit compléter le questionnaire.
+    // En mode découverte, on l'envoie sur profil1 (sit/cont/mat) plutôt qu'un toast
+    // qui le perd. Si l'onboarding est censé être fini mais programKey absent
+    // (état corrompu), fallback sur Train → Programmes.
+    if (typeof isDiscoveryMode === 'function' && isDiscoveryMode()) {
+      if (typeof showToast === 'function') showToast('Complète d\'abord ton profil pour révéler ton programme.', 'info');
+      try {
+        if (typeof discoveryGoTo === 'function') discoveryGoTo('profil1');
+        else go('profil1');
+      } catch(e) {}
+    } else {
+      if (typeof showToast === 'function') showToast('Pas de programme attribué. Termine ton onboarding.', 'info');
+      try { go('profil1'); } catch(e) {
+        try { if (typeof goToProgrammes === 'function') goToProgrammes(); else switchTab('train'); } catch(e2) {}
+      }
+    }
     return;
   }
 
@@ -10550,6 +10564,15 @@ function pickSATSelf(el, level) {
   if (typeof user !== 'undefined') user.athScoreSelf = info.score;
   if (typeof R !== 'undefined') R.athScoreSelf = info.score;
 
+  // Persiste dans ah_profile pour éviter de redemander à la reconnexion
+  try {
+    var prof = JSON.parse(localStorage.getItem('ah_profile') || '{}');
+    prof.satSelfLevel = level;
+    prof.athScoreSelf = info.score;
+    localStorage.setItem('ah_profile', JSON.stringify(prof));
+    if (typeof fbSaveProfile === 'function') fbSaveProfile();
+  } catch(e) {}
+
   var box = document.getElementById('qSATEstimate');
   var txt = document.getElementById('qSATEstimateText');
   if (box) box.style.display = '';
@@ -11292,6 +11315,26 @@ function obChk(el, group, val) {
   try { _persistOnboarding(); } catch(e) {}
 }
 
+// Valide qu'au moins 1 case est cochée avant de passer à la question suivante.
+// Sans ça, l'utilisateur peut cliquer "Continuer" sans rien sélectionner et le
+// scoring Tally se fait avec des arrays vides → résultat moins précis.
+function obContinueQ(group, nextPanelId, barPct) {
+  var arr = (typeof obChecks !== 'undefined' && obChecks[group]) ? obChecks[group] : [];
+  var err = document.getElementById('p1err');
+  if (!arr.length) {
+    if (err) {
+      var labels = { sit: 'ta situation', cont: 'tes contraintes', mat: 'ton matériel' };
+      err.textContent = 'Coche au moins une option sur ' + (labels[group] || 'cette question') + '.';
+      err.style.display = 'block';
+    }
+    return;
+  }
+  if (err) err.style.display = 'none';
+  // mat = dernière question → on calcule le programme
+  if (group === 'mat') { obCalcProg(); return; }
+  obShow(nextPanelId, barPct);
+}
+
 // Show sub-panel in profil1
 function obShow(id, barPct) {
   ['p1_id','p1_q1','p1_q2','p1_q3'].forEach(function(pid){
@@ -11579,6 +11622,12 @@ function getProfileSteps() {
       action: function(){ discoveryGoTo('profil4'); }
     }
   ];
+  // Verrouille tests/nutri tant que profil1 n'est pas validé.
+  // Un user qui fait SAT avant profil1 aurait un score athScore sans programme
+  // attribué → données orphelines + UX confuse.
+  var profil1Done = steps[1].done;
+  steps[2].locked = !profil1Done;
+  steps[3].locked = !profil1Done;
   return steps;
 }
 
@@ -11655,24 +11704,31 @@ function renderDiscoveryBanner() {
         textColor = 'var(--text)';
       }
 
-      // Click handler inline : utilise window.openStep pour éviter tout problème de scope
-      var clickable = !step.done && !!step.actionKey;
-      var onclickAttr = clickable ? ' onclick="openProfileStep(\'' + step.actionKey + '\')"' : '';
-      var cursor = clickable ? 'pointer' : 'default';
+      // Verrouillage : si step.locked, on désactive le click et on affiche un cadenas.
+      // Évite que l'utilisateur fasse SAT/nutrition avant l'étape profil1.
+      var clickable = !step.done && !!step.actionKey && !step.locked;
+      var onclickAttr = clickable
+        ? ' onclick="openProfileStep(\'' + step.actionKey + '\')"'
+        : (step.locked ? ' onclick="showToast(\'Termine d\\\'abord ton profil personnel pour débloquer cette étape.\',\'info\')"' : '');
+      var cursor = clickable ? 'pointer' : (step.locked ? 'not-allowed' : 'default');
+      var opacity = step.locked ? '0.5' : '1';
 
-      html += '<div data-step-key="' + step.key + '"' + onclickAttr + ' style="display:flex;align-items:center;gap:12px;padding:14px 18px;cursor:' + cursor + ';transition:background .15s;' + (isLast ? '' : 'border-bottom:1px solid var(--border);') + '">';
+      html += '<div data-step-key="' + step.key + '"' + onclickAttr + ' style="display:flex;align-items:center;gap:12px;padding:14px 18px;cursor:' + cursor + ';opacity:' + opacity + ';transition:background .15s;' + (isLast ? '' : 'border-bottom:1px solid var(--border);') + '">';
 
       // Icon
-      html += '<div style="width:36px;height:36px;border-radius:50%;background:' + bgColor + ';display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0;border:1.5px solid ' + (step.done ? 'rgba(16,185,129,.25)' : 'var(--border)') + '">' + step.icon + '</div>';
+      html += '<div style="width:36px;height:36px;border-radius:50%;background:' + bgColor + ';display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0;border:1.5px solid ' + (step.done ? 'rgba(16,185,129,.25)' : 'var(--border)') + '">' + (step.locked ? '🔒' : step.icon) + '</div>';
 
       // Texte
       html += '<div style="flex:1;min-width:0">';
       html += '<div style="font-size:13px;font-weight:700;color:' + textColor + ';margin-bottom:1px;' + (step.done ? 'text-decoration:line-through;text-decoration-color:var(--muted);text-decoration-thickness:1.5px;' : '') + '">' + step.label + '</div>';
-      html += '<div style="font-size:11px;color:var(--muted);font-weight:500">' + step.desc + '</div>';
+      html += '<div style="font-size:11px;color:var(--muted);font-weight:500">' + (step.locked ? 'Termine ton profil personnel d\'abord' : step.desc) + '</div>';
       html += '</div>';
 
       // Statut à droite
-      html += '<div style="width:24px;height:24px;border-radius:50%;background:' + (step.done ? 'var(--green)' : 'transparent') + ';display:flex;align-items:center;justify-content:center;color:' + (step.done ? '#fff' : statusColor) + ';font-size:' + (step.done ? '14px' : '16px') + ';font-weight:800;flex-shrink:0">' + statusIcon + '</div>';
+      var rightIcon = step.locked ? '🔒' : statusIcon;
+      var rightBg = step.done ? 'var(--green)' : 'transparent';
+      var rightColor = step.done ? '#fff' : (step.locked ? 'var(--muted)' : statusColor);
+      html += '<div style="width:24px;height:24px;border-radius:50%;background:' + rightBg + ';display:flex;align-items:center;justify-content:center;color:' + rightColor + ';font-size:' + (step.done ? '14px' : (step.locked ? '12px' : '16px')) + ';font-weight:800;flex-shrink:0">' + rightIcon + '</div>';
 
       html += '</div>';
     });
