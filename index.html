@@ -9267,17 +9267,31 @@ async function checkLakeraGuard(text) {
 async function callAnthropicAPI(userMessage) {
   conversationHistory.push({ role: 'user', content: userMessage });
 
-  // Build athlete context for system prompt
+  // Source de vérité = ah_profile (localStorage, synchro Firestore).
+  // window.user n'est qu'un mirror in-memory, pas toujours à jour après login fresh.
+  var prof = {};
+  try { prof = JSON.parse(localStorage.getItem('ah_profile') || '{}'); } catch(e) {}
+  var u = (typeof user !== 'undefined' && user) ? user : {};
+  function pick(field, fallback) {
+    return (prof[field] != null && prof[field] !== '') ? prof[field]
+         : (u[field]    != null && u[field]    !== '') ? u[field]
+         : fallback;
+  }
   var ctx = {
-    name: user.name || user.prenom || 'Athlète',
-    program: user.program || user.programName || 'Non attribué',
-    weekNum: user.weekNum || 1,
-    totalWeeks: user.totalWeeks || 12,
-    phase: user.phase || 'Phase 1',
-    streak: user.streak || 0,
-    athScore: user.athScore != null ? user.athScore : null,
-    sport: user.sport || '',
-    nutriObj: user.nutriObj || '',
+    name:       pick('prenom', pick('name', 'Athlète')),
+    program:    pick('program', pick('programName', 'Non attribué')),
+    programKey: pick('programKey', ''),
+    weekNum:    pick('weekNum', 1),
+    totalWeeks: pick('totalWeeks', 12),
+    phase:      pick('phase', 'Phase 1'),
+    phaseIdx:   pick('phaseIdx', 0),
+    streak:     pick('streak', 0),
+    athScore:   prof.athScore != null ? prof.athScore : (u.athScore != null ? u.athScore : null),
+    vertJump:   prof.vertJump != null ? prof.vertJump : null,
+    satDone:    !!prof.satDone || !!u.satDone,
+    sport:      pick('sport', ''),
+    nutriObj:   pick('nutriObj', pick('objNutri', '')),
+    accessTier: prof.accessTier || (function(){ try { return localStorage.getItem('ah_access_tier'); } catch(e) { return null; } })(),
   };
 
   // uid for rate limiting (Firebase uid or anonymous fallback)

@@ -70,13 +70,15 @@ MÉTHODE MENER :
 
 DONNÉES ATHLÈTE :
 Prénom : ${ctx.name || 'Athlète'}
-Programme : ${ctx.program || 'Non attribué'}
+Programme : ${ctx.program || 'Non attribué'}${ctx.programKey ? ' (' + ctx.programKey + ')' : ''}
 Semaine : ${ctx.weekNum || '?'} / ${ctx.totalWeeks || '?'}
 Phase : ${ctx.phase || 'Non définie'}
 Streak : ${ctx.streak || 0} jours
-Score SAT : ${ctx.athScore != null ? ctx.athScore + '/100' : 'SAT non fait'}
+SAT complété : ${ctx.satDone ? 'Oui' : 'Non'}
+Score SAT : ${ctx.athScore != null ? ctx.athScore + '/100' : 'SAT non fait'}${ctx.vertJump != null ? ' — Détente : ' + ctx.vertJump + ' cm' : ''}
 Sport : ${ctx.sport || 'Non renseigné'}
 Objectif nutrition : ${ctx.nutriObj || 'Non renseigné'}
+Accès : ${ctx.accessTier || 'Essai gratuit'}
 
 Si l'athlète n'a pas fait son SAT : pousse-le à le faire. C'est non-négociable.
 Si l'athlète parle de fatigue ou d'abandon : sois direct mais pas cruel.
