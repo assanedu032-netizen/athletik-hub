@@ -11892,27 +11892,68 @@ async function fbGoogleSignIn() {
   }
 }
 
+// Clés localStorage à sync vers Firestore. Chaque entrée = [storageKey, firestoreField, isJson].
+// Les clés purement device-local (theme, backups, flags transients) sont volontairement exclues.
+var FB_SYNC_KEYS = [
+  ['ah_profile',                  'profile',             true],
+  ['ah_nutri_journal',            'nutriJournal',        true],
+  ['ah_set_history',              'setHistory',          true],
+  ['ah_badges_earned',            'badgesEarned',        true],
+  ['ah_builder_session',          'builderSession',      true],
+  ['ah_recipe_favorites',         'recipeFavorites',     true],
+  ['ah_shopping_checks',          'shoppingChecks',      true],
+  ['ah_shopping_meal_plan',       'shoppingMealPlan',    true],
+  ['ah_shopping_meal_plan_checks','shoppingMealChecks',  true],
+  ['ah_sat_inprogress',           'satInProgress',       true],
+  ['ah_live_session',             'liveSession',         true],
+  ['ah_access_data',              'accessData',          true]
+];
+
+function _fbCollectPayload() {
+  var out = {};
+  FB_SYNC_KEYS.forEach(function(entry) {
+    var sk = entry[0], ff = entry[1], isJson = entry[2];
+    try {
+      var raw = localStorage.getItem(sk);
+      if (raw == null) return;
+      out[ff] = isJson ? JSON.parse(raw) : raw;
+    } catch(e) { /* skip clé corrompue */ }
+  });
+  // Tier d'accès en string simple (pratique pour les rules)
+  try {
+    var tier = localStorage.getItem('ah_access_tier');
+    if (tier) out.accessTier = tier;
+  } catch(e) {}
+  return out;
+}
+
+function _fbApplyPayload(data) {
+  if (!data || typeof data !== 'object') return;
+  FB_SYNC_KEYS.forEach(function(entry) {
+    var sk = entry[0], ff = entry[1], isJson = entry[2];
+    if (data[ff] == null) return;
+    try {
+      var v = isJson ? JSON.stringify(data[ff]) : data[ff];
+      localStorage.setItem(sk, v);
+    } catch(e) {}
+  });
+  try { if (data.accessTier) localStorage.setItem('ah_access_tier', data.accessTier); } catch(e) {}
+  // Flags dérivés
+  try {
+    if (data.profile && data.profile.programKey) localStorage.setItem('ah_onboarding_done', '1');
+  } catch(e) {}
+}
+
 async function fbMigrateLocalToFirestore(user) {
   if (!user || !window.fb) return;
-  // Collecter toutes les données localStorage
-  var profile = {};
-  try { profile = JSON.parse(localStorage.getItem('ah_profile') || '{}'); } catch(e) {}
-  var journal = [];
-  try { journal = JSON.parse(localStorage.getItem('ah_nutri_journal') || '[]'); } catch(e) {}
-  var setHistory = [];
-  try { setHistory = JSON.parse(localStorage.getItem('ah_set_history') || '[]'); } catch(e) {}
-
-  var payload = {
+  var payload = Object.assign({
     uid: user.uid,
     email: user.email,
-    displayName: user.displayName || profile.name || '',
+    displayName: user.displayName || '',
     emailVerified: user.emailVerified,
-    profile: profile,
-    nutriJournal: journal,
-    setHistory: setHistory,
     createdAt: window.fb.serverTimestamp(),
     updatedAt: window.fb.serverTimestamp()
-  };
+  }, _fbCollectPayload());
 
   try {
     var docRef = window.fb.doc(window.fb.db, 'users', user.uid);
@@ -11929,13 +11970,7 @@ async function fbLoadFirestoreToLocal(user) {
     var docRef = window.fb.doc(window.fb.db, 'users', user.uid);
     var snap = await window.fb.getDoc(docRef);
     if (snap.exists()) {
-      var data = snap.data();
-      if (data.profile) localStorage.setItem('ah_profile', JSON.stringify(data.profile));
-      if (data.nutriJournal) localStorage.setItem('ah_nutri_journal', JSON.stringify(data.nutriJournal));
-      if (data.setHistory) localStorage.setItem('ah_set_history', JSON.stringify(data.setHistory));
-      if (data.profile && data.profile.programKey) {
-        localStorage.setItem('ah_onboarding_done', '1');
-      }
+      _fbApplyPayload(snap.data());
       console.log('Profil chargé depuis Firestore.');
     }
   } catch(e) {
@@ -15076,9 +15111,16 @@ async function fbSaveProfile() {
   if (!window.fb || !window.fbUser) return false;
   try {
     var ref = window.fb.doc(window.fb.db, 'users', window.fbUser.uid);
-    var profile = Object.assign({}, (typeof user !== 'undefined' ? user : {}));
-    if (typeof R !== 'undefined') ['prenom','age','sexe','q4','sport','program','programName','poste','freq','compet'].forEach(function(k){ if (R[k] != null) profile[k] = R[k]; });
-    await window.fb.setDoc(ref, { profile: profile, updatedAt: window.fb.serverTimestamp() }, { merge: true });
+    // Construit le payload depuis localStorage (source de vérité côté client)
+    var payload = _fbCollectPayload();
+    // Fallback : injecte les champs window.user qui ne seraient pas encore dans ah_profile
+    try {
+      if (typeof user !== 'undefined' && user && (!payload.profile || Object.keys(payload.profile).length < 3)) {
+        payload.profile = Object.assign({}, payload.profile || {}, user);
+      }
+    } catch(e) {}
+    payload.updatedAt = window.fb.serverTimestamp();
+    await window.fb.setDoc(ref, payload, { merge: true });
     return true;
   } catch (e) { console.warn('fbSaveProfile:', e); return false; }
 }
