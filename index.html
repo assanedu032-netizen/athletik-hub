@@ -15472,9 +15472,20 @@ function obErr(id,msg){
 // LIVE SESSION ENGINE — GBG/Gymkee style
 // ═══════════════════════════════════════════════════
 var _LS = {
-  exos: [], idx: 0, setsLeft: 0, progKey: '', progName: '', sessName: '',
+  exos: [], idx: 0, setNum: 1, _pendingAction: null,
+  progKey: '', progName: '', sessName: '',
   restSec: 0, restTotal: 0, restInterval: null, restActive: false
 };
+
+// Nombre de séries d'un exercice, parsé depuis ex.s.
+// "4" → 4 | "3-4" → 4 (max) | "8 cycles" → 8 | "Var.*" → 3 (défaut) | "-" → 1
+function _lsSetCount(ex) {
+  if (!ex || !ex.s || ex.s === '-') return 1;
+  var nums = (String(ex.s).match(/\d+/g) || []).map(Number);
+  if (nums.length) return Math.max.apply(null, nums);
+  if (/var/i.test(String(ex.s))) return 3;
+  return 1;
+}
 
 // Persistance de la séance live — permet de reprendre après fermeture app
 // Clé : ah_live_session  | Forme : { exos, idx, progName, sessName, ts }
@@ -15483,7 +15494,7 @@ function _lsPersist() {
   if (!_LS.exos || !_LS.exos.length) { try { localStorage.removeItem('ah_live_session'); } catch(e) {} return; }
   try {
     localStorage.setItem('ah_live_session', JSON.stringify({
-      exos: _LS.exos, idx: _LS.idx,
+      exos: _LS.exos, idx: _LS.idx, setNum: _LS.setNum || 1,
       progKey: _LS.progKey || '',
       progName: _LS.progName, sessName: _LS.sessName,
       ts: Date.now()
@@ -15508,6 +15519,8 @@ window.resumeLiveSession = function() {
   if (!d) { renderResumeSessionBanner(); return; }
   _LS.exos = d.exos;
   _LS.idx = Math.max(0, Math.min(d.idx || 0, d.exos.length - 1));
+  _LS.setNum = d.setNum || 1;
+  _LS._pendingAction = null;
   _LS.progKey = d.progKey || '';
   _LS.progName = d.progName || '';
   _LS.sessName = d.sessName || '';
@@ -15647,6 +15660,8 @@ function launchSession(exos, sessName, progName, progKey) {
   if (!exos || !exos.length) { showToast('Aucun exercice dans cette séance.', 'info'); return; }
   _LS.exos = exos;
   _LS.idx = 0;
+  _LS.setNum = 1;
+  _LS._pendingAction = null;
   _LS.progName = progName || '';
   _LS.sessName = sessName || '';
   // progKey explicite si fourni, sinon fallback sur l'état programme courant.
@@ -15679,9 +15694,13 @@ function _lsRenderEx() {
   if (!sub && ex.n.indexOf('—') !== -1) sub = ex.n.split('—').slice(1).join('—').trim();
   document.getElementById('lsExSub').textContent = sub;
 
-  // Metrics
-  var sets = ex.s && ex.s !== '-' ? ex.s : '—';
-  document.getElementById('lsMetSets').textContent = sets;
+  // Metrics — Séries affiche la série courante / total quand l'exo en a plusieurs
+  var totalSets = _lsSetCount(ex);
+  if (_LS.setNum > totalSets) _LS.setNum = totalSets;
+  if (_LS.setNum < 1) _LS.setNum = 1;
+  document.getElementById('lsMetSets').textContent = totalSets > 1
+    ? (_LS.setNum + '/' + totalSets)
+    : (ex.s && ex.s !== '-' ? ex.s : '—');
   document.getElementById('lsMetReps').textContent = ex.r && ex.r !== '-' ? ex.r : '—';
   // Rest display: short format
   var restSec = _lsParseRest(ex.rest);
@@ -15693,9 +15712,14 @@ function _lsRenderEx() {
   clearInterval(_LS.restInterval);
   _LS.restActive = false;
 
-  // Done button label
+  // Done button label — reflète la série en cours et l'étape
   var isLast = (_LS.idx === total - 1);
-  document.getElementById('lsBtnDone').textContent = isLast ? '✓ TERMINER LA SÉANCE' : '✓ SÉRIE TERMINÉE';
+  var isLastSet = (_LS.setNum >= totalSets);
+  var btnLabel;
+  if (isLast && isLastSet) btnLabel = '✓ TERMINER LA SÉANCE';
+  else if (totalSets > 1 && !isLastSet) btnLabel = '✓ SÉRIE ' + _LS.setNum + ' / ' + totalSets;
+  else btnLabel = '✓ EXERCICE SUIVANT →';
+  document.getElementById('lsBtnDone').textContent = btnLabel;
 
   // Next preview
   var nextEl = document.getElementById('lsNextPreview');
@@ -15728,18 +15752,31 @@ function _lsRenderEx() {
 
 function _lsDoneSet() {
   var ex = _LS.exos[_LS.idx];
-  var isLast = (_LS.idx === _LS.exos.length - 1);
+  var totalSets = _lsSetCount(ex);
+  var isLastExo = (_LS.idx === _LS.exos.length - 1);
+  var isLastSet = (_LS.setNum >= totalSets);
 
-  if (isLast) {
-    // Session complete
-    _lsShowComplete();
-    return;
-  }
+  // Dernière série du dernier exercice → séance terminée
+  if (isLastExo && isLastSet) { _lsShowComplete(); return; }
 
-  // Start rest timer, then auto-advance
+  // Action différée après le repos : série suivante ou exercice suivant
+  _LS._pendingAction = isLastSet ? 'nextEx' : 'nextSet';
   var restSec = _lsParseRest(ex ? ex.rest : null);
   if (restSec > 0) {
     _lsStartRest(restSec);
+  } else {
+    _lsApplyPending();
+  }
+}
+
+// Applique l'action en attente (fin de repos ou repos sauté).
+function _lsApplyPending() {
+  var act = _LS._pendingAction;
+  _LS._pendingAction = null;
+  if (act === 'nextSet') {
+    _LS.setNum++;
+    _lsRenderEx();
+    _lsPersist();
   } else {
     _lsNextEx();
   }
@@ -15772,7 +15809,7 @@ function _lsStartRest(sec) {
       clearInterval(_LS.restInterval);
       _LS.restActive = false;
       overlay.classList.remove('ls-rest-active');
-      _lsNextEx();
+      _lsApplyPending();
     }
   }, 1000);
 }
@@ -15781,7 +15818,7 @@ function _lsSkipRest() {
   clearInterval(_LS.restInterval);
   _LS.restActive = false;
   document.getElementById('lsRestOverlay').classList.remove('ls-rest-active');
-  _lsNextEx();
+  _lsApplyPending();
 }
 
 function _lsAdjustRest(delta) {
@@ -15793,8 +15830,10 @@ function _lsAdjustRest(delta) {
 function _lsNextEx() {
   clearInterval(_LS.restInterval);
   _LS.restActive = false;
+  _LS._pendingAction = null;
   if (_LS.idx < _LS.exos.length - 1) {
     _LS.idx++;
+    _LS.setNum = 1;
     _lsRenderEx();
     _lsPersist();
   } else {
@@ -15805,8 +15844,10 @@ function _lsNextEx() {
 function _lsPrevEx() {
   clearInterval(_LS.restInterval);
   _LS.restActive = false;
+  _LS._pendingAction = null;
   if (_LS.idx > 0) {
     _LS.idx--;
+    _LS.setNum = 1;
     _lsRenderEx();
     _lsPersist();
   }
