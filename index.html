@@ -8547,6 +8547,12 @@ function _openSessionV2(sessKey) {
   var p = PROGRAMS_V2[window._progV2State.key]; if (!p) return;
   var ph = p.phases[window._progV2State.phaseIdx]; if (!ph) return;
   var sess = ph.sessions && ph.sessions[sessKey]; if (!sess) return;
+  // P3 — refuse l'ouverture d'une séance verrouillée (ordre strict)
+  if (typeof _isSessionUnlocked === 'function'
+      && !_isSessionUnlocked(window._progV2State.key, window._progV2State.phaseIdx, sessKey)) {
+    if (typeof showToast === 'function') showToast('Termine la séance précédente pour débloquer celle-ci.', 'info');
+    return;
+  }
   window._progV2State.sessionKey = sessKey;
 
   var container = document.getElementById('progDetail');
@@ -16194,18 +16200,27 @@ function startSessionGuarded() {
     if (ph) {
       var sk = state.sessionKey;
       if (sk && ph.sessions && ph.sessions[sk]) {
+        // Séance explicitement sélectionnée : on respecte le verrouillage P3
+        if (typeof _isSessionUnlocked === 'function'
+            && !_isSessionUnlocked(progKey, state.phaseIdx || 0, sk)) {
+          showToast('Termine la séance précédente pour débloquer celle-ci.', 'info');
+          return;
+        }
         var sess = ph.sessions[sk];
         exos = sess.exos;
         sessName = sess.name;
         resolvedSessKey = sk;
       } else {
-        // No specific session selected: use first session in phase
+        // Aucune séance sélectionnée : on lance la prochaine séance à faire
+        // (P3) plutôt que toujours la première de la phase.
+        var nextSk = (typeof _nextSessionToDo === 'function') ? _nextSessionToDo(progKey) : null;
         var keys = ph.sessions ? Object.keys(ph.sessions) : [];
-        if (keys.length) {
-          var firstSess = ph.sessions[keys[0]];
-          exos = firstSess.exos;
-          sessName = firstSess.name;
-          resolvedSessKey = keys[0];
+        var useKey = (nextSk && ph.sessions[nextSk]) ? nextSk : (keys.length ? keys[0] : null);
+        if (useKey && ph.sessions[useKey]) {
+          var nSess = ph.sessions[useKey];
+          exos = nSess.exos;
+          sessName = nSess.name;
+          resolvedSessKey = useKey;
         }
       }
     }
