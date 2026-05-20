@@ -3522,59 +3522,59 @@ body.test-mode #testSkipBar{display:flex}
 </div>
 
 <div id="pgProg" class="pg">
-<div id="progList">
-<div onclick="openProg('ea')" style="position:relative;height:160px;border-radius:16px;overflow:hidden;margin-bottom:12px;cursor:pointer;opacity:1;touch-action:manipulation">
-  <img src="images/elite-athlete.png" style="width:100%;height:100%;object-fit:cover;object-position:center" onerror="this.style.background='linear-gradient(135deg,#1B2A4A,#060C18)';this.src=''">
-  <div style="position:absolute;inset:0;background:linear-gradient(to right,rgba(6,12,24,.85) 0%,rgba(6,12,24,.3) 100%)"></div>
-  <div style="position:absolute;top:12px;right:12px;padding:4px 10px;background:rgba(197,164,78,.15);border:1px solid var(--gold);border-radius:20px;font-size:9px;font-weight:700;color:var(--gold);letter-spacing:1px">EN COURS</div>
-  <div style="position:absolute;bottom:16px;left:16px">
-    <div style="font-family:'Bebas Neue',sans-serif;font-size:22px;color:#fff;letter-spacing:2px;line-height:1">ELITE ATHLETE</div>
-    <div style="font-size:11px;color:rgba(255,255,255,.5);margin-top:3px">Explosivité globale</div>
+<div id="progList" style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+<div onclick="openProg('ea')" style="position:relative;aspect-ratio:4/5;border-radius:14px;overflow:hidden;cursor:pointer;opacity:1;touch-action:manipulation;border:1.5px solid var(--border)">
+  <img src="images/elite-athlete.png" style="width:100%;height:100%;object-fit:cover;object-position:center top" onerror="this.style.background='linear-gradient(135deg,#1B2A4A,#060C18)';this.src=''">
+  <div style="position:absolute;inset:0;background:linear-gradient(to top,rgba(6,12,24,.92) 0%,rgba(6,12,24,.15) 55%)"></div>
+  <div style="position:absolute;top:8px;right:8px;padding:3px 8px;background:rgba(197,164,78,.18);border:1px solid var(--gold);border-radius:20px;font-size:8px;font-weight:700;color:var(--gold);letter-spacing:.5px">EN COURS</div>
+  <div style="position:absolute;bottom:10px;left:10px;right:10px">
+    <div style="font-family:'Bebas Neue',sans-serif;font-size:17px;color:#fff;letter-spacing:1px;line-height:1">ELITE ATHLETE</div>
+    <div style="font-size:9px;color:rgba(255,255,255,.6);margin-top:2px">Explosivité globale</div>
   </div>
 </div>
-<div onclick="openProg('vd')" style="position:relative;height:160px;border-radius:16px;overflow:hidden;margin-bottom:12px;cursor:pointer;opacity:0.65;touch-action:manipulation">
-  <img src="images/vertical-dunk.png" style="width:100%;height:100%;object-fit:cover;object-position:center" onerror="this.style.background='linear-gradient(135deg,#1B2A4A,#060C18)';this.src=''">
-  <div style="position:absolute;inset:0;background:linear-gradient(to right,rgba(6,12,24,.85) 0%,rgba(6,12,24,.3) 100%)"></div>
-  <div style="position:absolute;top:12px;right:12px;padding:4px 10px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.3);border-radius:20px;font-size:9px;font-weight:700;color:rgba(255,255,255,.3);letter-spacing:1px">VERROUILLÉ</div>
-  <div style="position:absolute;bottom:16px;left:16px">
-    <div style="font-family:'Bebas Neue',sans-serif;font-size:22px;color:#fff;letter-spacing:2px;line-height:1">VERTICAL DUNK</div>
-    <div style="font-size:11px;color:rgba(255,255,255,.5);margin-top:3px">Dunker + Détente max</div>
+<div onclick="openProg('vd')" style="position:relative;aspect-ratio:4/5;border-radius:14px;overflow:hidden;cursor:pointer;opacity:0.7;touch-action:manipulation;border:1.5px solid var(--border)">
+  <img src="images/vertical-dunk.png" style="width:100%;height:100%;object-fit:cover;object-position:center top" onerror="this.style.background='linear-gradient(135deg,#1B2A4A,#060C18)';this.src=''">
+  <div style="position:absolute;inset:0;background:linear-gradient(to top,rgba(6,12,24,.92) 0%,rgba(6,12,24,.15) 55%)"></div>
+  <div style="position:absolute;top:8px;right:8px;padding:3px 8px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.3);border-radius:20px;font-size:8px;font-weight:700;color:rgba(255,255,255,.4);letter-spacing:.5px">🔒 VERROUILLÉ</div>
+  <div style="position:absolute;bottom:10px;left:10px;right:10px">
+    <div style="font-family:'Bebas Neue',sans-serif;font-size:17px;color:#fff;letter-spacing:1px;line-height:1">VERTICAL DUNK</div>
+    <div style="font-size:9px;color:rgba(255,255,255,.6);margin-top:2px">Dunker + Détente max</div>
   </div>
 </div>
-<div onclick="openProg('mt')" style="position:relative;height:160px;border-radius:16px;overflow:hidden;margin-bottom:12px;cursor:pointer;opacity:0.65;touch-action:manipulation">
-  <img src="images/microtraining.png" style="width:100%;height:100%;object-fit:cover;object-position:center" onerror="this.style.background='linear-gradient(135deg,#1B2A4A,#060C18)';this.src=''">
-  <div style="position:absolute;inset:0;background:linear-gradient(to right,rgba(6,12,24,.85) 0%,rgba(6,12,24,.3) 100%)"></div>
-  <div style="position:absolute;top:12px;right:12px;padding:4px 10px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.3);border-radius:20px;font-size:9px;font-weight:700;color:rgba(255,255,255,.3);letter-spacing:1px">VERROUILLÉ</div>
-  <div style="position:absolute;bottom:16px;left:16px">
-    <div style="font-family:'Bebas Neue',sans-serif;font-size:22px;color:#fff;letter-spacing:2px;line-height:1">MICROTRAINING</div>
-    <div style="font-size:11px;color:rgba(255,255,255,.5);margin-top:3px">Discipline et habitudes</div>
+<div onclick="openProg('mt')" style="position:relative;aspect-ratio:4/5;border-radius:14px;overflow:hidden;cursor:pointer;opacity:0.7;touch-action:manipulation;border:1.5px solid var(--border)">
+  <img src="images/microtraining.png" style="width:100%;height:100%;object-fit:cover;object-position:center top" onerror="this.style.background='linear-gradient(135deg,#1B2A4A,#060C18)';this.src=''">
+  <div style="position:absolute;inset:0;background:linear-gradient(to top,rgba(6,12,24,.92) 0%,rgba(6,12,24,.15) 55%)"></div>
+  <div style="position:absolute;top:8px;right:8px;padding:3px 8px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.3);border-radius:20px;font-size:8px;font-weight:700;color:rgba(255,255,255,.4);letter-spacing:.5px">🔒 VERROUILLÉ</div>
+  <div style="position:absolute;bottom:10px;left:10px;right:10px">
+    <div style="font-family:'Bebas Neue',sans-serif;font-size:17px;color:#fff;letter-spacing:1px;line-height:1">MICROTRAINING</div>
+    <div style="font-size:9px;color:rgba(255,255,255,.6);margin-top:2px">Discipline et habitudes</div>
   </div>
 </div>
-<div onclick="openProg('tri')" style="position:relative;height:160px;border-radius:16px;overflow:hidden;margin-bottom:12px;cursor:pointer;opacity:0.65;touch-action:manipulation">
-  <img src="images/triphasique.png" style="width:100%;height:100%;object-fit:cover;object-position:center" onerror="this.style.background='linear-gradient(135deg,#1B2A4A,#060C18)';this.src=''">
-  <div style="position:absolute;inset:0;background:linear-gradient(to right,rgba(6,12,24,.85) 0%,rgba(6,12,24,.3) 100%)"></div>
-  <div style="position:absolute;top:12px;right:12px;padding:4px 10px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.3);border-radius:20px;font-size:9px;font-weight:700;color:rgba(255,255,255,.3);letter-spacing:1px">VERROUILLÉ</div>
-  <div style="position:absolute;bottom:16px;left:16px">
-    <div style="font-family:'Bebas Neue',sans-serif;font-size:22px;color:#fff;letter-spacing:2px;line-height:1">TRIPHASIQUE</div>
-    <div style="font-size:11px;color:rgba(255,255,255,.5);margin-top:3px">Force sans salle</div>
+<div onclick="openProg('tri')" style="position:relative;aspect-ratio:4/5;border-radius:14px;overflow:hidden;cursor:pointer;opacity:0.7;touch-action:manipulation;border:1.5px solid var(--border)">
+  <img src="images/triphasique.png" style="width:100%;height:100%;object-fit:cover;object-position:center top" onerror="this.style.background='linear-gradient(135deg,#1B2A4A,#060C18)';this.src=''">
+  <div style="position:absolute;inset:0;background:linear-gradient(to top,rgba(6,12,24,.92) 0%,rgba(6,12,24,.15) 55%)"></div>
+  <div style="position:absolute;top:8px;right:8px;padding:3px 8px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.3);border-radius:20px;font-size:8px;font-weight:700;color:rgba(255,255,255,.4);letter-spacing:.5px">🔒 VERROUILLÉ</div>
+  <div style="position:absolute;bottom:10px;left:10px;right:10px">
+    <div style="font-family:'Bebas Neue',sans-serif;font-size:17px;color:#fff;letter-spacing:1px;line-height:1">TRIPHASIQUE</div>
+    <div style="font-size:9px;color:rgba(255,255,255,.6);margin-top:2px">Force sans salle</div>
   </div>
 </div>
-<div onclick="openProg('se')" style="position:relative;height:160px;border-radius:16px;overflow:hidden;margin-bottom:12px;cursor:pointer;opacity:0.65;touch-action:manipulation">
-  <img src="images/shred-explose.png" style="width:100%;height:100%;object-fit:cover;object-position:center" onerror="this.style.background='linear-gradient(135deg,#1B2A4A,#060C18)';this.src=''">
-  <div style="position:absolute;inset:0;background:linear-gradient(to right,rgba(6,12,24,.85) 0%,rgba(6,12,24,.3) 100%)"></div>
-  <div style="position:absolute;top:12px;right:12px;padding:4px 10px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.3);border-radius:20px;font-size:9px;font-weight:700;color:rgba(255,255,255,.3);letter-spacing:1px">VERROUILLÉ</div>
-  <div style="position:absolute;bottom:16px;left:16px">
-    <div style="font-family:'Bebas Neue',sans-serif;font-size:22px;color:#fff;letter-spacing:2px;line-height:1">SHRED EXPLOSE</div>
-    <div style="font-size:11px;color:rgba(255,255,255,.5);margin-top:3px">Perdre + Exploser</div>
+<div onclick="openProg('se')" style="position:relative;aspect-ratio:4/5;border-radius:14px;overflow:hidden;cursor:pointer;opacity:0.7;touch-action:manipulation;border:1.5px solid var(--border)">
+  <img src="images/shred-explose.png" style="width:100%;height:100%;object-fit:cover;object-position:center top" onerror="this.style.background='linear-gradient(135deg,#1B2A4A,#060C18)';this.src=''">
+  <div style="position:absolute;inset:0;background:linear-gradient(to top,rgba(6,12,24,.92) 0%,rgba(6,12,24,.15) 55%)"></div>
+  <div style="position:absolute;top:8px;right:8px;padding:3px 8px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.3);border-radius:20px;font-size:8px;font-weight:700;color:rgba(255,255,255,.4);letter-spacing:.5px">🔒 VERROUILLÉ</div>
+  <div style="position:absolute;bottom:10px;left:10px;right:10px">
+    <div style="font-family:'Bebas Neue',sans-serif;font-size:17px;color:#fff;letter-spacing:1px;line-height:1">SHRED EXPLOSE</div>
+    <div style="font-size:9px;color:rgba(255,255,255,.6);margin-top:2px">Perdre + Exploser</div>
   </div>
 </div>
-<div onclick="openProg('ep')" style="position:relative;height:160px;border-radius:16px;overflow:hidden;margin-bottom:12px;cursor:pointer;opacity:0.65;touch-action:manipulation">
-  <img src="images/explose-plus.png" style="width:100%;height:100%;object-fit:cover;object-position:center" onerror="this.style.background='linear-gradient(135deg,#1B2A4A,#060C18)';this.src=''">
-  <div style="position:absolute;inset:0;background:linear-gradient(to right,rgba(6,12,24,.85) 0%,rgba(6,12,24,.3) 100%)"></div>
-  <div style="position:absolute;top:12px;right:12px;padding:4px 10px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.3);border-radius:20px;font-size:9px;font-weight:700;color:rgba(255,255,255,.3);letter-spacing:1px">VERROUILLÉ</div>
-  <div style="position:absolute;bottom:16px;left:16px">
-    <div style="font-family:'Bebas Neue',sans-serif;font-size:22px;color:#fff;letter-spacing:2px;line-height:1">EXPLOSE+</div>
-    <div style="font-size:11px;color:rgba(255,255,255,.5);margin-top:3px">Transformation totale</div>
+<div onclick="openProg('ep')" style="position:relative;aspect-ratio:4/5;border-radius:14px;overflow:hidden;cursor:pointer;opacity:0.7;touch-action:manipulation;border:1.5px solid var(--border)">
+  <img src="images/explose-plus.png" style="width:100%;height:100%;object-fit:cover;object-position:center top" onerror="this.style.background='linear-gradient(135deg,#1B2A4A,#060C18)';this.src=''">
+  <div style="position:absolute;inset:0;background:linear-gradient(to top,rgba(6,12,24,.92) 0%,rgba(6,12,24,.15) 55%)"></div>
+  <div style="position:absolute;top:8px;right:8px;padding:3px 8px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.3);border-radius:20px;font-size:8px;font-weight:700;color:rgba(255,255,255,.4);letter-spacing:.5px">🔒 VERROUILLÉ</div>
+  <div style="position:absolute;bottom:10px;left:10px;right:10px">
+    <div style="font-family:'Bebas Neue',sans-serif;font-size:17px;color:#fff;letter-spacing:1px;line-height:1">EXPLOSE+</div>
+    <div style="font-size:9px;color:rgba(255,255,255,.6);margin-top:2px">Transformation totale</div>
   </div>
 </div>
 </div>
@@ -8362,7 +8362,7 @@ function renderProgramV2(key) {
 function _renderProgHeader(p) {
   return '<div class="back-btn" onclick="closeProg()">← Retour Programmes</div>'
     + '<div style="display:flex;gap:14px;align-items:center;margin-bottom:8px">'
-    +   '<img src="' + (p.img||'') + '" style="width:64px;height:64px;border-radius:12px;object-fit:cover;background:#1B2A4A;flex-shrink:0" onerror="this.style.display=\'none\'">'
+    +   '<img src="' + (p.img||'') + '" style="width:64px;height:64px;border-radius:12px;object-fit:cover;object-position:center top;background:#1B2A4A;flex-shrink:0" onerror="this.style.display=\'none\'">'
     +   '<div style="flex:1;min-width:0">'
     +     '<div style="font-family:\'Bebas Neue\',sans-serif;font-size:24px;color:var(--text);letter-spacing:1.5px;line-height:1.05">' + p.name + '</div>'
     +     '<div style="font-size:11px;color:var(--muted);margin-top:3px;line-height:1.4">' + (p.tagline||'') + '</div>'
