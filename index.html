@@ -4118,10 +4118,11 @@ body.test-mode #testSkipBar{display:flex}
       <!-- PHASE 1 : Upload — Tabs Photo / Barcode -->
       <div id="scanPhaseUpload">
 
-        <!-- Tabs Take Photo / Scan Barcode -->
+        <!-- Tabs Photo / Code-barre / Aliment -->
         <div style="display:flex;background:var(--surface2);border-radius:10px;padding:4px;margin-bottom:16px">
-          <button id="scanTabPhoto" onclick="scanSwitchMode('photo')" style="flex:1;padding:10px;background:var(--gold);border:none;border-radius:8px;color:var(--navy);font-weight:800;font-size:12px;cursor:pointer;font-family:Outfit,sans-serif">📸 Take Photo</button>
-          <button id="scanTabBarcode" onclick="scanSwitchMode('barcode')" style="flex:1;padding:10px;background:transparent;border:none;border-radius:8px;color:var(--muted);font-weight:700;font-size:12px;cursor:pointer;font-family:Outfit,sans-serif">📊 Scan Barcode</button>
+          <button id="scanTabPhoto" onclick="scanSwitchMode('photo')" style="flex:1;padding:10px 4px;background:var(--gold);border:none;border-radius:8px;color:var(--navy);font-weight:800;font-size:11px;cursor:pointer;font-family:Outfit,sans-serif">📸 Photo</button>
+          <button id="scanTabBarcode" onclick="scanSwitchMode('barcode')" style="flex:1;padding:10px 4px;background:transparent;border:none;border-radius:8px;color:var(--muted);font-weight:700;font-size:11px;cursor:pointer;font-family:Outfit,sans-serif">📊 Code-barre</button>
+          <button id="scanTabSearch" onclick="scanSwitchMode('search')" style="flex:1;padding:10px 4px;background:transparent;border:none;border-radius:8px;color:var(--muted);font-weight:700;font-size:11px;cursor:pointer;font-family:Outfit,sans-serif">🔍 Aliment</button>
         </div>
 
         <!-- Mode Photo -->
@@ -4175,6 +4176,38 @@ body.test-mode #testSkipBar{display:flex}
           <!-- Info source -->
           <div style="padding:10px 12px;background:rgba(91,156,246,.06);border-left:3px solid rgba(91,156,246,.4);border-radius:0 8px 8px 0;font-size:11px;color:var(--text2);line-height:1.5">
             📦 Base <strong>Open Food Facts</strong> — gratuite et open source. Plus de 3 millions de produits référencés mondialement.
+          </div>
+        </div>
+
+        <!-- Mode Recherche aliment — base CIQUAL -->
+        <div id="scanModeSearch" style="display:none">
+          <div style="background:var(--surface);border:2px dashed rgba(197,164,78,.3);border-radius:20px;padding:28px 20px;text-align:center;margin-bottom:14px;box-shadow:var(--card-shadow)">
+            <div style="font-size:44px;margin-bottom:10px">🔍</div>
+            <div style="font-family:'Bebas Neue',sans-serif;font-size:20px;color:var(--text);letter-spacing:2px;margin-bottom:4px">RECHERCHE ALIMENT</div>
+            <div style="font-size:12px;color:var(--muted)">Aliments bruts : fruits, légumes, viandes, féculents…</div>
+          </div>
+
+          <!-- Champ recherche -->
+          <div style="background:var(--surface);border:1.5px solid var(--border);border-radius:12px;padding:14px;margin-bottom:12px">
+            <label style="font-size:10px;color:var(--muted);font-weight:700;letter-spacing:1.5px;text-transform:uppercase;display:block;margin-bottom:8px">Nom de l'aliment</label>
+            <input type="text" id="ciqualSearchInput" oninput="ciqualSearch()" placeholder="Ex : banane, riz cuit, poulet rôti…" style="width:100%;padding:12px;background:var(--surface2);border:1.5px solid var(--border);border-radius:10px;font-family:'Outfit',sans-serif;font-size:14px;color:var(--text);outline:none;box-sizing:border-box">
+          </div>
+
+          <!-- Quantité -->
+          <div style="background:var(--surface);border:1.5px solid var(--border);border-radius:12px;padding:14px;margin-bottom:12px">
+            <label style="font-size:10px;color:var(--muted);font-weight:700;letter-spacing:1.5px;text-transform:uppercase;display:block;margin-bottom:8px">Quantité consommée</label>
+            <div style="display:flex;align-items:center;gap:8px">
+              <input type="number" id="ciqualQty" value="100" style="flex:1;padding:12px;background:var(--surface2);border:1.5px solid var(--border);border-radius:10px;font-family:'Outfit',sans-serif;font-size:14px;color:var(--text);text-align:center;outline:none">
+              <span style="font-size:12px;font-weight:700;color:var(--muted)">g / ml</span>
+            </div>
+          </div>
+
+          <!-- Résultats -->
+          <div id="ciqualResults" style="margin-bottom:12px"></div>
+
+          <!-- Info source -->
+          <div style="padding:10px 12px;background:rgba(197,164,78,.06);border-left:3px solid rgba(197,164,78,.4);border-radius:0 8px 8px 0;font-size:11px;color:var(--text2);line-height:1.5">
+            🇫🇷 Base <strong>CIQUAL 2025</strong> (ANSES) — 3484 aliments de référence, valeurs officielles françaises pour 100 g.
           </div>
         </div>
 
@@ -4492,6 +4525,8 @@ body.test-mode #testSkipBar{display:flex}
 </div><!-- /liveSession -->
 
 </div><!-- /app -->
+<!-- Base CIQUAL 2025 (ANSES) — 3484 aliments, chargée pour la recherche nutrition -->
+<script src="ciqual-data.js"></script>
 <script>
 function showNutriTab(el, tab) {
   document.querySelectorAll('#vNutri .sub-tab').forEach(function(t){ t.classList.remove('on'); });
@@ -14839,31 +14874,76 @@ function journalShowDatePicker() {
 // ═══════════════════════════════════════════════
 
 function scanSwitchMode(mode) {
-  var tabPhoto = document.getElementById('scanTabPhoto');
-  var tabBarcode = document.getElementById('scanTabBarcode');
-  var modePhoto = document.getElementById('scanModePhoto');
-  var modeBarcode = document.getElementById('scanModeBarcode');
-
-  if (mode === 'photo') {
-    tabPhoto.style.background = 'var(--gold)';
-    tabPhoto.style.color = 'var(--navy)';
-    tabPhoto.style.fontWeight = '800';
-    tabBarcode.style.background = 'transparent';
-    tabBarcode.style.color = 'var(--muted)';
-    tabBarcode.style.fontWeight = '700';
-    modePhoto.style.display = 'block';
-    modeBarcode.style.display = 'none';
-  } else {
-    tabBarcode.style.background = 'var(--gold)';
-    tabBarcode.style.color = 'var(--navy)';
-    tabBarcode.style.fontWeight = '800';
-    tabPhoto.style.background = 'transparent';
-    tabPhoto.style.color = 'var(--muted)';
-    tabPhoto.style.fontWeight = '700';
-    modeBarcode.style.display = 'block';
-    modePhoto.style.display = 'none';
-  }
+  // 3 modes : photo (IA) / barcode (Open Food Facts) / search (CIQUAL)
+  var tabs  = { photo:'scanTabPhoto', barcode:'scanTabBarcode', search:'scanTabSearch' };
+  var modes = { photo:'scanModePhoto', barcode:'scanModeBarcode', search:'scanModeSearch' };
+  Object.keys(tabs).forEach(function(k){
+    var tab = document.getElementById(tabs[k]);
+    var md  = document.getElementById(modes[k]);
+    var on  = (k === mode);
+    if (tab) {
+      tab.style.background = on ? 'var(--gold)' : 'transparent';
+      tab.style.color = on ? 'var(--navy)' : 'var(--muted)';
+      tab.style.fontWeight = on ? '800' : '700';
+    }
+    if (md) md.style.display = on ? 'block' : 'none';
+  });
 }
+
+// ═══ RECHERCHE ALIMENT — base CIQUAL 2025 (ANSES) ═══
+// window.CIQUAL_FOODS fourni par ciqual-data.js : [nom, kcal, prot, gluc, lip] /100g
+function ciqualSearch() {
+  var box = document.getElementById('ciqualResults');
+  if (!box) return;
+  var q = (document.getElementById('ciqualSearchInput').value || '').trim();
+  if (q.length < 2) {
+    box.innerHTML = '<div style="text-align:center;padding:16px;color:var(--muted);font-size:12px">Tape au moins 2 lettres.</div>';
+    return;
+  }
+  if (!window.CIQUAL_FOODS || !window.CIQUAL_FOODS.length) {
+    box.innerHTML = '<div style="text-align:center;padding:16px;color:#E05252;font-size:12px">Base CIQUAL non chargée — recharge la page.</div>';
+    return;
+  }
+  function norm(s) { return (s || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, ''); }
+  var nq = norm(q);
+  var matches = [];
+  for (var i = 0; i < window.CIQUAL_FOODS.length && matches.length < 40; i++) {
+    if (norm(window.CIQUAL_FOODS[i][0]).indexOf(nq) > -1) matches.push(i);
+  }
+  if (!matches.length) {
+    box.innerHTML = '<div style="text-align:center;padding:16px;color:var(--muted);font-size:12px">Aucun aliment trouvé pour « ' + q + ' ».</div>';
+    return;
+  }
+  var html = '';
+  matches.forEach(function(idx) {
+    var f = window.CIQUAL_FOODS[idx];
+    html += '<div onclick="ciqualPick(' + idx + ')" style="background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:10px 12px;margin-bottom:6px;cursor:pointer">'
+      + '<div style="font-size:13px;font-weight:600;color:var(--text);line-height:1.3">' + f[0] + '</div>'
+      + '<div style="font-size:11px;color:var(--muted);margin-top:3px">'
+      +   '<strong style="color:var(--gold)">' + f[1] + ' kcal</strong> · P ' + f[2] + ' · G ' + f[3] + ' · L ' + f[4] + ' <span style="opacity:.7">/100g</span>'
+      + '</div>'
+      + '</div>';
+  });
+  box.innerHTML = html;
+}
+window.ciqualSearch = ciqualSearch;
+
+// Sélection d'un aliment CIQUAL → réutilise le flux résultat du scan.
+function ciqualPick(idx) {
+  var f = window.CIQUAL_FOODS && window.CIQUAL_FOODS[idx];
+  if (!f) return;
+  var qty = parseFloat((document.getElementById('ciqualQty') || {}).value) || 100;
+  scanState.foods = [{
+    id: ++scanState.idCounter,
+    name: f[0],
+    qty: qty, unit: 'g',
+    cal: f[1], p: f[2], g: f[3], l: f[4]
+  }];
+  var img = document.getElementById('scanResultImg');
+  if (img) { img.src = ''; img.style.background = 'linear-gradient(135deg,#1B2A4A,#0F1A30)'; }
+  scanRenderResult('Aliment ajouté depuis la base CIQUAL (ANSES).');
+}
+window.ciqualPick = ciqualPick;
 
 async function scanBarcodeSearch() {
   var input = document.getElementById('scanBarcodeInput');
