@@ -9023,24 +9023,26 @@ function _userSatDone() {
   } catch(e) { return false; }
 }
 
-// Verrouille / déverrouille le bouton "Commencer la séance" en fonction des tests faits
+// Style du bouton "Commencer la séance" selon l'état du SAT.
+// IMPORTANT : on ne met JAMAIS le bouton en disabled — un bouton disabled
+// n'émet aucun onclick : le clic ne fait rien, sans erreur console (bug
+// "le bouton ne fonctionne pas"). Le bouton reste toujours cliquable ;
+// startSessionGuarded() gère le cas SAT non fait (toast + redirection Tracks).
 function updateStartSessionLock() {
   var btn = document.getElementById('startSessionBtn');
   if (!btn) return;
+  btn.disabled = false;
+  btn.style.cursor = 'pointer';
   var done = _userSatDone();
   if (done) {
-    btn.disabled = false;
     btn.style.background = '';
     btn.style.color = '';
-    btn.style.cursor = '';
     btn.style.opacity = '';
     btn.innerHTML = 'Commencer la séance 🔥';
   } else {
-    btn.disabled = true;
     btn.style.background = 'var(--surface2)';
     btn.style.color = 'var(--muted)';
-    btn.style.cursor = 'not-allowed';
-    btn.style.opacity = '.85';
+    btn.style.opacity = '.9';
     btn.innerHTML = '🔒 Fais d\'abord tes tests physiques';
   }
 }
@@ -16154,6 +16156,9 @@ function startSessionGuarded() {
 
   launchSession(exos, sessName, progName, progKey, resolvedSessKey);
 }
+// Exposé explicitement sur window — appelé par onclick inline des boutons
+// "Commencer la séance" générés dynamiquement (rendu V2 + détail séance).
+window.startSessionGuarded = startSessionGuarded;
 window.launchSession = launchSession;
 window._lsClose = _lsClose;
 window._lsDoneSet = _lsDoneSet;
