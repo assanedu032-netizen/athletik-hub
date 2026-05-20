@@ -19,6 +19,7 @@
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-app.js";
   import { getAuth, setPersistence, browserLocalPersistence, createUserWithEmailAndPassword, signInWithEmailAndPassword, signInWithPopup, GoogleAuthProvider, onAuthStateChanged, signOut, sendPasswordResetEmail } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-auth.js";
   import { getFirestore, doc, setDoc, getDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore.js";
+  import { getMessaging, getToken, onMessage, isSupported } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-messaging.js";
 
   const firebaseConfig = {
     apiKey: "AIzaSyBMeuLan21LGxUKB5XCmLN1110VJWvyM5s",
@@ -35,6 +36,30 @@
   const db = getFirestore(app);
   const googleProvider = new GoogleAuthProvider();
   setPersistence(auth, browserLocalPersistence);
+
+  // Cloud Messaging — initialisé seulement si supporté par le navigateur.
+  // iOS < 16.4 ne supporte pas → on garde l'ancien fallback setTimeout.
+  let messaging = null;
+  isSupported().then(function(ok) {
+    if (!ok) { console.warn('FCM non supporté sur ce navigateur'); return; }
+    try {
+      messaging = getMessaging(app);
+      window.fb.messaging = messaging;
+      window.fb.getToken = getToken;
+      window.fb.onMessage = onMessage;
+      // Notif reçue alors que l'app est au foreground : on l'affiche manuellement
+      onMessage(messaging, function(payload) {
+        try {
+          if (typeof _showTitanNotif === 'function') {
+            _showTitanNotif(
+              (payload.notification && payload.notification.title) || 'Titan',
+              (payload.notification && payload.notification.body) || ''
+            );
+          }
+        } catch(e) {}
+      });
+    } catch(e) { console.warn('FCM init:', e); }
+  });
 
   window.fb = {
     auth, db, googleProvider,
@@ -1972,7 +1997,7 @@ body.test-mode #testSkipBar{display:flex}
   <div class="ob" style="overflow-y:auto">
     <div class="ob-step">Étape 2 / 3 — Test physique</div>
     <div class="ob-q">On va mesurer ton niveau réel.</div>
-    <div class="ob-sub">Le SAT mesure 5 choses : détente, force, sprint, agilité, mobilité. Le vrai test demande 30 min + un peu de matériel. Tu peux le faire maintenant dans Tracks &gt; SAT, ou faire une <strong style="color:var(--gold)">estimation rapide</strong> ici pour que Titan puisse t'orienter en attendant.</div>
+    <div id="qSATIntroDesc" class="ob-sub">Le SAT mesure 5 choses : détente, force, sprint, agilité, mobilité. Le vrai test demande 30 min + un peu de matériel. Tu peux le faire maintenant dans Tracks &gt; SAT, ou faire une <strong style="color:var(--gold)">estimation rapide</strong> ici pour que Titan puisse t'orienter en attendant.</div>
 
     <div style="margin-top:22px">
       <label class="fl">Estimation rapide — où tu en es ?</label>
@@ -2807,6 +2832,9 @@ body.test-mode #testSkipBar{display:flex}
     <!-- Bannière reprendre séance — affichée si _LS persisté en localStorage -->
     <div id="resumeSessionBanner" style="display:none"></div>
 
+    <!-- Bannière reprendre tests — affichée si ah_sat_inprogress existe -->
+    <div id="resumeTestsBanner" style="display:none"></div>
+
     <!-- CARTE SÉANCE — collée sous la photo, style FizzUp TODAY -->
     <div id="todayCard" style="margin:-1px 0 0;background:var(--surface);border-bottom:1px solid var(--border);padding:20px 20px">
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
@@ -3450,6 +3478,7 @@ body.test-mode #testSkipBar{display:flex}
 
 <!-- Category chips -->
 <div class="lib-chips" id="libChips">
+  <div class="lib-chip" id="libChipMyProgram" onclick="_libFilter(this,'myprogram')" style="display:none">🎯 Mon programme</div>
   <div class="lib-chip on" onclick="_libFilter(this,'all')">⚡ Tous (198)</div>
   <div class="lib-chip" onclick="_libFilter(this,'echauf')">🔥 Échauffement</div>
   <div class="lib-chip" onclick="_libFilter(this,'mobi')">🧘 Mobilité</div>
@@ -3493,59 +3522,59 @@ body.test-mode #testSkipBar{display:flex}
 </div>
 
 <div id="pgProg" class="pg">
-<div id="progList">
-<div onclick="openProg('ea')" style="position:relative;height:160px;border-radius:16px;overflow:hidden;margin-bottom:12px;cursor:pointer;opacity:1;touch-action:manipulation">
-  <img src="https://images.unsplash.com/photo-1534438327276-14e5300c3a48?w=600&q=80" style="width:100%;height:100%;object-fit:cover" onerror="this.style.background='linear-gradient(135deg,#1B2A4A,#060C18)';this.src=''">
-  <div style="position:absolute;inset:0;background:linear-gradient(to right,rgba(6,12,24,.85) 0%,rgba(6,12,24,.3) 100%)"></div>
-  <div style="position:absolute;top:12px;right:12px;padding:4px 10px;background:rgba(197,164,78,.15);border:1px solid var(--gold);border-radius:20px;font-size:9px;font-weight:700;color:var(--gold);letter-spacing:1px">EN COURS</div>
-  <div style="position:absolute;bottom:16px;left:16px">
-    <div style="font-family:'Bebas Neue',sans-serif;font-size:22px;color:#fff;letter-spacing:2px;line-height:1">ELITE ATHLETE</div>
-    <div style="font-size:11px;color:rgba(255,255,255,.5);margin-top:3px">Explosivité globale</div>
+<div id="progList" style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+<div onclick="openProg('ea')" style="position:relative;aspect-ratio:4/5;border-radius:14px;overflow:hidden;cursor:pointer;opacity:1;touch-action:manipulation;border:1.5px solid var(--border)">
+  <img src="images/elite-athlete.png" style="width:100%;height:100%;object-fit:cover;object-position:center top" onerror="this.style.background='linear-gradient(135deg,#1B2A4A,#060C18)';this.src=''">
+  <div style="position:absolute;inset:0;background:linear-gradient(to top,rgba(6,12,24,.92) 0%,rgba(6,12,24,.15) 55%)"></div>
+  <div style="position:absolute;top:8px;right:8px;padding:3px 8px;background:rgba(197,164,78,.18);border:1px solid var(--gold);border-radius:20px;font-size:8px;font-weight:700;color:var(--gold);letter-spacing:.5px">EN COURS</div>
+  <div style="position:absolute;bottom:10px;left:10px;right:10px">
+    <div style="font-family:'Bebas Neue',sans-serif;font-size:17px;color:#fff;letter-spacing:1px;line-height:1">ELITE ATHLETE</div>
+    <div style="font-size:9px;color:rgba(255,255,255,.6);margin-top:2px">Explosivité globale</div>
   </div>
 </div>
-<div onclick="openProg('vd')" style="position:relative;height:160px;border-radius:16px;overflow:hidden;margin-bottom:12px;cursor:pointer;opacity:0.65;touch-action:manipulation">
-  <img src="https://images.unsplash.com/photo-1518611012118-696072aa579a?w=600&q=80" style="width:100%;height:100%;object-fit:cover" onerror="this.style.background='linear-gradient(135deg,#1B2A4A,#060C18)';this.src=''">
-  <div style="position:absolute;inset:0;background:linear-gradient(to right,rgba(6,12,24,.85) 0%,rgba(6,12,24,.3) 100%)"></div>
-  <div style="position:absolute;top:12px;right:12px;padding:4px 10px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.3);border-radius:20px;font-size:9px;font-weight:700;color:rgba(255,255,255,.3);letter-spacing:1px">VERROUILLÉ</div>
-  <div style="position:absolute;bottom:16px;left:16px">
-    <div style="font-family:'Bebas Neue',sans-serif;font-size:22px;color:#fff;letter-spacing:2px;line-height:1">VERTICAL DUNK</div>
-    <div style="font-size:11px;color:rgba(255,255,255,.5);margin-top:3px">Dunker + Détente max</div>
+<div onclick="openProg('vd')" style="position:relative;aspect-ratio:4/5;border-radius:14px;overflow:hidden;cursor:pointer;opacity:0.7;touch-action:manipulation;border:1.5px solid var(--border)">
+  <img src="images/vertical-dunk.png" style="width:100%;height:100%;object-fit:cover;object-position:center top" onerror="this.style.background='linear-gradient(135deg,#1B2A4A,#060C18)';this.src=''">
+  <div style="position:absolute;inset:0;background:linear-gradient(to top,rgba(6,12,24,.92) 0%,rgba(6,12,24,.15) 55%)"></div>
+  <div style="position:absolute;top:8px;right:8px;padding:3px 8px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.3);border-radius:20px;font-size:8px;font-weight:700;color:rgba(255,255,255,.4);letter-spacing:.5px">🔒 VERROUILLÉ</div>
+  <div style="position:absolute;bottom:10px;left:10px;right:10px">
+    <div style="font-family:'Bebas Neue',sans-serif;font-size:17px;color:#fff;letter-spacing:1px;line-height:1">VERTICAL DUNK</div>
+    <div style="font-size:9px;color:rgba(255,255,255,.6);margin-top:2px">Dunker + Détente max</div>
   </div>
 </div>
-<div onclick="openProg('mt')" style="position:relative;height:160px;border-radius:16px;overflow:hidden;margin-bottom:12px;cursor:pointer;opacity:0.65;touch-action:manipulation">
-  <img src="https://images.unsplash.com/photo-1552674605-db6ffd4facb5?w=600&q=80" style="width:100%;height:100%;object-fit:cover" onerror="this.style.background='linear-gradient(135deg,#1B2A4A,#060C18)';this.src=''">
-  <div style="position:absolute;inset:0;background:linear-gradient(to right,rgba(6,12,24,.85) 0%,rgba(6,12,24,.3) 100%)"></div>
-  <div style="position:absolute;top:12px;right:12px;padding:4px 10px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.3);border-radius:20px;font-size:9px;font-weight:700;color:rgba(255,255,255,.3);letter-spacing:1px">VERROUILLÉ</div>
-  <div style="position:absolute;bottom:16px;left:16px">
-    <div style="font-family:'Bebas Neue',sans-serif;font-size:22px;color:#fff;letter-spacing:2px;line-height:1">MICROTRAINING</div>
-    <div style="font-size:11px;color:rgba(255,255,255,.5);margin-top:3px">Discipline et habitudes</div>
+<div onclick="openProg('mt')" style="position:relative;aspect-ratio:4/5;border-radius:14px;overflow:hidden;cursor:pointer;opacity:0.7;touch-action:manipulation;border:1.5px solid var(--border)">
+  <img src="images/microtraining.png" style="width:100%;height:100%;object-fit:cover;object-position:center top" onerror="this.style.background='linear-gradient(135deg,#1B2A4A,#060C18)';this.src=''">
+  <div style="position:absolute;inset:0;background:linear-gradient(to top,rgba(6,12,24,.92) 0%,rgba(6,12,24,.15) 55%)"></div>
+  <div style="position:absolute;top:8px;right:8px;padding:3px 8px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.3);border-radius:20px;font-size:8px;font-weight:700;color:rgba(255,255,255,.4);letter-spacing:.5px">🔒 VERROUILLÉ</div>
+  <div style="position:absolute;bottom:10px;left:10px;right:10px">
+    <div style="font-family:'Bebas Neue',sans-serif;font-size:17px;color:#fff;letter-spacing:1px;line-height:1">MICROTRAINING</div>
+    <div style="font-size:9px;color:rgba(255,255,255,.6);margin-top:2px">Discipline et habitudes</div>
   </div>
 </div>
-<div onclick="openProg('tri')" style="position:relative;height:160px;border-radius:16px;overflow:hidden;margin-bottom:12px;cursor:pointer;opacity:0.65;touch-action:manipulation">
-  <img src="https://images.unsplash.com/photo-1574680096145-d05b474e2155?w=600&q=80" style="width:100%;height:100%;object-fit:cover" onerror="this.style.background='linear-gradient(135deg,#1B2A4A,#060C18)';this.src=''">
-  <div style="position:absolute;inset:0;background:linear-gradient(to right,rgba(6,12,24,.85) 0%,rgba(6,12,24,.3) 100%)"></div>
-  <div style="position:absolute;top:12px;right:12px;padding:4px 10px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.3);border-radius:20px;font-size:9px;font-weight:700;color:rgba(255,255,255,.3);letter-spacing:1px">VERROUILLÉ</div>
-  <div style="position:absolute;bottom:16px;left:16px">
-    <div style="font-family:'Bebas Neue',sans-serif;font-size:22px;color:#fff;letter-spacing:2px;line-height:1">TRIPHASIQUE</div>
-    <div style="font-size:11px;color:rgba(255,255,255,.5);margin-top:3px">Force sans salle</div>
+<div onclick="openProg('tri')" style="position:relative;aspect-ratio:4/5;border-radius:14px;overflow:hidden;cursor:pointer;opacity:0.7;touch-action:manipulation;border:1.5px solid var(--border)">
+  <img src="images/triphasique.png" style="width:100%;height:100%;object-fit:cover;object-position:center top" onerror="this.style.background='linear-gradient(135deg,#1B2A4A,#060C18)';this.src=''">
+  <div style="position:absolute;inset:0;background:linear-gradient(to top,rgba(6,12,24,.92) 0%,rgba(6,12,24,.15) 55%)"></div>
+  <div style="position:absolute;top:8px;right:8px;padding:3px 8px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.3);border-radius:20px;font-size:8px;font-weight:700;color:rgba(255,255,255,.4);letter-spacing:.5px">🔒 VERROUILLÉ</div>
+  <div style="position:absolute;bottom:10px;left:10px;right:10px">
+    <div style="font-family:'Bebas Neue',sans-serif;font-size:17px;color:#fff;letter-spacing:1px;line-height:1">TRIPHASIQUE</div>
+    <div style="font-size:9px;color:rgba(255,255,255,.6);margin-top:2px">Force sans salle</div>
   </div>
 </div>
-<div onclick="openProg('se')" style="position:relative;height:160px;border-radius:16px;overflow:hidden;margin-bottom:12px;cursor:pointer;opacity:0.65;touch-action:manipulation">
-  <img src="https://images.unsplash.com/photo-1517836357463-d25dfeac3438?w=600&q=80" style="width:100%;height:100%;object-fit:cover" onerror="this.style.background='linear-gradient(135deg,#1B2A4A,#060C18)';this.src=''">
-  <div style="position:absolute;inset:0;background:linear-gradient(to right,rgba(6,12,24,.85) 0%,rgba(6,12,24,.3) 100%)"></div>
-  <div style="position:absolute;top:12px;right:12px;padding:4px 10px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.3);border-radius:20px;font-size:9px;font-weight:700;color:rgba(255,255,255,.3);letter-spacing:1px">VERROUILLÉ</div>
-  <div style="position:absolute;bottom:16px;left:16px">
-    <div style="font-family:'Bebas Neue',sans-serif;font-size:22px;color:#fff;letter-spacing:2px;line-height:1">SHRED EXPLOSE</div>
-    <div style="font-size:11px;color:rgba(255,255,255,.5);margin-top:3px">Perdre + Exploser</div>
+<div onclick="openProg('se')" style="position:relative;aspect-ratio:4/5;border-radius:14px;overflow:hidden;cursor:pointer;opacity:0.7;touch-action:manipulation;border:1.5px solid var(--border)">
+  <img src="images/shred-explose.png" style="width:100%;height:100%;object-fit:cover;object-position:center top" onerror="this.style.background='linear-gradient(135deg,#1B2A4A,#060C18)';this.src=''">
+  <div style="position:absolute;inset:0;background:linear-gradient(to top,rgba(6,12,24,.92) 0%,rgba(6,12,24,.15) 55%)"></div>
+  <div style="position:absolute;top:8px;right:8px;padding:3px 8px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.3);border-radius:20px;font-size:8px;font-weight:700;color:rgba(255,255,255,.4);letter-spacing:.5px">🔒 VERROUILLÉ</div>
+  <div style="position:absolute;bottom:10px;left:10px;right:10px">
+    <div style="font-family:'Bebas Neue',sans-serif;font-size:17px;color:#fff;letter-spacing:1px;line-height:1">SHRED EXPLOSE</div>
+    <div style="font-size:9px;color:rgba(255,255,255,.6);margin-top:2px">Perdre + Exploser</div>
   </div>
 </div>
-<div onclick="openProg('ep')" style="position:relative;height:160px;border-radius:16px;overflow:hidden;margin-bottom:12px;cursor:pointer;opacity:0.65;touch-action:manipulation">
-  <img src="https://images.unsplash.com/photo-1526506118085-60ce8714f8c5?w=600&q=80" style="width:100%;height:100%;object-fit:cover" onerror="this.style.background='linear-gradient(135deg,#1B2A4A,#060C18)';this.src=''">
-  <div style="position:absolute;inset:0;background:linear-gradient(to right,rgba(6,12,24,.85) 0%,rgba(6,12,24,.3) 100%)"></div>
-  <div style="position:absolute;top:12px;right:12px;padding:4px 10px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.3);border-radius:20px;font-size:9px;font-weight:700;color:rgba(255,255,255,.3);letter-spacing:1px">VERROUILLÉ</div>
-  <div style="position:absolute;bottom:16px;left:16px">
-    <div style="font-family:'Bebas Neue',sans-serif;font-size:22px;color:#fff;letter-spacing:2px;line-height:1">EXPLOSE+</div>
-    <div style="font-size:11px;color:rgba(255,255,255,.5);margin-top:3px">Transformation totale</div>
+<div onclick="openProg('ep')" style="position:relative;aspect-ratio:4/5;border-radius:14px;overflow:hidden;cursor:pointer;opacity:0.7;touch-action:manipulation;border:1.5px solid var(--border)">
+  <img src="images/explose-plus.png" style="width:100%;height:100%;object-fit:cover;object-position:center top" onerror="this.style.background='linear-gradient(135deg,#1B2A4A,#060C18)';this.src=''">
+  <div style="position:absolute;inset:0;background:linear-gradient(to top,rgba(6,12,24,.92) 0%,rgba(6,12,24,.15) 55%)"></div>
+  <div style="position:absolute;top:8px;right:8px;padding:3px 8px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.3);border-radius:20px;font-size:8px;font-weight:700;color:rgba(255,255,255,.4);letter-spacing:.5px">🔒 VERROUILLÉ</div>
+  <div style="position:absolute;bottom:10px;left:10px;right:10px">
+    <div style="font-family:'Bebas Neue',sans-serif;font-size:17px;color:#fff;letter-spacing:1px;line-height:1">EXPLOSE+</div>
+    <div style="font-size:9px;color:rgba(255,255,255,.6);margin-top:2px">Transformation totale</div>
   </div>
 </div>
 </div>
@@ -3553,13 +3582,13 @@ body.test-mode #testSkipBar{display:flex}
 </div>
 
 <div id="pgBuilder" class="pg">
-  <!-- État verrouillé (par défaut, montré si !hasAccessTier ou sessionsDone < 10) -->
+  <!-- État verrouillé (par défaut, montré si !hasAccessTier ou programsDone < 2) -->
   <div id="builderLocked" class="builder-locked">
     <div class="bl-ic">🔒</div>
     <div class="bl-title">WORKOUT BUILDER</div>
-    <div class="bl-sub">Crée tes propres séances. Débloqué à partir de 10 séances réalisées.</div>
+    <div class="bl-sub">Crée tes propres séances. Débloqué après <strong>2 programmes terminés</strong>.</div>
     <div class="bl-bar"><div id="builderBar" class="bl-bar-in" style="width:0%"></div></div>
-    <div class="bl-count" id="builderCount">0 / 10 séances réalisées</div>
+    <div class="bl-count" id="builderCount">0 / 2 programmes terminés</div>
   </div>
 
   <!-- État débloqué : éditeur de séance -->
@@ -3662,6 +3691,12 @@ body.test-mode #testSkipBar{display:flex}
       <div class="ps-item"><div class="ps-val" id="psSessions">8</div><div class="ps-label">Séances</div></div>
       <div class="ps-item"><div class="ps-val" id="psBadges">2</div><div class="ps-label">Badges</div></div>
     </div>
+  </div>
+
+  <!-- Progression card — barres séances/semaine + PRs (rendu par renderProgression) -->
+  <div class="sec-title">📈 PROGRESSION</div>
+  <div id="progressionCard" style="background:var(--surface);border-radius:14px;padding:16px;margin-bottom:16px;border:1px solid var(--border)">
+    <div style="font-size:11px;color:var(--muted);text-align:center;padding:20px">Pas encore de données. Termine ta première séance pour voir ta progression.</div>
   </div>
 
   <!-- Level Card -->
@@ -3788,6 +3823,12 @@ body.test-mode #testSkipBar{display:flex}
   <div class="setting-item" onclick="toggleNotif()">
     <div class="si-left"><div class="si-icon">🔔</div><div><div class="si-text">Notifications</div><div class="si-sub">Rappels de Titan par WhatsApp-style</div></div></div>
     <div class="toggle on" id="notifToggle"><div class="toggle-knob"></div></div>
+  </div>
+
+  <!-- Test push notif (n'apparaît qu'après activation notif + FCM token) -->
+  <div class="setting-item" onclick="sendTestNotif()">
+    <div class="si-left"><div class="si-icon">🧪</div><div><div class="si-text">Envoyer un test</div><div class="si-sub">Vérifie que les push notifs arrivent</div></div></div>
+    <div class="si-right">→</div>
   </div>
 
   <div class="setting-item" onclick="alert('Jours d\'entraînement — Firebase à intégrer')">
@@ -4077,10 +4118,11 @@ body.test-mode #testSkipBar{display:flex}
       <!-- PHASE 1 : Upload — Tabs Photo / Barcode -->
       <div id="scanPhaseUpload">
 
-        <!-- Tabs Take Photo / Scan Barcode -->
+        <!-- Tabs Photo / Code-barre / Aliment -->
         <div style="display:flex;background:var(--surface2);border-radius:10px;padding:4px;margin-bottom:16px">
-          <button id="scanTabPhoto" onclick="scanSwitchMode('photo')" style="flex:1;padding:10px;background:var(--gold);border:none;border-radius:8px;color:var(--navy);font-weight:800;font-size:12px;cursor:pointer;font-family:Outfit,sans-serif">📸 Take Photo</button>
-          <button id="scanTabBarcode" onclick="scanSwitchMode('barcode')" style="flex:1;padding:10px;background:transparent;border:none;border-radius:8px;color:var(--muted);font-weight:700;font-size:12px;cursor:pointer;font-family:Outfit,sans-serif">📊 Scan Barcode</button>
+          <button id="scanTabPhoto" onclick="scanSwitchMode('photo')" style="flex:1;padding:10px 4px;background:var(--gold);border:none;border-radius:8px;color:var(--navy);font-weight:800;font-size:11px;cursor:pointer;font-family:Outfit,sans-serif">📸 Photo</button>
+          <button id="scanTabBarcode" onclick="scanSwitchMode('barcode')" style="flex:1;padding:10px 4px;background:transparent;border:none;border-radius:8px;color:var(--muted);font-weight:700;font-size:11px;cursor:pointer;font-family:Outfit,sans-serif">📊 Code-barre</button>
+          <button id="scanTabSearch" onclick="scanSwitchMode('search')" style="flex:1;padding:10px 4px;background:transparent;border:none;border-radius:8px;color:var(--muted);font-weight:700;font-size:11px;cursor:pointer;font-family:Outfit,sans-serif">🔍 Aliment</button>
         </div>
 
         <!-- Mode Photo -->
@@ -4106,15 +4148,16 @@ body.test-mode #testSkipBar{display:flex}
 
         <!-- Mode Barcode -->
         <div id="scanModeBarcode" style="display:none">
-          <div style="background:var(--surface);border:2px dashed rgba(59,130,246,.3);border-radius:20px;padding:36px 20px;text-align:center;margin-bottom:14px;box-shadow:var(--card-shadow)">
-            <div style="font-size:44px;margin-bottom:10px">📊</div>
-            <div style="font-family:'Bebas Neue',sans-serif;font-size:20px;color:var(--text);letter-spacing:2px;margin-bottom:4px">SCAN UN CODE-BARRE</div>
-            <div style="font-size:12px;color:var(--muted);margin-bottom:16px">Saisis ou scanne le code-barre du produit</div>
+          <!-- Bouton scan caméra (action principale) -->
+          <div onclick="scanBarcodeCameraStart()" style="background:linear-gradient(135deg,#3B82F6,#2563EB);border-radius:20px;padding:30px 20px;text-align:center;margin-bottom:12px;cursor:pointer;box-shadow:var(--card-shadow)">
+            <div style="font-size:44px;margin-bottom:8px">📷</div>
+            <div style="font-family:'Bebas Neue',sans-serif;font-size:20px;color:#fff;letter-spacing:2px;margin-bottom:4px">SCANNER AVEC LA CAMÉRA</div>
+            <div style="font-size:12px;color:rgba(255,255,255,.75)">Vise le code-barre du produit</div>
           </div>
 
-          <!-- Input barcode -->
+          <!-- Saisie manuelle (fallback) -->
           <div style="background:var(--surface);border:1.5px solid var(--border);border-radius:12px;padding:14px;margin-bottom:14px">
-            <label style="font-size:10px;color:var(--muted);font-weight:700;letter-spacing:1.5px;text-transform:uppercase;display:block;margin-bottom:8px">Code-barre</label>
+            <label style="font-size:10px;color:var(--muted);font-weight:700;letter-spacing:1.5px;text-transform:uppercase;display:block;margin-bottom:8px">Ou saisis le code à la main</label>
             <div style="display:flex;gap:8px">
               <input type="text" inputmode="numeric" id="scanBarcodeInput" placeholder="3017620422003" style="flex:1;padding:12px;background:var(--surface2);border:1.5px solid var(--border);border-radius:10px;font-family:'Outfit',sans-serif;font-size:14px;color:var(--text);text-align:center;letter-spacing:1px;outline:none">
               <button onclick="scanBarcodeSearch()" style="padding:12px 18px;background:linear-gradient(135deg,var(--gold),var(--gold2));border:none;border-radius:10px;color:var(--navy);font-weight:800;font-size:12px;cursor:pointer;font-family:Outfit,sans-serif">Chercher</button>
@@ -4134,6 +4177,38 @@ body.test-mode #testSkipBar{display:flex}
           <!-- Info source -->
           <div style="padding:10px 12px;background:rgba(91,156,246,.06);border-left:3px solid rgba(91,156,246,.4);border-radius:0 8px 8px 0;font-size:11px;color:var(--text2);line-height:1.5">
             📦 Base <strong>Open Food Facts</strong> — gratuite et open source. Plus de 3 millions de produits référencés mondialement.
+          </div>
+        </div>
+
+        <!-- Mode Recherche aliment — base CIQUAL -->
+        <div id="scanModeSearch" style="display:none">
+          <div style="background:var(--surface);border:2px dashed rgba(197,164,78,.3);border-radius:20px;padding:28px 20px;text-align:center;margin-bottom:14px;box-shadow:var(--card-shadow)">
+            <div style="font-size:44px;margin-bottom:10px">🔍</div>
+            <div style="font-family:'Bebas Neue',sans-serif;font-size:20px;color:var(--text);letter-spacing:2px;margin-bottom:4px">RECHERCHE ALIMENT</div>
+            <div style="font-size:12px;color:var(--muted)">Aliments bruts : fruits, légumes, viandes, féculents…</div>
+          </div>
+
+          <!-- Champ recherche -->
+          <div style="background:var(--surface);border:1.5px solid var(--border);border-radius:12px;padding:14px;margin-bottom:12px">
+            <label style="font-size:10px;color:var(--muted);font-weight:700;letter-spacing:1.5px;text-transform:uppercase;display:block;margin-bottom:8px">Nom de l'aliment</label>
+            <input type="text" id="ciqualSearchInput" oninput="ciqualSearch()" placeholder="Ex : banane, riz cuit, poulet rôti…" style="width:100%;padding:12px;background:var(--surface2);border:1.5px solid var(--border);border-radius:10px;font-family:'Outfit',sans-serif;font-size:14px;color:var(--text);outline:none;box-sizing:border-box">
+          </div>
+
+          <!-- Quantité -->
+          <div style="background:var(--surface);border:1.5px solid var(--border);border-radius:12px;padding:14px;margin-bottom:12px">
+            <label style="font-size:10px;color:var(--muted);font-weight:700;letter-spacing:1.5px;text-transform:uppercase;display:block;margin-bottom:8px">Quantité consommée</label>
+            <div style="display:flex;align-items:center;gap:8px">
+              <input type="number" id="ciqualQty" value="100" style="flex:1;padding:12px;background:var(--surface2);border:1.5px solid var(--border);border-radius:10px;font-family:'Outfit',sans-serif;font-size:14px;color:var(--text);text-align:center;outline:none">
+              <span style="font-size:12px;font-weight:700;color:var(--muted)">g / ml</span>
+            </div>
+          </div>
+
+          <!-- Résultats -->
+          <div id="ciqualResults" style="margin-bottom:12px"></div>
+
+          <!-- Info source -->
+          <div style="padding:10px 12px;background:rgba(197,164,78,.06);border-left:3px solid rgba(197,164,78,.4);border-radius:0 8px 8px 0;font-size:11px;color:var(--text2);line-height:1.5">
+            🇫🇷 Base <strong>CIQUAL 2025</strong> (ANSES) — 3484 aliments de référence, valeurs officielles françaises pour 100 g.
           </div>
         </div>
 
@@ -4451,6 +4526,17 @@ body.test-mode #testSkipBar{display:flex}
 </div><!-- /liveSession -->
 
 </div><!-- /app -->
+
+<!-- Overlay caméra — scan de code-barre en direct -->
+<div id="bcCamOverlay" style="display:none;position:fixed;inset:0;z-index:9700;background:#000;flex-direction:column;align-items:center;justify-content:center">
+  <video id="bcCamVideo" playsinline muted autoplay style="width:100%;height:100%;object-fit:cover;position:absolute;inset:0"></video>
+  <div style="position:relative;z-index:2;width:78%;max-width:320px;aspect-ratio:1.6;border:3px solid rgba(255,255,255,.92);border-radius:16px;box-shadow:0 0 0 2000px rgba(0,0,0,.5)"></div>
+  <div id="bcCamStatus" style="position:relative;z-index:2;margin-top:22px;color:#fff;font-family:'Outfit',sans-serif;font-size:13px;font-weight:600;text-align:center;padding:0 24px;text-shadow:0 1px 4px rgba(0,0,0,.8)">Initialisation de la caméra…</div>
+  <button onclick="scanBarcodeCameraStop()" style="position:absolute;top:20px;right:20px;z-index:3;width:44px;height:44px;border-radius:50%;background:rgba(0,0,0,.6);border:1.5px solid rgba(255,255,255,.4);color:#fff;font-size:20px;cursor:pointer;font-family:'Outfit',sans-serif">✕</button>
+</div>
+
+<!-- Base CIQUAL 2025 (ANSES) — 3484 aliments, chargée pour la recherche nutrition -->
+<script src="ciqual-data.js"></script>
 <script>
 function showNutriTab(el, tab) {
   document.querySelectorAll('#vNutri .sub-tab').forEach(function(t){ t.classList.remove('on'); });
@@ -5269,6 +5355,16 @@ function loadData() {
     activeHabits = validateHabits(raw.activeHabits);
     if (activeHabits.length !== (raw.activeHabits || []).length) repaired = true;
   }
+  // Override avec ah_active_habits si présent (priorité car sync Firestore).
+  // Évite que loadData() ne restaure une version stale depuis ah_v8 alors que
+  // ah_active_habits est plus à jour (cas reconnexion sur autre device).
+  try {
+    var habRaw = localStorage.getItem('ah_active_habits');
+    if (habRaw) {
+      var habArr = JSON.parse(habRaw);
+      if (Array.isArray(habArr)) activeHabits = validateHabits(habArr);
+    }
+  } catch(e) {}
   
   if (Array.isArray(raw.trainingDays)) {
     raw.trainingDays.forEach(function(d) {
@@ -5973,9 +6069,9 @@ function launchTodaySession() {
   // Met à jour l'état pour cohérence avec la page Programmes
   window._progV2State = { key: key, phaseIdx: phaseIdx, sessionKey: sessKey };
 
-  // Lance la séance plein écran
+  // Lance la séance plein écran avec clé programme + clé séance (tracking P2)
   if (typeof launchSession === 'function') {
-    launchSession(sess.exos, sess.name, prog.name);
+    launchSession(sess.exos, sess.name, prog.name, key, sessKey);
   }
 }
 window.launchTodaySession = launchTodaySession;
@@ -6058,6 +6154,7 @@ document.addEventListener('DOMContentLoaded', function() {
     origRUD(); renderTodayCard(); saveData();
     try { renderTrialBanner(); } catch(e) {}
     try { renderResumeSessionBanner(); } catch(e) {}
+    try { renderResumeTestsBanner(); } catch(e) {}
   };
 
   // Splash bar animation
@@ -6216,7 +6313,7 @@ function switchTab(tab){
   }
   // Init Scan check API key + restore form
   if (tab === 'nutrition') { try { scanCheckApiKey(); scanUpdateMacros(); renderJournalToday(); } catch(e) {} }
-  if (tab === 'moi') { try { apiKeyRestore(); fbRefreshAccountSection(window.fbUser); renderBadges(); refreshAccessTierUI(); } catch(e) {} }
+  if (tab === 'moi') { try { apiKeyRestore(); fbRefreshAccountSection(window.fbUser); renderBadges(); refreshAccessTierUI(); renderProgression(); } catch(e) {} }
   // Refresh Athletik Score on Home
   if (tab === 'home') { try { renderAthletikScore(); } catch(e) { console.warn('renderAthletikScore error:', e); } }
 }
@@ -6228,10 +6325,65 @@ function logoutUser(){
   try { if (window.fb && window.fb.auth) window.fb.signOut(window.fb.auth); } catch(e) {}
   setTimeout(function(){ location.reload(); }, 200);
 }
+// Refaire le questionnaire d'attribution programme.
+// Conserve l'historique (sessions, PRs, badges) et l'identité (prenom, age, sexe),
+// mais reset les champs de l'onboarding pour permettre une nouvelle attribution.
 function restartOnboarding(){
-  document.querySelectorAll('.view').forEach(function(v){v.classList.remove('on');});
-  document.querySelectorAll('.scr').forEach(function(e){e.style.display='';});
-  document.getElementById('mainNav').style.display='none'; go('titanIntro');
+  var ok = window.confirm(
+    'Refaire le questionnaire ?\n\n' +
+    'Tu vas répondre à nouveau aux questions d\'attribution. ' +
+    'Ton historique (séances, records, badges) est conservé.'
+  );
+  if (!ok) return;
+
+  // Reset ah_profile : on ne touche QUE les champs de l'attribution programme
+  try {
+    var prof = JSON.parse(localStorage.getItem('ah_profile') || '{}');
+    delete prof.programKey;
+    delete prof.program;
+    delete prof.programName;
+    delete prof.programObj;
+    delete prof.objectif;
+    delete prof.sit;
+    delete prof.cont;
+    delete prof.mat;
+    delete prof.phase;
+    delete prof.phaseIdx;
+    localStorage.setItem('ah_profile', JSON.stringify(prof));
+  } catch(e) { console.warn('restartOnboarding profile reset:', e); }
+
+  // Reset OB et obChecks en mémoire
+  try {
+    if (typeof OB !== 'undefined') {
+      OB.objectif = ''; OB.program = ''; OB.programKey = ''; OB.programName = '';
+      OB.programObj = '';
+    }
+    if (typeof obChecks !== 'undefined') {
+      obChecks.sit = []; obChecks.cont = []; obChecks.mat = [];
+    }
+    if (typeof user !== 'undefined') {
+      user.program = ''; user.programKey = ''; user.programObj = '';
+    }
+  } catch(e) {}
+
+  // Clear les flags d'état onboarding
+  try {
+    localStorage.removeItem('ah_onboarding_done');
+    localStorage.removeItem('ah_ob_inprogress');
+    localStorage.setItem('ah_discovery_mode', '1');
+  } catch(e) {}
+
+  // Sync Firestore (efface aussi les champs côté serveur)
+  try { if (typeof fbSaveProfile === 'function') fbSaveProfile(); } catch(e) {}
+
+  // Cache la nav + retourne sur obQ1 (pas titanIntro — l'user a déjà vu l'intro)
+  document.querySelectorAll('.view').forEach(function(v){ v.classList.remove('on'); });
+  document.querySelectorAll('.scr').forEach(function(e){ e.style.display = ''; });
+  var nav = document.getElementById('mainNav');
+  if (nav) nav.style.display = 'none';
+
+  if (typeof showToast === 'function') showToast('Questionnaire réinitialisé. Refais tes choix.', 'info');
+  setTimeout(function(){ go('obQ1'); }, 300);
 }
 function toggleTheme(){
   darkMode=!darkMode;
@@ -6314,6 +6466,26 @@ function go(id) {
 
   // Trigger thinking → result
   // thinking handled by startThinking()
+
+  // Adapte le sous-titre de qSATIntro selon le programme (SAT / SET / PDC).
+  // À ce stade l'utilisateur a déjà choisi son objectif (sur obQ1) mais pas
+  // forcément validé le programme — on prend ce qu'on a, fallback SAT.
+  if (id === 'qSATIntro') {
+    try {
+      var desc = document.getElementById('qSATIntroDesc');
+      if (desc && typeof window.getTestTypeLabel === 'function') {
+        var t = window.getTestTypeLabel();
+        var blurbs = {
+          SAT: 'Le SAT mesure 5 choses : détente, force, sprint, agilité, mobilité.',
+          SET: 'Le SET mesure ton explosivité globale : vitesse, agilité, détente, conditioning.',
+          PDC: 'Tests poids du corps : pas de matériel, on évalue ton niveau brut.'
+        };
+        desc.innerHTML = (blurbs[t.short] || blurbs.SAT)
+          + ' Tu peux le faire complet dans Tracks &gt; ' + t.short
+          + ', ou faire une <strong style="color:var(--gold)">estimation rapide</strong> ici pour que Titan puisse t\'orienter en attendant.';
+      }
+    } catch(e) {}
+  }
 }
 
 // ── CHECKBOX TOGGLE ──
@@ -7112,7 +7284,7 @@ var PROGRAMS_V2 = (function(){
       tagline: 'Apprendre à dunker et augmenter ta détente verticale',
       totalWeeks: 10,
       level: 'Tous niveaux',
-      img: 'https://images.unsplash.com/photo-1518611012118-696072aa579a?w=900&q=80',
+      img: 'images/vertical-dunk.png',
       phases: [
         {
           n: 1, title: 'PHASE 1 — VERTICAL TEST',
@@ -7262,7 +7434,7 @@ var PROGRAMS_V2 = (function(){
       tagline: 'Le programme complet pour devenir un athlète explosif',
       totalWeeks: 18,
       level: 'Tous niveaux',
-      img: 'https://images.unsplash.com/photo-1534438327276-14e5300c3a48?w=900&q=80',
+      img: 'images/elite-athlete.png',
       phases: [
         {
           n: 1, title: 'PHASE 1 — VERTICAL TEST',
@@ -7501,7 +7673,7 @@ var PROGRAMS_V2 = (function(){
     se: {
       name: 'SHRED EXPLOSE', tagline: 'Perdre du gras ET gagner en explosivité',
       totalWeeks: 16, level: 'Tous niveaux',
-      img: 'https://images.unsplash.com/photo-1517836357463-d25dfeac3438?w=900&q=80',
+      img: 'images/shred-explose.png',
       phases: [
         {
           n:1, title:'PHASE 1 — DETOX TURBO (Sem 1-8)', subtitle:'Brûler un max de gras + gagner en explosivité',
@@ -7671,7 +7843,7 @@ var PROGRAMS_V2 = (function(){
     tri: {
       name: 'TRIPHASIQUE', tagline: 'Force complète sans salle — Iso → Excentrique → Explosif',
       totalWeeks: 12, level: 'Intermédiaire à avancé',
-      img: 'https://images.unsplash.com/photo-1574680096145-d05b474e2155?w=900&q=80',
+      img: 'images/triphasique.png',
       phases: [
         {
           n:1, title:'PHASE 1 — ISOMÉTRIQUE (Sem 1-4)', subtitle:'Renforcer les tendons et les structures profondes',
@@ -7827,7 +7999,7 @@ var PROGRAMS_V2 = (function(){
     mt: {
       name: 'MICROTRAINING', tagline: 'Discipline | Régularité | 9 micro-séances/sem | 10-18 mn/séance',
       totalWeeks: 6, level: 'Tous niveaux',
-      img: 'https://images.unsplash.com/photo-1552674605-db6ffd4facb5?w=900&q=80',
+      img: 'images/microtraining.png',
       phases: [
         {
           n:1, title:'CYCLE HEBDOMADAIRE — 9 micros', subtitle:'Entraîner ta discipline autant que ta performance',
@@ -7920,7 +8092,7 @@ var PROGRAMS_V2 = (function(){
     ep: {
       name: 'EXPLOSE+', tagline: 'Méthode MENER | Partenaire | 18 semaines | 4 phases',
       totalWeeks: 18, level: 'Avancé',
-      img: 'https://images.unsplash.com/photo-1526506118085-60ce8714f8c5?w=900&q=80',
+      img: 'images/explose-plus.png',
       phases: [
         {
           n:1, title:'PHASE 1 — POIDS DU CORPS (Sem 1-4)', subtitle:'Maîtriser les patterns de mouvement',
@@ -8222,20 +8394,26 @@ window._progV2State = { key: null, phaseIdx: 0, sessionKey: null };
 function renderProgramV2(key) {
   var p = PROGRAMS_V2[key];
   if (!p) return;
-  window._progV2State = { key: key, phaseIdx: 0, sessionKey: null };
+  // Ouvre sur la phase courante de progression (P2), pas toujours phase 0
+  var startPhase = 0;
+  try {
+    var st = getProgramProgress(key);
+    if (st && typeof st.phaseIdx === 'number' && st.phaseIdx < p.phases.length) startPhase = st.phaseIdx;
+  } catch(e) {}
+  window._progV2State = { key: key, phaseIdx: startPhase, sessionKey: null };
   var container = document.getElementById('progDetail');
   if (!container) return;
   container.classList.remove('hidden');
   document.getElementById('progList').classList.add('hidden');
-  container.innerHTML = _renderProgHeader(p) + _renderPhaseTabs(p, 0) + '<div id="pgV2Body"></div>';
-  _renderPhaseBody(p, 0);
+  container.innerHTML = _renderProgHeader(p) + _renderPhaseTabs(p, startPhase) + '<div id="pgV2Body"></div>';
+  _renderPhaseBody(p, startPhase);
   var v = document.getElementById('vTrain'); if (v) v.scrollTop = 0;
 }
 
 function _renderProgHeader(p) {
   return '<div class="back-btn" onclick="closeProg()">← Retour Programmes</div>'
     + '<div style="display:flex;gap:14px;align-items:center;margin-bottom:8px">'
-    +   '<img src="' + (p.img||'') + '" style="width:64px;height:64px;border-radius:12px;object-fit:cover;background:#1B2A4A;flex-shrink:0" onerror="this.style.display=\'none\'">'
+    +   '<img src="' + (p.img||'') + '" style="width:64px;height:64px;border-radius:12px;object-fit:cover;object-position:center top;background:#1B2A4A;flex-shrink:0" onerror="this.style.display=\'none\'">'
     +   '<div style="flex:1;min-width:0">'
     +     '<div style="font-family:\'Bebas Neue\',sans-serif;font-size:24px;color:var(--text);letter-spacing:1.5px;line-height:1.05">' + p.name + '</div>'
     +     '<div style="font-size:11px;color:var(--muted);margin-top:3px;line-height:1.4">' + (p.tagline||'') + '</div>'
@@ -8245,10 +8423,21 @@ function _renderProgHeader(p) {
 }
 
 function _renderPhaseTabs(p, activeIdx) {
+  // P3 — verrouille les phases futures (idx > phase courante de progression)
+  var curPhase = 0;
+  try {
+    var _pk = window._progV2State && window._progV2State.key;
+    if (_pk) curPhase = getProgramProgress(_pk).phaseIdx || 0;
+  } catch(e) {}
   var h = '<div style="display:flex;gap:6px;margin:12px 0 14px;overflow-x:auto;padding-bottom:4px">';
   p.phases.forEach(function(ph, i){
     var on = (i === activeIdx);
-    h += '<div onclick="_switchPhaseV2(' + i + ')" style="flex-shrink:0;padding:8px 14px;border-radius:8px;font-size:11px;font-weight:700;letter-spacing:.5px;cursor:pointer;background:' + (on?'var(--navy)':'var(--surface2)') + ';color:' + (on?'var(--gold)':'var(--text2)') + ';border:1.5px solid ' + (on?'var(--navy)':'var(--border)') + '">PHASE ' + ph.n + '</div>';
+    var locked = (i > curPhase);
+    var bg = locked ? 'var(--surface2)' : (on ? 'var(--navy)' : 'var(--surface2)');
+    var col = locked ? 'var(--muted)' : (on ? 'var(--gold)' : 'var(--text2)');
+    var bd = locked ? 'var(--border)' : (on ? 'var(--navy)' : 'var(--border)');
+    var lbl = (locked ? '🔒 ' : '') + 'PHASE ' + ph.n;
+    h += '<div onclick="_switchPhaseV2(' + i + ')" style="flex-shrink:0;padding:8px 14px;border-radius:8px;font-size:11px;font-weight:700;letter-spacing:.5px;cursor:pointer;opacity:' + (locked?'.6':'1') + ';background:' + bg + ';color:' + col + ';border:1.5px solid ' + bd + '">' + lbl + '</div>';
   });
   h += '</div>';
   return h;
@@ -8256,6 +8445,14 @@ function _renderPhaseTabs(p, activeIdx) {
 
 function _switchPhaseV2(idx) {
   var p = PROGRAMS_V2[window._progV2State.key]; if (!p) return;
+  // P3 — bloque l'accès à une phase non débloquée
+  try {
+    var curPhase = getProgramProgress(window._progV2State.key).phaseIdx || 0;
+    if (idx > curPhase) {
+      if (typeof showToast === 'function') showToast('Termine la phase précédente pour débloquer celle-ci.', 'info');
+      return;
+    }
+  } catch(e) {}
   window._progV2State.phaseIdx = idx;
   window._progV2State.sessionKey = null;
   // Re-render tabs (update active)
@@ -8265,13 +8462,60 @@ function _switchPhaseV2(idx) {
   _renderPhaseBody(p, idx);
 }
 
+// P3 — séance débloquée ? (phase passée = tout ouvert, phase future = fermé,
+// phase courante = ordre strict des séances de la semaine type).
+function _isSessionUnlocked(progKey, phaseIdx, sessKey) {
+  try {
+    var st = getProgramProgress(progKey);
+    if (phaseIdx < st.phaseIdx) return true;
+    if (phaseIdx > st.phaseIdx) return false;
+    var prog = PROGRAMS_V2[progKey];
+    var phase = prog && prog.phases[phaseIdx];
+    if (!phase) return true;
+    var required = _requiredSessionKeys(phase);
+    var pos = required.indexOf(sessKey);
+    if (pos === -1) return true; // séance optionnelle → libre
+    for (var i = 0; i < pos; i++) {
+      if (!st.doneThisWeek[required[i]]) return false;
+    }
+    return true;
+  } catch(e) { return true; }
+}
+
+// Première séance non encore faite cette semaine (phase courante).
+function _nextSessionToDo(progKey) {
+  try {
+    var prog = PROGRAMS_V2[progKey]; if (!prog) return null;
+    var st = getProgramProgress(progKey);
+    var phase = prog.phases[st.phaseIdx]; if (!phase) return null;
+    var required = _requiredSessionKeys(phase);
+    for (var i = 0; i < required.length; i++) {
+      if (!st.doneThisWeek[required[i]]) return required[i];
+    }
+    return required[0] || null;
+  } catch(e) { return null; }
+}
+
 function _renderPhaseBody(p, idx) {
   var body = document.getElementById('pgV2Body');
   if (!body) return;
   var ph = p.phases[idx]; if (!ph) return;
   var h = '';
   h += '<div style="font-family:\'Bebas Neue\',sans-serif;font-size:20px;color:var(--text);letter-spacing:1.5px;line-height:1.05">' + ph.title + '</div>';
-  h += '<div style="font-size:12px;color:var(--muted);margin:3px 0 14px;font-style:italic">' + ph.subtitle + '</div>';
+  h += '<div style="font-size:12px;color:var(--muted);margin:3px 0 12px;font-style:italic">' + ph.subtitle + '</div>';
+
+  // P2 — état de progression de la phase (semaine courante / phase terminée)
+  try {
+    var _pk = window._progV2State && window._progV2State.key;
+    var _pp = _pk ? getProgramProgress(_pk) : null;
+    if (_pp) {
+      if (idx === _pp.phaseIdx) {
+        h += '<div style="background:rgba(197,164,78,.12);border:1px solid rgba(197,164,78,.35);border-radius:10px;padding:8px 12px;margin-bottom:12px;font-size:11px;font-weight:800;color:var(--gold);letter-spacing:.5px">📍 SEMAINE ' + _pp.week + ' / ' + (ph.weeks || 1) + ' — phase en cours</div>';
+      } else if (idx < _pp.phaseIdx) {
+        h += '<div style="background:rgba(16,185,129,.10);border:1px solid rgba(16,185,129,.3);border-radius:10px;padding:8px 12px;margin-bottom:12px;font-size:11px;font-weight:800;color:#10B981;letter-spacing:.5px">✅ Phase terminée</div>';
+      }
+    }
+  } catch(e) {}
 
   // Encart durée / fréquence / lieu
   h += '<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:14px;background:var(--surface2);border-radius:12px;padding:12px 10px;text-align:center">';
@@ -8308,13 +8552,22 @@ function _renderPhaseBody(p, idx) {
     var isRest = (sk === 'rest');
     var isMener = (sk === 'mener' || sk === 'bilan');
     var isOpt = (sk === 'opt');
-    var bg = isRest ? 'var(--surface2)' : (isMener ? 'rgba(108,99,255,.10)' : (isOpt ? 'rgba(245,158,11,.10)' : 'rgba(197,164,78,.10)'));
-    var border = isRest ? 'var(--border)' : (isMener ? 'rgba(108,99,255,.35)' : (isOpt ? 'rgba(245,158,11,.35)' : 'rgba(197,164,78,.35)'));
-    var color = isRest ? 'var(--muted)' : (isMener ? '#6C63FF' : (isOpt ? '#F59E0B' : 'var(--gold)'));
+    // P3 — verrouillage : séance bloquée si phase future ou ordre non respecté
+    var locked = false;
+    if (sess && !isRest) {
+      try {
+        var _pk = window._progV2State && window._progV2State.key;
+        if (_pk) locked = !_isSessionUnlocked(_pk, idx, sk);
+      } catch(e) {}
+    }
+    var bg = isRest ? 'var(--surface2)' : (locked ? 'var(--surface2)' : (isMener ? 'rgba(108,99,255,.10)' : (isOpt ? 'rgba(245,158,11,.10)' : 'rgba(197,164,78,.10)')));
+    var border = isRest ? 'var(--border)' : (locked ? 'var(--border)' : (isMener ? 'rgba(108,99,255,.35)' : (isOpt ? 'rgba(245,158,11,.35)' : 'rgba(197,164,78,.35)')));
+    var color = isRest ? 'var(--muted)' : (locked ? 'var(--muted)' : (isMener ? '#6C63FF' : (isOpt ? '#F59E0B' : 'var(--gold)')));
     var label = isRest ? 'Repos' : (isMener ? (sk==='bilan'?'Bilan':'MENER') : (isOpt ? 'Optionnel' : (sess ? sess.name.split('—')[0].trim() : sk.toUpperCase())));
+    if (locked) label = '🔒 ' + label;
     var clickable = !!sess && !isRest;
     var oc = clickable ? ' onclick="_openSessionV2(\'' + sk + '\')"' : '';
-    h += '<div' + oc + ' style="background:' + bg + ';border:1px solid ' + border + ';border-radius:8px;padding:8px 4px;text-align:center;cursor:' + (clickable?'pointer':'default') + ';min-height:62px;display:flex;flex-direction:column;justify-content:space-between">';
+    h += '<div' + oc + ' style="background:' + bg + ';border:1px solid ' + border + ';border-radius:8px;padding:8px 4px;text-align:center;cursor:' + (clickable?'pointer':'default') + ';opacity:' + (locked?'.6':'1') + ';min-height:62px;display:flex;flex-direction:column;justify-content:space-between">';
     h +=   '<div style="font-size:9px;font-weight:800;color:var(--muted);letter-spacing:1px">' + day.d.toUpperCase() + '</div>';
     h +=   '<div style="font-size:10px;font-weight:700;color:' + color + ';line-height:1.15;margin-top:4px">' + label + '</div>';
     h += '</div>';
@@ -8339,6 +8592,12 @@ function _openSessionV2(sessKey) {
   var p = PROGRAMS_V2[window._progV2State.key]; if (!p) return;
   var ph = p.phases[window._progV2State.phaseIdx]; if (!ph) return;
   var sess = ph.sessions && ph.sessions[sessKey]; if (!sess) return;
+  // P3 — refuse l'ouverture d'une séance verrouillée (ordre strict)
+  if (typeof _isSessionUnlocked === 'function'
+      && !_isSessionUnlocked(window._progV2State.key, window._progV2State.phaseIdx, sessKey)) {
+    if (typeof showToast === 'function') showToast('Termine la séance précédente pour débloquer celle-ci.', 'info');
+    return;
+  }
   window._progV2State.sessionKey = sessKey;
 
   var container = document.getElementById('progDetail');
@@ -8581,8 +8840,60 @@ var _LIB_VIDEO_MAP = {
 var _libCurrentFilter = 'all';
 var _libCurrentVideo = null;
 
+// Retourne la liste des noms d'exercices utilisés dans le programme attribué.
+// Parse PROGRAMS_V2[programKey].phases[*].sessions[*].exos et collecte les noms
+// uniques. Utilisé pour le filtre "🎯 Mon programme" de la librairie.
+function _libProgramExoNames() {
+  try {
+    var prof = JSON.parse(localStorage.getItem('ah_profile') || '{}');
+    var key = prof.programKey;
+    if (!key || typeof PROGRAMS_V2 === 'undefined' || !PROGRAMS_V2[key]) return [];
+    var prog = PROGRAMS_V2[key];
+    var names = {};
+    if (prog.phases) {
+      prog.phases.forEach(function(phase) {
+        if (!phase.sessions) return;
+        Object.keys(phase.sessions).forEach(function(sk) {
+          var sess = phase.sessions[sk];
+          if (!sess || !sess.exos) return;
+          sess.exos.forEach(function(e) {
+            if (e && e.n) names[e.n.toLowerCase()] = true;
+          });
+        });
+      });
+    }
+    return Object.keys(names);
+  } catch(e) { return []; }
+}
+
 function _libFlatExos(filterKey) {
   var result = [];
+  if (filterKey === 'myprogram') {
+    // Tous les exos de la librairie dont le nom matche (substring) au moins
+    // un nom d'exo du programme attribué. Substring car PROGRAMS_V2 contient
+    // des descriptions élargies ("Squat à la barre — Charge lourde") vs
+    // catData qui a des noms courts ("Squat").
+    var progNames = _libProgramExoNames();
+    if (!progNames.length) return result;
+    Object.keys(_LIB_CAT_MAP).forEach(function(ck) {
+      var cfg = _LIB_CAT_MAP[ck];
+      cfg.keys.forEach(function(dk) {
+        (catData[dk]||[]).forEach(function(ex) {
+          var exName = (ex.name || '').toLowerCase();
+          if (!exName) return;
+          var hit = false;
+          for (var i = 0; i < progNames.length; i++) {
+            var pn = progNames[i];
+            // Match bidirectionnel : exName dans pn (cas Squat ⊂ Squat à la barre)
+            // ou pn dans exName (cas Box jumps ⊂ Box jumps adapté).
+            if (pn.indexOf(exName) > -1 || exName.indexOf(pn) > -1) { hit = true; break; }
+          }
+          if (hit) result.push({ex:ex, catKey:ck, catLabel:cfg.label, color:cfg.color});
+        });
+      });
+    });
+    return result;
+  }
   if (filterKey === 'all') {
     Object.keys(_LIB_CAT_MAP).forEach(function(ck) {
       var cfg = _LIB_CAT_MAP[ck];
@@ -8670,10 +8981,27 @@ function _libOpenDetail(name, catKey) {
   var dEl = document.getElementById('ytDetailDiff'); dEl.textContent = dl; dEl.className = 'yt-detail-diff ' + ex.diff;
   document.getElementById('ytDetailDesc').textContent = ex.desc || '';
   document.getElementById('ytDetailTags').innerHTML = (ex.muscles||[]).map(function(m){ return '<div class="tag">' + m + '</div>'; }).join('');
-  // Video
-  _libCurrentVideo = _LIB_VIDEO_MAP[ex.name] || null;
+  // Video : priorité ex.video (futur champ inline) puis _LIB_VIDEO_MAP[name]
+  _libCurrentVideo = ex.video || _LIB_VIDEO_MAP[ex.name] || null;
   var placeholder = document.getElementById('ytDetailPlaceholder');
   placeholder.style.display = 'flex';
+  // Adapte le placeholder selon disponibilité de la vidéo. Quand pas de vidéo,
+  // on indique clairement "à venir" et on propose une recherche YouTube en fallback.
+  if (_libCurrentVideo) {
+    placeholder.innerHTML =
+      '<div class="yt-detail-play"><div class="yt-detail-play-tri"></div></div>' +
+      '<div style="font-size:9px;color:rgba(255,255,255,.55);letter-spacing:1px;text-transform:uppercase;margin-top:4px">Voir la démo</div>';
+    placeholder.style.cursor = 'pointer';
+    placeholder.onclick = function(){ _libPlayVideo(); };
+  } else {
+    var q = encodeURIComponent(ex.name + ' technique tutoriel');
+    placeholder.innerHTML =
+      '<div style="font-size:36px;opacity:.5">🎬</div>' +
+      '<div style="font-size:10px;color:rgba(255,255,255,.45);letter-spacing:1px;text-transform:uppercase;margin-top:6px">Vidéo de démo à venir</div>' +
+      '<a href="https://www.youtube.com/results?search_query=' + q + '" target="_blank" rel="noopener" style="margin-top:8px;font-size:10px;color:rgba(255,255,255,.7);text-decoration:underline;letter-spacing:.5px" onclick="event.stopPropagation()">Chercher sur YouTube ↗</a>';
+    placeholder.style.cursor = 'default';
+    placeholder.onclick = null;
+  }
   var existingIframe = document.getElementById('ytDetailIframe');
   if (existingIframe) existingIframe.remove();
   var videoArea = document.getElementById('ytDetailVideo');
@@ -8709,6 +9037,12 @@ function _libCloseDetail() {
 function _libInit() {
   var grid = document.getElementById('libYtGrid');
   if (grid && !grid.innerHTML.trim()) _libRender('all');
+  // Affiche le chip "🎯 Mon programme" si un programKey est attribué
+  try {
+    var prof = JSON.parse(localStorage.getItem('ah_profile') || '{}');
+    var chip = document.getElementById('libChipMyProgram');
+    if (chip) chip.style.display = prof.programKey ? '' : 'none';
+  } catch(e) {}
 }
 function openProg(k){
   // SAT gate : si pas de SAT et pas test mode, on bloque
@@ -8802,24 +9136,26 @@ function _userSatDone() {
   } catch(e) { return false; }
 }
 
-// Verrouille / déverrouille le bouton "Commencer la séance" en fonction des tests faits
+// Style du bouton "Commencer la séance" selon l'état du SAT.
+// IMPORTANT : on ne met JAMAIS le bouton en disabled — un bouton disabled
+// n'émet aucun onclick : le clic ne fait rien, sans erreur console (bug
+// "le bouton ne fonctionne pas"). Le bouton reste toujours cliquable ;
+// startSessionGuarded() gère le cas SAT non fait (toast + redirection Tracks).
 function updateStartSessionLock() {
   var btn = document.getElementById('startSessionBtn');
   if (!btn) return;
+  btn.disabled = false;
+  btn.style.cursor = 'pointer';
   var done = _userSatDone();
   if (done) {
-    btn.disabled = false;
     btn.style.background = '';
     btn.style.color = '';
-    btn.style.cursor = '';
     btn.style.opacity = '';
     btn.innerHTML = 'Commencer la séance 🔥';
   } else {
-    btn.disabled = true;
     btn.style.background = 'var(--surface2)';
     btn.style.color = 'var(--muted)';
-    btn.style.cursor = 'not-allowed';
-    btn.style.opacity = '.85';
+    btn.style.opacity = '.9';
     btn.innerHTML = '🔒 Fais d\'abord tes tests physiques';
   }
 }
@@ -9546,10 +9882,12 @@ function toggleNotif() {
           if (toggleEl) toggleEl.classList.remove('on');
           alert('Permission refusée. Active les notifications dans les paramètres du navigateur pour recevoir les rappels.');
         } else {
+          _registerFCMToken();
           _enableTitanReminders();
         }
       });
     } else if (Notification.permission === 'granted') {
+      _registerFCMToken();
       _enableTitanReminders();
     } else {
       alert('Permission refusée. Va dans les paramètres du navigateur pour autoriser les notifications.');
@@ -9563,13 +9901,107 @@ function toggleNotif() {
   try { localStorage.setItem('ah_notif_on', notifOn ? '1' : '0'); } catch(e) {}
 }
 
-// ═══ LOCAL NOTIFICATIONS — Titan reminders ═══
+// ═══ FCM — Firebase Cloud Messaging ═══
+// Récupère le token push de l'appareil + le sauvegarde dans ah_profile + Firestore.
+// La clé VAPID est servie via /.netlify/functions/notif-config pour ne pas la coder
+// en dur dans le HTML public. Fallback : utilise la chaîne window.FCM_VAPID_KEY si
+// définie côté HTML (utile en dev local).
+async function _registerFCMToken() {
+  if (!window.fb || !window.fb.messaging || !window.fb.getToken) {
+    console.log('FCM pas dispo (navigateur non supporté ou pas encore init).');
+    return null;
+  }
+  try {
+    var vapidKey = window.FCM_VAPID_KEY || null;
+    if (!vapidKey) {
+      // Tente de récupérer la clé publique depuis la Netlify function
+      try {
+        var r = await fetch('/.netlify/functions/notif-config');
+        if (r.ok) {
+          var j = await r.json();
+          vapidKey = j.vapidKey || null;
+        }
+      } catch(e) {}
+    }
+    if (!vapidKey) {
+      console.warn('FCM VAPID key absente — notif push background désactivé. ' +
+        'Définis FIREBASE_VAPID_KEY sur Netlify ou window.FCM_VAPID_KEY en local.');
+      return null;
+    }
+    // Service Worker doit être enregistré à la racine
+    var reg = await navigator.serviceWorker.register('/firebase-messaging-sw.js');
+    var token = await window.fb.getToken(window.fb.messaging, {
+      vapidKey: vapidKey,
+      serviceWorkerRegistration: reg
+    });
+    if (!token) {
+      console.warn('FCM token vide — permission probablement refusée.');
+      return null;
+    }
+    // Sauvegarde token dans ah_profile (sync Firestore automatique)
+    try {
+      var prof = JSON.parse(localStorage.getItem('ah_profile') || '{}');
+      prof.fcmToken = token;
+      prof.fcmTokenAt = new Date().toISOString();
+      localStorage.setItem('ah_profile', JSON.stringify(prof));
+      if (typeof fbSaveProfile === 'function') fbSaveProfile();
+    } catch(e) {}
+    console.log('FCM token enregistré:', token.slice(0, 16) + '…');
+    return token;
+  } catch(err) {
+    console.warn('_registerFCMToken:', err);
+    return null;
+  }
+}
+window._registerFCMToken = _registerFCMToken;
+
+// Bouton "Envoyer un test" — appelle la Netlify function send-notif avec le token
+// stocké dans ah_profile. Permet à l'utilisateur de vérifier que tout marche.
+window.sendTestNotif = async function() {
+  var prof = {};
+  try { prof = JSON.parse(localStorage.getItem('ah_profile') || '{}'); } catch(e) {}
+  if (!prof.fcmToken) {
+    if (typeof showToast === 'function') showToast('Active d\'abord les notifications dans Paramètres.', 'info');
+    return;
+  }
+  try {
+    var r = await fetch('/.netlify/functions/send-notif', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        token: prof.fcmToken,
+        title: 'Test Titan 🔔',
+        body: 'Si tu vois cette notif, le push background est bien actif.'
+      })
+    });
+    var j = await r.json();
+    if (j.ok) {
+      if (typeof showToast === 'function') showToast('Notif envoyée. Vérifie le centre de notif du téléphone.', 'ok');
+    } else {
+      if (typeof showToast === 'function') showToast('Erreur : ' + (j.error || 'inconnue'), 'err');
+    }
+  } catch(e) {
+    if (typeof showToast === 'function') showToast('Réseau indisponible.', 'err');
+  }
+};
+
+// ═══ LOCAL NOTIFICATIONS — Titan reminders (fallback PWA ouverte) ═══
 var _notifTimers = [];
 
 function _enableTitanReminders() {
   _disableTitanReminders();
-  // Daily reminder at 19:00 if no session done today
+  // Daily reminder at 19:00 — uniquement si la séance du jour n'a pas été faite.
   _scheduleDailyAt(19, 0, function(){
+    try {
+      // Skip si l'utilisateur a complété au moins une séance aujourd'hui
+      var today = new Date().toDateString();
+      var hist = JSON.parse(localStorage.getItem('ah_set_history') || '[]');
+      var doneToday = hist.some(function(h){
+        if (!h || !h.date) return false;
+        return new Date(h.date).toDateString() === today && (h.type === 'session' || h.sessName);
+      });
+      if (doneToday) return;
+    } catch(e) {}
     _showTitanNotif(
       'Tu as une séance prévue 🏋️',
       'Termine ta journée comme tu l\'as commencée. — Titan'
@@ -9578,13 +10010,16 @@ function _enableTitanReminders() {
   // Habit check at 21:00 if any active habit not checked today
   _scheduleDailyAt(21, 0, function(){
     try {
-      var habits = JSON.parse(localStorage.getItem('ah_habits') || '[]');
-      var today = new Date().toISOString().split('T')[0];
-      var pending = habits.filter(function(h){ return h.active && (!h.lastCheck || h.lastCheck.split('T')[0] !== today); });
+      // Lit la bonne clé (ah_active_habits) — pas ah_habits qui n'existe pas.
+      var habits = JSON.parse(localStorage.getItem('ah_active_habits') || '[]');
+      var today = new Date().toDateString();
+      var pending = habits.filter(function(h){
+        return h && (!h.lastChecked || h.lastChecked !== today);
+      });
       if (pending.length > 0) {
         _showTitanNotif(
           'Habitudes 🔔',
-          'Tu as ' + pending.length + ' habitude(s) à cocher avant la fin de la journée.'
+          'Tu as ' + pending.length + ' habitude' + (pending.length > 1 ? 's' : '') + ' à cocher avant la fin de la journée.'
         );
       }
     } catch(e) {}
@@ -9989,7 +10424,9 @@ function exitTestMode() {
 // ÉTAPE 3/3 — NUTRITION (Mifflin-St Jeor + ajustement objectif)
 // ══════════════════════════════════
 // ═══ WORKOUT BUILDER ═══
-var BUILDER_UNLOCK_AFTER = 10; // séances complétées pour débloquer
+// Débloqué après 2 programmes terminés (ou tier VIP/MASTER pour skip).
+// programsDone est incrémenté quand un programme entier est complété.
+var BUILDER_UNLOCK_PROGRAMS = 2;
 var builderState = { exos: [] };
 
 function _builderLoad() {
@@ -10004,11 +10441,11 @@ function _builderPersist() {
 }
 
 function _builderCheckUnlock() {
-  // VIP/MASTER tier unlocks immediately + 10 sessions also unlocks
+  // VIP/MASTER tier unlocks immediately + 2 programmes complétés débloquent aussi
   if (typeof window.hasAccessTier === 'function' && window.hasAccessTier('VIP')) return true;
   try {
     var prof = JSON.parse(localStorage.getItem('ah_profile') || '{}');
-    return (prof.sessionsDone || 0) >= BUILDER_UNLOCK_AFTER;
+    return (prof.programsDone || 0) >= BUILDER_UNLOCK_PROGRAMS;
   } catch(e) { return false; }
 }
 
@@ -10020,14 +10457,14 @@ function renderBuilder() {
   if (!_builderCheckUnlock()) {
     locked.style.display = '';
     unlocked.style.display = 'none';
-    // Progress
+    // Progression : programmes terminés (pas séances)
     var done = 0;
-    try { done = JSON.parse(localStorage.getItem('ah_profile') || '{}').sessionsDone || 0; } catch(e) {}
-    var pct = Math.min(100, (done / BUILDER_UNLOCK_AFTER) * 100);
+    try { done = JSON.parse(localStorage.getItem('ah_profile') || '{}').programsDone || 0; } catch(e) {}
+    var pct = Math.min(100, (done / BUILDER_UNLOCK_PROGRAMS) * 100);
     var bar = document.getElementById('builderBar');
     var cnt = document.getElementById('builderCount');
     if (bar) bar.style.width = pct + '%';
-    if (cnt) cnt.textContent = done + ' / ' + BUILDER_UNLOCK_AFTER + ' séances réalisées';
+    if (cnt) cnt.textContent = done + ' / ' + BUILDER_UNLOCK_PROGRAMS + ' programmes terminés';
     return;
   }
   locked.style.display = 'none';
@@ -10172,7 +10609,7 @@ function builderStart() {
   });
   try {
     if (typeof launchSession === 'function') {
-      launchSession(exos, 'Ma séance custom', 'WORKOUT BUILDER');
+      launchSession(exos, 'Ma séance custom', 'WORKOUT BUILDER', '', '');
     } else if (typeof startLive === 'function') {
       window._customSessionExos = exos;
       startLive();
@@ -10466,7 +10903,7 @@ var BADGES_DEF = [
   { id:'streak30',   icon:'🦅', name:'Streak 30',    desc:'30 jours consécutifs',     check: function(s){ return (s.streak||0) >= 30; } },
   { id:'phase1',     icon:'💪', name:'Phase 1',      desc:'Fondations terminées',     check: function(s){ return (s.phasesDone||0) >= 1; } },
   { id:'prog1',      icon:'🏀', name:'Programme 1',  desc:'1er programme fini',       check: function(s){ return (s.programsDone||0) >= 1; } },
-  { id:'builder',    icon:'🛠️', name:'Builder',      desc:'Workout Builder débloqué', check: function(s){ return (s.sessionsDone||0) >= 10; } },
+  { id:'builder',    icon:'🛠️', name:'Builder',      desc:'Workout Builder débloqué', check: function(s){ return (s.programsDone||0) >= 2; } },
   { id:'surhumain',  icon:'🔱', name:'Surhumain',    desc:'Score 91+/100',            check: function(s){ return (s.athScore||0) >= 91; } },
   { id:'prHunter',   icon:'📈', name:'PR Hunter',    desc:'5 records personnels',     check: function(s){ return (s.prs||0) >= 5; } },
   { id:'zenMaster',  icon:'🧘', name:'Zen Master',   desc:'Protocole Flow 10 fois',   check: function(s){ return (s.flowDone||0) >= 10; } },
@@ -11021,6 +11458,26 @@ function selectHabitItem(el) {
   contractEl.scrollIntoView({ behavior: "smooth" });
 }
 
+// Sauvegarde d\u00e9di\u00e9e activeHabits dans son propre localStorage key + Firestore.
+// Avant : seulement dans ah_v8 (saveData) qui n'est PAS sync Firestore \u2192 perte
+// au change de device.
+function _persistActiveHabits() {
+  try { localStorage.setItem('ah_active_habits', JSON.stringify(activeHabits)); } catch(e) {}
+  try { if (typeof fbSaveProfile === 'function') fbSaveProfile(); } catch(e) {}
+}
+
+// Restaure activeHabits depuis localStorage (pr\u00e9f\u00e8re ah_active_habits, fallback
+// sur l'\u00e9ventuel ah_v8 h\u00e9rit\u00e9 de saveData).
+function _restoreActiveHabits() {
+  try {
+    var raw = localStorage.getItem('ah_active_habits');
+    if (raw) {
+      var arr = JSON.parse(raw);
+      if (Array.isArray(arr)) activeHabits = arr;
+    }
+  } catch(e) {}
+}
+
 function signAndStartHabit() {
   if (!selectedHabit) return;
   var sig = document.getElementById("signatureInput").value.trim();
@@ -11030,6 +11487,7 @@ function signAndStartHabit() {
     duration: selectedDuration, startDate: new Date().toISOString(),
     daysCompleted: 0, signature: sig, streak: 0, lastChecked: null
   });
+  _persistActiveHabits();
   closeHabitsModal();
   renderActiveHabits();
 }
@@ -11089,14 +11547,171 @@ function checkHabit(id) {
   var h = activeHabits.find(function(a) { return a.id === id; });
   if (!h) return;
   var today = new Date().toDateString();
-  if (h.lastChecked === today) return;
-  h.daysCompleted++; h.streak++; h.lastChecked = today;
-  if (h.daysCompleted >= h.duration) {
-    activeHabits = activeHabits.filter(function(a) { return a.id !== id; });
-    alert("\uD83C\uDFC6 D\u00e9fi termin\u00e9 ! Titan est fier.");
+  if (h.lastChecked === today) return; // d\u00e9j\u00E0 coch\u00e9 aujourd'hui
+
+  // D\u00e9tection du gap : si lastChecked != hier (ou null), on reset la streak.
+  // Sinon on incr\u00e9mente normalement. \u00C9vite que la streak monte alors que l'user
+  // a saut\u00e9 plusieurs jours.
+  var yesterday = new Date(Date.now() - 86400000).toDateString();
+  if (h.lastChecked && h.lastChecked !== yesterday) {
+    h.streak = 1; // gap d\u00e9tect\u00e9 \u2192 on repart \u00E0 1 (le check d'aujourd'hui compte)
+  } else {
+    h.streak = (h.streak || 0) + 1;
   }
+
+  h.daysCompleted++;
+  h.lastChecked = today;
+
+  if (h.daysCompleted >= h.duration) {
+    // D\u00e9fi termin\u00e9 : bump compteur global pour les badges (zenMaster: flowDone 10x,
+    // etc. d\u00e9pendent de habitsDone). Retire l'habitude de la liste active.
+    try {
+      if (typeof _bumpProfileCounter === 'function') _bumpProfileCounter('habitsDone', 1);
+    } catch(e) {}
+    activeHabits = activeHabits.filter(function(a) { return a.id !== id; });
+    try { if (typeof renderBadges === 'function') renderBadges(); } catch(e) {}
+    if (typeof showToast === 'function') {
+      showToast('\uD83C\uDFC6 D\u00e9fi "' + h.name + '" termin\u00e9 ! Titan est fier.', 'ok');
+    } else {
+      alert('\uD83C\uDFC6 D\u00e9fi termin\u00e9 ! Titan est fier.');
+    }
+  }
+
+  _persistActiveHabits();
   renderActiveHabits();
 }
+
+// Abandon manuel d'une habitude (si l'UI ajoute un bouton plus tard)
+window.abandonHabit = function(id) {
+  activeHabits = activeHabits.filter(function(a) { return a.id !== id; });
+  _persistActiveHabits();
+  renderActiveHabits();
+};
+
+// ═══════════════════════════════════════════════
+// PROGRESSION — vue chiffrée + courbe séances/semaine + records personnels
+// ═══════════════════════════════════════════════
+
+// Compte les séances complétées par semaine sur les N dernières semaines.
+// Retourne un tableau de { weekStart: 'YYYY-MM-DD', count: N } indexé du plus
+// ancien au plus récent.
+function _progressionWeeklySessions(nbWeeks) {
+  nbWeeks = nbWeeks || 8;
+  var hist = [];
+  try { hist = JSON.parse(localStorage.getItem('ah_set_history') || '[]'); } catch(e) { return []; }
+  var weeks = [];
+  // Calcule le lundi de la semaine courante (0=dim → on retombe à -6 jours)
+  var now = new Date();
+  var dow = now.getDay(); // 0=dim..6=sam
+  var diff = (dow === 0 ? -6 : 1 - dow);
+  var monday = new Date(now.getFullYear(), now.getMonth(), now.getDate() + diff);
+  for (var i = nbWeeks - 1; i >= 0; i--) {
+    var ws = new Date(monday.getTime() - i * 7 * 86400000);
+    var we = new Date(ws.getTime() + 7 * 86400000);
+    var count = hist.filter(function(h) {
+      if (!h || !h.date) return false;
+      var d = new Date(h.date);
+      return d >= ws && d < we && (h.type === 'session' || h.sessName);
+    }).length;
+    weeks.push({ weekStart: ws.toISOString().slice(0,10), count: count });
+  }
+  return weeks;
+}
+
+function renderProgression() {
+  var el = document.getElementById('progressionCard');
+  if (!el) return;
+  var prof = {};
+  try { prof = JSON.parse(localStorage.getItem('ah_profile') || '{}'); } catch(e) {}
+
+  var weeks = _progressionWeeklySessions(8);
+  var maxCount = Math.max.apply(null, weeks.map(function(w){ return w.count; }).concat([1]));
+  var totalSessions = weeks.reduce(function(acc, w){ return acc + w.count; }, 0);
+
+  var athScore = prof.athScore != null ? prof.athScore : null;
+  var vertJump = prof.vertJump != null ? prof.vertJump : null;
+  var sprintTime = prof.satSprintTime != null ? prof.satSprintTime : null;
+  var sprintDist = prof.satSprintDist != null ? prof.satSprintDist : null;
+  var tTest = prof.satTTest != null ? prof.satTTest : null;
+  var force1RM = prof.satForce1RM != null ? prof.satForce1RM : null;
+
+  var html = '';
+
+  // Bandeau score + total séances 8 sem
+  html += '<div style="display:flex;gap:10px;margin-bottom:14px">';
+  html += '<div style="flex:1;background:linear-gradient(135deg,rgba(197,164,78,.10),rgba(197,164,78,.04));border:1px solid rgba(197,164,78,.30);border-radius:10px;padding:10px 12px">';
+  html += '<div style="font-size:10px;color:var(--gold);font-weight:700;letter-spacing:1.5px;text-transform:uppercase">Score actuel</div>';
+  html += '<div style="font-size:22px;font-weight:800;color:var(--text);line-height:1.1;margin-top:2px">' + (athScore != null ? athScore + '<span style="font-size:11px;color:var(--muted);font-weight:600">/100</span>' : '—') + '</div>';
+  html += '</div>';
+  html += '<div style="flex:1;background:linear-gradient(135deg,rgba(16,185,129,.10),rgba(16,185,129,.04));border:1px solid rgba(16,185,129,.30);border-radius:10px;padding:10px 12px">';
+  html += '<div style="font-size:10px;color:#10B981;font-weight:700;letter-spacing:1.5px;text-transform:uppercase">Séances 8 sem</div>';
+  html += '<div style="font-size:22px;font-weight:800;color:var(--text);line-height:1.1;margin-top:2px">' + totalSessions + '</div>';
+  html += '</div>';
+  html += '</div>';
+
+  // Mini-graphique barres séances/semaine
+  if (weeks.length) {
+    html += '<div style="font-size:11px;color:var(--muted);font-weight:700;letter-spacing:1px;text-transform:uppercase;margin-bottom:8px">Séances par semaine</div>';
+    html += '<div style="display:flex;align-items:flex-end;gap:4px;height:60px;margin-bottom:14px">';
+    weeks.forEach(function(w, idx) {
+      var pct = maxCount > 0 ? Math.max(4, Math.round((w.count / maxCount) * 100)) : 4;
+      var isCurrent = idx === weeks.length - 1;
+      var bg = isCurrent ? 'var(--gold)' : 'rgba(197,164,78,.40)';
+      var label = 'S' + (idx + 1);
+      html += '<div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:3px">';
+      html += '<div style="font-size:9px;color:var(--text);font-weight:700;line-height:1">' + (w.count > 0 ? w.count : '') + '</div>';
+      html += '<div style="width:100%;height:' + pct + '%;background:' + bg + ';border-radius:3px;min-height:4px"></div>';
+      html += '<div style="font-size:9px;color:var(--muted);line-height:1">' + label + '</div>';
+      html += '</div>';
+    });
+    html += '</div>';
+  }
+
+  // Records personnels
+  var hasAnyPR = vertJump != null || sprintTime != null || tTest != null || force1RM != null;
+  if (hasAnyPR) {
+    html += '<div style="font-size:11px;color:var(--muted);font-weight:700;letter-spacing:1px;text-transform:uppercase;margin-bottom:8px">Records personnels</div>';
+    html += '<div style="display:grid;grid-template-columns:repeat(2,1fr);gap:8px">';
+    if (vertJump != null) {
+      html += '<div style="background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:10px 12px">';
+      html += '<div style="font-size:10px;color:var(--muted);font-weight:700;letter-spacing:1px;text-transform:uppercase">🦘 Détente</div>';
+      html += '<div style="font-size:18px;font-weight:800;color:var(--text);margin-top:2px">' + vertJump + ' cm</div>';
+      html += '</div>';
+    }
+    if (sprintTime != null) {
+      var speedTxt = '';
+      if (sprintDist) {
+        var speed = (sprintDist / sprintTime).toFixed(2);
+        speedTxt = ' <span style="font-size:10px;color:var(--muted);font-weight:600">/ ' + sprintDist + 'm — ' + speed + ' m/s</span>';
+      }
+      html += '<div style="background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:10px 12px">';
+      html += '<div style="font-size:10px;color:var(--muted);font-weight:700;letter-spacing:1px;text-transform:uppercase">⚡ Sprint</div>';
+      html += '<div style="font-size:18px;font-weight:800;color:var(--text);margin-top:2px">' + sprintTime + 's' + speedTxt + '</div>';
+      html += '</div>';
+    }
+    if (tTest != null) {
+      html += '<div style="background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:10px 12px">';
+      html += '<div style="font-size:10px;color:var(--muted);font-weight:700;letter-spacing:1px;text-transform:uppercase">🔄 T-Test</div>';
+      html += '<div style="font-size:18px;font-weight:800;color:var(--text);margin-top:2px">' + tTest + 's</div>';
+      html += '</div>';
+    }
+    if (force1RM != null) {
+      html += '<div style="background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:10px 12px">';
+      html += '<div style="font-size:10px;color:var(--muted);font-weight:700;letter-spacing:1px;text-transform:uppercase">🏋️ Squat 1RM</div>';
+      html += '<div style="font-size:18px;font-weight:800;color:var(--text);margin-top:2px">' + force1RM + ' kg</div>';
+      html += '</div>';
+    }
+    html += '</div>';
+  }
+
+  // Fallback si rien à montrer
+  if (athScore == null && !hasAnyPR && totalSessions === 0) {
+    html = '<div style="font-size:13px;color:var(--muted);text-align:center;padding:24px 14px;line-height:1.5">Pas encore de données.<br>Termine ta première séance ou tes tests pour voir ta progression.</div>';
+  }
+
+  el.innerHTML = html;
+}
+window.renderProgression = renderProgression;
 
 
 // ═══════════════════════════════════════════════
@@ -11612,15 +12227,21 @@ function getProfileSteps() {
       actionKey: 'profil1',
       action: function(){ discoveryGoTo('profil1'); }
     },
-    {
-      key: 'tests',
-      label: 'Tests physiques (SAT)',
-      desc: 'Pour ton Athletik Score',
-      icon: '🏋️',
-      done: !!(p.satDone || p.satDetente),
-      actionKey: 'profil3',
-      action: function(){ discoveryGoTo('profil3'); }
-    },
+    (function(){
+      // Label dynamique selon le programme attribué : SAT / SET / PDC
+      var t = (typeof window.getTestTypeLabel === 'function')
+        ? window.getTestTypeLabel(p.programKey)
+        : { short:'SAT', icon:'🏋️' };
+      return {
+        key: 'tests',
+        label: 'Tests physiques (' + t.short + ')',
+        desc: 'Pour ton Athletik Score',
+        icon: t.icon || '🏋️',
+        done: !!(p.satDone || p.satDetente),
+        actionKey: 'profil3',
+        action: function(){ discoveryGoTo('profil3'); }
+      };
+    })(),
     {
       key: 'nutri',
       label: 'Profil nutrition',
@@ -12134,7 +12755,8 @@ var FB_SYNC_KEYS = [
   ['ah_shopping_meal_plan_checks','shoppingMealChecks',  true],
   ['ah_sat_inprogress',           'satInProgress',       true],
   ['ah_live_session',             'liveSession',         true],
-  ['ah_access_data',              'accessData',          true]
+  ['ah_access_data',              'accessData',          true],
+  ['ah_active_habits',            'activeHabits',        true]
 ];
 
 function _fbCollectPayload() {
@@ -12618,6 +13240,16 @@ function renderP3SATStep() {
   }
   var ex = p3SatExercices[p3CurrentStep];
   if (!ex) return;
+
+  // Met à jour le badge type de test (SAT / SET / PDC) selon le programme attribué
+  try {
+    var badge = document.getElementById('p3testBadge');
+    if (badge && typeof window.getTestTypeLabel === 'function') {
+      var t = window.getTestTypeLabel();
+      badge.textContent = (t.icon || '🏋️') + ' ' + t.short + ' — ' + t.long;
+    }
+  } catch(e) {}
+
   var total = p3SatExercices.length;
   var prog = Math.round((p3CurrentStep / total) * 100);
   var html = '';
@@ -14252,31 +14884,156 @@ function journalShowDatePicker() {
 // ═══════════════════════════════════════════════
 
 function scanSwitchMode(mode) {
-  var tabPhoto = document.getElementById('scanTabPhoto');
-  var tabBarcode = document.getElementById('scanTabBarcode');
-  var modePhoto = document.getElementById('scanModePhoto');
-  var modeBarcode = document.getElementById('scanModeBarcode');
-
-  if (mode === 'photo') {
-    tabPhoto.style.background = 'var(--gold)';
-    tabPhoto.style.color = 'var(--navy)';
-    tabPhoto.style.fontWeight = '800';
-    tabBarcode.style.background = 'transparent';
-    tabBarcode.style.color = 'var(--muted)';
-    tabBarcode.style.fontWeight = '700';
-    modePhoto.style.display = 'block';
-    modeBarcode.style.display = 'none';
-  } else {
-    tabBarcode.style.background = 'var(--gold)';
-    tabBarcode.style.color = 'var(--navy)';
-    tabBarcode.style.fontWeight = '800';
-    tabPhoto.style.background = 'transparent';
-    tabPhoto.style.color = 'var(--muted)';
-    tabPhoto.style.fontWeight = '700';
-    modeBarcode.style.display = 'block';
-    modePhoto.style.display = 'none';
-  }
+  // 3 modes : photo (IA) / barcode (Open Food Facts) / search (CIQUAL)
+  var tabs  = { photo:'scanTabPhoto', barcode:'scanTabBarcode', search:'scanTabSearch' };
+  var modes = { photo:'scanModePhoto', barcode:'scanModeBarcode', search:'scanModeSearch' };
+  Object.keys(tabs).forEach(function(k){
+    var tab = document.getElementById(tabs[k]);
+    var md  = document.getElementById(modes[k]);
+    var on  = (k === mode);
+    if (tab) {
+      tab.style.background = on ? 'var(--gold)' : 'transparent';
+      tab.style.color = on ? 'var(--navy)' : 'var(--muted)';
+      tab.style.fontWeight = on ? '800' : '700';
+    }
+    if (md) md.style.display = on ? 'block' : 'none';
+  });
 }
+
+// ═══ RECHERCHE ALIMENT — base CIQUAL 2025 (ANSES) ═══
+// window.CIQUAL_FOODS fourni par ciqual-data.js : [nom, kcal, prot, gluc, lip] /100g
+function ciqualSearch() {
+  var box = document.getElementById('ciqualResults');
+  if (!box) return;
+  var q = (document.getElementById('ciqualSearchInput').value || '').trim();
+  if (q.length < 2) {
+    box.innerHTML = '<div style="text-align:center;padding:16px;color:var(--muted);font-size:12px">Tape au moins 2 lettres.</div>';
+    return;
+  }
+  if (!window.CIQUAL_FOODS || !window.CIQUAL_FOODS.length) {
+    box.innerHTML = '<div style="text-align:center;padding:16px;color:#E05252;font-size:12px">Base CIQUAL non chargée — recharge la page.</div>';
+    return;
+  }
+  function norm(s) { return (s || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, ''); }
+  var nq = norm(q);
+  var matches = [];
+  for (var i = 0; i < window.CIQUAL_FOODS.length && matches.length < 40; i++) {
+    if (norm(window.CIQUAL_FOODS[i][0]).indexOf(nq) > -1) matches.push(i);
+  }
+  if (!matches.length) {
+    box.innerHTML = '<div style="text-align:center;padding:16px;color:var(--muted);font-size:12px">Aucun aliment trouvé pour « ' + q + ' ».</div>';
+    return;
+  }
+  var html = '';
+  matches.forEach(function(idx) {
+    var f = window.CIQUAL_FOODS[idx];
+    html += '<div onclick="ciqualPick(' + idx + ')" style="background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:10px 12px;margin-bottom:6px;cursor:pointer">'
+      + '<div style="font-size:13px;font-weight:600;color:var(--text);line-height:1.3">' + f[0] + '</div>'
+      + '<div style="font-size:11px;color:var(--muted);margin-top:3px">'
+      +   '<strong style="color:var(--gold)">' + f[1] + ' kcal</strong> · P ' + f[2] + ' · G ' + f[3] + ' · L ' + f[4] + ' <span style="opacity:.7">/100g</span>'
+      + '</div>'
+      + '</div>';
+  });
+  box.innerHTML = html;
+}
+window.ciqualSearch = ciqualSearch;
+
+// Sélection d'un aliment CIQUAL → réutilise le flux résultat du scan.
+function ciqualPick(idx) {
+  var f = window.CIQUAL_FOODS && window.CIQUAL_FOODS[idx];
+  if (!f) return;
+  var qty = parseFloat((document.getElementById('ciqualQty') || {}).value) || 100;
+  scanState.foods = [{
+    id: ++scanState.idCounter,
+    name: f[0],
+    qty: qty, unit: 'g',
+    cal: f[1], p: f[2], g: f[3], l: f[4]
+  }];
+  var img = document.getElementById('scanResultImg');
+  if (img) { img.src = ''; img.style.background = 'linear-gradient(135deg,#1B2A4A,#0F1A30)'; }
+  scanRenderResult('Aliment ajouté depuis la base CIQUAL (ANSES).');
+}
+window.ciqualPick = ciqualPick;
+
+// ═══ SCAN CODE-BARRE CAMÉRA — BarcodeDetector natif ═══
+// BarcodeDetector est supporté sur Chrome Android (cible de l'app) + Chrome
+// desktop. Fallback : saisie manuelle si non supporté.
+var _bcScan = { stream: null, raf: null, detector: null, running: false };
+
+async function scanBarcodeCameraStart() {
+  var overlay = document.getElementById('bcCamOverlay');
+  var video = document.getElementById('bcCamVideo');
+  var status = document.getElementById('bcCamStatus');
+  if (!('BarcodeDetector' in window)) {
+    showToast('Ton navigateur ne supporte pas le scan caméra. Saisis le code à la main.', 'info');
+    return;
+  }
+  if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+    showToast('Caméra non disponible sur ce navigateur.', 'info');
+    return;
+  }
+  try {
+    _bcScan.detector = new BarcodeDetector({ formats: ['ean_13','ean_8','upc_a','upc_e','code_128','code_39'] });
+  } catch(e) {
+    try { _bcScan.detector = new BarcodeDetector(); }
+    catch(e2) { showToast('Scan caméra indisponible.', 'info'); return; }
+  }
+  if (overlay) overlay.style.display = 'flex';
+  if (status) status.textContent = 'Autorise la caméra…';
+  try {
+    _bcScan.stream = await navigator.mediaDevices.getUserMedia({
+      video: { facingMode: { ideal: 'environment' } }
+    });
+  } catch(e) {
+    if (overlay) overlay.style.display = 'none';
+    showToast('Accès caméra refusé. Autorise la caméra dans ton navigateur.', 'err');
+    return;
+  }
+  video.srcObject = _bcScan.stream;
+  try { await video.play(); } catch(e) {}
+  if (status) status.textContent = 'Vise le code-barre du produit…';
+  _bcScan.running = true;
+  _bcScanLoop();
+}
+
+function _bcScanLoop() {
+  if (!_bcScan.running || !_bcScan.detector) return;
+  var video = document.getElementById('bcCamVideo');
+  if (!video || video.readyState < 2) {
+    _bcScan.raf = requestAnimationFrame(_bcScanLoop);
+    return;
+  }
+  _bcScan.detector.detect(video).then(function(codes) {
+    if (!_bcScan.running) return;
+    if (codes && codes.length && codes[0].rawValue) {
+      var raw = String(codes[0].rawValue).replace(/\s/g, '');
+      scanBarcodeCameraStop();
+      var input = document.getElementById('scanBarcodeInput');
+      if (input) input.value = raw;
+      showToast('Code détecté : ' + raw, 'ok');
+      if (typeof scanBarcodeSearch === 'function') scanBarcodeSearch();
+      return;
+    }
+    _bcScan.raf = requestAnimationFrame(_bcScanLoop);
+  }).catch(function() {
+    if (_bcScan.running) _bcScan.raf = requestAnimationFrame(_bcScanLoop);
+  });
+}
+
+function scanBarcodeCameraStop() {
+  _bcScan.running = false;
+  if (_bcScan.raf) { cancelAnimationFrame(_bcScan.raf); _bcScan.raf = null; }
+  if (_bcScan.stream) {
+    _bcScan.stream.getTracks().forEach(function(t){ try { t.stop(); } catch(e) {} });
+    _bcScan.stream = null;
+  }
+  var video = document.getElementById('bcCamVideo');
+  if (video) { try { video.pause(); } catch(e) {} video.srcObject = null; }
+  var overlay = document.getElementById('bcCamOverlay');
+  if (overlay) overlay.style.display = 'none';
+}
+window.scanBarcodeCameraStart = scanBarcodeCameraStart;
+window.scanBarcodeCameraStop = scanBarcodeCameraStop;
 
 async function scanBarcodeSearch() {
   var input = document.getElementById('scanBarcodeInput');
@@ -14974,9 +15731,20 @@ function obErr(id,msg){
 // LIVE SESSION ENGINE — GBG/Gymkee style
 // ═══════════════════════════════════════════════════
 var _LS = {
-  exos: [], idx: 0, setsLeft: 0, progName: '', sessName: '',
+  exos: [], idx: 0, setNum: 1, _pendingAction: null,
+  progKey: '', sessKey: '', progName: '', sessName: '',
   restSec: 0, restTotal: 0, restInterval: null, restActive: false
 };
+
+// Nombre de séries d'un exercice, parsé depuis ex.s.
+// "4" → 4 | "3-4" → 4 (max) | "8 cycles" → 8 | "Var.*" → 3 (défaut) | "-" → 1
+function _lsSetCount(ex) {
+  if (!ex || !ex.s || ex.s === '-') return 1;
+  var nums = (String(ex.s).match(/\d+/g) || []).map(Number);
+  if (nums.length) return Math.max.apply(null, nums);
+  if (/var/i.test(String(ex.s))) return 3;
+  return 1;
+}
 
 // Persistance de la séance live — permet de reprendre après fermeture app
 // Clé : ah_live_session  | Forme : { exos, idx, progName, sessName, ts }
@@ -14985,7 +15753,8 @@ function _lsPersist() {
   if (!_LS.exos || !_LS.exos.length) { try { localStorage.removeItem('ah_live_session'); } catch(e) {} return; }
   try {
     localStorage.setItem('ah_live_session', JSON.stringify({
-      exos: _LS.exos, idx: _LS.idx,
+      exos: _LS.exos, idx: _LS.idx, setNum: _LS.setNum || 1,
+      progKey: _LS.progKey || '', sessKey: _LS.sessKey || '',
       progName: _LS.progName, sessName: _LS.sessName,
       ts: Date.now()
     }));
@@ -15009,6 +15778,10 @@ window.resumeLiveSession = function() {
   if (!d) { renderResumeSessionBanner(); return; }
   _LS.exos = d.exos;
   _LS.idx = Math.max(0, Math.min(d.idx || 0, d.exos.length - 1));
+  _LS.setNum = d.setNum || 1;
+  _LS._pendingAction = null;
+  _LS.progKey = d.progKey || '';
+  _LS.sessKey = d.sessKey || '';
   _LS.progName = d.progName || '';
   _LS.sessName = d.sessName || '';
   _LS.restActive = false;
@@ -15049,6 +15822,67 @@ function renderResumeSessionBanner() {
 }
 window.renderResumeSessionBanner = renderResumeSessionBanner;
 
+// Bannière "Reprendre tes tests" — affichée si ah_sat_inprogress existe et < 7 jours.
+// Cliquer "▶ Reprendre" envoie vers Tracks tab, qui restaure les valeurs via
+// restoreSATInProgress() au chargement de l'onglet. Label dynamique SAT/SET/PDC.
+function renderResumeTestsBanner() {
+  var el = document.getElementById('resumeTestsBanner');
+  if (!el) return;
+  // Pas de bannière si le SAT est déjà marqué fait
+  try {
+    var prof = JSON.parse(localStorage.getItem('ah_profile') || '{}');
+    if (prof.satDone) { el.style.display = 'none'; el.innerHTML = ''; return; }
+  } catch(e) {}
+  var raw = null;
+  try { raw = localStorage.getItem('ah_sat_inprogress'); } catch(e) {}
+  if (!raw) { el.style.display = 'none'; el.innerHTML = ''; return; }
+  var snap = null;
+  try { snap = JSON.parse(raw); } catch(e) {}
+  if (!snap || !snap.values) { el.style.display = 'none'; el.innerHTML = ''; return; }
+  // Drop si > 7 jours (au-delà : autant tout refaire)
+  if (Date.now() - (snap.ts || 0) > 7 * 86400000) {
+    try { localStorage.removeItem('ah_sat_inprogress'); } catch(e) {}
+    el.style.display = 'none'; el.innerHTML = ''; return;
+  }
+  var filled = Object.keys(snap.values).filter(function(k){
+    var v = snap.values[k];
+    return v != null && v !== '';
+  }).length;
+  if (filled === 0) { el.style.display = 'none'; el.innerHTML = ''; return; }
+  var total = (typeof SAT_INPUT_IDS !== 'undefined' && SAT_INPUT_IDS.length) ? SAT_INPUT_IDS.length : filled;
+  var label = 'SAT';
+  try {
+    if (typeof window.getTestTypeLabel === 'function') label = window.getTestTypeLabel().short;
+  } catch(e) {}
+  el.style.display = '';
+  el.innerHTML =
+    '<div style="background:linear-gradient(135deg,rgba(197,164,78,.10),rgba(197,164,78,.04));border:1px solid rgba(197,164,78,.35);border-radius:12px;padding:12px 14px;margin:12px 16px;display:flex;align-items:center;justify-content:space-between;gap:10px">' +
+      '<div style="flex:1;min-width:0">' +
+        '<div style="font-size:11px;letter-spacing:1.5px;font-weight:800;color:var(--gold);text-transform:uppercase">Tests en cours</div>' +
+        '<div style="font-size:13px;color:var(--text);font-weight:600;margin-top:2px">' + label + ' • ' + filled + ' / ' + total + ' champs remplis</div>' +
+      '</div>' +
+      '<div style="display:flex;gap:6px">' +
+        '<button onclick="goToTracksSAT()" style="background:var(--gold);color:#0A0F1E;border:0;padding:8px 12px;border-radius:10px;font-family:\'Outfit\',sans-serif;font-size:12px;font-weight:800;cursor:pointer;white-space:nowrap">▶ Reprendre</button>' +
+        '<button onclick="dismissResumeTests()" style="background:transparent;color:var(--muted);border:1px solid var(--border);padding:8px 10px;border-radius:10px;font-family:\'Outfit\',sans-serif;font-size:12px;font-weight:600;cursor:pointer">✕</button>' +
+      '</div>' +
+    '</div>';
+}
+window.renderResumeTestsBanner = renderResumeTestsBanner;
+
+window.goToTracksSAT = function() {
+  try { switchTab('tracks'); } catch(e) {}
+  try { renderResumeTestsBanner(); } catch(e) {}
+};
+
+window.dismissResumeTests = function() {
+  if (typeof clearSATInProgress === 'function') {
+    clearSATInProgress();
+  } else {
+    try { localStorage.removeItem('ah_sat_inprogress'); } catch(e) {}
+  }
+  try { renderResumeTestsBanner(); } catch(e) {}
+};
+
 // Parse rest string like "1 mn", "2 mn 30", "45 s", "-" → seconds
 function _lsParseRest(str) {
   if (!str || str === '-') return 60;
@@ -15082,12 +15916,18 @@ function _lsFmt(sec) {
   return (m < 10 ? '0' : '') + m + ':' + (s < 10 ? '0' : '') + s;
 }
 
-function launchSession(exos, sessName, progName) {
+function launchSession(exos, sessName, progName, progKey, sessKey) {
   if (!exos || !exos.length) { showToast('Aucun exercice dans cette séance.', 'info'); return; }
   _LS.exos = exos;
   _LS.idx = 0;
+  _LS.setNum = 1;
+  _LS._pendingAction = null;
   _LS.progName = progName || '';
   _LS.sessName = sessName || '';
+  // progKey/sessKey explicites si fournis, sinon fallback sur l'état programme.
+  // Servent à _lsShowComplete : compteur programme + progression semaine (P2).
+  _LS.progKey = progKey || (window._progV2State && window._progV2State.key) || '';
+  _LS.sessKey = sessKey || (window._progV2State && window._progV2State.sessionKey) || '';
   _LS.restActive = false;
   clearInterval(_LS.restInterval);
   _lsRenderEx();
@@ -15115,9 +15955,13 @@ function _lsRenderEx() {
   if (!sub && ex.n.indexOf('—') !== -1) sub = ex.n.split('—').slice(1).join('—').trim();
   document.getElementById('lsExSub').textContent = sub;
 
-  // Metrics
-  var sets = ex.s && ex.s !== '-' ? ex.s : '—';
-  document.getElementById('lsMetSets').textContent = sets;
+  // Metrics — Séries affiche la série courante / total quand l'exo en a plusieurs
+  var totalSets = _lsSetCount(ex);
+  if (_LS.setNum > totalSets) _LS.setNum = totalSets;
+  if (_LS.setNum < 1) _LS.setNum = 1;
+  document.getElementById('lsMetSets').textContent = totalSets > 1
+    ? (_LS.setNum + '/' + totalSets)
+    : (ex.s && ex.s !== '-' ? ex.s : '—');
   document.getElementById('lsMetReps').textContent = ex.r && ex.r !== '-' ? ex.r : '—';
   // Rest display: short format
   var restSec = _lsParseRest(ex.rest);
@@ -15129,9 +15973,14 @@ function _lsRenderEx() {
   clearInterval(_LS.restInterval);
   _LS.restActive = false;
 
-  // Done button label
+  // Done button label — reflète la série en cours et l'étape
   var isLast = (_LS.idx === total - 1);
-  document.getElementById('lsBtnDone').textContent = isLast ? '✓ TERMINER LA SÉANCE' : '✓ SÉRIE TERMINÉE';
+  var isLastSet = (_LS.setNum >= totalSets);
+  var btnLabel;
+  if (isLast && isLastSet) btnLabel = '✓ TERMINER LA SÉANCE';
+  else if (totalSets > 1 && !isLastSet) btnLabel = '✓ SÉRIE ' + _LS.setNum + ' / ' + totalSets;
+  else btnLabel = '✓ EXERCICE SUIVANT →';
+  document.getElementById('lsBtnDone').textContent = btnLabel;
 
   // Next preview
   var nextEl = document.getElementById('lsNextPreview');
@@ -15164,18 +16013,31 @@ function _lsRenderEx() {
 
 function _lsDoneSet() {
   var ex = _LS.exos[_LS.idx];
-  var isLast = (_LS.idx === _LS.exos.length - 1);
+  var totalSets = _lsSetCount(ex);
+  var isLastExo = (_LS.idx === _LS.exos.length - 1);
+  var isLastSet = (_LS.setNum >= totalSets);
 
-  if (isLast) {
-    // Session complete
-    _lsShowComplete();
-    return;
-  }
+  // Dernière série du dernier exercice → séance terminée
+  if (isLastExo && isLastSet) { _lsShowComplete(); return; }
 
-  // Start rest timer, then auto-advance
+  // Action différée après le repos : série suivante ou exercice suivant
+  _LS._pendingAction = isLastSet ? 'nextEx' : 'nextSet';
   var restSec = _lsParseRest(ex ? ex.rest : null);
   if (restSec > 0) {
     _lsStartRest(restSec);
+  } else {
+    _lsApplyPending();
+  }
+}
+
+// Applique l'action en attente (fin de repos ou repos sauté).
+function _lsApplyPending() {
+  var act = _LS._pendingAction;
+  _LS._pendingAction = null;
+  if (act === 'nextSet') {
+    _LS.setNum++;
+    _lsRenderEx();
+    _lsPersist();
   } else {
     _lsNextEx();
   }
@@ -15208,7 +16070,7 @@ function _lsStartRest(sec) {
       clearInterval(_LS.restInterval);
       _LS.restActive = false;
       overlay.classList.remove('ls-rest-active');
-      _lsNextEx();
+      _lsApplyPending();
     }
   }, 1000);
 }
@@ -15217,7 +16079,7 @@ function _lsSkipRest() {
   clearInterval(_LS.restInterval);
   _LS.restActive = false;
   document.getElementById('lsRestOverlay').classList.remove('ls-rest-active');
-  _lsNextEx();
+  _lsApplyPending();
 }
 
 function _lsAdjustRest(delta) {
@@ -15229,8 +16091,10 @@ function _lsAdjustRest(delta) {
 function _lsNextEx() {
   clearInterval(_LS.restInterval);
   _LS.restActive = false;
+  _LS._pendingAction = null;
   if (_LS.idx < _LS.exos.length - 1) {
     _LS.idx++;
+    _LS.setNum = 1;
     _lsRenderEx();
     _lsPersist();
   } else {
@@ -15241,11 +16105,170 @@ function _lsNextEx() {
 function _lsPrevEx() {
   clearInterval(_LS.restInterval);
   _LS.restActive = false;
+  _LS._pendingAction = null;
   if (_LS.idx > 0) {
     _LS.idx--;
+    _LS.setNum = 1;
     _lsRenderEx();
     _lsPersist();
   }
+}
+
+// Type de test selon le programme attribué.
+// SAT (Super Athlétique Test) = VD, EA, EXPLOSE+ — détente + force + sprint
+// SET (Super Explosif Test)   = SHRED EXPLOSE — vitesse + agilité + explosivité
+// PDC (Tests Poids du Corps)  = MICROTRAINING, TRIPHASIQUE — pas de matériel
+// Retourné par getTestTypeLabel(progKey) pour adapter les libellés UI.
+window.getTestTypeLabel = function(progKeyArg) {
+  var progKey = progKeyArg;
+  if (!progKey) {
+    try {
+      var prof = JSON.parse(localStorage.getItem('ah_profile') || '{}');
+      progKey = prof.programKey || (typeof OB !== 'undefined' && OB.program) || '';
+    } catch(e) {}
+  }
+  var norm = (typeof p3NormalizeProgram === 'function')
+    ? p3NormalizeProgram(progKey)
+    : (progKey || '').toLowerCase();
+  var map = {
+    microtraining: { short:'PDC', long:'Tests Poids du Corps', icon:'💪',
+                     desc:'Tests poids du corps — pas besoin de matos.' },
+    triphasique:   { short:'PDC', long:'Tests Poids du Corps', icon:'💪',
+                     desc:'Tests poids du corps — pas besoin de matos.' },
+    verticalDunk:  { short:'SAT', long:'Super Athlétique Test', icon:'🏋️',
+                     desc:'Détente + force max sur 3 exos clés.' },
+    eliteAthlete:  { short:'SAT', long:'Super Athlétique Test', icon:'🏋️',
+                     desc:'Tests complets de force + détente.' },
+    explose:       { short:'SAT', long:'Super Athlétique Test', icon:'🏋️',
+                     desc:'Tests complets de force + détente.' },
+    shredExplose:  { short:'SET', long:'Super Explosif Test', icon:'⚡',
+                     desc:'Tests d\'explosivité globale (vitesse, agilité).' }
+  };
+  return map[norm] || map.eliteAthlete;
+};
+
+// Calcule le total de séances attendues pour un programme (somme des jours
+// d'entraînement non-repos sur toutes les phases × leur durée en semaines).
+// Sert à déterminer quand on peut considérer le programme comme "terminé".
+function _programExpectedSessions(progKey) {
+  if (!progKey || typeof PROGRAMS_V2 === 'undefined') return 0;
+  var p = PROGRAMS_V2[progKey];
+  if (!p || !p.phases) return 0;
+  var total = 0;
+  p.phases.forEach(function(phase) {
+    var trainingDays = 0;
+    if (phase.weekDays && phase.weekDays.length) {
+      phase.weekDays.forEach(function(d) {
+        if (d && d.s && d.s !== 'rest' && d.s !== 'bilan') trainingDays++;
+      });
+    }
+    total += (phase.weeks || 1) * trainingDays;
+  });
+  return total;
+}
+
+function _countSessionsForProgram(progKey) {
+  try {
+    var hist = JSON.parse(localStorage.getItem('ah_set_history') || '[]');
+    return hist.filter(function(h) {
+      return h && h.progKey === progKey && (h.type === 'session' || h.sessName);
+    }).length;
+  } catch(e) { return 0; }
+}
+
+// Si le programme atteint 80% des séances attendues, on l'ajoute à la liste
+// completedPrograms et on incrémente programsDone. Idempotent (n'incrémente
+// qu'une fois par progKey).
+function _checkProgramCompletion(progKey) {
+  if (!progKey) return false;
+  var expected = _programExpectedSessions(progKey);
+  if (!expected) return false;
+  var done = _countSessionsForProgram(progKey);
+  if (done < Math.ceil(expected * 0.8)) return false;
+  try {
+    var prof = JSON.parse(localStorage.getItem('ah_profile') || '{}');
+    var completed = prof.completedPrograms || [];
+    if (completed.indexOf(progKey) > -1) return false;
+    completed.push(progKey);
+    prof.completedPrograms = completed;
+    prof.programsDone = completed.length;
+    localStorage.setItem('ah_profile', JSON.stringify(prof));
+    if (typeof fbSaveProfile === 'function') fbSaveProfile();
+    return true;
+  } catch(e) { return false; }
+}
+
+// ═══ P2 — Progression semaine/phase par programme ═══
+// Stocké dans ah_profile.programProgress[progKey] = { phaseIdx, week, doneThisWeek }.
+// La semaine avance automatiquement quand toutes les séances d'entraînement
+// de la semaine type (weekDays, hors rest/opt/mener/bilan) sont complétées.
+
+// Clés de séances "obligatoires" d'une phase : entrées weekDays pointant sur
+// une vraie session (exclut repos, optionnel, MENER, bilan).
+function _requiredSessionKeys(phase) {
+  var out = [], seen = {};
+  (phase && phase.weekDays || []).forEach(function(d) {
+    var k = d && d.s;
+    if (!k || k === 'rest' || k === 'opt' || k === 'mener' || k === 'bilan') return;
+    if (phase.sessions && phase.sessions[k] && !seen[k]) { seen[k] = true; out.push(k); }
+  });
+  return out;
+}
+
+function getProgramProgress(progKey) {
+  try {
+    var prof = JSON.parse(localStorage.getItem('ah_profile') || '{}');
+    var pp = prof.programProgress || {};
+    var st = pp[progKey];
+    if (st && typeof st.phaseIdx === 'number') {
+      if (!st.doneThisWeek) st.doneThisWeek = {};
+      return st;
+    }
+  } catch(e) {}
+  return { phaseIdx: 0, week: 1, doneThisWeek: {} };
+}
+
+function _saveProgramProgress(progKey, st) {
+  try {
+    var prof = JSON.parse(localStorage.getItem('ah_profile') || '{}');
+    var pp = prof.programProgress || {};
+    pp[progKey] = st;
+    prof.programProgress = pp;
+    // Miroir top-level pour renderUserData / carte Home
+    prof.phaseIdx = st.phaseIdx;
+    prof.weekNum = st.week;
+    localStorage.setItem('ah_profile', JSON.stringify(prof));
+    if (typeof fbSaveProfile === 'function') fbSaveProfile();
+  } catch(e) {}
+}
+
+// Marque une séance comme faite ; fait avancer semaine → phase quand la
+// semaine type est complète. Retourne true si la semaine a été validée.
+function _advanceProgramProgress(progKey, sessKey) {
+  if (!progKey || !sessKey || typeof PROGRAMS_V2 === 'undefined' || !PROGRAMS_V2[progKey]) return false;
+  var prog = PROGRAMS_V2[progKey];
+  var st = getProgramProgress(progKey);
+  if (st.phaseIdx >= prog.phases.length) st.phaseIdx = prog.phases.length - 1;
+  var phase = prog.phases[st.phaseIdx];
+  if (!phase) return false;
+  st.doneThisWeek[sessKey] = true;
+
+  var required = _requiredSessionKeys(phase);
+  var weekDone = required.length > 0 && required.every(function(k){ return st.doneThisWeek[k]; });
+  if (weekDone) {
+    st.doneThisWeek = {};
+    if (st.week < (phase.weeks || 1)) {
+      st.week++;
+    } else if (st.phaseIdx < prog.phases.length - 1) {
+      st.phaseIdx++;
+      st.week = 1;
+    } else {
+      st.week = phase.weeks || 1;
+      st.completed = true;
+    }
+  }
+  _saveProgramProgress(progKey, st);
+  return weekDone;
 }
 
 function _lsShowComplete() {
@@ -15264,6 +16287,40 @@ function _lsShowComplete() {
   document.getElementById('lsCompleteMsg').innerHTML = msg;
   if (body) body.scrollTop = 0;
   showToast('Séance terminée 🔥', 'ok');
+
+  // Tracking complétion : sessionsDone + historique + check programme terminé.
+  try {
+    _bumpProfileCounter('sessionsDone', 1);
+    var hist = JSON.parse(localStorage.getItem('ah_set_history') || '[]');
+    hist.push({
+      type: 'session',
+      progKey: _LS.progKey || '',
+      sessKey: _LS.sessKey || '',
+      progName: _LS.progName || '',
+      sessName: _LS.sessName || '',
+      date: new Date().toISOString()
+    });
+    localStorage.setItem('ah_set_history', JSON.stringify(hist));
+    if (typeof renderBadges === 'function') renderBadges();
+    // P2 — fait avancer semaine/phase si la semaine type est complète
+    if (_LS.progKey && _LS.sessKey) {
+      try {
+        var weekDone = _advanceProgramProgress(_LS.progKey, _LS.sessKey);
+        if (weekDone) {
+          setTimeout(function() {
+            var st = getProgramProgress(_LS.progKey);
+            showToast('✅ Semaine validée — tu passes à la semaine ' + st.week, 'ok');
+          }, 1200);
+        }
+      } catch(e) {}
+    }
+    if (_LS.progKey && _checkProgramCompletion(_LS.progKey)) {
+      setTimeout(function() {
+        showToast('🏆 Programme ' + (_LS.progName || _LS.progKey) + ' terminé !', 'ok');
+      }, 1800);
+    }
+  } catch(e) { console.warn('session tracking error', e); }
+
   _lsClearPersist();
   try { renderResumeSessionBanner(); } catch(e) {}
 }
@@ -15305,7 +16362,7 @@ function startSessionGuarded() {
   var state = window._progV2State || {};
   var progKey = state.key || (typeof currentProgKey !== 'undefined' ? currentProgKey : null);
   var prog = progKey && typeof PROGRAMS_V2 !== 'undefined' ? PROGRAMS_V2[progKey] : null;
-  var exos = null, sessName = '', progName = '';
+  var exos = null, sessName = '', progName = '', resolvedSessKey = '';
 
   if (prog) {
     progName = prog.name;
@@ -15313,16 +16370,27 @@ function startSessionGuarded() {
     if (ph) {
       var sk = state.sessionKey;
       if (sk && ph.sessions && ph.sessions[sk]) {
+        // Séance explicitement sélectionnée : on respecte le verrouillage P3
+        if (typeof _isSessionUnlocked === 'function'
+            && !_isSessionUnlocked(progKey, state.phaseIdx || 0, sk)) {
+          showToast('Termine la séance précédente pour débloquer celle-ci.', 'info');
+          return;
+        }
         var sess = ph.sessions[sk];
         exos = sess.exos;
         sessName = sess.name;
+        resolvedSessKey = sk;
       } else {
-        // No specific session selected: use first session in phase
+        // Aucune séance sélectionnée : on lance la prochaine séance à faire
+        // (P3) plutôt que toujours la première de la phase.
+        var nextSk = (typeof _nextSessionToDo === 'function') ? _nextSessionToDo(progKey) : null;
         var keys = ph.sessions ? Object.keys(ph.sessions) : [];
-        if (keys.length) {
-          var firstSess = ph.sessions[keys[0]];
-          exos = firstSess.exos;
-          sessName = firstSess.name;
+        var useKey = (nextSk && ph.sessions[nextSk]) ? nextSk : (keys.length ? keys[0] : null);
+        if (useKey && ph.sessions[useKey]) {
+          var nSess = ph.sessions[useKey];
+          exos = nSess.exos;
+          sessName = nSess.name;
+          resolvedSessKey = useKey;
         }
       }
     }
@@ -15333,8 +16401,11 @@ function startSessionGuarded() {
     return;
   }
 
-  launchSession(exos, sessName, progName);
+  launchSession(exos, sessName, progName, progKey, resolvedSessKey);
 }
+// Exposé explicitement sur window — appelé par onclick inline des boutons
+// "Commencer la séance" générés dynamiquement (rendu V2 + détail séance).
+window.startSessionGuarded = startSessionGuarded;
 window.launchSession = launchSession;
 window._lsClose = _lsClose;
 window._lsDoneSet = _lsDoneSet;

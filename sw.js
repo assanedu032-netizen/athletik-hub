@@ -1,7 +1,8 @@
-const CACHE = 'athletik-v2';
+const CACHE = 'athletik-v3';
 const ASSETS = [
   '/',
   '/index.html',
+  '/ciqual-data.js',
   '/icons/icon-192.png',
   '/icons/icon-512.png'
 ];
