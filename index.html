@@ -6024,9 +6024,9 @@ function launchTodaySession() {
   // Met à jour l'état pour cohérence avec la page Programmes
   window._progV2State = { key: key, phaseIdx: phaseIdx, sessionKey: sessKey };
 
-  // Lance la séance plein écran avec la clé programme pour tracking complétion
+  // Lance la séance plein écran avec clé programme + clé séance (tracking P2)
   if (typeof launchSession === 'function') {
-    launchSession(sess.exos, sess.name, prog.name, key);
+    launchSession(sess.exos, sess.name, prog.name, key, sessKey);
   }
 }
 window.launchTodaySession = launchTodaySession;
@@ -8349,13 +8349,19 @@ window._progV2State = { key: null, phaseIdx: 0, sessionKey: null };
 function renderProgramV2(key) {
   var p = PROGRAMS_V2[key];
   if (!p) return;
-  window._progV2State = { key: key, phaseIdx: 0, sessionKey: null };
+  // Ouvre sur la phase courante de progression (P2), pas toujours phase 0
+  var startPhase = 0;
+  try {
+    var st = getProgramProgress(key);
+    if (st && typeof st.phaseIdx === 'number' && st.phaseIdx < p.phases.length) startPhase = st.phaseIdx;
+  } catch(e) {}
+  window._progV2State = { key: key, phaseIdx: startPhase, sessionKey: null };
   var container = document.getElementById('progDetail');
   if (!container) return;
   container.classList.remove('hidden');
   document.getElementById('progList').classList.add('hidden');
-  container.innerHTML = _renderProgHeader(p) + _renderPhaseTabs(p, 0) + '<div id="pgV2Body"></div>';
-  _renderPhaseBody(p, 0);
+  container.innerHTML = _renderProgHeader(p) + _renderPhaseTabs(p, startPhase) + '<div id="pgV2Body"></div>';
+  _renderPhaseBody(p, startPhase);
   var v = document.getElementById('vTrain'); if (v) v.scrollTop = 0;
 }
 
@@ -8398,7 +8404,20 @@ function _renderPhaseBody(p, idx) {
   var ph = p.phases[idx]; if (!ph) return;
   var h = '';
   h += '<div style="font-family:\'Bebas Neue\',sans-serif;font-size:20px;color:var(--text);letter-spacing:1.5px;line-height:1.05">' + ph.title + '</div>';
-  h += '<div style="font-size:12px;color:var(--muted);margin:3px 0 14px;font-style:italic">' + ph.subtitle + '</div>';
+  h += '<div style="font-size:12px;color:var(--muted);margin:3px 0 12px;font-style:italic">' + ph.subtitle + '</div>';
+
+  // P2 — état de progression de la phase (semaine courante / phase terminée)
+  try {
+    var _pk = window._progV2State && window._progV2State.key;
+    var _pp = _pk ? getProgramProgress(_pk) : null;
+    if (_pp) {
+      if (idx === _pp.phaseIdx) {
+        h += '<div style="background:rgba(197,164,78,.12);border:1px solid rgba(197,164,78,.35);border-radius:10px;padding:8px 12px;margin-bottom:12px;font-size:11px;font-weight:800;color:var(--gold);letter-spacing:.5px">📍 SEMAINE ' + _pp.week + ' / ' + (ph.weeks || 1) + ' — phase en cours</div>';
+      } else if (idx < _pp.phaseIdx) {
+        h += '<div style="background:rgba(16,185,129,.10);border:1px solid rgba(16,185,129,.3);border-radius:10px;padding:8px 12px;margin-bottom:12px;font-size:11px;font-weight:800;color:#10B981;letter-spacing:.5px">✅ Phase terminée</div>';
+      }
+    }
+  } catch(e) {}
 
   // Encart durée / fréquence / lieu
   h += '<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:14px;background:var(--surface2);border-radius:12px;padding:12px 10px;text-align:center">';
@@ -10475,7 +10494,7 @@ function builderStart() {
   });
   try {
     if (typeof launchSession === 'function') {
-      launchSession(exos, 'Ma séance custom', 'WORKOUT BUILDER');
+      launchSession(exos, 'Ma séance custom', 'WORKOUT BUILDER', '', '');
     } else if (typeof startLive === 'function') {
       window._customSessionExos = exos;
       startLive();
@@ -15473,7 +15492,7 @@ function obErr(id,msg){
 // ═══════════════════════════════════════════════════
 var _LS = {
   exos: [], idx: 0, setNum: 1, _pendingAction: null,
-  progKey: '', progName: '', sessName: '',
+  progKey: '', sessKey: '', progName: '', sessName: '',
   restSec: 0, restTotal: 0, restInterval: null, restActive: false
 };
 
@@ -15495,7 +15514,7 @@ function _lsPersist() {
   try {
     localStorage.setItem('ah_live_session', JSON.stringify({
       exos: _LS.exos, idx: _LS.idx, setNum: _LS.setNum || 1,
-      progKey: _LS.progKey || '',
+      progKey: _LS.progKey || '', sessKey: _LS.sessKey || '',
       progName: _LS.progName, sessName: _LS.sessName,
       ts: Date.now()
     }));
@@ -15522,6 +15541,7 @@ window.resumeLiveSession = function() {
   _LS.setNum = d.setNum || 1;
   _LS._pendingAction = null;
   _LS.progKey = d.progKey || '';
+  _LS.sessKey = d.sessKey || '';
   _LS.progName = d.progName || '';
   _LS.sessName = d.sessName || '';
   _LS.restActive = false;
@@ -15656,7 +15676,7 @@ function _lsFmt(sec) {
   return (m < 10 ? '0' : '') + m + ':' + (s < 10 ? '0' : '') + s;
 }
 
-function launchSession(exos, sessName, progName, progKey) {
+function launchSession(exos, sessName, progName, progKey, sessKey) {
   if (!exos || !exos.length) { showToast('Aucun exercice dans cette séance.', 'info'); return; }
   _LS.exos = exos;
   _LS.idx = 0;
@@ -15664,9 +15684,10 @@ function launchSession(exos, sessName, progName, progKey) {
   _LS._pendingAction = null;
   _LS.progName = progName || '';
   _LS.sessName = sessName || '';
-  // progKey explicite si fourni, sinon fallback sur l'état programme courant.
-  // Sert ensuite à _lsShowComplete pour incrémenter le bon compteur programme.
+  // progKey/sessKey explicites si fournis, sinon fallback sur l'état programme.
+  // Servent à _lsShowComplete : compteur programme + progression semaine (P2).
   _LS.progKey = progKey || (window._progV2State && window._progV2State.key) || '';
+  _LS.sessKey = sessKey || (window._progV2State && window._progV2State.sessionKey) || '';
   _LS.restActive = false;
   clearInterval(_LS.restInterval);
   _lsRenderEx();
@@ -15937,6 +15958,79 @@ function _checkProgramCompletion(progKey) {
   } catch(e) { return false; }
 }
 
+// ═══ P2 — Progression semaine/phase par programme ═══
+// Stocké dans ah_profile.programProgress[progKey] = { phaseIdx, week, doneThisWeek }.
+// La semaine avance automatiquement quand toutes les séances d'entraînement
+// de la semaine type (weekDays, hors rest/opt/mener/bilan) sont complétées.
+
+// Clés de séances "obligatoires" d'une phase : entrées weekDays pointant sur
+// une vraie session (exclut repos, optionnel, MENER, bilan).
+function _requiredSessionKeys(phase) {
+  var out = [], seen = {};
+  (phase && phase.weekDays || []).forEach(function(d) {
+    var k = d && d.s;
+    if (!k || k === 'rest' || k === 'opt' || k === 'mener' || k === 'bilan') return;
+    if (phase.sessions && phase.sessions[k] && !seen[k]) { seen[k] = true; out.push(k); }
+  });
+  return out;
+}
+
+function getProgramProgress(progKey) {
+  try {
+    var prof = JSON.parse(localStorage.getItem('ah_profile') || '{}');
+    var pp = prof.programProgress || {};
+    var st = pp[progKey];
+    if (st && typeof st.phaseIdx === 'number') {
+      if (!st.doneThisWeek) st.doneThisWeek = {};
+      return st;
+    }
+  } catch(e) {}
+  return { phaseIdx: 0, week: 1, doneThisWeek: {} };
+}
+
+function _saveProgramProgress(progKey, st) {
+  try {
+    var prof = JSON.parse(localStorage.getItem('ah_profile') || '{}');
+    var pp = prof.programProgress || {};
+    pp[progKey] = st;
+    prof.programProgress = pp;
+    // Miroir top-level pour renderUserData / carte Home
+    prof.phaseIdx = st.phaseIdx;
+    prof.weekNum = st.week;
+    localStorage.setItem('ah_profile', JSON.stringify(prof));
+    if (typeof fbSaveProfile === 'function') fbSaveProfile();
+  } catch(e) {}
+}
+
+// Marque une séance comme faite ; fait avancer semaine → phase quand la
+// semaine type est complète. Retourne true si la semaine a été validée.
+function _advanceProgramProgress(progKey, sessKey) {
+  if (!progKey || !sessKey || typeof PROGRAMS_V2 === 'undefined' || !PROGRAMS_V2[progKey]) return false;
+  var prog = PROGRAMS_V2[progKey];
+  var st = getProgramProgress(progKey);
+  if (st.phaseIdx >= prog.phases.length) st.phaseIdx = prog.phases.length - 1;
+  var phase = prog.phases[st.phaseIdx];
+  if (!phase) return false;
+  st.doneThisWeek[sessKey] = true;
+
+  var required = _requiredSessionKeys(phase);
+  var weekDone = required.length > 0 && required.every(function(k){ return st.doneThisWeek[k]; });
+  if (weekDone) {
+    st.doneThisWeek = {};
+    if (st.week < (phase.weeks || 1)) {
+      st.week++;
+    } else if (st.phaseIdx < prog.phases.length - 1) {
+      st.phaseIdx++;
+      st.week = 1;
+    } else {
+      st.week = phase.weeks || 1;
+      st.completed = true;
+    }
+  }
+  _saveProgramProgress(progKey, st);
+  return weekDone;
+}
+
 function _lsShowComplete() {
   clearInterval(_LS.restInterval);
   _LS.restActive = false;
@@ -15961,12 +16055,25 @@ function _lsShowComplete() {
     hist.push({
       type: 'session',
       progKey: _LS.progKey || '',
+      sessKey: _LS.sessKey || '',
       progName: _LS.progName || '',
       sessName: _LS.sessName || '',
       date: new Date().toISOString()
     });
     localStorage.setItem('ah_set_history', JSON.stringify(hist));
     if (typeof renderBadges === 'function') renderBadges();
+    // P2 — fait avancer semaine/phase si la semaine type est complète
+    if (_LS.progKey && _LS.sessKey) {
+      try {
+        var weekDone = _advanceProgramProgress(_LS.progKey, _LS.sessKey);
+        if (weekDone) {
+          setTimeout(function() {
+            var st = getProgramProgress(_LS.progKey);
+            showToast('✅ Semaine validée — tu passes à la semaine ' + st.week, 'ok');
+          }, 1200);
+        }
+      } catch(e) {}
+    }
     if (_LS.progKey && _checkProgramCompletion(_LS.progKey)) {
       setTimeout(function() {
         showToast('🏆 Programme ' + (_LS.progName || _LS.progKey) + ' terminé !', 'ok');
@@ -16015,7 +16122,7 @@ function startSessionGuarded() {
   var state = window._progV2State || {};
   var progKey = state.key || (typeof currentProgKey !== 'undefined' ? currentProgKey : null);
   var prog = progKey && typeof PROGRAMS_V2 !== 'undefined' ? PROGRAMS_V2[progKey] : null;
-  var exos = null, sessName = '', progName = '';
+  var exos = null, sessName = '', progName = '', resolvedSessKey = '';
 
   if (prog) {
     progName = prog.name;
@@ -16026,6 +16133,7 @@ function startSessionGuarded() {
         var sess = ph.sessions[sk];
         exos = sess.exos;
         sessName = sess.name;
+        resolvedSessKey = sk;
       } else {
         // No specific session selected: use first session in phase
         var keys = ph.sessions ? Object.keys(ph.sessions) : [];
@@ -16033,6 +16141,7 @@ function startSessionGuarded() {
           var firstSess = ph.sessions[keys[0]];
           exos = firstSess.exos;
           sessName = firstSess.name;
+          resolvedSessKey = keys[0];
         }
       }
     }
@@ -16043,7 +16152,7 @@ function startSessionGuarded() {
     return;
   }
 
-  launchSession(exos, sessName, progName, progKey);
+  launchSession(exos, sessName, progName, progKey, resolvedSessKey);
 }
 window.launchSession = launchSession;
 window._lsClose = _lsClose;
