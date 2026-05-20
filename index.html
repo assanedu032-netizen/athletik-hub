@@ -4148,15 +4148,16 @@ body.test-mode #testSkipBar{display:flex}
 
         <!-- Mode Barcode -->
         <div id="scanModeBarcode" style="display:none">
-          <div style="background:var(--surface);border:2px dashed rgba(59,130,246,.3);border-radius:20px;padding:36px 20px;text-align:center;margin-bottom:14px;box-shadow:var(--card-shadow)">
-            <div style="font-size:44px;margin-bottom:10px">📊</div>
-            <div style="font-family:'Bebas Neue',sans-serif;font-size:20px;color:var(--text);letter-spacing:2px;margin-bottom:4px">SCAN UN CODE-BARRE</div>
-            <div style="font-size:12px;color:var(--muted);margin-bottom:16px">Saisis ou scanne le code-barre du produit</div>
+          <!-- Bouton scan caméra (action principale) -->
+          <div onclick="scanBarcodeCameraStart()" style="background:linear-gradient(135deg,#3B82F6,#2563EB);border-radius:20px;padding:30px 20px;text-align:center;margin-bottom:12px;cursor:pointer;box-shadow:var(--card-shadow)">
+            <div style="font-size:44px;margin-bottom:8px">📷</div>
+            <div style="font-family:'Bebas Neue',sans-serif;font-size:20px;color:#fff;letter-spacing:2px;margin-bottom:4px">SCANNER AVEC LA CAMÉRA</div>
+            <div style="font-size:12px;color:rgba(255,255,255,.75)">Vise le code-barre du produit</div>
           </div>
 
-          <!-- Input barcode -->
+          <!-- Saisie manuelle (fallback) -->
           <div style="background:var(--surface);border:1.5px solid var(--border);border-radius:12px;padding:14px;margin-bottom:14px">
-            <label style="font-size:10px;color:var(--muted);font-weight:700;letter-spacing:1.5px;text-transform:uppercase;display:block;margin-bottom:8px">Code-barre</label>
+            <label style="font-size:10px;color:var(--muted);font-weight:700;letter-spacing:1.5px;text-transform:uppercase;display:block;margin-bottom:8px">Ou saisis le code à la main</label>
             <div style="display:flex;gap:8px">
               <input type="text" inputmode="numeric" id="scanBarcodeInput" placeholder="3017620422003" style="flex:1;padding:12px;background:var(--surface2);border:1.5px solid var(--border);border-radius:10px;font-family:'Outfit',sans-serif;font-size:14px;color:var(--text);text-align:center;letter-spacing:1px;outline:none">
               <button onclick="scanBarcodeSearch()" style="padding:12px 18px;background:linear-gradient(135deg,var(--gold),var(--gold2));border:none;border-radius:10px;color:var(--navy);font-weight:800;font-size:12px;cursor:pointer;font-family:Outfit,sans-serif">Chercher</button>
@@ -4525,6 +4526,15 @@ body.test-mode #testSkipBar{display:flex}
 </div><!-- /liveSession -->
 
 </div><!-- /app -->
+
+<!-- Overlay caméra — scan de code-barre en direct -->
+<div id="bcCamOverlay" style="display:none;position:fixed;inset:0;z-index:9700;background:#000;flex-direction:column;align-items:center;justify-content:center">
+  <video id="bcCamVideo" playsinline muted autoplay style="width:100%;height:100%;object-fit:cover;position:absolute;inset:0"></video>
+  <div style="position:relative;z-index:2;width:78%;max-width:320px;aspect-ratio:1.6;border:3px solid rgba(255,255,255,.92);border-radius:16px;box-shadow:0 0 0 2000px rgba(0,0,0,.5)"></div>
+  <div id="bcCamStatus" style="position:relative;z-index:2;margin-top:22px;color:#fff;font-family:'Outfit',sans-serif;font-size:13px;font-weight:600;text-align:center;padding:0 24px;text-shadow:0 1px 4px rgba(0,0,0,.8)">Initialisation de la caméra…</div>
+  <button onclick="scanBarcodeCameraStop()" style="position:absolute;top:20px;right:20px;z-index:3;width:44px;height:44px;border-radius:50%;background:rgba(0,0,0,.6);border:1.5px solid rgba(255,255,255,.4);color:#fff;font-size:20px;cursor:pointer;font-family:'Outfit',sans-serif">✕</button>
+</div>
+
 <!-- Base CIQUAL 2025 (ANSES) — 3484 aliments, chargée pour la recherche nutrition -->
 <script src="ciqual-data.js"></script>
 <script>
@@ -14944,6 +14954,86 @@ function ciqualPick(idx) {
   scanRenderResult('Aliment ajouté depuis la base CIQUAL (ANSES).');
 }
 window.ciqualPick = ciqualPick;
+
+// ═══ SCAN CODE-BARRE CAMÉRA — BarcodeDetector natif ═══
+// BarcodeDetector est supporté sur Chrome Android (cible de l'app) + Chrome
+// desktop. Fallback : saisie manuelle si non supporté.
+var _bcScan = { stream: null, raf: null, detector: null, running: false };
+
+async function scanBarcodeCameraStart() {
+  var overlay = document.getElementById('bcCamOverlay');
+  var video = document.getElementById('bcCamVideo');
+  var status = document.getElementById('bcCamStatus');
+  if (!('BarcodeDetector' in window)) {
+    showToast('Ton navigateur ne supporte pas le scan caméra. Saisis le code à la main.', 'info');
+    return;
+  }
+  if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+    showToast('Caméra non disponible sur ce navigateur.', 'info');
+    return;
+  }
+  try {
+    _bcScan.detector = new BarcodeDetector({ formats: ['ean_13','ean_8','upc_a','upc_e','code_128','code_39'] });
+  } catch(e) {
+    try { _bcScan.detector = new BarcodeDetector(); }
+    catch(e2) { showToast('Scan caméra indisponible.', 'info'); return; }
+  }
+  if (overlay) overlay.style.display = 'flex';
+  if (status) status.textContent = 'Autorise la caméra…';
+  try {
+    _bcScan.stream = await navigator.mediaDevices.getUserMedia({
+      video: { facingMode: { ideal: 'environment' } }
+    });
+  } catch(e) {
+    if (overlay) overlay.style.display = 'none';
+    showToast('Accès caméra refusé. Autorise la caméra dans ton navigateur.', 'err');
+    return;
+  }
+  video.srcObject = _bcScan.stream;
+  try { await video.play(); } catch(e) {}
+  if (status) status.textContent = 'Vise le code-barre du produit…';
+  _bcScan.running = true;
+  _bcScanLoop();
+}
+
+function _bcScanLoop() {
+  if (!_bcScan.running || !_bcScan.detector) return;
+  var video = document.getElementById('bcCamVideo');
+  if (!video || video.readyState < 2) {
+    _bcScan.raf = requestAnimationFrame(_bcScanLoop);
+    return;
+  }
+  _bcScan.detector.detect(video).then(function(codes) {
+    if (!_bcScan.running) return;
+    if (codes && codes.length && codes[0].rawValue) {
+      var raw = String(codes[0].rawValue).replace(/\s/g, '');
+      scanBarcodeCameraStop();
+      var input = document.getElementById('scanBarcodeInput');
+      if (input) input.value = raw;
+      showToast('Code détecté : ' + raw, 'ok');
+      if (typeof scanBarcodeSearch === 'function') scanBarcodeSearch();
+      return;
+    }
+    _bcScan.raf = requestAnimationFrame(_bcScanLoop);
+  }).catch(function() {
+    if (_bcScan.running) _bcScan.raf = requestAnimationFrame(_bcScanLoop);
+  });
+}
+
+function scanBarcodeCameraStop() {
+  _bcScan.running = false;
+  if (_bcScan.raf) { cancelAnimationFrame(_bcScan.raf); _bcScan.raf = null; }
+  if (_bcScan.stream) {
+    _bcScan.stream.getTracks().forEach(function(t){ try { t.stop(); } catch(e) {} });
+    _bcScan.stream = null;
+  }
+  var video = document.getElementById('bcCamVideo');
+  if (video) { try { video.pause(); } catch(e) {} video.srcObject = null; }
+  var overlay = document.getElementById('bcCamOverlay');
+  if (overlay) overlay.style.display = 'none';
+}
+window.scanBarcodeCameraStart = scanBarcodeCameraStart;
+window.scanBarcodeCameraStop = scanBarcodeCameraStop;
 
 async function scanBarcodeSearch() {
   var input = document.getElementById('scanBarcodeInput');
