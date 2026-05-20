@@ -8378,10 +8378,21 @@ function _renderProgHeader(p) {
 }
 
 function _renderPhaseTabs(p, activeIdx) {
+  // P3 — verrouille les phases futures (idx > phase courante de progression)
+  var curPhase = 0;
+  try {
+    var _pk = window._progV2State && window._progV2State.key;
+    if (_pk) curPhase = getProgramProgress(_pk).phaseIdx || 0;
+  } catch(e) {}
   var h = '<div style="display:flex;gap:6px;margin:12px 0 14px;overflow-x:auto;padding-bottom:4px">';
   p.phases.forEach(function(ph, i){
     var on = (i === activeIdx);
-    h += '<div onclick="_switchPhaseV2(' + i + ')" style="flex-shrink:0;padding:8px 14px;border-radius:8px;font-size:11px;font-weight:700;letter-spacing:.5px;cursor:pointer;background:' + (on?'var(--navy)':'var(--surface2)') + ';color:' + (on?'var(--gold)':'var(--text2)') + ';border:1.5px solid ' + (on?'var(--navy)':'var(--border)') + '">PHASE ' + ph.n + '</div>';
+    var locked = (i > curPhase);
+    var bg = locked ? 'var(--surface2)' : (on ? 'var(--navy)' : 'var(--surface2)');
+    var col = locked ? 'var(--muted)' : (on ? 'var(--gold)' : 'var(--text2)');
+    var bd = locked ? 'var(--border)' : (on ? 'var(--navy)' : 'var(--border)');
+    var lbl = (locked ? '🔒 ' : '') + 'PHASE ' + ph.n;
+    h += '<div onclick="_switchPhaseV2(' + i + ')" style="flex-shrink:0;padding:8px 14px;border-radius:8px;font-size:11px;font-weight:700;letter-spacing:.5px;cursor:pointer;opacity:' + (locked?'.6':'1') + ';background:' + bg + ';color:' + col + ';border:1.5px solid ' + bd + '">' + lbl + '</div>';
   });
   h += '</div>';
   return h;
@@ -8389,6 +8400,14 @@ function _renderPhaseTabs(p, activeIdx) {
 
 function _switchPhaseV2(idx) {
   var p = PROGRAMS_V2[window._progV2State.key]; if (!p) return;
+  // P3 — bloque l'accès à une phase non débloquée
+  try {
+    var curPhase = getProgramProgress(window._progV2State.key).phaseIdx || 0;
+    if (idx > curPhase) {
+      if (typeof showToast === 'function') showToast('Termine la phase précédente pour débloquer celle-ci.', 'info');
+      return;
+    }
+  } catch(e) {}
   window._progV2State.phaseIdx = idx;
   window._progV2State.sessionKey = null;
   // Re-render tabs (update active)
@@ -8396,6 +8415,40 @@ function _switchPhaseV2(idx) {
   if (!container) return;
   container.innerHTML = _renderProgHeader(p) + _renderPhaseTabs(p, idx) + '<div id="pgV2Body"></div>';
   _renderPhaseBody(p, idx);
+}
+
+// P3 — séance débloquée ? (phase passée = tout ouvert, phase future = fermé,
+// phase courante = ordre strict des séances de la semaine type).
+function _isSessionUnlocked(progKey, phaseIdx, sessKey) {
+  try {
+    var st = getProgramProgress(progKey);
+    if (phaseIdx < st.phaseIdx) return true;
+    if (phaseIdx > st.phaseIdx) return false;
+    var prog = PROGRAMS_V2[progKey];
+    var phase = prog && prog.phases[phaseIdx];
+    if (!phase) return true;
+    var required = _requiredSessionKeys(phase);
+    var pos = required.indexOf(sessKey);
+    if (pos === -1) return true; // séance optionnelle → libre
+    for (var i = 0; i < pos; i++) {
+      if (!st.doneThisWeek[required[i]]) return false;
+    }
+    return true;
+  } catch(e) { return true; }
+}
+
+// Première séance non encore faite cette semaine (phase courante).
+function _nextSessionToDo(progKey) {
+  try {
+    var prog = PROGRAMS_V2[progKey]; if (!prog) return null;
+    var st = getProgramProgress(progKey);
+    var phase = prog.phases[st.phaseIdx]; if (!phase) return null;
+    var required = _requiredSessionKeys(phase);
+    for (var i = 0; i < required.length; i++) {
+      if (!st.doneThisWeek[required[i]]) return required[i];
+    }
+    return required[0] || null;
+  } catch(e) { return null; }
 }
 
 function _renderPhaseBody(p, idx) {
@@ -8454,13 +8507,22 @@ function _renderPhaseBody(p, idx) {
     var isRest = (sk === 'rest');
     var isMener = (sk === 'mener' || sk === 'bilan');
     var isOpt = (sk === 'opt');
-    var bg = isRest ? 'var(--surface2)' : (isMener ? 'rgba(108,99,255,.10)' : (isOpt ? 'rgba(245,158,11,.10)' : 'rgba(197,164,78,.10)'));
-    var border = isRest ? 'var(--border)' : (isMener ? 'rgba(108,99,255,.35)' : (isOpt ? 'rgba(245,158,11,.35)' : 'rgba(197,164,78,.35)'));
-    var color = isRest ? 'var(--muted)' : (isMener ? '#6C63FF' : (isOpt ? '#F59E0B' : 'var(--gold)'));
+    // P3 — verrouillage : séance bloquée si phase future ou ordre non respecté
+    var locked = false;
+    if (sess && !isRest) {
+      try {
+        var _pk = window._progV2State && window._progV2State.key;
+        if (_pk) locked = !_isSessionUnlocked(_pk, idx, sk);
+      } catch(e) {}
+    }
+    var bg = isRest ? 'var(--surface2)' : (locked ? 'var(--surface2)' : (isMener ? 'rgba(108,99,255,.10)' : (isOpt ? 'rgba(245,158,11,.10)' : 'rgba(197,164,78,.10)')));
+    var border = isRest ? 'var(--border)' : (locked ? 'var(--border)' : (isMener ? 'rgba(108,99,255,.35)' : (isOpt ? 'rgba(245,158,11,.35)' : 'rgba(197,164,78,.35)')));
+    var color = isRest ? 'var(--muted)' : (locked ? 'var(--muted)' : (isMener ? '#6C63FF' : (isOpt ? '#F59E0B' : 'var(--gold)')));
     var label = isRest ? 'Repos' : (isMener ? (sk==='bilan'?'Bilan':'MENER') : (isOpt ? 'Optionnel' : (sess ? sess.name.split('—')[0].trim() : sk.toUpperCase())));
+    if (locked) label = '🔒 ' + label;
     var clickable = !!sess && !isRest;
     var oc = clickable ? ' onclick="_openSessionV2(\'' + sk + '\')"' : '';
-    h += '<div' + oc + ' style="background:' + bg + ';border:1px solid ' + border + ';border-radius:8px;padding:8px 4px;text-align:center;cursor:' + (clickable?'pointer':'default') + ';min-height:62px;display:flex;flex-direction:column;justify-content:space-between">';
+    h += '<div' + oc + ' style="background:' + bg + ';border:1px solid ' + border + ';border-radius:8px;padding:8px 4px;text-align:center;cursor:' + (clickable?'pointer':'default') + ';opacity:' + (locked?'.6':'1') + ';min-height:62px;display:flex;flex-direction:column;justify-content:space-between">';
     h +=   '<div style="font-size:9px;font-weight:800;color:var(--muted);letter-spacing:1px">' + day.d.toUpperCase() + '</div>';
     h +=   '<div style="font-size:10px;font-weight:700;color:' + color + ';line-height:1.15;margin-top:4px">' + label + '</div>';
     h += '</div>';
