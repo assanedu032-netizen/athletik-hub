@@ -8705,7 +8705,12 @@ function openMenerQuiz() {
   } catch(e) { _menerAnswers = {}; }
   ov.style.display = 'flex';
   document.body.style.overflow = 'hidden';
-  _menerRenderQuestions();
+  // Reprend à la première question non répondue
+  _menerStep = 0;
+  for (var i = 0; i < MENER_QUIZ.questions.length; i++) {
+    if (!_menerAnswers[i]) { _menerStep = i; break; }
+  }
+  _menerRenderStep();
 }
 window.openMenerQuiz = openMenerQuiz;
 
@@ -8716,79 +8721,78 @@ function closeMenerQuiz() {
 }
 window.closeMenerQuiz = closeMenerQuiz;
 
-function _menerRenderQuestions() {
+var _menerStep = 0;
+var _menerAdvanceTimer = null;
+
+// Affiche UNE question plein écran (style Typeform, pas de scroll).
+function _menerRenderStep() {
   var body = document.getElementById('menerQuizBody');
   if (!body) return;
-  var h = '';
-  h += '<div style="background:rgba(197,164,78,.08);border:1px solid rgba(197,164,78,.25);border-radius:12px;padding:12px 14px;margin-bottom:16px;font-size:12px;color:var(--text2);line-height:1.55">';
-  h += 'Réponds honnêtement aux 25 questions. La méthode <strong style="color:var(--gold)">MENER</strong> identifiera ton pilier le plus faible — celui sur lequel concentrer tes efforts.';
-  h += '</div>';
+  var total = MENER_QUIZ.questions.length;
+  if (_menerStep < 0) _menerStep = 0;
+  if (_menerStep >= total) { _menerShowResult(); return; }
+  var item = MENER_QUIZ.questions[_menerStep];
+  var pil = MENER_QUIZ.pillars.filter(function(p){ return p.key === item.p; })[0] || {};
+  var answered = _menerAnswers[_menerStep];
+  var pct = Math.round((_menerStep / total) * 100);
 
-  var curPillar = '';
-  MENER_QUIZ.questions.forEach(function(item, qi) {
-    if (item.p !== curPillar) {
-      curPillar = item.p;
-      var pil = MENER_QUIZ.pillars.filter(function(p){ return p.key === curPillar; })[0] || {};
-      h += '<div style="display:flex;align-items:center;gap:8px;margin:18px 0 10px">';
-      h += '<span style="font-size:20px">' + (pil.icon||'') + '</span>';
-      h += '<span style="font-family:\'Bebas Neue\',sans-serif;font-size:17px;color:var(--gold);letter-spacing:1.5px">PILIER ' + (pil.name||'').toUpperCase() + '</span>';
-      h += '</div>';
-    }
-    h += '<div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:13px 14px;margin-bottom:10px">';
-    h += '<div style="font-size:13px;font-weight:600;color:var(--text);line-height:1.4;margin-bottom:10px">' + (qi+1) + '. ' + item.q + '</div>';
-    item.o.forEach(function(opt, oi) {
-      var val = oi + 1;
-      var sel = (_menerAnswers[qi] === val);
-      h += '<div onclick="_menerPick(' + qi + ',' + val + ')" data-mq="' + qi + '" data-mv="' + val + '" style="display:flex;align-items:center;gap:9px;padding:9px 10px;margin-bottom:5px;border-radius:9px;cursor:pointer;border:1.5px solid ' + (sel?'var(--gold)':'var(--border)') + ';background:' + (sel?'rgba(197,164,78,.12)':'var(--surface2)') + '">';
-      h += '<div style="width:20px;height:20px;border-radius:50%;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:800;border:1.5px solid ' + (sel?'var(--gold)':'var(--border2)') + ';background:' + (sel?'var(--gold)':'transparent') + ';color:' + (sel?'var(--navy)':'var(--muted)') + '">' + val + '</div>';
-      h += '<div style="font-size:12px;color:var(--text2);line-height:1.35">' + opt + '</div>';
-      h += '</div>';
-    });
+  var h = '';
+  h += '<div style="display:flex;flex-direction:column;min-height:100%">';
+  // Barre de progression
+  h += '<div style="height:6px;background:var(--border);border-radius:4px;overflow:hidden;margin-bottom:14px"><div style="height:100%;width:' + pct + '%;background:var(--gold);transition:width .3s"></div></div>';
+  h += '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:22px">';
+  h += '<span style="font-size:11px;font-weight:800;color:var(--muted);letter-spacing:1.5px">QUESTION ' + (_menerStep+1) + ' / ' + total + '</span>';
+  h += '<span style="font-size:11px;font-weight:800;color:var(--gold);letter-spacing:1px">' + (pil.icon||'') + ' ' + (pil.name||'').toUpperCase() + '</span>';
+  h += '</div>';
+  // Question
+  h += '<div style="font-family:\'Bebas Neue\',sans-serif;font-size:23px;color:var(--text);line-height:1.22;letter-spacing:.5px;margin-bottom:22px">' + item.q + '</div>';
+  // Options (grandes cartes)
+  item.o.forEach(function(opt, oi) {
+    var val = oi + 1;
+    var sel = (answered === val);
+    h += '<div onclick="_menerPick(' + _menerStep + ',' + val + ')" style="display:flex;align-items:center;gap:12px;padding:15px 14px;margin-bottom:10px;border-radius:13px;cursor:pointer;border:2px solid ' + (sel?'var(--gold)':'var(--border)') + ';background:' + (sel?'rgba(197,164,78,.12)':'var(--surface)') + '">';
+    h += '<div style="width:28px;height:28px;border-radius:50%;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:800;border:2px solid ' + (sel?'var(--gold)':'var(--border2)') + ';background:' + (sel?'var(--gold)':'transparent') + ';color:' + (sel?'var(--navy)':'var(--muted)') + '">' + val + '</div>';
+    h += '<div style="font-size:13px;color:var(--text);line-height:1.4;font-weight:500">' + opt + '</div>';
     h += '</div>';
   });
-
-  // Footer : progression + bouton résultat
-  h += '<div id="menerFooter" style="position:sticky;bottom:0;background:var(--bg);padding:12px 0 4px;margin-top:8px">';
-  h += '<div id="menerProgress" style="font-size:11px;color:var(--muted);text-align:center;margin-bottom:8px"></div>';
-  h += '<button id="menerResultBtn" onclick="_menerShowResult()" style="width:100%;padding:14px;border:0;border-radius:12px;font-family:\'Outfit\',sans-serif;font-size:14px;font-weight:800;cursor:pointer">Voir mon résultat</button>';
+  // Spacer puis navigation
+  h += '<div style="flex:1;min-height:14px"></div>';
+  h += '<div style="display:flex;gap:8px;padding-top:8px">';
+  if (_menerStep > 0) {
+    h += '<button onclick="_menerPrev()" style="flex:1;padding:13px;background:var(--surface2);border:1px solid var(--border);border-radius:12px;font-family:\'Outfit\',sans-serif;font-size:13px;font-weight:700;color:var(--text2);cursor:pointer">← Précédent</button>';
+  }
+  if (answered) {
+    var lastQ = (_menerStep === total - 1);
+    h += '<button onclick="' + (lastQ ? '_menerShowResult()' : '_menerNext()') + '" style="flex:2;padding:13px;background:linear-gradient(135deg,var(--gold),#D4B86A);border:0;border-radius:12px;font-family:\'Outfit\',sans-serif;font-size:13px;font-weight:800;color:var(--navy);cursor:pointer">' + (lastQ ? 'Voir mon résultat 🔱' : 'Suivant →') + '</button>';
+  }
   h += '</div>';
-
+  h += '</div>';
   body.innerHTML = h;
-  _menerUpdateProgress();
+  body.scrollTop = 0;
 }
+
+function _menerNext() {
+  if (_menerStep < MENER_QUIZ.questions.length - 1) { _menerStep++; _menerRenderStep(); }
+  else _menerShowResult();
+}
+window._menerNext = _menerNext;
+
+function _menerPrev() {
+  if (_menerAdvanceTimer) { clearTimeout(_menerAdvanceTimer); _menerAdvanceTimer = null; }
+  if (_menerStep > 0) { _menerStep--; _menerRenderStep(); }
+}
+window._menerPrev = _menerPrev;
 
 function _menerPick(qi, val) {
   _menerAnswers[qi] = val;
-  // Met à jour visuellement les options de cette question
-  document.querySelectorAll('[data-mq="' + qi + '"]').forEach(function(el) {
-    var v = parseInt(el.getAttribute('data-mv'), 10);
-    var sel = (v === val);
-    el.style.borderColor = sel ? 'var(--gold)' : 'var(--border)';
-    el.style.background = sel ? 'rgba(197,164,78,.12)' : 'var(--surface2)';
-    var badge = el.firstElementChild;
-    if (badge) {
-      badge.style.borderColor = sel ? 'var(--gold)' : 'var(--border2)';
-      badge.style.background = sel ? 'var(--gold)' : 'transparent';
-      badge.style.color = sel ? 'var(--navy)' : 'var(--muted)';
-    }
-  });
-  _menerUpdateProgress();
-}
-window._menerPick = _menerPick;
-
-function _menerUpdateProgress() {
-  var total = MENER_QUIZ.questions.length;
-  var done = Object.keys(_menerAnswers).length;
-  var prog = document.getElementById('menerProgress');
-  var btn = document.getElementById('menerResultBtn');
-  if (prog) prog.textContent = done + ' / ' + total + ' questions répondues';
-  if (btn) {
-    var ready = (done === total);
-    btn.style.background = ready ? 'linear-gradient(135deg,var(--gold),#D4B86A)' : 'var(--surface2)';
-    btn.style.color = ready ? 'var(--navy)' : 'var(--muted)';
-    btn.textContent = ready ? 'Voir mon résultat 🔱' : 'Réponds à toutes les questions';
+  _menerRenderStep(); // re-render pour montrer la sélection
+  // Auto-avance vers la question suivante (sauf la dernière)
+  if (_menerAdvanceTimer) clearTimeout(_menerAdvanceTimer);
+  if (_menerStep < MENER_QUIZ.questions.length - 1) {
+    _menerAdvanceTimer = setTimeout(function(){ _menerAdvanceTimer = null; _menerNext(); }, 300);
   }
 }
+window._menerPick = _menerPick;
 
 function _menerShowResult() {
   var total = MENER_QUIZ.questions.length;
@@ -8861,7 +8865,7 @@ function _menerShowResult() {
 
   h += '<div style="text-align:center;font-size:12px;color:var(--muted);margin:16px 0 18px">Score global MENER : <strong style="color:var(--text)">' + totalScore + ' / ' + totalMax + '</strong></div>';
 
-  h += '<button onclick="_menerRenderQuestions()" style="width:100%;padding:12px;background:var(--surface2);border:1px solid var(--border);border-radius:12px;font-family:\'Outfit\',sans-serif;font-size:13px;font-weight:700;color:var(--text2);cursor:pointer;margin-bottom:8px">← Revoir mes réponses</button>';
+  h += '<button onclick="_menerStep=0;_menerRenderStep()" style="width:100%;padding:12px;background:var(--surface2);border:1px solid var(--border);border-radius:12px;font-family:\'Outfit\',sans-serif;font-size:13px;font-weight:700;color:var(--text2);cursor:pointer;margin-bottom:8px">← Revoir mes réponses</button>';
   h += '<button onclick="closeMenerQuiz()" style="width:100%;padding:14px;background:linear-gradient(135deg,var(--gold),#D4B86A);border:0;border-radius:12px;font-family:\'Outfit\',sans-serif;font-size:14px;font-weight:800;color:var(--navy);cursor:pointer">Terminé</button>';
 
   body.innerHTML = h;
