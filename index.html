@@ -3754,7 +3754,7 @@ body.test-mode #testSkipBar{display:flex}
     <div id="emailVerifyBanner" style="display:none;margin-top:10px;padding:10px 12px;background:rgba(245,158,11,.08);border:1px solid rgba(245,158,11,.2);border-radius:8px;font-size:11px;color:#F59E0B;line-height:1.5">
       ⚠️ Email non vérifié. <a href="#" onclick="fbResendVerification();return false;" style="color:#F59E0B;font-weight:700;text-decoration:underline">Renvoyer le lien</a>
     </div>
-    <button id="signOutBtn" onclick="(function(){try{if(window.fb&&window.fb.auth)window.fb.signOut(window.fb.auth);}catch(e){}try{localStorage.clear();sessionStorage.clear();}catch(e){}if(window.caches)caches.keys().then(function(k){k.forEach(function(c){caches.delete(c);});});setTimeout(function(){location.replace(location.origin+location.pathname+'?logout='+Date.now());},300);})()" style="display:none;margin-top:12px;width:100%;padding:11px;background:rgba(224,82,82,.08);border:1px solid rgba(224,82,82,.25);border-radius:10px;color:#E05252;font-family:'Outfit',sans-serif;font-weight:700;font-size:12px;cursor:pointer">Me déconnecter</button>
+    <button id="signOutBtn" onclick="fbSignOut()" style="display:none;margin-top:12px;width:100%;padding:11px;background:rgba(224,82,82,.08);border:1px solid rgba(224,82,82,.25);border-radius:10px;color:#E05252;font-family:'Outfit',sans-serif;font-weight:700;font-size:12px;cursor:pointer">Me déconnecter</button>
   </div>
 
   <!-- Session History -->
@@ -3897,7 +3897,7 @@ body.test-mode #testSkipBar{display:flex}
     <div style="font-size:12px;color:var(--muted)">Tu utilises l'app depuis quelques jours ? Dis-moi ce qui marche et ce qui ne marche pas.</div>
   </div>
 
-<div class="logout-btn" onclick="(function(){try{if(window.fb&&window.fb.auth)window.fb.signOut(window.fb.auth);}catch(e){}try{localStorage.clear();sessionStorage.clear();}catch(e){}if(window.caches)caches.keys().then(function(k){k.forEach(function(c){caches.delete(c);});});setTimeout(function(){location.replace(location.origin+location.pathname+'?logout='+Date.now());},300);})()">Se déconnecter</div>
+<div class="logout-btn" onclick="fbSignOut()">Se déconnecter</div>
 
   <div style="text-align:center;padding:10px 0 20px;font-size:10px;color:var(--muted)">
     ATHLETIK HUB v5.0 • Coach Alassane<br>
