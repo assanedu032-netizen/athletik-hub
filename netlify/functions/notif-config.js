@@ -19,8 +19,9 @@ exports.handler = async function(event) {
     headers: {
       'Access-Control-Allow-Origin': '*',
       'Content-Type': 'application/json',
-      // Cache court : si la clé est corrigée côté Netlify, elle se propage vite.
-      'Cache-Control': 'public, max-age=300',
+      // no-store : une clé corrigée doit être visible immédiatement, sans
+      // que le navigateur serve une ancienne réponse en cache.
+      'Cache-Control': 'no-store',
     },
     body: JSON.stringify({
       // .trim() : une variable d'env collée avec un retour-ligne ou des

@@ -10340,7 +10340,7 @@ async function _registerFCMToken() {
     if (!vapidKey) {
       // Tente de récupérer la clé publique depuis la Netlify function
       try {
-        var r = await fetch('/.netlify/functions/notif-config');
+        var r = await fetch('/.netlify/functions/notif-config?t=' + Date.now(), { cache: 'no-store' });
         if (r.ok) {
           var j = await r.json();
           vapidKey = (j.vapidKey || '').trim() || null;
