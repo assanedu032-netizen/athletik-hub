@@ -4412,8 +4412,8 @@ body.test-mode #testSkipBar{display:flex}
       <button onclick="closePlanModal()" style="background:none;border:none;font-size:30px;color:var(--text);cursor:pointer;line-height:1">×</button>
     </div>
     <div id="planModalFreq" style="font-size:13px;color:var(--text2);line-height:1.5;margin-bottom:20px"></div>
-    <div style="font-size:11px;color:var(--muted);font-weight:700;letter-spacing:1.5px;margin-bottom:10px">CHOISIS TES JOURS</div>
-    <div id="planModalDays" style="display:grid;grid-template-columns:repeat(7,1fr);gap:6px;margin-bottom:14px"></div>
+    <div style="font-size:11px;color:var(--muted);font-weight:700;letter-spacing:1.5px;margin-bottom:10px">CHOISIS TES JOURS ET HEURES</div>
+    <div id="planModalDays" style="margin-bottom:14px"></div>
     <div id="planModalCount" style="text-align:center;font-size:13px;font-weight:700;margin-bottom:22px"></div>
     <button id="planConfirmBtn" data-ready="" onclick="confirmPlan()" style="width:100%;padding:15px;background:linear-gradient(135deg,var(--gold),var(--gold2));border:none;border-radius:12px;font-family:'Bebas Neue',sans-serif;font-size:16px;letter-spacing:2px;color:var(--navy);cursor:pointer">CONFIRMER MON PLANNING</button>
   </div>
@@ -5277,6 +5277,7 @@ function saveData() {
       user: user,
       activeHabits: activeHabits,
       trainingDays: Array.from(trainingDays),
+      trainingTimes: trainingTimes,
       satHistory: window.satHistory || [],
       trackHistory: window.trackHistory || []
     };
@@ -5357,6 +5358,12 @@ function loadData() {
   if (Array.isArray(raw.trainingDays)) {
     raw.trainingDays.forEach(function(d) {
       if (typeof d === 'number' && d >= 0 && d <= 6) trainingDays.add(d);
+    });
+  }
+  if (raw.trainingTimes && typeof raw.trainingTimes === 'object') {
+    Object.keys(raw.trainingTimes).forEach(function(k) {
+      var v = raw.trainingTimes[k];
+      if (typeof v === 'string' && /^\d{1,2}:\d{2}$/.test(v)) trainingTimes[k] = v;
     });
   }
   
@@ -6731,7 +6738,8 @@ function _planSessionName(phase, key) {
   return 'Séance ' + (key || '').toUpperCase();
 }
 
-// HTML de la semaine en liste verticale (un jour par ligne).
+// HTML de la semaine en vrai agenda : en-tête semaine + une ligne par jour
+// (date réelle, heure, séance ou repos, aujourd'hui surligné).
 function _planningWeekHtml() {
   var wp = _getWeekPlan();
   var todayIdx = (new Date().getDay() + 6) % 7;
@@ -6748,30 +6756,40 @@ function _planningWeekHtml() {
     });
   } catch(e) {}
 
-  var html = '';
+  var html = '<div style="font-size:10px;font-weight:700;letter-spacing:1.5px;color:var(--muted);margin-bottom:10px">SEMAINE DU ' + _fmtDateShort(wp.weekStart).toUpperCase() + '</div>';
+
   wp.plan.forEach(function(p){
     var isRest = p.sessKey === 'rest';
     var isToday = p.idx === todayIdx;
     var isDone = !isRest && doneDays[p.idx];
     var name = isRest ? 'Repos' : _planSessionName(wp.phase, p.sessKey);
-    var bg = isToday ? 'rgba(197,164,78,.10)' : 'var(--surface)';
+    var bg = isToday ? 'rgba(197,164,78,.12)' : 'var(--surface)';
     var bd = isToday ? '1.5px solid var(--gold)' : '1px solid var(--border)';
+    var barColor = isRest ? 'var(--border2)' : (isDone ? '#10B981' : 'var(--gold)');
 
-    var dot;
-    if (isDone) dot = '<div style="flex:0 0 26px;width:26px;height:26px;border-radius:50%;background:#10B981;display:flex;align-items:center;justify-content:center;color:#fff;font-size:13px;font-weight:800">✓</div>';
-    else if (isRest) dot = '<div style="flex:0 0 26px;width:26px;height:26px;border-radius:50%;border:1.5px solid var(--border2);box-sizing:border-box"></div>';
-    else dot = '<div style="flex:0 0 26px;width:26px;height:26px;border-radius:50%;background:var(--gold)"></div>';
+    var dateCol =
+      '<div style="flex:0 0 40px;text-align:center">'
+      + '<div style="font-size:9px;font-weight:700;letter-spacing:.5px;color:' + (isToday ? 'var(--gold)' : 'var(--muted)') + '">' + _DAY_ABBR[p.idx] + '</div>'
+      + '<div style="font-family:\'Bebas Neue\',sans-serif;font-size:22px;line-height:1.1;color:' + (isToday ? 'var(--gold)' : 'var(--text)') + '">' + p.date.getDate() + '</div>'
+      + '</div>';
+    var bar = '<div style="flex:0 0 3px;align-self:stretch;border-radius:3px;background:' + barColor + '"></div>';
 
     var click = isRest ? '' : ' onclick="planDayClick(\'' + p.sessKey + '\')"';
     var cursor = isRest ? '' : 'cursor:pointer;';
 
-    html += '<div' + click + ' style="' + cursor + 'display:flex;align-items:center;gap:11px;padding:11px 12px;background:' + bg + ';border:' + bd + ';border-radius:12px;margin-bottom:6px">';
-    html +=   dot;
+    html += '<div' + click + ' style="' + cursor + 'display:flex;align-items:center;gap:10px;padding:9px 11px;background:' + bg + ';border:' + bd + ';border-radius:12px;margin-bottom:6px">';
+    html +=   dateCol;
+    html +=   bar;
     html +=   '<div style="flex:1;min-width:0">';
-    html +=     '<div style="font-family:\'Bebas Neue\',sans-serif;font-size:13px;letter-spacing:1px;color:' + (isToday ? 'var(--gold)' : 'var(--text)') + '">' + _DAY_ABBR[p.idx] + (isToday ? ' · AUJOURD\'HUI' : '') + '</div>';
-    html +=     '<div style="font-size:11px;color:' + (isRest ? 'var(--muted)' : 'var(--text2)') + ';margin-top:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">' + name + '</div>';
+    html +=     '<div style="font-size:13px;font-weight:700;color:' + (isRest ? 'var(--muted)' : 'var(--text)') + ';white-space:nowrap;overflow:hidden;text-overflow:ellipsis">' + name + '</div>';
+    if (!isRest) {
+      html +=   '<div style="font-size:11px;color:var(--text2);margin-top:2px">🕐 ' + (p.time || '— : —') + (isToday ? '  ·  Aujourd\'hui' : '') + '</div>';
+    } else if (isToday) {
+      html +=   '<div style="font-size:11px;color:var(--gold);margin-top:2px">Aujourd\'hui</div>';
+    }
     html +=   '</div>';
-    if (!isRest) html += '<div style="flex:0 0 auto;color:var(--gold);font-size:15px">→</div>';
+    if (isDone) html += '<div style="flex:0 0 auto;color:#10B981;font-size:15px;font-weight:800">✓</div>';
+    else if (!isRest) html += '<div style="flex:0 0 auto;color:var(--gold);font-size:15px">→</div>';
     html += '</div>';
   });
   return html;
@@ -11580,12 +11598,20 @@ function _clearMealPlanShoppingList() {
   renderMealPlanShoppingList();
 }
 
-// CALENDRIER \u2014 jours d'entra\u00EEnement choisis par le client
-var trainingDays = new Set();
+// CALENDRIER \u2014 jours d'entra\u00EEnement + heure choisis par le client
+var trainingDays = new Set();   // indices 0=Lun .. 6=Dim
+var trainingTimes = {};         // { dayIdx: 'HH:MM' }
+
+var _MONTH_ABBR = ['janv.','f\u00e9vr.','mars','avr.','mai','juin','juil.','ao\u00FBt','sept.','oct.','nov.','d\u00e9c.'];
+
+// "26 mai" \u2014 date courte FR.
+function _fmtDateShort(d) {
+  return d.getDate() + ' ' + _MONTH_ABBR[d.getMonth()];
+}
 
 // Plan de la semaine : mappe les s\u00e9ances de la phase courante du programme
-// sur les jours d'entra\u00EEnement choisis (option A \u2014 le programme impose le
-// nombre de s\u00e9ances, le client choisit les jours). Retourne 7 jours.
+// sur les jours d'entra\u00EEnement choisis (le programme impose le nombre de
+// s\u00e9ances). Calcule les vraies dates de la semaine en cours + l'heure.
 function _getWeekPlan() {
   var days = ['Lun','Mar','Mer','Jeu','Ven','Sam','Dim'];
   var prof = {};
@@ -11599,24 +11625,36 @@ function _getWeekPlan() {
     phase = prog.phases[pIdx] || prog.phases[0];
     if (phase && typeof _requiredSessionKeys === 'function') sessionKeys = _requiredSessionKeys(phase);
   }
+  // Lundi 00:00 de la semaine en cours
+  var weekStart = new Date();
+  weekStart.setHours(0,0,0,0);
+  weekStart.setDate(weekStart.getDate() - ((weekStart.getDay() + 6) % 7));
+
   var chosen = Array.from(trainingDays).sort(function(a,b){ return a-b; });
   var plan = [], si = 0;
   for (var i = 0; i < 7; i++) {
     var sessKey = 'rest';
     if (chosen.indexOf(i) > -1 && si < sessionKeys.length) { sessKey = sessionKeys[si]; si++; }
-    plan.push({ day: days[i], idx: i, sessKey: sessKey });
+    var dt = new Date(weekStart);
+    dt.setDate(dt.getDate() + i);
+    plan.push({ day: days[i], idx: i, sessKey: sessKey, date: dt, time: trainingTimes[i] || null });
   }
-  return { plan: plan, phase: phase, progKey: progKey, sessionCount: sessionKeys.length, chosenCount: chosen.length };
+  return { plan: plan, phase: phase, progKey: progKey, weekStart: weekStart,
+           sessionCount: sessionKeys.length, chosenCount: chosen.length };
 }
 window._getWeekPlan = _getWeekPlan;
 
-// \u2550\u2550\u2550 MON PLANNING \u2014 modal de choix des jours (avec confirmation) \u2550\u2550\u2550
-// _planDraft : s\u00e9lection en cours dans le modal, non sauvegard\u00e9e tant que
-// le client n'a pas appuy\u00e9 sur "Confirmer".
+// \u2550\u2550\u2550 MON PLANNING \u2014 modal de choix des jours + heures (avec confirmation) \u2550\u2550\u2550
+// _planDraft : Map { dayIdx -> 'HH:MM' }, s\u00e9lection en cours dans le modal,
+// non sauvegard\u00e9e tant que le client n'a pas appuy\u00e9 sur "Confirmer".
 window._planDraft = null;
+var _PLAN_DAY_NAMES = ['Lundi','Mardi','Mercredi','Jeudi','Vendredi','Samedi','Dimanche'];
 
 function openPlanModal() {
-  _planDraft = new Set(typeof trainingDays !== 'undefined' ? trainingDays : []);
+  _planDraft = new Map();
+  if (typeof trainingDays !== 'undefined') {
+    trainingDays.forEach(function(d){ _planDraft.set(d, trainingTimes[d] || '18:00'); });
+  }
   var m = document.getElementById('planModal');
   if (!m) return;
   m.style.display = 'block';
@@ -11636,10 +11674,16 @@ window.closePlanModal = closePlanModal;
 function planToggleDay(idx) {
   if (!_planDraft) return;
   if (_planDraft.has(idx)) _planDraft.delete(idx);
-  else _planDraft.add(idx);
+  else _planDraft.set(idx, trainingTimes[idx] || '18:00');
   _renderPlanModal();
 }
 window.planToggleDay = planToggleDay;
+
+// Changement d'heure : met \u00E0 jour le draft sans re-render (garde le focus).
+function planSetTime(idx, value) {
+  if (_planDraft && _planDraft.has(idx) && value) _planDraft.set(idx, value);
+}
+window.planSetTime = planSetTime;
 
 function _renderPlanModal() {
   var wp = _getWeekPlan();
@@ -11656,8 +11700,8 @@ function _renderPlanModal() {
       }
     } catch(e) {}
     freqEl.innerHTML = need > 0
-      ? 'Ton programme ' + (pname ? '<strong style="color:var(--text)">' + pname + '</strong> ' : '') + 'demande <strong style="color:var(--gold)">' + need + ' s\u00e9ances / semaine</strong>. Choisis ' + need + ' jour' + (need > 1 ? 's' : '') + '.'
-      : 'Choisis les jours o\u00F9 tu veux t\'entra\u00EEner cette semaine.';
+      ? 'Ton programme ' + (pname ? '<strong style="color:var(--text)">' + pname + '</strong> ' : '') + 'demande <strong style="color:var(--gold)">' + need + ' s\u00e9ances / semaine</strong>. Choisis ' + need + ' jour' + (need > 1 ? 's' : '') + ' et leur heure.'
+      : 'Choisis les jours o\u00F9 tu veux t\'entra\u00EEner et leur heure.';
   }
 
   var daysEl = document.getElementById('planModalDays');
@@ -11665,11 +11709,20 @@ function _renderPlanModal() {
     var h = '';
     for (var i = 0; i < 7; i++) {
       var on = _planDraft && _planDraft.has(i);
-      h += '<div onclick="planToggleDay(' + i + ')" style="aspect-ratio:1;display:flex;align-items:center;justify-content:center;border-radius:12px;cursor:pointer;font-weight:800;font-size:13px;box-sizing:border-box;'
-        + (on
-            ? 'background:var(--gold);color:var(--navy);border:2px solid var(--gold)'
-            : 'background:var(--surface);color:var(--text2);border:2px solid var(--border2)')
-        + '">' + _DAY_LETTER[i] + '</div>';
+      var t = on ? _planDraft.get(i) : '';
+      h += '<div onclick="planToggleDay(' + i + ')" style="display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:12px;cursor:pointer;margin-bottom:6px;box-sizing:border-box;'
+        + (on ? 'background:rgba(197,164,78,.12);border:1.5px solid var(--gold)' : 'background:var(--surface);border:1.5px solid var(--border2)')
+        + '">';
+      h += '<div style="flex:0 0 22px;width:22px;height:22px;border-radius:6px;display:flex;align-items:center;justify-content:center;box-sizing:border-box;'
+        + (on ? 'background:var(--gold);color:var(--navy);font-weight:800;font-size:13px' : 'border:2px solid var(--border2)')
+        + '">' + (on ? '\u2713' : '') + '</div>';
+      h += '<div style="flex:1;font-size:14px;font-weight:700;color:' + (on ? 'var(--text)' : 'var(--text2)') + '">' + _PLAN_DAY_NAMES[i] + '</div>';
+      if (on) {
+        h += '<input type="time" value="' + t + '" onclick="event.stopPropagation()" onchange="planSetTime(' + i + ',this.value)" style="background:var(--bg);border:1px solid var(--border2);border-radius:8px;color:var(--text);font-family:\'Outfit\',sans-serif;font-size:13px;font-weight:700;padding:6px 8px">';
+      } else {
+        h += '<div style="font-size:12px;color:var(--muted)">\u2014</div>';
+      }
+      h += '</div>';
     }
     daysEl.innerHTML = h;
   }
@@ -11701,7 +11754,13 @@ function confirmPlan() {
   }
   if (typeof trainingDays !== 'undefined') {
     trainingDays.clear();
-    (_planDraft || new Set()).forEach(function(d){ trainingDays.add(d); });
+    trainingTimes = {};
+    if (_planDraft) {
+      _planDraft.forEach(function(time, dayIdx){
+        trainingDays.add(dayIdx);
+        trainingTimes[dayIdx] = time || '18:00';
+      });
+    }
   }
   try { saveData(); } catch(e) {}
   closePlanModal();
