@@ -3841,7 +3841,7 @@ body.test-mode #testSkipBar{display:flex}
     <div class="si-right">→</div>
   </div>
 
-  <div class="setting-item" onclick="alert('Questionnaire MENER — Identifier ton pilier faible')">
+  <div class="setting-item" onclick="openMenerQuiz()">
     <div class="si-left"><div class="si-icon">📋</div><div><div class="si-text">Questionnaire MENER</div><div class="si-sub">Identifier ton pilier le plus faible</div></div></div>
     <div class="si-right">→</div>
   </div>
@@ -4392,6 +4392,18 @@ body.test-mode #testSkipBar{display:flex}
     <button id="rmAddFavBtn" class="rm-add-btn" onclick="toggleCurrentRecipeFavorite()" style="background:linear-gradient(135deg,var(--gold),#D4B86A);color:var(--navy);margin-bottom:8px">⭐ Ajouter aux favoris (+ liste de courses)</button>
     <button class="rm-add-btn" onclick="addRecipeToJournal()" style="background:var(--surface2);color:var(--text);border:1.5px solid var(--border)">+ Ajouter au journal du jour</button>
   </div>
+</div>
+
+<!-- ═══ QUESTIONNAIRE MENER — overlay plein écran ═══ -->
+<div id="menerQuizOverlay" style="display:none;position:fixed;inset:0;background:var(--bg);z-index:9550;flex-direction:column">
+  <div style="display:flex;align-items:center;justify-content:space-between;padding:16px 18px;border-bottom:1px solid var(--border);background:var(--surface);flex-shrink:0">
+    <div>
+      <div style="font-family:'Bebas Neue',sans-serif;font-size:18px;color:var(--text);letter-spacing:1.5px">QUESTIONNAIRE MENER</div>
+      <div style="font-size:10px;color:var(--muted);margin-top:1px">Identifie ton pilier le plus faible</div>
+    </div>
+    <button onclick="closeMenerQuiz()" style="width:38px;height:38px;border-radius:50%;background:var(--surface2);border:1px solid var(--border);color:var(--text2);font-size:17px;cursor:pointer;font-family:'Outfit',sans-serif">✕</button>
+  </div>
+  <div id="menerQuizBody" style="flex:1;overflow-y:auto;padding:18px 16px 24px"></div>
 </div>
 
 <!-- ═══ ACCÈS POST-LIVRE — modal de saisie code/question ═══ -->
@@ -8639,6 +8651,228 @@ function _backToPhaseV2() {
   _renderPhaseBody(p, window._progV2State.phaseIdx);
   var v = document.getElementById('vTrain'); if (v) v.scrollTop = 0;
 }
+
+// ═══════════════════════════════════════════════════
+// QUESTIONNAIRE MENER — identifie le pilier le plus faible
+// Reproduit le form Tally VL00Wl : 5 piliers × 5 questions,
+// options notées 1→4 (pire→meilleur). Score /20 par pilier.
+// ═══════════════════════════════════════════════════
+var MENER_QUIZ = {
+  pillars: [
+    { key:'mental',       name:'Mental',       icon:'🧠', advice:"Travaille ta tête : visualisation avant chaque séance, accepte les plateaux, analyse tes échecs au lieu de les subir." },
+    { key:'engagement',   name:'Engagement',   icon:'🤝', advice:"Trouve un partenaire de résultats, écris tes objectifs avec un plan, tiens tes RDV avec toi-même comme avec un autre." },
+    { key:'nutrition',    name:'Nutrition',    icon:'🥗', advice:"Structure tes repas à horaires fixes, bois 2L+ d'eau, fruits/légumes chaque jour, coupe le fast-food." },
+    { key:'entrainement', name:'Entraînement', icon:'🏋️', advice:"Suis un programme structuré à la lettre, note tes performances à chaque séance, monte l'intensité." },
+    { key:'recuperation', name:'Récupération', icon:'😴', advice:"Dors 8h, étire-toi après chaque séance, prends 2 jours de repos complets, gère ton stress." }
+  ],
+  questions: [
+    { p:'mental', q:"Quand tu te fixes un objectif difficile, que se passe-t-il généralement ?", o:["J'abandonne rapidement si je ne vois pas de résultats","Je tiens quelques semaines puis j'abandonne","Je tiens plusieurs mois mais j'abandonne avant la fin","Je vais jusqu'au bout, quoi qu'il arrive"] },
+    { p:'mental', q:"Avant un entraînement ou une compétition importante, comment te sens-tu ?", o:["Stressé, anxieux, j'ai envie d'annuler","Nerveux mais je fais quand même","Concentré, un peu de stress positif","Confiant, excité, prêt à tout donner"] },
+    { p:'mental', q:"Quand tu échoues à une tâche ou un objectif, quelle est ta réaction ?", o:["Je me décourage complètement et j'arrête","Je suis déçu et j'ai du mal à recommencer","Je suis déçu mais je recommence après quelques jours","J'analyse l'échec, j'apprends et je recommence immédiatement"] },
+    { p:'mental', q:"Comment gères-tu les plateaux (périodes sans progrès) ?", o:["Je perds motivation et j'arrête","Je continue sans conviction, en espérant que ça passe","Je reste patient et je fais confiance au processus","J'analyse, j'ajuste ma stratégie et je continue avec plus d'intensité"] },
+    { p:'mental', q:"Utilises-tu des techniques mentales (visualisation, méditation, affirmations) ?", o:["Jamais, je ne connais pas","Rarement, j'essaye parfois","Oui, 1-2 fois par semaine","Oui, quotidiennement ou avant chaque séance"] },
+    { p:'engagement', q:"Quand tu prends un engagement envers toi-même, que se passe-t-il ?", o:["Je ne tiens jamais mes engagements","Je tiens 1-2 semaines puis j'arrête","Je tiens plusieurs semaines mais pas sur la durée","Je respecte mes engagements jusqu'au bout"] },
+    { p:'engagement', q:"As-tu un partenaire de résultats, un coach, ou quelqu'un à qui tu rends des comptes ?", o:["Non, personne. Je fais tout seul","J'ai essayé mais ça n'a pas marché","Oui, mais je ne lui rends pas vraiment de comptes","Oui, je lui rends des comptes chaque semaine"] },
+    { p:'engagement', q:"Combien de programmes d'entraînement as-tu commencés sans les finir ?", o:["Plus de 5 programmes abandonnés","3-4 programmes abandonnés","1-2 programmes abandonnés","Aucun ou presque, je finis ce que je commence"] },
+    { p:'engagement', q:"Si tu te fixes un RDV avec toi-même (entraînement à 17h), respectes-tu l'heure ?", o:["Non, j'arrive toujours en retard ou je saute","Parfois, mais souvent je décale ou annule","Oui, la plupart du temps je respecte","Toujours, aussi rigoureux qu'un RDV avec quelqu'un"] },
+    { p:'engagement', q:"Quand tu te fixes un objectif, l'écris-tu quelque part et fais-tu un plan ?", o:["Non, je garde tout dans ma tête","Parfois je note, mais je ne fais pas de plan","Oui, je note mes objectifs mais pas de plan détaillé","Oui, j'écris mes objectifs ET je fais un plan précis"] },
+    { p:'nutrition', q:"Comment décrirais-tu ton alimentation actuelle ?", o:["Très mauvaise (fast-food, plats préparés, sodas)","Moyenne (je mange ce que je trouve)","Correcte (je fais attention mais pas parfait)","Très bonne (équilibrée, variée, saine)"] },
+    { p:'nutrition', q:"Combien de litres d'eau bois-tu par jour en moyenne ?", o:["Moins de 1L","1 à 1,5L","1,5 à 2,5L","Plus de 2,5L"] },
+    { p:'nutrition', q:"Manges-tu des fruits et légumes tous les jours ?", o:["Jamais ou presque","Rarement (1-2 fois par semaine)","Oui, au moins 1 fois par jour","Oui, à chaque repas ou presque"] },
+    { p:'nutrition', q:"Manges-tu au fast-food ou des plats préparés industriels ?", o:["Très souvent (presque tous les jours)","Souvent (3-4 fois par semaine)","Parfois (1-2 fois par semaine)","Jamais ou rarement"] },
+    { p:'nutrition', q:"As-tu une structure dans tes repas (horaires fixes, nombre de repas) ?", o:["Aucune structure, je mange n'importe quand","Peu de structure, c'est irrégulier","Oui, j'ai des horaires à peu près fixes","Oui, repas à horaires très fixes tous les jours"] },
+    { p:'entrainement', q:"Combien de fois par semaine t'entraînes-tu actuellement ?", o:["0-1 fois par semaine","2-3 fois par semaine","4-5 fois par semaine","6 fois ou plus par semaine"] },
+    { p:'entrainement', q:"Suis-tu un programme d'entraînement structuré ou tu improvises ?", o:["J'improvise complètement à chaque séance","J'ai une idée générale mais pas de plan","Je suis un programme mais je le modifie souvent","Je suis un programme structuré à la lettre"] },
+    { p:'entrainement', q:"Notes-tu tes performances (poids, reps, temps, hauteur de saut) ?", o:["Jamais","Rarement, de temps en temps","Oui, mais pas systématiquement","Oui, à chaque séance sans exception"] },
+    { p:'entrainement', q:"Depuis combien de temps t'entraînes-tu de manière régulière ?", o:["Moins de 3 mois ou très irrégulier","3-6 mois de manière régulière","6-12 mois de manière régulière","Plus de 12 mois de manière régulière"] },
+    { p:'entrainement', q:"Quelle est ton intensité moyenne pendant les entraînements ?", o:["Faible, je ne me pousse pas vraiment","Moyenne, je fais l'effort sans aller au bout","Élevée, je me pousse mais je pourrais plus","Maximale, je donne 100% à chaque séance"] },
+    { p:'recuperation', q:"Combien d'heures dors-tu par nuit en moyenne ?", o:["Moins de 6h","6-7h","7-8h","Plus de 8h"] },
+    { p:'recuperation', q:"Fais-tu des étirements, du foam rolling ou de la mobilité après tes séances ?", o:["Jamais","Rarement (1 fois par semaine)","Parfois (2-3 fois par semaine)","Oui, systématiquement après chaque séance"] },
+    { p:'recuperation', q:"Comment gères-tu le stress au quotidien ?", o:["Mal, je suis constamment stressé","Moyen, le stress m'affecte beaucoup","Bien, j'ai quelques techniques pour gérer","Très bien, je maîtrise mon stress efficacement"] },
+    { p:'recuperation', q:"Prends-tu des jours de repos complets (sans entraînement) ?", o:["Non, je m'entraîne tous les jours","Parfois, mais pas régulièrement","Oui, 1 jour de repos par semaine","Oui, 2 jours ou plus de repos par semaine"] },
+    { p:'recuperation', q:"Utilises-tu des méthodes de récupération active (marche, vélo léger, yoga) ?", o:["Jamais","Rarement","Oui, 1-2 fois par semaine","Oui, régulièrement (3+ fois par semaine)"] }
+  ]
+};
+var _menerAnswers = {};
+
+function openMenerQuiz() {
+  var ov = document.getElementById('menerQuizOverlay');
+  if (!ov) return;
+  // Restaure des réponses sauvegardées si elles existent
+  try {
+    var prof = JSON.parse(localStorage.getItem('ah_profile') || '{}');
+    _menerAnswers = (prof.menerResult && prof.menerResult.answers) ? Object.assign({}, prof.menerResult.answers) : {};
+  } catch(e) { _menerAnswers = {}; }
+  ov.style.display = 'flex';
+  document.body.style.overflow = 'hidden';
+  // Reprend à la première question non répondue
+  _menerStep = 0;
+  for (var i = 0; i < MENER_QUIZ.questions.length; i++) {
+    if (!_menerAnswers[i]) { _menerStep = i; break; }
+  }
+  _menerRenderStep();
+}
+window.openMenerQuiz = openMenerQuiz;
+
+function closeMenerQuiz() {
+  var ov = document.getElementById('menerQuizOverlay');
+  if (ov) ov.style.display = 'none';
+  document.body.style.overflow = '';
+}
+window.closeMenerQuiz = closeMenerQuiz;
+
+var _menerStep = 0;
+var _menerAdvanceTimer = null;
+
+// Affiche UNE question plein écran (style Typeform, pas de scroll).
+function _menerRenderStep() {
+  var body = document.getElementById('menerQuizBody');
+  if (!body) return;
+  var total = MENER_QUIZ.questions.length;
+  if (_menerStep < 0) _menerStep = 0;
+  if (_menerStep >= total) { _menerShowResult(); return; }
+  var item = MENER_QUIZ.questions[_menerStep];
+  var pil = MENER_QUIZ.pillars.filter(function(p){ return p.key === item.p; })[0] || {};
+  var answered = _menerAnswers[_menerStep];
+  var pct = Math.round((_menerStep / total) * 100);
+
+  var h = '';
+  h += '<div style="display:flex;flex-direction:column;min-height:100%">';
+  // Barre de progression
+  h += '<div style="height:6px;background:var(--border);border-radius:4px;overflow:hidden;margin-bottom:14px"><div style="height:100%;width:' + pct + '%;background:var(--gold);transition:width .3s"></div></div>';
+  h += '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:22px">';
+  h += '<span style="font-size:11px;font-weight:800;color:var(--muted);letter-spacing:1.5px">QUESTION ' + (_menerStep+1) + ' / ' + total + '</span>';
+  h += '<span style="font-size:11px;font-weight:800;color:var(--gold);letter-spacing:1px">' + (pil.icon||'') + ' ' + (pil.name||'').toUpperCase() + '</span>';
+  h += '</div>';
+  // Question
+  h += '<div style="font-family:\'Bebas Neue\',sans-serif;font-size:23px;color:var(--text);line-height:1.22;letter-spacing:.5px;margin-bottom:22px">' + item.q + '</div>';
+  // Options (grandes cartes)
+  item.o.forEach(function(opt, oi) {
+    var val = oi + 1;
+    var sel = (answered === val);
+    h += '<div onclick="_menerPick(' + _menerStep + ',' + val + ')" style="display:flex;align-items:center;gap:12px;padding:15px 14px;margin-bottom:10px;border-radius:13px;cursor:pointer;border:2px solid ' + (sel?'var(--gold)':'var(--border)') + ';background:' + (sel?'rgba(197,164,78,.12)':'var(--surface)') + '">';
+    h += '<div style="width:28px;height:28px;border-radius:50%;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:800;border:2px solid ' + (sel?'var(--gold)':'var(--border2)') + ';background:' + (sel?'var(--gold)':'transparent') + ';color:' + (sel?'var(--navy)':'var(--muted)') + '">' + val + '</div>';
+    h += '<div style="font-size:13px;color:var(--text);line-height:1.4;font-weight:500">' + opt + '</div>';
+    h += '</div>';
+  });
+  // Spacer puis navigation
+  h += '<div style="flex:1;min-height:14px"></div>';
+  h += '<div style="display:flex;gap:8px;padding-top:8px">';
+  if (_menerStep > 0) {
+    h += '<button onclick="_menerPrev()" style="flex:1;padding:13px;background:var(--surface2);border:1px solid var(--border);border-radius:12px;font-family:\'Outfit\',sans-serif;font-size:13px;font-weight:700;color:var(--text2);cursor:pointer">← Précédent</button>';
+  }
+  if (answered) {
+    var lastQ = (_menerStep === total - 1);
+    h += '<button onclick="' + (lastQ ? '_menerShowResult()' : '_menerNext()') + '" style="flex:2;padding:13px;background:linear-gradient(135deg,var(--gold),#D4B86A);border:0;border-radius:12px;font-family:\'Outfit\',sans-serif;font-size:13px;font-weight:800;color:var(--navy);cursor:pointer">' + (lastQ ? 'Voir mon résultat 🔱' : 'Suivant →') + '</button>';
+  }
+  h += '</div>';
+  h += '</div>';
+  body.innerHTML = h;
+  body.scrollTop = 0;
+}
+
+function _menerNext() {
+  if (_menerStep < MENER_QUIZ.questions.length - 1) { _menerStep++; _menerRenderStep(); }
+  else _menerShowResult();
+}
+window._menerNext = _menerNext;
+
+function _menerPrev() {
+  if (_menerAdvanceTimer) { clearTimeout(_menerAdvanceTimer); _menerAdvanceTimer = null; }
+  if (_menerStep > 0) { _menerStep--; _menerRenderStep(); }
+}
+window._menerPrev = _menerPrev;
+
+function _menerPick(qi, val) {
+  _menerAnswers[qi] = val;
+  _menerRenderStep(); // re-render pour montrer la sélection
+  // Auto-avance vers la question suivante (sauf la dernière)
+  if (_menerAdvanceTimer) clearTimeout(_menerAdvanceTimer);
+  if (_menerStep < MENER_QUIZ.questions.length - 1) {
+    _menerAdvanceTimer = setTimeout(function(){ _menerAdvanceTimer = null; _menerNext(); }, 300);
+  }
+}
+window._menerPick = _menerPick;
+
+function _menerShowResult() {
+  var total = MENER_QUIZ.questions.length;
+  if (Object.keys(_menerAnswers).length < total) {
+    if (typeof showToast === 'function') showToast('Réponds à toutes les questions d\'abord.', 'info');
+    return;
+  }
+  // Score par pilier
+  var scores = {};
+  MENER_QUIZ.pillars.forEach(function(p){ scores[p.key] = { sum:0, count:0 }; });
+  MENER_QUIZ.questions.forEach(function(item, qi) {
+    var s = scores[item.p];
+    s.sum += (_menerAnswers[qi] || 0);
+    s.count++;
+  });
+  var ranked = MENER_QUIZ.pillars.map(function(p){
+    var s = scores[p.key];
+    var max = s.count * 4;
+    return { key:p.key, name:p.name, icon:p.icon, advice:p.advice, score:s.sum, max:max, pct:Math.round((s.sum/max)*100) };
+  }).sort(function(a,b){ return a.pct - b.pct; });
+  var weakest = ranked[0];
+  var totalScore = ranked.reduce(function(acc,r){ return acc + r.score; }, 0);
+  var totalMax = ranked.reduce(function(acc,r){ return acc + r.max; }, 0);
+
+  // Sauvegarde dans ah_profile
+  try {
+    var prof = JSON.parse(localStorage.getItem('ah_profile') || '{}');
+    prof.menerResult = {
+      answers: _menerAnswers,
+      weakestPillar: weakest.key,
+      scores: ranked.map(function(r){ return { key:r.key, score:r.score, max:r.max }; }),
+      completedAt: new Date().toISOString()
+    };
+    localStorage.setItem('ah_profile', JSON.stringify(prof));
+    if (typeof fbSaveProfile === 'function') fbSaveProfile();
+  } catch(e) {}
+
+  // Rendu résultat
+  var body = document.getElementById('menerQuizBody');
+  if (!body) return;
+  var h = '';
+  h += '<div style="text-align:center;margin-bottom:18px">';
+  h += '<div style="font-size:40px">' + weakest.icon + '</div>';
+  h += '<div style="font-size:11px;color:var(--muted);letter-spacing:2px;text-transform:uppercase;margin-top:6px">Ton pilier le plus faible</div>';
+  h += '<div style="font-family:\'Bebas Neue\',sans-serif;font-size:30px;color:var(--gold);letter-spacing:2px;line-height:1.1">' + weakest.name.toUpperCase() + '</div>';
+  h += '<div style="font-size:13px;color:var(--text);font-weight:700;margin-top:2px">' + weakest.score + ' / ' + weakest.max + '</div>';
+  h += '</div>';
+
+  h += '<div style="background:rgba(239,68,68,.08);border-left:3px solid #EF4444;border-radius:0 10px 10px 0;padding:12px 14px;margin-bottom:18px">';
+  h += '<div style="font-size:10px;color:#EF4444;font-weight:800;letter-spacing:1.5px;margin-bottom:5px">🎯 TON FOCUS PRIORITAIRE</div>';
+  h += '<div style="font-size:12px;color:var(--text2);line-height:1.55">' + weakest.advice + '</div>';
+  h += '</div>';
+
+  h += '<div style="font-size:10px;color:var(--muted);font-weight:800;letter-spacing:1.5px;margin-bottom:10px">📊 TES 5 PILIERS</div>';
+  ranked.slice().sort(function(a,b){
+    // ordre MENER fixe pour l'affichage
+    var order = ['mental','engagement','nutrition','entrainement','recuperation'];
+    return order.indexOf(a.key) - order.indexOf(b.key);
+  }).forEach(function(r) {
+    var isWeak = (r.key === weakest.key);
+    var col = isWeak ? '#EF4444' : (r.pct >= 75 ? '#10B981' : 'var(--gold)');
+    h += '<div style="margin-bottom:11px">';
+    h += '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">';
+    h += '<span style="font-size:12px;font-weight:700;color:var(--text)">' + r.icon + ' ' + r.name + (isWeak?' <span style="font-size:9px;color:#EF4444;font-weight:800">— À TRAVAILLER</span>':'') + '</span>';
+    h += '<span style="font-size:12px;font-weight:800;color:' + col + '">' + r.score + '/' + r.max + '</span>';
+    h += '</div>';
+    h += '<div style="height:7px;background:var(--border);border-radius:4px;overflow:hidden"><div style="height:100%;width:' + r.pct + '%;background:' + col + '"></div></div>';
+    h += '</div>';
+  });
+
+  h += '<div style="text-align:center;font-size:12px;color:var(--muted);margin:16px 0 18px">Score global MENER : <strong style="color:var(--text)">' + totalScore + ' / ' + totalMax + '</strong></div>';
+
+  h += '<button onclick="_menerStep=0;_menerRenderStep()" style="width:100%;padding:12px;background:var(--surface2);border:1px solid var(--border);border-radius:12px;font-family:\'Outfit\',sans-serif;font-size:13px;font-weight:700;color:var(--text2);cursor:pointer;margin-bottom:8px">← Revoir mes réponses</button>';
+  h += '<button onclick="closeMenerQuiz()" style="width:100%;padding:14px;background:linear-gradient(135deg,var(--gold),#D4B86A);border:0;border-radius:12px;font-family:\'Outfit\',sans-serif;font-size:14px;font-weight:800;color:var(--navy);cursor:pointer">Terminé</button>';
+
+  body.innerHTML = h;
+  body.scrollTop = 0;
+  if (typeof showToast === 'function') showToast('Pilier faible identifié : ' + weakest.name, 'ok');
+}
+window._menerShowResult = _menerShowResult;
 
 const progPhases={ea:{name:'ELITE ATHLETE',obj:'Explosivité globale',phases:[[{name:'Échauffement',detail:'5 min'},{name:'Activation fessiers',detail:'2×12'},{name:'Squat progressif',detail:'3×8 (60%)'},{name:'Pogo Jumps',detail:'3×10'},{name:'Sprint 10m',detail:'5 passages'},{name:'Planche',detail:'3×30s'}],[{name:'Back Squat',detail:'4×5 (75%)'},{name:'Box Jump',detail:'4×5'},{name:'Hip Thrust',detail:'3×8 (70%)'},{name:'Sprint 30m',detail:'4 passages'},{name:'Depth Jump',detail:'3×3'}],[{name:'Power Clean',detail:'5×3 (85%)'},{name:'Back Squat',detail:'5×3 (85%)'},{name:'Depth Jump',detail:'4×3'},{name:'Sprint 60m',detail:'3 passages'},{name:'Box Jump Max',detail:'3×3'}]]},vd:{name:'VERTICAL DUNK',obj:'Dunker + Détente max',phases:[[{name:'CMJ',detail:'5×3'},{name:'Squat Jump',detail:'4×5'},{name:'Pogo Jumps',detail:'3×15'}],[{name:'Depth Jump',detail:'4×3'},{name:'Back Squat',detail:'4×5 (80%)'},{name:'Approach Jump',detail:'5×3'}],[{name:'Box Jump Max',detail:'5×2'},{name:'Single Leg Bound',detail:'3×5/jambe'},{name:'Sprint 10m',detail:'6 passages'}]]},mt:{name:'MICROTRAINING',obj:'Discipline et habitudes',phases:[[{name:'Squat Jump',detail:'3×5'},{name:'Pompes explosives',detail:'3×8'},{name:'Planche',detail:'3×30s'}],[{name:'Pogo Jumps',detail:'3×10'},{name:'V-Ups',detail:'3×12'},{name:'Skip A',detail:'3×15'}],[{name:'Box Jump',detail:'3×5'},{name:'Sprint 10m',detail:'4 passages'}]]},tri:{name:'TRIPHASIQUE',obj:'Force sans salle',phases:[[{name:'Squat PDC',detail:'4×15'},{name:'Fentes',detail:'3×10/jambe'},{name:'Pompes',detail:'4×12'}],[{name:'Squat Jump',detail:'4×8'},{name:'Single Leg Bound',detail:'3×6/jambe'}],[{name:'Pogo Jumps',detail:'4×12'},{name:'Sprint 10m',detail:'5 passages'}]]},se:{name:'SHRED EXPLOSE',obj:'Perdre + Exploser',phases:[[{name:'Circuit cardio',detail:'15 min'},{name:'Squat',detail:'3×12'},{name:'Pogo Jumps',detail:'3×15'}],[{name:'HIIT Sprint',detail:'10×10m'},{name:'Back Squat',detail:'4×8 (65%)'},{name:'Box Jump',detail:'3×8'}],[{name:'Sprint 30m',detail:'6 passages'},{name:'Depth Jump',detail:'3×3'}]]},ep:{name:'EXPLOSE+',obj:'Transformation totale',phases:[[{name:'Questionnaire MENER',detail:'Identifier pilier faible'},{name:'15 engagements',detail:'4 semaines'}],[{name:'Back Squat',detail:'5×5 (80%)'},{name:'Power Clean',detail:'4×3'},{name:'Sprint 30m',detail:'5 passages'}],[{name:'Depth Jump',detail:'5×3'},{name:'Back Squat',detail:'5×3 (90%)'},{name:'Sprint 60m',detail:'4 passages'}]]}};
 function showPg(id){document.querySelectorAll('.pg').forEach(p=>p.classList.remove('on'));document.querySelectorAll('.sub-tab').forEach(t=>t.classList.remove('on'));({lib:'pgLib',prog:'pgProg',builder:'pgBuilder'})[id]&&document.getElementById(({lib:'pgLib',prog:'pgProg',builder:'pgBuilder'})[id]).classList.add('on');event.currentTarget.classList.add('on');var __v=document.getElementById('vTrain');if(__v)__v.scrollTop=0;if(id==='lib'){try{_libCloseDetail();}catch(e){}try{_libRender('all');}catch(e){}}if(id==='prog'){try{closeProg();}catch(e){}try{updateProgrammeLocks();}catch(e){}}}
@@ -14722,6 +14956,8 @@ function scanSaveToJournal() {
 
   alert('✓ Repas enregistré dans ton journal.\n\n' + Math.round(totals.cal) + ' kcal · ' + Math.round(totals.p) + 'g prot');
   scanReset();
+  // Rafraîchit le journal + la barre "Macros du jour" immédiatement
+  try { renderJournalToday(); } catch(e) {}
 }
 
 function scanFileToBase64(file) {
@@ -14786,6 +15022,11 @@ function renderJournalToday() {
   var $ = function(id){ return document.getElementById(id); };
   if ($('jCalRemaining')) $('jCalRemaining').textContent = Math.round(remaining);
   if ($('jCalConsumed')) $('jCalConsumed').textContent = Math.round(totals.cal);
+  // Barre "Macros du jour" en haut de l'onglet Nutrition — reflète le consommé
+  if ($('nutri-kcal'))  $('nutri-kcal').textContent  = Math.round(totals.cal);
+  if ($('nutri-prot'))  $('nutri-prot').textContent  = Math.round(totals.p) + 'g';
+  if ($('nutri-carbs')) $('nutri-carbs').textContent = Math.round(totals.g) + 'g';
+  if ($('nutri-fat'))   $('nutri-fat').textContent   = Math.round(totals.l) + 'g';
   if ($('jRdiTotal')) $('jRdiTotal').textContent = rdi;
   if ($('jRdiPct')) $('jRdiPct').textContent = Math.round(pct) + '% du RDI';
   if ($('jProgressBar')) $('jProgressBar').style.width = Math.min(100, pct) + '%';
