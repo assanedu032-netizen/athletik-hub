@@ -3370,7 +3370,7 @@ body.test-mode #testSkipBar{display:flex}
     </div>
 
     <!-- Active session -->
-    <div id="liveSession" class="hidden">
+    <div id="liveSessionLegacy" class="hidden">
       <div class="live-header">
         <div class="lh-step" id="liveStep">EXERCICE 1 / 4</div>
         <div class="lh-name" id="liveName">BOX JUMPS</div>
@@ -3452,46 +3452,13 @@ body.test-mode #testSkipBar{display:flex}
 
 <div id="vTrain" class="view">
 <div class="main" id="mainScroll">
-<div class="pg-head"><div class="pg-title">TRAIN</div><div class="pg-sub">Librairie, programmes et construction.</div></div>
-<div class="sub-tabs"><div class="sub-tab on" onclick="showPg('lib')">Librairie</div><div class="sub-tab" onclick="showPg('prog')">Programmes</div><div class="sub-tab" onclick="showPg('builder')">Builder</div></div>
+<div class="pg-head"><div class="pg-title">TRAIN</div><div class="pg-sub">Programmes, librairie et construction.</div></div>
+<div class="sub-tabs"><div class="sub-tab on" onclick="showPg('prog')">Programmes</div><div class="sub-tab" onclick="showPg('lib')">Librairie</div><div class="sub-tab" onclick="showPg('builder')">Builder</div></div>
 
-<div id="pgLib" class="pg on" style="position:relative;overflow:hidden">
+<div id="pgLib" class="pg" style="position:relative;overflow:hidden">
 
 <!-- Search bar -->
 <div class="search-wrap"><div class="search-ic">🔍</div><input class="search-input" id="libSearch" placeholder="Rechercher un exercice..." oninput="_libSearchInput()"></div>
-
-<!-- Smart filters (effort + équipement) -->
-<div class="lib-filters" id="libFilters">
-  <div class="lib-filter-grp">
-    <div class="lib-filter-label">Type d'effort</div>
-    <div class="lib-chips" id="libChipsEffort"></div>
-  </div>
-  <div class="lib-filter-grp">
-    <div class="lib-filter-label">Équipement</div>
-    <div class="lib-chips" id="libChipsEquip"></div>
-  </div>
-  <div class="lib-filter-actions">
-    <span class="lib-filter-count" id="libFilterCount">Aucun filtre actif</span>
-    <button class="lib-filter-clear" onclick="clearLibFilters()">Réinitialiser</button>
-  </div>
-</div>
-
-<!-- Category chips -->
-<div class="lib-chips" id="libChips">
-  <div class="lib-chip" id="libChipMyProgram" onclick="_libFilter(this,'myprogram')" style="display:none">🎯 Mon programme</div>
-  <div class="lib-chip on" onclick="_libFilter(this,'all')">⚡ Tous (198)</div>
-  <div class="lib-chip" onclick="_libFilter(this,'echauf')">🔥 Échauffement</div>
-  <div class="lib-chip" onclick="_libFilter(this,'mobi')">🧘 Mobilité</div>
-  <div class="lib-chip" onclick="_libFilter(this,'proprio')">⚖️ Proprio</div>
-  <div class="lib-chip" onclick="_libFilter(this,'plio')">📈 Pliométrie</div>
-  <div class="lib-chip" onclick="_libFilter(this,'force_pdc')">💪 Force PDC</div>
-  <div class="lib-chip" onclick="_libFilter(this,'force_charge')">🏋️ Force Charges</div>
-  <div class="lib-chip" onclick="_libFilter(this,'gainage')">🧱 Gainage</div>
-  <div class="lib-chip" onclick="_libFilter(this,'rotation')">🔁 Rotation</div>
-  <div class="lib-chip" onclick="_libFilter(this,'pied')">👟 Pied</div>
-  <div class="lib-chip" onclick="_libFilter(this,'sprint')">🏃 Sprint</div>
-  <div class="lib-chip" onclick="_libFilter(this,'recup')">💆 Récup</div>
-</div>
 
 <!-- Exercise grid (YouTube-style 2 col) -->
 <div class="yt-grid" id="libYtGrid"></div>
@@ -3521,7 +3488,7 @@ body.test-mode #testSkipBar{display:flex}
 
 </div>
 
-<div id="pgProg" class="pg">
+<div id="pgProg" class="pg on">
 <div id="progList" style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
 <div onclick="openProg('ea')" style="position:relative;aspect-ratio:4/5;border-radius:14px;overflow:hidden;cursor:pointer;opacity:1;touch-action:manipulation;border:1.5px solid var(--border)">
   <img src="images/elite-athlete.png" style="width:100%;height:100%;object-fit:cover;object-position:center top" onerror="this.style.background='linear-gradient(135deg,#1B2A4A,#060C18)';this.src=''">
@@ -6058,8 +6025,18 @@ function launchTodaySession() {
   // Jour de la semaine (0=Lun, 6=Dim)
   var dayN = new Date().getDay();
   var tdDay = dayN === 0 ? 6 : dayN - 1;
-  var todayMap = phase.weekDays && phase.weekDays[tdDay];
-  var sessKey = todayMap && todayMap.s;
+  var sessKey;
+  // Si le client a choisi ses jours → planning perso ; sinon semaine type figée
+  if (typeof trainingDays !== 'undefined' && trainingDays.size > 0) {
+    try {
+      var wp = _getWeekPlan();
+      sessKey = wp.plan[tdDay] && wp.plan[tdDay].sessKey;
+    } catch(e) {}
+  }
+  if (!sessKey) {
+    var todayMap = phase.weekDays && phase.weekDays[tdDay];
+    sessKey = todayMap && todayMap.s;
+  }
 
   // Repos ou jour non programmé : pas de séance
   if (!sessKey || sessKey === 'rest') {
@@ -6191,6 +6168,7 @@ document.addEventListener('DOMContentLoaded', function() {
           var el = document.querySelector('[data-day="'+d+'"]');
           if (el) el.classList.add('on');
         });
+        try { _updateCalSummary(); } catch(e) {}
         try { initSATv7(); } catch(e) {}
         try { renderUserData(); } catch(e) {}
         try { renderActiveHabits(); } catch(e) {}
@@ -6325,7 +6303,7 @@ function switchTab(tab){
   }
   // Init Scan check API key + restore form
   if (tab === 'nutrition') { try { scanCheckApiKey(); scanUpdateMacros(); renderJournalToday(); } catch(e) {} }
-  if (tab === 'moi') { try { apiKeyRestore(); fbRefreshAccountSection(window.fbUser); renderBadges(); refreshAccessTierUI(); renderProgression(); } catch(e) {} }
+  if (tab === 'moi') { try { apiKeyRestore(); fbRefreshAccountSection(window.fbUser); renderBadges(); refreshAccessTierUI(); renderProgression(); _updateCalSummary(); } catch(e) {} }
   // Refresh Athletik Score on Home
   if (tab === 'home') { try { renderAthletikScore(); } catch(e) { console.warn('renderAthletikScore error:', e); } }
 }
@@ -6758,6 +6736,14 @@ function renderHomeAgenda() {
     ];
   }
 
+  // Si le client a choisi ses jours d'entraînement → on mappe les séances
+  // du programme dessus (planning personnalisé), au lieu de la semaine type figée.
+  if (typeof trainingDays !== 'undefined' && trainingDays.size > 0) {
+    try {
+      weekDays = _getWeekPlan().plan.map(function(p){ return { day: p.day, key: p.sessKey }; });
+    } catch(e) {}
+  }
+
   // Get completed sessions from history
   var doneDays = {};
   try {
@@ -6946,7 +6932,13 @@ function calculateSAT() {
   const dl = parseFloat(document.getElementById('satDL').value) || 0;
   const ht = parseFloat(document.getElementById('satHT').value) || 0;
   const dc = parseFloat(document.getElementById('satDC').value) || 0;
-  const sprintTime = _bestSprintTime('satSprint', 5); // meilleur des 5 essais
+  var sprintTime = _bestSprintTime('satSprint', 5); // meilleur des 5 essais
+  // Fallback : le SAT pas-à-pas stocke le sprint dans le champ unique
+  // satSprintTime (et non satSprint1..5). Sans ce fallback, le sprint
+  // ressort à 0 et n'apparaît pas dans le score.
+  if (sprintTime <= 0) {
+    sprintTime = parseFloat((document.getElementById('satSprintTime') || {}).value) || 0;
+  }
   const tTest = _bestSprintTime('satTTest', 5);       // meilleur des 5 essais
   const fms = parseFloat(document.getElementById('satFMS').value) || 0;
 
@@ -11576,18 +11568,68 @@ function _clearMealPlanShoppingList() {
   renderMealPlanShoppingList();
 }
 
-// CALENDRIER
+// CALENDRIER \u2014 jours d'entra\u00EEnement choisis par le client
 var trainingDays = new Set();
+
+// Plan de la semaine : mappe les s\u00e9ances de la phase courante du programme
+// sur les jours d'entra\u00EEnement choisis (option A \u2014 le programme impose le
+// nombre de s\u00e9ances, le client choisit les jours). Retourne 7 jours.
+function _getWeekPlan() {
+  var days = ['Lun','Mar','Mer','Jeu','Ven','Sam','Dim'];
+  var prof = {};
+  try { prof = JSON.parse(localStorage.getItem('ah_profile') || '{}'); } catch(e) {}
+  var progKey = prof.programKey || (typeof user !== 'undefined' ? user.programKey : null);
+  var prog = (progKey && typeof PROGRAMS_V2 !== 'undefined') ? PROGRAMS_V2[progKey] : null;
+  var sessionKeys = [], phase = null;
+  if (prog && prog.phases) {
+    var pIdx = 0;
+    try { if (typeof getProgramProgress === 'function') pIdx = getProgramProgress(progKey).phaseIdx || 0; } catch(e) {}
+    phase = prog.phases[pIdx] || prog.phases[0];
+    if (phase && typeof _requiredSessionKeys === 'function') sessionKeys = _requiredSessionKeys(phase);
+  }
+  var chosen = Array.from(trainingDays).sort(function(a,b){ return a-b; });
+  var plan = [], si = 0;
+  for (var i = 0; i < 7; i++) {
+    var sessKey = 'rest';
+    if (chosen.indexOf(i) > -1 && si < sessionKeys.length) { sessKey = sessionKeys[si]; si++; }
+    plan.push({ day: days[i], idx: i, sessKey: sessKey });
+  }
+  return { plan: plan, phase: phase, progKey: progKey, sessionCount: sessionKeys.length, chosenCount: chosen.length };
+}
+window._getWeekPlan = _getWeekPlan;
+
+// Met \u00E0 jour le r\u00e9sum\u00e9 du picker + valide le nombre de jours vs le programme.
+function _updateCalSummary() {
+  var el = document.getElementById('calSummary');
+  if (!el) return;
+  var names = ['Lun','Mar','Mer','Jeu','Ven','Sam','Dim'];
+  var wp = _getWeekPlan();
+  var need = wp.sessionCount, have = trainingDays.size;
+  if (have === 0) {
+    el.innerHTML = need > 0
+      ? 'Aucun jour s\u00e9lectionn\u00e9 \u2014 ton programme demande <strong style="color:var(--gold)">' + need + ' s\u00e9ances / semaine</strong>'
+      : 'Aucun jour s\u00e9lectionn\u00e9';
+    return;
+  }
+  var line = '\uD83D\uDCC5 ' + Array.from(trainingDays).sort(function(a,b){return a-b;}).map(function(d){return names[d];}).join(', ');
+  if (need > 0) {
+    if (have === need) line += ' \u2014 <strong style="color:#10B981">\u2713 ' + need + ' s\u00e9ances/sem</strong>';
+    else if (have < need) line += ' \u2014 <strong style="color:#F59E0B">\u26A0\uFE0F ajoute ' + (need-have) + ' jour' + (need-have>1?'s':'') + ' (' + need + ' s\u00e9ances)</strong>';
+    else line += ' \u2014 <strong style="color:#F59E0B">\u26A0\uFE0F ' + (have-need) + ' jour' + (have-need>1?'s':'') + ' en trop (' + need + ' s\u00e9ances)</strong>';
+  }
+  el.innerHTML = line;
+}
+window._updateCalSummary = _updateCalSummary;
+
 function toggleDay(el) {
   var d = parseInt(el.dataset.day);
-  if (trainingDays.has(d)) { trainingDays.delete(d); el.classList.remove("on"); }
-  else { trainingDays.add(d); el.classList.add("on"); }
-  var names = ["Lun","Mar","Mer","Jeu","Ven","Sam","Dim"];
-  var el2 = document.getElementById("calSummary");
-  if (!el2) return;
-  if (trainingDays.size === 0) { el2.textContent = "Aucun jour s\u00e9lectionn\u00e9"; return; }
-  el2.textContent = "\uD83D\uDCC5 " + Array.from(trainingDays).sort().map(function(d) { return names[d]; }).join(", ");
+  if (trainingDays.has(d)) { trainingDays.delete(d); el.classList.remove('on'); }
+  else { trainingDays.add(d); el.classList.add('on'); }
+  _updateCalSummary();
+  try { saveData(); } catch(e) {}
+  try { renderHomeAgenda(); } catch(e) {}
 }
+window.toggleDay = toggleDay;
 
 // HABITUDES MENER
 var MENER_HABITS = {
