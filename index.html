@@ -13419,10 +13419,18 @@ async function fbSignOut() {
     } catch(e) { console.warn('[SignOut] Firebase error:', e); }
   }
 
-  // 2. Vider TOUT le localStorage (pas juste les ah_*)
+  // 2. Vider le localStorage en CONSERVANT le profil du device.
+  //    Sans ça, l'utilisateur devait refaire tout l'onboarding à chaque
+  //    reconnexion (ah_profile effacé → l'app oublie programme/objectif et
+  //    renvoie sur obQ1 si la restauration Firestore échoue/tarde).
+  //    ah_onboarding_done n'est PAS conservé : la page post-déconnexion
+  //    affiche bien l'accueil ; mais ah_profile permet à la reconnexion de
+  //    router directement vers la Home (programKey / objectif déjà connus).
   try {
+    var _keepProfile = localStorage.getItem('ah_profile');
     localStorage.clear();
-    console.log('[SignOut] localStorage cleared');
+    if (_keepProfile) localStorage.setItem('ah_profile', _keepProfile);
+    console.log('[SignOut] localStorage cleared (profil conservé)');
   } catch(e) { console.warn('[SignOut] LocalStorage error:', e); }
 
   // 3. Vider sessionStorage aussi
