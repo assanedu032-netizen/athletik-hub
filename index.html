@@ -10336,14 +10336,14 @@ async function _registerFCMToken() {
     return null;
   }
   try {
-    var vapidKey = window.FCM_VAPID_KEY || null;
+    var vapidKey = (window.FCM_VAPID_KEY || '').trim() || null;
     if (!vapidKey) {
       // Tente de récupérer la clé publique depuis la Netlify function
       try {
         var r = await fetch('/.netlify/functions/notif-config');
         if (r.ok) {
           var j = await r.json();
-          vapidKey = j.vapidKey || null;
+          vapidKey = (j.vapidKey || '').trim() || null;
         }
       } catch(e) {}
     }
@@ -10351,6 +10351,14 @@ async function _registerFCMToken() {
       window._fcmLastError = 'Clé VAPID absente — variable FIREBASE_VAPID_KEY manquante sur Netlify.';
       console.warn('FCM VAPID key absente — notif push background désactivé. ' +
         'Définis FIREBASE_VAPID_KEY sur Netlify ou window.FCM_VAPID_KEY en local.');
+      return null;
+    }
+    // Une clé VAPID FCM valide fait ~87-88 caractères (base64url). Trop courte
+    // = variable mal copiée sur Netlify → autant le dire clairement.
+    if (vapidKey.length < 80) {
+      window._fcmLastError = 'Clé VAPID invalide (' + vapidKey.length +
+        ' caractères, ~88 attendus). Vérifie FIREBASE_VAPID_KEY sur Netlify.';
+      console.warn(window._fcmLastError);
       return null;
     }
     // Service Worker doit être enregistré à la racine
