@@ -3789,7 +3789,7 @@ body.test-mode #testSkipBar{display:flex}
 
   <div class="setting-item" onclick="toggleNotif()">
     <div class="si-left"><div class="si-icon">🔔</div><div><div class="si-text">Notifications</div><div class="si-sub">Rappels de Titan par WhatsApp-style</div></div></div>
-    <div class="toggle on" id="notifToggle"><div class="toggle-knob"></div></div>
+    <div class="toggle" id="notifToggle"><div class="toggle-knob"></div></div>
   </div>
 
   <!-- Test push notif (n'apparaît qu'après activation notif + FCM token) -->
@@ -6233,7 +6233,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
 
 const R={}, checks={q1:[],q2:[],q3:[]};
-let darkMode=false,notifOn=true,currentMode='full',satPhase='debut';
+let darkMode=false,notifOn=false,currentMode='full',satPhase='debut';
 let currentRPE=0,liveRPE=0,timerInterval=null,timerSeconds=120,timerRunning=false,timerTarget=120;
 let currentCat=null,currentCatData=[],currentFilter='all',currentProgKey=null;
 let conversationHistory=[],liveData=[],currentLiveEx=0;
@@ -10456,13 +10456,16 @@ function _showTitanNotif(title, body) {
   } catch(e) { console.warn('notif:', e); }
 }
 
-// Restore notif state on boot
+// Restore notif state on boot — le toggle reflète l'autorisation RÉELLE du
+// navigateur. Sinon il s'affichait ON sans permission accordée, et le 1er
+// tap le passait OFF au lieu de déclencher la demande d'autorisation.
 (function(){
   try {
-    if (localStorage.getItem('ah_notif_on') === '1' && 'Notification' in window && Notification.permission === 'granted') {
-      // Don't auto-enable on every page load, but resume the timers
-      setTimeout(_enableTitanReminders, 1500);
-    }
+    var granted = ('Notification' in window) && Notification.permission === 'granted';
+    notifOn = granted && localStorage.getItem('ah_notif_on') !== '0';
+    var tEl = document.getElementById('notifToggle');
+    if (tEl) tEl.classList.toggle('on', notifOn);
+    if (notifOn) setTimeout(_enableTitanReminders, 1500);
   } catch(e) {}
 })();
 
