@@ -10256,42 +10256,65 @@ function toggleDark() {
 }
 
 function toggleNotif() {
-  notifOn = !notifOn;
   var toggleEl = document.getElementById('notifToggle');
-  if (toggleEl) toggleEl.classList.toggle('on', notifOn);
+  if (!('Notification' in window)) {
+    alert('Les notifications ne sont pas supportées par ce navigateur.');
+    return;
+  }
+  // On lit la permission RÉELLE du navigateur — c'est elle qui décide,
+  // pas l'état visuel du bouton.
+  var perm = Notification.permission;
 
-  if (notifOn) {
-    // Request browser notification permission
-    if (!('Notification' in window)) {
-      alert('Les notifications ne sont pas supportées par ce navigateur.');
-      notifOn = false;
-      if (toggleEl) toggleEl.classList.remove('on');
-      return;
-    }
-    if (Notification.permission === 'default') {
-      Notification.requestPermission().then(function(perm){
-        if (perm !== 'granted') {
-          notifOn = false;
-          if (toggleEl) toggleEl.classList.remove('on');
-          alert('Permission refusée. Active les notifications dans les paramètres du navigateur pour recevoir les rappels.');
-        } else {
-          _registerFCMToken();
-          _enableTitanReminders();
-        }
-      });
-    } else if (Notification.permission === 'granted') {
+  // Déjà autorisé : on bascule juste le rappel local (on/off).
+  if (perm === 'granted') {
+    notifOn = !notifOn;
+    if (toggleEl) toggleEl.classList.toggle('on', notifOn);
+    try { localStorage.setItem('ah_notif_on', notifOn ? '1' : '0'); } catch(e) {}
+    if (notifOn) {
       _registerFCMToken();
       _enableTitanReminders();
+      if (typeof showToast === 'function') showToast('Notifications activées ✅', 'success');
     } else {
-      alert('Permission refusée. Va dans les paramètres du navigateur pour autoriser les notifications.');
+      _disableTitanReminders();
+      if (typeof showToast === 'function') showToast('Notifications désactivées', 'info');
+    }
+    return;
+  }
+
+  // Bloqué par le navigateur : aucune popup ne s'affichera, il faut
+  // réautoriser à la main dans les paramètres du site.
+  if (perm === 'denied') {
+    notifOn = false;
+    if (toggleEl) toggleEl.classList.remove('on');
+    try { localStorage.setItem('ah_notif_on', '0'); } catch(e) {}
+    alert('Les notifications sont BLOQUÉES par ton navigateur.\n\n' +
+      'Pour les réactiver sur Android Chrome :\n' +
+      '1. Touche l\'icône à gauche de l\'adresse du site (cadenas / réglages)\n' +
+      '2. Touche « Autorisations » puis « Notifications »\n' +
+      '3. Choisis « Autoriser »\n' +
+      '4. Recharge la page, puis réappuie sur ce bouton.');
+    return;
+  }
+
+  // perm === 'default' : on demande l'autorisation (popup du navigateur).
+  Notification.requestPermission().then(function(p){
+    if (p === 'granted') {
+      notifOn = true;
+      if (toggleEl) toggleEl.classList.add('on');
+      try { localStorage.setItem('ah_notif_on', '1'); } catch(e) {}
+      _registerFCMToken();
+      _enableTitanReminders();
+      if (typeof showToast === 'function') showToast('Notifications activées ✅', 'success');
+    } else {
       notifOn = false;
       if (toggleEl) toggleEl.classList.remove('on');
-      return;
+      try { localStorage.setItem('ah_notif_on', '0'); } catch(e) {}
+      alert('Tu n\'as pas autorisé les notifications. Réappuie sur le bouton pour réessayer.');
     }
-  } else {
-    _disableTitanReminders();
-  }
-  try { localStorage.setItem('ah_notif_on', notifOn ? '1' : '0'); } catch(e) {}
+  }).catch(function(){
+    notifOn = false;
+    if (toggleEl) toggleEl.classList.remove('on');
+  });
 }
 
 // ═══ FCM — Firebase Cloud Messaging ═══
