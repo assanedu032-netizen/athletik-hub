@@ -10483,6 +10483,10 @@ function toggleDark() {
   document.getElementById('darkToggle').classList.toggle('on', darkMode);
 }
 
+// Message affiché quand le push (FCM) n'est pas configuré ou échoue.
+// Volontairement simple et non alarmant : l'app fonctionne sans le push.
+var FCM_UNAVAILABLE_MSG = 'Les rappels ne sont pas encore disponibles. Vérifie la configuration Firebase.';
+
 async function toggleNotif() {
   var toggleEl = document.getElementById('notifToggle');
   if (!('Notification' in window)) {
@@ -10499,11 +10503,11 @@ async function toggleNotif() {
     if (toggleEl) toggleEl.classList.toggle('on', notifOn);
     try { localStorage.setItem('ah_notif_on', notifOn ? '1' : '0'); } catch(e) {}
     if (notifOn) {
-      _enableTitanReminders();
+      try { _enableTitanReminders(); } catch(e) {}
       var tk1 = await _registerFCMToken();
       if (typeof showToast === 'function') {
         if (tk1) showToast('Notifications activées ✅', 'success');
-        else showToast('Rappels activés. Push indisponible : ' + (window._fcmLastError || 'inconnu'), 'info');
+        else showToast(FCM_UNAVAILABLE_MSG, 'info');
       }
     } else {
       _disableTitanReminders();
@@ -10533,11 +10537,11 @@ async function toggleNotif() {
       notifOn = true;
       if (toggleEl) toggleEl.classList.add('on');
       try { localStorage.setItem('ah_notif_on', '1'); } catch(e) {}
-      _enableTitanReminders();
+      try { _enableTitanReminders(); } catch(e) {}
       var tk2 = await _registerFCMToken();
       if (typeof showToast === 'function') {
         if (tk2) showToast('Notifications activées ✅', 'success');
-        else showToast('Autorisé, mais push indisponible : ' + (window._fcmLastError || 'inconnu'), 'info');
+        else showToast(FCM_UNAVAILABLE_MSG, 'info');
       }
     } else {
       notifOn = false;
@@ -10633,7 +10637,8 @@ window.sendTestNotif = async function() {
     if (typeof showToast === 'function') showToast('Activation du push en cours…', 'info');
     var tok = await _registerFCMToken();
     if (!tok) {
-      if (typeof showToast === 'function') showToast('Push indisponible : ' + (window._fcmLastError || 'raison inconnue'), 'err');
+      console.warn('Test notif — push indisponible :', window._fcmLastError);
+      if (typeof showToast === 'function') showToast(FCM_UNAVAILABLE_MSG, 'info');
       return;
     }
     try { prof = JSON.parse(localStorage.getItem('ah_profile') || '{}'); } catch(e) {}
@@ -10652,10 +10657,12 @@ window.sendTestNotif = async function() {
     if (j.ok) {
       if (typeof showToast === 'function') showToast('Notif envoyée. Vérifie le centre de notif du téléphone.', 'ok');
     } else {
-      if (typeof showToast === 'function') showToast('Erreur : ' + (j.error || 'inconnue'), 'err');
+      console.warn('Test notif — send-notif a échoué :', j.error);
+      if (typeof showToast === 'function') showToast(FCM_UNAVAILABLE_MSG, 'info');
     }
   } catch(e) {
-    if (typeof showToast === 'function') showToast('Réseau indisponible.', 'err');
+    console.warn('Test notif — réseau indisponible :', e);
+    if (typeof showToast === 'function') showToast('Pas de connexion. Réessaie plus tard.', 'info');
   }
 };
 
