@@ -6797,12 +6797,14 @@ function renderHomeAgenda() {
 
 function homeAgendaClick(dayIdx, key) {
   if (key === 'rest') {
-    if (typeof toast === 'function') toast('Jour de repos — récupère bien.');
+    if (typeof showToast === 'function') showToast('Jour de repos — récupère bien.', 'info');
     return;
   }
-  // Open the program tab and let user pick the right day
-  if (typeof switchTab === 'function') switchTab('train');
-  if (typeof showPg === 'function') showPg('pgProg');
+  // Ouvre l'onglet Programmes. showPg('pgProg') était bugué : 'pgProg' n'est
+  // pas une clé valide (lib/prog/builder) → toutes les pages .pg restaient
+  // masquées et l'onglet Train s'affichait vide.
+  if (typeof goToProgrammes === 'function') goToProgrammes();
+  else if (typeof switchTab === 'function') switchTab('train');
 }
 
 // ═══ HOME MACROS CIRCLES (style Eklo) ═══
