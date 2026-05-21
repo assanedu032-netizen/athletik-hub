@@ -11900,6 +11900,8 @@ function confirmPlan() {
     }
   }
   try { saveData(); } catch(e) {}
+  // Pousse le planning vers Firestore pour les rappels push planifi\u00e9s.
+  try { if (window.fbUser && typeof fbSaveProfile === 'function') fbSaveProfile(); } catch(e) {}
   closePlanModal();
   try { renderHomeAgenda(); } catch(e) {}
   try { renderMoiPlanning(); } catch(e) {}
@@ -13326,6 +13328,18 @@ function _fbCollectPayload() {
     var tier = localStorage.getItem('ah_access_tier');
     if (tier) out.accessTier = tier;
   } catch(e) {}
+  // Planning (jours + heures + fuseau) — lu par la fonction planifiée
+  // session-reminders.js pour envoyer un rappel push avant chaque séance.
+  try {
+    if (typeof trainingDays !== 'undefined' && trainingDays.size > 0) {
+      out.planning = {
+        days: Array.from(trainingDays),
+        times: (typeof trainingTimes !== 'undefined' && trainingTimes) ? trainingTimes : {},
+        tz: (window.Intl && Intl.DateTimeFormat) ? (Intl.DateTimeFormat().resolvedOptions().timeZone || '') : '',
+        reminderMin: 30
+      };
+    }
+  } catch(e) {}
   return out;
 }
 
@@ -13343,6 +13357,18 @@ function _fbApplyPayload(data) {
   // Flags dérivés
   try {
     if (data.profile && data.profile.programKey) localStorage.setItem('ah_onboarding_done', '1');
+  } catch(e) {}
+  // Restaure le planning (jours + heures) — synchronisé entre appareils.
+  try {
+    if (data.planning && Array.isArray(data.planning.days) && typeof trainingDays !== 'undefined') {
+      trainingDays.clear();
+      data.planning.days.forEach(function(d){ if (typeof d === 'number' && d >= 0 && d <= 6) trainingDays.add(d); });
+      trainingTimes = {};
+      var _t = data.planning.times || {};
+      Object.keys(_t).forEach(function(k){
+        if (typeof _t[k] === 'string' && /^\d{1,2}:\d{2}$/.test(_t[k])) trainingTimes[k] = _t[k];
+      });
+    }
   } catch(e) {}
 }
 

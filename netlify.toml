@@ -3,6 +3,10 @@
   publish = "."
   functions = "netlify/functions"
 
+# Fonction planifiée : rappel push ~30 min avant chaque séance.
+[functions."session-reminders"]
+  schedule = "*/10 * * * *"
+
 [[headers]]
   for = "/sw.js"
   [headers.values]
