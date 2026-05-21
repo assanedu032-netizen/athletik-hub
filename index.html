@@ -2848,13 +2848,13 @@ body.test-mode #testSkipBar{display:flex}
       </button>
     </div>
 
-    <!-- ═══ AGENDA HEBDO (style Eklo) ═══ -->
+    <!-- ═══ MON PLANNING ═══ -->
     <div style="padding:18px 20px;border-bottom:1px solid var(--border)">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
-        <div style="font-size:10px;font-weight:700;letter-spacing:2px;color:var(--muted);text-transform:uppercase">Cette semaine</div>
-        <div style="font-size:11px;color:var(--gold);font-weight:600;cursor:pointer" onclick="switchTab('train')">Voir programme →</div>
+        <div style="font-size:10px;font-weight:700;letter-spacing:2px;color:var(--muted);text-transform:uppercase">Mon planning</div>
+        <div id="homePlanEdit" style="font-size:11px;color:var(--gold);font-weight:600;cursor:pointer;display:none" onclick="openPlanModal()">Modifier →</div>
       </div>
-      <div id="homeAgendaRow" style="display:flex;gap:6px;overflow-x:auto;-webkit-overflow-scrolling:touch;padding-bottom:4px">
+      <div id="homeAgendaRow">
         <!-- Injecté par renderHomeAgenda() -->
       </div>
     </div>
@@ -3829,19 +3829,13 @@ body.test-mode #testSkipBar{display:flex}
   </div>
 
 
-<!-- ═══ CALENDRIER ═══ -->
+<!-- ═══ MON PLANNING ═══ -->
 <div style="background:var(--surface);border-radius:16px;padding:16px;margin-bottom:12px">
-  <div style="font-family:'Bebas Neue',sans-serif;font-size:16px;color:var(--gold);letter-spacing:1px;margin-bottom:10px">📅 JOURS D'ENTRAÎNEMENT</div>
-  <div style="display:flex;gap:6px;flex-wrap:wrap" id="calDays">
-    <div class="cal-day" data-day="0" onclick="toggleDay(this)">L</div>
-    <div class="cal-day" data-day="1" onclick="toggleDay(this)">M</div>
-    <div class="cal-day" data-day="2" onclick="toggleDay(this)">Me</div>
-    <div class="cal-day" data-day="3" onclick="toggleDay(this)">J</div>
-    <div class="cal-day" data-day="4" onclick="toggleDay(this)">V</div>
-    <div class="cal-day" data-day="5" onclick="toggleDay(this)">S</div>
-    <div class="cal-day" data-day="6" onclick="toggleDay(this)">D</div>
+  <div style="font-family:'Bebas Neue',sans-serif;font-size:16px;color:var(--gold);letter-spacing:1px;margin-bottom:12px">📅 MON PLANNING</div>
+  <div id="moiPlanningView">
+    <!-- Injecté par renderMoiPlanning() -->
   </div>
-  <div style="font-size:11px;color:var(--muted);margin-top:8px" id="calSummary">Aucun jour sélectionné</div>
+  <button id="moiPlanBtn" onclick="openPlanModal()" style="width:100%;padding:12px;background:var(--navy);border:none;border-radius:10px;color:var(--gold);font-family:'Outfit',sans-serif;font-size:13px;font-weight:700;cursor:pointer;margin-top:12px">Configurer mes jours d'entraînement</button>
 </div>
 
 <!-- ═══ HABITUDES MENER ═══ -->
@@ -4407,6 +4401,21 @@ body.test-mode #testSkipBar{display:flex}
 
     <button id="accessCodeSubmitBtn" onclick="submitAccessCode()" style="width:100%;padding:14px;background:linear-gradient(135deg,#D4AF37,#E0C25A);color:#0A0F1E;border:0;border-radius:12px;font-family:'Outfit',sans-serif;font-size:14px;font-weight:800;cursor:pointer;letter-spacing:1px">DÉBLOQUER MON ACCÈS</button>
     <button onclick="closeAccessCode()" style="width:100%;margin-top:8px;padding:10px;background:transparent;border:1px solid #1B2A4A;color:#8a93a8;border-radius:12px;font-family:'Outfit',sans-serif;font-size:12px;font-weight:700;cursor:pointer">Plus tard</button>
+  </div>
+</div>
+
+<!-- MODAL MON PLANNING (hors .view — ouvrable depuis Home et Moi) -->
+<div id="planModal" style="display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,.85);z-index:600;overflow-y:auto">
+  <div style="background:var(--bg);min-height:100%;padding:24px;box-sizing:border-box">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
+      <div style="font-family:'Bebas Neue',sans-serif;font-size:24px;color:var(--gold);letter-spacing:1px">MON PLANNING</div>
+      <button onclick="closePlanModal()" style="background:none;border:none;font-size:30px;color:var(--text);cursor:pointer;line-height:1">×</button>
+    </div>
+    <div id="planModalFreq" style="font-size:13px;color:var(--text2);line-height:1.5;margin-bottom:20px"></div>
+    <div style="font-size:11px;color:var(--muted);font-weight:700;letter-spacing:1.5px;margin-bottom:10px">CHOISIS TES JOURS</div>
+    <div id="planModalDays" style="display:grid;grid-template-columns:repeat(7,1fr);gap:6px;margin-bottom:14px"></div>
+    <div id="planModalCount" style="text-align:center;font-size:13px;font-weight:700;margin-bottom:22px"></div>
+    <button id="planConfirmBtn" data-ready="" onclick="confirmPlan()" style="width:100%;padding:15px;background:linear-gradient(135deg,var(--gold),var(--gold2));border:none;border-radius:12px;font-family:'Bebas Neue',sans-serif;font-size:16px;letter-spacing:2px;color:var(--navy);cursor:pointer">CONFIRMER MON PLANNING</button>
   </div>
 </div>
 
@@ -6164,11 +6173,7 @@ document.addEventListener('DOMContentLoaded', function() {
         });
         var nav = document.getElementById('mainNav');
         if (nav) nav.style.display = 'flex';
-        trainingDays.forEach(function(d) {
-          var el = document.querySelector('[data-day="'+d+'"]');
-          if (el) el.classList.add('on');
-        });
-        try { _updateCalSummary(); } catch(e) {}
+        try { renderMoiPlanning(); } catch(e) {}
         try { initSATv7(); } catch(e) {}
         try { renderUserData(); } catch(e) {}
         try { renderActiveHabits(); } catch(e) {}
@@ -6303,7 +6308,7 @@ function switchTab(tab){
   }
   // Init Scan check API key + restore form
   if (tab === 'nutrition') { try { scanCheckApiKey(); scanUpdateMacros(); renderJournalToday(); } catch(e) {} }
-  if (tab === 'moi') { try { apiKeyRestore(); fbRefreshAccountSection(window.fbUser); renderBadges(); refreshAccessTierUI(); renderProgression(); _updateCalSummary(); } catch(e) {} }
+  if (tab === 'moi') { try { apiKeyRestore(); fbRefreshAccountSection(window.fbUser); renderBadges(); refreshAccessTierUI(); renderProgression(); renderMoiPlanning(); } catch(e) {} }
   // Refresh Athletik Score on Home
   if (tab === 'home') { try { renderAthletikScore(); } catch(e) { console.warn('renderAthletikScore error:', e); } }
 }
@@ -6712,100 +6717,105 @@ function renderUserData() {
   try { renderHomeMacros(); } catch(e) { console.warn('macros render:', e); }
 }
 
-// ═══ HOME AGENDA HEBDO (style Eklo) ═══
-function renderHomeAgenda() {
-  var row = document.getElementById('homeAgendaRow');
-  if (!row) return;
+// ═══ MON PLANNING — affichage hebdo en liste verticale ═══
+var _DAY_ABBR = ['LUN','MAR','MER','JEU','VEN','SAM','DIM'];
+var _DAY_LETTER = ['L','M','Me','J','V','S','D'];
 
-  var profile = {};
-  try { profile = JSON.parse(localStorage.getItem('ah_profile') || '{}'); } catch(e) {}
+// Nom lisible d'une séance à partir de sa clé (j1 → nom de la session V2).
+function _planSessionName(phase, key) {
+  try {
+    if (phase && phase.sessions && phase.sessions[key] && phase.sessions[key].name) {
+      return phase.sessions[key].name;
+    }
+  } catch(e) {}
+  return 'Séance ' + (key || '').toUpperCase();
+}
 
-  // Build week schedule from PROGRAMS_V2 if available
-  var weekDays = null;
-  var progKey = profile.programKey || user.programKey;
-  if (progKey && typeof PROGRAMS_V2 !== 'undefined' && PROGRAMS_V2[progKey]) {
-    var p = PROGRAMS_V2[progKey];
-    var firstPhase = p.phases && p.phases[0];
-    if (firstPhase && firstPhase.weekDays) weekDays = firstPhase.weekDays;
-  }
-  // Fallback : standard 4-day split
-  if (!weekDays) {
-    weekDays = [
-      {day:'Lun',key:'j1'},{day:'Mar',key:'rest'},{day:'Mer',key:'j2'},
-      {day:'Jeu',key:'rest'},{day:'Ven',key:'j3'},{day:'Sam',key:'j4'},{day:'Dim',key:'rest'}
-    ];
-  }
-
-  // Si le client a choisi ses jours d'entraînement → on mappe les séances
-  // du programme dessus (planning personnalisé), au lieu de la semaine type figée.
-  if (typeof trainingDays !== 'undefined' && trainingDays.size > 0) {
-    try {
-      weekDays = _getWeekPlan().plan.map(function(p){ return { day: p.day, key: p.sessKey }; });
-    } catch(e) {}
-  }
-
-  // Get completed sessions from history
+// HTML de la semaine en liste verticale (un jour par ligne).
+function _planningWeekHtml() {
+  var wp = _getWeekPlan();
+  var todayIdx = (new Date().getDay() + 6) % 7;
   var doneDays = {};
   try {
     var hist = JSON.parse(localStorage.getItem('ah_set_history') || '[]');
-    var startOfWeek = new Date();
-    startOfWeek.setDate(startOfWeek.getDate() - ((startOfWeek.getDay() + 6) % 7));
-    startOfWeek.setHours(0,0,0,0);
+    var sow = new Date();
+    sow.setDate(sow.getDate() - ((sow.getDay() + 6) % 7));
+    sow.setHours(0,0,0,0);
     hist.forEach(function(h){
-      if (!h.date) return;
-      var d = new Date(h.date);
-      if (d >= startOfWeek) {
-        var dayIdx = (d.getDay() + 6) % 7; // Lun=0 ... Dim=6
-        doneDays[dayIdx] = true;
-      }
+      if (!h || !h.date) return;
+      var dd = new Date(h.date);
+      if (dd >= sow) doneDays[(dd.getDay() + 6) % 7] = true;
     });
   } catch(e) {}
 
-  var todayIdx = (new Date().getDay() + 6) % 7; // Lun=0 ... Dim=6
   var html = '';
-  weekDays.forEach(function(w, i){
-    var isToday = i === todayIdx;
-    var isRest = w.key === 'rest';
-    var isDone = doneDays[i];
-    var bg, border, label, dotColor;
+  wp.plan.forEach(function(p){
+    var isRest = p.sessKey === 'rest';
+    var isToday = p.idx === todayIdx;
+    var isDone = !isRest && doneDays[p.idx];
+    var name = isRest ? 'Repos' : _planSessionName(wp.phase, p.sessKey);
+    var bg = isToday ? 'rgba(197,164,78,.10)' : 'var(--surface)';
+    var bd = isToday ? '1.5px solid var(--gold)' : '1px solid var(--border)';
 
-    if (isRest) {
-      bg = 'var(--surface)'; border = '1px solid var(--border)'; label = 'REPOS'; dotColor = 'transparent';
-    } else if (isDone) {
-      bg = 'rgba(16,185,129,.12)'; border = '1px solid rgba(16,185,129,.4)'; label = '✓'; dotColor = '#10B981';
-    } else {
-      bg = 'var(--surface2)'; border = '1px solid var(--border)'; label = w.key.toUpperCase(); dotColor = 'var(--gold)';
-    }
+    var dot;
+    if (isDone) dot = '<div style="flex:0 0 26px;width:26px;height:26px;border-radius:50%;background:#10B981;display:flex;align-items:center;justify-content:center;color:#fff;font-size:13px;font-weight:800">✓</div>';
+    else if (isRest) dot = '<div style="flex:0 0 26px;width:26px;height:26px;border-radius:50%;border:1.5px solid var(--border2);box-sizing:border-box"></div>';
+    else dot = '<div style="flex:0 0 26px;width:26px;height:26px;border-radius:50%;background:var(--gold)"></div>';
 
-    if (isToday) {
-      bg = isDone ? 'rgba(16,185,129,.18)' : 'linear-gradient(135deg,var(--gold),var(--gold2))';
-      border = isDone ? '2px solid #10B981' : '2px solid var(--gold)';
-    }
+    var click = isRest ? '' : ' onclick="planDayClick(\'' + p.sessKey + '\')"';
+    var cursor = isRest ? '' : 'cursor:pointer;';
 
-    var dayColor = isToday && !isDone ? 'var(--navy)' : 'var(--text)';
-    var labelColor = isToday && !isDone ? 'var(--navy)' : (isRest ? 'var(--muted)' : 'var(--gold)');
-
-    html += '<div onclick="homeAgendaClick(' + i + ',\'' + w.key + '\')" '
-      + 'style="flex:0 0 56px;min-width:56px;background:' + bg + ';border:' + border + ';border-radius:12px;padding:10px 4px;text-align:center;cursor:pointer;transition:transform .15s">'
-      + '<div style="font-family:\'Bebas Neue\',sans-serif;font-size:13px;letter-spacing:1px;color:' + dayColor + ';line-height:1">' + w.day.toUpperCase() + '</div>'
-      + '<div style="width:5px;height:5px;border-radius:50%;background:' + dotColor + ';margin:6px auto 4px"></div>'
-      + '<div style="font-size:9px;font-weight:800;letter-spacing:.5px;color:' + labelColor + '">' + label + '</div>'
-      + '</div>';
+    html += '<div' + click + ' style="' + cursor + 'display:flex;align-items:center;gap:11px;padding:11px 12px;background:' + bg + ';border:' + bd + ';border-radius:12px;margin-bottom:6px">';
+    html +=   dot;
+    html +=   '<div style="flex:1;min-width:0">';
+    html +=     '<div style="font-family:\'Bebas Neue\',sans-serif;font-size:13px;letter-spacing:1px;color:' + (isToday ? 'var(--gold)' : 'var(--text)') + '">' + _DAY_ABBR[p.idx] + (isToday ? ' · AUJOURD\'HUI' : '') + '</div>';
+    html +=     '<div style="font-size:11px;color:' + (isRest ? 'var(--muted)' : 'var(--text2)') + ';margin-top:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">' + name + '</div>';
+    html +=   '</div>';
+    if (!isRest) html += '<div style="flex:0 0 auto;color:var(--gold);font-size:15px">→</div>';
+    html += '</div>';
   });
-  row.innerHTML = html;
+  return html;
 }
 
-function homeAgendaClick(dayIdx, key) {
-  if (key === 'rest') {
-    if (typeof showToast === 'function') showToast('Jour de repos — récupère bien.', 'info');
-    return;
-  }
-  // Ouvre l'onglet Programmes. showPg('pgProg') était bugué : 'pgProg' n'est
-  // pas une clé valide (lib/prog/builder) → toutes les pages .pg restaient
-  // masquées et l'onglet Train s'affichait vide.
+// Clic sur un jour d'entraînement → ouvre l'onglet Programmes.
+function planDayClick(sessKey) {
   if (typeof goToProgrammes === 'function') goToProgrammes();
   else if (typeof switchTab === 'function') switchTab('train');
 }
+window.planDayClick = planDayClick;
+
+// Home — carte "Mon planning" : CTA si aucun jour, liste verticale sinon.
+function renderHomeAgenda() {
+  var row = document.getElementById('homeAgendaRow');
+  if (!row) return;
+  var edit = document.getElementById('homePlanEdit');
+  if (typeof trainingDays === 'undefined' || trainingDays.size === 0) {
+    if (edit) edit.style.display = 'none';
+    row.innerHTML =
+      '<div style="text-align:center">'
+      + '<div style="font-size:12px;color:var(--text2);margin-bottom:12px">Choisis tes jours d\'entraînement pour voir ta semaine.</div>'
+      + '<button onclick="openPlanModal()" style="width:100%;padding:13px;background:linear-gradient(135deg,var(--gold),var(--gold2));border:none;border-radius:12px;font-family:\'Bebas Neue\',sans-serif;font-size:15px;letter-spacing:1.5px;color:var(--navy);cursor:pointer">📅 CONFIGURER MON PLANNING</button>'
+      + '</div>';
+    return;
+  }
+  if (edit) edit.style.display = '';
+  row.innerHTML = _planningWeekHtml();
+}
+
+// Moi — section "Mon planning" : même liste verticale.
+function renderMoiPlanning() {
+  var c = document.getElementById('moiPlanningView');
+  if (!c) return;
+  var btn = document.getElementById('moiPlanBtn');
+  if (typeof trainingDays === 'undefined' || trainingDays.size === 0) {
+    c.innerHTML = '<div style="font-size:12px;color:var(--muted);text-align:center;padding:4px 0 8px">Aucun jour d\'entraînement défini.</div>';
+    if (btn) btn.textContent = 'Configurer mes jours d\'entraînement';
+    return;
+  }
+  c.innerHTML = _planningWeekHtml();
+  if (btn) btn.textContent = 'Modifier mes jours d\'entraînement';
+}
+window.renderMoiPlanning = renderMoiPlanning;
 
 // ═══ HOME MACROS CIRCLES (style Eklo) ═══
 function renderHomeMacros() {
@@ -11600,38 +11610,106 @@ function _getWeekPlan() {
 }
 window._getWeekPlan = _getWeekPlan;
 
-// Met \u00E0 jour le r\u00e9sum\u00e9 du picker + valide le nombre de jours vs le programme.
-function _updateCalSummary() {
-  var el = document.getElementById('calSummary');
-  if (!el) return;
-  var names = ['Lun','Mar','Mer','Jeu','Ven','Sam','Dim'];
+// \u2550\u2550\u2550 MON PLANNING \u2014 modal de choix des jours (avec confirmation) \u2550\u2550\u2550
+// _planDraft : s\u00e9lection en cours dans le modal, non sauvegard\u00e9e tant que
+// le client n'a pas appuy\u00e9 sur "Confirmer".
+window._planDraft = null;
+
+function openPlanModal() {
+  _planDraft = new Set(typeof trainingDays !== 'undefined' ? trainingDays : []);
+  var m = document.getElementById('planModal');
+  if (!m) return;
+  m.style.display = 'block';
+  document.body.style.overflow = 'hidden';
+  _renderPlanModal();
+}
+window.openPlanModal = openPlanModal;
+
+function closePlanModal() {
+  var m = document.getElementById('planModal');
+  if (m) m.style.display = 'none';
+  document.body.style.overflow = '';
+  _planDraft = null;
+}
+window.closePlanModal = closePlanModal;
+
+function planToggleDay(idx) {
+  if (!_planDraft) return;
+  if (_planDraft.has(idx)) _planDraft.delete(idx);
+  else _planDraft.add(idx);
+  _renderPlanModal();
+}
+window.planToggleDay = planToggleDay;
+
+function _renderPlanModal() {
   var wp = _getWeekPlan();
-  var need = wp.sessionCount, have = trainingDays.size;
-  if (have === 0) {
-    el.innerHTML = need > 0
-      ? 'Aucun jour s\u00e9lectionn\u00e9 \u2014 ton programme demande <strong style="color:var(--gold)">' + need + ' s\u00e9ances / semaine</strong>'
-      : 'Aucun jour s\u00e9lectionn\u00e9';
+  var need = wp.sessionCount;
+  var have = _planDraft ? _planDraft.size : 0;
+
+  var freqEl = document.getElementById('planModalFreq');
+  if (freqEl) {
+    var pname = '';
+    try {
+      var prof = JSON.parse(localStorage.getItem('ah_profile') || '{}');
+      if (prof.programKey && typeof PROGRAMS_V2 !== 'undefined' && PROGRAMS_V2[prof.programKey]) {
+        pname = PROGRAMS_V2[prof.programKey].name || '';
+      }
+    } catch(e) {}
+    freqEl.innerHTML = need > 0
+      ? 'Ton programme ' + (pname ? '<strong style="color:var(--text)">' + pname + '</strong> ' : '') + 'demande <strong style="color:var(--gold)">' + need + ' s\u00e9ances / semaine</strong>. Choisis ' + need + ' jour' + (need > 1 ? 's' : '') + '.'
+      : 'Choisis les jours o\u00F9 tu veux t\'entra\u00EEner cette semaine.';
+  }
+
+  var daysEl = document.getElementById('planModalDays');
+  if (daysEl) {
+    var h = '';
+    for (var i = 0; i < 7; i++) {
+      var on = _planDraft && _planDraft.has(i);
+      h += '<div onclick="planToggleDay(' + i + ')" style="aspect-ratio:1;display:flex;align-items:center;justify-content:center;border-radius:12px;cursor:pointer;font-weight:800;font-size:13px;box-sizing:border-box;'
+        + (on
+            ? 'background:var(--gold);color:var(--navy);border:2px solid var(--gold)'
+            : 'background:var(--surface);color:var(--text2);border:2px solid var(--border2)')
+        + '">' + _DAY_LETTER[i] + '</div>';
+    }
+    daysEl.innerHTML = h;
+  }
+
+  var countEl = document.getElementById('planModalCount');
+  if (countEl) {
+    if (need > 0) {
+      if (have === need) countEl.innerHTML = '<span style="color:#10B981">\u2713 ' + have + ' / ' + need + ' jours</span>';
+      else if (have < need) countEl.innerHTML = '<span style="color:#F59E0B">' + have + ' / ' + need + ' \u2014 ajoute ' + (need - have) + ' jour' + (need - have > 1 ? 's' : '') + '</span>';
+      else countEl.innerHTML = '<span style="color:#F59E0B">' + have + ' / ' + need + ' \u2014 retire ' + (have - need) + ' jour' + (have - need > 1 ? 's' : '') + '</span>';
+    } else {
+      countEl.innerHTML = '<span style="color:var(--muted)">' + have + ' jour' + (have > 1 ? 's' : '') + ' s\u00e9lectionn\u00e9' + (have > 1 ? 's' : '') + '</span>';
+    }
+  }
+
+  var btn = document.getElementById('planConfirmBtn');
+  if (btn) {
+    var ok = need > 0 ? (have === need) : (have > 0);
+    btn.style.opacity = ok ? '1' : '.45';
+    btn.dataset.ready = ok ? '1' : '';
+  }
+}
+
+function confirmPlan() {
+  var btn = document.getElementById('planConfirmBtn');
+  if (btn && btn.dataset.ready !== '1') {
+    if (typeof showToast === 'function') showToast('Choisis le bon nombre de jours d\'abord.', 'info');
     return;
   }
-  var line = '\uD83D\uDCC5 ' + Array.from(trainingDays).sort(function(a,b){return a-b;}).map(function(d){return names[d];}).join(', ');
-  if (need > 0) {
-    if (have === need) line += ' \u2014 <strong style="color:#10B981">\u2713 ' + need + ' s\u00e9ances/sem</strong>';
-    else if (have < need) line += ' \u2014 <strong style="color:#F59E0B">\u26A0\uFE0F ajoute ' + (need-have) + ' jour' + (need-have>1?'s':'') + ' (' + need + ' s\u00e9ances)</strong>';
-    else line += ' \u2014 <strong style="color:#F59E0B">\u26A0\uFE0F ' + (have-need) + ' jour' + (have-need>1?'s':'') + ' en trop (' + need + ' s\u00e9ances)</strong>';
+  if (typeof trainingDays !== 'undefined') {
+    trainingDays.clear();
+    (_planDraft || new Set()).forEach(function(d){ trainingDays.add(d); });
   }
-  el.innerHTML = line;
-}
-window._updateCalSummary = _updateCalSummary;
-
-function toggleDay(el) {
-  var d = parseInt(el.dataset.day);
-  if (trainingDays.has(d)) { trainingDays.delete(d); el.classList.remove('on'); }
-  else { trainingDays.add(d); el.classList.add('on'); }
-  _updateCalSummary();
   try { saveData(); } catch(e) {}
+  closePlanModal();
   try { renderHomeAgenda(); } catch(e) {}
+  try { renderMoiPlanning(); } catch(e) {}
+  if (typeof showToast === 'function') showToast('Planning enregistr\u00e9 \uD83D\uDCAA', 'success');
 }
-window.toggleDay = toggleDay;
+window.confirmPlan = confirmPlan;
 
 // HABITUDES MENER
 var MENER_HABITS = {
