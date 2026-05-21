@@ -4419,6 +4419,17 @@ body.test-mode #testSkipBar{display:flex}
   </div>
 </div>
 
+<!-- MODAL DÉTAIL JOUR (hors .view — ouvrable depuis Home et Moi) -->
+<div id="dayDetailModal" style="display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,.85);z-index:600;overflow-y:auto">
+  <div style="background:var(--bg);min-height:100%;padding:24px;box-sizing:border-box">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+      <div id="dayDetailDate" style="font-family:'Bebas Neue',sans-serif;font-size:23px;color:var(--gold);letter-spacing:1px">JOUR</div>
+      <button onclick="closeDayDetail()" style="background:none;border:none;font-size:30px;color:var(--text);cursor:pointer;line-height:1">×</button>
+    </div>
+    <div id="dayDetailBody"></div>
+  </div>
+</div>
+
 <!-- ═══ LIVE SESSION SCREEN ═══ -->
 <div id="liveSession">
   <!-- Header -->
@@ -6738,30 +6749,41 @@ function _planSessionName(phase, key) {
   return 'Séance ' + (key || '').toUpperCase();
 }
 
-// HTML de la semaine en vrai agenda : en-tête semaine + une ligne par jour
+// État de la vue planning dans Moi : 'week' ou 'month'.
+var _planView = 'week';
+
+// Clé date "YYYY-M-D" pour comparer des journées.
+function _dateKey(d) {
+  return d.getFullYear() + '-' + (d.getMonth() + 1) + '-' + d.getDate();
+}
+
+// Ensemble des dates où une séance a été enregistrée (ah_set_history).
+function _doneDateSet() {
+  var s = {};
+  try {
+    var hist = JSON.parse(localStorage.getItem('ah_set_history') || '[]');
+    hist.forEach(function(h){
+      if (!h || !h.date) return;
+      var d = new Date(h.date);
+      if (!isNaN(d.getTime())) s[_dateKey(d)] = true;
+    });
+  } catch(e) {}
+  return s;
+}
+
+// HTML de la semaine en vrai agenda : en-tête + une ligne par jour
 // (date réelle, heure, séance ou repos, aujourd'hui surligné).
 function _planningWeekHtml() {
   var wp = _getWeekPlan();
-  var todayIdx = (new Date().getDay() + 6) % 7;
-  var doneDays = {};
-  try {
-    var hist = JSON.parse(localStorage.getItem('ah_set_history') || '[]');
-    var sow = new Date();
-    sow.setDate(sow.getDate() - ((sow.getDay() + 6) % 7));
-    sow.setHours(0,0,0,0);
-    hist.forEach(function(h){
-      if (!h || !h.date) return;
-      var dd = new Date(h.date);
-      if (dd >= sow) doneDays[(dd.getDay() + 6) % 7] = true;
-    });
-  } catch(e) {}
+  var todayKey = _dateKey(new Date());
+  var done = _doneDateSet();
 
   var html = '<div style="font-size:10px;font-weight:700;letter-spacing:1.5px;color:var(--muted);margin-bottom:10px">SEMAINE DU ' + _fmtDateShort(wp.weekStart).toUpperCase() + '</div>';
 
   wp.plan.forEach(function(p){
     var isRest = p.sessKey === 'rest';
-    var isToday = p.idx === todayIdx;
-    var isDone = !isRest && doneDays[p.idx];
+    var isToday = _dateKey(p.date) === todayKey;
+    var isDone = !isRest && done[_dateKey(p.date)];
     var name = isRest ? 'Repos' : _planSessionName(wp.phase, p.sessKey);
     var bg = isToday ? 'rgba(197,164,78,.12)' : 'var(--surface)';
     var bd = isToday ? '1.5px solid var(--gold)' : '1px solid var(--border)';
@@ -6774,35 +6796,150 @@ function _planningWeekHtml() {
       + '</div>';
     var bar = '<div style="flex:0 0 3px;align-self:stretch;border-radius:3px;background:' + barColor + '"></div>';
 
-    var click = isRest ? '' : ' onclick="planDayClick(\'' + p.sessKey + '\')"';
-    var cursor = isRest ? '' : 'cursor:pointer;';
-
-    html += '<div' + click + ' style="' + cursor + 'display:flex;align-items:center;gap:10px;padding:9px 11px;background:' + bg + ';border:' + bd + ';border-radius:12px;margin-bottom:6px">';
+    html += '<div onclick="openDayDetail(' + p.idx + ')" style="cursor:pointer;display:flex;align-items:center;gap:10px;padding:9px 11px;background:' + bg + ';border:' + bd + ';border-radius:12px;margin-bottom:6px">';
     html +=   dateCol;
     html +=   bar;
     html +=   '<div style="flex:1;min-width:0">';
     html +=     '<div style="font-size:13px;font-weight:700;color:' + (isRest ? 'var(--muted)' : 'var(--text)') + ';white-space:nowrap;overflow:hidden;text-overflow:ellipsis">' + name + '</div>';
     if (!isRest) {
       html +=   '<div style="font-size:11px;color:var(--text2);margin-top:2px">🕐 ' + (p.time || '— : —') + (isToday ? '  ·  Aujourd\'hui' : '') + '</div>';
-    } else if (isToday) {
-      html +=   '<div style="font-size:11px;color:var(--gold);margin-top:2px">Aujourd\'hui</div>';
+    } else {
+      html +=   '<div style="font-size:11px;color:' + (isToday ? 'var(--gold)' : 'var(--muted)') + ';margin-top:2px">' + (isToday ? 'Aujourd\'hui · récupération' : 'Récupération') + '</div>';
     }
     html +=   '</div>';
     if (isDone) html += '<div style="flex:0 0 auto;color:#10B981;font-size:15px;font-weight:800">✓</div>';
-    else if (!isRest) html += '<div style="flex:0 0 auto;color:var(--gold);font-size:15px">→</div>';
+    else html += '<div style="flex:0 0 auto;color:var(--muted);font-size:14px">›</div>';
     html += '</div>';
   });
   return html;
 }
 
-// Clic sur un jour d'entraînement → ouvre l'onglet Programmes.
-function planDayClick(sessKey) {
-  if (typeof goToProgrammes === 'function') goToProgrammes();
-  else if (typeof switchTab === 'function') switchTab('train');
-}
-window.planDayClick = planDayClick;
+// HTML de la vue mois : grille 4 semaines (le rythme hebdo se répète).
+function _planningMonthHtml() {
+  var wp = _getWeekPlan();
+  var todayKey = _dateKey(new Date());
+  var todayMid = new Date(); todayMid.setHours(0,0,0,0);
+  var done = _doneDateSet();
 
-// Home — carte "Mon planning" : CTA si aucun jour, liste verticale sinon.
+  var html = '<div style="font-size:10px;font-weight:700;letter-spacing:1.5px;color:var(--muted);margin-bottom:8px">4 SEMAINES DÈS LE ' + _fmtDateShort(wp.weekStart).toUpperCase() + '</div>';
+
+  html += '<div style="display:grid;grid-template-columns:repeat(7,1fr);gap:4px;margin-bottom:4px">';
+  ['L','M','M','J','V','S','D'].forEach(function(d){
+    html += '<div style="text-align:center;font-size:9px;font-weight:700;color:var(--muted)">' + d + '</div>';
+  });
+  html += '</div>';
+
+  html += '<div style="display:grid;grid-template-columns:repeat(7,1fr);gap:4px">';
+  for (var w = 0; w < 4; w++) {
+    for (var i = 0; i < 7; i++) {
+      var offset = w * 7 + i;
+      var dt = new Date(wp.weekStart); dt.setDate(dt.getDate() + offset);
+      var p = wp.plan[i];
+      var isTraining = p.sessKey !== 'rest';
+      var isToday = _dateKey(dt) === todayKey;
+      var isPast = dt < todayMid;
+      var isDone = isTraining && done[_dateKey(dt)];
+
+      var cellBg = isToday ? 'var(--gold)' : (isTraining ? 'rgba(197,164,78,.13)' : 'var(--surface)');
+      var cellBd = isToday ? '2px solid var(--gold)' : (isTraining ? '1px solid rgba(197,164,78,.45)' : '1px solid var(--border)');
+      var numColor = isToday ? 'var(--navy)' : 'var(--text)';
+      var dotColor = isDone ? '#10B981' : (isToday ? 'var(--navy)' : 'var(--gold)');
+
+      html += '<div onclick="openDayDetail(' + offset + ')" style="aspect-ratio:1;display:flex;flex-direction:column;align-items:center;justify-content:center;border-radius:9px;cursor:pointer;box-sizing:border-box;border:' + cellBd + ';background:' + cellBg + ';' + (isPast && !isToday ? 'opacity:.4;' : '') + '">';
+      html +=   '<div style="font-size:13px;font-weight:700;color:' + numColor + '">' + dt.getDate() + '</div>';
+      if (isTraining) html += '<div style="width:5px;height:5px;border-radius:50%;background:' + dotColor + ';margin-top:2px"></div>';
+      html += '</div>';
+    }
+  }
+  html += '</div>';
+
+  html += '<div style="display:flex;gap:14px;justify-content:center;margin-top:10px;font-size:10px;color:var(--muted);flex-wrap:wrap">'
+    + '<span><span style="display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--gold);margin-right:5px"></span>Séance</span>'
+    + '<span><span style="display:inline-block;width:7px;height:7px;border-radius:50%;background:#10B981;margin-right:5px"></span>Faite</span>'
+    + '<span><span style="display:inline-block;width:10px;height:10px;border-radius:3px;background:var(--gold);margin-right:5px;vertical-align:-1px"></span>Aujourd\'hui</span>'
+    + '</div>';
+  return html;
+}
+
+// Sélecteur Semaine / 4 semaines.
+function _planViewToggleHtml() {
+  function tab(id, label) {
+    var on = _planView === id;
+    return '<div onclick="setPlanView(\'' + id + '\')" style="flex:1;text-align:center;padding:7px 4px;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer;'
+      + (on ? 'background:var(--gold);color:var(--navy)' : 'color:var(--text2)') + '">' + label + '</div>';
+  }
+  return '<div style="display:flex;gap:4px;background:var(--bg);border:1px solid var(--border2);border-radius:10px;padding:3px;margin-bottom:12px">'
+    + tab('week', 'Semaine') + tab('month', '4 semaines') + '</div>';
+}
+function setPlanView(v) {
+  _planView = (v === 'month') ? 'month' : 'week';
+  renderMoiPlanning();
+}
+window.setPlanView = setPlanView;
+
+// Détail d'une journée (offset = nb de jours depuis le lundi de la semaine).
+function openDayDetail(offset) {
+  var wp = _getWeekPlan();
+  var weekday = ((offset % 7) + 7) % 7;
+  var p = wp.plan[weekday];
+  var dt = new Date(wp.weekStart); dt.setDate(dt.getDate() + offset);
+  var isRest = p.sessKey === 'rest';
+  var fullDays = ['Lundi','Mardi','Mercredi','Jeudi','Vendredi','Samedi','Dimanche'];
+
+  var dateEl = document.getElementById('dayDetailDate');
+  if (dateEl) dateEl.textContent = fullDays[weekday] + ' ' + _fmtDateShort(dt);
+
+  var body = document.getElementById('dayDetailBody');
+  if (body) {
+    if (isRest) {
+      body.innerHTML =
+        '<div style="text-align:center;padding:30px 10px">'
+        + '<div style="font-size:40px;margin-bottom:10px">🛌</div>'
+        + '<div style="font-size:16px;font-weight:700;color:var(--text);margin-bottom:6px">Jour de repos</div>'
+        + '<div style="font-size:13px;color:var(--text2);line-height:1.5">Récupération active conseillée — mobilité, marche, étirements. Le repos fait partie du programme.</div>'
+        + '</div>';
+    } else {
+      var sess = (wp.phase && wp.phase.sessions && wp.phase.sessions[p.sessKey]) ? wp.phase.sessions[p.sessKey] : null;
+      var h = '';
+      h += '<div style="display:flex;gap:8px;margin-bottom:14px">';
+      h +=   '<div style="flex:1;background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:10px 12px">'
+           + '<div style="font-size:9px;color:var(--muted);font-weight:700;letter-spacing:1px">SÉANCE</div>'
+           + '<div style="font-size:13px;font-weight:700;color:var(--text);margin-top:3px">' + _planSessionName(wp.phase, p.sessKey) + '</div></div>';
+      h +=   '<div style="background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:10px 14px;text-align:center">'
+           + '<div style="font-size:9px;color:var(--muted);font-weight:700;letter-spacing:1px">HEURE</div>'
+           + '<div style="font-size:16px;font-weight:800;color:var(--gold);margin-top:3px">' + (p.time || '—') + '</div></div>';
+      h += '</div>';
+      if (sess && sess.exos && sess.exos.length) {
+        h += '<div style="font-size:10px;color:var(--muted);font-weight:700;letter-spacing:1.5px;margin-bottom:8px">' + sess.exos.length + ' EXERCICES</div>';
+        sess.exos.forEach(function(ex){
+          var meta = [];
+          if (ex.s && ex.s !== '-') meta.push(ex.s + ' sér.');
+          if (ex.r && ex.r !== '-') meta.push(ex.r);
+          h += '<div style="display:flex;align-items:center;gap:8px;padding:8px 10px;background:var(--surface);border:1px solid var(--border);border-radius:9px;margin-bottom:5px">'
+             + '<div style="flex:1;font-size:12px;color:var(--text)">' + (ex.n || '') + '</div>'
+             + (meta.length ? '<div style="font-size:11px;color:var(--gold);font-weight:700;white-space:nowrap">' + meta.join(' · ') + '</div>' : '')
+             + '</div>';
+        });
+      } else {
+        h += '<div style="font-size:13px;color:var(--text2);padding:8px 0">Détail des exercices disponible dans l\'onglet Programmes.</div>';
+      }
+      h += '<button onclick="closeDayDetail();goToProgrammes()" style="width:100%;margin-top:14px;padding:13px;background:linear-gradient(135deg,var(--gold),var(--gold2));border:none;border-radius:12px;font-family:\'Bebas Neue\',sans-serif;font-size:15px;letter-spacing:1.5px;color:var(--navy);cursor:pointer">VOIR LE PROGRAMME →</button>';
+      body.innerHTML = h;
+    }
+  }
+  var m = document.getElementById('dayDetailModal');
+  if (m) { m.style.display = 'block'; document.body.style.overflow = 'hidden'; }
+}
+window.openDayDetail = openDayDetail;
+
+function closeDayDetail() {
+  var m = document.getElementById('dayDetailModal');
+  if (m) m.style.display = 'none';
+  document.body.style.overflow = '';
+}
+window.closeDayDetail = closeDayDetail;
+
+// Home — carte "Mon planning" : CTA si aucun jour, semaine sinon.
 function renderHomeAgenda() {
   var row = document.getElementById('homeAgendaRow');
   if (!row) return;
@@ -6820,7 +6957,7 @@ function renderHomeAgenda() {
   row.innerHTML = _planningWeekHtml();
 }
 
-// Moi — section "Mon planning" : même liste verticale.
+// Moi — section "Mon planning" : sélecteur Semaine/Mois + agenda.
 function renderMoiPlanning() {
   var c = document.getElementById('moiPlanningView');
   if (!c) return;
@@ -6830,8 +6967,8 @@ function renderMoiPlanning() {
     if (btn) btn.textContent = 'Configurer mes jours d\'entraînement';
     return;
   }
-  c.innerHTML = _planningWeekHtml();
   if (btn) btn.textContent = 'Modifier mes jours d\'entraînement';
+  c.innerHTML = _planViewToggleHtml() + (_planView === 'month' ? _planningMonthHtml() : _planningWeekHtml());
 }
 window.renderMoiPlanning = renderMoiPlanning;
 
