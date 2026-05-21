@@ -6946,7 +6946,13 @@ function calculateSAT() {
   const dl = parseFloat(document.getElementById('satDL').value) || 0;
   const ht = parseFloat(document.getElementById('satHT').value) || 0;
   const dc = parseFloat(document.getElementById('satDC').value) || 0;
-  const sprintTime = _bestSprintTime('satSprint', 5); // meilleur des 5 essais
+  var sprintTime = _bestSprintTime('satSprint', 5); // meilleur des 5 essais
+  // Fallback : le SAT pas-à-pas stocke le sprint dans le champ unique
+  // satSprintTime (et non satSprint1..5). Sans ce fallback, le sprint
+  // ressort à 0 et n'apparaît pas dans le score.
+  if (sprintTime <= 0) {
+    sprintTime = parseFloat((document.getElementById('satSprintTime') || {}).value) || 0;
+  }
   const tTest = _bestSprintTime('satTTest', 5);       // meilleur des 5 essais
   const fms = parseFloat(document.getElementById('satFMS').value) || 0;
 
