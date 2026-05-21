@@ -880,6 +880,18 @@ body{background:var(--bg);color:var(--text);font-family:'Outfit',sans-serif;disp
 .ps-val{font-family:'Bebas Neue',sans-serif;font-size:24px;color:var(--gold);line-height:1}
 .ps-label{font-size:9px;color:rgba(255,255,255,.5);font-weight:700;letter-spacing:1px;text-transform:uppercase;margin-top:2px}
 
+/* ═══ MON PROFIL (carte éditable) ═══ */
+.pf-row{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:9px 0;border-bottom:1px solid var(--border);font-size:13px}
+.pf-k{color:var(--muted);font-weight:600}
+.pf-v{color:var(--text);font-weight:700;text-align:right;word-break:break-word}
+.pf-label{display:block;font-size:11px;font-weight:700;color:var(--muted);letter-spacing:.5px;margin:12px 0 5px}
+.pf-input{width:100%;padding:11px 13px;background:var(--surface2);border:1.5px solid var(--border);border-radius:10px;font-family:'Outfit',sans-serif;font-size:13px;color:var(--text);outline:none}
+.pf-input:focus{border-color:var(--gold)}
+.pf-btn{padding:12px;border:none;border-radius:10px;font-family:'Outfit',sans-serif;font-weight:800;font-size:13px;cursor:pointer}
+.pf-btn-gold{background:linear-gradient(135deg,var(--gold),var(--gold2));color:var(--navy)}
+.pf-btn-navy{background:var(--navy);color:var(--gold)}
+.pf-btn-ghost{background:var(--surface2);color:var(--text2);border:1.5px solid var(--border)}
+
 /* ═══ LEVEL CARD ═══ */
 .level-card{margin:16px 22px 0;background:var(--surface);border:1px solid var(--border);border-radius:var(--r2);padding:18px;box-shadow:var(--card-shadow);display:flex;align-items:center;gap:14px;animation:fadeUp .3s ease both}
 .lc-icon{font-size:36px}
@@ -3660,6 +3672,53 @@ body.test-mode #testSkipBar{display:flex}
     </div>
   </div>
 
+  <!-- ═══ MON PROFIL — fiche utilisateur éditable ═══ -->
+  <div class="sec-title">👤 MON PROFIL</div>
+  <div id="profileCard" style="background:var(--surface);border-radius:14px;padding:16px;margin-bottom:16px;border:1px solid var(--border)">
+
+    <!-- Mode lecture -->
+    <div id="profileView">
+      <div id="pvName" style="font-family:'Bebas Neue',sans-serif;font-size:20px;color:var(--text);letter-spacing:1px;margin-bottom:4px">Complète ton profil</div>
+      <div class="pf-row"><span class="pf-k">Âge</span><span class="pf-v" id="pvAge">Non renseigné</span></div>
+      <div class="pf-row"><span class="pf-k">Sport</span><span class="pf-v" id="pvSport">Non renseigné</span></div>
+      <div class="pf-row" style="border-bottom:none"><span class="pf-k">Objectif principal</span><span class="pf-v" id="pvObj">Non renseigné</span></div>
+      <button class="pf-btn pf-btn-navy" style="width:100%;margin-top:12px" onclick="profileEnterEdit()">✏️ Modifier</button>
+    </div>
+
+    <!-- Mode édition -->
+    <div id="profileEdit" style="display:none">
+      <div style="display:flex;align-items:center;gap:14px;margin-bottom:4px">
+        <div id="peAvatar" style="width:64px;height:64px;flex:0 0 64px;border-radius:50%;background:var(--navy2);border:2px solid var(--gold);display:flex;align-items:center;justify-content:center;font-family:'Bebas Neue',sans-serif;font-size:22px;color:#fff;background-size:cover;background-position:center;overflow:hidden">A</div>
+        <div style="display:flex;flex-direction:column;gap:6px;flex:1">
+          <button type="button" class="pf-btn pf-btn-ghost" style="padding:8px 12px;font-size:12px" onclick="document.getElementById('pePhotoFile').click()">Choisir une photo</button>
+          <button type="button" id="peRemovePhoto" class="pf-btn pf-btn-ghost" style="padding:8px 12px;font-size:12px;display:none" onclick="profileRemovePhoto()">Retirer la photo</button>
+        </div>
+      </div>
+      <input type="file" id="pePhotoFile" accept="image/*" style="display:none" onchange="profilePhotoPicked(event)">
+
+      <label class="pf-label" for="peFirstName">Prénom</label>
+      <input class="pf-input" type="text" id="peFirstName" maxlength="30" autocomplete="given-name" placeholder="Ton prénom">
+
+      <label class="pf-label" for="peLastName">Nom</label>
+      <input class="pf-input" type="text" id="peLastName" maxlength="40" autocomplete="family-name" placeholder="Ton nom">
+
+      <label class="pf-label" for="peAge">Âge</label>
+      <input class="pf-input" type="number" id="peAge" inputmode="numeric" min="10" max="99" placeholder="Ton âge">
+
+      <label class="pf-label" for="peSport">Sport</label>
+      <input class="pf-input" type="text" id="peSport" maxlength="40" placeholder="Basketball, volley, sprint...">
+
+      <label class="pf-label" for="peObjectif">Objectif principal</label>
+      <input class="pf-input" type="text" id="peObjectif" maxlength="80" placeholder="Ex : améliorer ma détente verticale">
+
+      <div style="display:flex;gap:8px;margin-top:16px">
+        <button class="pf-btn pf-btn-ghost" style="flex:1" onclick="profileCancelEdit()">Annuler</button>
+        <button class="pf-btn pf-btn-gold" style="flex:1.6" onclick="profileSave()">Enregistrer</button>
+      </div>
+    </div>
+
+  </div>
+
   <!-- Progression card — barres séances/semaine + PRs (rendu par renderProgression) -->
   <div class="sec-title">📈 PROGRESSION</div>
   <div id="progressionCard" style="background:var(--surface);border-radius:14px;padding:16px;margin-bottom:16px;border:1px solid var(--border)">
@@ -6326,7 +6385,10 @@ function switchTab(tab){
   }
   // Init Scan check API key + restore form
   if (tab === 'nutrition') { try { scanCheckApiKey(); scanUpdateMacros(); renderJournalToday(); } catch(e) {} }
-  if (tab === 'moi') { try { apiKeyRestore(); fbRefreshAccountSection(window.fbUser); renderBadges(); refreshAccessTierUI(); renderProgression(); renderMoiPlanning(); } catch(e) {} }
+  if (tab === 'moi') {
+    try { renderProfileCard(); } catch(e) {}
+    try { apiKeyRestore(); fbRefreshAccountSection(window.fbUser); renderBadges(); refreshAccessTierUI(); renderProgression(); renderMoiPlanning(); } catch(e) {}
+  }
   // Refresh Athletik Score on Home
   if (tab === 'home') { try { renderAthletikScore(); } catch(e) { console.warn('renderAthletikScore error:', e); } }
 }
@@ -6971,6 +7033,172 @@ function renderMoiPlanning() {
   c.innerHTML = _planViewToggleHtml() + (_planView === 'month' ? _planningMonthHtml() : _planningWeekHtml());
 }
 window.renderMoiPlanning = renderMoiPlanning;
+
+// ═══ MON PROFIL — fiche utilisateur éditable (onglet Moi) ═══
+// Les champs sont stockés dans ah_profile (déjà persisté en localStorage et
+// synchronisé vers Firestore). On réutilise prenom/age/objectif existants et
+// on ajoute nom/sport/photo. La photo est redimensionnée (256px, JPEG) pour
+// rester légère. Aucun impact sur l'onboarding ni le planning.
+var _profilePhotoDraft; // undefined = inchangé, '' = retirée, string = dataURL
+
+function _profileGet() {
+  try { return JSON.parse(localStorage.getItem('ah_profile') || '{}'); } catch(e) { return {}; }
+}
+function _profileInitials(prenom, nom) {
+  var a = (prenom || '').trim(), b = (nom || '').trim();
+  var ini = ((a.charAt(0) || '') + (b.charAt(0) || '')).toUpperCase();
+  return ini || 'A';
+}
+function _profileApplyAvatar(el, photo, prenom, nom) {
+  if (!el) return;
+  if (photo) {
+    el.textContent = '';
+    el.style.backgroundImage = 'url("' + photo + '")';
+    el.style.backgroundSize = 'cover';
+    el.style.backgroundPosition = 'center';
+  } else {
+    el.style.backgroundImage = 'none';
+    el.textContent = _profileInitials(prenom, nom);
+  }
+}
+function renderProfileCard() {
+  var p = _profileGet();
+  var fullName = ((p.prenom || '') + ' ' + (p.nom || '')).trim();
+  // En-tête de l'onglet Moi (.prof-header)
+  _profileApplyAvatar(document.getElementById('profAvatar'), p.photo, p.prenom, p.nom);
+  var nameEl = document.getElementById('profName');
+  if (nameEl) nameEl.textContent = fullName ? fullName.toUpperCase() : 'ATHLÈTE';
+  var emailEl = document.getElementById('profEmail');
+  if (emailEl) {
+    var sub = (window.fbUser && window.fbUser.email) ? window.fbUser.email : (p.sport || '');
+    emailEl.textContent = sub;
+    emailEl.style.display = sub ? '' : 'none';
+  }
+  // Carte (mode lecture)
+  var set = function(id, val){ var e = document.getElementById(id); if (e) e.textContent = val; };
+  set('pvName', fullName || 'Complète ton profil');
+  set('pvAge', p.age ? (p.age + ' ans') : 'Non renseigné');
+  set('pvSport', p.sport || 'Non renseigné');
+  set('pvObj', p.objectif || 'Non renseigné');
+}
+window.renderProfileCard = renderProfileCard;
+
+function profileEnterEdit() {
+  var p = _profileGet();
+  _profilePhotoDraft = p.photo || '';
+  var setV = function(id, v){ var e = document.getElementById(id); if (e) e.value = v; };
+  setV('peFirstName', p.prenom || '');
+  setV('peLastName', p.nom || '');
+  setV('peAge', p.age || '');
+  setV('peSport', p.sport || '');
+  setV('peObjectif', p.objectif || '');
+  _profileApplyAvatar(document.getElementById('peAvatar'), p.photo, p.prenom, p.nom);
+  var rm = document.getElementById('peRemovePhoto');
+  if (rm) rm.style.display = p.photo ? '' : 'none';
+  document.getElementById('profileView').style.display = 'none';
+  document.getElementById('profileEdit').style.display = '';
+}
+window.profileEnterEdit = profileEnterEdit;
+
+function profileCancelEdit() {
+  _profilePhotoDraft = undefined;
+  document.getElementById('profileEdit').style.display = 'none';
+  document.getElementById('profileView').style.display = '';
+}
+window.profileCancelEdit = profileCancelEdit;
+
+function profilePhotoPicked(ev) {
+  var input = ev.target;
+  var file = input && input.files && input.files[0];
+  if (!file) return;
+  if (!/^image\//.test(file.type || '')) {
+    showToast('Choisis un fichier image.', 'info'); input.value = ''; return;
+  }
+  var reader = new FileReader();
+  reader.onload = function() {
+    var img = new Image();
+    img.onload = function() {
+      try {
+        var max = 256;
+        var scale = Math.min(1, max / Math.max(img.width, img.height));
+        var cw = Math.max(1, Math.round(img.width * scale));
+        var ch = Math.max(1, Math.round(img.height * scale));
+        var cv = document.createElement('canvas');
+        cv.width = cw; cv.height = ch;
+        cv.getContext('2d').drawImage(img, 0, 0, cw, ch);
+        _profilePhotoDraft = cv.toDataURL('image/jpeg', 0.82);
+        _profileApplyAvatar(document.getElementById('peAvatar'), _profilePhotoDraft);
+        var rm = document.getElementById('peRemovePhoto');
+        if (rm) rm.style.display = '';
+      } catch(e) { showToast('Image illisible.', 'err'); }
+    };
+    img.onerror = function(){ showToast('Image illisible.', 'err'); };
+    img.src = reader.result;
+  };
+  reader.onerror = function(){ showToast('Lecture de l\'image impossible.', 'err'); };
+  reader.readAsDataURL(file);
+  input.value = ''; // permet de re-choisir le même fichier
+}
+window.profilePhotoPicked = profilePhotoPicked;
+
+function profileRemovePhoto() {
+  _profilePhotoDraft = '';
+  var prenom = (document.getElementById('peFirstName') || {}).value || '';
+  var nom = (document.getElementById('peLastName') || {}).value || '';
+  _profileApplyAvatar(document.getElementById('peAvatar'), '', prenom, nom);
+  var rm = document.getElementById('peRemovePhoto');
+  if (rm) rm.style.display = 'none';
+}
+window.profileRemovePhoto = profileRemovePhoto;
+
+function profileSave() {
+  var prenom = (document.getElementById('peFirstName').value || '').trim();
+  if (prenom.length < 2) { showToast('Entre ton prénom (2 caractères minimum).', 'info'); return; }
+  prenom = prenom.charAt(0).toUpperCase() + prenom.slice(1);
+  var nom = (document.getElementById('peLastName').value || '').trim();
+  var ageRaw = (document.getElementById('peAge').value || '').trim();
+  var sport = (document.getElementById('peSport').value || '').trim();
+  var objectif = (document.getElementById('peObjectif').value || '').trim();
+
+  var p = _profileGet();
+  p.prenom = prenom;
+  p.name = prenom; // l'onboarding stocke aussi name = prénom
+  p.nom = nom;
+  p.sport = sport;
+  if (ageRaw !== '') {
+    var n = parseInt(ageRaw, 10);
+    if (isNaN(n) || n < 10 || n > 99) { showToast('Âge invalide (entre 10 et 99).', 'info'); return; }
+    p.age = n;
+  }
+  // On n'écrase jamais l'objectif avec du vide (préserve celui de l'onboarding).
+  if (objectif) p.objectif = objectif;
+  if (_profilePhotoDraft !== undefined) {
+    if (_profilePhotoDraft) p.photo = _profilePhotoDraft;
+    else delete p.photo;
+  }
+
+  try {
+    localStorage.setItem('ah_profile', JSON.stringify(p));
+  } catch(e) {
+    showToast('Sauvegarde impossible (mémoire pleine — essaie une photo plus petite).', 'err');
+    return;
+  }
+  // Cohérence avec le nom d'affichage utilisé ailleurs (Home, Titan).
+  try {
+    if (typeof user !== 'undefined' && user) user.name = prenom.toUpperCase();
+    if (typeof R !== 'undefined' && R) { R.prenom = prenom; if (p.age) R.age = p.age; }
+  } catch(e) {}
+  try { if (typeof saveData === 'function') saveData(); } catch(e) {}
+  try { if (window.fbUser && typeof fbSaveProfile === 'function') fbSaveProfile(); } catch(e) {}
+
+  _profilePhotoDraft = undefined;
+  renderProfileCard();
+  try { if (typeof renderUserData === 'function') renderUserData(); } catch(e) {}
+  document.getElementById('profileEdit').style.display = 'none';
+  document.getElementById('profileView').style.display = '';
+  showToast('Profil enregistré 💪', 'success');
+}
+window.profileSave = profileSave;
 
 // ═══ HOME MACROS CIRCLES (style Eklo) ═══
 function renderHomeMacros() {
