@@ -14956,6 +14956,8 @@ function scanSaveToJournal() {
 
   alert('✓ Repas enregistré dans ton journal.\n\n' + Math.round(totals.cal) + ' kcal · ' + Math.round(totals.p) + 'g prot');
   scanReset();
+  // Rafraîchit le journal + la barre "Macros du jour" immédiatement
+  try { renderJournalToday(); } catch(e) {}
 }
 
 function scanFileToBase64(file) {
@@ -15020,6 +15022,11 @@ function renderJournalToday() {
   var $ = function(id){ return document.getElementById(id); };
   if ($('jCalRemaining')) $('jCalRemaining').textContent = Math.round(remaining);
   if ($('jCalConsumed')) $('jCalConsumed').textContent = Math.round(totals.cal);
+  // Barre "Macros du jour" en haut de l'onglet Nutrition — reflète le consommé
+  if ($('nutri-kcal'))  $('nutri-kcal').textContent  = Math.round(totals.cal);
+  if ($('nutri-prot'))  $('nutri-prot').textContent  = Math.round(totals.p) + 'g';
+  if ($('nutri-carbs')) $('nutri-carbs').textContent = Math.round(totals.g) + 'g';
+  if ($('nutri-fat'))   $('nutri-fat').textContent   = Math.round(totals.l) + 'g';
   if ($('jRdiTotal')) $('jRdiTotal').textContent = rdi;
   if ($('jRdiPct')) $('jRdiPct').textContent = Math.round(pct) + '% du RDI';
   if ($('jProgressBar')) $('jProgressBar').style.width = Math.min(100, pct) + '%';
