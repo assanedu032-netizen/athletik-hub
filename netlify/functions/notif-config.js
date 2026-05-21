@@ -19,10 +19,13 @@ exports.handler = async function(event) {
     headers: {
       'Access-Control-Allow-Origin': '*',
       'Content-Type': 'application/json',
-      'Cache-Control': 'public, max-age=3600',
+      // Cache court : si la clé est corrigée côté Netlify, elle se propage vite.
+      'Cache-Control': 'public, max-age=300',
     },
     body: JSON.stringify({
-      vapidKey: process.env.FIREBASE_VAPID_KEY || ''
+      // .trim() : une variable d'env collée avec un retour-ligne ou des
+      // espaces produit une applicationServerKey rejetée par le navigateur.
+      vapidKey: (process.env.FIREBASE_VAPID_KEY || '').trim()
     }),
   };
 };
