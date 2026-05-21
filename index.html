@@ -10255,7 +10255,7 @@ function toggleDark() {
   document.getElementById('darkToggle').classList.toggle('on', darkMode);
 }
 
-function toggleNotif() {
+async function toggleNotif() {
   var toggleEl = document.getElementById('notifToggle');
   if (!('Notification' in window)) {
     alert('Les notifications ne sont pas supportées par ce navigateur.');
@@ -10271,9 +10271,12 @@ function toggleNotif() {
     if (toggleEl) toggleEl.classList.toggle('on', notifOn);
     try { localStorage.setItem('ah_notif_on', notifOn ? '1' : '0'); } catch(e) {}
     if (notifOn) {
-      _registerFCMToken();
       _enableTitanReminders();
-      if (typeof showToast === 'function') showToast('Notifications activées ✅', 'success');
+      var tk1 = await _registerFCMToken();
+      if (typeof showToast === 'function') {
+        if (tk1) showToast('Notifications activées ✅', 'success');
+        else showToast('Rappels activés. Push indisponible : ' + (window._fcmLastError || 'inconnu'), 'info');
+      }
     } else {
       _disableTitanReminders();
       if (typeof showToast === 'function') showToast('Notifications désactivées', 'info');
@@ -10297,14 +10300,17 @@ function toggleNotif() {
   }
 
   // perm === 'default' : on demande l'autorisation (popup du navigateur).
-  Notification.requestPermission().then(function(p){
+  Notification.requestPermission().then(async function(p){
     if (p === 'granted') {
       notifOn = true;
       if (toggleEl) toggleEl.classList.add('on');
       try { localStorage.setItem('ah_notif_on', '1'); } catch(e) {}
-      _registerFCMToken();
       _enableTitanReminders();
-      if (typeof showToast === 'function') showToast('Notifications activées ✅', 'success');
+      var tk2 = await _registerFCMToken();
+      if (typeof showToast === 'function') {
+        if (tk2) showToast('Notifications activées ✅', 'success');
+        else showToast('Autorisé, mais push indisponible : ' + (window._fcmLastError || 'inconnu'), 'info');
+      }
     } else {
       notifOn = false;
       if (toggleEl) toggleEl.classList.remove('on');
@@ -10323,7 +10329,9 @@ function toggleNotif() {
 // en dur dans le HTML public. Fallback : utilise la chaîne window.FCM_VAPID_KEY si
 // définie côté HTML (utile en dev local).
 async function _registerFCMToken() {
+  window._fcmLastError = '';
   if (!window.fb || !window.fb.messaging || !window.fb.getToken) {
+    window._fcmLastError = 'Firebase Messaging non initialisé (navigateur non supporté, ou app pas prête).';
     console.log('FCM pas dispo (navigateur non supporté ou pas encore init).');
     return null;
   }
@@ -10340,6 +10348,7 @@ async function _registerFCMToken() {
       } catch(e) {}
     }
     if (!vapidKey) {
+      window._fcmLastError = 'Clé VAPID absente — variable FIREBASE_VAPID_KEY manquante sur Netlify.';
       console.warn('FCM VAPID key absente — notif push background désactivé. ' +
         'Définis FIREBASE_VAPID_KEY sur Netlify ou window.FCM_VAPID_KEY en local.');
       return null;
@@ -10351,6 +10360,7 @@ async function _registerFCMToken() {
       serviceWorkerRegistration: reg
     });
     if (!token) {
+      window._fcmLastError = 'Token push vide — autorisation refusée ou Service Worker bloqué.';
       console.warn('FCM token vide — permission probablement refusée.');
       return null;
     }
@@ -10365,6 +10375,7 @@ async function _registerFCMToken() {
     console.log('FCM token enregistré:', token.slice(0, 16) + '…');
     return token;
   } catch(err) {
+    window._fcmLastError = (err && err.message) ? err.message : String(err);
     console.warn('_registerFCMToken:', err);
     return null;
   }
@@ -10376,9 +10387,20 @@ window._registerFCMToken = _registerFCMToken;
 window.sendTestNotif = async function() {
   var prof = {};
   try { prof = JSON.parse(localStorage.getItem('ah_profile') || '{}'); } catch(e) {}
+  // Pas de token stocké : on tente de l'enregistrer maintenant (le bouton
+  // Notifications affiche peut-être "activé" sans que le token soit prêt).
   if (!prof.fcmToken) {
-    if (typeof showToast === 'function') showToast('Active d\'abord les notifications dans Paramètres.', 'info');
-    return;
+    if (!('Notification' in window) || Notification.permission !== 'granted') {
+      if (typeof showToast === 'function') showToast('Autorise d\'abord les notifications (bouton ci-dessus).', 'info');
+      return;
+    }
+    if (typeof showToast === 'function') showToast('Activation du push en cours…', 'info');
+    var tok = await _registerFCMToken();
+    if (!tok) {
+      if (typeof showToast === 'function') showToast('Push indisponible : ' + (window._fcmLastError || 'raison inconnue'), 'err');
+      return;
+    }
+    try { prof = JSON.parse(localStorage.getItem('ah_profile') || '{}'); } catch(e) {}
   }
   try {
     var r = await fetch('/.netlify/functions/send-notif', {
@@ -10488,7 +10510,12 @@ function _showTitanNotif(title, body) {
     notifOn = granted && localStorage.getItem('ah_notif_on') !== '0';
     var tEl = document.getElementById('notifToggle');
     if (tEl) tEl.classList.toggle('on', notifOn);
-    if (notifOn) setTimeout(_enableTitanReminders, 1500);
+    // Notifications déjà autorisées : on (ré)enregistre le token push au
+    // démarrage — sinon le token n'existe que si l'utilisateur tape le bouton.
+    if (notifOn) setTimeout(function(){
+      try { _enableTitanReminders(); } catch(e) {}
+      try { _registerFCMToken(); } catch(e) {}
+    }, 1500);
   } catch(e) {}
 })();
 
