@@ -975,6 +975,15 @@ body{background:var(--bg);color:var(--text);font-family:'Outfit',sans-serif;disp
 .bf-auth-gate h3{font-family:'Bebas Neue',sans-serif;font-size:20px;color:var(--navy);letter-spacing:1px;margin-bottom:8px}
 .bf-auth-gate p{font-size:13px;color:var(--text2);line-height:1.5;margin-bottom:18px}
 
+/* ═══ TRACK — sélecteur de méthode + chronomètre ═══ */
+.trk-chip{padding:8px 12px;background:var(--surface2);border:1.5px solid var(--border);border-radius:20px;font-family:'Outfit',sans-serif;font-size:12px;font-weight:600;color:var(--text2);cursor:pointer;transition:all .2s;-webkit-tap-highlight-color:transparent;user-select:none}
+.trk-chip.on{background:var(--navy);color:var(--gold);border-color:var(--navy)}
+.trk-chip:active{transform:scale(.97)}
+.trk-chrono{width:36px;height:36px;border-radius:8px;background:var(--gold);color:var(--navy);border:none;font-size:14px;cursor:pointer;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-family:'Outfit',sans-serif;transition:all .15s}
+.trk-chrono:active{transform:scale(.95)}
+.trk-chrono[data-state="running"]{background:var(--red);color:#fff}
+.trk-chrono[data-state="stopped"]{background:var(--surface2);color:var(--text2);border:1.5px solid var(--border)}
+
 /* ═══ LEVEL CARD ═══ */
 .level-card{margin:16px 22px 0;background:var(--surface);border:1px solid var(--border);border-radius:var(--r2);padding:18px;box-shadow:var(--card-shadow);display:flex;align-items:center;gap:14px;animation:fadeUp .3s ease both}
 .lc-icon{font-size:36px}
@@ -3346,29 +3355,22 @@ body.test-mode #testSkipBar{display:flex}
       <div class="card-title"><span>📊</span> Tracker un exercice</div>
       <div class="fg">
         <label class="fl">Choisis ton exercice</label>
-        <select class="fi-select" id="trackExSelect" onchange="updateTrackFields()">
+        <select class="fi-select" id="trackExSelect" onchange="_trkRefreshLastScore()">
           <option value="" disabled selected>Sélectionne un exercice</option>
-          <optgroup label="Force">
-            <option value="squat" data-type="force">Back Squat</option>
-            <option value="sdl" data-type="force">Soulevé de terre</option>
-            <option value="hip-thrust" data-type="force">Hip Thrust</option>
-            <option value="dc" data-type="force">Développé couché</option>
-          </optgroup>
-          <optgroup label="Pliométrie">
-            <option value="box-jump" data-type="saut">Box Jump</option>
-            <option value="depth-jump" data-type="saut">Depth Jump</option>
-            <option value="pogo" data-type="saut">Pogo Jumps</option>
-          </optgroup>
-          <optgroup label="Sprint">
-            <option value="sprint-10" data-type="sprint">Sprint 10m</option>
-            <option value="sprint-30" data-type="sprint">Sprint 30m</option>
-            <option value="sprint-60" data-type="sprint">Sprint 60m</option>
-          </optgroup>
-          <optgroup label="Saut">
-            <option value="cmj" data-type="saut">Counter Movement Jump</option>
-            <option value="squat-jump" data-type="saut">Squat Jump</option>
-          </optgroup>
+          <!-- Peuplé dynamiquement depuis catData par _trkPopulateExoList() -->
         </select>
+      </div>
+
+      <!-- Choix de la méthode de tracking (utilisateur) -->
+      <div class="fg" style="margin-top:10px;margin-bottom:14px">
+        <label class="fl">Méthode de tracking</label>
+        <div id="trkMethodChips" style="display:flex;flex-wrap:wrap;gap:6px">
+          <div class="trk-chip on" data-trkmethod="charge"   onclick="setTrackMethod('charge',this)">🏋️ Charge × Reps</div>
+          <div class="trk-chip"    data-trkmethod="temps"    onclick="setTrackMethod('temps',this)">⏱ Temps</div>
+          <div class="trk-chip"    data-trkmethod="distance" onclick="setTrackMethod('distance',this)">📏 Distance</div>
+          <div class="trk-chip"    data-trkmethod="hauteur"  onclick="setTrackMethod('hauteur',this)">⬆ Hauteur × Reps</div>
+          <div class="trk-chip"    data-trkmethod="reps"     onclick="setTrackMethod('reps',this)">🔢 Reps seuls</div>
+        </div>
       </div>
 
       <!-- Last score -->
@@ -3413,9 +3415,7 @@ body.test-mode #testSkipBar{display:flex}
     <div style="margin-top:20px">
       <div style="font-family:'Bebas Neue',sans-serif;font-size:18px;color:var(--text);letter-spacing:1px;margin-bottom:10px">Exercices trackés</div>
       <div id="trackHistory">
-        <div class="track-item"><div class="ti-ic">🏋️</div><div class="ti-body"><div class="ti-name">Back Squat</div><div class="ti-cat">Force Charge</div><div class="ti-last">Dernier : 100kg × 5 reps • RPE 7</div></div><div class="ti-arrow">→</div></div>
-        <div class="track-item"><div class="ti-ic">🦘</div><div class="ti-body"><div class="ti-name">Box Jump</div><div class="ti-cat">Pliométrie intensive</div><div class="ti-last">Dernier : 90cm × 3 reps</div></div><div class="ti-arrow">→</div></div>
-        <div class="track-item"><div class="ti-ic">⚡</div><div class="ti-body"><div class="ti-name">Sprint 30m</div><div class="ti-cat">Sprint</div><div class="ti-last">Dernier : 4.12s</div></div><div class="ti-arrow">→</div></div>
+        <!-- Peuplé par _trkRenderHistory() depuis window.trackHistory -->
       </div>
     </div>
   </div>
@@ -6589,6 +6589,7 @@ function switchTab(tab){
   if (tab === 'tracks') {
     try { initSATv7(); } catch(e) { console.warn('initSATv7 error:', e); }
     try { initTracksSAT(); } catch(e) { console.warn('initTracksSAT error:', e); }
+    try { _trkInit(); } catch(e) { console.warn('_trkInit error:', e); }
   }
   // Quand on entre dans Train : rafraîchir le verrouillage des cartes + init lib
   if (tab === 'train') {
@@ -8241,57 +8242,158 @@ function initTracksSAT() {
 // TRACK EXERCICES
 // ══════════════════════════════════
 
+// Track : méthode courante choisie par l'utilisateur (5 options).
+var _trkMethod = 'charge';
+
+// Peuple le <select> #trackExSelect avec toute la librairie catData,
+// groupée par catégorie (Force, Pliométrie, Sprint, etc.). Appelé une
+// seule fois à l'entrée de l'onglet Tracks.
+function _trkPopulateExoList() {
+  var sel = document.getElementById('trackExSelect');
+  if (!sel || sel.dataset.populated === '1') return;
+  if (typeof catData !== 'object' || !catData) return;
+  var ph = sel.querySelector('option[disabled]');
+  sel.innerHTML = '';
+  if (ph) sel.appendChild(ph);
+  Object.keys(catData).forEach(function(catKey) {
+    var arr = catData[catKey];
+    if (!Array.isArray(arr) || !arr.length) return;
+    var label = (typeof _LIB_CAT_MAP !== 'undefined' && _LIB_CAT_MAP[catKey] && _LIB_CAT_MAP[catKey].label) || catKey;
+    var og = document.createElement('optgroup');
+    og.label = label;
+    arr.forEach(function(ex) {
+      if (!ex || !ex.name) return;
+      var op = document.createElement('option');
+      op.value = ex.name;
+      op.textContent = ex.name;
+      op.setAttribute('data-cat', catKey);
+      og.appendChild(op);
+    });
+    sel.appendChild(og);
+  });
+  sel.dataset.populated = '1';
+}
+window._trkPopulateExoList = _trkPopulateExoList;
+
+// Init de l'onglet Tracks : peuple la liste et rend l'historique réel.
+function _trkInit() {
+  try { _trkPopulateExoList(); } catch(e) {}
+  try { _trkRenderHistory(); } catch(e) {}
+}
+window._trkInit = _trkInit;
+
+// Change la méthode de tracking et reconstruit les essais.
+function setTrackMethod(method, btn) {
+  if (_trkMethod === method) return;
+  _trkMethod = method;
+  var chips = document.querySelectorAll('#trkMethodChips .trk-chip');
+  for (var i = 0; i < chips.length; i++) {
+    chips[i].classList.toggle('on', chips[i].getAttribute('data-trkmethod') === method);
+  }
+  updateTrackFields();
+  _trkRefreshLastScore();
+}
+window.setTrackMethod = setTrackMethod;
+
+// Mise à jour de la ligne "Dernier score" sans rebâtir les essais
+// (appelé quand on change juste d'exercice dans la liste).
+function _trkRefreshLastScore() {
+  var sel = document.getElementById('trackExSelect');
+  var exoName = sel && sel.value;
+  var lastWrap = document.getElementById('trackLastWrap');
+  var lastEl = document.getElementById('trackLast');
+  var lastTxt = exoName ? _trkLastScoreFor(exoName, _trkMethod) : '';
+  if (lastWrap && lastEl) {
+    if (lastTxt) { lastEl.textContent = lastTxt; lastWrap.classList.remove('hidden'); }
+    else { lastWrap.classList.add('hidden'); }
+  }
+  // Premier rendu : si les essais ne sont pas encore créés, on les crée.
+  if (!document.getElementById('trackEssaisList')) updateTrackFields();
+}
+window._trkRefreshLastScore = _trkRefreshLastScore;
+
 function updateTrackFields() {
-  const sel = document.getElementById('trackExSelect');
-  const opt = sel.options[sel.selectedIndex];
-  const type = opt.dataset.type;
-  const fields = document.getElementById('trackFields');
-  document.getElementById('trackLastWrap').classList.remove('hidden');
-
-  const lastByType = { force:'95kg × 5 reps • RPE 7', sprint:'Meilleur 4.35s (3 essais)', saut:'55cm × 3 reps' };
-  document.getElementById('trackLast').textContent = lastByType[type] || '—';
-
-  const defaultCount = (type === 'sprint') ? 3 : 1;
-  window._trackType = type;
+  var fields = document.getElementById('trackFields');
+  if (!fields) return;
+  if (!_trkMethod) _trkMethod = 'charge';
+  window._trackType = _trkMethod; // compat avec addEssai / removeEssai / _collectEssais
   fields.innerHTML = '<div id="trackEssaisList" class="tr-essais"></div>'
     + '<button type="button" class="btn btn-outline btn-sm" onclick="addEssai()" style="margin-bottom:12px">+ Ajouter un essai</button>';
-  for (let i = 0; i < defaultCount; i++) addEssai();
+  var defaultCount = (_trkMethod === 'temps') ? 3 : 1;
+  for (var i = 0; i < defaultCount; i++) addEssai();
+  _trkRefreshLastScore();
 }
 
-function _essaiRowHtml(type, idx) {
-  if (type === 'force') {
-    return '<div class="tr-essai" data-idx="'+idx+'">'
-      + '<div class="tr-essai-num">'+(idx+1)+'</div>'
+function _essaiRowHtml(method, idx) {
+  var num = '<div class="tr-essai-num">' + (idx + 1) + '</div>';
+  var rm = '<button type="button" class="tr-essai-rm" onclick="removeEssai(this)" aria-label="Supprimer">✕</button>';
+  if (method === 'charge') {
+    return '<div class="tr-essai" data-idx="' + idx + '">' + num
       + '<div class="tr-essai-inputs">'
-      +   '<input class="fi tr-essai-input" data-key="load" type="number" placeholder="100"><span class="tr-essai-unit">kg</span>'
+      +   '<input class="fi tr-essai-input" data-key="load" type="number" inputmode="decimal" placeholder="100"><span class="tr-essai-unit">kg</span>'
       +   '<span class="tr-essai-x">×</span>'
-      +   '<input class="fi tr-essai-input" data-key="reps" type="number" placeholder="5"><span class="tr-essai-unit">reps</span>'
-      + '</div>'
-      + '<button type="button" class="tr-essai-rm" onclick="removeEssai(this)" aria-label="Supprimer">✕</button>'
-      + '</div>';
+      +   '<input class="fi tr-essai-input" data-key="reps" type="number" inputmode="numeric" placeholder="5"><span class="tr-essai-unit">reps</span>'
+      + '</div>' + rm + '</div>';
   }
-  if (type === 'sprint') {
-    return '<div class="tr-essai" data-idx="'+idx+'">'
-      + '<div class="tr-essai-num">'+(idx+1)+'</div>'
+  if (method === 'temps') {
+    return '<div class="tr-essai" data-idx="' + idx + '">' + num
       + '<div class="tr-essai-inputs">'
-      +   '<input class="fi tr-essai-input" data-key="time" type="number" step="0.01" placeholder="4.20"><span class="tr-essai-unit">sec</span>'
-      + '</div>'
-      + '<button type="button" class="tr-essai-rm" onclick="removeEssai(this)" aria-label="Supprimer">✕</button>'
-      + '</div>';
+      +   '<input class="fi tr-essai-input" data-key="time" type="number" step="0.01" inputmode="decimal" placeholder="0.00"><span class="tr-essai-unit">s</span>'
+      +   '<button type="button" class="trk-chrono" data-state="idle" onclick="_trkChrono(this)" aria-label="Chronomètre">▶</button>'
+      + '</div>' + rm + '</div>';
   }
-  if (type === 'saut') {
-    return '<div class="tr-essai" data-idx="'+idx+'">'
-      + '<div class="tr-essai-num">'+(idx+1)+'</div>'
+  if (method === 'distance') {
+    return '<div class="tr-essai" data-idx="' + idx + '">' + num
       + '<div class="tr-essai-inputs">'
-      +   '<input class="fi tr-essai-input" data-key="height" type="number" placeholder="60"><span class="tr-essai-unit">cm</span>'
+      +   '<input class="fi tr-essai-input" data-key="distance" type="number" step="0.1" inputmode="decimal" placeholder="25"><span class="tr-essai-unit">m</span>'
+      + '</div>' + rm + '</div>';
+  }
+  if (method === 'hauteur') {
+    return '<div class="tr-essai" data-idx="' + idx + '">' + num
+      + '<div class="tr-essai-inputs">'
+      +   '<input class="fi tr-essai-input" data-key="height" type="number" inputmode="numeric" placeholder="60"><span class="tr-essai-unit">cm</span>'
       +   '<span class="tr-essai-x">×</span>'
-      +   '<input class="fi tr-essai-input" data-key="reps" type="number" placeholder="3"><span class="tr-essai-unit">reps</span>'
-      + '</div>'
-      + '<button type="button" class="tr-essai-rm" onclick="removeEssai(this)" aria-label="Supprimer">✕</button>'
-      + '</div>';
+      +   '<input class="fi tr-essai-input" data-key="reps" type="number" inputmode="numeric" placeholder="3"><span class="tr-essai-unit">reps</span>'
+      + '</div>' + rm + '</div>';
+  }
+  if (method === 'reps') {
+    return '<div class="tr-essai" data-idx="' + idx + '">' + num
+      + '<div class="tr-essai-inputs">'
+      +   '<input class="fi tr-essai-input" data-key="reps" type="number" inputmode="numeric" placeholder="10"><span class="tr-essai-unit">reps</span>'
+      + '</div>' + rm + '</div>';
   }
   return '';
 }
+
+// Chronomètre par essai (méthode Temps). États : idle → running → stopped → idle.
+function _trkChrono(btn) {
+  var input = btn.parentElement && btn.parentElement.querySelector('.tr-essai-input[data-key="time"]');
+  if (!input) return;
+  var st = btn.dataset.state || 'idle';
+  if (st === 'idle') {
+    var start = Date.now();
+    input.value = '0.00';
+    input.readOnly = true;
+    var iv = setInterval(function(){
+      input.value = ((Date.now() - start) / 1000).toFixed(2);
+    }, 50);
+    btn.dataset.iv = String(iv);
+    btn.dataset.state = 'running';
+    btn.textContent = '⏸';
+  } else if (st === 'running') {
+    var ivId = parseInt(btn.dataset.iv, 10);
+    if (!isNaN(ivId)) clearInterval(ivId);
+    input.readOnly = false;
+    btn.dataset.state = 'stopped';
+    btn.textContent = '↺';
+  } else {
+    input.value = '';
+    input.readOnly = false;
+    btn.dataset.state = 'idle';
+    btn.textContent = '▶';
+  }
+}
+window._trkChrono = _trkChrono;
 
 function addEssai() {
   const list = document.getElementById('trackEssaisList');
@@ -8334,39 +8436,130 @@ function setRPE(el, val) {
   currentRPE = val;
 }
 
+// Calcule un résumé "meilleur essai" lisible selon la méthode.
+function _trkBestOfEssais(method, essais) {
+  if (!essais || !essais.length) return '';
+  if (method === 'temps') {
+    var times = essais.map(function(e){ return e.time; }).filter(function(t){ return !isNaN(t); });
+    if (!times.length) return '';
+    return 'Meilleur : ' + Math.min.apply(null, times).toFixed(2) + 's (' + times.length + ' essai' + (times.length > 1 ? 's' : '') + ')';
+  }
+  if (method === 'charge') {
+    var b = essais[0]; var bl = essais[0].load || 0;
+    essais.forEach(function(e){ if ((e.load || 0) > bl) { b = e; bl = e.load; } });
+    return 'Meilleur : ' + (b.load || '—') + 'kg × ' + (b.reps || '—') + ' reps';
+  }
+  if (method === 'hauteur') {
+    var hs = essais.map(function(e){ return e.height; }).filter(function(h){ return !isNaN(h); });
+    if (!hs.length) return '';
+    return 'Meilleur : ' + Math.max.apply(null, hs) + 'cm';
+  }
+  if (method === 'distance') {
+    var ds = essais.map(function(e){ return e.distance; }).filter(function(d){ return !isNaN(d); });
+    if (!ds.length) return '';
+    return 'Meilleur : ' + Math.max.apply(null, ds) + 'm';
+  }
+  if (method === 'reps') {
+    var rs = essais.map(function(e){ return e.reps; }).filter(function(r){ return !isNaN(r); });
+    if (!rs.length) return '';
+    return 'Meilleur : ' + Math.max.apply(null, rs) + ' reps';
+  }
+  return '';
+}
+
+// Cherche dans window.trackHistory le dernier "best" pour cet exo + méthode.
+function _trkLastScoreFor(exoName, method) {
+  var hist = window.trackHistory || [];
+  for (var i = hist.length - 1; i >= 0; i--) {
+    var h = hist[i];
+    if (h && h.exo === exoName && h.method === method && h.best) return h.best;
+  }
+  return '';
+}
+
+function _trkEsc(s) {
+  return String(s == null ? '' : s).replace(/[&<>"]/g, function(c){
+    return { '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;' }[c];
+  });
+}
+
+// Rend la liste "Exercices trackés" depuis window.trackHistory (20 max).
+function _trkRenderHistory() {
+  var wrap = document.getElementById('trackHistory');
+  if (!wrap) return;
+  var hist = (window.trackHistory || []).slice().reverse();
+  if (!hist.length) {
+    wrap.innerHTML = '<div style="font-size:12px;color:var(--muted);text-align:center;padding:18px">Aucun exercice tracké pour l\'instant.</div>';
+    return;
+  }
+  var icons  = { charge:'🏋️', temps:'⏱', distance:'📏', hauteur:'⬆', reps:'🔢' };
+  var labels = { charge:'Charge × Reps', temps:'Temps', distance:'Distance', hauteur:'Hauteur × Reps', reps:'Reps seuls' };
+  var h = '';
+  var max = Math.min(hist.length, 20);
+  for (var i = 0; i < max; i++) {
+    var e = hist[i] || {};
+    var d = new Date(e.date);
+    var datestr = '';
+    if (!isNaN(d.getTime())) {
+      datestr = d.getDate() + '/' + (d.getMonth() + 1) + ' ' + ('0' + d.getHours()).slice(-2) + ':' + ('0' + d.getMinutes()).slice(-2);
+    }
+    var lastTxt = (e.best || '—') + (datestr ? ' • ' + datestr : '');
+    h += '<div class="track-item">'
+      + '<div class="ti-ic">' + (icons[e.method] || '📊') + '</div>'
+      + '<div class="ti-body">'
+      +   '<div class="ti-name">' + _trkEsc(e.exo || 'Exercice') + '</div>'
+      +   '<div class="ti-cat">' + (labels[e.method] || _trkEsc(e.method || '')) + (e.rpe ? ' • RPE ' + e.rpe : '') + '</div>'
+      +   '<div class="ti-last">' + _trkEsc(lastTxt) + '</div>'
+      + '</div>'
+      + '<div class="ti-arrow">→</div>'
+      + '</div>';
+  }
+  wrap.innerHTML = h;
+}
+window._trkRenderHistory = _trkRenderHistory;
+
 function saveTrack() {
-  const sel = document.getElementById('trackExSelect');
-  if (!sel.value) {
+  var sel = document.getElementById('trackExSelect');
+  var exoName = sel && sel.value;
+  if (!exoName) {
     if (!window.TEST_MODE) { alert('Choisis un exercice d\'abord.'); return; }
   }
-  const type = window._trackType;
-  const essais = _collectEssais();
+  if (!_trkMethod) _trkMethod = 'charge';
+  var essais = _collectEssais();
   if (!essais.length && !window.TEST_MODE) { alert('Renseigne au moins un essai.'); return; }
+  var best = _trkBestOfEssais(_trkMethod, essais);
 
-  let bestTxt = '';
-  if (type === 'sprint' && essais.length) {
-    const times = essais.map(function(e){ return e.time; }).filter(function(t){ return !isNaN(t); });
-    if (times.length) bestTxt = 'Meilleur : ' + Math.min.apply(null, times).toFixed(2) + 's sur ' + times.length + ' essai' + (times.length>1?'s':'');
-  } else if (type === 'force' && essais.length) {
-    let best = essais[0]; let bestLoad = essais[0].load || 0;
-    essais.forEach(function(e){ if ((e.load||0) > bestLoad) { best = e; bestLoad = e.load; } });
-    bestTxt = 'Meilleur : ' + (best.load||'—') + 'kg × ' + (best.reps||'—') + ' reps';
-  } else if (type === 'saut' && essais.length) {
-    const hs = essais.map(function(e){ return e.height; }).filter(function(h){ return !isNaN(h); });
-    if (hs.length) bestTxt = 'Meilleur : ' + Math.max.apply(null, hs) + 'cm sur ' + hs.length + ' essai' + (hs.length>1?'s':'');
-  }
+  // Persiste dans window.trackHistory (sauvegardé via saveData → ah_v8 blob).
+  try {
+    var entry = {
+      date: new Date().toISOString(),
+      exo: exoName || '',
+      method: _trkMethod,
+      essais: essais,
+      rpe: (typeof currentRPE === 'number' ? currentRPE : 0),
+      best: best
+    };
+    if (!Array.isArray(window.trackHistory)) window.trackHistory = [];
+    window.trackHistory.push(entry);
+    if (typeof saveData === 'function') saveData();
+  } catch(e) { console.warn('saveTrack persist:', e); }
 
-  const feedbacks = [
+  // Feedback Titan
+  var feedbacks = [
     '"Enregistré. Ton système nerveux s\'adapte. Continue."',
     '"C\'est noté. La progression se construit séance après séance."',
     '"Données sauvegardées. Je surveille ta courbe de progression."',
     '"Bien. Chaque rep compte. Ne l\'oublie jamais."'
   ];
-  const msg = feedbacks[Math.floor(Math.random() * feedbacks.length)];
-
-  document.getElementById('trackTitanFb').classList.remove('hidden');
-  var ttm = document.getElementById('trackTitanMsg'); if (ttm) ttm.innerHTML = bestTxt ? (bestTxt + '<br>' + msg) : msg;
+  var msg = feedbacks[Math.floor(Math.random() * feedbacks.length)];
+  var fb = document.getElementById('trackTitanFb');
+  if (fb) fb.classList.remove('hidden');
+  var ttm = document.getElementById('trackTitanMsg');
+  if (ttm) ttm.innerHTML = best ? (best + '<br>' + msg) : msg;
   currentRPE = 0;
+
+  try { _trkRenderHistory(); } catch(e) {}
+  if (typeof showToast === 'function') showToast('Exercice enregistré ✓', 'success');
 }
 
 // ══════════════════════════════════
