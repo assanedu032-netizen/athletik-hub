@@ -983,6 +983,21 @@ body{background:var(--bg);color:var(--text);font-family:'Outfit',sans-serif;disp
 .trk-chrono:active{transform:scale(.95)}
 .trk-chrono[data-state="running"]{background:var(--red);color:#fff}
 .trk-chrono[data-state="stopped"]{background:var(--surface2);color:var(--text2);border:1.5px solid var(--border)}
+.trk-search{width:100%;padding:12px 14px;border:1.5px solid var(--border);border-radius:10px;background:var(--surface);color:var(--text);font-family:'Outfit',sans-serif;font-size:14px;outline:none;-webkit-appearance:none}
+.trk-search:focus{border-color:var(--gold);background:var(--surface)}
+.trk-results{max-height:300px;overflow-y:auto;margin-top:6px;border-radius:10px;background:var(--surface2);-webkit-overflow-scrolling:touch}
+.trk-results:empty{display:none}
+.trk-result{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:11px 12px;border-bottom:1px solid var(--border);cursor:pointer;-webkit-tap-highlight-color:transparent;transition:background .15s}
+.trk-result:last-child{border-bottom:none}
+.trk-result:active{background:var(--surface)}
+.trk-result-name{font-size:13px;font-weight:600;color:var(--text);line-height:1.3;flex:1;min-width:0}
+.trk-result-name mark{background:rgba(197,164,78,.35);color:var(--navy);padding:0 2px;border-radius:2px}
+.trk-result-cat{font-size:9px;color:var(--muted);font-weight:700;letter-spacing:.5px;text-transform:uppercase;flex-shrink:0;text-align:right;max-width:35%}
+.trk-result-empty{padding:18px;text-align:center;color:var(--muted);font-size:12px}
+.trk-selected{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:11px 14px;background:linear-gradient(135deg,var(--navy),#0F1B33);color:#fff;border-radius:10px;border:1px solid var(--gold)}
+.trk-selected #trkSelectedName{font-weight:700;font-size:14px;color:var(--gold);flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.trk-selected button{background:rgba(255,255,255,.15);color:#fff;border:none;width:28px;height:28px;border-radius:50%;cursor:pointer;font-size:12px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.trk-selected button:active{background:rgba(255,255,255,.25)}
 
 /* ═══ LEVEL CARD ═══ */
 .level-card{margin:16px 22px 0;background:var(--surface);border:1px solid var(--border);border-radius:var(--r2);padding:18px;box-shadow:var(--card-shadow);display:flex;align-items:center;gap:14px;animation:fadeUp .3s ease both}
@@ -3355,10 +3370,15 @@ body.test-mode #testSkipBar{display:flex}
       <div class="card-title"><span>📊</span> Tracker un exercice</div>
       <div class="fg">
         <label class="fl">Choisis ton exercice</label>
-        <select class="fi-select" id="trackExSelect" onchange="_trkRefreshLastScore()">
-          <option value="" disabled selected>Sélectionne un exercice</option>
-          <!-- Peuplé dynamiquement depuis catData par _trkPopulateExoList() -->
-        </select>
+        <input type="hidden" id="trackExSelect">
+        <div id="trkSelected" class="trk-selected" style="display:none">
+          <span id="trkSelectedName">—</span>
+          <button type="button" onclick="_trkClearExo()" aria-label="Changer d'exercice">✕</button>
+        </div>
+        <div id="trkSearchWrap">
+          <input type="search" class="trk-search" id="trkSearchInput" placeholder="🔍 Rechercher un exercice…" oninput="_trkSearch(this.value)" autocomplete="off">
+          <div id="trkResults" class="trk-results"></div>
+        </div>
       </div>
 
       <!-- Choix de la méthode de tracking (utilisateur) -->
@@ -8245,39 +8265,103 @@ function initTracksSAT() {
 // Track : méthode courante choisie par l'utilisateur (5 options).
 var _trkMethod = 'charge';
 
-// Peuple le <select> #trackExSelect avec toute la librairie catData,
-// groupée par catégorie (Force, Pliométrie, Sprint, etc.). Appelé une
-// seule fois à l'entrée de l'onglet Tracks.
-function _trkPopulateExoList() {
-  var sel = document.getElementById('trackExSelect');
-  if (!sel || sel.dataset.populated === '1') return;
-  if (typeof catData !== 'object' || !catData) return;
-  var ph = sel.querySelector('option[disabled]');
-  sel.innerHTML = '';
-  if (ph) sel.appendChild(ph);
+// Index plat de tous les exercices (catData), construit une seule fois.
+var _trkIndex = [];
+function _trkNorm(s) {
+  return String(s == null ? '' : s).toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
+}
+function _trkBuildIndex() {
+  if (_trkIndex.length || typeof catData !== 'object' || !catData) return;
   Object.keys(catData).forEach(function(catKey) {
     var arr = catData[catKey];
-    if (!Array.isArray(arr) || !arr.length) return;
+    if (!Array.isArray(arr)) return;
     var label = (typeof _LIB_CAT_MAP !== 'undefined' && _LIB_CAT_MAP[catKey] && _LIB_CAT_MAP[catKey].label) || catKey;
-    var og = document.createElement('optgroup');
-    og.label = label;
     arr.forEach(function(ex) {
       if (!ex || !ex.name) return;
-      var op = document.createElement('option');
-      op.value = ex.name;
-      op.textContent = ex.name;
-      op.setAttribute('data-cat', catKey);
-      og.appendChild(op);
+      _trkIndex.push({ name: ex.name, cat: catKey, catLabel: label, norm: _trkNorm(ex.name) });
     });
-    sel.appendChild(og);
   });
-  sel.dataset.populated = '1';
 }
-window._trkPopulateExoList = _trkPopulateExoList;
 
-// Init de l'onglet Tracks : peuple la liste et rend l'historique réel.
+// Recherche live : appelée à chaque keystroke dans la barre.
+function _trkSearch(q) {
+  _trkBuildIndex();
+  var nq = _trkNorm(q || '');
+  var results;
+  if (!nq) {
+    results = _trkIndex.slice(0, 50);
+  } else {
+    results = _trkIndex.filter(function(it){ return it.norm.indexOf(nq) >= 0; });
+    results.sort(function(a, b) {
+      var ai = a.norm.indexOf(nq), bi = b.norm.indexOf(nq);
+      if (ai !== bi) return ai - bi;
+      return a.name.localeCompare(b.name);
+    });
+    results = results.slice(0, 30);
+  }
+  _trkRenderResults(results, nq);
+}
+window._trkSearch = _trkSearch;
+
+function _trkRenderResults(items, nq) {
+  var wrap = document.getElementById('trkResults');
+  if (!wrap) return;
+  if (!items.length) {
+    wrap.innerHTML = '<div class="trk-result-empty">Aucun résultat.</div>';
+    return;
+  }
+  var h = '';
+  for (var i = 0; i < items.length; i++) {
+    var it = items[i];
+    var display = _trkEsc(it.name);
+    if (nq) {
+      var idx = it.norm.indexOf(nq);
+      if (idx >= 0) {
+        display = _trkEsc(it.name.substr(0, idx)) + '<mark>' + _trkEsc(it.name.substr(idx, nq.length)) + '</mark>' + _trkEsc(it.name.substr(idx + nq.length));
+      }
+    }
+    h += '<div class="trk-result" onclick="_trkPickExo(this.getAttribute(\'data-name\'))" data-name="' + _trkEsc(it.name) + '">'
+      +    '<div class="trk-result-name">' + display + '</div>'
+      +    '<div class="trk-result-cat">' + _trkEsc(it.catLabel) + '</div>'
+      +  '</div>';
+  }
+  wrap.innerHTML = h;
+}
+
+function _trkPickExo(name) {
+  if (!name) return;
+  var h = document.getElementById('trackExSelect');
+  if (h) h.value = name;
+  var nm = document.getElementById('trkSelectedName');
+  var disp = document.getElementById('trkSelected');
+  var sw = document.getElementById('trkSearchWrap');
+  if (nm) nm.textContent = name;
+  if (disp) disp.style.display = '';
+  if (sw) sw.style.display = 'none';
+  var inp = document.getElementById('trkSearchInput');
+  if (inp) inp.value = '';
+  var results = document.getElementById('trkResults');
+  if (results) results.innerHTML = '';
+  _trkRefreshLastScore();
+}
+window._trkPickExo = _trkPickExo;
+
+function _trkClearExo() {
+  var h = document.getElementById('trackExSelect');
+  if (h) h.value = '';
+  var disp = document.getElementById('trkSelected');
+  var sw = document.getElementById('trkSearchWrap');
+  if (disp) disp.style.display = 'none';
+  if (sw) sw.style.display = '';
+  var inp = document.getElementById('trkSearchInput');
+  if (inp) { inp.value = ''; setTimeout(function(){ try { inp.focus(); } catch(e) {} }, 30); }
+  _trkRefreshLastScore();
+}
+window._trkClearExo = _trkClearExo;
+
+// Init de l'onglet Tracks : construit l'index de recherche et rend l'historique réel.
 function _trkInit() {
-  try { _trkPopulateExoList(); } catch(e) {}
+  try { _trkBuildIndex(); } catch(e) {}
   try { _trkRenderHistory(); } catch(e) {}
 }
 window._trkInit = _trkInit;
