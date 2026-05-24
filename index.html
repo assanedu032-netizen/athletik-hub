@@ -585,13 +585,24 @@ body{background:var(--bg);color:var(--text);font-family:'Outfit',sans-serif;disp
 
 /* ═══ PAGE HEADER ═══ */
 .pg-head{padding:20px 22px 0}
-.pg-title{font-family:'Bebas Neue',sans-serif;font-size:32px;color:var(--text);letter-spacing:2px}
-.pg-sub{font-size:12px;color:var(--muted);margin-top:2px}
+.pg-title{font-family:'Bebas Neue',sans-serif;font-size:32px;color:var(--text);letter-spacing:3px;text-transform:uppercase}
+.pg-sub{font-size:11px;color:var(--muted);margin-top:3px;letter-spacing:1.5px;text-transform:uppercase;font-weight:600}
 
 /* ═══ CARDS ═══ */
 .card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:18px;margin-bottom:14px;box-shadow:var(--card-shadow)}
-.card-title{font-family:'Bebas Neue',sans-serif;font-size:18px;color:var(--text);letter-spacing:1px;margin-bottom:12px;display:flex;align-items:center;gap:8px}
+.card-title{font-family:'Bebas Neue',sans-serif;font-size:18px;color:var(--text);letter-spacing:2.5px;text-transform:uppercase;margin-bottom:12px;display:flex;align-items:center;gap:8px}
 .card-title span{font-size:20px}
+
+/* ═══ HERO TIMER-INSPIRED — utilitaires pour stats premium ═══ */
+.hero-tim{background:linear-gradient(135deg,var(--navy) 0%,#0F1B33 100%);color:#F0EDE8;border-radius:16px;padding:20px 22px;position:relative;overflow:hidden;border:1px solid rgba(197,164,78,.2)}
+.hero-tim::after{content:'';position:absolute;top:-30px;right:-30px;width:100px;height:100px;border-radius:50%;background:radial-gradient(circle,rgba(197,164,78,.12) 0%,transparent 70%);pointer-events:none}
+.hero-tim-lbl{font-family:'Outfit',sans-serif;font-size:10px;font-weight:700;letter-spacing:2.5px;text-transform:uppercase;color:var(--gold);opacity:.85;margin-bottom:6px;position:relative;z-index:1}
+.hero-tim-val{font-family:'Bebas Neue',sans-serif;font-size:44px;line-height:1;letter-spacing:1px;color:#F0EDE8;position:relative;z-index:1}
+.hero-tim-val .unit{font-size:18px;color:var(--gold);margin-left:6px;font-family:'Outfit',sans-serif;font-weight:600;letter-spacing:1px}
+.hero-tim-sub{font-size:12px;color:#8A99B3;margin-top:6px;position:relative;z-index:1;letter-spacing:.5px}
+.hero-tim-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:14px;padding-top:12px;margin-top:14px;border-top:1px solid rgba(255,255,255,.08);position:relative;z-index:1}
+.hero-tim-grid-stat{font-family:'Bebas Neue',sans-serif;font-size:22px;color:#F0EDE8;line-height:1;letter-spacing:.5px}
+.hero-tim-grid-stat .l{display:block;font-family:'Outfit',sans-serif;font-size:9px;font-weight:700;letter-spacing:1.5px;color:#8A99B3;text-transform:uppercase;margin-top:3px}
 
 /* ═══ INPUTS ═══ */
 .fg{margin-bottom:14px}
