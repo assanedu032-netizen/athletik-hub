@@ -18,7 +18,7 @@
 <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-app.js";
   import { getAuth, setPersistence, browserLocalPersistence, createUserWithEmailAndPassword, signInWithEmailAndPassword, signInWithPopup, GoogleAuthProvider, onAuthStateChanged, signOut, sendPasswordResetEmail } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-auth.js";
-  import { getFirestore, doc, setDoc, getDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore.js";
+  import { getFirestore, doc, setDoc, getDoc, serverTimestamp, collection, addDoc, deleteDoc, query, orderBy, onSnapshot } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore.js";
   import { getMessaging, getToken, onMessage, isSupported } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-messaging.js";
 
   const firebaseConfig = {
@@ -65,7 +65,8 @@
     auth, db, googleProvider,
     createUserWithEmailAndPassword, signInWithEmailAndPassword, signInWithPopup,
     onAuthStateChanged, signOut, sendPasswordResetEmail,
-    doc, setDoc, getDoc, serverTimestamp
+    doc, setDoc, getDoc, serverTimestamp,
+    collection, addDoc, deleteDoc, query, orderBy, onSnapshot
   };
 
   onAuthStateChanged(auth, function(user) {
@@ -891,6 +892,88 @@ body{background:var(--bg);color:var(--text);font-family:'Outfit',sans-serif;disp
 .pf-btn-gold{background:linear-gradient(135deg,var(--gold),var(--gold2));color:var(--navy)}
 .pf-btn-navy{background:var(--navy);color:var(--gold)}
 .pf-btn-ghost{background:var(--surface2);color:var(--text2);border:1.5px solid var(--border)}
+
+/* ═══ BODY FAT 7-SITES (Jackson & Pollock) ═══ */
+#bodyfat{font-family:'Outfit',sans-serif}
+.bf-tab{flex:1;background:transparent;border:none;padding:11px 8px;font-family:'Outfit',sans-serif;font-size:13px;font-weight:600;color:var(--muted);cursor:pointer;border-radius:10px;transition:all .2s;letter-spacing:.3px}
+.bf-tab.on{background:var(--navy);color:#fff;box-shadow:0 2px 6px rgba(27,42,74,.25)}
+.bf-panel{padding:18px 16px 40px}
+.bf-section{background:var(--surface);border-radius:14px;padding:16px;margin-bottom:14px;border:1px solid var(--border)}
+.bf-section-title{font-family:'Bebas Neue',sans-serif;font-size:16px;color:var(--navy);letter-spacing:1px;margin-bottom:12px;display:flex;align-items:center;gap:8px}
+.bf-section-title::before{content:'';width:3px;height:14px;background:var(--gold);border-radius:2px}
+.bf-row{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px}
+.bf-row:last-child{margin-bottom:0}
+.bf-field{display:flex;flex-direction:column;min-width:0}
+.bf-field label{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.8px;color:var(--muted);margin-bottom:5px}
+.bf-field input{font-family:'Outfit',sans-serif;font-size:14px;padding:11px 12px;border:1.5px solid var(--border);border-radius:10px;background:var(--surface2);color:var(--text);width:100%;outline:none;-webkit-appearance:none}
+.bf-field input:focus{border-color:var(--gold);background:var(--surface)}
+.bf-gender{display:grid;grid-template-columns:1fr 1fr;background:var(--surface2);border-radius:10px;padding:3px;border:1.5px solid var(--border)}
+.bf-gender button{background:transparent;border:none;padding:9px;font-family:'Outfit',sans-serif;font-size:13px;font-weight:600;color:var(--muted);cursor:pointer;border-radius:7px;transition:all .2s}
+.bf-gender button.on{background:var(--navy);color:#fff}
+.bf-skinfold{display:grid;grid-template-columns:32px 1fr 92px;align-items:center;gap:10px;padding:10px;background:var(--surface2);border-radius:10px;border:1.5px solid transparent;margin-bottom:8px;transition:all .2s}
+.bf-skinfold.filled{border-color:var(--gold);background:var(--surface)}
+.bf-sf-num{width:32px;height:32px;border-radius:50%;background:var(--navy);color:var(--gold);font-family:'Bebas Neue',sans-serif;font-size:16px;display:flex;align-items:center;justify-content:center}
+.bf-sf-info{min-width:0}
+.bf-sf-name{font-size:13px;font-weight:700;color:var(--text)}
+.bf-sf-desc{font-size:10px;color:var(--muted);line-height:1.3;margin-top:2px}
+.bf-sf-input-wrap{position:relative}
+.bf-sf-input-wrap input{font-family:'Outfit',sans-serif;font-size:14px;font-weight:600;padding:9px 26px 9px 10px;border:1.5px solid var(--border);border-radius:8px;background:var(--surface);color:var(--navy);width:100%;text-align:right;outline:none;-webkit-appearance:none}
+.bf-sf-input-wrap input:focus{border-color:var(--gold)}
+.bf-sf-input-wrap::after{content:'mm';position:absolute;right:8px;top:50%;transform:translateY(-50%);font-size:10px;font-weight:600;color:var(--muted);pointer-events:none}
+.bf-cta{width:100%;background:var(--navy);color:#fff;border:none;padding:14px;border-radius:12px;font-family:'Bebas Neue',sans-serif;font-size:16px;letter-spacing:2px;cursor:pointer;box-shadow:0 4px 14px rgba(27,42,74,.22)}
+.bf-cta:active{transform:translateY(1px)}
+.bf-cta:disabled{opacity:.5;cursor:not-allowed}
+.bf-cta-secondary{background:var(--surface);color:var(--navy);border:1.5px solid var(--border);box-shadow:none}
+.bf-hero{background:linear-gradient(135deg,var(--navy),#0F1B33);color:#fff;border-radius:18px;padding:22px 20px;text-align:center;margin-bottom:14px;position:relative;overflow:hidden}
+.bf-hero-label{font-size:10px;font-weight:700;letter-spacing:2px;text-transform:uppercase;opacity:.7;margin-bottom:6px}
+.bf-hero-val{font-family:'Bebas Neue',sans-serif;font-size:56px;line-height:1;color:var(--gold);letter-spacing:1px}
+.bf-hero-val sup{font-size:22px;margin-left:4px}
+.bf-class{display:inline-block;margin-top:10px;padding:5px 14px;border-radius:18px;font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:#fff;background:var(--muted)}
+.bf-scale{display:flex;height:28px;border-radius:8px;overflow:hidden;margin:10px 0 8px;position:relative}
+.bf-scale-seg{flex:1}
+.bf-scale-mark{position:absolute;top:-6px;transform:translateX(-50%);width:4px;height:40px;background:var(--navy);border-radius:2px;box-shadow:0 0 0 2px #fff;transition:left .6s cubic-bezier(.34,1.3,.64,1)}
+.bf-scale-leg{display:grid;grid-template-columns:repeat(3,1fr);gap:5px;font-size:9px;color:var(--muted);margin-top:6px}
+.bf-scale-leg-item{display:flex;align-items:center;gap:3px}
+.bf-scale-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0}
+.bf-stat{background:var(--surface);border-radius:12px;padding:14px;border:1px solid var(--border)}
+.bf-stat-label{font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--muted);margin-bottom:4px}
+.bf-stat-val{font-family:'Bebas Neue',sans-serif;font-size:24px;color:var(--navy);letter-spacing:.5px}
+.bf-stat-u{font-size:13px;color:var(--muted);margin-left:4px;font-family:'Outfit',sans-serif;font-weight:500}
+.bf-detail-row{display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid var(--border);font-size:13px}
+.bf-detail-row:last-child{border-bottom:none}
+.bf-detail-row .l{color:var(--muted)}
+.bf-detail-row .v{font-weight:600;color:var(--text)}
+.bf-site-card{background:var(--surface);border-radius:12px;padding:14px;margin-bottom:8px;border:1px solid var(--border);border-left:3px solid var(--gold)}
+.bf-site-head{display:flex;align-items:center;gap:12px;cursor:pointer}
+.bf-site-num{width:30px;height:30px;border-radius:50%;background:var(--navy);color:var(--gold);font-family:'Bebas Neue',sans-serif;font-size:14px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.bf-site-name{font-weight:700;color:var(--text);font-size:14px;flex:1}
+.bf-site-arrow{color:var(--muted);transition:transform .3s;font-size:12px}
+.bf-site-card.exp .bf-site-arrow{transform:rotate(180deg)}
+.bf-site-body{max-height:0;overflow:hidden;transition:max-height .3s ease;font-size:12px;color:var(--text2);line-height:1.6}
+.bf-site-card.exp .bf-site-body{max-height:240px;padding-top:10px;margin-top:10px;border-top:1px solid var(--border)}
+.bf-hist-stats{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:14px}
+.bf-hist-stat{background:var(--surface);border-radius:12px;padding:12px 6px;text-align:center;border:1px solid var(--border)}
+.bf-hist-stat-label{font-size:9px;font-weight:700;letter-spacing:1px;color:var(--muted);text-transform:uppercase;margin-bottom:3px}
+.bf-hist-stat-val{font-family:'Bebas Neue',sans-serif;font-size:20px;color:var(--navy)}
+.bf-hist-trend{font-size:10px;font-weight:600;margin-top:2px}
+.bf-trend-down{color:var(--green)}
+.bf-trend-up{color:var(--red)}
+.bf-trend-flat{color:var(--muted)}
+.bf-chart-wrap{background:var(--surface);border-radius:14px;padding:14px 12px;margin-bottom:12px;border:1px solid var(--border)}
+.bf-chart-title{font-size:11px;font-weight:700;letter-spacing:1px;color:var(--muted);text-transform:uppercase;margin-bottom:10px}
+.bf-chart{width:100%;height:160px}
+.bf-hist-item{background:var(--surface);border-radius:12px;padding:12px 14px;display:grid;grid-template-columns:1fr auto auto;align-items:center;gap:10px;border:1px solid var(--border);border-left:3px solid var(--gold);margin-bottom:8px}
+.bf-hist-date{font-size:12px;font-weight:700;color:var(--text)}
+.bf-hist-detail{font-size:10px;color:var(--muted);margin-top:2px}
+.bf-hist-sum{font-family:'Bebas Neue',sans-serif;font-size:22px;color:var(--gold);letter-spacing:.5px}
+.bf-hist-sum sup{font-size:10px;margin-left:2px;color:var(--muted);font-family:'Outfit',sans-serif;font-weight:600}
+.bf-hist-del{background:transparent;border:none;color:var(--muted);cursor:pointer;padding:4px;font-size:14px;opacity:.5}
+.bf-hist-del:hover{opacity:1;color:var(--red)}
+.bf-hist-empty{text-align:center;padding:40px 20px;color:var(--muted);font-size:12px}
+.bf-auth-gate{text-align:center;padding:50px 24px}
+.bf-auth-gate-ic{font-size:42px;margin-bottom:14px;opacity:.4}
+.bf-auth-gate h3{font-family:'Bebas Neue',sans-serif;font-size:20px;color:var(--navy);letter-spacing:1px;margin-bottom:8px}
+.bf-auth-gate p{font-size:13px;color:var(--text2);line-height:1.5;margin-bottom:18px}
 
 /* ═══ LEVEL CARD ═══ */
 .level-card{margin:16px 22px 0;background:var(--surface);border:1px solid var(--border);border-radius:var(--r2);padding:18px;box-shadow:var(--card-shadow);display:flex;align-items:center;gap:14px;animation:fadeUp .3s ease both}
@@ -1787,7 +1870,13 @@ body.test-mode #testSkipBar{display:flex}
     doc,
     setDoc,
     getDoc,
-    serverTimestamp
+    serverTimestamp,
+    collection,
+    addDoc,
+    deleteDoc,
+    query,
+    orderBy,
+    onSnapshot
   } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore.js";
 
   const firebaseConfig = {
@@ -1818,7 +1907,8 @@ body.test-mode #testSkipBar{display:flex}
     onAuthStateChanged,
     signOut,
     sendPasswordResetEmail,
-    doc, setDoc, getDoc, serverTimestamp
+    doc, setDoc, getDoc, serverTimestamp,
+    collection, addDoc, deleteDoc, query, orderBy, onSnapshot
   };
 
   // Listener état d'authentification
@@ -3075,6 +3165,16 @@ body.test-mode #testSkipBar{display:flex}
   <div class="pg-head">
     <div class="pg-title">TRACKS</div>
     <div class="pg-sub">Mesure, track et progresse.</div>
+  </div>
+
+  <!-- Entrée Body Fat 7-Sites (overlay plein écran) -->
+  <div onclick="openBodyfat()" style="cursor:pointer;margin:0 0 14px;background:linear-gradient(135deg,var(--navy),#0F1B33);border-radius:14px;padding:16px;display:flex;align-items:center;gap:14px;box-shadow:var(--card-shadow);border:1px solid var(--gold-glow)">
+    <div style="font-size:32px;flex-shrink:0">📏</div>
+    <div style="flex:1;color:#fff;min-width:0">
+      <div style="font-family:'Bebas Neue',sans-serif;font-size:15px;letter-spacing:1.5px;color:var(--gold)">COMPOSITION CORPORELLE</div>
+      <div style="font-size:11px;opacity:.75;margin-top:2px">Body Fat 7 plis · Jackson &amp; Pollock</div>
+    </div>
+    <div style="color:var(--gold);font-size:20px;flex-shrink:0">→</div>
   </div>
 
   <!-- Sub-tabs -->
@@ -4572,6 +4672,128 @@ body.test-mode #testSkipBar{display:flex}
 
   </div><!-- /ls-body -->
 </div><!-- /liveSession -->
+
+<!-- ═══ BODY FAT 7-SITES (overlay plein écran, ouvert depuis Tracks) ═══ -->
+<div id="bodyfat" style="display:none;position:fixed;inset:0;z-index:1000;background:var(--bg);overflow-y:auto;-webkit-overflow-scrolling:touch">
+
+  <div style="background:linear-gradient(135deg,var(--navy),#0F1B33);color:#fff;padding:18px 18px 28px;position:relative;overflow:hidden">
+    <div style="display:flex;align-items:center;gap:12px;margin-bottom:8px;position:relative;z-index:1">
+      <button onclick="closeBodyfat()" style="width:36px;height:36px;border-radius:50%;background:rgba(255,255,255,.1);border:none;color:#fff;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center" aria-label="Fermer">←</button>
+      <span style="font-family:'Bebas Neue',sans-serif;letter-spacing:2px;color:var(--gold);font-size:12px">ATHLETIK · TRACKS</span>
+    </div>
+    <div style="font-family:'Bebas Neue',sans-serif;font-size:30px;letter-spacing:1px;line-height:1;position:relative;z-index:1">📏 BODY FAT 7-SITES</div>
+    <div style="font-size:12px;opacity:.7;margin-top:4px;position:relative;z-index:1">Protocole Jackson &amp; Pollock</div>
+  </div>
+
+  <div style="display:flex;background:var(--surface);margin:-14px 16px 0;border-radius:14px;padding:4px;box-shadow:var(--card-shadow);position:relative;z-index:2">
+    <button class="bf-tab on" data-bftab="calc" onclick="bfShowTab('calc')">Calcul</button>
+    <button class="bf-tab" data-bftab="sites" onclick="bfShowTab('sites')">Sites</button>
+    <button class="bf-tab" data-bftab="history" onclick="bfShowTab('history')">Historique</button>
+  </div>
+
+  <!-- Panel Calcul -->
+  <div id="bfPanelCalc" class="bf-panel">
+    <!-- Garde d'authentification : remplace tout le contenu si non connecté. -->
+    <div id="bfAuthGate" class="bf-auth-gate" style="display:none">
+      <div class="bf-auth-gate-ic">🔒</div>
+      <h3>Connecte-toi pour mesurer</h3>
+      <p>La mesure de composition corporelle nécessite un compte pour suivre ton évolution dans le temps.</p>
+      <button class="bf-cta" onclick="closeBodyfat(); if(typeof switchTab==='function') switchTab('moi'); if(typeof showToast==='function') showToast('Va dans « Mon compte » pour te connecter.', 'info');">Me connecter</button>
+    </div>
+
+    <div id="bfCalcContent">
+      <div class="bf-section">
+        <div class="bf-section-title">Profil</div>
+        <div class="bf-row">
+          <div class="bf-field">
+            <label>Genre</label>
+            <div class="bf-gender">
+              <button type="button" data-bfgender="M" class="on" onclick="bfSetGender('M',this)">Homme</button>
+              <button type="button" data-bfgender="F" onclick="bfSetGender('F',this)">Femme</button>
+            </div>
+          </div>
+          <div class="bf-field">
+            <label>Âge</label>
+            <input id="bfAge" type="number" min="16" max="100" inputmode="numeric" placeholder="25">
+          </div>
+        </div>
+        <div class="bf-row">
+          <div class="bf-field">
+            <label>Poids (kg)</label>
+            <input id="bfWeight" type="number" min="30" max="200" step="0.1" inputmode="decimal" placeholder="75">
+          </div>
+          <div class="bf-field">
+            <label>Date</label>
+            <input id="bfDate" type="date">
+          </div>
+        </div>
+      </div>
+
+      <div class="bf-section">
+        <div class="bf-section-title">Plis cutanés</div>
+        <div id="bfSkinfoldList"></div>
+      </div>
+
+      <button class="bf-cta" onclick="bfOnCalc()">Calculer</button>
+
+      <div style="background:rgba(197,164,78,.08);border-left:3px solid var(--gold);padding:12px;border-radius:0 8px 8px 0;margin-top:14px;font-size:11px;line-height:1.5;color:var(--text2)">
+        <strong>Rappel.</strong> Mesures sur le côté droit du corps, muscle relâché. Reprendre 2 fois chaque site et noter au 0.5 mm près.
+      </div>
+
+      <div id="bfResult" style="display:none;margin-top:20px">
+        <div class="bf-hero">
+          <div class="bf-hero-label">Somme des 7 plis</div>
+          <div class="bf-hero-val"><span id="bfRSum">—</span><sup>mm</sup></div>
+          <div id="bfRClass" class="bf-class">—</div>
+        </div>
+
+        <div class="bf-section">
+          <div class="bf-section-title">Échelle % MG</div>
+          <div class="bf-scale" id="bfScaleBar"></div>
+          <div class="bf-scale-leg">
+            <div class="bf-scale-leg-item"><span class="bf-scale-dot" style="background:#6B7280"></span>Essentielle</div>
+            <div class="bf-scale-leg-item"><span class="bf-scale-dot" style="background:var(--green)"></span>Excellent</div>
+            <div class="bf-scale-leg-item"><span class="bf-scale-dot" style="background:#34D399"></span>Bon</div>
+            <div class="bf-scale-leg-item"><span class="bf-scale-dot" style="background:var(--orange)"></span>Moyen</div>
+            <div class="bf-scale-leg-item"><span class="bf-scale-dot" style="background:#F97316"></span>Sous moy.</div>
+            <div class="bf-scale-leg-item"><span class="bf-scale-dot" style="background:var(--red)"></span>Faible</div>
+          </div>
+        </div>
+
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px">
+          <div class="bf-stat"><div class="bf-stat-label">% Masse grasse</div><div class="bf-stat-val"><span id="bfRBF">—</span><span class="bf-stat-u">%</span></div></div>
+          <div class="bf-stat"><div class="bf-stat-label">Masse maigre</div><div class="bf-stat-val"><span id="bfRLean">—</span><span class="bf-stat-u">kg</span></div></div>
+        </div>
+
+        <div class="bf-section">
+          <div class="bf-section-title">Détails</div>
+          <div class="bf-detail-row"><span class="l">Masse grasse</span><span class="v"><span id="bfRFat">—</span> kg</span></div>
+          <div class="bf-detail-row"><span class="l">Densité corporelle</span><span class="v" id="bfRDensity">—</span></div>
+          <div class="bf-detail-row"><span class="l">Formule de Siri</span><span class="v">%MG = (495/D) − 450</span></div>
+        </div>
+
+        <button class="bf-cta" onclick="bfOnSave()" id="bfSaveBtn">Enregistrer dans Firestore</button>
+        <button class="bf-cta bf-cta-secondary" onclick="bfOnReset()" style="margin-top:8px">Nouvelle mesure</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Panel Sites -->
+  <div id="bfPanelSites" class="bf-panel" style="display:none">
+    <div style="background:linear-gradient(135deg,rgba(197,164,78,.12),transparent);border-left:3px solid var(--gold);padding:14px;border-radius:10px;margin-bottom:14px;font-size:12px;color:var(--text);line-height:1.5">
+      Les 7 sites du protocole Jackson &amp; Pollock. Toutes les prises se font sur le <strong>côté droit du corps</strong>, muscle relâché.
+    </div>
+    <div id="bfSiteList"></div>
+  </div>
+
+  <!-- Panel Historique -->
+  <div id="bfPanelHistory" class="bf-panel" style="display:none">
+    <div id="bfHistoryContent">
+      <div class="bf-hist-empty">Chargement…</div>
+    </div>
+  </div>
+
+</div>
 
 </div><!-- /app -->
 
@@ -7242,6 +7464,453 @@ function renderHistory() {
   el.innerHTML = html;
 }
 window.renderHistory = renderHistory;
+
+// ═══════════════════════════════════════════════════════════════
+// BODY FAT 7-SITES (Protocole Jackson & Pollock)
+// Module interne : constantes + logique pure (équivalent d'un
+// utils/bodyfat.ts) + rendu + persistance Firestore temps réel.
+// Sous-collection : users/{uid}/bodyfat/{measureId}.
+// Métrique primaire : totalSum (somme des 7 plis en mm).
+// ═══════════════════════════════════════════════════════════════
+
+var BF_SITES = [
+  { key:'tricep',  name:'Triceps',         desc:'Pli vertical, milieu arrière du bras' },
+  { key:'chest',   name:'Pectoraux',       desc:'Pli diagonal, entre aisselle et mamelon' },
+  { key:'subscap', name:'Sous-scapulaire', desc:'Pli diagonal, sous l\'angle de l\'omoplate' },
+  { key:'midax',   name:'Mi-axillaire',    desc:'Ligne médio-axillaire, hauteur xiphoïde' },
+  { key:'suprail', name:'Sus-iliaque',     desc:'Pli diagonal, au-dessus de la crête iliaque' },
+  { key:'abdo',    name:'Abdominal',       desc:'Pli vertical, 2 cm à droite du nombril' },
+  { key:'thigh',   name:'Cuisse',          desc:'Milieu antérieur de la cuisse' }
+];
+var BF_TIPS = [
+  'Bras complètement relâché le long du corps',
+  'Plus court chez la femme (1/3 entre aisselle et mamelon)',
+  "Le pli suit l'axe naturel des fibres",
+  'Bras légèrement écarté pour dégager la zone',
+  'Ne pas confondre avec le pli abdominal',
+  'Pince à 2 cm du nombril, ne pas pincer le nombril',
+  "Pied au sol, jambe relâchée, poids sur l'autre jambe"
+];
+var BF_DIRS = ['Vertical','Diagonal','Diagonal','Horizontal','Diagonal','Vertical','Vertical'];
+var BF_LIMITS = {
+  skinfold: { min: 1, max: 80 },
+  age:      { min: 16, max: 100 },
+  weight:   { min: 30, max: 200 }
+};
+// Tables Jackson & Pollock par tranche d'âge × genre (en %MG).
+var BF_CLASSIF = {
+  M: [
+    { range:[18,29], levels:[['Essentielle',2,5],['Excellent',5.1,9.3],['Bon',9.4,14],['Moyen',14.1,17.5],['Sous moyenne',17.6,22.5],['Faible',22.6,100]] },
+    { range:[30,39], levels:[['Essentielle',2,5],['Excellent',5.1,13.8],['Bon',13.9,17.4],['Moyen',17.5,20.4],['Sous moyenne',20.5,24.1],['Faible',24.2,100]] },
+    { range:[40,49], levels:[['Essentielle',2,5],['Excellent',5.1,16.2],['Bon',16.3,19.5],['Moyen',19.6,22.4],['Sous moyenne',22.5,26],['Faible',26.1,100]] },
+    { range:[50,59], levels:[['Essentielle',2,5],['Excellent',5.1,17.8],['Bon',17.9,21.2],['Moyen',21.3,24],['Sous moyenne',24.1,27.4],['Faible',27.5,100]] },
+    { range:[60,100],levels:[['Essentielle',2,5],['Excellent',5.1,18.3],['Bon',18.4,21.9],['Moyen',22,25],['Sous moyenne',25.1,28.4],['Faible',28.5,100]] }
+  ],
+  F: [
+    { range:[18,29], levels:[['Essentielle',10,13],['Excellent',13.1,17],['Bon',17.1,20.5],['Moyen',20.6,23.6],['Sous moyenne',23.7,27.6],['Faible',27.7,100]] },
+    { range:[30,39], levels:[['Essentielle',10,13],['Excellent',13.1,17.9],['Bon',18,21.5],['Moyen',21.6,24.8],['Sous moyenne',24.9,29.2],['Faible',29.3,100]] },
+    { range:[40,49], levels:[['Essentielle',10,13],['Excellent',13.1,21.2],['Bon',21.3,24.8],['Moyen',24.9,28],['Sous moyenne',28.1,32],['Faible',32.1,100]] },
+    { range:[50,59], levels:[['Essentielle',10,13],['Excellent',13.1,24.9],['Bon',25,28.4],['Moyen',28.5,31.5],['Sous moyenne',31.6,35.5],['Faible',35.6,100]] },
+    { range:[60,100],levels:[['Essentielle',10,13],['Excellent',13.1,25],['Bon',25.1,29.2],['Moyen',29.3,32.4],['Sous moyenne',32.5,36.5],['Faible',36.6,100]] }
+  ]
+};
+var BF_COLORS = {
+  'Essentielle': '#6B7280', 'Excellent': '#10B981', 'Bon': '#34D399',
+  'Moyen': '#F59E0B', 'Sous moyenne': '#F97316', 'Faible': '#EF4444'
+};
+
+// ─── LOGIQUE PURE (testable, sans DOM ni Firestore) ───────────
+function bfCalcDensity(sumMm, age, gender) {
+  var S = sumMm, S2 = S * S;
+  if (gender === 'M') return 1.112 - 0.00043499 * S + 0.00000055 * S2 - 0.00028826 * age;
+  return 1.097 - 0.00046971 * S + 0.00000056 * S2 - 0.00012828 * age;
+}
+function bfSiriPct(density) { return (495 / density) - 450; }
+function bfClassify(bf, age, gender) {
+  var tables = BF_CLASSIF[gender] || BF_CLASSIF.M;
+  var tbl = null;
+  for (var i = 0; i < tables.length; i++) {
+    if (age >= tables[i].range[0] && age <= tables[i].range[1]) { tbl = tables[i]; break; }
+  }
+  if (!tbl) tbl = tables[0];
+  for (var j = 0; j < tbl.levels.length; j++) {
+    var lv = tbl.levels[j];
+    if (bf >= lv[1] && bf <= lv[2]) return { label: lv[0], range: [lv[1], lv[2]], tbl: tbl };
+  }
+  if (bf < tbl.levels[0][1]) return { label: tbl.levels[0][0], range: [tbl.levels[0][1], tbl.levels[0][2]], tbl: tbl };
+  return { label: 'Faible', range: [tbl.levels[5][1], tbl.levels[5][2]], tbl: tbl };
+}
+// Validation des entrées avant calcul et avant écriture Firestore.
+function bfValidate(d) {
+  if (!d) return { ok:false, error:'Données manquantes.' };
+  if (!(d.age >= BF_LIMITS.age.min && d.age <= BF_LIMITS.age.max))
+    return { ok:false, error:'Âge invalide (' + BF_LIMITS.age.min + '-' + BF_LIMITS.age.max + ').' };
+  if (!(d.weight >= BF_LIMITS.weight.min && d.weight <= BF_LIMITS.weight.max))
+    return { ok:false, error:'Poids invalide (' + BF_LIMITS.weight.min + '-' + BF_LIMITS.weight.max + ' kg).' };
+  if (d.gender !== 'M' && d.gender !== 'F') return { ok:false, error:'Genre invalide.' };
+  for (var i = 0; i < BF_SITES.length; i++) {
+    var k = BF_SITES[i].key;
+    var v = d.skinfolds && d.skinfolds[k];
+    if (typeof v !== 'number' || isNaN(v)) return { ok:false, error:'Pli ' + BF_SITES[i].name + ' manquant.' };
+    if (v < BF_LIMITS.skinfold.min || v > BF_LIMITS.skinfold.max)
+      return { ok:false, error:'Pli ' + BF_SITES[i].name + ' hors limites (' + BF_LIMITS.skinfold.min + '-' + BF_LIMITS.skinfold.max + ' mm).' };
+  }
+  return { ok:true };
+}
+
+// ─── ÉTAT ───────────────────────────────────────────────────────
+var _bfState = { gender:'M', tab:'calc', list:[], lastResult:null, unsub:null, initialized:false };
+
+// ─── OUVERTURE / FERMETURE / NAVIGATION ─────────────────────────
+function openBodyfat() {
+  var ov = document.getElementById('bodyfat');
+  if (!ov) return;
+  ov.style.display = 'block';
+  if (!_bfState.initialized) {
+    _bfRenderForm();
+    _bfRenderSites();
+    var di = document.getElementById('bfDate');
+    if (di) try { di.valueAsDate = new Date(); } catch(e) {}
+    _bfState.initialized = true;
+  }
+  bfShowTab('calc');
+  _bfAttachListener();
+}
+window.openBodyfat = openBodyfat;
+
+function closeBodyfat() {
+  var ov = document.getElementById('bodyfat');
+  if (ov) ov.style.display = 'none';
+  if (_bfState.unsub) { try { _bfState.unsub(); } catch(e) {} _bfState.unsub = null; }
+}
+window.closeBodyfat = closeBodyfat;
+
+function bfShowTab(tab) {
+  _bfState.tab = tab;
+  var p = function(id, show){ var e = document.getElementById(id); if (e) e.style.display = show ? '' : 'none'; };
+  p('bfPanelCalc', tab === 'calc');
+  p('bfPanelSites', tab === 'sites');
+  p('bfPanelHistory', tab === 'history');
+  var tabs = document.querySelectorAll('#bodyfat .bf-tab');
+  for (var i = 0; i < tabs.length; i++) {
+    tabs[i].classList.toggle('on', tabs[i].getAttribute('data-bftab') === tab);
+  }
+  if (tab === 'history') _bfRenderHistory();
+}
+window.bfShowTab = bfShowTab;
+
+function bfSetGender(g) {
+  _bfState.gender = g;
+  var btns = document.querySelectorAll('#bodyfat .bf-gender button');
+  for (var i = 0; i < btns.length; i++) btns[i].classList.toggle('on', btns[i].getAttribute('data-bfgender') === g);
+}
+window.bfSetGender = bfSetGender;
+
+// ─── RENDU FORMULAIRE & SITES ────────────────────────────────────
+function _bfRenderForm() {
+  var list = document.getElementById('bfSkinfoldList');
+  if (!list) return;
+  var h = '';
+  for (var i = 0; i < BF_SITES.length; i++) {
+    var s = BF_SITES[i];
+    h += '<div class="bf-skinfold" data-bfkey="' + s.key + '">'
+      + '<div class="bf-sf-num">' + (i + 1) + '</div>'
+      + '<div class="bf-sf-info"><div class="bf-sf-name">' + s.name + '</div><div class="bf-sf-desc">' + s.desc + '</div></div>'
+      + '<div class="bf-sf-input-wrap"><input type="number" min="' + BF_LIMITS.skinfold.min + '" max="' + BF_LIMITS.skinfold.max + '" step="0.5" inputmode="decimal" data-bfkey="' + s.key + '" placeholder="—" oninput="_bfMarkFilled(this)"></div>'
+      + '</div>';
+  }
+  list.innerHTML = h;
+}
+window._bfMarkFilled = function(input) {
+  var card = input.closest('.bf-skinfold');
+  if (card) card.classList.toggle('filled', !!input.value && parseFloat(input.value) > 0);
+};
+
+function _bfRenderSites() {
+  var list = document.getElementById('bfSiteList');
+  if (!list) return;
+  var h = '';
+  for (var i = 0; i < BF_SITES.length; i++) {
+    var s = BF_SITES[i];
+    h += '<div class="bf-site-card" onclick="this.classList.toggle(\'exp\')">'
+      + '<div class="bf-site-head">'
+      + '<div class="bf-site-num">' + (i + 1) + '</div>'
+      + '<div class="bf-site-name">' + s.name + '</div>'
+      + '<div class="bf-site-arrow">▾</div>'
+      + '</div>'
+      + '<div class="bf-site-body">'
+      + '<strong>Localisation :</strong> ' + s.desc + '.<br>'
+      + '<strong>Direction du pli :</strong> ' + BF_DIRS[i] + '.<br>'
+      + '<strong>Astuce :</strong> ' + BF_TIPS[i] + '.'
+      + '</div></div>';
+  }
+  list.innerHTML = h;
+}
+
+// ─── CALCUL ─────────────────────────────────────────────────────
+function _bfReadForm() {
+  var ageEl = document.getElementById('bfAge');
+  var wEl = document.getElementById('bfWeight');
+  var dateEl = document.getElementById('bfDate');
+  var sk = {};
+  for (var i = 0; i < BF_SITES.length; i++) {
+    var k = BF_SITES[i].key;
+    var inp = document.querySelector('#bfSkinfoldList input[data-bfkey="' + k + '"]');
+    var v = inp ? parseFloat(inp.value) : NaN;
+    if (!isNaN(v)) sk[k] = v;
+  }
+  return {
+    gender: _bfState.gender,
+    age: parseFloat(ageEl && ageEl.value),
+    weight: parseFloat(wEl && wEl.value),
+    date: (dateEl && dateEl.value) || new Date().toISOString().slice(0, 10),
+    skinfolds: sk
+  };
+}
+function bfOnCalc() {
+  var d = _bfReadForm();
+  var v = bfValidate(d);
+  if (!v.ok) { if (typeof showToast === 'function') showToast(v.error, 'info'); return; }
+
+  var sum = 0;
+  for (var i = 0; i < BF_SITES.length; i++) sum += d.skinfolds[BF_SITES[i].key];
+  var density = bfCalcDensity(sum, d.age, d.gender);
+  var bf = bfSiriPct(density);
+  var fatMass = d.weight * (bf / 100);
+  var leanMass = d.weight - fatMass;
+  var cl = bfClassify(bf, d.age, d.gender);
+
+  var setT = function(id, val){ var e = document.getElementById(id); if (e) e.textContent = val; };
+  setT('bfRSum', sum.toFixed(1));
+  setT('bfRBF', bf.toFixed(1));
+  setT('bfRLean', leanMass.toFixed(1));
+  setT('bfRFat', fatMass.toFixed(1));
+  setT('bfRDensity', density.toFixed(4));
+  var cEl = document.getElementById('bfRClass');
+  if (cEl) { cEl.textContent = cl.label; cEl.style.background = BF_COLORS[cl.label] || '#9CA3AF'; }
+  _bfRenderScale(bf, cl.tbl);
+
+  _bfState.lastResult = {
+    date: d.date, gender: d.gender, age: d.age, weight: d.weight,
+    skinfolds: d.skinfolds,
+    totalSum: parseFloat(sum.toFixed(1)),
+    bodyFat: parseFloat(bf.toFixed(1)),
+    density: parseFloat(density.toFixed(4)),
+    leanMass: parseFloat(leanMass.toFixed(1)),
+    fatMass: parseFloat(fatMass.toFixed(1)),
+    classification: cl.label
+  };
+
+  var res = document.getElementById('bfResult');
+  if (res) { res.style.display = 'block'; res.scrollIntoView({ behavior:'smooth', block:'start' }); }
+}
+window.bfOnCalc = bfOnCalc;
+
+function _bfRenderScale(bf, tbl) {
+  var bar = document.getElementById('bfScaleBar');
+  if (!bar) return;
+  var min = tbl.levels[0][1];
+  var max = Math.max(40, tbl.levels[5][1] + 10);
+  var total = max - min;
+  var h = '';
+  for (var i = 0; i < tbl.levels.length; i++) {
+    var lv = tbl.levels[i];
+    var segMax = lv[0] === 'Faible' ? max : lv[2];
+    var w = ((segMax - lv[1]) / total) * 100;
+    h += '<div class="bf-scale-seg" style="background:' + BF_COLORS[lv[0]] + ';flex:' + w + '"></div>';
+  }
+  var pos = Math.max(0, Math.min(100, ((bf - min) / total) * 100));
+  h += '<div class="bf-scale-mark" style="left:' + pos + '%"></div>';
+  bar.innerHTML = h;
+}
+
+// ─── FIRESTORE (sous-collection users/{uid}/bodyfat) ────────────
+function _bfShowAuthGate(show) {
+  var gate = document.getElementById('bfAuthGate');
+  var content = document.getElementById('bfCalcContent');
+  if (gate) gate.style.display = show ? '' : 'none';
+  if (content) content.style.display = show ? 'none' : '';
+}
+
+function _bfAttachListener() {
+  if (_bfState.unsub) { try { _bfState.unsub(); } catch(e) {} _bfState.unsub = null; }
+  var fb = window.fb;
+  if (!window.fbUser || !fb || !fb.collection || !fb.onSnapshot) {
+    _bfShowAuthGate(true);
+    _bfState.list = [];
+    _bfRenderHistory();
+    return;
+  }
+  _bfShowAuthGate(false);
+  try {
+    var ref = fb.collection(fb.db, 'users', window.fbUser.uid, 'bodyfat');
+    var q = fb.query(ref, fb.orderBy('timestamp', 'desc'));
+    _bfState.unsub = fb.onSnapshot(q, function(snap) {
+      var arr = [];
+      snap.forEach(function(doc) { arr.push(Object.assign({ id: doc.id }, doc.data())); });
+      _bfState.list = arr;
+      if (_bfState.tab === 'history') _bfRenderHistory();
+    }, function(err) {
+      console.warn('Body Fat listener error:', err);
+      var wrap = document.getElementById('bfHistoryContent');
+      if (wrap) wrap.innerHTML = '<div class="bf-hist-empty">Impossible de charger l\'historique pour le moment.</div>';
+    });
+  } catch(e) {
+    console.warn('Body Fat listener setup:', e);
+  }
+}
+
+async function bfOnSave() {
+  if (!_bfState.lastResult) return;
+  var fb = window.fb;
+  if (!window.fbUser || !fb || !fb.addDoc || !fb.collection) {
+    if (typeof showToast === 'function') showToast('Connecte-toi pour enregistrer.', 'info');
+    return;
+  }
+  // Re-validation côté client avant écriture.
+  var v = bfValidate(_bfState.lastResult);
+  if (!v.ok) { if (typeof showToast === 'function') showToast(v.error, 'info'); return; }
+  var btn = document.getElementById('bfSaveBtn');
+  if (btn) { btn.disabled = true; btn.textContent = 'Enregistrement…'; }
+  try {
+    var col = fb.collection(fb.db, 'users', window.fbUser.uid, 'bodyfat');
+    var payload = Object.assign({}, _bfState.lastResult, {
+      timestamp: fb.serverTimestamp(),
+      createdAtMs: Date.now()
+    });
+    await fb.addDoc(col, payload);
+    if (typeof showToast === 'function') showToast('Mesure enregistrée ✓', 'success');
+  } catch(e) {
+    console.warn('bfOnSave:', e);
+    if (typeof showToast === 'function') showToast('Sauvegarde impossible. Vérifie ta connexion ou les Firestore rules.', 'info');
+  } finally {
+    if (btn) { btn.disabled = false; btn.textContent = 'Enregistrer dans Firestore'; }
+  }
+}
+window.bfOnSave = bfOnSave;
+
+function bfOnReset() {
+  var inputs = document.querySelectorAll('#bfSkinfoldList input');
+  for (var i = 0; i < inputs.length; i++) {
+    inputs[i].value = '';
+    var card = inputs[i].closest('.bf-skinfold');
+    if (card) card.classList.remove('filled');
+  }
+  var res = document.getElementById('bfResult');
+  if (res) res.style.display = 'none';
+  _bfState.lastResult = null;
+  var ov = document.getElementById('bodyfat');
+  if (ov) ov.scrollTo({ top: 0, behavior: 'smooth' });
+}
+window.bfOnReset = bfOnReset;
+
+async function bfDeleteMeasure(id) {
+  if (!id) return;
+  if (!confirm('Supprimer cette mesure ?')) return;
+  var fb = window.fb;
+  if (!window.fbUser || !fb || !fb.deleteDoc || !fb.doc) return;
+  try {
+    await fb.deleteDoc(fb.doc(fb.db, 'users', window.fbUser.uid, 'bodyfat', id));
+    if (typeof showToast === 'function') showToast('Mesure supprimée', 'info');
+  } catch(e) {
+    console.warn('bfDeleteMeasure:', e);
+    if (typeof showToast === 'function') showToast('Suppression impossible.', 'info');
+  }
+}
+window.bfDeleteMeasure = bfDeleteMeasure;
+
+// ─── HISTORIQUE + COURBE SVG ────────────────────────────────────
+function _bfFmtDate(iso) {
+  var d = new Date(iso);
+  if (isNaN(d.getTime())) return '';
+  var mois = ['janv.','févr.','mars','avr.','mai','juin','juil.','août','sept.','oct.','nov.','déc.'];
+  return d.getDate() + ' ' + mois[d.getMonth()] + ' ' + d.getFullYear();
+}
+function _bfRenderHistory() {
+  var wrap = document.getElementById('bfHistoryContent');
+  if (!wrap) return;
+  if (!window.fbUser) {
+    wrap.innerHTML = '<div class="bf-hist-empty">Connecte-toi pour voir ton historique.</div>';
+    return;
+  }
+  var list = _bfState.list || [];
+  if (!list.length) {
+    wrap.innerHTML = '<div class="bf-hist-empty">📊<br><br>Aucune mesure enregistrée.<br>Effectue ton premier calcul et enregistre-le pour suivre ton évolution.</div>';
+    return;
+  }
+  // Ordre chronologique pour la courbe + tendance première vs dernière.
+  var sorted = list.slice().sort(function(a, b){ return new Date(a.date) - new Date(b.date); });
+  var first = sorted[0], last = sorted[sorted.length - 1];
+  var trend = sorted.length > 1 ? (last.totalSum - first.totalSum) : 0;
+  var trendCls = trend < -0.5 ? 'bf-trend-down' : (trend > 0.5 ? 'bf-trend-up' : 'bf-trend-flat');
+  var trendTxt = trend < -0.5 ? '↓ Progrès' : (trend > 0.5 ? '↑ Hausse' : '→ Stable');
+
+  var h = '<div class="bf-hist-stats">'
+    +   '<div class="bf-hist-stat"><div class="bf-hist-stat-label">Mesures</div><div class="bf-hist-stat-val">' + list.length + '</div></div>'
+    +   '<div class="bf-hist-stat"><div class="bf-hist-stat-label">Dernière somme</div><div class="bf-hist-stat-val">' + last.totalSum.toFixed(1) + '</div></div>'
+    +   '<div class="bf-hist-stat"><div class="bf-hist-stat-label">Évolution</div><div class="bf-hist-stat-val">' + (trend > 0 ? '+' : '') + trend.toFixed(1) + '</div><div class="bf-hist-trend ' + trendCls + '">' + trendTxt + '</div></div>'
+    + '</div>';
+
+  if (sorted.length >= 2) {
+    h += '<div class="bf-chart-wrap">'
+      + '<div class="bf-chart-title">Évolution somme des 7 plis (mm)</div>'
+      + '<svg class="bf-chart" id="bfChart" viewBox="0 0 320 160" preserveAspectRatio="none"></svg>'
+      + '</div>';
+  }
+
+  h += '<div>';
+  for (var i = 0; i < list.length; i++) {
+    var m = list[i];
+    var sum = (typeof m.totalSum === 'number') ? m.totalSum : 0;
+    var bfTxt = (typeof m.bodyFat === 'number') ? (' · ' + m.bodyFat.toFixed(1) + ' % MG') : '';
+    var detail = (m.gender === 'M' ? '♂' : '♀') + ' ' + (m.age || '—') + ' ans · ' + (m.weight || '—') + ' kg' + bfTxt;
+    h += '<div class="bf-hist-item">'
+      + '<div><div class="bf-hist-date">' + _bfFmtDate(m.date) + '</div><div class="bf-hist-detail">' + detail + '</div></div>'
+      + '<div class="bf-hist-sum">' + sum.toFixed(1) + '<sup>mm</sup></div>'
+      + '<button class="bf-hist-del" onclick="bfDeleteMeasure(\'' + (m.id || '') + '\')" aria-label="Supprimer">✕</button>'
+      + '</div>';
+  }
+  h += '</div>';
+  wrap.innerHTML = h;
+
+  if (sorted.length >= 2) _bfDrawChart(sorted);
+}
+
+function _bfDrawChart(data) {
+  var svg = document.getElementById('bfChart');
+  if (!svg) return;
+  var W = 320, H = 160, P = 22;
+  var vals = data.map(function(d){ return d.totalSum; });
+  var min = Math.min.apply(null, vals) - 2;
+  var max = Math.max.apply(null, vals) + 2;
+  var range = (max - min) || 1;
+  var xs = data.map(function(_, i){ return P + (i / ((data.length - 1) || 1)) * (W - P * 2); });
+  var ys = vals.map(function(v){ return H - P - ((v - min) / range) * (H - P * 2); });
+
+  var grid = '';
+  for (var i = 0; i < 4; i++) {
+    var y = P + (i / 3) * (H - P * 2);
+    grid += '<line x1="' + P + '" y1="' + y + '" x2="' + (W - P) + '" y2="' + y + '" stroke="rgba(27,42,74,.08)" stroke-dasharray="2,4"/>';
+  }
+  var areaPath = 'M ' + xs[0] + ' ' + (H - P);
+  for (var i2 = 0; i2 < xs.length; i2++) areaPath += ' L ' + xs[i2] + ' ' + ys[i2];
+  areaPath += ' L ' + xs[xs.length - 1] + ' ' + (H - P) + ' Z';
+  var linePath = 'M ' + xs[0] + ' ' + ys[0];
+  for (var i3 = 1; i3 < xs.length; i3++) linePath += ' L ' + xs[i3] + ' ' + ys[i3];
+  var points = '';
+  for (var i4 = 0; i4 < xs.length; i4++) points += '<circle cx="' + xs[i4] + '" cy="' + ys[i4] + '" r="3.5" fill="#C5A44E" stroke="#1B2A4A" stroke-width="2"/>';
+  var yLab = '<text x="2" y="' + (P + 4) + '" font-size="9" fill="#9CA3AF" font-family="Outfit">' + max.toFixed(0) + '</text>'
+           + '<text x="2" y="' + (H - P + 4) + '" font-size="9" fill="#9CA3AF" font-family="Outfit">' + min.toFixed(0) + '</text>';
+
+  svg.innerHTML = '<defs><linearGradient id="bfAreaGrad" x1="0" y1="0" x2="0" y2="1">'
+    +   '<stop offset="0%" stop-color="#C5A44E" stop-opacity=".3"/>'
+    +   '<stop offset="100%" stop-color="#C5A44E" stop-opacity="0"/>'
+    + '</linearGradient></defs>'
+    + grid
+    + '<path d="' + areaPath + '" fill="url(#bfAreaGrad)"/>'
+    + '<path d="' + linePath + '" fill="none" stroke="#1B2A4A" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>'
+    + points + yLab;
+}
 
 // ═══ HOME MACROS CIRCLES (style Eklo) ═══
 function renderHomeMacros() {
