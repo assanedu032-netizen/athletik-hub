@@ -999,6 +999,131 @@ body{background:var(--bg);color:var(--text);font-family:'Outfit',sans-serif;disp
 .trk-selected button{background:rgba(255,255,255,.15);color:#fff;border:none;width:28px;height:28px;border-radius:50%;cursor:pointer;font-size:12px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
 .trk-selected button:active{background:rgba(255,255,255,.25)}
 
+/* ═══ ATHLETIK TIMER — FAB + overlay plein écran ═══ */
+.tim-fab{position:fixed;right:16px;bottom:88px;width:60px;height:60px;border-radius:50%;background:linear-gradient(135deg,var(--gold) 0%,#A0853A 100%);color:var(--navy);border:none;font-size:26px;cursor:pointer;box-shadow:0 6px 24px rgba(197,164,78,.4),0 2px 8px rgba(0,0,0,.2);z-index:90;display:flex;align-items:center;justify-content:center;font-family:'Outfit',sans-serif;-webkit-tap-highlight-color:transparent;transition:transform .15s}
+.tim-fab:active{transform:scale(.92)}
+/* Cache la FAB sur les écrans pré-app (onboarding/auth/etc.) */
+body:has(.scr.on) .tim-fab{display:none}
+#tim-overlay{position:fixed;inset:0;z-index:1000;background:#111D34;color:#F0EDE8;font-family:'Outfit',sans-serif;display:none;flex-direction:column;overflow:hidden}
+#tim-overlay.on{display:flex}
+.tim-header{display:flex;align-items:center;justify-content:space-between;padding:14px 16px;border-bottom:1px solid rgba(197,164,78,.15);flex-shrink:0}
+.tim-back,.tim-save-btn{background:rgba(255,255,255,.06);border:1px solid rgba(197,164,78,.3);color:var(--gold);width:38px;height:38px;border-radius:10px;cursor:pointer;font-size:15px;display:flex;align-items:center;justify-content:center;font-family:'Outfit',sans-serif}
+.tim-save-btn{width:auto;padding:0 14px;font-size:11px;font-weight:700;letter-spacing:1.5px}
+.tim-logo{font-family:'Bebas Neue',sans-serif;font-size:18px;letter-spacing:3px;color:var(--gold);text-align:center;flex:1}
+.tim-logo small{display:block;font-family:'Outfit',sans-serif;font-size:9px;letter-spacing:1.5px;color:#F0EDE8;opacity:.5;font-weight:400}
+.tim-tabs{display:flex;gap:6px;padding:12px 16px;overflow-x:auto;flex-shrink:0;scrollbar-width:none}
+.tim-tabs::-webkit-scrollbar{display:none}
+.tim-tab{flex-shrink:0;padding:8px 16px;border-radius:50px;border:1.5px solid #4A5A72;background:transparent;color:#8A99B3;font-family:'Outfit',sans-serif;font-weight:600;font-size:12px;letter-spacing:.5px;cursor:pointer;white-space:nowrap;transition:all .2s}
+.tim-tab.on{background:var(--gold);border-color:var(--gold);color:var(--navy)}
+.tim-main{flex:1;overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch;padding:16px 16px 60px}
+.tim-screen{display:none;animation:timFade .25s ease}
+.tim-screen.on{display:block}
+@keyframes timFade{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
+.tim-sec{font-family:'Bebas Neue',sans-serif;font-size:12px;letter-spacing:3px;color:var(--gold);margin:18px 0 10px;text-transform:uppercase}
+.tim-sec:first-child{margin-top:4px}
+.tim-row{display:flex;gap:10px;margin-bottom:10px}
+.tim-field{flex:1;background:#243355;border-radius:12px;padding:12px 14px;border:1.5px solid rgba(138,153,179,.15);min-width:0}
+.tim-field label{display:block;font-size:10px;font-weight:700;letter-spacing:1px;color:#8A99B3;text-transform:uppercase;margin-bottom:5px}
+.tim-field input[type=number],.tim-field input[type=text]{width:100%;background:transparent;border:none;outline:none;color:#F0EDE8;font-family:'Outfit',sans-serif;font-size:20px;font-weight:700;-moz-appearance:textfield}
+.tim-field input::-webkit-outer-spin-button,.tim-field input::-webkit-inner-spin-button{-webkit-appearance:none}
+.tim-field-unit{font-size:11px;color:#8A99B3;margin-top:2px}
+.tim-slbl{font-size:10px;letter-spacing:1px;color:#8A99B3;text-transform:uppercase;margin-bottom:5px;font-weight:700}
+.tim-stepper{display:flex;align-items:center;background:#243355;border-radius:12px;border:1.5px solid rgba(138,153,179,.15);overflow:hidden}
+.tim-stepper button{width:44px;height:50px;background:transparent;border:none;color:var(--gold);font-size:20px;cursor:pointer}
+.tim-stepper input{flex:1;background:transparent;border:none;outline:none;text-align:center;color:#F0EDE8;font-family:'Outfit',sans-serif;font-size:20px;font-weight:700;-moz-appearance:textfield;min-width:0}
+.tim-stepper input::-webkit-outer-spin-button,.tim-stepper input::-webkit-inner-spin-button{-webkit-appearance:none}
+.tim-stepper-wrap{flex:1;min-width:0}
+.tim-summary{margin-top:18px;background:linear-gradient(135deg,#243355 0%,#1B2A4A 100%);border-radius:14px;border:1px solid rgba(197,164,78,.2);padding:16px}
+.tim-sum-title{font-family:'Bebas Neue',sans-serif;font-size:11px;letter-spacing:3px;color:var(--gold);margin-bottom:12px}
+.tim-sum-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.tim-sum-stat .v{font-family:'Bebas Neue',sans-serif;font-size:24px;color:#F0EDE8;line-height:1}
+.tim-sum-stat .l{font-size:10px;color:#8A99B3;text-transform:uppercase;letter-spacing:.5px;margin-top:2px}
+.tim-sum-total{margin-top:14px;padding-top:14px;border-top:1px solid rgba(138,153,179,.2);display:flex;justify-content:space-between;align-items:center}
+.tim-sum-total .tv{font-family:'Bebas Neue',sans-serif;font-size:30px;color:var(--gold)}
+.tim-sum-total .tl{font-size:11px;color:#8A99B3;text-transform:uppercase;letter-spacing:1px}
+.tim-launch{width:100%;margin-top:16px;padding:16px;background:var(--gold);border:none;border-radius:12px;color:var(--navy);font-family:'Bebas Neue',sans-serif;font-size:18px;letter-spacing:3px;cursor:pointer;font-weight:700}
+.tim-launch:active{transform:scale(.98)}
+.tim-ex-input{width:100%;background:#243355;border:1.5px solid rgba(138,153,179,.15);border-radius:10px;padding:11px 13px;color:#F0EDE8;font-family:'Outfit',sans-serif;font-size:13px;outline:none;margin-bottom:6px}
+.tim-ex-label{font-size:10px;color:#8A99B3;text-transform:uppercase;letter-spacing:1px;font-weight:700;margin-bottom:3px}
+/* Saved list */
+.tim-saved-empty{text-align:center;padding:40px 20px;color:#8A99B3;font-size:13px}
+.tim-saved-empty .ico{font-size:36px;margin-bottom:10px}
+.tim-saved-item{background:#243355;border-radius:12px;padding:13px 14px;border:1.5px solid rgba(138,153,179,.12);display:flex;align-items:center;gap:12px;cursor:pointer;margin-bottom:8px}
+.tim-saved-icon{width:38px;height:38px;border-radius:10px;background:rgba(197,164,78,.12);display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0}
+.tim-saved-info{flex:1;min-width:0}
+.tim-saved-name{font-weight:700;font-size:13px;color:#F0EDE8;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.tim-saved-meta{font-size:11px;color:#8A99B3;margin-top:2px}
+.tim-saved-del{background:transparent;border:none;color:#4A5A72;font-size:15px;cursor:pointer;padding:4px;flex-shrink:0}
+.tim-saved-del:hover{color:#FF4D4D}
+/* Timer screen (sub-overlay) */
+.tim-timer-screen{position:fixed;inset:0;z-index:1010;background:#111;display:none;flex-direction:column;color:#fff;font-family:'Bebas Neue',sans-serif}
+.tim-timer-screen.on{display:flex}
+.tim-timer-screen.ph-prep .tim-phase-block{background:#3D5AFE;color:#000}
+.tim-timer-screen.ph-work .tim-phase-block{background:#FF1744;color:#000}
+.tim-timer-screen.ph-rest .tim-phase-block{background:#00E676;color:#000}
+.tim-timer-screen.ph-inter .tim-phase-block{background:#FF9100;color:#000}
+.tim-timer-screen.ph-fin .tim-phase-block{background:var(--gold);color:#000}
+.tim-timer-screen.ph-prep .tim-next-block{background:#1a2880}
+.tim-timer-screen.ph-work .tim-next-block{background:#7a0020}
+.tim-timer-screen.ph-rest .tim-next-block{background:#006633}
+.tim-timer-screen.ph-inter .tim-next-block{background:#7a4000}
+.tim-topbar{display:flex;align-items:center;justify-content:space-between;padding:14px 18px 10px;background:#111;flex-shrink:0}
+.tim-icon-btn{background:rgba(255,255,255,.1);border:none;color:#fff;width:38px;height:38px;border-radius:50%;font-size:15px;cursor:pointer;display:flex;align-items:center;justify-content:center}
+.tim-top-center{text-align:center;flex:1}
+.tim-mode-lbl{font-size:11px;letter-spacing:3px;color:rgba(255,255,255,.5)}
+.tim-total-time{font-size:26px;color:#fff;letter-spacing:2px;line-height:1}
+.tim-phase-block{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:20px;transition:background .25s}
+.tim-phase-name{font-size:clamp(34px,9vw,48px);letter-spacing:4px;font-weight:900;line-height:1;margin-bottom:10px;opacity:.9;text-align:center}
+.tim-big-time{font-size:clamp(96px,26vw,140px);line-height:.9;letter-spacing:-2px;transition:transform .1s}
+.tim-big-time.pulse{animation:timBigPulse .25s ease}
+@keyframes timBigPulse{0%,100%{transform:scale(1)}50%{transform:scale(1.06)}}
+.tim-ex-name{font-size:16px;letter-spacing:2px;margin-top:10px;opacity:.7;text-align:center;padding:0 10px}
+.tim-next-block{flex-shrink:0;padding:12px 22px;display:flex;align-items:center;justify-content:space-between;transition:background .25s}
+.tim-next-label{font-size:16px;letter-spacing:3px;color:rgba(255,255,255,.8)}
+.tim-next-time{font-size:28px;color:#fff;letter-spacing:2px}
+.tim-bottom{flex-shrink:0;background:#111;display:flex;align-items:center;justify-content:space-around;padding:14px 22px 6px}
+.tim-stat{text-align:center}
+.tim-stat-val{font-size:44px;color:#fff;line-height:1}
+.tim-stat-lbl{font-size:10px;letter-spacing:2px;color:rgba(255,255,255,.4);margin-top:2px}
+.tim-play-btn{width:74px;height:74px;border-radius:50%;background:var(--gold);border:none;font-size:26px;cursor:pointer;display:flex;align-items:center;justify-content:center;color:#111;box-shadow:0 6px 22px rgba(197,164,78,.4);font-family:'Outfit',sans-serif}
+.tim-play-btn:active{transform:scale(.93)}
+.tim-sub-ctrl{display:flex;gap:14px;justify-content:center;padding:8px 0 10px;background:#111;flex-shrink:0}
+.tim-sub-btn{background:transparent;border:1px solid rgba(255,255,255,.15);color:rgba(255,255,255,.6);padding:7px 16px;border-radius:8px;font-family:'Outfit',sans-serif;font-size:11px;font-weight:700;cursor:pointer;letter-spacing:1px}
+.tim-snd-panel{background:#1a1a1a;padding:10px 14px;border-top:1px solid rgba(255,255,255,.08);display:none;flex-shrink:0}
+.tim-snd-panel.on{display:block}
+.tim-snd-row{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px}
+.tim-snd-btn{padding:6px 10px;background:rgba(255,255,255,.06);border:1.5px solid rgba(255,255,255,.12);border-radius:7px;color:rgba(255,255,255,.6);font-family:'Outfit',sans-serif;font-size:11px;font-weight:600;cursor:pointer}
+.tim-snd-btn.on{background:var(--gold);border-color:var(--gold);color:#111}
+.tim-test-snd{width:100%;padding:8px;background:transparent;border:1.5px solid rgba(197,164,78,.5);border-radius:8px;color:var(--gold);font-family:'Bebas Neue',sans-serif;font-size:13px;letter-spacing:2px;cursor:pointer}
+.tim-dots{display:flex;gap:5px;justify-content:center;padding:4px 14px 12px;background:#111;flex-wrap:wrap;flex-shrink:0}
+.tim-dot{width:6px;height:6px;border-radius:50%;background:rgba(255,255,255,.15);transition:all .3s}
+.tim-dot.done{background:rgba(255,255,255,.45)}
+.tim-dot.cur{background:#fff;transform:scale(1.5)}
+/* Finish + modal */
+.tim-finish{position:fixed;inset:0;z-index:1020;background:#111D34;display:none;flex-direction:column;align-items:center;justify-content:center;padding:36px 22px;text-align:center;color:#F0EDE8}
+.tim-finish.on{display:flex;animation:timFade .4s ease}
+.tim-fin-icon{font-size:56px;margin-bottom:14px}
+.tim-fin-title{font-family:'Bebas Neue',sans-serif;font-size:42px;letter-spacing:4px;color:var(--gold);line-height:1}
+.tim-fin-sub{margin-top:6px;font-size:13px;color:#8A99B3;font-weight:500}
+.tim-fin-stats{display:flex;gap:22px;margin-top:24px}
+.tim-fin-stat .v{font-family:'Bebas Neue',sans-serif;font-size:30px;color:#F0EDE8}
+.tim-fin-stat .l{font-size:10px;color:#8A99B3;text-transform:uppercase;letter-spacing:1px}
+.tim-fin-quote{margin-top:26px;padding:16px;background:#243355;border-radius:12px;border-left:3px solid var(--gold);font-size:13px;line-height:1.6;color:#F0EDE8;font-style:italic;max-width:340px}
+.tim-fin-quote cite{display:block;margin-top:6px;font-style:normal;font-size:11px;color:var(--gold);font-weight:700;letter-spacing:1px;font-family:'Bebas Neue',sans-serif}
+.tim-fin-btn{margin-top:26px;padding:14px 40px;background:var(--gold);border:none;border-radius:12px;color:var(--navy);font-family:'Bebas Neue',sans-serif;font-size:17px;letter-spacing:3px;cursor:pointer;font-weight:700}
+.tim-modal-bg{position:fixed;inset:0;z-index:1030;background:rgba(10,16,30,.85);display:none;align-items:flex-end;justify-content:center}
+.tim-modal-bg.on{display:flex}
+.tim-modal-box{background:#1B2A4A;border-radius:18px 18px 0 0;padding:24px 22px 32px;width:100%;max-width:480px;border-top:1px solid rgba(197,164,78,.2);animation:timSlideUp .3s ease}
+@keyframes timSlideUp{from{transform:translateY(40px);opacity:0}to{transform:translateY(0);opacity:1}}
+.tim-modal-title{font-family:'Bebas Neue',sans-serif;font-size:20px;letter-spacing:3px;color:var(--gold);margin-bottom:14px}
+.tim-modal-input{width:100%;background:#243355;border:1.5px solid #4A5A72;border-radius:10px;padding:12px 14px;color:#F0EDE8;font-family:'Outfit',sans-serif;font-size:15px;outline:none}
+.tim-modal-actions{display:flex;gap:8px;margin-top:14px}
+.tim-modal-btn{flex:1;padding:12px;border-radius:10px;font-family:'Outfit',sans-serif;font-size:13px;font-weight:700;cursor:pointer;border:none}
+.tim-modal-btn.cancel{background:rgba(255,255,255,.06);color:#8A99B3}
+.tim-modal-btn.confirm{background:var(--gold);color:var(--navy)}
+.tim-toast{position:fixed;bottom:120px;left:50%;transform:translateX(-50%);background:#243355;border:1px solid rgba(197,164,78,.5);color:#F0EDE8;padding:10px 22px;border-radius:50px;font-size:12px;font-weight:600;z-index:1040;opacity:0;transition:opacity .3s;pointer-events:none}
+.tim-toast.on{opacity:1}
+
 /* ═══ LEVEL CARD ═══ */
 .level-card{margin:16px 22px 0;background:var(--surface);border:1px solid var(--border);border-radius:var(--r2);padding:18px;box-shadow:var(--card-shadow);display:flex;align-items:center;gap:14px;animation:fadeUp .3s ease both}
 .lc-icon{font-size:36px}
@@ -4815,6 +4940,140 @@ body.test-mode #testSkipBar{display:flex}
 
 </div>
 
+<!-- ═══ ATHLETIK TIMER — FAB + overlay (Tabata · HIIT · Sauvegardés) ═══ -->
+<button class="tim-fab" onclick="tim_open()" aria-label="Ouvrir le timer">⏱</button>
+
+<div id="tim-overlay">
+  <div class="tim-header">
+    <button class="tim-back" onclick="tim_close()" aria-label="Fermer">←</button>
+    <div class="tim-logo">ATHLETIK TIMER<small>Tabata · HIIT</small></div>
+    <button class="tim-save-btn" onclick="tim_openSaveModal()">💾 SAUVER</button>
+  </div>
+
+  <div class="tim-tabs">
+    <button class="tim-tab on" data-timtab="tabata" onclick="tim_showTab('tabata')">⚡ TABATA</button>
+    <button class="tim-tab" data-timtab="hiit" onclick="tim_showTab('hiit')">🔥 FRACTIONNÉ</button>
+    <button class="tim-tab" data-timtab="saved" onclick="tim_showTab('saved')">💾 SAUVEGARDÉS</button>
+  </div>
+
+  <div class="tim-main">
+
+    <!-- TABATA -->
+    <div id="timScreenTabata" class="tim-screen on">
+      <div class="tim-sec">Temps</div>
+      <div class="tim-row">
+        <div class="tim-field"><label>Travail</label><input type="number" id="timTabWork" value="20" min="1" max="600"><div class="tim-field-unit">secondes</div></div>
+        <div class="tim-field"><label>Repos</label><input type="number" id="timTabRest" value="10" min="1" max="600"><div class="tim-field-unit">secondes</div></div>
+      </div>
+      <div class="tim-sec">Structure</div>
+      <div class="tim-row">
+        <div class="tim-stepper-wrap"><div class="tim-slbl">Rounds / cycle</div><div class="tim-stepper"><button onclick="tim_step('timTabRounds',-1)">−</button><input type="number" id="timTabRounds" value="8" min="1" max="100"><button onclick="tim_step('timTabRounds',1)">+</button></div></div>
+        <div class="tim-stepper-wrap"><div class="tim-slbl">Cycles</div><div class="tim-stepper"><button onclick="tim_step('timTabCycles',-1)">−</button><input type="number" id="timTabCycles" value="1" min="1" max="20"><button onclick="tim_step('timTabCycles',1)">+</button></div></div>
+      </div>
+      <div class="tim-field" style="margin-top:10px"><label>Repos entre cycles</label><input type="number" id="timTabCycleRest" value="60" min="0" max="600"><div class="tim-field-unit">secondes</div></div>
+      <div class="tim-field" style="margin-top:10px"><label>Décompte avant départ</label><input type="number" id="timTabCountdown" value="5" min="0" max="30"><div class="tim-field-unit">secondes</div></div>
+      <div id="timTabSummary" class="tim-summary"></div>
+      <button class="tim-launch" onclick="tim_launchTabata()">⚡ LANCER LA SÉANCE</button>
+    </div>
+
+    <!-- HIIT -->
+    <div id="timScreenHiit" class="tim-screen">
+      <div class="tim-sec">Temps</div>
+      <div class="tim-row">
+        <div class="tim-field"><label>Effort</label><input type="number" id="timHitWork" value="45" min="1" max="900"><div class="tim-field-unit">secondes</div></div>
+        <div class="tim-field"><label>Récupération</label><input type="number" id="timHitRest" value="15" min="1" max="900"><div class="tim-field-unit">secondes</div></div>
+      </div>
+      <div class="tim-sec">Structure</div>
+      <div class="tim-row">
+        <div class="tim-stepper-wrap"><div class="tim-slbl">Séries / bloc</div><div class="tim-stepper"><button onclick="tim_step('timHitSeries',-1)">−</button><input type="number" id="timHitSeries" value="4" min="1" max="50"><button onclick="tim_step('timHitSeries',1)">+</button></div></div>
+        <div class="tim-stepper-wrap"><div class="tim-slbl">Blocs</div><div class="tim-stepper"><button onclick="tim_step('timHitBlocs',-1)">−</button><input type="number" id="timHitBlocs" value="2" min="1" max="20"><button onclick="tim_step('timHitBlocs',1)">+</button></div></div>
+      </div>
+      <div class="tim-field" style="margin-top:10px"><label>Repos entre blocs</label><input type="number" id="timHitBlocRest" value="90" min="0" max="600"><div class="tim-field-unit">secondes</div></div>
+      <div class="tim-field" style="margin-top:10px"><label>Décompte avant départ</label><input type="number" id="timHitCountdown" value="5" min="0" max="30"><div class="tim-field-unit">secondes</div></div>
+      <div class="tim-sec">Nom des exercices (optionnel)</div>
+      <div id="timHitExInputs"></div>
+      <div id="timHitSummary" class="tim-summary"></div>
+      <button class="tim-launch" onclick="tim_launchHIIT()">⚡ LANCER LA SÉANCE</button>
+    </div>
+
+    <!-- SAUVEGARDÉS -->
+    <div id="timScreenSaved" class="tim-screen">
+      <div class="tim-sec">Séances sauvegardées</div>
+      <div id="timSavedList"></div>
+    </div>
+
+  </div>
+</div>
+
+<!-- Sub-overlay : écran timer plein écran -->
+<div id="timTimerScreen" class="tim-timer-screen">
+  <div class="tim-topbar">
+    <button class="tim-icon-btn" onclick="tim_closeTimerScreen()" aria-label="Fermer">✕</button>
+    <div class="tim-top-center">
+      <div class="tim-mode-lbl" id="timModeLbl">TABATA</div>
+      <div class="tim-total-time" id="timTotalTime">00:00</div>
+    </div>
+    <button class="tim-icon-btn" id="timMuteBtn" onclick="tim_toggleMute()" aria-label="Son">🔊</button>
+  </div>
+  <div class="tim-phase-block">
+    <div class="tim-phase-name" id="timPhaseName">PRÉPARATION</div>
+    <div class="tim-big-time" id="timBigTime">05</div>
+    <div class="tim-ex-name" id="timExName"></div>
+  </div>
+  <div class="tim-next-block">
+    <div class="tim-next-label" id="timNextLabel">TRAVAIL</div>
+    <div class="tim-next-time" id="timNextTime">00:20</div>
+  </div>
+  <div class="tim-bottom">
+    <div class="tim-stat">
+      <div class="tim-stat-val" id="timRoundsLeft">8</div>
+      <div class="tim-stat-lbl" id="timRoundsLbl">ROUNDS</div>
+    </div>
+    <button class="tim-play-btn" id="timPlayBtn" onclick="tim_togglePlay()">▶</button>
+    <div class="tim-stat">
+      <div class="tim-stat-val" id="timCyclesLeft">1</div>
+      <div class="tim-stat-lbl">CYCLES</div>
+    </div>
+  </div>
+  <div class="tim-sub-ctrl">
+    <button class="tim-sub-btn" onclick="tim_resetTimer()">↺ RESET</button>
+    <button class="tim-sub-btn" onclick="tim_skipPhase()">⏭ SKIP</button>
+    <button class="tim-sub-btn" onclick="tim_toggleSoundPanel()">🎵 SON</button>
+  </div>
+  <div id="timSoundPanel" class="tim-snd-panel">
+    <div class="tim-snd-row" id="timSoundRow"></div>
+    <button class="tim-test-snd" onclick="tim_testSound()">▶ TESTER LE SON</button>
+  </div>
+  <div class="tim-dots" id="timDots"></div>
+</div>
+
+<!-- Sub-overlay : écran de fin -->
+<div id="timFinish" class="tim-finish">
+  <div class="tim-fin-icon">🏆</div>
+  <div class="tim-fin-title">SÉANCE TERMINÉE</div>
+  <div class="tim-fin-sub" id="timFinSub"></div>
+  <div class="tim-fin-stats">
+    <div class="tim-fin-stat"><div class="v" id="timFinDur">—</div><div class="l">Durée</div></div>
+    <div class="tim-fin-stat"><div class="v" id="timFinRounds">—</div><div class="l">Rounds</div></div>
+  </div>
+  <div class="tim-fin-quote" id="timFinQuote"></div>
+  <button class="tim-fin-btn" onclick="tim_backFromFinish()">NOUVELLE SÉANCE</button>
+</div>
+
+<!-- Modal : sauvegarder une séance -->
+<div id="timSaveModal" class="tim-modal-bg">
+  <div class="tim-modal-box">
+    <div class="tim-modal-title">SAUVEGARDER LA SÉANCE</div>
+    <input type="text" id="timSaveName" class="tim-modal-input" placeholder="Ex : Tabata du matin">
+    <div class="tim-modal-actions">
+      <button class="tim-modal-btn cancel" onclick="tim_closeSaveModal()">Annuler</button>
+      <button class="tim-modal-btn confirm" onclick="tim_confirmSave()">Sauvegarder ✓</button>
+    </div>
+  </div>
+</div>
+
+<div id="timToast" class="tim-toast"></div>
+
 </div><!-- /app -->
 
 <!-- Overlay caméra — scan de code-barre en direct -->
@@ -7932,6 +8191,602 @@ function _bfDrawChart(data) {
     + '<path d="' + linePath + '" fill="none" stroke="#1B2A4A" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>'
     + points + yLab;
 }
+
+// ═══════════════════════════════════════════════════════════════
+// ATHLETIK TIMER — Tabata · HIIT · Sauvegardés (Firestore + local)
+// Engine isolé (préfixe tim_/.tim-*) pour zéro collision avec le
+// reste de l'app. Ouvre depuis la FAB ⏱ flottante au-dessus du nav.
+// ═══════════════════════════════════════════════════════════════
+(function(){
+  var tim_audioCtx = null;
+  var tim_muted = false;
+  var tim_soundStyle = localStorage.getItem('tim_sound') || 'training';
+  var tim_mode = 'tabata';
+  var tim_T = { queue:[], idx:0, rem:0, total:0, running:false, iv:null, startMs:null, doneRounds:0, modeLabel:'', totalWorkPhases:0 };
+  var tim_savedLocal = [];
+  var tim_unsub = null;
+  var tim_toastT = null;
+
+  // ── AUDIO ENGINE (port direct, 6 styles) ──
+  function tim_ctx(){
+    if(!tim_audioCtx) tim_audioCtx = new (window.AudioContext||window.webkitAudioContext)();
+    if(tim_audioCtx.state==='suspended') tim_audioCtx.resume();
+    return tim_audioCtx;
+  }
+  function tim_osc(f, d, type, vol, start){
+    type = type || 'sine'; vol = vol == null ? .5 : vol; start = start || 0;
+    if(tim_muted) return;
+    try{
+      var c=tim_ctx(), o=c.createOscillator(), g=c.createGain();
+      o.connect(g); g.connect(c.destination);
+      o.type=type; o.frequency.setValueAtTime(f, c.currentTime+start);
+      g.gain.setValueAtTime(vol, c.currentTime+start);
+      g.gain.exponentialRampToValueAtTime(0.001, c.currentTime+start+d);
+      o.start(c.currentTime+start); o.stop(c.currentTime+start+d+0.01);
+    }catch(e){}
+  }
+  function tim_oscSweep(f1, f2, d, type, vol, start){
+    type = type || 'sine'; vol = vol == null ? .5 : vol; start = start || 0;
+    if(tim_muted) return;
+    try{
+      var c=tim_ctx(), o=c.createOscillator(), g=c.createGain();
+      o.connect(g); g.connect(c.destination);
+      o.type=type;
+      o.frequency.setValueAtTime(f1, c.currentTime+start);
+      o.frequency.linearRampToValueAtTime(f2, c.currentTime+start+d);
+      g.gain.setValueAtTime(vol, c.currentTime+start);
+      g.gain.exponentialRampToValueAtTime(0.001, c.currentTime+start+d);
+      o.start(c.currentTime+start); o.stop(c.currentTime+start+d+0.01);
+    }catch(e){}
+  }
+  function tim_noise(d, vol, start, decay){
+    vol = vol == null ? .4 : vol; start = start || 0; decay = decay || .05;
+    if(tim_muted) return;
+    try{
+      var c=tim_ctx();
+      var buf=c.createBuffer(1, Math.ceil(c.sampleRate*d), c.sampleRate);
+      var data=buf.getChannelData(0);
+      for(var i=0;i<data.length;i++) data[i]=(Math.random()*2-1)*Math.exp(-i/(c.sampleRate*decay));
+      var src=c.createBufferSource(); src.buffer=buf;
+      var g=c.createGain(); g.gain.setValueAtTime(vol, c.currentTime+start);
+      g.gain.exponentialRampToValueAtTime(0.001, c.currentTime+start+d);
+      src.connect(g); g.connect(c.destination);
+      src.start(c.currentTime+start);
+    }catch(e){}
+  }
+  var TIM_SOUNDS = {
+    training: { label:'🏃 Training',
+      depart:function(){ tim_osc(880,.12,'square',.5); tim_osc(1108,.1,'square',.4,.15); },
+      tick:function(){ tim_osc(800,.06,'sine',.3); },
+      urgence:function(){ tim_osc(1000,.06,'sine',.4); tim_osc(1200,.06,'sine',.4,.08); },
+      fin:function(){ [[0,523,.2],[180,659,.2],[360,784,.2],[540,1046,.25],[780,1318,.35]].forEach(function(a){ tim_osc(a[1],a[2],'sine',.5,a[0]/1000); }); },
+      repos:function(){ tim_osc(660,.08,'sine',.3); tim_osc(523,.15,'sine',.35,.09); tim_osc(392,.2,'sine',.25,.22); },
+      reprise:function(){ tim_osc(523,.08,'square',.35); tim_osc(659,.08,'square',.35,.1); tim_osc(784,.12,'square',.45,.2); }
+    },
+    hiit: { label:'⚡ HIIT',
+      depart:function(){ tim_noise(.05,.6,0,.03); tim_oscSweep(400,1200,.15,'square',.5,.06); tim_osc(1108,.15,'square',.4,.18); },
+      tick:function(){ tim_noise(.03,.5,0,.015); tim_osc(1000,.04,'square',.35,.03); },
+      urgence:function(){ tim_noise(.04,.6,0,.02); tim_osc(1200,.04,'square',.5,.04); tim_noise(.04,.6,.1,.02); tim_osc(1200,.04,'square',.5,.14); },
+      fin:function(){ tim_noise(.08,.5,0,.04); [[0,880],[100,1046],[200,1244],[350,1568],[550,2093]].forEach(function(a){ tim_osc(a[1],.15,'square',.45,a[0]/1000); }); },
+      repos:function(){ tim_oscSweep(800,300,.25,'sine',.4); },
+      reprise:function(){ tim_noise(.04,.5,0,.02); tim_oscSweep(300,900,.12,'square',.45,.05); tim_osc(1108,.1,'square',.4,.18); }
+    },
+    boxe: { label:'🥊 Boxe',
+      depart:function(){ tim_osc(1046,.6,'sine',.7); tim_osc(1318,.4,'sine',.4,.05); tim_osc(1046,.3,'sine',.3,.2); tim_osc(880,.5,'sine',.35,.1); },
+      tick:function(){ tim_osc(1200,.05,'sine',.3); },
+      urgence:function(){ [0,.12,.24].forEach(function(t){ tim_osc(1200,.06,'sine',.45,t); tim_osc(1568,.04,'sine',.3,t+.03); }); },
+      fin:function(){ [0,.15,.3].forEach(function(t){ tim_osc(220,.12,'square',.6,t); }); tim_osc(880,.5,'sine',.5,.45); tim_osc(1046,.4,'sine',.4,.55); tim_osc(1318,.3,'sine',.3,.65); },
+      repos:function(){ tim_osc(440,.3,'sine',.4); tim_osc(330,.25,'sine',.3,.15); },
+      reprise:function(){ tim_osc(1046,.4,'sine',.6); tim_osc(1318,.3,'sine',.4,.1); tim_osc(1568,.2,'sine',.3,.2); }
+    },
+    premium: { label:'💎 Premium',
+      depart:function(){ [[0,523,.3],[0,659,.25],[0,784,.2],[80,1046,.3],[200,1318,.25]].forEach(function(a){ tim_osc(a[1],a[2],'sine',.35,a[0]/1000); }); },
+      tick:function(){ tim_osc(880,.05,'sine',.2); tim_osc(1108,.04,'sine',.15,.02); },
+      urgence:function(){ tim_osc(1046,.07,'sine',.4); tim_osc(1318,.06,'sine',.3,.04); tim_osc(1046,.07,'sine',.4,.12); tim_osc(1318,.06,'sine',.3,.16); },
+      fin:function(){ [[0,523],[120,659],[240,784],[360,1046],[500,1318],[680,1568],[900,2093]].forEach(function(a){ tim_osc(a[1],.3,'sine',.4,a[0]/1000); tim_osc(a[1]*1.5,.2,'sine',.2,(a[0]+30)/1000); }); },
+      repos:function(){ tim_osc(784,.2,'sine',.3); tim_osc(659,.25,'sine',.25,.1); tim_osc(523,.3,'sine',.2,.22); tim_osc(392,.35,'sine',.15,.36); },
+      reprise:function(){ [[0,523],[80,784],[160,1046],[240,1318]].forEach(function(a){ tim_osc(a[1],.15,'sine',.35,a[0]/1000); }); }
+    },
+    soft: { label:'🎯 Coaching',
+      depart:function(){ tim_oscSweep(440,880,.3,'sine',.35); tim_osc(1046,.2,'sine',.3,.25); },
+      tick:function(){ tim_osc(660,.05,'sine',.18); },
+      urgence:function(){ tim_osc(784,.08,'sine',.25); tim_osc(880,.08,'sine',.22,.1); },
+      fin:function(){ [[0,392],[200,523],[400,659],[600,784],[800,1046]].forEach(function(a){ tim_osc(a[1],.35,'sine',.3,a[0]/1000); }); },
+      repos:function(){ tim_oscSweep(523,330,.4,'sine',.3); },
+      reprise:function(){ tim_osc(523,.12,'sine',.28); tim_osc(659,.12,'sine',.28,.12); tim_osc(784,.15,'sine',.3,.24); }
+    },
+    digital: { label:'🎮 Digital',
+      depart:function(){ tim_noise(.04,.4,0,.02); tim_oscSweep(200,1400,.12,'sawtooth',.4,.04); tim_osc(1046,.1,'square',.35,.18); tim_osc(1318,.08,'square',.3,.26); },
+      tick:function(){ tim_osc(1200,.04,'square',.25); },
+      urgence:function(){ tim_oscSweep(800,1600,.06,'square',.4); tim_oscSweep(800,1600,.06,'square',.35,.1); tim_oscSweep(800,1600,.06,'square',.3,.2); },
+      fin:function(){ tim_noise(.06,.4,0,.03); [[0,220],[80,440],[160,880],[240,1108],[340,1318],[480,1568],[660,2093]].forEach(function(a){ tim_osc(a[1],.12,'square',.35,a[0]/1000); }); tim_osc(2093,.5,'sine',.4,.68); },
+      repos:function(){ tim_oscSweep(1000,200,.2,'sine',.35); tim_osc(330,.3,'sine',.25,.15); },
+      reprise:function(){ tim_noise(.03,.35,0,.015); tim_oscSweep(300,1100,.1,'sawtooth',.4,.03); tim_osc(880,.08,'square',.35,.14); }
+    }
+  };
+  function tim_vib(p){ if(!tim_muted && navigator.vibrate) try { navigator.vibrate(p || [40]); } catch(e) {} }
+  function tim_sndDepart(){ if(!tim_muted && TIM_SOUNDS[tim_soundStyle]) TIM_SOUNDS[tim_soundStyle].depart(); tim_vib([60,30,60]); }
+  function tim_sndTick(){ if(!tim_muted && TIM_SOUNDS[tim_soundStyle]) TIM_SOUNDS[tim_soundStyle].tick(); }
+  function tim_sndUrgence(){ if(!tim_muted && TIM_SOUNDS[tim_soundStyle]) TIM_SOUNDS[tim_soundStyle].urgence(); tim_vib([20]); }
+  function tim_sndFinish(){ if(!tim_muted && TIM_SOUNDS[tim_soundStyle]) TIM_SOUNDS[tim_soundStyle].fin(); tim_vib([60,40,60,40,120]); }
+  function tim_sndRest(){ if(!tim_muted && TIM_SOUNDS[tim_soundStyle]) TIM_SOUNDS[tim_soundStyle].repos(); tim_vib([40]); }
+  function tim_sndReprise(){ if(!tim_muted && TIM_SOUNDS[tim_soundStyle]) TIM_SOUNDS[tim_soundStyle].reprise(); tim_vib([30,20,50]); }
+
+  function tim_toast(msg){
+    var el = document.getElementById('timToast');
+    if (!el) return;
+    el.textContent = msg; el.classList.add('on');
+    clearTimeout(tim_toastT);
+    tim_toastT = setTimeout(function(){ el.classList.remove('on'); }, 2000);
+  }
+
+  // ── UTILS ──
+  function tim_fmtMSS(s){ s = Math.max(0, Math.floor(s)); return Math.floor(s/60) + ':' + String(s%60).padStart(2,'0'); }
+  function tim_iv(id){ var el = document.getElementById(id); return el ? (parseInt(el.value, 10) || 0) : 0; }
+
+  // ── OUVERTURE / FERMETURE / TABS ──
+  function tim_open(){
+    var ov = document.getElementById('tim-overlay');
+    if (!ov) return;
+    ov.classList.add('on');
+    tim_showTab(tim_mode || 'tabata');
+    tim_updateTabSummary();
+    tim_buildHIITExInputs(); tim_updateHIITSummary();
+  }
+  function tim_close(){
+    var ov = document.getElementById('tim-overlay');
+    if (ov) ov.classList.remove('on');
+    if (tim_unsub) { try { tim_unsub(); } catch(e) {} tim_unsub = null; }
+  }
+  function tim_showTab(tab){
+    tim_mode = tab;
+    var screens = ['tabata','hiit','saved'];
+    screens.forEach(function(t){
+      var s = document.getElementById('timScreen' + t.charAt(0).toUpperCase() + t.slice(1));
+      if (s) s.classList.toggle('on', t === tab);
+    });
+    document.querySelectorAll('#tim-overlay .tim-tab').forEach(function(b){
+      b.classList.toggle('on', b.getAttribute('data-timtab') === tab);
+    });
+    if (tab === 'tabata') tim_updateTabSummary();
+    if (tab === 'hiit') { tim_buildHIITExInputs(); tim_updateHIITSummary(); }
+    if (tab === 'saved') tim_attachSavedListener();
+    else if (tim_unsub) { try { tim_unsub(); } catch(e) {} tim_unsub = null; }
+  }
+
+  function tim_step(id, d){
+    var el = document.getElementById(id); if (!el) return;
+    var min = parseInt(el.min || 1, 10), max = parseInt(el.max || 9999, 10);
+    var v = (parseInt(el.value, 10) || 0) + d;
+    v = Math.max(min, Math.min(max, v));
+    el.value = v;
+    if (id.indexOf('Tab') >= 0) tim_updateTabSummary();
+    if (id.indexOf('Hit') >= 0) { tim_buildHIITExInputs(); tim_updateHIITSummary(); }
+  }
+
+  // ── TABATA ──
+  function tim_sumHTML(stats, totalTime, totalRight, totalRightLabel){
+    var statsH = stats.map(function(s){ return '<div class="tim-sum-stat"><div class="v">' + s[0] + '</div><div class="l">' + s[1] + '</div></div>'; }).join('');
+    return '<div class="tim-sum-title">RÉSUMÉ DE SÉANCE</div>'
+      + '<div class="tim-sum-grid">' + statsH + '</div>'
+      + '<div class="tim-sum-total"><div><div class="tv">' + totalTime + '</div><div class="tl">Durée totale</div></div>'
+      + '<div style="text-align:right"><div class="tv">' + totalRight + '</div><div class="tl">' + totalRightLabel + '</div></div></div>';
+  }
+  function tim_updateTabSummary(){
+    var work=tim_iv('timTabWork'), rest=tim_iv('timTabRest'), rounds=tim_iv('timTabRounds'),
+        cycles=tim_iv('timTabCycles'), cr=tim_iv('timTabCycleRest'), cd=tim_iv('timTabCountdown');
+    var oneCycle = rounds * (work + rest);
+    var total = cd + oneCycle * cycles + Math.max(0, cycles - 1) * cr;
+    var el = document.getElementById('timTabSummary');
+    if (el) el.innerHTML = tim_sumHTML([[rounds,'Rounds / cycle'],[cycles,'Cycles'],[work+'s','Travail'],[rest+'s','Repos']], tim_fmtMSS(total), rounds*cycles, 'Total rounds');
+  }
+  function tim_buildTabataQueue(){
+    var work=tim_iv('timTabWork'), rest=tim_iv('timTabRest'), rounds=tim_iv('timTabRounds'),
+        cycles=tim_iv('timTabCycles'), cr=tim_iv('timTabCycleRest'), cd=tim_iv('timTabCountdown');
+    var q = [];
+    if (cd > 0) q.push({ ph:'ph-prep', lbl:'PRÉPARATION', dur:cd, ex:'' });
+    for (var cy=0; cy<cycles; cy++) {
+      for (var r=0; r<rounds; r++) {
+        q.push({ ph:'ph-work', lbl:'TRAVAIL', dur:work, ex: cycles>1 ? ('Cycle '+(cy+1)+' · Round '+(r+1)+'/'+rounds) : ('Round '+(r+1)+'/'+rounds), bi:cy, bt:cycles, ui:r, ut:rounds });
+        q.push({ ph:'ph-rest', lbl:'REPOS', dur:rest, ex: r<rounds-1 ? 'Récupère.' : (cy<cycles-1 ? 'Repos long ↓' : 'Dernier repos'), bi:cy, bt:cycles, ui:r, ut:rounds });
+      }
+      if (cy<cycles-1 && cr>0) q.push({ ph:'ph-inter', lbl:'REPOS CYCLE '+(cy+2), dur:cr, ex:'Prochain cycle dans…', bi:cy, bt:cycles });
+    }
+    return q;
+  }
+  function tim_launchTabata(){ tim_updateTabSummary(); tim_startTimer(tim_buildTabataQueue(), 'TABATA'); }
+
+  // ── HIIT ──
+  function tim_buildHIITExInputs(){
+    var blocs = tim_iv('timHitBlocs');
+    var container = document.getElementById('timHitExInputs');
+    if (!container) return;
+    if (container.children.length === blocs) return;
+    container.innerHTML = '';
+    for (var b=0; b<blocs; b++) {
+      var w = document.createElement('div');
+      w.style.marginBottom = '8px';
+      w.innerHTML = '<div class="tim-ex-label">Bloc ' + (b+1) + '</div><input type="text" placeholder="Ex : Sprint 30m, Box Jumps…" class="tim-hit-ex tim-ex-input">';
+      container.appendChild(w);
+    }
+  }
+  function tim_getHIITNames(){
+    return Array.prototype.map.call(document.querySelectorAll('.tim-hit-ex'), function(i){ return i.value.trim(); });
+  }
+  function tim_updateHIITSummary(){
+    var work=tim_iv('timHitWork'), rest=tim_iv('timHitRest'), series=tim_iv('timHitSeries'),
+        blocs=tim_iv('timHitBlocs'), br=tim_iv('timHitBlocRest'), cd=tim_iv('timHitCountdown');
+    var total = cd + blocs * (series * (work + rest)) + (blocs - 1) * br;
+    var el = document.getElementById('timHitSummary');
+    if (el) el.innerHTML = tim_sumHTML([[series,'Séries / bloc'],[blocs,'Blocs'],[work+'s','Effort'],[rest+'s','Récup']], tim_fmtMSS(total), series*blocs, 'Total séries');
+  }
+  function tim_buildHIITQueue(){
+    var work=tim_iv('timHitWork'), rest=tim_iv('timHitRest'), series=tim_iv('timHitSeries'),
+        blocs=tim_iv('timHitBlocs'), br=tim_iv('timHitBlocRest'), cd=tim_iv('timHitCountdown');
+    var names = tim_getHIITNames();
+    var q = [];
+    if (cd > 0) q.push({ ph:'ph-prep', lbl:'PRÉPARATION', dur:cd, ex:'' });
+    for (var b=0; b<blocs; b++) {
+      var ex = names[b] || ('Bloc ' + (b+1));
+      for (var s=0; s<series; s++) {
+        q.push({ ph:'ph-work', lbl:'TRAVAIL', dur:work, ex:ex, bi:b, bt:blocs, ui:s, ut:series });
+        var lastInBloc = s === series - 1, lastBloc = b === blocs - 1;
+        if (lastInBloc && !lastBloc) q.push({ ph:'ph-inter', lbl:'REPOS BLOC', dur:br, ex:'Prochain : ' + (names[b+1] || ('Bloc ' + (b+2))), bi:b, bt:blocs, ui:s, ut:series });
+        else if (!(lastInBloc && lastBloc)) q.push({ ph:'ph-rest', lbl:'RÉCUPÉRATION', dur:rest, ex:'', bi:b, bt:blocs, ui:s, ut:series });
+      }
+    }
+    return q;
+  }
+  function tim_launchHIIT(){ tim_updateHIITSummary(); tim_startTimer(tim_buildHIITQueue(), 'FRACTIONNÉ'); }
+
+  // ── TIMER ENGINE ──
+  function tim_startTimer(queue, label){
+    if (!queue.length) return;
+    if (tim_T.iv) clearInterval(tim_T.iv);
+    var workPhases = queue.filter(function(s){ return s.ph === 'ph-work'; });
+    tim_T = { queue:queue, idx:0, rem:queue[0].dur, total:queue[0].dur,
+              running:false, iv:null, startMs:null, doneRounds:0,
+              modeLabel:label, totalWorkPhases:workPhases.length };
+    var ml = document.getElementById('timModeLbl'); if (ml) ml.textContent = label;
+    tim_renderDots();
+    tim_applyStep(queue[0]);
+    document.getElementById('timTimerScreen').classList.add('on');
+    var btn = document.getElementById('timPlayBtn'); if (btn) btn.textContent = '▶';
+  }
+  function tim_applyStep(step){
+    var screen = document.getElementById('timTimerScreen');
+    screen.className = 'tim-timer-screen on ' + step.ph;
+    var p = document.getElementById('timPhaseName'); if (p) p.textContent = step.lbl || '';
+    var e = document.getElementById('timExName'); if (e) e.textContent = step.ex || '';
+    var next = tim_T.queue[tim_T.idx + 1];
+    var nL = document.getElementById('timNextLabel');
+    var nT = document.getElementById('timNextTime');
+    if (next) { if (nL) nL.textContent = next.lbl || ''; if (nT) nT.textContent = tim_fmtMSS(next.dur); }
+    else { if (nL) nL.textContent = 'DERNIÈRE PHASE'; if (nT) nT.textContent = ''; }
+    var worksDone = tim_T.queue.slice(0, tim_T.idx).filter(function(s){ return s.ph === 'ph-work'; }).length;
+    var worksLeft = Math.max(0, tim_T.totalWorkPhases - worksDone);
+    var rl = document.getElementById('timRoundsLeft'); if (rl) rl.textContent = worksLeft || '—';
+    var cyclesLeft = step.bt !== undefined ? (step.bt - step.bi) : '—';
+    var cl = document.getElementById('timCyclesLeft'); if (cl) cl.textContent = cyclesLeft;
+    tim_T.total = step.dur; tim_T.rem = step.dur;
+    tim_updateDisplay(step.dur);
+    tim_updateDots();
+  }
+  function tim_updateDisplay(s){
+    s = Math.max(0, s);
+    var b = document.getElementById('timBigTime');
+    if (b) b.textContent = s >= 60 ? tim_fmtMSS(s) : String(s).padStart(2,'0');
+    var remaining = tim_T.queue.slice(tim_T.idx).reduce(function(a, st, i){ return a + (i === 0 ? tim_T.rem : st.dur); }, 0);
+    var t = document.getElementById('timTotalTime'); if (t) t.textContent = tim_fmtMSS(remaining);
+  }
+  function tim_tick(){
+    tim_T.rem--;
+    if (tim_T.rem <= 3 && tim_T.rem > 0) {
+      tim_sndUrgence();
+      var d = document.getElementById('timBigTime');
+      if (d) { d.classList.add('pulse'); setTimeout(function(){ d.classList.remove('pulse'); }, 200); }
+    }
+    if (tim_T.rem === 0) { tim_endPhase(); return; }
+    tim_updateDisplay(tim_T.rem);
+  }
+  function tim_endPhase(){
+    var cur = tim_T.queue[tim_T.idx];
+    if (cur.ph === 'ph-work') tim_T.doneRounds++;
+    tim_T.idx++;
+    if (tim_T.idx >= tim_T.queue.length) { tim_finishSession(); return; }
+    var next = tim_T.queue[tim_T.idx];
+    if (next.ph === 'ph-work') tim_sndReprise();
+    else if (next.ph === 'ph-rest' || next.ph === 'ph-inter') tim_sndRest();
+    tim_applyStep(next);
+  }
+  function tim_finishSession(){
+    clearInterval(tim_T.iv); tim_T.running = false;
+    tim_sndFinish();
+    var elapsed = tim_T.startMs ? Math.floor((Date.now() - tim_T.startMs) / 1000) : 0;
+    var d = document.getElementById('timFinDur'); if (d) d.textContent = tim_fmtMSS(elapsed);
+    var r = document.getElementById('timFinRounds'); if (r) r.textContent = tim_T.doneRounds;
+    var s = document.getElementById('timFinSub'); if (s) s.textContent = tim_T.doneRounds + ' phases · ' + tim_T.modeLabel;
+    var quotes = [
+      '"La motivation c\'est des conneries. La discipline, ça reste."',
+      '"T\'as pas abandonné. C\'est pour ça que tu progresses."',
+      '"Chaque séance terminée est une brique. Construis."',
+      '"C\'est comme ça qu\'on progresse. Repose-toi bien."',
+      '"La détente verticale se construit. Tu viens de poser une fondation."'
+    ];
+    var q = document.getElementById('timFinQuote');
+    if (q) q.innerHTML = quotes[Math.floor(Math.random() * quotes.length)] + '<cite>— TITAN</cite>';
+    document.getElementById('timTimerScreen').classList.remove('on');
+    document.getElementById('timFinish').classList.add('on');
+  }
+  function tim_togglePlay(){
+    if (tim_T.running) {
+      clearInterval(tim_T.iv); tim_T.running = false;
+      var b = document.getElementById('timPlayBtn'); if (b) b.textContent = '▶';
+      tim_toast('En pause');
+    } else {
+      if (!tim_T.startMs) tim_T.startMs = Date.now();
+      if (tim_audioCtx && tim_audioCtx.state === 'suspended') tim_audioCtx.resume();
+      tim_T.iv = setInterval(tim_tick, 1000); tim_T.running = true;
+      var b2 = document.getElementById('timPlayBtn'); if (b2) b2.textContent = '⏸';
+    }
+  }
+  function tim_resetTimer(){
+    clearInterval(tim_T.iv); tim_T.running = false; tim_T.startMs = null; tim_T.doneRounds = 0; tim_T.idx = 0;
+    tim_applyStep(tim_T.queue[0]);
+    var b = document.getElementById('timPlayBtn'); if (b) b.textContent = '▶';
+    tim_toast('Réinitialisé');
+  }
+  function tim_skipPhase(){
+    clearInterval(tim_T.iv);
+    tim_endPhase();
+    if (tim_T.running) tim_T.iv = setInterval(tim_tick, 1000);
+  }
+  function tim_closeTimerScreen(){
+    if (tim_T.iv) clearInterval(tim_T.iv);
+    tim_T.running = false;
+    document.getElementById('timTimerScreen').classList.remove('on');
+  }
+  function tim_backFromFinish(){
+    document.getElementById('timFinish').classList.remove('on');
+  }
+  function tim_toggleMute(){
+    tim_muted = !tim_muted;
+    var b = document.getElementById('timMuteBtn'); if (b) b.textContent = tim_muted ? '🔇' : '🔊';
+    tim_toast(tim_muted ? 'Son désactivé' : 'Son activé');
+  }
+  function tim_toggleSoundPanel(){
+    var p = document.getElementById('timSoundPanel');
+    if (!p) return;
+    var open = !p.classList.contains('on');
+    p.classList.toggle('on', open);
+    if (open) tim_renderSoundSelector();
+    if (tim_audioCtx && tim_audioCtx.state === 'suspended') tim_audioCtx.resume();
+  }
+  function tim_renderSoundSelector(){
+    var row = document.getElementById('timSoundRow'); if (!row) return;
+    row.innerHTML = Object.keys(TIM_SOUNDS).map(function(k){
+      var s = TIM_SOUNDS[k];
+      return '<button class="tim-snd-btn' + (tim_soundStyle === k ? ' on' : '') + '" data-style="' + k + '" onclick="tim_setSoundStyle(\'' + k + '\')">' + s.label + '</button>';
+    }).join('');
+  }
+  function tim_setSoundStyle(s){
+    tim_soundStyle = s;
+    try { localStorage.setItem('tim_sound', s); } catch(e) {}
+    document.querySelectorAll('#timSoundRow .tim-snd-btn').forEach(function(b){
+      b.classList.toggle('on', b.getAttribute('data-style') === s);
+    });
+    tim_toast('✓ ' + TIM_SOUNDS[s].label);
+  }
+  function tim_testSound(){
+    if (tim_audioCtx && tim_audioCtx.state === 'suspended') tim_audioCtx.resume();
+    tim_sndDepart();
+    setTimeout(tim_sndTick, 600);
+    setTimeout(tim_sndUrgence, 1100);
+    setTimeout(tim_sndRest, 1800);
+    setTimeout(tim_sndReprise, 2400);
+    setTimeout(tim_sndFinish, 3100);
+  }
+  // ── DOTS ──
+  function tim_renderDots(){
+    var dots = document.getElementById('timDots'); if (!dots) return;
+    var markers = tim_T.queue.filter(function(s){ return s.ph === 'ph-work'; }).slice(0, 40);
+    if (markers.length > 40) { dots.innerHTML = ''; return; }
+    dots.innerHTML = markers.map(function(_, i){ return '<div class="tim-dot" id="timDot' + i + '"></div>'; }).join('');
+  }
+  function tim_updateDots(){
+    tim_T.queue.forEach(function(s, si){
+      if (s.ph !== 'ph-work') return;
+      var dotIdx = tim_T.queue.slice(0, si).filter(function(x){ return x.ph === 'ph-work'; }).length;
+      var d = document.getElementById('timDot' + dotIdx);
+      if (!d) return;
+      if (si < tim_T.idx) d.className = 'tim-dot done';
+      else if (si === tim_T.idx) d.className = 'tim-dot cur';
+      else d.className = 'tim-dot';
+    });
+  }
+
+  // ── PERSISTANCE : Firestore + miroir localStorage ──
+  function tim_getLocalSaved(){
+    try { return JSON.parse(localStorage.getItem('tim_saved') || '[]'); } catch(e) { return []; }
+  }
+  function tim_setLocalSaved(arr){
+    try { localStorage.setItem('tim_saved', JSON.stringify(arr)); } catch(e) {}
+  }
+  function tim_currentConfig(){
+    if (tim_mode === 'tabata') return {
+      work:tim_iv('timTabWork'), rest:tim_iv('timTabRest'), rounds:tim_iv('timTabRounds'),
+      cycles:tim_iv('timTabCycles'), cycleRest:tim_iv('timTabCycleRest'), countdown:tim_iv('timTabCountdown')
+    };
+    if (tim_mode === 'hiit') return {
+      work:tim_iv('timHitWork'), rest:tim_iv('timHitRest'), series:tim_iv('timHitSeries'),
+      blocs:tim_iv('timHitBlocs'), blocRest:tim_iv('timHitBlocRest'), countdown:tim_iv('timHitCountdown')
+    };
+    return {};
+  }
+  function tim_applyConfig(item){
+    var c = item.config || {};
+    if (item.mode === 'tabata') {
+      ['timTabWork:work','timTabRest:rest','timTabRounds:rounds','timTabCycles:cycles','timTabCycleRest:cycleRest','timTabCountdown:countdown'].forEach(function(map){
+        var p = map.split(':'); var el = document.getElementById(p[0]);
+        if (el && c[p[1]] != null) el.value = c[p[1]];
+      });
+      tim_showTab('tabata'); tim_updateTabSummary();
+    } else if (item.mode === 'hiit') {
+      ['timHitWork:work','timHitRest:rest','timHitSeries:series','timHitBlocs:blocs','timHitBlocRest:blocRest','timHitCountdown:countdown'].forEach(function(map){
+        var p = map.split(':'); var el = document.getElementById(p[0]);
+        if (el && c[p[1]] != null) el.value = c[p[1]];
+      });
+      tim_showTab('hiit'); tim_buildHIITExInputs(); tim_updateHIITSummary();
+    }
+    tim_toast('✓ ' + (item.name || 'Séance') + ' chargée');
+  }
+
+  function tim_openSaveModal(){
+    if (tim_mode !== 'tabata' && tim_mode !== 'hiit') { tim_toast('Va dans Tabata ou Fractionné'); return; }
+    document.getElementById('timSaveModal').classList.add('on');
+    var inp = document.getElementById('timSaveName');
+    if (inp) { inp.value = ''; setTimeout(function(){ try { inp.focus(); } catch(e) {} }, 80); }
+  }
+  function tim_closeSaveModal(){ document.getElementById('timSaveModal').classList.remove('on'); }
+  function tim_confirmSave(){
+    var inp = document.getElementById('timSaveName');
+    var name = inp ? inp.value.trim() : '';
+    if (!name) { tim_toast('Entre un nom'); return; }
+    var icons = { tabata:'⚡', hiit:'🔥' };
+    var item = {
+      name: name,
+      mode: tim_mode,
+      config: tim_currentConfig(),
+      icon: icons[tim_mode] || '🏆',
+      createdAtMs: Date.now()
+    };
+    var fb = window.fb;
+    if (window.fbUser && fb && fb.addDoc && fb.collection) {
+      try {
+        var col = fb.collection(fb.db, 'users', window.fbUser.uid, 'timerPresets');
+        fb.addDoc(col, Object.assign({}, item, { timestamp: fb.serverTimestamp() })).then(function(){
+          tim_toast('✓ Sauvegardée');
+        }).catch(function(e){
+          console.warn('tim save firestore:', e);
+          tim_saveLocalFallback(item);
+        });
+      } catch(e) { tim_saveLocalFallback(item); }
+    } else {
+      tim_saveLocalFallback(item);
+    }
+    tim_closeSaveModal();
+  }
+  function tim_saveLocalFallback(item){
+    var arr = tim_getLocalSaved();
+    arr.unshift(Object.assign({ id: 'l_' + Date.now() }, item));
+    tim_setLocalSaved(arr);
+    tim_toast('✓ Sauvegardée (local)');
+    if (tim_mode === 'saved') tim_renderSaved();
+  }
+  function tim_renderSaved(){
+    var wrap = document.getElementById('timSavedList'); if (!wrap) return;
+    var list = (tim_savedLocal && tim_savedLocal.length) ? tim_savedLocal : tim_getLocalSaved();
+    if (!list.length) {
+      wrap.innerHTML = '<div class="tim-saved-empty"><div class="ico">📋</div>Aucune séance sauvegardée.<br>Configure ta séance puis tape 💾 SAUVER.</div>';
+      return;
+    }
+    var h = '';
+    for (var i = 0; i < list.length; i++) {
+      var s = list[i];
+      var id = s.id || ('l_' + i);
+      var name = String(s.name || '').replace(/[<>"&]/g, '');
+      var mode = String(s.mode || '').toUpperCase();
+      h += '<div class="tim-saved-item" onclick="tim_loadSaved(\'' + id + '\')">'
+        + '<div class="tim-saved-icon">' + (s.icon || '🏆') + '</div>'
+        + '<div class="tim-saved-info"><div class="tim-saved-name">' + name + '</div><div class="tim-saved-meta">' + mode + '</div></div>'
+        + '<button class="tim-saved-del" onclick="event.stopPropagation();tim_delSaved(\'' + id + '\')" aria-label="Supprimer">✕</button>'
+        + '</div>';
+    }
+    wrap.innerHTML = h;
+  }
+  function tim_attachSavedListener(){
+    if (tim_unsub) { try { tim_unsub(); } catch(e) {} tim_unsub = null; }
+    var fb = window.fb;
+    if (!window.fbUser || !fb || !fb.collection || !fb.onSnapshot) {
+      tim_savedLocal = tim_getLocalSaved();
+      tim_renderSaved();
+      return;
+    }
+    try {
+      var ref = fb.collection(fb.db, 'users', window.fbUser.uid, 'timerPresets');
+      var q = fb.query(ref, fb.orderBy('timestamp', 'desc'));
+      tim_unsub = fb.onSnapshot(q, function(snap){
+        var arr = [];
+        snap.forEach(function(d){ arr.push(Object.assign({ id: d.id }, d.data())); });
+        tim_savedLocal = arr;
+        tim_renderSaved();
+      }, function(err){
+        console.warn('tim listener:', err);
+        tim_savedLocal = tim_getLocalSaved();
+        tim_renderSaved();
+      });
+    } catch(e) {
+      tim_savedLocal = tim_getLocalSaved();
+      tim_renderSaved();
+    }
+  }
+  function tim_loadSaved(id){
+    var item = (tim_savedLocal || []).find(function(s){ return s.id === id; });
+    if (!item) {
+      var arr = tim_getLocalSaved();
+      item = arr.find(function(s){ return s.id === id; });
+    }
+    if (!item) return;
+    tim_applyConfig(item);
+  }
+  function tim_delSaved(id){
+    if (!confirm('Supprimer cette séance ?')) return;
+    var fb = window.fb;
+    if (window.fbUser && fb && fb.deleteDoc && fb.doc && String(id).indexOf('l_') !== 0) {
+      try {
+        fb.deleteDoc(fb.doc(fb.db, 'users', window.fbUser.uid, 'timerPresets', id)).then(function(){
+          tim_toast('Supprimée');
+        }).catch(function(e){ console.warn('tim del:', e); tim_toast('Suppression impossible'); });
+        return;
+      } catch(e) {}
+    }
+    var arr = tim_getLocalSaved().filter(function(s){ return s.id !== id; });
+    tim_setLocalSaved(arr);
+    tim_savedLocal = arr;
+    tim_renderSaved();
+    tim_toast('Supprimée');
+  }
+
+  // ── EXPOSE ──
+  window.tim_open = tim_open;
+  window.tim_close = tim_close;
+  window.tim_showTab = tim_showTab;
+  window.tim_step = tim_step;
+  window.tim_launchTabata = tim_launchTabata;
+  window.tim_launchHIIT = tim_launchHIIT;
+  window.tim_togglePlay = tim_togglePlay;
+  window.tim_resetTimer = tim_resetTimer;
+  window.tim_skipPhase = tim_skipPhase;
+  window.tim_closeTimerScreen = tim_closeTimerScreen;
+  window.tim_backFromFinish = tim_backFromFinish;
+  window.tim_toggleMute = tim_toggleMute;
+  window.tim_toggleSoundPanel = tim_toggleSoundPanel;
+  window.tim_setSoundStyle = tim_setSoundStyle;
+  window.tim_testSound = tim_testSound;
+  window.tim_openSaveModal = tim_openSaveModal;
+  window.tim_closeSaveModal = tim_closeSaveModal;
+  window.tim_confirmSave = tim_confirmSave;
+  window.tim_loadSaved = tim_loadSaved;
+  window.tim_delSaved = tim_delSaved;
+
+  // Recalcule les sommaires quand un input change.
+  document.addEventListener('input', function(e){
+    var id = e.target && e.target.id;
+    if (!id) return;
+    if (id.indexOf('timTab') === 0) tim_updateTabSummary();
+    else if (id.indexOf('timHit') === 0) { tim_buildHIITExInputs(); tim_updateHIITSummary(); }
+  });
+})();
 
 // ═══ HOME MACROS CIRCLES (style Eklo) ═══
 function renderHomeMacros() {
