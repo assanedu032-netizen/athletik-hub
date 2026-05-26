@@ -5707,7 +5707,6 @@ function addRecipeToJournal() {
   var btns = document.querySelectorAll('#recipeModal .rm-add-btn');
   var btn = btns[btns.length - 1]; // le dernier bouton = "journal"
   if (btn) {
-    var prev = btn.textContent;
     btn.textContent = '✅ Ajouté au journal !';
     btn.style.background = 'linear-gradient(135deg, #22C55E, #16A34A)';
     btn.style.color = '#fff';
@@ -5718,20 +5717,75 @@ function addRecipeToJournal() {
       closeRecipeModal();
     }, 1200);
   }
-  // Ajout effectif au journal localStorage
+  // Ajout effectif au journal localStorage — format compatible avec renderJournalToday()
+  // qui lit m.totals.{cal,p,g,l} pour alimenter les macros du jour en haut de Nutri.
   try {
     var key = 'ah_nutri_journal';
     var arr = []; try { arr = JSON.parse(localStorage.getItem(key) || '[]'); } catch(e) {}
     arr.push({
       ts: Date.now(),
-      date: new Date().toISOString().slice(0,10),
+      date: new Date().toISOString(),
       name: r.name,
       cals: r.cals, prot: r.prot, carbs: r.carbs, fat: r.fat,
-      source: 'recipe'
+      totals: { cal: r.cals || 0, p: r.prot || 0, g: r.carbs || 0, l: r.fat || 0 },
+      source: 'recipe',
+      recipeKey: window._currentRecipeKey || ''
     });
     localStorage.setItem(key, JSON.stringify(arr));
   } catch(e) {}
+  // Refresh immédiat de la barre macros + sync Firestore
+  try { renderJournalToday(); } catch(e) {}
+  try { if (typeof fbSaveProfile === 'function') fbSaveProfile(); } catch(e) {}
+  if (typeof showToast === 'function') showToast('✓ +' + (r.cals||0) + ' kcal au journal du jour', 'success');
 }
+window.addRecipeToJournal = addRecipeToJournal;
+
+// Bonus : logger toute une journée du plan repas en un tap.
+// Appelé depuis le bouton "✓ Consommer ce jour" dans le meal plan.
+function logMealPlanDay(dayIdx) {
+  if (typeof RECIPES === 'undefined') return;
+  var profile = (typeof _mpGetProfile === 'function') ? _mpGetProfile() : {};
+  var objectif = profile.objectif || 'optimisation';
+  var breakfasts = [], meals = [], snacks = [], smoothies = [];
+  Object.keys(RECIPES).forEach(function(k){
+    var r = Object.assign({key:k}, RECIPES[k]);
+    if      (r.tag === 'breakfast') breakfasts.push(r);
+    else if (r.tag === 'meal')      meals.push(r);
+    else if (r.tag === 'snack')     snacks.push(r);
+    else if (r.tag === 'smoothie')  smoothies.push(r);
+  });
+  if (!breakfasts.length || !meals.length) return;
+  breakfasts = _mpSortByObjectif(breakfasts, objectif);
+  meals      = _mpSortByObjectif(meals,      objectif);
+  var collations = _mpSortByObjectif(smoothies.concat(snacks), objectif);
+  if (!collations.length) collations = breakfasts.slice();
+  var dayRecipes = [
+    _mpRotate(breakfasts, dayIdx),
+    _mpRotate(meals,      dayIdx),
+    _mpRotate(collations, dayIdx),
+    _mpRotate(meals,      dayIdx + Math.ceil(meals.length/2))
+  ].filter(Boolean);
+  // Push chaque repas au journal
+  try {
+    var key = 'ah_nutri_journal';
+    var arr = []; try { arr = JSON.parse(localStorage.getItem(key) || '[]'); } catch(e) {}
+    var totalCal = 0;
+    dayRecipes.forEach(function(r){
+      arr.push({
+        ts: Date.now(), date: new Date().toISOString(),
+        name: r.name, cals: r.cals, prot: r.prot, carbs: r.carbs, fat: r.fat,
+        totals: { cal: r.cals||0, p: r.prot||0, g: r.carbs||0, l: r.fat||0 },
+        source: 'meal-plan', recipeKey: r.key
+      });
+      totalCal += r.cals || 0;
+    });
+    localStorage.setItem(key, JSON.stringify(arr));
+  } catch(e) {}
+  try { renderJournalToday(); } catch(e) {}
+  try { if (typeof fbSaveProfile === 'function') fbSaveProfile(); } catch(e) {}
+  if (typeof showToast === 'function') showToast('✓ Journée loggée — +' + totalCal + ' kcal au journal', 'success');
+}
+window.logMealPlanDay = logMealPlanDay;
 
 // ═══ SET — SESSION D'ÉVALUATION TERRAIN ═══
 var SET_TYPES = {
@@ -13839,49 +13893,113 @@ function testSkipScreen() {
 // ══════════════════════════════════
 // PLAN REPAS AUTO (mode stricte)
 // ══════════════════════════════════
+// ─── PLAN REPAS HEBDO — calibré sur l'objectif (priseMuscle/pertePoids/optimisation) ───
+// Lit profile.objectif et profile.nutriCal pour adapter la sélection + le total.
+// Structure jour : Petit-déj + Déjeuner + Collation + Dîner (4 repas).
+
+// Récupère le profil utilisateur (localStorage source de vérité).
+function _mpGetProfile() {
+  try { return JSON.parse(localStorage.getItem('ah_profile') || '{}'); }
+  catch(e) { return {}; }
+}
+
+// Cible kcal par défaut selon objectif si nutriCal manquant.
+function _mpDefaultTarget(objectif) {
+  if (objectif === 'priseMuscle') return 2800;
+  if (objectif === 'pertePoids')  return 1900;
+  return 2400; // optimisation / fallback
+}
+
+// Trie les recettes selon l'objectif (favoriser les bonnes pour le but).
+function _mpSortByObjectif(arr, objectif) {
+  var copy = arr.slice();
+  if (objectif === 'priseMuscle') {
+    // Hautes calories d'abord (surplus calorique propre)
+    copy.sort(function(a,b){ return (b.cals||0) - (a.cals||0); });
+  } else if (objectif === 'pertePoids') {
+    // Meilleur ratio protéines/kcal d'abord (satiété + maintien muscle en déficit)
+    copy.sort(function(a,b){
+      var ra = (a.prot||0) / Math.max(1, a.cals||1);
+      var rb = (b.prot||0) / Math.max(1, b.cals||1);
+      return rb - ra;
+    });
+  }
+  // optimisation : ordre naturel (varié)
+  return copy;
+}
+
+// Pick une recette différente à chaque appel (anti-doublon par jour).
+function _mpRotate(arr, offset) {
+  if (!arr.length) return null;
+  return arr[((offset % arr.length) + arr.length) % arr.length];
+}
+
 function generateMealPlan() {
   if (typeof RECIPES === 'undefined') { alert('Recettes non chargées'); return; }
-  var pres   = [], meals = [], posts = [];
+
+  var profile = _mpGetProfile();
+  var objectif = profile.objectif || 'optimisation';
+  var targetCal = profile.nutriCal || _mpDefaultTarget(objectif);
+  var objLabel = { priseMuscle:'💪 Prise de muscle', pertePoids:'🔥 Perte de poids', optimisation:'⚡ Optimisation' }[objectif] || '⚡ Optimisation';
+
+  // Sépare les recettes par catégorie
+  var breakfasts = [], meals = [], snacks = [], smoothies = [];
   Object.keys(RECIPES).forEach(function(k){
     var r = Object.assign({key:k}, RECIPES[k]);
-    if (r.tag === 'pre')  pres.push(r);
-    else if (r.tag === 'post') posts.push(r);
-    else meals.push(r);
+    if      (r.tag === 'breakfast') breakfasts.push(r);
+    else if (r.tag === 'meal')      meals.push(r);
+    else if (r.tag === 'snack')     snacks.push(r);
+    else if (r.tag === 'smoothie')  smoothies.push(r);
   });
-  if (!pres.length || !meals.length) { alert('Pas assez de recettes pour générer un plan.'); return; }
-  if (!posts.length) posts = meals.slice();
+  if (!breakfasts.length || !meals.length) { alert('Pas assez de recettes pour générer un plan.'); return; }
 
-  var dailyTarget = (typeof user !== 'undefined' && user.nutriCal) ? user.nutriCal : 2400;
+  // Tri selon l'objectif
+  breakfasts = _mpSortByObjectif(breakfasts, objectif);
+  meals      = _mpSortByObjectif(meals,      objectif);
+  var collations = _mpSortByObjectif(smoothies.concat(snacks), objectif);
+  if (!collations.length) collations = breakfasts.slice();
+
   var days = ['LUNDI','MARDI','MERCREDI','JEUDI','VENDREDI','SAMEDI','DIMANCHE'];
-  var rotate = function(arr, offset) { return arr[offset % arr.length]; };
 
-  var html = '<div class="mp-head">Plan auto pour atteindre <strong>' + dailyTarget + ' kcal/jour</strong></div>';
+  // Entête : objectif + cible kcal + lien profil si pas calibré
+  var calibTxt = profile.nutriCal ? '' : ' <small style="opacity:.7">(défaut — complète ton profil pour calibrer)</small>';
+  var html = '<div class="mp-head">'
+    + '<div style="font-size:11px;color:var(--gold);letter-spacing:1.5px;font-weight:700;text-transform:uppercase;margin-bottom:3px">Objectif : ' + objLabel + '</div>'
+    + 'Cible <strong>' + targetCal + ' kcal/jour</strong>' + calibTxt
+    + '</div>';
+
   for (var i = 0; i < 7; i++) {
-    var pre   = rotate(pres,  i);
-    var lunch = rotate(meals, i);
-    var diner = rotate(meals, i + 1);
-    var post  = rotate(posts, i);
-    var total = (pre.cals||0) + (lunch.cals||0) + (diner.cals||0) + (post.cals||0);
-    var diff = total - dailyTarget;
-    var diffTxt = diff > 0 ? ('+' + diff) : diff;
-    var diffCls = Math.abs(diff) > 200 ? 'warn' : 'ok';
+    // Décalage différent par slot pour varier
+    var b = _mpRotate(breakfasts,  i);
+    var l = _mpRotate(meals,       i);
+    var c = _mpRotate(collations,  i);
+    var d = _mpRotate(meals,       i + Math.ceil(meals.length/2)); // antipode pour éviter même que midi
+    var total = (b.cals||0) + (l.cals||0) + (c.cals||0) + (d.cals||0);
+    var diff = total - targetCal;
+    var diffTxt = (diff > 0 ? '+' : '') + diff;
+    var diffCls = Math.abs(diff) > 250 ? 'warn' : 'ok';
     html += '<div class="mp-day">'
       + '<div class="mp-day-head"><span class="mp-day-name">' + days[i] + '</span>'
       + '<span class="mp-day-cals ' + diffCls + '">' + total + ' kcal <em>(' + diffTxt + ')</em></span></div>'
-      + _mealRowHtml('PRE',   pre)
-      + _mealRowHtml('MIDI',  lunch)
-      + _mealRowHtml('SOIR',  diner)
-      + _mealRowHtml('POST',  post)
+      + _mealRowHtml('🌅 MATIN',     b)
+      + _mealRowHtml('🍽️ MIDI',     l)
+      + _mealRowHtml('🥤 COLLATION', c)
+      + _mealRowHtml('🌙 SOIR',     d)
+      + '<button class="mp-log-day" onclick="logMealPlanDay(' + i + ')" style="width:100%;margin-top:6px;padding:8px;background:rgba(34,197,94,.1);border:1px solid rgba(34,197,94,.4);border-radius:8px;color:#16A34A;font-size:11px;font-weight:700;letter-spacing:.5px;cursor:pointer">✓ J\'ai mangé cette journée — logger au journal (+' + total + ' kcal)</button>'
       + '</div>';
   }
-  html += '<button class="btn btn-outline" onclick="addMealPlanToShopping()" style="margin-top:8px">🛒 Ajouter à la liste de courses</button>';
+  html += '<button class="btn btn-outline" onclick="addMealPlanToShopping()" style="margin-top:8px">🛒 Ajouter à la liste de courses</button>'
+       +  '<button class="btn btn-outline" onclick="generateMealPlan()" style="margin-top:8px">🔄 Régénérer un nouveau plan</button>';
   var grid = document.getElementById('mealPlanGrid');
   grid.innerHTML = html;
   grid.classList.remove('hidden');
 }
 
 function _mealRowHtml(slot, r) {
-  return '<div class="mp-meal">'
+  if (!r) return '';
+  var key = r.key || '';
+  var onclick = key ? 'showRecipe(\'' + key + '\')' : '';
+  return '<div class="mp-meal"' + (onclick ? ' onclick="' + onclick + '" style="cursor:pointer"' : '') + '>'
     + '<div class="mp-meal-slot">' + slot + '</div>'
     + '<div class="mp-meal-name">' + r.name + '</div>'
     + '<div class="mp-meal-cals">' + (r.cals || '?') + 'kcal</div>'
@@ -13890,25 +14008,33 @@ function _mealRowHtml(slot, r) {
 
 function addMealPlanToShopping() {
   if (typeof RECIPES === 'undefined') { alert('Recettes non chargées'); return; }
-  // Re-run the same rotation as generateMealPlan() to know which recipes are in the week
-  var pres = [], meals = [], posts = [];
+  // Replique la sélection de generateMealPlan() pour agréger les ingrédients de la semaine
+  var profile = _mpGetProfile();
+  var objectif = profile.objectif || 'optimisation';
+
+  var breakfasts = [], meals = [], snacks = [], smoothies = [];
   Object.keys(RECIPES).forEach(function(k){
     var r = Object.assign({key:k}, RECIPES[k]);
-    if (r.tag === 'pre')  pres.push(r);
-    else if (r.tag === 'post') posts.push(r);
-    else meals.push(r);
+    if      (r.tag === 'breakfast') breakfasts.push(r);
+    else if (r.tag === 'meal')      meals.push(r);
+    else if (r.tag === 'snack')     snacks.push(r);
+    else if (r.tag === 'smoothie')  smoothies.push(r);
   });
-  if (!pres.length || !meals.length) { alert('Pas assez de recettes pour générer le plan.'); return; }
-  if (!posts.length) posts = meals.slice();
+  if (!breakfasts.length || !meals.length) { alert('Pas assez de recettes pour générer le plan.'); return; }
 
-  var rotate = function(arr, offset) { return arr[offset % arr.length]; };
+  breakfasts = _mpSortByObjectif(breakfasts, objectif);
+  meals      = _mpSortByObjectif(meals,      objectif);
+  var collations = _mpSortByObjectif(smoothies.concat(snacks), objectif);
+  if (!collations.length) collations = breakfasts.slice();
+
   var weekRecipes = [];
   for (var i = 0; i < 7; i++) {
-    weekRecipes.push(rotate(pres,  i));
-    weekRecipes.push(rotate(meals, i));
-    weekRecipes.push(rotate(meals, i + 1));
-    weekRecipes.push(rotate(posts, i));
+    weekRecipes.push(_mpRotate(breakfasts,  i));
+    weekRecipes.push(_mpRotate(meals,       i));
+    weekRecipes.push(_mpRotate(collations,  i));
+    weekRecipes.push(_mpRotate(meals,       i + Math.ceil(meals.length/2)));
   }
+  weekRecipes = weekRecipes.filter(Boolean);
 
   // Aggregate ingredients across all recipes — sum quantities when same name
   var agg = {};
