@@ -3059,9 +3059,9 @@ button:active:not(.ah-titan-btn):not([class*="nav"]):not([class*="ls-"]):not([cl
 }
 
 /* ── Flow d'entrée dark cinéma — même look que #welcome/#titanIntro ── */
-#obQ1, #qSATIntro, #qNutri,
-#profil1, #profil2, #profil3, #profil4,
-#result, #nutriResult{
+html body #obQ1, html body #qSATIntro, html body #qNutri,
+html body #profil1, html body #profil2, html body #profil3, html body #profil4,
+html body #result, html body #nutriResult{
   background:linear-gradient(180deg,var(--ah-navy-deep) 0%,var(--ah-navy) 100%) !important;
   color:#fff !important;
 }
@@ -3150,21 +3150,22 @@ button:active:not(.ah-titan-btn):not([class*="nav"]):not([class*="ls-"]):not([cl
   border-color:var(--ah-gold) !important;
 }
 #qNutri .sport-name{ color:#fff !important; }
-/* halo arrière-plan ambiance cinéma */
-#obQ1::before, #qSATIntro::before, #qNutri::before,
-#profil1::before, #profil2::before, #profil3::before, #profil4::before{
-  content:''; position:absolute; top:-80px; left:50%; transform:translateX(-50%);
+/* halo arrière-plan ambiance cinéma — sur le .ob interne pour ne pas casser
+   le position:absolute du .scr (fullscreen layout) */
+#obQ1 .ob::before, #qSATIntro .ob::before, #qNutri .ob::before,
+#profil1 .ob::before, #profil2 .ob::before, #profil3 .ob::before, #profil4 .ob::before{
+  content:''; position:absolute; top:-40px; left:50%; transform:translateX(-50%);
   width:280px; height:280px;
   background:radial-gradient(circle,rgba(197,164,78,.12) 0%,transparent 70%);
   pointer-events:none; z-index:0;
 }
-#obQ1, #qSATIntro, #qNutri,
-#profil1, #profil2, #profil3, #profil4{
-  position:relative; overflow:hidden;
-}
-/* ob container au-dessus du halo */
 #obQ1 .ob, #qSATIntro .ob, #qNutri .ob,
 #profil1 .ob, #profil2 .ob, #profil3 .ob, #profil4 .ob{
+  position:relative;
+}
+/* ob enfants au-dessus du halo */
+#obQ1 .ob > *, #qSATIntro .ob > *, #qNutri .ob > *,
+#profil1 .ob > *, #profil2 .ob > *, #profil3 .ob > *, #profil4 .ob > *{
   position:relative; z-index:1;
 }
 
