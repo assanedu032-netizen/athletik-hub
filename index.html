@@ -4604,7 +4604,13 @@ body.test-mode #testSkipBar{display:flex}
         <div style="font-family:'Bebas Neue',sans-serif;font-size:20px;color:var(--text);letter-spacing:1px">LISTE DE COURSES</div>
         <button onclick="generateList()" style="padding:8px 16px;background:linear-gradient(135deg,var(--gold),var(--gold2));border:none;border-radius:10px;color:var(--navy);font-size:12px;font-weight:800;cursor:pointer">Générer 🛒</button>
       </div>
-      <div id="coursesSource" style="font-size:11px;color:var(--muted);line-height:1.5;margin-bottom:14px">Agrège les ingrédients de tes <strong style="color:var(--gold)">recettes favorites ⭐</strong>. Ajoute des recettes via l'onglet Recettes.</div>
+      <div id="coursesSource" style="font-size:11px;color:var(--muted);line-height:1.5;margin-bottom:10px">Agrège les ingrédients de tes <strong style="color:var(--gold)">recettes favorites ⭐</strong>. Ajoute des recettes via l'onglet Recettes.</div>
+
+      <!-- Boutons export liste de courses -->
+      <div style="display:flex;gap:8px;margin-bottom:14px">
+        <button onclick="shareShopping()" style="flex:1;padding:11px;background:var(--surface);border:1.5px solid var(--border);border-radius:10px;color:var(--text);font-size:12px;font-weight:700;cursor:pointer;text-transform:uppercase;letter-spacing:.5px;font-family:'Outfit',sans-serif">📤 Partager</button>
+        <button onclick="exportShoppingDocx()" style="flex:1;padding:11px;background:var(--surface);border:1.5px solid var(--border);border-radius:10px;color:var(--text);font-size:12px;font-weight:700;cursor:pointer;text-transform:uppercase;letter-spacing:.5px;font-family:'Outfit',sans-serif">📄 Word (.docx)</button>
+      </div>
 
       <!-- Zone dynamique : remplie par renderShoppingList() -->
       <div id="shoppingList"></div>
@@ -5682,6 +5688,251 @@ function toggleShopItem(name, el) {
   try { localStorage.setItem('ah_shopping_checks', JSON.stringify(checked)); } catch(e) {}
   renderShoppingList();
 }
+
+// ═══════════════════════════════════════════════════════════════
+// EXPORT LISTE DE COURSES — Native Share + .docx Word
+// .docx = ZIP de 3 fichiers XML (mini-zip stored inline, ~80 lignes).
+// Aucune librairie externe, marche offline, ouvre dans Word/Pages/LibreOffice.
+// ═══════════════════════════════════════════════════════════════
+
+// CRC32 — requis par le format ZIP pour intégrité de chaque fichier.
+function _crc32Table() {
+  if (window._crc32T) return window._crc32T;
+  var t = []; var c;
+  for (var n = 0; n < 256; n++) {
+    c = n;
+    for (var k = 0; k < 8; k++) c = (c & 1) ? (0xEDB88320 ^ (c >>> 1)) : (c >>> 1);
+    t[n] = c >>> 0;
+  }
+  window._crc32T = t;
+  return t;
+}
+function _crc32(bytes) {
+  var t = _crc32Table(), crc = 0xFFFFFFFF;
+  for (var i = 0; i < bytes.length; i++) crc = (crc >>> 8) ^ t[(crc ^ bytes[i]) & 0xFF];
+  return (crc ^ 0xFFFFFFFF) >>> 0;
+}
+
+// Construit un ZIP "stored" (sans compression — Word l'accepte).
+// files = [{name:'foo.xml', data: Uint8Array}, ...]
+function _zipBuild(files) {
+  var enc = new TextEncoder();
+  var parts = [], central = [], offset = 0;
+  files.forEach(function(f) {
+    var nb = enc.encode(f.name);
+    var crc = _crc32(f.data);
+    var sz = f.data.length;
+    var lfh = new Uint8Array(30 + nb.length);
+    var dv = new DataView(lfh.buffer);
+    dv.setUint32(0, 0x04034b50, true);
+    dv.setUint16(4, 20, true); dv.setUint16(6, 0, true);
+    dv.setUint16(8, 0, true); // stored
+    dv.setUint16(10, 0, true); dv.setUint16(12, 0, true);
+    dv.setUint32(14, crc, true);
+    dv.setUint32(18, sz, true); dv.setUint32(22, sz, true);
+    dv.setUint16(26, nb.length, true); dv.setUint16(28, 0, true);
+    lfh.set(nb, 30);
+    parts.push(lfh); parts.push(f.data);
+    central.push({ nb: nb, crc: crc, sz: sz, off: offset });
+    offset += lfh.length + sz;
+  });
+  var centralStart = offset;
+  central.forEach(function(e) {
+    var cd = new Uint8Array(46 + e.nb.length);
+    var dv = new DataView(cd.buffer);
+    dv.setUint32(0, 0x02014b50, true);
+    dv.setUint16(4, 20, true); dv.setUint16(6, 20, true);
+    dv.setUint16(8, 0, true); dv.setUint16(10, 0, true);
+    dv.setUint16(12, 0, true); dv.setUint16(14, 0, true);
+    dv.setUint32(16, e.crc, true);
+    dv.setUint32(20, e.sz, true); dv.setUint32(24, e.sz, true);
+    dv.setUint16(28, e.nb.length, true);
+    dv.setUint32(42, e.off, true);
+    cd.set(e.nb, 46);
+    parts.push(cd);
+    offset += cd.length;
+  });
+  var centralSize = offset - centralStart;
+  var eocd = new Uint8Array(22);
+  var dv = new DataView(eocd.buffer);
+  dv.setUint32(0, 0x06054b50, true);
+  dv.setUint16(8, central.length, true);
+  dv.setUint16(10, central.length, true);
+  dv.setUint32(12, centralSize, true);
+  dv.setUint32(16, centralStart, true);
+  parts.push(eocd);
+  var total = parts.reduce(function(a, p){ return a + p.length; }, 0);
+  var out = new Uint8Array(total);
+  var pos = 0;
+  parts.forEach(function(p) { out.set(p, pos); pos += p.length; });
+  return out;
+}
+
+function _xmlEsc(s) {
+  return String(s == null ? '' : s).replace(/[&<>"']/g, function(c) {
+    return { '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&apos;' }[c];
+  });
+}
+
+function _fmtShopDate() {
+  var d = new Date();
+  var jours = ['dimanche','lundi','mardi','mercredi','jeudi','vendredi','samedi'];
+  var mois = ['janvier','février','mars','avril','mai','juin','juillet','août','septembre','octobre','novembre','décembre'];
+  return jours[d.getDay()] + ' ' + d.getDate() + ' ' + mois[d.getMonth()] + ' ' + d.getFullYear();
+}
+
+// Collecte les ingrédients depuis : favoris + plan repas auto.
+// Regroupe par catégorie. Retourne { cats: [{name, items:[{name, qty}]}], totalItems }.
+function _collectShoppingForExport() {
+  var byCat = {};
+  function addItem(cat, name, qty) {
+    if (!byCat[cat]) byCat[cat] = {};
+    var k = name.toLowerCase().trim();
+    if (!byCat[cat][k]) byCat[cat][k] = { name: name.trim(), qtys: [] };
+    if (qty) byCat[cat][k].qtys.push(String(qty).trim());
+  }
+  // 1. Favoris
+  if (typeof RECIPES !== 'undefined' && window.RECIPES) {
+    var favs = (typeof _getRecipeFavorites === 'function') ? _getRecipeFavorites() : [];
+    favs.forEach(function(key) {
+      var r = RECIPES[key]; if (!r) return;
+      (r.ingredients || []).forEach(function(ing) {
+        if (!ing || !ing.name) return;
+        addItem(_categorizeIngredient(ing.name), ing.name, ing.qty);
+      });
+    });
+  }
+  // 2. Plan repas auto (lignes pré-agrégées)
+  try {
+    var mp = JSON.parse(localStorage.getItem('ah_shopping_meal_plan') || '[]');
+    mp.forEach(function(line) {
+      var m = String(line).match(/^([\d.,]+\s*\S*)\s+(.+)$/);
+      var qty = m ? m[1].trim() : '';
+      var name = m ? m[2].trim() : String(line).trim();
+      if (!name) return;
+      addItem(_categorizeIngredient(name), name, qty);
+    });
+  } catch(e) {}
+  // Tri stable par catégorie
+  var catOrder = ['PROTÉINES & LAITAGES','GLUCIDES & FÉCULENTS','LÉGUMES & HERBES','FRUITS','BONS GRAS','ÉPICES & DIVERS'];
+  var cats = [], totalItems = 0;
+  catOrder.forEach(function(cn) {
+    if (!byCat[cn]) return;
+    var keys = Object.keys(byCat[cn]).sort();
+    var items = keys.map(function(k) {
+      var it = byCat[cn][k];
+      var q = it.qtys.length ? (it.qtys.slice(0,4).join(' + ') + (it.qtys.length > 4 ? ' + …' : '')) : '';
+      return { name: it.name, qty: q };
+    });
+    if (items.length) { cats.push({ name: cn, items: items }); totalItems += items.length; }
+  });
+  return { cats: cats, totalItems: totalItems };
+}
+
+// Texte plain pour Native Share / clipboard
+function _buildShoppingText(data) {
+  var lines = ['🛒 LISTE DE COURSES', _fmtShopDate(), ''];
+  data.cats.forEach(function(cat) {
+    lines.push('— ' + cat.name + ' —');
+    cat.items.forEach(function(it) {
+      lines.push('• ' + it.name + (it.qty ? ' — ' + it.qty : ''));
+    });
+    lines.push('');
+  });
+  lines.push('Généré par Athletik Hub 💪');
+  return lines.join('\n');
+}
+
+// Construit document.xml — corps du .docx avec mise en forme
+function _buildDocXml(data) {
+  var p = [];
+  // Titre
+  p.push('<w:p><w:pPr><w:spacing w:after="240"/><w:jc w:val="center"/></w:pPr><w:r><w:rPr><w:b/><w:sz w:val="44"/><w:color w:val="1B2A4A"/></w:rPr><w:t>LISTE DE COURSES</w:t></w:r></w:p>');
+  // Date
+  p.push('<w:p><w:pPr><w:jc w:val="center"/><w:spacing w:after="360"/></w:pPr><w:r><w:rPr><w:i/><w:color w:val="666666"/></w:rPr><w:t>' + _xmlEsc(_fmtShopDate()) + '</w:t></w:r></w:p>');
+  // Catégories
+  data.cats.forEach(function(cat) {
+    p.push('<w:p><w:pPr><w:spacing w:before="240" w:after="120"/></w:pPr><w:r><w:rPr><w:b/><w:sz w:val="28"/><w:color w:val="C5A44E"/></w:rPr><w:t>' + _xmlEsc(cat.name) + '</w:t></w:r></w:p>');
+    cat.items.forEach(function(it) {
+      var line = '• ' + it.name + (it.qty ? ' — ' + it.qty : '');
+      p.push('<w:p><w:pPr><w:spacing w:after="60"/></w:pPr><w:r><w:rPr><w:sz w:val="22"/></w:rPr><w:t xml:space="preserve">' + _xmlEsc(line) + '</w:t></w:r></w:p>');
+    });
+  });
+  // Footer
+  p.push('<w:p><w:pPr><w:spacing w:before="480"/><w:jc w:val="center"/></w:pPr><w:r><w:rPr><w:i/><w:sz w:val="18"/><w:color w:val="999999"/></w:rPr><w:t>Généré par Athletik Hub</w:t></w:r></w:p>');
+  return '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'
+    + '<w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main">'
+    + '<w:body>' + p.join('') + '</w:body></w:document>';
+}
+
+async function shareShopping() {
+  var data = _collectShoppingForExport();
+  if (data.totalItems === 0) {
+    if (typeof showToast === 'function') showToast('Liste vide — ajoute des recettes en favoris', 'info');
+    else alert('Liste vide — ajoute des recettes en favoris');
+    return;
+  }
+  var text = _buildShoppingText(data);
+  if (navigator.share) {
+    try {
+      await navigator.share({ title: 'Ma liste de courses', text: text });
+    } catch(e) { /* user cancelled — silencieux */ }
+    return;
+  }
+  // Fallback : clipboard
+  try {
+    await navigator.clipboard.writeText(text);
+    if (typeof showToast === 'function') showToast('✓ Liste copiée dans le presse-papier', 'success');
+    else alert('Liste copiée dans le presse-papier');
+  } catch(e) {
+    // Ultimate fallback : prompt
+    window.prompt('Copie ta liste de courses :', text);
+  }
+}
+window.shareShopping = shareShopping;
+
+function exportShoppingDocx() {
+  var data = _collectShoppingForExport();
+  if (data.totalItems === 0) {
+    if (typeof showToast === 'function') showToast('Liste vide — ajoute des recettes en favoris', 'info');
+    else alert('Liste vide — ajoute des recettes en favoris');
+    return;
+  }
+  try {
+    var enc = new TextEncoder();
+    var files = [
+      { name: '[Content_Types].xml', data: enc.encode(
+        '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'
+        + '<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types">'
+        + '<Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/>'
+        + '<Default Extension="xml" ContentType="application/xml"/>'
+        + '<Override PartName="/word/document.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml"/>'
+        + '</Types>'
+      ) },
+      { name: '_rels/.rels', data: enc.encode(
+        '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'
+        + '<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">'
+        + '<Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="word/document.xml"/>'
+        + '</Relationships>'
+      ) },
+      { name: 'word/document.xml', data: enc.encode(_buildDocXml(data)) }
+    ];
+    var zip = _zipBuild(files);
+    var blob = new Blob([zip], { type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' });
+    var url = URL.createObjectURL(blob);
+    var a = document.createElement('a');
+    a.href = url;
+    a.download = 'liste-courses-' + new Date().toISOString().slice(0,10) + '.docx';
+    document.body.appendChild(a);
+    a.click();
+    setTimeout(function() { URL.revokeObjectURL(url); a.remove(); }, 200);
+    if (typeof showToast === 'function') showToast('✓ Fichier Word téléchargé', 'success');
+  } catch(e) {
+    console.warn('exportShoppingDocx:', e);
+    if (typeof showToast === 'function') showToast('Erreur export — réessaie', 'info');
+  }
+}
+window.exportShoppingDocx = exportShoppingDocx;
 
 // Remplace l'ancien toggleShop (qui était sur des items statiques) — désormais alias
 function toggleShop(el) {
