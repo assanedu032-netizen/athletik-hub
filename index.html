@@ -583,6 +583,19 @@ body{background:var(--bg);color:var(--text);font-family:'Outfit',sans-serif;disp
 .recipe-card-moment{display:inline-block;font-size:9px;font-weight:700;letter-spacing:.3px;padding:2px 6px;border-radius:8px;background:rgba(197,164,78,.15);color:var(--gold);border:1px solid rgba(197,164,78,.3)}
 .recipe-card-diff{color:var(--gold);font-size:9px;letter-spacing:0;font-weight:700}
 .rm-meta-chip{display:inline-block;font-size:10px;font-weight:700;letter-spacing:.3px;padding:5px 10px;border-radius:14px;background:var(--surface2);color:var(--text2);border:1px solid var(--border)}
+.jml-item{display:flex;align-items:center;gap:10px;padding:11px 14px;background:var(--surface);border:1px solid var(--border);border-left:3px solid var(--gold);border-radius:10px;margin-bottom:6px}
+.jml-ic{font-size:20px;flex-shrink:0}
+.jml-info{flex:1;min-width:0}
+.jml-name{font-size:13px;font-weight:700;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.jml-meta{font-size:11px;color:var(--muted);margin-top:2px}
+.jml-del{background:transparent;border:none;color:var(--muted);font-size:14px;cursor:pointer;padding:6px;flex-shrink:0;opacity:.55}
+.jml-del:hover,.jml-del:active{opacity:1;color:var(--red)}
+.rm-sub-btn{background:transparent;border:1px solid var(--border);color:var(--gold);font-size:11px;width:22px;height:22px;border-radius:50%;cursor:pointer;margin-left:6px;padding:0;line-height:1;vertical-align:middle}
+.rm-sub-btn:active{background:var(--gold);color:var(--navy)}
+.rm-subs{background:rgba(197,164,78,.06);border-left:3px solid var(--gold);border-radius:0 8px 8px 0;padding:8px 12px;margin:2px 0 8px 26px}
+.rm-subs-label{font-size:10px;color:var(--gold);font-weight:700;letter-spacing:1px;text-transform:uppercase;margin-bottom:6px}
+.rm-subs-list{display:flex;flex-wrap:wrap;gap:5px}
+.rm-sub-chip{font-size:11px;padding:3px 9px;background:var(--surface);border:1px solid var(--border);border-radius:10px;color:var(--text2);font-weight:600}
 .test-video-wrap{margin:-4px 0 14px;border-radius:10px;overflow:hidden;background:#0a0f1e;position:relative;padding-top:56.25%;border:1px solid var(--border)}
 .test-video-wrap iframe,.test-video-wrap .tvw-ph{position:absolute;inset:0;width:100%;height:100%;border:0}
 .test-video-wrap .tvw-ph{display:flex;align-items:center;justify-content:center;flex-direction:column;background:linear-gradient(135deg,#1B2A4A,#0A0F1E);color:rgba(255,255,255,.5);font-size:12px;letter-spacing:1px;font-weight:600;cursor:pointer;text-align:center;padding:12px}
@@ -3182,6 +3195,17 @@ body.test-mode #testSkipBar{display:flex}
       </div>
     </div>
 
+    <!-- ═══ REPAS DU JOUR (depuis plan repas auto si généré) ═══ -->
+    <div id="homeMealPlanWrap" style="display:none;padding:18px 20px;border-bottom:1px solid var(--border)">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+        <div style="font-size:10px;font-weight:700;letter-spacing:2px;color:var(--muted);text-transform:uppercase">Repas du jour</div>
+        <div style="font-size:11px;color:var(--gold);font-weight:600;cursor:pointer" onclick="switchTab('nutrition')">Voir le plan complet →</div>
+      </div>
+      <div id="homeMealPlanContent">
+        <!-- Injecté par renderHomeMealPlan() -->
+      </div>
+    </div>
+
     <!-- ═══ CERCLES MACROS (style Eklo) ═══ -->
     <div id="homeMacros" style="padding:18px 20px;border-bottom:1px solid var(--border);display:none">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
@@ -4341,6 +4365,9 @@ body.test-mode #testSkipBar{display:flex}
 
       <!-- Photos repas du jour -->
       <div id="journalPhotosGrid" style="display:grid;grid-template-columns:1fr 1fr;gap:6px;padding:0 20px;margin-bottom:14px"></div>
+
+      <!-- Liste des repas consommés aujourd'hui (alimenté par renderJournalToday) -->
+      <div id="journalMealsList" style="padding:0 20px;margin-bottom:14px"></div>
 
       <!-- Plan repas auto (mode stricte) -->
       <div class="meal-plan-cta" style="margin:0 20px 14px">
@@ -5590,9 +5617,19 @@ function showRecipe(key) {
   // État favoris (étoile + bouton)
   window._currentRecipeKey = key;
   _refreshRecipeModalFavUI();
-  // Ingrédients
-  var ingrHtml = r.ingredients.map(function(i) {
-    return '<div class="rm-ingr"><div class="rm-ingr-dot"></div><div class="rm-ingr-name">' + i.name + '</div><div class="rm-ingr-qty">' + i.qty + '</div></div>';
+  // Ingrédients — avec substitutions possibles
+  var ingrHtml = r.ingredients.map(function(i, idx) {
+    var subs = _findSubs(i.name);
+    var html = '<div class="rm-ingr"><div class="rm-ingr-dot"></div><div class="rm-ingr-name">' + i.name
+      + (subs ? ' <button class="rm-sub-btn" onclick="toggleSubs(' + idx + ')" aria-label="Voir les alternatives" title="Alternatives">↻</button>' : '')
+      + '</div><div class="rm-ingr-qty">' + i.qty + '</div></div>';
+    if (subs) {
+      html += '<div class="rm-subs" id="rmSubs' + idx + '" style="display:none">'
+        + '<div class="rm-subs-label">💡 Alternatives</div>'
+        + '<div class="rm-subs-list">' + subs.map(function(a){ return '<span class="rm-sub-chip">' + a + '</span>'; }).join('') + '</div>'
+        + '</div>';
+    }
+    return html;
   }).join('');
   var rmI = document.getElementById('rmIngredients'); if (rmI) rmI.innerHTML = ingrHtml;
   // Étapes
@@ -5631,6 +5668,129 @@ function adjustRecipeServings(delta) {
   _applyRecipeServings();
 }
 window.adjustRecipeServings = adjustRecipeServings;
+
+// Base de substitutions d'ingrédients courantes pour athlètes
+// Chaque clé est une regex appliquée au nom (lowercased), valeurs = alternatives
+var INGREDIENT_SUBS = [
+  { re: /skyr/, alts: ['Fromage blanc 0%', 'Yaourt grec 0%'] },
+  { re: /fromage blanc/, alts: ['Skyr', 'Yaourt grec 0%'] },
+  { re: /yaourt grec/, alts: ['Skyr', 'Fromage blanc 0%'] },
+  { re: /whey/, alts: ['Caséine', 'Protéine de pois', 'Œufs +1'] },
+  { re: /beurre de cacahu[èe]te/, alts: ['Beurre d\'amande', 'Pâte de noisette', 'Tahini'] },
+  { re: /beurre d['\']amande/, alts: ['Beurre de cacahuète', 'Pâte de noisette'] },
+  { re: /lait d['\']amande/, alts: ['Lait écrémé', 'Lait de coco léger', 'Eau'] },
+  { re: /lait de coco/, alts: ['Crème de soja', 'Lait d\'amande + cuillère huile coco'] },
+  { re: /lait[^d]/, alts: ['Lait d\'amande', 'Lait de soja'] },
+  { re: /flocons d['\']avoine|avoine/, alts: ['Farine d\'avoine', 'Quinoa flocons'] },
+  { re: /quinoa/, alts: ['Riz complet', 'Boulgour'] },
+  { re: /riz basmati/, alts: ['Riz complet', 'Riz long'] },
+  { re: /riz noir/, alts: ['Riz basmati', 'Riz complet'] },
+  { re: /pâtes complètes/, alts: ['Pâtes semi-complètes', 'Pâtes de lentilles'] },
+  { re: /huile d['\']olive/, alts: ['Huile de coco', 'Huile d\'avocat'] },
+  { re: /banane/, alts: ['Pomme', 'Mangue', 'Poire'] },
+  { re: /myrtilles/, alts: ['Framboises', 'Fraises', 'Mûres'] },
+  { re: /framboises/, alts: ['Myrtilles', 'Fraises'] },
+  { re: /poulet|blanc.*poulet/, alts: ['Blanc de dinde', 'Filet mignon de porc maigre'] },
+  { re: /dinde/, alts: ['Blanc de poulet'] },
+  { re: /b[oeœ]uf hach[eé] 5%/, alts: ['Dinde hachée', 'Poulet haché'] },
+  { re: /saumon/, alts: ['Truite', 'Cabillaud (moins gras)', 'Maquereau'] },
+  { re: /cabillaud/, alts: ['Colin', 'Lieu noir', 'Merlu'] },
+  { re: /crevettes/, alts: ['Poulet en cubes', 'Tofu ferme'] },
+  { re: /thon/, alts: ['Saumon', 'Maquereau'] },
+  { re: /tofu/, alts: ['Tempeh', 'Œufs', 'Pois chiches'] },
+  { re: /œufs|oeufs/, alts: ['Blancs d\'œufs (×2)', 'Tofu brouillé'] },
+  { re: /amandes/, alts: ['Noix', 'Noix de cajou', 'Noisettes'] },
+  { re: /noix(?!\s)/, alts: ['Amandes', 'Noix de pécan'] },
+  { re: /miel/, alts: ['Sirop d\'érable', 'Sirop d\'agave'] },
+  { re: /sirop d['\']érable/, alts: ['Miel', 'Stevia (à doser)'] },
+  { re: /épinards/, alts: ['Kale', 'Roquette', 'Mâche'] },
+  { re: /brocoli/, alts: ['Chou-fleur', 'Haricots verts'] },
+  { re: /patate douce/, alts: ['Courge butternut', 'Pomme de terre'] },
+  { re: /haricots noirs/, alts: ['Haricots rouges', 'Pois chiches', 'Lentilles'] },
+  { re: /lentilles/, alts: ['Haricots blancs', 'Pois chiches'] },
+  { re: /pois chiches/, alts: ['Haricots blancs', 'Lentilles'] },
+  { re: /avocat/, alts: ['Houmous', 'Olives noires'] },
+  { re: /feta/, alts: ['Mozzarella light', 'Chèvre frais', 'Ricotta'] },
+  { re: /parmesan/, alts: ['Pecorino', 'Gruyère râpé'] }
+];
+
+// Retourne les alternatives possibles pour un nom d'ingrédient
+function _findSubs(name) {
+  var n = String(name || '').toLowerCase();
+  for (var i = 0; i < INGREDIENT_SUBS.length; i++) {
+    if (INGREDIENT_SUBS[i].re.test(n)) return INGREDIENT_SUBS[i].alts;
+  }
+  return null;
+}
+
+// Retire une entrée du journal (par index dans le tableau global)
+function removeJournalMeal(idx) {
+  try {
+    var arr = JSON.parse(localStorage.getItem('ah_nutri_journal') || '[]');
+    if (idx < 0 || idx >= arr.length) return;
+    arr.splice(idx, 1);
+    localStorage.setItem('ah_nutri_journal', JSON.stringify(arr));
+    if (typeof renderJournalToday === 'function') renderJournalToday();
+    if (typeof fbSaveProfile === 'function') fbSaveProfile();
+    if (typeof showToast === 'function') showToast('Retiré du journal', 'info');
+  } catch(e) {}
+}
+window.removeJournalMeal = removeJournalMeal;
+
+// Widget Home : affiche les 4 repas du jour si un plan a été généré
+function renderHomeMealPlan() {
+  var wrap = document.getElementById('homeMealPlanWrap');
+  var content = document.getElementById('homeMealPlanContent');
+  if (!wrap || !content) return;
+  var plan = null;
+  try { plan = JSON.parse(localStorage.getItem('ah_meal_plan') || 'null'); } catch(e) {}
+  if (!plan || !plan.days || !plan.days.length) {
+    // Pas de plan généré : affiche un CTA discret
+    wrap.style.display = 'block';
+    content.innerHTML = '<div style="background:var(--surface);border:1px dashed var(--border);border-radius:12px;padding:14px;text-align:center;font-size:12px;color:var(--muted)">'
+      + 'Pas de plan repas généré.<br>'
+      + '<a onclick="switchTab(\'nutrition\')" style="color:var(--gold);font-weight:700;cursor:pointer">Aller dans Nutri → Journal → Générer</a>'
+      + '</div>';
+    return;
+  }
+  // jsDay 0=Sun..6=Sat → planDayIdx 0=Lun..6=Dim
+  var planDayIdx = (new Date().getDay() + 6) % 7;
+  var d = plan.days[planDayIdx];
+  if (!d) { wrap.style.display = 'none'; return; }
+  wrap.style.display = 'block';
+
+  var slots = [
+    { lbl: '🌅 Matin',     r: d.breakfast },
+    { lbl: '🍽️ Midi',     r: d.lunch },
+    { lbl: '🥤 Collation', r: d.snack },
+    { lbl: '🌙 Soir',     r: d.dinner }
+  ];
+  var html = '<div style="background:linear-gradient(135deg,var(--surface),var(--surface2));border:1px solid var(--border);border-radius:14px;overflow:hidden;box-shadow:var(--card-shadow)">'
+    + '<div style="display:flex;justify-content:space-between;align-items:center;padding:10px 14px;background:var(--navy);color:#fff">'
+    +   '<div style="font-family:\'Bebas Neue\',sans-serif;font-size:14px;letter-spacing:2px;color:var(--gold)">' + d.name + '</div>'
+    +   '<div style="font-size:12px;font-weight:700;color:#fff">' + d.total + ' kcal</div>'
+    + '</div>';
+  slots.forEach(function(s){
+    if (!s.r) return;
+    var nm = String(s.r.name).replace(/[<>]/g,'');
+    html += '<div onclick="showRecipe(\'' + s.r.key + '\')" style="display:flex;align-items:center;gap:10px;padding:9px 14px;border-bottom:1px solid var(--border);cursor:pointer">'
+      +   '<div style="font-size:11px;color:var(--muted);font-weight:700;letter-spacing:.5px;min-width:70px">' + s.lbl + '</div>'
+      +   '<div style="flex:1;font-size:12px;color:var(--text);font-weight:600;line-height:1.3;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">' + nm + '</div>'
+      +   '<div style="font-family:\'Bebas Neue\',sans-serif;font-size:14px;color:var(--gold);font-weight:700">' + (s.r.cals||0) + '</div>'
+      + '</div>';
+  });
+  html += '<button onclick="logMealPlanDay(' + planDayIdx + ')" style="width:100%;padding:11px;background:rgba(34,197,94,.08);border:none;border-top:1px solid var(--border);color:#16A34A;font-size:12px;font-weight:700;letter-spacing:.5px;cursor:pointer;font-family:\'Outfit\',sans-serif">✓ J\'ai tout mangé — logger au journal</button>';
+  html += '</div>';
+  content.innerHTML = html;
+}
+window.renderHomeMealPlan = renderHomeMealPlan;
+
+function toggleSubs(idx) {
+  var el = document.getElementById('rmSubs' + idx);
+  if (!el) return;
+  el.style.display = (el.style.display === 'none' || !el.style.display) ? 'block' : 'none';
+}
+window.toggleSubs = toggleSubs;
 
 function closeRecipeModal() {
   document.getElementById('recipeModal').classList.remove('open');
@@ -5777,6 +5937,65 @@ function toggleRecipeFavoriteFromCard(key, el) {
 
 // ─── Shopping list dynamique depuis favoris ───
 
+// Parse une qty "100g", "1/2", "2 c.à.s", "qq feuilles" en { value, unit }.
+function _parseQty(qty) {
+  var s = String(qty || '').trim();
+  if (!s) return { value: null, unit: '' };
+  // Fraction : 1/2, 3/4
+  var f = s.match(/^(\d+)\s*\/\s*(\d+)\s*(.*)$/);
+  if (f) {
+    var v = parseInt(f[1], 10) / parseInt(f[2], 10);
+    return { value: v, unit: f[3].trim() };
+  }
+  // Décimal + unité : "100g", "1.5 c.à.s", "2,5 cuillères", "100 ml"
+  var m = s.match(/^([\d]+[.,]?[\d]*)\s*(.*)$/);
+  if (m) {
+    var num = parseFloat(m[1].replace(',', '.'));
+    if (!isNaN(num)) return { value: num, unit: m[2].trim() };
+  }
+  return { value: null, unit: s };
+}
+
+// Normalise une unité pour pouvoir cumuler ("c.à.s" = "c. à s." = "c à s")
+function _normUnit(u) {
+  return String(u || '').toLowerCase()
+    .replace(/[\s.]+/g, '')
+    .replace(/càs|càsoupe|cuillèresàsoupe|cuilleresasoupe/g, 'cas')
+    .replace(/càc|càcafé|cuillèresàcafé|cuilleresacafe/g, 'cac');
+}
+
+// Affichage joli pour une unité normalisée
+function _displayUnit(u) {
+  var n = _normUnit(u);
+  if (n === 'cas') return 'c.à.s';
+  if (n === 'cac') return 'c.à.c';
+  return u;
+}
+
+// Agrège un tableau de qtys ("100g", "200g", "1 c.à.s") en chaîne lisible.
+function _sumQtys(qtys) {
+  if (!qtys || !qtys.length) return '';
+  var byUnit = {};      // { unitNormalisée: { value, displayUnit } }
+  var unparsed = [];    // qtys non-numériques (ex: "qq feuilles")
+  qtys.forEach(function(q) {
+    var p = _parseQty(q);
+    if (p.value !== null) {
+      var nu = _normUnit(p.unit);
+      if (!byUnit[nu]) byUnit[nu] = { value: 0, display: _displayUnit(p.unit) };
+      byUnit[nu].value += p.value;
+    } else {
+      if (String(q).trim()) unparsed.push(q);
+    }
+  });
+  var parts = [];
+  Object.keys(byUnit).forEach(function(nu) {
+    var x = byUnit[nu];
+    var nice = (Math.abs(x.value % 1) < 0.05) ? Math.round(x.value) : (Math.round(x.value * 10) / 10);
+    parts.push(nice + (x.display ? (nu === 'g' || nu === 'kg' || nu === 'ml' || nu === 'l' ? '' : ' ') + x.display : ''));
+  });
+  return parts.concat(unparsed).join(' · ');
+}
+
 // Catégorise un ingrédient (heuristique simple sur le nom)
 function _categorizeIngredient(name) {
   var n = name.toLowerCase();
@@ -5833,7 +6052,7 @@ function renderShoppingList() {
     items.forEach(function(it){
       var checkKey = it.name.toLowerCase().trim();
       var isChecked = !!checked[checkKey];
-      var qtyTxt = it.qtys.slice(0, 3).join(' + ') + (it.qtys.length > 3 ? ' + …' : '');
+      var qtyTxt = _sumQtys(it.qtys);
       html += '<div style="display:flex;align-items:center;gap:10px;padding:11px 0;border-bottom:1px solid var(--border)">';
       html +=   '<div class="shop-check ' + (isChecked?'on':'') + '" onclick="toggleShopItem(\'' + checkKey.replace(/'/g,"\\'") + '\',this)" style="width:22px;height:22px;border-radius:6px;' + (isChecked?'background:var(--gold);border:2px solid var(--gold);color:var(--navy);display:flex;align-items:center;justify-content:center;font-size:12px':'border:2px solid var(--border2)') + ';cursor:pointer;flex-shrink:0">' + (isChecked?'✓':'') + '</div>';
       html +=   '<div style="flex:1;font-size:13px;' + (isChecked?'color:var(--muted);text-decoration:line-through':'color:var(--text)') + '">';
@@ -5987,7 +6206,7 @@ function _collectShoppingForExport() {
     var keys = Object.keys(byCat[cn]).sort();
     var items = keys.map(function(k) {
       var it = byCat[cn][k];
-      var q = it.qtys.length ? (it.qtys.slice(0,4).join(' + ') + (it.qtys.length > 4 ? ' + …' : '')) : '';
+      var q = _sumQtys(it.qtys);
       return { name: it.name, qty: q };
     });
     if (items.length) { cats.push({ name: cn, items: items }); totalItems += items.length; }
@@ -7498,7 +7717,10 @@ function switchTab(tab){
     try { apiKeyRestore(); fbRefreshAccountSection(window.fbUser); renderBadges(); refreshAccessTierUI(); renderProgression(); renderMoiPlanning(); renderHistory(); } catch(e) {}
   }
   // Refresh Athletik Score on Home
-  if (tab === 'home') { try { renderAthletikScore(); } catch(e) { console.warn('renderAthletikScore error:', e); } }
+  if (tab === 'home') {
+    try { renderAthletikScore(); } catch(e) { console.warn('renderAthletikScore error:', e); }
+    try { renderHomeMealPlan(); } catch(e) {}
+  }
 }
 // Logout: keep onboarding/SAT data but clear session, redirect to auth on next load.
 function logoutUser(){
@@ -14653,6 +14875,8 @@ function generateMealPlan() {
   // (sans casser le tri par objectif : on décale juste le point de départ)
   var seed = ((Date.now() / 1000) | 0) + (window._mpRegen = (window._mpRegen || 0) + 1);
   window._mpLastSeed = seed; // mémorisé pour que addMealPlanToShopping() utilise le même
+  // Pour le widget Home "Repas du jour" : on persiste le plan généré
+  var planForStorage = { generatedAt: Date.now(), seed: seed, objectif: objectif, targetCal: targetCal, days: [] };
   for (var i = 0; i < 7; i++) {
     // Offsets distincts par slot pour éviter doublons dans la même journée
     var b = _mpRotate(breakfasts,  i + seed);
@@ -14663,6 +14887,9 @@ function generateMealPlan() {
     var diff = total - targetCal;
     var diffTxt = (diff > 0 ? '+' : '') + diff;
     var diffCls = Math.abs(diff) > 250 ? 'warn' : 'ok';
+    // Snapshot pour le storage (utilisé par renderHomeMealPlan)
+    var snap = function(r){ return r ? { key:r.key, name:r.name, cals:r.cals, prot:r.prot, img:r.img, moment:r.moment } : null; };
+    planForStorage.days.push({ name: days[i], total: total, breakfast: snap(b), lunch: snap(l), snack: snap(c), dinner: snap(d) });
     html += '<div class="mp-day">'
       + '<div class="mp-day-head"><span class="mp-day-name">' + days[i] + '</span>'
       + '<span class="mp-day-cals ' + diffCls + '">' + total + ' kcal <em>(' + diffTxt + ')</em></span></div>'
@@ -14673,6 +14900,8 @@ function generateMealPlan() {
       + '<button class="mp-log-day" onclick="logMealPlanDay(' + i + ')" style="width:100%;margin-top:6px;padding:8px;background:rgba(34,197,94,.1);border:1px solid rgba(34,197,94,.4);border-radius:8px;color:#16A34A;font-size:11px;font-weight:700;letter-spacing:.5px;cursor:pointer">✓ J\'ai mangé cette journée — logger au journal (+' + total + ' kcal)</button>'
       + '</div>';
   }
+  // Persiste le plan pour le widget Home (Repas du jour)
+  try { localStorage.setItem('ah_meal_plan', JSON.stringify(planForStorage)); } catch(e) {}
   html += '<button class="btn btn-outline" onclick="addMealPlanToShopping()" style="margin-top:8px">🛒 Ajouter à la liste de courses</button>'
        +  '<button class="btn btn-outline" onclick="generateMealPlan()" style="margin-top:8px">🔄 Régénérer un nouveau plan</button>';
   var grid = document.getElementById('mealPlanGrid');
@@ -18452,6 +18681,37 @@ function renderJournalToday() {
   if ($('nutri-prot'))  $('nutri-prot').textContent  = Math.round(totals.p) + 'g';
   if ($('nutri-carbs')) $('nutri-carbs').textContent = Math.round(totals.g) + 'g';
   if ($('nutri-fat'))   $('nutri-fat').textContent   = Math.round(totals.l) + 'g';
+
+  // Liste des repas consommés aujourd'hui (cards avec bouton retirer)
+  var mealsList = $('journalMealsList');
+  if (mealsList) {
+    if (!todayMeals.length) {
+      mealsList.innerHTML = '';
+    } else {
+      var html = '<div style="font-size:10px;color:var(--muted);letter-spacing:2px;font-weight:700;margin-bottom:8px">REPAS DU JOUR (' + todayMeals.length + ')</div>';
+      // Ordre chronologique inverse (plus récent en haut)
+      var sorted = todayMeals.slice().sort(function(a,b){ return (b.ts||0) - (a.ts||0); });
+      sorted.forEach(function(m){
+        var idx = journal.indexOf(m);
+        var sourceIc = m.source === 'recipe' ? '🍴' : m.source === 'meal-plan' ? '📋' : '📸';
+        var nm = String(m.name||'Repas').replace(/[<>]/g,'');
+        var cal = Math.round((m.totals && m.totals.cal) || m.cals || 0);
+        var prot = Math.round((m.totals && m.totals.p) || m.prot || 0);
+        var time = m.ts ? new Date(m.ts) : null;
+        var timeStr = time ? (('0'+time.getHours()).slice(-2) + ':' + ('0'+time.getMinutes()).slice(-2)) : '';
+        html += '<div class="jml-item">'
+          +   '<div class="jml-ic">' + sourceIc + '</div>'
+          +   '<div class="jml-info">'
+          +     '<div class="jml-name">' + nm + '</div>'
+          +     '<div class="jml-meta">' + cal + ' kcal · ' + prot + 'g prot' + (timeStr ? ' · ' + timeStr : '') + '</div>'
+          +   '</div>'
+          +   '<button class="jml-del" onclick="removeJournalMeal(' + idx + ')" aria-label="Retirer">✕</button>'
+          + '</div>';
+      });
+      mealsList.innerHTML = html;
+    }
+  }
+
   if ($('jRdiTotal')) $('jRdiTotal').textContent = rdi;
   if ($('jRdiPct')) $('jRdiPct').textContent = Math.round(pct) + '% du RDI';
   if ($('jProgressBar')) $('jProgressBar').style.width = Math.min(100, pct) + '%';
