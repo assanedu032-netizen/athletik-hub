@@ -2631,6 +2631,628 @@ div.titan-bubble,div.t-bubble{
   color:#fff !important;
 }
 #vChat .chat-input::placeholder{ color:rgba(255,255,255,.45) !important; }
+
+/* ════════════════════════════════════════════════════════════════════════════
+   DESIGN SYSTEM v1.0 — PHASE 4 : HANDOFF COMPLET
+   Couvre : thinking, vHome, profils, liveSession, vChat, vNutri, vTracks,
+   auth, card states, vTrain, segments, steppers, goldframe, scoreboard.
+   ════════════════════════════════════════════════════════════════════════════ */
+
+/* ── #thinking — écran d'analyse Titan ── */
+#thinking{
+  background:linear-gradient(180deg,var(--ah-navy-deep) 0%,var(--ah-navy) 100%) !important;
+  color:#fff !important;
+}
+#thinking #thinkMsg{
+  font-family:var(--ah-font-body) !important;
+  color:rgba(255,255,255,.65) !important;
+  font-size:14px !important;
+  line-height:1.6 !important;
+}
+#thinking #thinkPct{
+  font-family:var(--ah-font-display) !important;
+  font-size:48px !important;
+  color:var(--ah-gold) !important;
+  letter-spacing:.04em !important;
+}
+#thinking > div:first-child{
+  background:var(--ah-navy) !important;
+  border:2px solid var(--ah-gold) !important;
+  box-shadow:0 0 40px rgba(197,164,78,.22) !important;
+}
+#thinkBar{
+  background:linear-gradient(90deg,var(--ah-gold),var(--ah-gold2)) !important;
+  border-radius:3px !important;
+}
+
+/* ── vHome — Today Card goldframe ── */
+#todayCard{
+  background:var(--ah-surface) !important;
+  border:none !important;
+  border-bottom:1px solid var(--ah-border) !important;
+  padding:20px 20px !important;
+}
+#todayCard > div:first-child > div:first-child{
+  font-family:var(--ah-font-mono) !important;
+  font-size:10px !important;
+  letter-spacing:.22em !important;
+  color:var(--ah-gold) !important;
+  text-transform:uppercase !important;
+}
+#pcName{
+  font-family:var(--ah-font-display) !important;
+  font-size:26px !important;
+  color:var(--ah-text) !important;
+  letter-spacing:.08em !important;
+}
+#pcObj{
+  font-family:var(--ah-font-body) !important;
+  font-size:13px !important;
+  color:var(--ah-text2) !important;
+}
+/* Bouton LANCER SÉANCE */
+#todayCard button[onclick*="discoveryStartProfile"],
+#todayCard button[onclick*="launchToday"],
+#todayCard button[onclick*="startSession"]{
+  background:var(--ah-gold) !important;
+  color:var(--ah-navy) !important;
+  font-family:var(--ah-font-display) !important;
+  font-size:16px !important;
+  letter-spacing:.12em !important;
+  border-radius:var(--ah-r-lg) !important;
+  box-shadow:0 6px 20px rgba(197,164,78,.28) !important;
+  border:none !important;
+  min-height:52px !important;
+}
+/* Scoreboard sur Home */
+.ah-scoreboard{
+  display:flex; align-items:center; justify-content:space-around;
+  background:var(--ah-navy); border-radius:var(--ah-r-lg);
+  padding:12px 16px; margin:0 20px 16px; gap:0;
+}
+.ah-scoreboard .grp{ display:flex;flex-direction:column;align-items:center;gap:3px; }
+.ah-scoreboard .lbl{
+  font-family:var(--ah-font-mono); font-size:9px; color:rgba(255,255,255,.5);
+  letter-spacing:.18em; text-transform:uppercase;
+}
+.ah-scoreboard .val{
+  font-family:var(--ah-font-display); font-size:28px; color:var(--ah-gold);
+  line-height:1; letter-spacing:.04em;
+}
+.ah-scoreboard .val.empty{ color:rgba(255,255,255,.3); }
+.ah-scoreboard .div{ width:1px; height:36px; background:rgba(255,255,255,.08); }
+.ah-scoreboard .live{
+  font-family:var(--ah-font-mono); font-size:8px; color:var(--ah-gold);
+  letter-spacing:.2em; text-transform:uppercase; animation:ah-pulse 1.6s infinite;
+}
+@keyframes ah-pulse{ 0%,100%{opacity:.6} 50%{opacity:1} }
+
+/* ── Gold frame ── */
+.ah-goldframe{
+  position:relative; padding:3px; border-radius:calc(var(--ah-r-lg) + 3px);
+  background:linear-gradient(135deg,var(--ah-gold),rgba(197,164,78,.4),var(--ah-gold));
+}
+.ah-goldframe .inner{ border-radius:var(--ah-r-lg); overflow:hidden; }
+
+/* ── Profil screens — progress bar ── */
+.ah-progress-bar{
+  display:flex; gap:4px; margin-bottom:8px;
+}
+.ah-progress-bar .seg{
+  flex:1; height:3px; border-radius:2px; background:var(--ah-border);
+}
+.ah-progress-bar .seg.done{ background:var(--ah-gold); }
+.ah-progress-bar .seg.active{ background:var(--ah-gold); opacity:.55; }
+
+/* Profil screens — opt-cards et structure */
+.ob{ padding:24px 20px 100px !important; }
+.ob-next{
+  background:var(--ah-gold) !important;
+  color:var(--ah-navy) !important;
+  font-family:var(--ah-font-display) !important;
+  font-size:16px !important;
+  letter-spacing:.12em !important;
+  border-radius:var(--ah-r-lg) !important;
+  padding:16px 20px !important;
+  min-height:52px !important;
+  box-shadow:0 6px 18px rgba(197,164,78,.28) !important;
+  border:none !important;
+  width:100% !important;
+}
+
+/* ── Segments (.ah-seg) pour remplacer les select natifs ── */
+.ah-seg{
+  display:flex; gap:4px; background:var(--ah-surface2);
+  border-radius:var(--ah-r-md); padding:4px; width:100%;
+}
+.ah-seg-item{
+  flex:1; padding:9px 6px; text-align:center; border-radius:calc(var(--ah-r-md) - 2px);
+  font-family:var(--ah-font-body); font-size:12px; font-weight:600;
+  color:var(--ah-text2); cursor:pointer; transition:background .12s, color .12s;
+  border:none; background:transparent;
+}
+.ah-seg-item.on{
+  background:var(--ah-navy); color:#fff;
+  box-shadow:0 2px 8px rgba(27,42,74,.18);
+}
+/* Sub-tabs en mode segment design system */
+.sub-tabs{
+  display:flex; gap:4px; background:var(--ah-surface2) !important;
+  border-radius:var(--ah-r-md) !important; padding:4px !important;
+  margin:16px 20px 0 !important;
+}
+.sub-tab{
+  flex:1; padding:9px 6px !important; text-align:center !important;
+  border-radius:calc(var(--ah-r-md) - 2px) !important;
+  font-size:12px !important; font-weight:600 !important;
+  color:var(--ah-text2) !important; cursor:pointer;
+  background:transparent !important; box-shadow:none !important;
+  border:none !important;
+}
+.sub-tab.on{
+  background:var(--ah-navy) !important; color:#fff !important;
+  box-shadow:0 2px 8px rgba(27,42,74,.18) !important;
+}
+
+/* ── Steppers (.ah-stepper) ── */
+.ah-stepper{
+  display:flex; align-items:center; gap:12px;
+  background:var(--ah-surface2); border-radius:var(--ah-r-md); padding:8px 12px;
+}
+.ah-stepper .ah-step-btn{
+  width:36px; height:36px; border-radius:50%;
+  background:var(--ah-surface); border:1px solid var(--ah-border2);
+  font-size:18px; color:var(--ah-text); cursor:pointer;
+  display:flex; align-items:center; justify-content:center;
+  font-family:var(--ah-font-display);
+}
+.ah-stepper .ah-step-val{
+  flex:1; text-align:center;
+  font-family:var(--ah-font-display); font-size:28px; color:var(--ah-text);
+  letter-spacing:.04em; line-height:1;
+}
+.ah-stepper .ah-step-unit{
+  font-family:var(--ah-font-mono); font-size:10px; color:var(--ah-muted);
+  letter-spacing:.12em; text-transform:uppercase;
+}
+
+/* ── Card states ── */
+.ah-card{
+  background:var(--ah-surface);
+  border:1px solid var(--ah-border);
+  border-radius:var(--ah-r-lg);
+  box-shadow:0 2px 8px rgba(20,30,60,.04);
+  position:relative;
+}
+.ah-card-active{
+  border:1.5px solid var(--ah-navy) !important;
+  box-shadow:0 4px 14px rgba(27,42,74,.1) !important;
+}
+.ah-card-active::before{
+  content:''; position:absolute; left:0; top:12px; bottom:12px;
+  width:3px; background:var(--ah-gold); border-radius:0 2px 2px 0;
+}
+.ah-card-done{
+  border:1.5px solid var(--ah-green) !important;
+}
+.ah-card-done::before{
+  content:''; position:absolute; left:0; top:12px; bottom:12px;
+  width:3px; background:var(--ah-green); border-radius:0 2px 2px 0;
+}
+.ah-card-locked{
+  background:var(--ah-surface2) !important;
+  border-color:var(--ah-border) !important;
+  opacity:.75;
+  pointer-events:none;
+}
+.ah-lock-pill{
+  display:inline-flex; align-items:center; gap:4px;
+  background:var(--ah-surface); border:1px solid var(--ah-border2);
+  border-radius:999px; padding:4px 10px;
+  font-family:var(--ah-font-body); font-size:11px; font-weight:600;
+  color:var(--ah-text2);
+}
+.ah-pill-gold{
+  background:rgba(197,164,78,.12); color:var(--ah-gold);
+  border:1px solid rgba(197,164,78,.3);
+  border-radius:999px; padding:3px 10px;
+  font-family:var(--ah-font-mono); font-size:9px;
+  letter-spacing:.14em; text-transform:uppercase; font-weight:500;
+}
+.ah-pill-green{
+  background:rgba(16,185,129,.1); color:var(--ah-green);
+  border:1px solid rgba(16,185,129,.25);
+  border-radius:999px; padding:3px 10px;
+  font-family:var(--ah-font-mono); font-size:9px;
+  letter-spacing:.14em; text-transform:uppercase; font-weight:500;
+}
+
+/* ── vTrain — programme cards ── */
+#pgProg #progList > div{
+  border-radius:var(--ah-r-lg) !important;
+  overflow:hidden !important;
+  box-shadow:0 4px 14px rgba(11,18,40,.12) !important;
+  border:1px solid rgba(255,255,255,.06) !important;
+  transition:transform .15s, box-shadow .15s !important;
+}
+#pgProg #progList > div:active{ transform:scale(.97) !important; }
+
+/* ── Live Session — dark immersif ── */
+#liveSession{
+  background:var(--ah-navy-deep) !important;
+  color:#fff !important;
+}
+.ls-timer-num{
+  font-family:var(--ah-font-display) !important;
+  font-size:72px !important;
+  color:var(--ah-gold) !important;
+  letter-spacing:.04em !important;
+  line-height:.9 !important;
+}
+.ls-exo-name{
+  font-family:var(--ah-font-display) !important;
+  font-size:28px !important;
+  color:#fff !important;
+  letter-spacing:.06em !important;
+}
+.ls-header{
+  background:transparent !important;
+  border-bottom:1px solid rgba(255,255,255,.06) !important;
+}
+.ls-complete-title{
+  font-family:var(--ah-font-display) !important;
+  font-size:42px !important;
+  color:var(--ah-gold) !important;
+  letter-spacing:.06em !important;
+}
+/* FAB timer */
+.ah-fab{
+  position:fixed; bottom:100px; right:18px; z-index:45;
+  width:52px; height:52px; border-radius:50%;
+  background:var(--ah-gold); color:var(--ah-navy);
+  border:none; box-shadow:0 6px 18px rgba(197,164,78,.35);
+  display:flex; align-items:center; justify-content:center;
+  font-size:22px; cursor:pointer;
+  transition:transform .12s;
+}
+.ah-fab:active{ transform:scale(.94); }
+
+/* ── vNutri — header dark (design system nutri) ── */
+#vNutri > .main > div:first-child{
+  background:var(--ah-navy) !important;
+  border-radius:0 0 20px 20px !important;
+  padding:20px 20px 16px !important;
+}
+#vNutri > .main > div:first-child > div:first-child > div:first-child > div:first-child{
+  font-family:var(--ah-font-display) !important;
+  font-size:28px !important; letter-spacing:.14em !important;
+  color:#fff !important;
+}
+/* NPI pill */
+#vNutri .sub-tabs{
+  margin:0 0 0 0 !important;
+  border-radius:0 !important;
+  background:var(--ah-surface2) !important;
+  padding:12px 16px 0 !important;
+}
+
+/* ── vTracks — segments SAT/SET propres ── */
+#vTracks .sub-tabs{
+  margin:16px 20px 0 !important;
+}
+.track-item{
+  background:var(--ah-surface) !important;
+  border:1px solid var(--ah-border) !important;
+  border-radius:var(--ah-r-lg) !important;
+  padding:14px 16px !important;
+  margin-bottom:8px !important;
+}
+
+/* ── auth screen ── */
+#auth .ac{
+  background:var(--ah-surface) !important;
+  border:1px solid var(--ah-border) !important;
+  border-radius:var(--ah-r-lg) !important;
+  box-shadow:0 8px 28px rgba(20,30,60,.08) !important;
+  padding:24px !important;
+}
+#auth .ac-t{
+  font-family:var(--ah-font-display) !important;
+  font-size:28px !important; letter-spacing:.06em !important;
+  color:var(--ah-text) !important; text-transform:uppercase !important;
+}
+#auth .ac-s{
+  font-family:var(--ah-font-body) !important;
+  font-size:13px !important; color:var(--ah-text2) !important;
+}
+#auth .fi{
+  font-family:var(--ah-font-mono) !important;
+  letter-spacing:.06em !important;
+}
+#auth .bg{
+  background:var(--ah-surface) !important;
+  border:1.5px solid var(--ah-border2) !important;
+  border-radius:var(--ah-r-lg) !important;
+  font-family:var(--ah-font-body) !important;
+  font-weight:600 !important;
+  color:var(--ah-text) !important;
+  min-height:48px !important;
+  transition:border-color .12s !important;
+}
+#auth .bg:hover{ border-color:var(--ah-navy) !important; }
+/* CTA primaire auth */
+#auth button[onclick*="fbEmailSignUp"],
+#auth button[onclick*="fbEmailSignIn"]{
+  background:var(--ah-gold) !important;
+  color:var(--ah-navy) !important;
+  border:none !important;
+  font-family:var(--ah-font-display) !important;
+  font-size:15px !important; letter-spacing:.1em !important;
+  min-height:50px !important;
+  border-radius:var(--ah-r-lg) !important;
+  box-shadow:0 6px 18px rgba(197,164,78,.28) !important;
+}
+
+/* ── vChat — header mascotte premium ── */
+#vChat .chat-header{
+  background:var(--ah-navy) !important;
+  border-bottom:1px solid rgba(197,164,78,.18) !important;
+  padding:14px 16px !important;
+}
+#vChat .ch-name{
+  font-family:var(--ah-font-display) !important;
+  font-size:18px !important; letter-spacing:.18em !important;
+  color:var(--ah-gold) !important;
+}
+#vChat .ch-status{
+  font-family:var(--ah-font-mono) !important;
+  font-size:9px !important; letter-spacing:.14em !important;
+  color:rgba(255,255,255,.5) !important;
+  text-transform:uppercase !important;
+}
+#vChat .ch-avatar{
+  width:46px; height:46px; border-radius:50% !important;
+  border:2px solid var(--ah-gold) !important;
+  overflow:hidden !important;
+  background:var(--ah-navy-deep) !important;
+}
+#vChat .msg.titan .msg-bubble,
+#vChat .msg-bubble{
+  font-family:var(--ah-font-body) !important;
+  font-size:13.5px !important;
+  line-height:1.55 !important;
+  font-style:normal !important;
+}
+#vChat .typing-dot{ background:var(--ah-gold) !important; }
+#vChat .ci-field{
+  font-family:var(--ah-font-body) !important;
+  font-size:14px !important;
+  border-radius:12px !important;
+  background:rgba(255,255,255,.07) !important;
+  border:1px solid rgba(197,164,78,.2) !important;
+  color:#fff !important;
+}
+#vChat .ci-send{
+  background:var(--ah-gold) !important;
+  border-radius:50% !important;
+  box-shadow:0 4px 12px rgba(197,164,78,.3) !important;
+}
+#vChat .ci-send svg{ fill:var(--ah-navy) !important; }
+
+/* ── micro-interactions globales ── */
+.ah-tap-press:active{ transform:scale(.97) !important; transition:transform .12s !important; }
+button:active:not(.ah-titan-btn):not([class*="nav"]):not([class*="ls-"]):not([class*="chat"]){
+  transform:scale(.97) !important; transition:transform .12s !important;
+}
+
+/* ── vHome profil header ── */
+#greetText{
+  font-family:var(--ah-font-mono) !important;
+  font-size:10px !important; letter-spacing:.2em !important;
+  color:rgba(255,255,255,.55) !important; text-transform:uppercase !important;
+}
+#userName{
+  font-family:var(--ah-font-display) !important;
+  font-size:34px !important; letter-spacing:.1em !important;
+  color:#fff !important; text-shadow:0 2px 20px rgba(0,0,0,.5) !important;
+}
+
+/* ── Flow d'entrée dark cinéma — même look que #welcome/#titanIntro ── */
+#obQ1, #qSATIntro, #qNutri,
+#profil1, #profil2, #profil3, #profil4,
+#result, #nutriResult{
+  background:linear-gradient(180deg,var(--ah-navy-deep) 0%,var(--ah-navy) 100%) !important;
+  color:#fff !important;
+}
+/* .ob container dans le dark */
+#obQ1 .ob, #qSATIntro .ob, #qNutri .ob,
+#profil1 .ob, #profil2 .ob, #profil3 .ob, #profil4 .ob{
+  background:transparent !important;
+  color:#fff !important;
+}
+/* Textes onboarding sur dark */
+#obQ1 .ob-q, #qSATIntro .ob-q, #qNutri .ob-q,
+#profil1 .ob-q, #profil2 .ob-q, #profil3 .ob-q, #profil4 .ob-q{
+  color:#fff !important;
+}
+#obQ1 .ob-sub, #qSATIntro .ob-sub, #qNutri .ob-sub,
+#profil1 .ob-sub, #profil2 .ob-sub, #profil3 .ob-sub, #profil4 .ob-sub{
+  color:rgba(255,255,255,.65) !important;
+}
+/* opt-cards sur dark — surface semi-transparente */
+#obQ1 .ob-opt, #qSATIntro .ob-opt, #qNutri .ob-opt,
+#profil1 .ob-opt, #profil2 .ob-opt, #profil3 .ob-opt, #profil4 .ob-opt{
+  background:rgba(255,255,255,.04) !important;
+  border:1.5px solid rgba(255,255,255,.1) !important;
+  color:#fff !important;
+}
+#obQ1 .ob-opt:hover, #qSATIntro .ob-opt:hover, #qNutri .ob-opt:hover,
+#profil1 .ob-opt:hover, #profil2 .ob-opt:hover, #profil3 .ob-opt:hover, #profil4 .ob-opt:hover,
+#obQ1 .ob-opt.on, #qSATIntro .ob-opt.on, #qNutri .ob-opt.on,
+#profil1 .ob-opt.on, #profil2 .ob-opt.on, #profil3 .ob-opt.on, #profil4 .ob-opt.on{
+  background:rgba(197,164,78,.12) !important;
+  border-color:var(--ah-gold) !important;
+}
+#obQ1 .ob-opt-txt, #qSATIntro .ob-opt-txt, #qNutri .ob-opt-txt,
+#profil1 .ob-opt-txt, #profil2 .ob-opt-txt, #profil3 .ob-opt-txt, #profil4 .ob-opt-txt{
+  color:#fff !important;
+}
+/* labels sur dark */
+#obQ1 .fl, #qSATIntro .fl, #qNutri .fl,
+#profil1 .fl, #profil2 .fl, #profil3 .fl, #profil4 .fl{
+  color:rgba(255,255,255,.7) !important;
+}
+/* inputs sur dark */
+#obQ1 .fi, #qSATIntro .fi, #qNutri .fi,
+#profil1 .fi, #profil2 .fi, #profil3 .fi, #profil4 .fi{
+  background:rgba(255,255,255,.06) !important;
+  border:1px solid rgba(255,255,255,.14) !important;
+  color:#fff !important;
+}
+#obQ1 .fi::placeholder, #qSATIntro .fi::placeholder, #qNutri .fi::placeholder,
+#profil1 .fi::placeholder, #profil2 .fi::placeholder, #profil3 .fi::placeholder, #profil4 .fi::placeholder{
+  color:rgba(255,255,255,.35) !important;
+}
+/* progress bars sur dark */
+#obQ1 .ob-step, #qSATIntro .ob-step, #qNutri .ob-step,
+#profil1 .ob-step, #profil2 .ob-step, #profil3 .ob-step, #profil4 .ob-step{
+  color:var(--ah-gold) !important;
+}
+/* result screens */
+#result, #nutriResult{
+  color:#fff !important;
+}
+#result .res-badge, #nutriResult .res-badge{
+  background:rgba(197,164,78,.1) !important; color:var(--ah-gold) !important;
+  border-color:rgba(197,164,78,.3) !important;
+}
+#result .res-card, #nutriResult .res-card{
+  background:rgba(255,255,255,.04) !important;
+  border:1px solid rgba(255,255,255,.1) !important;
+}
+#result .res-title, #nutriResult .res-title{ color:rgba(255,255,255,.6) !important; }
+#result .res-name, #nutriResult .res-title+*{ color:#fff !important; }
+#result .res-obj, #nutriResult .res-obj{ color:rgba(255,255,255,.6) !important; }
+#result .res-meta-i, #nutriResult .res-meta-i{ color:rgba(255,255,255,.55) !important; }
+/* titres kcal / macros dans nutriResult */
+#nutriResult #nrCal{ color:var(--ah-gold) !important; }
+#nutriResult #nrProt,#nutriResult #nrGluc,#nutriResult #nrLip{ color:#fff !important; }
+/* sport chips dark */
+#qNutri .sport-chip{
+  background:rgba(255,255,255,.05) !important;
+  border:1.5px solid rgba(255,255,255,.12) !important;
+  color:#fff !important;
+  border-radius:var(--ah-r-lg) !important;
+}
+#qNutri .sport-chip.on{
+  background:rgba(197,164,78,.12) !important;
+  border-color:var(--ah-gold) !important;
+}
+#qNutri .sport-name{ color:#fff !important; }
+/* halo arrière-plan ambiance cinéma */
+#obQ1::before, #qSATIntro::before, #qNutri::before,
+#profil1::before, #profil2::before, #profil3::before, #profil4::before{
+  content:''; position:absolute; top:-80px; left:50%; transform:translateX(-50%);
+  width:280px; height:280px;
+  background:radial-gradient(circle,rgba(197,164,78,.12) 0%,transparent 70%);
+  pointer-events:none; z-index:0;
+}
+#obQ1, #qSATIntro, #qNutri,
+#profil1, #profil2, #profil3, #profil4{
+  position:relative; overflow:hidden;
+}
+/* ob container au-dessus du halo */
+#obQ1 .ob, #qSATIntro .ob, #qNutri .ob,
+#profil1 .ob, #profil2 .ob, #profil3 .ob, #profil4 .ob{
+  position:relative; z-index:1;
+}
+
+/* ── Section titles ── */
+.sec-title{
+  font-family:var(--ah-font-display) !important;
+  font-size:14px !important; letter-spacing:.18em !important;
+  color:var(--ah-text2) !important; text-transform:uppercase !important;
+  padding:18px 20px 8px !important;
+}
+
+/* ── Profile header (Moi tab) ── */
+.prof-header{
+  background:linear-gradient(180deg,var(--ah-navy) 0%,var(--ah-navy2) 100%) !important;
+  border-radius:0 0 24px 24px !important;
+  padding:24px 20px 20px !important;
+}
+.prof-av{
+  background:var(--ah-navy-deep) !important;
+  border:2px solid var(--ah-gold) !important;
+  font-family:var(--ah-font-display) !important;
+  font-size:28px !important; color:var(--ah-gold) !important;
+}
+.prof-name{
+  font-family:var(--ah-font-display) !important;
+  font-size:26px !important; letter-spacing:.1em !important;
+  color:#fff !important;
+}
+.prof-email{
+  font-family:var(--ah-font-body) !important;
+  font-size:12px !important; color:rgba(255,255,255,.5) !important;
+}
+.ps-val{
+  font-family:var(--ah-font-display) !important;
+  font-size:24px !important; color:var(--ah-gold) !important;
+  letter-spacing:.04em !important;
+}
+.ps-label{
+  font-family:var(--ah-font-mono) !important;
+  font-size:9px !important; color:rgba(255,255,255,.5) !important;
+  letter-spacing:.14em !important; text-transform:uppercase !important;
+}
+
+/* ── Global page backgrounds consistent ── */
+#vHome, #vTrain, #vMoi, #vTracks, #vNutri{
+  background:var(--ah-bg) !important;
+}
+
+/* ── res-btn (résultat onboarding) ── */
+.res-btn{
+  background:var(--ah-gold) !important;
+  color:var(--ah-navy) !important;
+  font-family:var(--ah-font-display) !important;
+  font-size:15px !important; letter-spacing:.1em !important;
+  border-radius:var(--ah-r-lg) !important;
+  border:none !important;
+  padding:16px 20px !important;
+  box-shadow:0 6px 18px rgba(197,164,78,.28) !important;
+}
+.res-name{
+  font-family:var(--ah-font-display) !important;
+  font-size:26px !important; letter-spacing:.1em !important;
+  color:var(--ah-text) !important;
+}
+.res-title{
+  font-family:var(--ah-font-display) !important;
+  font-size:14px !important; letter-spacing:.22em !important;
+  color:var(--ah-text2) !important; text-transform:uppercase !important;
+}
+.res-badge{
+  background:rgba(197,164,78,.1) !important;
+  color:var(--ah-gold) !important;
+  border:1px solid rgba(197,164,78,.3) !important;
+  border-radius:999px !important;
+  font-family:var(--ah-font-mono) !important;
+  font-size:10px !important; letter-spacing:.14em !important;
+  text-transform:uppercase !important;
+  padding:5px 14px !important;
+  margin-bottom:14px !important;
+}
+.res-card{
+  background:var(--ah-surface) !important;
+  border:1px solid var(--ah-border) !important;
+  border-radius:var(--ah-r-lg) !important;
+  box-shadow:0 6px 18px rgba(20,30,60,.06) !important;
+  padding:20px !important;
+  width:100% !important; text-align:center !important;
+  margin-bottom:18px !important;
+}
 </style>
 
 <template id="__bundler_thumbnail" data-bg-color="#1B2A4A">
@@ -8394,14 +9016,14 @@ window.pickSexe = window.pickSexe || function(el, val) {
 
 window.startGuidedMode = window.startGuidedMode || function() {
   document.querySelectorAll(".scr").forEach(function(e){ e.classList.remove("on","out"); e.style.display="none"; });
-  document.getElementById("mainNav").style.display = "flex";
+  document.getElementById("mainNav").style.display = "block";
   if (typeof switchTab === 'function') switchTab("home");
   if (typeof renderUserData === 'function') renderUserData();
 };
 
 window.startFreeMode = window.startFreeMode || function() {
   document.querySelectorAll(".scr").forEach(function(e){ e.classList.remove("on","out"); e.style.display="none"; });
-  document.getElementById("mainNav").style.display = "flex";
+  document.getElementById("mainNav").style.display = "block";
   if (typeof switchTab === 'function') switchTab("train");
   if (typeof renderUserData === 'function') renderUserData();
 };
@@ -8409,7 +9031,7 @@ window.startFreeMode = window.startFreeMode || function() {
 function testMode(){user.name='TEST';enterApp();}
 function enterApp(){
   document.querySelectorAll('.scr').forEach(function(e){e.classList.remove('on','out');e.style.display='none';});
-  document.getElementById('mainNav').style.display='flex';
+  document.getElementById('mainNav').style.display='block';
   // Honor pending post-onboarding action (e.g. open SAT after qSATIntro choice)
   var postAction = null;
   try { postAction = localStorage.getItem('ah_post_onb_action'); } catch(e) {}
@@ -14703,7 +15325,7 @@ window.submitAge = function() {
 function startGuidedMode() {
   user.appMode = "guided";
   document.querySelectorAll(".scr").forEach(function(e) { e.classList.remove("on","out"); e.style.display = "none"; });
-  document.getElementById("mainNav").style.display = "flex";
+  document.getElementById("mainNav").style.display = "block";
   switchTab("home");
   renderUserData();
 }
@@ -14711,7 +15333,7 @@ function startGuidedMode() {
 function startFreeMode() {
   user.appMode = "free";
   document.querySelectorAll(".scr").forEach(function(e) { e.classList.remove("on","out"); e.style.display = "none"; });
-  document.getElementById("mainNav").style.display = "flex";
+  document.getElementById("mainNav").style.display = "block";
   switchTab("train");
   renderUserData();
 }
@@ -14746,7 +15368,7 @@ window.testMode = function() {
   user.name = "TEST";
   user.appMode = "guided";
   document.querySelectorAll(".scr").forEach(function(e) { e.classList.remove("on","out"); e.style.display = "none"; });
-  document.getElementById("mainNav").style.display = "flex";
+  document.getElementById("mainNav").style.display = "block";
   switchTab("home");
   renderUserData();
 };
@@ -16480,7 +17102,7 @@ function obPickObj(el, val) {
     setTimeout(function(){
       try {
         document.querySelectorAll('.scr').forEach(function(e){ e.classList.remove('on','out'); e.style.display='none'; });
-        var nav = document.getElementById('mainNav'); if (nav) nav.style.display='flex';
+        var nav = document.getElementById('mainNav'); if (nav) nav.style.display='block';
         try { renderUserData(); } catch(e) {}
         try { renderAthletikScore(); } catch(e) {}
         try { renderTodayCard(); } catch(e) {}
@@ -16494,7 +17116,7 @@ function obPickObj(el, val) {
           homeView.classList.add('on');
           homeView.style.display = 'flex';
         }
-        var nav2 = document.getElementById('mainNav'); if (nav2) nav2.style.display='flex';
+        var nav2 = document.getElementById('mainNav'); if (nav2) nav2.style.display='block';
       }
     }, 300);
   } catch(eMain) {
@@ -17335,7 +17957,7 @@ async function fbHandleEmailAuth() {
           // En cas d'objectif sans programKey, on s'assure que discovery mode est on
           if (hasObjectif && !hasProgram) localStorage.setItem('ah_discovery_mode', '1');
           document.querySelectorAll('.scr').forEach(function(e){ e.classList.remove('on','out'); e.style.display='none'; });
-          var nav = document.getElementById('mainNav'); if (nav) nav.style.display='flex';
+          var nav = document.getElementById('mainNav'); if (nav) nav.style.display='block';
           try { renderUserData(); } catch(e) {}
           try { renderAthletikScore(); } catch(e) {}
           switchTab('home');
@@ -17391,7 +18013,7 @@ async function fbGoogleSignIn() {
         if (hasProgram || hasObjectif) {
           if (hasObjectif && !hasProgram) localStorage.setItem('ah_discovery_mode', '1');
           document.querySelectorAll('.scr').forEach(function(e){ e.classList.remove('on','out'); e.style.display='none'; });
-          var nav = document.getElementById('mainNav'); if (nav) nav.style.display='flex';
+          var nav = document.getElementById('mainNav'); if (nav) nav.style.display='block';
           try { renderUserData(); } catch(e) {}
           try { renderAthletikScore(); } catch(e) {}
           switchTab('home');
@@ -20452,7 +21074,7 @@ function obFinish(){
   // CRITIQUE : reset l'inline display:none mis par discoveryGoTo() sur les .view,
   // sinon switchTab('nutrition') ajoute .on mais l'inline gagne et la vue reste blanche.
   document.querySelectorAll('.view').forEach(function(v){ v.style.display=''; });
-  var nav=document.getElementById('mainNav');if(nav)nav.style.display='flex';
+  var nav=document.getElementById('mainNav');if(nav)nav.style.display='block';
   try{renderUserData();}catch(e){}
   try{renderAthletikScore();}catch(e){}
   try{renderDiscoveryBanner();}catch(e){}
