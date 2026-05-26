@@ -596,6 +596,55 @@ body{background:var(--bg);color:var(--text);font-family:'Outfit',sans-serif;disp
 .rm-subs-label{font-size:10px;color:var(--gold);font-weight:700;letter-spacing:1px;text-transform:uppercase;margin-bottom:6px}
 .rm-subs-list{display:flex;flex-wrap:wrap;gap:5px}
 .rm-sub-chip{font-size:11px;padding:3px 9px;background:var(--surface);border:1px solid var(--border);border-radius:10px;color:var(--text2);font-weight:600}
+
+/* ═══ PLAN REPAS — Vue plein écran ═══ */
+.mp-overlay{position:fixed;inset:0;z-index:300;background:var(--bg);display:none;flex-direction:column;font-family:'Outfit',sans-serif}
+.mp-overlay.on{display:flex}
+.mp-header{background:linear-gradient(135deg,var(--navy),#0F1B33);color:#fff;padding:14px 16px;display:flex;align-items:center;gap:12px;flex-shrink:0}
+.mp-back{width:38px;height:38px;border-radius:50%;background:rgba(255,255,255,.1);border:none;color:#fff;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.mp-title-wrap{flex:1;text-align:center;min-width:0}
+.mp-title{font-family:'Bebas Neue',sans-serif;font-size:22px;letter-spacing:3px;color:var(--gold);line-height:1}
+.mp-subtitle{font-size:10px;color:rgba(255,255,255,.6);letter-spacing:1px;margin-top:3px;font-weight:600;text-transform:uppercase}
+.mp-obj-badge{background:rgba(197,164,78,.2);color:var(--gold);font-size:18px;width:38px;height:38px;border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0;border:1px solid rgba(197,164,78,.4)}
+.mp-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:1px;background:var(--border);flex-shrink:0}
+.mp-stat{background:var(--surface);padding:12px 8px;text-align:center}
+.mp-stat-l{font-size:9px;color:var(--muted);letter-spacing:1px;font-weight:700;text-transform:uppercase}
+.mp-stat-v{font-family:'Bebas Neue',sans-serif;font-size:22px;color:var(--navy);line-height:1;margin-top:3px}
+.mp-stat-u{font-size:9px;color:var(--muted);margin-top:2px;font-weight:600;letter-spacing:.5px}
+.mp-day-strip{display:flex;gap:6px;padding:12px 16px;overflow-x:auto;-webkit-overflow-scrolling:touch;flex-shrink:0;background:var(--bg);scrollbar-width:none;border-bottom:1px solid var(--border)}
+.mp-day-strip::-webkit-scrollbar{display:none}
+.mp-day-chip{flex-shrink:0;min-width:62px;padding:8px 10px;background:var(--surface);border:1.5px solid var(--border);border-radius:12px;cursor:pointer;text-align:center;transition:all .15s;-webkit-tap-highlight-color:transparent}
+.mp-day-chip.on{background:var(--navy);border-color:var(--navy);transform:scale(1.04);box-shadow:0 4px 12px rgba(27,42,74,.2)}
+.mp-day-chip.today{border-color:var(--gold);border-width:2px}
+.mp-day-chip-name{font-family:'Bebas Neue',sans-serif;font-size:14px;letter-spacing:1.5px;color:var(--navy)}
+.mp-day-chip.on .mp-day-chip-name{color:var(--gold)}
+.mp-day-chip-cal{font-size:9px;color:var(--muted);font-weight:700;margin-top:2px;letter-spacing:.3px}
+.mp-day-chip.on .mp-day-chip-cal{color:rgba(255,255,255,.75)}
+.mp-day-chip-today-pill{font-size:7px;color:var(--gold);font-weight:800;letter-spacing:1px;text-transform:uppercase;display:none;margin-top:1px}
+.mp-day-chip.today .mp-day-chip-today-pill{display:block}
+.mp-day-content{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:16px 16px 20px}
+.mp-meal-card{display:flex;gap:12px;background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:10px;margin-bottom:10px;cursor:pointer;box-shadow:var(--card-shadow);transition:transform .15s}
+.mp-meal-card:active{transform:scale(.98)}
+.mp-meal-img{width:88px;height:88px;border-radius:10px;object-fit:cover;background:#1B2A4A;flex-shrink:0}
+.mp-meal-info{flex:1;min-width:0;display:flex;flex-direction:column;justify-content:center}
+.mp-meal-slot{font-size:10px;color:var(--gold);font-weight:800;letter-spacing:1.2px;text-transform:uppercase;margin-bottom:3px}
+.mp-meal-name{font-family:'Bebas Neue',sans-serif;font-size:15px;letter-spacing:.5px;color:var(--text);line-height:1.2;margin-bottom:4px;text-transform:uppercase}
+.mp-meal-stats{font-size:11px;color:var(--muted);font-weight:600}
+.mp-meal-stats .kcal{color:var(--gold);font-weight:800}
+.mp-day-total{background:linear-gradient(135deg,var(--navy),#0F1B33);color:#fff;border-radius:14px;padding:14px 16px;display:flex;justify-content:space-between;align-items:center;margin-top:6px}
+.mp-day-total-l{font-size:10px;color:var(--gold);letter-spacing:2px;font-weight:700;text-transform:uppercase}
+.mp-day-total-r{text-align:right}
+.mp-day-total-v{font-family:'Bebas Neue',sans-serif;font-size:26px;color:#fff;letter-spacing:1px;line-height:1}
+.mp-day-total-diff{font-size:11px;color:rgba(255,255,255,.65);margin-top:2px}
+.mp-day-log-btn{width:100%;padding:13px;background:linear-gradient(135deg,#22C55E,#16A34A);color:#fff;border:none;border-radius:12px;font-family:'Outfit',sans-serif;font-size:13px;font-weight:700;letter-spacing:1px;text-transform:uppercase;cursor:pointer;margin-top:10px;box-shadow:0 4px 12px rgba(34,197,94,.2)}
+.mp-day-log-btn:active{transform:scale(.98)}
+.mp-footer{flex-shrink:0;background:var(--surface);border-top:1px solid var(--border);padding:10px 12px;display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;padding-bottom:max(10px,env(safe-area-inset-bottom))}
+.mp-fbtn{padding:11px 6px;background:var(--surface2);border:1.5px solid var(--border);border-radius:10px;color:var(--text);font-family:'Outfit',sans-serif;font-size:11px;font-weight:700;letter-spacing:.3px;text-transform:uppercase;cursor:pointer;-webkit-tap-highlight-color:transparent}
+.mp-fbtn:active{transform:scale(.96);background:var(--surface)}
+.mp-fbtn.primary{background:linear-gradient(135deg,var(--gold),#A0853A);color:var(--navy);border-color:var(--gold);box-shadow:0 3px 10px rgba(197,164,78,.25)}
+.mp-empty{text-align:center;padding:60px 20px;color:var(--muted);font-size:13px;line-height:1.6}
+.mp-empty .ico{font-size:48px;margin-bottom:14px;opacity:.5}
+.mp-empty button{margin-top:18px;padding:14px 28px;background:linear-gradient(135deg,var(--gold),#A0853A);border:none;border-radius:12px;color:var(--navy);font-family:'Bebas Neue',sans-serif;font-size:16px;letter-spacing:2px;cursor:pointer;font-weight:700}
 .test-video-wrap{margin:-4px 0 14px;border-radius:10px;overflow:hidden;background:#0a0f1e;position:relative;padding-top:56.25%;border:1px solid var(--border)}
 .test-video-wrap iframe,.test-video-wrap .tvw-ph{position:absolute;inset:0;width:100%;height:100%;border:0}
 .test-video-wrap .tvw-ph{display:flex;align-items:center;justify-content:center;flex-direction:column;background:linear-gradient(135deg,#1B2A4A,#0A0F1E);color:rgba(255,255,255,.5);font-size:12px;letter-spacing:1px;font-weight:600;cursor:pointer;text-align:center;padding:12px}
@@ -3199,7 +3248,7 @@ body.test-mode #testSkipBar{display:flex}
     <div id="homeMealPlanWrap" style="display:none;padding:18px 20px;border-bottom:1px solid var(--border)">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
         <div style="font-size:10px;font-weight:700;letter-spacing:2px;color:var(--muted);text-transform:uppercase">Repas du jour</div>
-        <div style="font-size:11px;color:var(--gold);font-weight:600;cursor:pointer" onclick="switchTab('nutrition')">Voir le plan complet →</div>
+        <div style="font-size:11px;color:var(--gold);font-weight:600;cursor:pointer" onclick="openMealPlan()">Voir le plan complet →</div>
       </div>
       <div id="homeMealPlanContent">
         <!-- Injecté par renderHomeMealPlan() -->
@@ -4374,9 +4423,9 @@ body.test-mode #testSkipBar{display:flex}
         <div class="mpc-head">
           <div>
             <div class="mpc-title">📋 PLAN REPAS SEMAINE</div>
-            <div class="mpc-sub">Mode stricte — Titan génère 7 jours pour atteindre ton objectif calorique.</div>
+            <div class="mpc-sub">Vue d'ensemble 7 jours · calibré sur ton objectif · liste de courses en 1 tap.</div>
           </div>
-          <button class="btn btn-gold mpc-btn" onclick="generateMealPlan()">Générer →</button>
+          <button class="btn btn-gold mpc-btn" onclick="openMealPlan()">Voir / Générer →</button>
         </div>
         <div id="mealPlanGrid" class="hidden"></div>
       </div>
@@ -5266,6 +5315,45 @@ body.test-mode #testSkipBar{display:flex}
 
 <div id="timToast" class="tim-toast"></div>
 
+<!-- ═══ PLAN REPAS — Vue plein écran (overlay) ═══ -->
+<div id="mealPlan" class="mp-overlay">
+  <div class="mp-header">
+    <button class="mp-back" onclick="closeMealPlan()" aria-label="Fermer">←</button>
+    <div class="mp-title-wrap">
+      <div class="mp-title">PLAN REPAS</div>
+      <div class="mp-subtitle" id="mpSubtitle">7 jours · calibré sur ton objectif</div>
+    </div>
+    <div class="mp-obj-badge" id="mpObjBadge" title="Objectif">⚡</div>
+  </div>
+
+  <div class="mp-stats">
+    <div class="mp-stat">
+      <div class="mp-stat-l">Cible jour</div>
+      <div class="mp-stat-v" id="mpTargetCal">2400</div>
+      <div class="mp-stat-u">kcal</div>
+    </div>
+    <div class="mp-stat">
+      <div class="mp-stat-l">Semaine</div>
+      <div class="mp-stat-v" id="mpWeekTotal">—</div>
+      <div class="mp-stat-u">kcal</div>
+    </div>
+    <div class="mp-stat">
+      <div class="mp-stat-l">Repas</div>
+      <div class="mp-stat-v" id="mpMealsCount">28</div>
+      <div class="mp-stat-u">prévus</div>
+    </div>
+  </div>
+
+  <div class="mp-day-strip" id="mpDayStrip"></div>
+  <div class="mp-day-content" id="mpDayContent"></div>
+
+  <div class="mp-footer">
+    <button class="mp-fbtn" onclick="addMealPlanToShopping()">🛒 Courses</button>
+    <button class="mp-fbtn" onclick="exportMealPlanDocx()">📄 .docx</button>
+    <button class="mp-fbtn primary" onclick="generateMealPlan()">🔄 Régénérer</button>
+  </div>
+</div>
+
 </div><!-- /app -->
 
 <!-- Overlay caméra — scan de code-barre en direct -->
@@ -5784,6 +5872,173 @@ function renderHomeMealPlan() {
   content.innerHTML = html;
 }
 window.renderHomeMealPlan = renderHomeMealPlan;
+
+// ═══ PLAN REPAS — Overlay plein écran ═══
+// Affiche la semaine complète d'un coup avec navigation par jour,
+// accès à la liste de courses et export .docx du plan entier.
+
+window._mpCurrentDay = 0;
+var MP_DAY_LABELS = ['LUN','MAR','MER','JEU','VEN','SAM','DIM'];
+var MP_SLOTS = [
+  { lbl: '🌅 MATIN',     k: 'breakfast' },
+  { lbl: '🍽️ MIDI',     k: 'lunch' },
+  { lbl: '🥤 COLLATION', k: 'snack' },
+  { lbl: '🌙 SOIR',      k: 'dinner' }
+];
+var MP_OBJ_BADGES = { 'priseMuscle':'💪', 'pertePoids':'🔥', 'optimisation':'⚡' };
+var MP_OBJ_LABELS = { 'priseMuscle':'Prise de muscle', 'pertePoids':'Perte de poids', 'optimisation':'Optimisation' };
+
+function _mpGetPlan() {
+  try { return JSON.parse(localStorage.getItem('ah_meal_plan') || 'null'); } catch(e) { return null; }
+}
+
+function openMealPlan() {
+  var plan = _mpGetPlan();
+  var ov = document.getElementById('mealPlan');
+  if (!ov) return;
+  if (!plan || !plan.days || !plan.days.length) {
+    // Pas de plan : on en génère un et on rouvre
+    if (typeof generateMealPlan === 'function') generateMealPlan();
+    plan = _mpGetPlan();
+    if (!plan) { _mpRenderEmpty(); ov.classList.add('on'); return; }
+  }
+  // Init UI
+  var todayIdx = (new Date().getDay() + 6) % 7; // 0=Lun..6=Dim
+  window._mpCurrentDay = todayIdx;
+  _mpRenderHeader(plan);
+  _mpRenderDayStrip(plan, todayIdx);
+  _mpRenderDayContent(plan, todayIdx);
+  ov.classList.add('on');
+}
+window.openMealPlan = openMealPlan;
+
+function closeMealPlan() {
+  var ov = document.getElementById('mealPlan');
+  if (ov) ov.classList.remove('on');
+}
+window.closeMealPlan = closeMealPlan;
+
+function _mpRenderHeader(plan) {
+  var obj = plan.objectif || 'optimisation';
+  var bdg = document.getElementById('mpObjBadge');
+  if (bdg) { bdg.textContent = MP_OBJ_BADGES[obj] || '⚡'; bdg.title = MP_OBJ_LABELS[obj] || obj; }
+  var sub = document.getElementById('mpSubtitle');
+  if (sub) sub.textContent = '7 jours · ' + (MP_OBJ_LABELS[obj] || 'Personnalisé');
+  var target = document.getElementById('mpTargetCal'); if (target) target.textContent = plan.targetCal || '—';
+  var weekTotal = plan.days.reduce(function(a,d){ return a + (d.total||0); }, 0);
+  var wt = document.getElementById('mpWeekTotal'); if (wt) wt.textContent = weekTotal.toLocaleString('fr-FR');
+  var mealsCount = plan.days.length * 4;
+  var mc = document.getElementById('mpMealsCount'); if (mc) mc.textContent = mealsCount;
+}
+
+function _mpRenderDayStrip(plan, activeIdx) {
+  var strip = document.getElementById('mpDayStrip'); if (!strip) return;
+  var todayIdx = (new Date().getDay() + 6) % 7;
+  var h = '';
+  for (var i = 0; i < plan.days.length; i++) {
+    var d = plan.days[i];
+    var cls = 'mp-day-chip' + (i === activeIdx ? ' on' : '') + (i === todayIdx ? ' today' : '');
+    h += '<div class="' + cls + '" onclick="mpSelectDay(' + i + ')">'
+      + '<div class="mp-day-chip-today-pill">Aujourd\'hui</div>'
+      + '<div class="mp-day-chip-name">' + (MP_DAY_LABELS[i] || d.name) + '</div>'
+      + '<div class="mp-day-chip-cal">' + (d.total || 0) + ' kcal</div>'
+      + '</div>';
+  }
+  strip.innerHTML = h;
+}
+
+function mpSelectDay(idx) {
+  var plan = _mpGetPlan(); if (!plan) return;
+  window._mpCurrentDay = idx;
+  // Update chips state
+  var chips = document.querySelectorAll('#mpDayStrip .mp-day-chip');
+  chips.forEach(function(c, i){ c.classList.toggle('on', i === idx); });
+  _mpRenderDayContent(plan, idx);
+  var content = document.getElementById('mpDayContent');
+  if (content) content.scrollTop = 0;
+}
+window.mpSelectDay = mpSelectDay;
+
+function _mpRenderDayContent(plan, idx) {
+  var content = document.getElementById('mpDayContent'); if (!content) return;
+  var d = plan.days[idx]; if (!d) { content.innerHTML = ''; return; }
+  var h = '';
+  MP_SLOTS.forEach(function(s){
+    var r = d[s.k];
+    if (!r) return;
+    var nm = String(r.name).replace(/[<>]/g,'');
+    var img = r.img || 'images/recipes/recipe-001.webp';
+    h += '<div class="mp-meal-card" onclick="showRecipe(\'' + (r.key||'') + '\')">'
+      +   '<img class="mp-meal-img" src="' + img + '" alt="" loading="lazy" onerror="this.style.background=\'linear-gradient(135deg,#1B2A4A,#0F1B33)\';this.src=\'\'">'
+      +   '<div class="mp-meal-info">'
+      +     '<div class="mp-meal-slot">' + s.lbl + '</div>'
+      +     '<div class="mp-meal-name">' + nm + '</div>'
+      +     '<div class="mp-meal-stats"><span class="kcal">' + (r.cals||0) + ' kcal</span> · ' + (r.prot||0) + 'g prot</div>'
+      +   '</div>'
+      + '</div>';
+  });
+  // Total + bouton log
+  var diff = d.total - (plan.targetCal || 0);
+  var diffTxt = diff > 0 ? '+' + diff : diff;
+  h += '<div class="mp-day-total">'
+    + '<div><div class="mp-day-total-l">Total ' + (MP_DAY_LABELS[idx]||d.name) + '</div></div>'
+    + '<div class="mp-day-total-r"><div class="mp-day-total-v">' + (d.total||0) + ' kcal</div><div class="mp-day-total-diff">' + diffTxt + ' vs cible</div></div>'
+    + '</div>';
+  h += '<button class="mp-day-log-btn" onclick="logMealPlanDay(' + idx + ')">✓ J\'ai mangé cette journée — logger au journal</button>';
+  content.innerHTML = h;
+}
+
+function _mpRenderEmpty() {
+  var content = document.getElementById('mpDayContent');
+  if (content) content.innerHTML = '<div class="mp-empty"><div class="ico">📋</div>Pas encore de plan repas.<br>Va dans Nutri → Journal puis tape <strong style="color:var(--gold)">Générer →</strong>.<br><br><button onclick="closeMealPlan();switchTab(\'nutrition\')">Aller dans Nutri</button></div>';
+  var strip = document.getElementById('mpDayStrip'); if (strip) strip.innerHTML = '';
+}
+
+// Export .docx du plan repas complet (7 jours × 4 repas)
+function exportMealPlanDocx() {
+  var plan = _mpGetPlan();
+  if (!plan || !plan.days || !plan.days.length) {
+    if (typeof showToast === 'function') showToast('Aucun plan repas — génère-en un d\'abord', 'info');
+    return;
+  }
+  try {
+    var enc = new TextEncoder();
+    var p = [];
+    p.push('<w:p><w:pPr><w:spacing w:after="240"/><w:jc w:val="center"/></w:pPr><w:r><w:rPr><w:b/><w:sz w:val="44"/><w:color w:val="1B2A4A"/></w:rPr><w:t>PLAN REPAS</w:t></w:r></w:p>');
+    p.push('<w:p><w:pPr><w:jc w:val="center"/><w:spacing w:after="120"/></w:pPr><w:r><w:rPr><w:i/><w:color w:val="666666"/></w:rPr><w:t>' + _xmlEsc(_fmtShopDate()) + '</w:t></w:r></w:p>');
+    var obj = MP_OBJ_LABELS[plan.objectif] || 'Personnalisé';
+    p.push('<w:p><w:pPr><w:jc w:val="center"/><w:spacing w:after="360"/></w:pPr><w:r><w:rPr><w:b/><w:color w:val="C5A44E"/><w:sz w:val="22"/></w:rPr><w:t>Objectif : ' + _xmlEsc(obj) + ' · ' + plan.targetCal + ' kcal/jour</w:t></w:r></w:p>');
+    plan.days.forEach(function(d, i){
+      p.push('<w:p><w:pPr><w:spacing w:before="320" w:after="80"/></w:pPr><w:r><w:rPr><w:b/><w:sz w:val="30"/><w:color w:val="1B2A4A"/></w:rPr><w:t>' + _xmlEsc(d.name) + '</w:t><w:tab/><w:t xml:space="preserve">  ' + (d.total||0) + ' kcal</w:t></w:r></w:p>');
+      MP_SLOTS.forEach(function(s){
+        var r = d[s.k]; if (!r) return;
+        p.push('<w:p><w:pPr><w:spacing w:after="60"/></w:pPr>'
+          + '<w:r><w:rPr><w:b/><w:color w:val="C5A44E"/><w:sz w:val="20"/></w:rPr><w:t xml:space="preserve">' + _xmlEsc(s.lbl.replace(/[^A-ZÀ-ÖÙ-Ý ]/gi,'').trim()) + ' · </w:t></w:r>'
+          + '<w:r><w:rPr><w:sz w:val="22"/></w:rPr><w:t xml:space="preserve">' + _xmlEsc(r.name) + ' (' + (r.cals||0) + ' kcal)</w:t></w:r>'
+          + '</w:p>');
+      });
+    });
+    p.push('<w:p><w:pPr><w:spacing w:before="480"/><w:jc w:val="center"/></w:pPr><w:r><w:rPr><w:i/><w:sz w:val="18"/><w:color w:val="999999"/></w:rPr><w:t>Généré par Athletik Hub</w:t></w:r></w:p>');
+    var docXml = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main"><w:body>' + p.join('') + '</w:body></w:document>';
+    var files = [
+      { name: '[Content_Types].xml', data: enc.encode('<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Override PartName="/word/document.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml"/></Types>') },
+      { name: '_rels/.rels', data: enc.encode('<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="word/document.xml"/></Relationships>') },
+      { name: 'word/document.xml', data: enc.encode(docXml) }
+    ];
+    var zip = _zipBuild(files);
+    var blob = new Blob([zip], { type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' });
+    var url = URL.createObjectURL(blob);
+    var a = document.createElement('a');
+    a.href = url; a.download = 'plan-repas-' + new Date().toISOString().slice(0,10) + '.docx';
+    document.body.appendChild(a); a.click();
+    setTimeout(function(){ URL.revokeObjectURL(url); a.remove(); }, 200);
+    if (typeof showToast === 'function') showToast('✓ Plan repas téléchargé', 'success');
+  } catch(e) {
+    console.warn('exportMealPlanDocx:', e);
+    if (typeof showToast === 'function') showToast('Erreur export plan repas', 'info');
+  }
+}
+window.exportMealPlanDocx = exportMealPlanDocx;
 
 function toggleSubs(idx) {
   var el = document.getElementById('rmSubs' + idx);
@@ -14900,13 +15155,14 @@ function generateMealPlan() {
       + '<button class="mp-log-day" onclick="logMealPlanDay(' + i + ')" style="width:100%;margin-top:6px;padding:8px;background:rgba(34,197,94,.1);border:1px solid rgba(34,197,94,.4);border-radius:8px;color:#16A34A;font-size:11px;font-weight:700;letter-spacing:.5px;cursor:pointer">✓ J\'ai mangé cette journée — logger au journal (+' + total + ' kcal)</button>'
       + '</div>';
   }
-  // Persiste le plan pour le widget Home (Repas du jour)
+  // Persiste le plan pour le widget Home (Repas du jour) + l'overlay plein écran
   try { localStorage.setItem('ah_meal_plan', JSON.stringify(planForStorage)); } catch(e) {}
   html += '<button class="btn btn-outline" onclick="addMealPlanToShopping()" style="margin-top:8px">🛒 Ajouter à la liste de courses</button>'
        +  '<button class="btn btn-outline" onclick="generateMealPlan()" style="margin-top:8px">🔄 Régénérer un nouveau plan</button>';
   var grid = document.getElementById('mealPlanGrid');
-  grid.innerHTML = html;
-  grid.classList.remove('hidden');
+  if (grid) { grid.innerHTML = html; grid.classList.remove('hidden'); }
+  // Ouvre l'overlay plein écran avec le plan généré (vue d'ensemble)
+  try { if (typeof openMealPlan === 'function') setTimeout(openMealPlan, 100); } catch(e) {}
 }
 
 function _mealRowHtml(slot, r) {
