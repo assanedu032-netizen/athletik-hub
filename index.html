@@ -1157,6 +1157,32 @@ body:has(.scr.on) .tim-fab{display:none}
 .tim-toast{position:fixed;bottom:120px;left:50%;transform:translateX(-50%);background:var(--navy);border:1px solid var(--gold);color:#F0EDE8;padding:10px 22px;border-radius:50px;font-size:12px;font-weight:600;z-index:1040;opacity:0;transition:opacity .3s;pointer-events:none;box-shadow:0 4px 14px rgba(0,0,0,.15)}
 .tim-toast.on{opacity:1}
 
+/* ── Chrono & Minuteur (fonctions principales) ── */
+.tim-chrono-display{font-family:'Bebas Neue',sans-serif;font-size:clamp(72px,20vw,108px);text-align:center;color:var(--navy);letter-spacing:-2px;line-height:1;margin:30px 0 24px;font-variant-numeric:tabular-nums}
+.tim-chrono-display small{font-size:.45em;color:var(--gold);margin-left:4px;letter-spacing:0;font-weight:400}
+.tim-chrono-controls{display:flex;gap:12px;justify-content:center;align-items:center;margin-bottom:22px}
+.tim-chrono-btn{font-family:'Outfit',sans-serif;font-weight:700;letter-spacing:1px;cursor:pointer;border:none;text-transform:uppercase;-webkit-tap-highlight-color:transparent;transition:transform .12s}
+.tim-chrono-btn.primary{width:88px;height:88px;border-radius:50%;background:linear-gradient(135deg,var(--gold),#A0853A);color:var(--navy);font-size:32px;box-shadow:0 6px 20px rgba(197,164,78,.35);font-family:'Bebas Neue',sans-serif}
+.tim-chrono-btn.primary:active{transform:scale(.93)}
+.tim-chrono-btn.secondary{padding:11px 16px;background:var(--surface);color:var(--text2);border:1.5px solid var(--border);border-radius:10px;font-size:11px;min-width:78px}
+.tim-chrono-btn.secondary:active{transform:scale(.96);background:var(--surface2)}
+.tim-chrono-laps{background:var(--surface);border-radius:12px;padding:14px;border:1px solid var(--border);max-height:260px;overflow-y:auto;-webkit-overflow-scrolling:touch}
+.tim-chrono-laps-empty{text-align:center;color:var(--muted);font-size:12px;font-style:italic;padding:18px 8px}
+.tim-chrono-lap{display:grid;grid-template-columns:auto 1fr auto;align-items:center;gap:12px;padding:9px 4px;border-bottom:1px solid var(--border);font-family:'Outfit',sans-serif;font-size:13px}
+.tim-chrono-lap:last-child{border-bottom:none}
+.tim-chrono-lap .num{color:var(--muted);font-weight:600;font-size:11px;letter-spacing:.5px;text-transform:uppercase}
+.tim-chrono-lap .delta{color:var(--gold);font-size:11px;font-weight:600;text-align:right}
+.tim-chrono-lap .time{color:var(--navy);font-weight:700;font-family:'Bebas Neue',sans-serif;font-size:18px;letter-spacing:.5px}
+.tim-minut-pickers{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:18px}
+.tim-minut-picker .tim-stepper input{font-size:28px}
+.tim-minut-lbl{font-size:10px;font-weight:700;letter-spacing:1.5px;color:var(--muted);text-align:center;margin-bottom:5px;text-transform:uppercase}
+.tim-minut-presets{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:18px}
+.tim-minut-presets button{padding:11px;background:var(--surface);border:1.5px solid var(--border);border-radius:10px;color:var(--navy);font-family:'Bebas Neue',sans-serif;font-size:15px;letter-spacing:1px;cursor:pointer;-webkit-tap-highlight-color:transparent}
+.tim-minut-presets button:active{background:var(--gold);color:var(--navy);border-color:var(--gold);transform:scale(.97)}
+/* Sépare les onglets "principaux" (chrono/minuteur) des "options" (tabata/hiit/saved) */
+.tim-tabs-divider{flex-shrink:0;align-self:center;width:1px;height:24px;background:var(--border);margin:0 4px}
+.tim-tab.opt{font-size:11px;opacity:.85}
+
 /* ═══ LEVEL CARD ═══ */
 .level-card{margin:16px 22px 0;background:var(--surface);border:1px solid var(--border);border-radius:var(--r2);padding:18px;box-shadow:var(--card-shadow);display:flex;align-items:center;gap:14px;animation:fadeUp .3s ease both}
 .lc-icon{font-size:36px}
@@ -5002,15 +5028,68 @@ body.test-mode #testSkipBar{display:flex}
   </div>
 
   <div class="tim-tabs">
-    <button class="tim-tab on" data-timtab="tabata" onclick="tim_showTab('tabata')">⚡ TABATA</button>
-    <button class="tim-tab" data-timtab="hiit" onclick="tim_showTab('hiit')">🔥 FRACTIONNÉ</button>
-    <button class="tim-tab" data-timtab="saved" onclick="tim_showTab('saved')">💾 SAUVEGARDÉS</button>
+    <button class="tim-tab on" data-timtab="chrono" onclick="tim_showTab('chrono')">⏱ CHRONO</button>
+    <button class="tim-tab" data-timtab="minuteur" onclick="tim_showTab('minuteur')">⏰ MINUTEUR</button>
+    <div class="tim-tabs-divider" aria-hidden="true"></div>
+    <button class="tim-tab opt" data-timtab="tabata" onclick="tim_showTab('tabata')">⚡ Tabata</button>
+    <button class="tim-tab opt" data-timtab="hiit" onclick="tim_showTab('hiit')">🔥 HIIT</button>
+    <button class="tim-tab opt" data-timtab="saved" onclick="tim_showTab('saved')">💾 Sauv.</button>
   </div>
 
   <div class="tim-main">
 
+    <!-- CHRONO — fonction principale -->
+    <div id="timScreenChrono" class="tim-screen on">
+      <div class="tim-chrono-display" id="timChronoDisplay">00:00<small>.00</small></div>
+      <div class="tim-chrono-controls">
+        <button class="tim-chrono-btn secondary" onclick="tim_chronoReset()">↺ Reset</button>
+        <button class="tim-chrono-btn primary" id="timChronoBtn" onclick="tim_chronoToggle()">▶</button>
+        <button class="tim-chrono-btn secondary" onclick="tim_chronoLap()">🏁 Tour</button>
+      </div>
+      <div id="timChronoLaps" class="tim-chrono-laps"><div class="tim-chrono-laps-empty">Aucun tour enregistré. Tape « Tour » pendant le chrono.</div></div>
+    </div>
+
+    <!-- MINUTEUR — fonction principale -->
+    <div id="timScreenMinuteur" class="tim-screen">
+      <div id="timMinutSetup">
+        <div class="tim-sec">Durée</div>
+        <div class="tim-minut-pickers">
+          <div class="tim-minut-picker">
+            <div class="tim-minut-lbl">Heures</div>
+            <div class="tim-stepper"><button onclick="tim_minutStep('h',-1)">−</button><input type="number" id="timMinutH" value="0" min="0" max="23"><button onclick="tim_minutStep('h',1)">+</button></div>
+          </div>
+          <div class="tim-minut-picker">
+            <div class="tim-minut-lbl">Minutes</div>
+            <div class="tim-stepper"><button onclick="tim_minutStep('m',-1)">−</button><input type="number" id="timMinutM" value="5" min="0" max="59"><button onclick="tim_minutStep('m',1)">+</button></div>
+          </div>
+          <div class="tim-minut-picker">
+            <div class="tim-minut-lbl">Secondes</div>
+            <div class="tim-stepper"><button onclick="tim_minutStep('s',-1)">−</button><input type="number" id="timMinutS" value="0" min="0" max="59"><button onclick="tim_minutStep('s',1)">+</button></div>
+          </div>
+        </div>
+        <div class="tim-sec">Presets rapides</div>
+        <div class="tim-minut-presets">
+          <button onclick="tim_minutPreset(30)">30s</button>
+          <button onclick="tim_minutPreset(60)">1min</button>
+          <button onclick="tim_minutPreset(120)">2min</button>
+          <button onclick="tim_minutPreset(300)">5min</button>
+          <button onclick="tim_minutPreset(600)">10min</button>
+          <button onclick="tim_minutPreset(1200)">20min</button>
+        </div>
+        <button class="tim-launch" onclick="tim_minutStart()">⚡ Démarrer</button>
+      </div>
+      <div id="timMinutRunning" style="display:none">
+        <div class="tim-chrono-display" id="timMinutDisplay">--:--</div>
+        <div class="tim-chrono-controls">
+          <button class="tim-chrono-btn secondary" onclick="tim_minutReset()">↺ Annuler</button>
+          <button class="tim-chrono-btn primary" id="timMinutBtn" onclick="tim_minutToggle()">⏸</button>
+          <button class="tim-chrono-btn secondary" onclick="tim_minutAdd30()">+30s</button>
+        </div>
+      </div>
+    </div>
+
     <!-- TABATA — 4 inputs visibles, défauts cachés (cycle-rest, countdown) -->
-    <div id="timScreenTabata" class="tim-screen on">
+    <div id="timScreenTabata" class="tim-screen">
       <div class="tim-sec">Effort</div>
       <div class="tim-row">
         <div class="tim-field"><label>Travail</label><input type="number" id="timTabWork" value="20" min="1" max="600"><div class="tim-field-unit">secondes</div></div>
@@ -8755,7 +8834,7 @@ function _bfDrawChart(data) {
     var ov = document.getElementById('tim-overlay');
     if (!ov) return;
     ov.classList.add('on');
-    tim_showTab(tim_mode || 'tabata');
+    tim_showTab(tim_mode || 'chrono');
     tim_updateTabSummary();
     tim_buildHIITExInputs(); tim_updateHIITSummary();
   }
@@ -8766,7 +8845,7 @@ function _bfDrawChart(data) {
   }
   function tim_showTab(tab){
     tim_mode = tab;
-    var screens = ['tabata','hiit','saved'];
+    var screens = ['chrono','minuteur','tabata','hiit','saved'];
     screens.forEach(function(t){
       var s = document.getElementById('timScreen' + t.charAt(0).toUpperCase() + t.slice(1));
       if (s) s.classList.toggle('on', t === tab);
@@ -8788,6 +8867,178 @@ function _bfDrawChart(data) {
     el.value = v;
     if (id.indexOf('Tab') >= 0) tim_updateTabSummary();
     if (id.indexOf('Hit') >= 0) { tim_buildHIITExInputs(); tim_updateHIITSummary(); }
+  }
+
+  // ── CHRONO (chronomètre stopwatch — fonction principale) ──
+  var _tim_chrono = { running:false, startMs:0, elapsed:0, laps:[], lastLap:0, iv:null };
+  function _tim_chronoFmt(ms){
+    var cs = Math.floor(ms/10) % 100;
+    var totalS = Math.floor(ms/1000);
+    var s = totalS % 60;
+    var m = Math.floor(totalS/60);
+    return { mm:String(m).padStart(2,'0'), ss:String(s).padStart(2,'0'), cc:String(cs).padStart(2,'0') };
+  }
+  function _tim_chronoRender(){
+    var f = _tim_chronoFmt(_tim_chrono.elapsed);
+    var d = document.getElementById('timChronoDisplay');
+    if (d) d.innerHTML = f.mm + ':' + f.ss + '<small>.' + f.cc + '</small>';
+  }
+  function _tim_chronoRenderLaps(){
+    var wrap = document.getElementById('timChronoLaps'); if (!wrap) return;
+    if (!_tim_chrono.laps.length) {
+      wrap.innerHTML = '<div class="tim-chrono-laps-empty">Aucun tour enregistré. Tape « Tour » pendant le chrono.</div>';
+      return;
+    }
+    var h = '';
+    _tim_chrono.laps.forEach(function(lap, i){
+      var n = _tim_chrono.laps.length - i;
+      var f = _tim_chronoFmt(lap.time);
+      var df = _tim_chronoFmt(lap.delta);
+      h += '<div class="tim-chrono-lap">'
+        + '<span class="num">TOUR ' + n + '</span>'
+        + '<span class="delta">+' + df.mm + ':' + df.ss + '.' + df.cc + '</span>'
+        + '<span class="time">' + f.mm + ':' + f.ss + '.' + f.cc + '</span>'
+        + '</div>';
+    });
+    wrap.innerHTML = h;
+  }
+  function tim_chronoToggle(){
+    if (_tim_chrono.running) {
+      clearInterval(_tim_chrono.iv);
+      _tim_chrono.running = false;
+      var b = document.getElementById('timChronoBtn'); if (b) b.textContent = '▶';
+    } else {
+      if (tim_audioCtx && tim_audioCtx.state === 'suspended') tim_audioCtx.resume();
+      _tim_chrono.startMs = Date.now() - _tim_chrono.elapsed;
+      _tim_chrono.iv = setInterval(function(){
+        _tim_chrono.elapsed = Date.now() - _tim_chrono.startMs;
+        _tim_chronoRender();
+      }, 50);
+      _tim_chrono.running = true;
+      var b2 = document.getElementById('timChronoBtn'); if (b2) b2.textContent = '⏸';
+    }
+  }
+  function tim_chronoReset(){
+    clearInterval(_tim_chrono.iv);
+    _tim_chrono.running = false;
+    _tim_chrono.elapsed = 0;
+    _tim_chrono.laps = [];
+    _tim_chrono.lastLap = 0;
+    var b = document.getElementById('timChronoBtn'); if (b) b.textContent = '▶';
+    _tim_chronoRender();
+    _tim_chronoRenderLaps();
+  }
+  function tim_chronoLap(){
+    if (!_tim_chrono.running) return;
+    var delta = _tim_chrono.elapsed - _tim_chrono.lastLap;
+    _tim_chrono.laps.unshift({ time: _tim_chrono.elapsed, delta: delta });
+    _tim_chrono.lastLap = _tim_chrono.elapsed;
+    _tim_chronoRenderLaps();
+    if (typeof tim_vib === 'function') tim_vib([20]);
+  }
+
+  // ── MINUTEUR (compte à rebours simple — fonction principale) ──
+  var _tim_minut = { running:false, totalMs:0, remMs:0, startMs:0, iv:null };
+  function _tim_minutFmt(ms){
+    var totalS = Math.max(0, Math.ceil(ms/1000));
+    var s = totalS % 60;
+    var totalM = Math.floor(totalS/60);
+    var m = totalM % 60;
+    var h = Math.floor(totalM/60);
+    if (h > 0) return String(h).padStart(2,'0') + ':' + String(m).padStart(2,'0') + ':' + String(s).padStart(2,'0');
+    return String(m).padStart(2,'0') + ':' + String(s).padStart(2,'0');
+  }
+  function _tim_minutRender(){
+    var d = document.getElementById('timMinutDisplay');
+    if (d) d.textContent = _tim_minutFmt(_tim_minut.remMs);
+  }
+  function tim_minutGetSeconds(){
+    var h = parseInt((document.getElementById('timMinutH')||{}).value, 10) || 0;
+    var m = parseInt((document.getElementById('timMinutM')||{}).value, 10) || 0;
+    var s = parseInt((document.getElementById('timMinutS')||{}).value, 10) || 0;
+    return h*3600 + m*60 + s;
+  }
+  function tim_minutSetSeconds(secs){
+    var h = Math.floor(secs/3600);
+    var m = Math.floor((secs%3600)/60);
+    var s = secs%60;
+    var hE = document.getElementById('timMinutH'); if (hE) hE.value = h;
+    var mE = document.getElementById('timMinutM'); if (mE) mE.value = m;
+    var sE = document.getElementById('timMinutS'); if (sE) sE.value = s;
+  }
+  function tim_minutPreset(secs){ tim_minutSetSeconds(secs); }
+  function tim_minutStep(field, d){
+    var id = field === 'h' ? 'timMinutH' : field === 'm' ? 'timMinutM' : 'timMinutS';
+    var el = document.getElementById(id); if (!el) return;
+    var max = field === 'h' ? 23 : 59;
+    var v = (parseInt(el.value, 10) || 0) + d;
+    v = Math.max(0, Math.min(max, v));
+    el.value = v;
+  }
+  function tim_minutStart(){
+    var secs = tim_minutGetSeconds();
+    if (secs <= 0) { tim_toast('Choisis une durée'); return; }
+    _tim_minut.totalMs = secs * 1000;
+    _tim_minut.remMs = _tim_minut.totalMs;
+    _tim_minut.startMs = Date.now();
+    if (tim_audioCtx && tim_audioCtx.state === 'suspended') tim_audioCtx.resume();
+    _tim_minut.iv = setInterval(_tim_minutTick, 200);
+    _tim_minut.running = true;
+    document.getElementById('timMinutSetup').style.display = 'none';
+    document.getElementById('timMinutRunning').style.display = '';
+    var b = document.getElementById('timMinutBtn'); if (b) b.textContent = '⏸';
+    _tim_minutRender();
+  }
+  function _tim_minutTick(){
+    _tim_minut.remMs = _tim_minut.totalMs - (Date.now() - _tim_minut.startMs);
+    // Bip d'urgence sur les 3 dernières secondes.
+    var sLeft = Math.ceil(_tim_minut.remMs / 1000);
+    if (sLeft <= 3 && sLeft > 0 && _tim_minut.lastBipSec !== sLeft) {
+      _tim_minut.lastBipSec = sLeft;
+      if (typeof tim_sndUrgence === 'function') tim_sndUrgence();
+    }
+    if (_tim_minut.remMs <= 0) {
+      clearInterval(_tim_minut.iv);
+      _tim_minut.running = false;
+      _tim_minut.remMs = 0;
+      _tim_minutRender();
+      if (typeof tim_sndFinish === 'function') tim_sndFinish();
+      tim_toast('⏰ Temps écoulé !');
+      var b = document.getElementById('timMinutBtn'); if (b) b.textContent = '▶';
+      return;
+    }
+    _tim_minutRender();
+  }
+  function tim_minutToggle(){
+    if (_tim_minut.running) {
+      clearInterval(_tim_minut.iv);
+      _tim_minut.running = false;
+      document.getElementById('timMinutBtn').textContent = '▶';
+    } else {
+      if (_tim_minut.remMs <= 0) return;
+      _tim_minut.startMs = Date.now() - (_tim_minut.totalMs - _tim_minut.remMs);
+      if (tim_audioCtx && tim_audioCtx.state === 'suspended') tim_audioCtx.resume();
+      _tim_minut.iv = setInterval(_tim_minutTick, 200);
+      _tim_minut.running = true;
+      document.getElementById('timMinutBtn').textContent = '⏸';
+    }
+  }
+  function tim_minutReset(){
+    clearInterval(_tim_minut.iv);
+    _tim_minut.running = false;
+    _tim_minut.remMs = 0;
+    _tim_minut.lastBipSec = -1;
+    document.getElementById('timMinutSetup').style.display = '';
+    document.getElementById('timMinutRunning').style.display = 'none';
+  }
+  function tim_minutAdd30(){
+    _tim_minut.totalMs += 30000;
+    _tim_minut.remMs += 30000;
+    if (_tim_minut.running) {
+      _tim_minut.startMs = Date.now() - (_tim_minut.totalMs - _tim_minut.remMs);
+    }
+    _tim_minutRender();
+    if (typeof tim_toast === 'function') tim_toast('+30 secondes');
   }
 
   // ── TABATA ──
@@ -9184,6 +9435,17 @@ function _bfDrawChart(data) {
   }
 
   // ── EXPOSE ──
+  // Chrono / Minuteur (fonctions principales)
+  window.tim_chronoToggle = tim_chronoToggle;
+  window.tim_chronoReset = tim_chronoReset;
+  window.tim_chronoLap = tim_chronoLap;
+  window.tim_minutPreset = tim_minutPreset;
+  window.tim_minutStep = tim_minutStep;
+  window.tim_minutStart = tim_minutStart;
+  window.tim_minutToggle = tim_minutToggle;
+  window.tim_minutReset = tim_minutReset;
+  window.tim_minutAdd30 = tim_minutAdd30;
+
   window.tim_open = tim_open;
   window.tim_close = tim_close;
   window.tim_showTab = tim_showTab;
