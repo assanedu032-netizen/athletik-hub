@@ -568,16 +568,21 @@ body{background:var(--bg);color:var(--text);font-family:'Outfit',sans-serif;disp
 .sec.on{display:block}
 .recipe-fc{padding:8px 14px;border:1.5px solid var(--border);border-radius:20px;font-size:11px;font-weight:700;color:var(--text2);cursor:pointer;background:var(--surface);user-select:none;transition:all .15s;white-space:nowrap}
 .recipe-fc.on{background:var(--navy);border-color:var(--navy);color:var(--gold)}
-.recipe-card{position:relative;border-radius:14px;overflow:hidden;cursor:pointer;background:var(--surface);border:1px solid var(--border);box-shadow:0 2px 8px rgba(0,0,0,.04);transition:transform .15s}
-.recipe-card:active{transform:scale(0.97)}
-.recipe-card-img{width:100%;height:90px;object-fit:cover;display:block;background:#1B2A4A}
-.recipe-card-body{padding:8px 10px 10px}
-.recipe-card-name{font-family:'Bebas Neue',sans-serif;font-size:13px;letter-spacing:.5px;color:var(--text);line-height:1.15;margin-bottom:3px;min-height:30px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
-.recipe-card-meta{display:flex;justify-content:space-between;align-items:center;font-size:10px;color:var(--muted);font-weight:600}
-.recipe-card-cals{color:var(--gold);font-weight:800}
-.recipe-card-fav{position:absolute;top:6px;right:6px;width:30px;height:30px;border-radius:50%;background:rgba(0,0,0,.55);backdrop-filter:blur(8px);display:flex;align-items:center;justify-content:center;font-size:16px;color:#fff;cursor:pointer;z-index:2;border:1.5px solid rgba(255,255,255,.15)}
+/* Cards recettes — layout 1 colonne grandes images (inspiré librairie vidéo Train) */
+.recipe-card{position:relative;cursor:pointer;background:transparent;transition:opacity .15s}
+.recipe-card:active{opacity:.75}
+.recipe-card-img{width:100%;aspect-ratio:16/9;object-fit:cover;display:block;background:#1B2A4A;border-radius:12px}
+.recipe-card-body{padding:10px 4px 0}
+.recipe-card-name{font-family:'Bebas Neue',sans-serif;font-size:18px;letter-spacing:1px;color:var(--text);line-height:1.2;margin-bottom:4px;text-transform:uppercase}
+.recipe-card-meta{display:flex;align-items:center;gap:6px;font-size:11px;color:var(--muted);font-weight:600;flex-wrap:wrap}
+.recipe-card-meta>span{display:inline-flex;align-items:center;gap:4px}
+.recipe-card-cals{color:var(--gold);font-weight:800;font-family:'Bebas Neue',sans-serif;font-size:14px;letter-spacing:.5px}
+.recipe-card-fav{position:absolute;top:10px;right:10px;width:36px;height:36px;border-radius:50%;background:rgba(0,0,0,.6);backdrop-filter:blur(10px);display:flex;align-items:center;justify-content:center;font-size:18px;color:#fff;cursor:pointer;z-index:2;border:1.5px solid rgba(255,255,255,.2)}
 .recipe-card-fav.on{background:linear-gradient(135deg,var(--gold),#D4B86A);color:var(--navy);border-color:var(--gold)}
-.recipe-card-tag{position:absolute;top:6px;left:6px;font-size:8px;font-weight:800;letter-spacing:1px;padding:3px 7px;border-radius:10px;background:rgba(0,0,0,.55);color:#fff;backdrop-filter:blur(4px)}
+.recipe-card-tag{position:absolute;top:10px;left:10px;font-size:9px;font-weight:800;letter-spacing:1.5px;padding:4px 10px;border-radius:12px;background:rgba(0,0,0,.65);color:#fff;backdrop-filter:blur(6px);text-transform:uppercase}
+.recipe-card-moment{display:inline-block;font-size:9px;font-weight:700;letter-spacing:.3px;padding:2px 6px;border-radius:8px;background:rgba(197,164,78,.15);color:var(--gold);border:1px solid rgba(197,164,78,.3)}
+.recipe-card-diff{color:var(--gold);font-size:9px;letter-spacing:0;font-weight:700}
+.rm-meta-chip{display:inline-block;font-size:10px;font-weight:700;letter-spacing:.3px;padding:5px 10px;border-radius:14px;background:var(--surface2);color:var(--text2);border:1px solid var(--border)}
 .test-video-wrap{margin:-4px 0 14px;border-radius:10px;overflow:hidden;background:#0a0f1e;position:relative;padding-top:56.25%;border:1px solid var(--border)}
 .test-video-wrap iframe,.test-video-wrap .tvw-ph{position:absolute;inset:0;width:100%;height:100%;border:0}
 .test-video-wrap .tvw-ph{display:flex;align-items:center;justify-content:center;flex-direction:column;background:linear-gradient(135deg,#1B2A4A,#0A0F1E);color:rgba(255,255,255,.5);font-size:12px;letter-spacing:1px;font-weight:600;cursor:pointer;text-align:center;padding:12px}
@@ -4629,7 +4634,7 @@ body.test-mode #testSkipBar{display:flex}
       <div id="recipeFavCount" style="display:none;font-size:11px;color:var(--gold);font-weight:700;letter-spacing:1px;margin-bottom:10px"></div>
 
       <!-- Grille des recettes -->
-      <div id="recipeGrid" style="display:grid;grid-template-columns:1fr 1fr;gap:10px"></div>
+      <div id="recipeGrid" style="display:flex;flex-direction:column;gap:18px;padding-bottom:20px"></div>
     </div>
 
     <div id="ntab-courses" class="pg" style="padding:16px 22px">
@@ -4704,7 +4709,21 @@ body.test-mode #testSkipBar{display:flex}
   </div>
   <div class="rm-body">
     <!-- Tagline -->
-    <div id="rmTagline" style="font-size:12px;color:var(--muted);line-height:1.5;margin-bottom:14px;font-style:italic"></div>
+    <div id="rmTagline" style="font-size:12px;color:var(--muted);line-height:1.5;margin-bottom:10px;font-style:italic"></div>
+
+    <!-- Méta : moment · difficulté · portions (alimenté par showRecipe) -->
+    <div id="rmMetaRow" style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:14px"></div>
+
+    <!-- Sélecteur de portions (modifie les macros affichées en live) -->
+    <div id="rmServingsCtrl" style="display:flex;align-items:center;justify-content:space-between;gap:10px;background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:10px 14px;margin-bottom:14px">
+      <div style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:1px;font-weight:700">Portions</div>
+      <div style="display:flex;align-items:center;gap:8px">
+        <button onclick="adjustRecipeServings(-1)" style="width:32px;height:32px;border-radius:8px;background:var(--surface2);border:1.5px solid var(--border);color:var(--navy);font-size:18px;font-weight:700;cursor:pointer">−</button>
+        <div id="rmServingsVal" style="font-family:'Bebas Neue',sans-serif;font-size:24px;color:var(--navy);min-width:32px;text-align:center">1</div>
+        <button onclick="adjustRecipeServings(1)" style="width:32px;height:32px;border-radius:8px;background:var(--surface2);border:1.5px solid var(--border);color:var(--navy);font-size:18px;font-weight:700;cursor:pointer">+</button>
+      </div>
+    </div>
+
     <!-- Macros -->
     <div class="rm-macros">
       <div class="rm-macro"><div class="rm-macro-v" id="rmProt" style="color:#3B82F6">28g</div><div class="rm-macro-l">Prot</div></div>
@@ -5549,15 +5568,25 @@ function showRecipe(key) {
   tagEl.textContent = r.tagLabel;
   tagEl.className = 'rm-tag ' + r.tag;
   document.getElementById('rmImg').src = r.img;
-  document.getElementById('rmCals').textContent = r.cals + ' kcal';
-  document.getElementById('rmProt').textContent = r.prot + 'g';
-  document.getElementById('rmCarbs').textContent = r.carbs + 'g';
-  document.getElementById('rmFat').textContent = r.fat + 'g';
   document.getElementById('rmTime').textContent = r.time;
   document.getElementById('rmTitanMsg').textContent = r.titan;
   // Tagline (1-liner sous le hero)
   var tagline = document.getElementById('rmTagline');
   if (tagline) tagline.textContent = r.tagline || '';
+  // Méta row : moment + difficulté + temps total
+  var momentMap = { 'pre-workout':'🌅 Pré-workout', 'post-workout':'💪 Post-workout', 'pre-game':'🏆 Pré-match', 'post-game':'🔥 Post-match', 'recovery':'😌 Récup', 'before-sleep':'🌙 Sommeil', 'any':'⚙️ Tout moment' };
+  var diffMap = { 'facile':'🟢 Facile', 'moyen':'🟡 Moyen', 'difficile':'🔴 Difficile' };
+  var meta = document.getElementById('rmMetaRow');
+  if (meta) {
+    var bits = [];
+    if (r.moment) bits.push('<span class="rm-meta-chip">' + (momentMap[r.moment] || r.moment) + '</span>');
+    if (r.difficulty) bits.push('<span class="rm-meta-chip">' + (diffMap[r.difficulty] || r.difficulty) + '</span>');
+    bits.push('<span class="rm-meta-chip">⏱ ' + r.time + '</span>');
+    meta.innerHTML = bits.join('');
+  }
+  // Portions : reset au nombre de la recette + applique les macros
+  window._currentRecipeServings = r.servings || 1;
+  _applyRecipeServings();
   // État favoris (étoile + bouton)
   window._currentRecipeKey = key;
   _refreshRecipeModalFavUI();
@@ -5578,6 +5607,30 @@ function showRecipe(key) {
   modal.classList.add('open');
   modal.scrollTop = 0;
 }
+
+// Recalcule les macros affichées dans la modal selon le nombre de portions courant
+function _applyRecipeServings() {
+  var r = window._currentRecipe;
+  if (!r) return;
+  var base = r.servings || 1;
+  var curr = window._currentRecipeServings || base;
+  var mult = curr / base;
+  var fmt = function(v) { return Math.round(v * mult); };
+  var $ = function(id) { return document.getElementById(id); };
+  if ($('rmCals')) $('rmCals').textContent = fmt(r.cals) + ' kcal';
+  if ($('rmProt')) $('rmProt').textContent = fmt(r.prot) + 'g';
+  if ($('rmCarbs')) $('rmCarbs').textContent = fmt(r.carbs) + 'g';
+  if ($('rmFat')) $('rmFat').textContent = fmt(r.fat) + 'g';
+  if ($('rmServingsVal')) $('rmServingsVal').textContent = curr;
+}
+function adjustRecipeServings(delta) {
+  var curr = window._currentRecipeServings || 1;
+  var next = Math.max(1, Math.min(8, curr + delta));
+  if (next === curr) return;
+  window._currentRecipeServings = next;
+  _applyRecipeServings();
+}
+window.adjustRecipeServings = adjustRecipeServings;
 
 function closeRecipeModal() {
   document.getElementById('recipeModal').classList.remove('open');
@@ -5635,19 +5688,32 @@ function toggleCurrentRecipeFavorite() {
   try { renderShoppingList(); } catch(e) {}
 }
 
-// Filtres + rendu grille recettes
-window._recipeFilterCat = 'all';
-window._recipeFilterMoment = 'all';
+// Filtres + rendu grille recettes — persistés en localStorage
+window._recipeFilterCat = (function(){ try { return localStorage.getItem('ah_recipe_cat') || 'all'; } catch(e) { return 'all'; }})();
+window._recipeFilterMoment = (function(){ try { return localStorage.getItem('ah_recipe_mom') || 'all'; } catch(e) { return 'all'; }})();
+// Restaure l'état UI des chips au prochain rendu de l'onglet Nutri
+function _restoreRecipeFilterUI() {
+  var cat = window._recipeFilterCat, mom = window._recipeFilterMoment;
+  document.querySelectorAll('#recipeFilters .recipe-fc').forEach(function(f){
+    f.classList.toggle('on', f.getAttribute('data-cat') === cat);
+  });
+  document.querySelectorAll('#recipeMomentFilters .recipe-fc').forEach(function(f){
+    f.classList.toggle('on', f.getAttribute('data-mom') === mom);
+  });
+}
+window._restoreRecipeFilterUI = _restoreRecipeFilterUI;
 function filterRecipeMoment(el, mom) {
   document.querySelectorAll('#recipeMomentFilters .recipe-fc').forEach(function(f){ f.classList.remove('on'); });
   if (el) el.classList.add('on');
   window._recipeFilterMoment = mom;
+  try { localStorage.setItem('ah_recipe_mom', mom); } catch(e) {}
   renderRecipesList();
 }
 function filterRecipeCat(el, cat) {
   document.querySelectorAll('#recipeFilters .recipe-fc').forEach(function(f){ f.classList.remove('on'); });
   if (el) el.classList.add('on');
   window._recipeFilterCat = cat;
+  try { localStorage.setItem('ah_recipe_cat', cat); } catch(e) {}
   renderRecipesList();
 }
 
@@ -5668,13 +5734,17 @@ function renderRecipesList() {
     if (mom !== 'all' && r.moment !== mom && r.moment !== 'any') return;
     if (q && r.name.toLowerCase().indexOf(q) === -1 && (r.tagline||'').toLowerCase().indexOf(q) === -1) return;
     var isFav = favs.indexOf(key) > -1;
+    var diffDots = { 'facile': '●', 'moyen': '●●', 'difficile': '●●●' }[r.difficulty || 'facile'] || '●';
+    var momentMap = { 'pre-workout':'🌅 Pré-W', 'post-workout':'💪 Post-W', 'pre-game':'🏆 Pré-G', 'post-game':'🔥 Post-G', 'recovery':'😌 Récup', 'before-sleep':'🌙 Sommeil' };
+    var momentBadge = (r.moment && r.moment !== 'any') ? '<span class="recipe-card-moment">' + (momentMap[r.moment] || r.moment) + '</span>' : '';
     html += '<div class="recipe-card" onclick="showRecipe(\'' + key + '\')">';
     html +=   '<div class="recipe-card-tag">' + r.tagLabel + '</div>';
     html +=   '<div class="recipe-card-fav ' + (isFav?'on':'') + '" onclick="event.stopPropagation();toggleRecipeFavoriteFromCard(\'' + key + '\',this)">' + (isFav?'⭐':'☆') + '</div>';
     html +=   '<img class="recipe-card-img" src="' + r.img + '" alt="" loading="lazy" width="320" height="180" onerror="this.style.background=\'linear-gradient(135deg,#1B2A4A,#0F1B33)\';this.src=\'\'">';
     html +=   '<div class="recipe-card-body">';
     html +=     '<div class="recipe-card-name">' + r.name + '</div>';
-    html +=     '<div class="recipe-card-meta"><span class="recipe-card-cals">' + r.cals + ' kcal</span><span>⏱ ' + r.time + '</span></div>';
+    html +=     (momentBadge ? '<div style="margin:2px 0 4px">' + momentBadge + '</div>' : '');
+    html +=     '<div class="recipe-card-meta"><span class="recipe-card-cals">' + r.cals + ' kcal</span><span>⏱ ' + r.time + ' · <span class="recipe-card-diff" title="Difficulté">' + diffDots + '</span></span></div>';
     html +=   '</div>';
     html += '</div>';
     count++;
@@ -6064,6 +6134,14 @@ function addRecipeToJournal() {
       closeRecipeModal();
     }, 1200);
   }
+  // Multiplier selon les portions choisies dans la modal (slider 1-8)
+  var base = r.servings || 1;
+  var curr = window._currentRecipeServings || base;
+  var mult = curr / base;
+  var cals = Math.round((r.cals || 0) * mult);
+  var prot = Math.round((r.prot || 0) * mult);
+  var carbs = Math.round((r.carbs || 0) * mult);
+  var fat = Math.round((r.fat || 0) * mult);
   // Ajout effectif au journal localStorage — format compatible avec renderJournalToday()
   // qui lit m.totals.{cal,p,g,l} pour alimenter les macros du jour en haut de Nutri.
   try {
@@ -6072,9 +6150,10 @@ function addRecipeToJournal() {
     arr.push({
       ts: Date.now(),
       date: new Date().toISOString(),
-      name: r.name,
-      cals: r.cals, prot: r.prot, carbs: r.carbs, fat: r.fat,
-      totals: { cal: r.cals || 0, p: r.prot || 0, g: r.carbs || 0, l: r.fat || 0 },
+      name: r.name + (curr !== base ? ' × ' + curr : ''),
+      cals: cals, prot: prot, carbs: carbs, fat: fat,
+      totals: { cal: cals, p: prot, g: carbs, l: fat },
+      servings: curr,
       source: 'recipe',
       recipeKey: window._currentRecipeKey || ''
     });
@@ -6106,11 +6185,12 @@ function logMealPlanDay(dayIdx) {
   meals      = _mpSortByObjectif(meals,      objectif);
   var collations = _mpSortByObjectif(smoothies.concat(snacks), objectif);
   if (!collations.length) collations = breakfasts.slice();
+  var seed = window._mpLastSeed || 0;
   var dayRecipes = [
-    _mpRotate(breakfasts, dayIdx),
-    _mpRotate(meals,      dayIdx),
-    _mpRotate(collations, dayIdx),
-    _mpRotate(meals,      dayIdx + Math.ceil(meals.length/2))
+    _mpRotate(breakfasts, dayIdx + seed),
+    _mpRotate(meals,      dayIdx + seed + 3),
+    _mpRotate(collations, dayIdx + seed + 7),
+    _mpRotate(meals,      dayIdx + seed + Math.ceil(meals.length/2))
   ].filter(Boolean);
   // Push chaque repas au journal
   try {
@@ -7398,7 +7478,21 @@ function switchTab(tab){
     try { _libInit(); } catch(e) {}
   }
   // Init Scan check API key + restore form
-  if (tab === 'nutrition') { try { scanCheckApiKey(); scanUpdateMacros(); renderJournalToday(); } catch(e) {} }
+  if (tab === 'nutrition') {
+    try { scanCheckApiKey(); scanUpdateMacros(); renderJournalToday(); } catch(e) {}
+    // Prefetch images Hero (8 recettes post-mvp-prio-1) pour scroll instant
+    try {
+      if (typeof RECIPES !== 'undefined' && !window._heroPrefetched) {
+        window._heroPrefetched = true;
+        Object.keys(RECIPES).forEach(function(k){
+          var r = RECIPES[k];
+          if (r && r.hero && r.img) { var im = new Image(); im.src = r.img; }
+        });
+      }
+    } catch(e) {}
+    // Restaure les filtres persistés
+    try { _restoreRecipeFilterUI(); renderRecipesList(); } catch(e) {}
+  }
   if (tab === 'moi') {
     try { renderProfileCard(); } catch(e) {}
     try { apiKeyRestore(); fbRefreshAccountSection(window.fbUser); renderBadges(); refreshAccessTierUI(); renderProgression(); renderMoiPlanning(); renderHistory(); } catch(e) {}
@@ -14555,12 +14649,16 @@ function generateMealPlan() {
     + 'Cible <strong>' + targetCal + ' kcal/jour</strong>' + calibTxt
     + '</div>';
 
+  // Seed aléatoire pour varier le plan à chaque tap "Régénérer"
+  // (sans casser le tri par objectif : on décale juste le point de départ)
+  var seed = ((Date.now() / 1000) | 0) + (window._mpRegen = (window._mpRegen || 0) + 1);
+  window._mpLastSeed = seed; // mémorisé pour que addMealPlanToShopping() utilise le même
   for (var i = 0; i < 7; i++) {
-    // Décalage différent par slot pour varier
-    var b = _mpRotate(breakfasts,  i);
-    var l = _mpRotate(meals,       i);
-    var c = _mpRotate(collations,  i);
-    var d = _mpRotate(meals,       i + Math.ceil(meals.length/2)); // antipode pour éviter même que midi
+    // Offsets distincts par slot pour éviter doublons dans la même journée
+    var b = _mpRotate(breakfasts,  i + seed);
+    var l = _mpRotate(meals,       i + seed + 3);
+    var c = _mpRotate(collations,  i + seed + 7);
+    var d = _mpRotate(meals,       i + seed + Math.ceil(meals.length/2));
     var total = (b.cals||0) + (l.cals||0) + (c.cals||0) + (d.cals||0);
     var diff = total - targetCal;
     var diffTxt = (diff > 0 ? '+' : '') + diff;
@@ -14614,12 +14712,13 @@ function addMealPlanToShopping() {
   var collations = _mpSortByObjectif(smoothies.concat(snacks), objectif);
   if (!collations.length) collations = breakfasts.slice();
 
+  var seed = window._mpLastSeed || 0;
   var weekRecipes = [];
   for (var i = 0; i < 7; i++) {
-    weekRecipes.push(_mpRotate(breakfasts,  i));
-    weekRecipes.push(_mpRotate(meals,       i));
-    weekRecipes.push(_mpRotate(collations,  i));
-    weekRecipes.push(_mpRotate(meals,       i + Math.ceil(meals.length/2)));
+    weekRecipes.push(_mpRotate(breakfasts,  i + seed));
+    weekRecipes.push(_mpRotate(meals,       i + seed + 3));
+    weekRecipes.push(_mpRotate(collations,  i + seed + 7));
+    weekRecipes.push(_mpRotate(meals,       i + seed + Math.ceil(meals.length/2)));
   }
   weekRecipes = weekRecipes.filter(Boolean);
 
