@@ -236,8 +236,8 @@
 .ah-hero .meta b{ color:#fff; font-weight:500; font-family:var(--ah-font-display); font-size:13px; letter-spacing:.02em; }
 
 /* 11. BOTTOM NAV — branchée en Phase 2 sur #mainNav */
-.ah-bottomnav-wrap{ position:fixed; left:0; right:0; bottom:0; padding:8px 8px 4px; pointer-events:none; z-index:50; }
-.ah-bottomnav{ position:relative; background:var(--ah-surface); border:1px solid var(--ah-border); border-radius:20px; display:grid; grid-template-columns:repeat(5,1fr); align-items:end; padding:8px 8px 8px; box-shadow:0 6px 18px rgba(20,30,60,.06); pointer-events:auto; }
+.ah-bottomnav-wrap{ position:fixed; left:0; right:0; bottom:0; padding:8px 8px 4px; pointer-events:none; z-index:50; box-sizing:border-box; }
+.ah-bottomnav{ position:relative; background:var(--ah-surface); border:1px solid var(--ah-border); border-radius:20px; display:grid; grid-template-columns:repeat(5,1fr); align-items:end; padding:8px 8px 8px; box-shadow:0 6px 18px rgba(20,30,60,.06); pointer-events:auto; width:100%; box-sizing:border-box; }
 .ah-bottomnav .ni{ display:flex; flex-direction:column; align-items:center; gap:4px; color:var(--ah-text2); font-size:9px; letter-spacing:.12em; text-transform:uppercase; font-weight:600; padding:6px 0 4px; position:relative; cursor:pointer; }
 .ah-bottomnav .ni.on{ color:var(--ah-navy); }
 .ah-bottomnav .ni.on::before{ content:""; position:absolute; top:0; left:50%; transform:translateX(-50%); width:18px; height:2px; background:var(--ah-gold); border-radius:2px; }
@@ -2433,76 +2433,63 @@ body.test-mode #testSkipBar{display:flex}
 
 <!-- ═══ WELCOME — Page d'accueil pour visiteurs ═══ -->
 <div id="welcome" class="scr">
-  <div style="flex:1;display:flex;flex-direction:column;padding:24px 22px;min-height:100vh;background:linear-gradient(180deg,#0A0F1E 0%,#1B2A4A 100%);position:relative;overflow:hidden">
+  <div style="flex:1;display:flex;flex-direction:column;padding:24px 22px;min-height:100vh;background:linear-gradient(180deg,var(--ah-navy-deep) 0%,var(--ah-navy) 100%);position:relative;overflow:hidden;color:#fff">
 
-    <!-- Effet lumière en arrière-plan -->
+    <!-- Halo or arrière-plan -->
     <div style="position:absolute;top:-100px;left:50%;transform:translateX(-50%);width:300px;height:300px;background:radial-gradient(circle,rgba(197,164,78,.15) 0%,transparent 70%);pointer-events:none"></div>
 
-    <!-- Logo discret en haut -->
+    <!-- Logo (Design System v1.0) -->
     <div style="display:flex;align-items:center;gap:10px;padding-top:20px;position:relative;z-index:1">
-      <div style="width:38px;height:38px;border-radius:10px;background:linear-gradient(135deg,#1B2A4A,#0A0F1E);border:1.5px solid var(--gold);display:flex;align-items:center;justify-content:center;font-family:'Bebas Neue',sans-serif;font-size:16px;color:var(--gold)">AH</div>
-      <div style="font-family:'Bebas Neue',sans-serif;font-size:14px;color:#fff;letter-spacing:2px">ATHLETIK HUB</div>
+      <div style="width:38px;height:38px;border-radius:var(--ah-r-md);background:linear-gradient(135deg,var(--ah-navy),var(--ah-navy-deep));border:1.5px solid var(--ah-gold);display:flex;align-items:center;justify-content:center;font-family:var(--ah-font-display);font-size:16px;color:var(--ah-gold)">AH</div>
+      <div style="font-family:var(--ah-font-display);font-size:14px;color:#fff;letter-spacing:.2em">ATHLETIK HUB</div>
     </div>
 
     <!-- Contenu principal centré -->
     <div style="flex:1;display:flex;flex-direction:column;justify-content:center;padding:40px 0;position:relative;z-index:1">
 
-      <!-- Headline -->
-      <div style="font-family:'Bebas Neue',sans-serif;font-size:48px;line-height:1;letter-spacing:1.5px;color:#fff;margin-bottom:18px">
+      <!-- Headline Bebas massif -->
+      <h1 class="ah-display" style="font-size:48px;color:#fff;margin-bottom:18px">
         +10 CM<br>
-        <span style="color:var(--gold)">EN 12 SEMAINES</span>
-      </div>
+        <span style="color:var(--ah-gold)">EN 12 SEMAINES</span>
+      </h1>
+      <hr class="ah-rule-gold" style="margin-bottom:20px">
 
-      <div style="font-size:14px;color:rgba(255,255,255,.65);line-height:1.6;margin-bottom:40px">
+      <p class="ah-body" style="color:rgba(255,255,255,.65);margin-bottom:40px">
         Le programme officiel du livre <strong style="color:#fff">Les Secrets de la Détente Verticale</strong>. Méthode testée, résultats mesurés.
-      </div>
+      </p>
 
-      <!-- Bénéfices avec checkmarks -->
-      <div style="margin-bottom:48px">
-        <div style="display:flex;align-items:flex-start;gap:12px;margin-bottom:14px">
-          <div style="width:24px;height:24px;border-radius:50%;background:rgba(197,164,78,.15);border:1.5px solid var(--gold);display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:2px">
-            <span style="color:var(--gold);font-size:12px;font-weight:800">✓</span>
-          </div>
+      <!-- Bénéfices -->
+      <div style="margin-bottom:48px;display:flex;flex-direction:column;gap:14px">
+        <div style="display:flex;align-items:flex-start;gap:12px">
+          <div style="width:24px;height:24px;border-radius:50%;background:rgba(197,164,78,.15);border:1.5px solid var(--ah-gold);display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:2px;color:var(--ah-gold);font-size:12px;font-weight:800">✓</div>
           <div>
             <div style="font-size:14px;font-weight:700;color:#fff">Programme personnalisé</div>
-            <div style="font-size:12px;color:rgba(255,255,255,.5);margin-top:2px;line-height:1.4">Adapté à ton niveau, ton matériel, tes contraintes</div>
+            <div class="ah-small" style="color:rgba(255,255,255,.55);margin-top:2px">Adapté à ton niveau, ton matériel, tes contraintes</div>
           </div>
         </div>
-
-        <div style="display:flex;align-items:flex-start;gap:12px;margin-bottom:14px">
-          <div style="width:24px;height:24px;border-radius:50%;background:rgba(197,164,78,.15);border:1.5px solid var(--gold);display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:2px">
-            <span style="color:var(--gold);font-size:12px;font-weight:800">✓</span>
-          </div>
+        <div style="display:flex;align-items:flex-start;gap:12px">
+          <div style="width:24px;height:24px;border-radius:50%;background:rgba(197,164,78,.15);border:1.5px solid var(--ah-gold);display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:2px;color:var(--ah-gold);font-size:12px;font-weight:800">✓</div>
           <div>
             <div style="font-size:14px;font-weight:700;color:#fff">Coach IA Titan</div>
-            <div style="font-size:12px;color:rgba(255,255,255,.5);margin-top:2px;line-height:1.4">Direct, exigeant, jamais flatteur. Comme dans le livre.</div>
+            <div class="ah-small" style="color:rgba(255,255,255,.55);margin-top:2px">Direct, exigeant, jamais flatteur. Comme dans le livre.</div>
           </div>
         </div>
-
         <div style="display:flex;align-items:flex-start;gap:12px">
-          <div style="width:24px;height:24px;border-radius:50%;background:rgba(197,164,78,.15);border:1.5px solid var(--gold);display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:2px">
-            <span style="color:var(--gold);font-size:12px;font-weight:800">✓</span>
-          </div>
+          <div style="width:24px;height:24px;border-radius:50%;background:rgba(197,164,78,.15);border:1.5px solid var(--ah-gold);display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:2px;color:var(--ah-gold);font-size:12px;font-weight:800">✓</div>
           <div>
             <div style="font-size:14px;font-weight:700;color:#fff">Suivi mesuré</div>
-            <div style="font-size:12px;color:rgba(255,255,255,.5);margin-top:2px;line-height:1.4">Athletik Score chiffré, courbe de progression réelle</div>
+            <div class="ah-small" style="color:rgba(255,255,255,.55);margin-top:2px">Athletik Score chiffré, courbe de progression réelle</div>
           </div>
         </div>
       </div>
 
     </div>
 
-    <!-- Boutons en bas -->
-    <div style="padding-bottom:24px;position:relative;z-index:1">
-      <button onclick="welcomeStart()" style="width:100%;padding:17px;background:linear-gradient(135deg,var(--gold),#D4B86A);border:none;border-radius:14px;font-family:'Outfit',sans-serif;font-size:15px;font-weight:800;color:var(--navy);cursor:pointer;letter-spacing:.5px;box-shadow:0 8px 24px rgba(197,164,78,.25);margin-bottom:10px">
-        Commencer mon parcours →
-      </button>
-      <button onclick="welcomeLogin()" style="width:100%;padding:15px;background:transparent;border:1.5px solid rgba(255,255,255,.15);border-radius:14px;font-family:'Outfit',sans-serif;font-size:13px;font-weight:600;color:rgba(255,255,255,.7);cursor:pointer;margin-bottom:10px">
-        J'ai déjà un compte
-      </button>
-      <button onclick="openAccessCode()" style="width:100%;padding:13px;background:rgba(197,164,78,.08);border:1.5px solid rgba(197,164,78,.35);border-radius:14px;font-family:'Outfit',sans-serif;font-size:13px;font-weight:700;color:var(--gold);cursor:pointer;letter-spacing:.3px">
-        📕 J'ai le livre — Saisir mon code
-      </button>
+    <!-- CTAs en bas -->
+    <div style="padding-bottom:24px;position:relative;z-index:1;display:flex;flex-direction:column;gap:10px">
+      <button class="ah-btn ah-btn-gold ah-btn-lg ah-btn-block" onclick="welcomeStart()">Commencer mon parcours →</button>
+      <button class="ah-btn ah-btn-block" onclick="welcomeLogin()" style="background:transparent;border:1.5px solid rgba(255,255,255,.18);color:rgba(255,255,255,.75)">J'ai déjà un compte</button>
+      <button class="ah-btn ah-btn-block" onclick="openAccessCode()" style="background:rgba(197,164,78,.08);border:1.5px solid rgba(197,164,78,.35);color:var(--ah-gold)">📕 J'ai le livre — Saisir mon code</button>
     </div>
 
   </div>
