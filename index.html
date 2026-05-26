@@ -2329,6 +2329,308 @@ body.test-mode #testSkipBar{display:flex}
 .ls-complete-icon { font-size: 64px; margin-bottom: 20px; }
 .ls-complete-title { font-family: 'Bebas Neue', sans-serif; font-size: 38px; color: var(--gold); letter-spacing: 2px; margin-bottom: 8px; }
 .ls-complete-sub { font-size: 14px; color: var(--text2); line-height: 1.6; margin-bottom: 32px; }
+
+/* ════════════════════════════════════════════════════════════════════════════
+   DESIGN SYSTEM v1.0 — OVERRIDES GLOBAUX
+   ----------------------------------------------------------------------------
+   Redéfinit les classes existantes (.btn, .card, .pg-title, etc.) pour qu'elles
+   adoptent le look du Design System sans toucher au HTML.
+   Utilise !important pour battre les inline-styles legacy.
+   Tout est groupé ici, rollback = supprimer ce bloc.
+   ════════════════════════════════════════════════════════════════════════════ */
+
+/* ── Phase 3a — Bottom Nav Polish ── */
+.ah-bottomnav .nav-item{ min-height:54px !important; padding:8px 0 6px !important; gap:5px !important; }
+.ah-bottomnav .nav-item .ico{ width:22px !important; height:22px !important; }
+.ah-bottomnav-wrap{ padding:10px 12px 6px !important; }
+.ah-bottomnav{ padding:6px 4px !important; }
+.ah-bottomnav .ni{ font-size:9.5px !important; letter-spacing:.14em !important; }
+.ah-bottomnav .ni.on::before{ width:22px !important; height:2.5px !important; box-shadow:0 0 6px rgba(197,164,78,.55); }
+
+/* Bouton TITAN central — plus marqué, plus premium */
+.ah-titan-btn{ width:64px !important; height:64px !important; bottom:32px !important; box-shadow:0 10px 28px rgba(20,30,60,.32), 0 0 0 5px var(--ah-surface) !important; }
+.ah-titan-btn::after{ inset:-4px !important; border-width:2.5px !important; }
+.ah-titan-btn:active{ transform:translateX(-50%) scale(.92); transition:transform .15s; }
+.ah-titan-btn-label{ bottom:10px !important; font-size:9px !important; color:var(--ah-gold) !important; letter-spacing:.22em !important; opacity:.85; }
+.ah-titan-btn-fallback{ font-size:26px !important; }
+
+/* ── Phase 3b — Overrides globaux (LE GROS COUP) ──
+   Réécrit les composants existants pour qu'ils adoptent le DS visuellement.
+   Aucun changement de HTML nécessaire. */
+
+/* ───── Boutons ───── */
+.btn{
+  font-family:var(--ah-font-body) !important;
+  font-weight:600 !important;
+  font-size:14px !important;
+  letter-spacing:.02em !important;
+  padding:14px 18px !important;
+  min-height:46px !important;
+  border-radius:var(--ah-r-md) !important;
+  border:1px solid transparent !important;
+  transition:transform .12s, background .12s, border-color .12s, box-shadow .12s !important;
+  cursor:pointer !important;
+}
+.btn:active{ transform:scale(.97) !important; }
+.btn:focus-visible{ outline:none !important; box-shadow:0 0 0 3px rgba(197,164,78,.35) !important; }
+
+.btn-gold,
+button.btn-gold,
+.btn.btn-gold{
+  background:var(--ah-gold) !important;
+  color:var(--ah-navy) !important;
+  box-shadow:inset 0 -2px 0 rgba(0,0,0,.06), 0 4px 14px rgba(197,164,78,.22) !important;
+  border:1px solid var(--ah-gold) !important;
+  font-weight:600 !important;
+}
+.btn-gold:hover,.btn-gold:focus{ background:var(--ah-gold2) !important; }
+
+.btn-outline,
+button.btn-outline{
+  background:var(--ah-surface) !important;
+  color:var(--ah-text) !important;
+  border:1px solid var(--ah-border2) !important;
+  box-shadow:none !important;
+}
+.btn-outline:hover{ border-color:var(--ah-navy) !important; color:var(--ah-navy) !important; }
+
+.btn-secondary{
+  background:var(--ah-surface) !important;
+  border:1px solid var(--ah-border2) !important;
+  color:var(--ah-text2) !important;
+  border-radius:var(--ah-r-md) !important;
+  font-weight:600 !important;
+  font-family:var(--ah-font-body) !important;
+}
+
+.btn-disabled{ opacity:.4 !important; pointer-events:none !important; }
+
+/* CTA d'onboarding — encore plus prémium */
+.btn-cta{
+  background:var(--ah-gold) !important;
+  color:var(--ah-navy) !important;
+  box-shadow:inset 0 -2px 0 rgba(0,0,0,.06), 0 8px 24px rgba(197,164,78,.32) !important;
+  border:none !important;
+  border-radius:var(--ah-r-lg) !important;
+  padding:17px 20px !important;
+  font-family:var(--ah-font-body) !important;
+  font-weight:700 !important;
+  font-size:15px !important;
+  letter-spacing:.04em !important;
+}
+.btn-cta.show{ opacity:1 !important; transform:translateY(0) !important; }
+
+/* ───── Cards ───── */
+.card{
+  background:var(--ah-surface) !important;
+  border:1px solid var(--ah-border) !important;
+  border-radius:var(--ah-r-lg) !important;
+  box-shadow:0 6px 18px rgba(20,30,60,.06) !important;
+}
+
+/* Titres de cards en gold subtil + spacing premium */
+.card-title{
+  font-family:var(--ah-font-display) !important;
+  font-size:18px !important;
+  letter-spacing:.18em !important;
+  color:var(--ah-text) !important;
+  text-transform:uppercase !important;
+  margin-bottom:12px !important;
+}
+.card-title span:first-child{ font-size:20px; }
+
+/* Pages headers */
+.pg-title{
+  font-family:var(--ah-font-display) !important;
+  font-size:32px !important;
+  letter-spacing:.06em !important;
+  text-transform:uppercase !important;
+  color:var(--ah-text) !important;
+  line-height:1 !important;
+}
+.pg-sub{
+  font-family:var(--ah-font-mono) !important;
+  font-size:10px !important;
+  letter-spacing:.18em !important;
+  text-transform:uppercase !important;
+  color:var(--ah-gold) !important;
+  font-weight:500 !important;
+}
+
+/* ───── Inputs ───── */
+.fi, input.fi, select.fi, textarea.fi,
+.fi-select, input.fi-select,
+.input-text, input.input-text{
+  border-radius:var(--ah-r-md) !important;
+  border:1px solid var(--ah-border2) !important;
+  padding:13px 14px !important;
+  font-family:var(--ah-font-body) !important;
+  font-size:14px !important;
+  background:var(--ah-surface) !important;
+  color:var(--ah-text) !important;
+  transition:border-color .12s, box-shadow .12s !important;
+}
+.fi:focus, .input-text:focus, .fi-select:focus{
+  outline:none !important;
+  border-color:var(--ah-gold) !important;
+  box-shadow:0 0 0 3px rgba(197,164,78,.18) !important;
+}
+
+/* ───── Toast ───── */
+.toast{
+  background:var(--ah-navy) !important;
+  color:#fff !important;
+  border:1px solid var(--ah-gold) !important;
+  border-left:3px solid var(--ah-gold) !important;
+  border-radius:var(--ah-r-md) !important;
+  font-family:var(--ah-font-body) !important;
+  box-shadow:0 8px 24px rgba(11,18,40,.35) !important;
+}
+.toast.success{ border-left-color:var(--ah-green) !important; }
+.toast.error,.toast.warn{ border-left-color:var(--ah-red) !important; }
+
+/* ───── Recipe cards — affinage ───── */
+.recipe-card{ border-radius:var(--ah-r-lg) !important; box-shadow:0 6px 18px rgba(20,30,60,.06) !important; }
+.recipe-card-name{ font-family:var(--ah-font-display) !important; letter-spacing:.04em !important; color:var(--ah-text) !important; }
+
+/* ───── Track cards ───── */
+.track-item{ background:var(--ah-surface) !important; border:1px solid var(--ah-border) !important; border-radius:var(--ah-r-lg) !important; }
+
+/* ───── Sub-tabs ───── */
+.sub-tab{
+  font-family:var(--ah-font-body) !important;
+  font-weight:600 !important;
+  color:var(--ah-text2) !important;
+  border-radius:var(--ah-r-md) !important;
+  letter-spacing:.04em !important;
+}
+.sub-tab.on{ background:var(--ah-navy) !important; color:#fff !important; box-shadow:0 4px 10px rgba(27,42,74,.18) !important; }
+
+/* ── Phase 3c — Onboarding obQ1 opt-cards style DS ── */
+.ob-step{
+  font-family:var(--ah-font-mono) !important;
+  font-size:10px !important;
+  letter-spacing:.22em !important;
+  color:var(--ah-gold) !important;
+  text-transform:uppercase !important;
+  font-weight:500 !important;
+}
+.ob-q{
+  font-family:var(--ah-font-display) !important;
+  font-size:32px !important;
+  font-weight:400 !important;
+  letter-spacing:.025em !important;
+  line-height:1 !important;
+  color:var(--ah-text) !important;
+  text-transform:uppercase !important;
+}
+.ob-sub{
+  font-family:var(--ah-font-body) !important;
+  font-size:13px !important;
+  color:var(--ah-text2) !important;
+  line-height:1.5 !important;
+}
+.ob-opt{
+  background:var(--ah-surface) !important;
+  border:1.5px solid var(--ah-border) !important;
+  border-radius:var(--ah-r-lg) !important;
+  padding:16px 14px !important;
+  min-height:60px !important;
+  transition:border-color .12s, background .12s, transform .1s !important;
+  font-family:var(--ah-font-body) !important;
+}
+.ob-opt:active{ transform:scale(.98) !important; }
+.ob-opt:hover,.ob-opt.on{
+  border-color:var(--ah-gold) !important;
+  background:#FFFDF6 !important;
+}
+.ob-opt-txt{
+  font-family:var(--ah-font-display) !important;
+  font-size:16px !important;
+  letter-spacing:.03em !important;
+  line-height:1.15 !important;
+  text-transform:uppercase !important;
+  color:var(--ah-text) !important;
+  font-weight:400 !important;
+}
+.ob-opt.on .ob-opt-txt{ color:var(--ah-navy) !important; }
+
+/* ── Phase 3d — Bandeaux Titan globaux (.t-bubble, .titan-msg, .res-titan, titan-fb) ── */
+.titan-bubble,.t-bubble,
+div.titan-bubble,div.t-bubble{
+  background:var(--ah-navy) !important;
+  color:#fff !important;
+  border-radius:14px 14px 14px 4px !important;
+  padding:12px 14px !important;
+  border-left:2px solid var(--ah-gold) !important;
+  font-family:var(--ah-font-body) !important;
+  font-size:13.5px !important;
+  line-height:1.5 !important;
+  font-style:normal !important;
+}
+.t-name{
+  font-family:var(--ah-font-display) !important;
+  letter-spacing:.18em !important;
+  color:var(--ah-gold) !important;
+  font-weight:400 !important;
+  font-size:14px !important;
+}
+.t-role{
+  font-family:var(--ah-font-mono) !important;
+  font-size:10px !important;
+  letter-spacing:.18em !important;
+  color:var(--ah-muted) !important;
+  text-transform:uppercase !important;
+}
+.titan-fb{
+  background:var(--ah-navy) !important;
+  color:#fff !important;
+  border-left:3px solid var(--ah-gold) !important;
+  border-radius:var(--ah-r-lg) !important;
+  font-family:var(--ah-font-body) !important;
+}
+.titan-msg{
+  background:var(--ah-navy) !important;
+  color:#fff !important;
+  border-left:3px solid var(--ah-gold) !important;
+  border-radius:var(--ah-r-lg) !important;
+}
+
+/* ── Phase 3e — Home hero + scoreboard ── */
+.home-hero, .today-card, .pgcard-program{
+  background:linear-gradient(135deg, var(--ah-navy2) 0%, var(--ah-navy) 60%, var(--ah-navy-deep) 100%) !important;
+  border:1px solid rgba(197,164,78,.25) !important;
+  border-radius:var(--ah-r-lg) !important;
+  box-shadow:0 8px 24px rgba(11,18,40,.18) !important;
+}
+/* Verdict / banner Titan dans la home en navy + filet or */
+.home-verdict, .verdict-card{
+  background:var(--ah-navy) !important;
+  color:#fff !important;
+  border-left:3px solid var(--ah-gold) !important;
+  border-radius:var(--ah-r-lg) !important;
+}
+
+/* ── Coach Titan vChat dark mode (autorisé §0 du handoff) ── */
+#vChat{ background:var(--ah-navy-deep) !important; color:#fff !important; }
+#vChat .pg-title, #vChat .pg-sub{ color:#fff !important; }
+#vChat .chat-msg-titan,#vChat .chat-bubble-titan,#vChat .chat-msg.ai{
+  background:var(--ah-navy) !important;
+  color:#fff !important;
+  border-left:2px solid var(--ah-gold) !important;
+  border-radius:14px 14px 14px 4px !important;
+}
+#vChat .chat-msg-user,#vChat .chat-bubble-user,#vChat .chat-msg.user{
+  background:var(--ah-surface2) !important;
+  color:var(--ah-text) !important;
+  border-radius:14px 14px 4px 14px !important;
+}
+#vChat .chat-input,#vChat input,#vChat textarea{
+  background:var(--ah-navy2) !important;
+  border:1px solid rgba(197,164,78,.25) !important;
+  color:#fff !important;
+}
+#vChat .chat-input::placeholder{ color:rgba(255,255,255,.45) !important; }
 </style>
 
 <template id="__bundler_thumbnail" data-bg-color="#1B2A4A">
@@ -2497,20 +2799,24 @@ body.test-mode #testSkipBar{display:flex}
 
 <!-- ═══ TITAN INTRO ═══ -->
 <div id="titanIntro" class="scr">
-  <div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:32px 24px;text-align:center">
-    <div style="width:110px;height:110px;border-radius:50%;background:linear-gradient(135deg,#1B2A4A,#0A0F1E);border:3px solid #C5A44E;box-shadow:0 0 0 8px rgba(197,164,78,.08),0 20px 60px rgba(0,0,0,.5);display:flex;align-items:center;justify-content:center;">
-      <svg width="60" height="60" viewBox="0 0 56 56" fill="none">
-        <ellipse cx="28" cy="20" rx="11" ry="12" fill="#C5A44E" opacity=".9"/>
-        <path d="M8 52c0-11 9-18 20-18s20 7 20 18" fill="#C5A44E" opacity=".7"/>
-        <ellipse cx="28" cy="18" rx="9" ry="10" fill="#0A0F1E"/>
-        <circle cx="24" cy="17" r="2.5" fill="#C5A44E"/>
-        <circle cx="32" cy="17" r="2.5" fill="#C5A44E"/>
-      </svg>
+  <div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:32px 24px;text-align:center;background:linear-gradient(180deg,var(--ah-navy-deep) 0%,var(--ah-navy) 100%);color:#fff;min-height:100vh;position:relative;overflow:hidden">
+
+    <!-- Halo or arrière-plan -->
+    <div style="position:absolute;top:20%;left:50%;transform:translate(-50%,-50%);width:320px;height:320px;background:radial-gradient(circle,rgba(197,164,78,.18) 0%,transparent 70%);pointer-events:none"></div>
+
+    <!-- Mascotte 140px Design System v1.0 (.ah-titan + image + anneau or) -->
+    <div class="ah-titan" style="width:140px;height:140px;position:relative;z-index:1;box-shadow:0 20px 60px rgba(0,0,0,.5)">
+      <img src="images/titan-mascot.png" alt="Titan" onerror="this.parentElement.classList.add('fallback');this.style.display='none';this.nextElementSibling.style.display='flex'">
+      <span style="display:none;width:100%;height:100%;align-items:center;justify-content:center;font-family:var(--ah-font-display);font-size:54px;color:var(--ah-gold)">T</span>
     </div>
-    <div class="t-name" style="margin-top:16px">TITAN</div>
-    <div class="t-role">Ton coach virtuel</div>
-    <div class="t-bubble" id="titanBubble" style="margin-top:20px;max-width:320px;width:100%;text-align:left"></div>
-    <button class="btn-cta show" id="btnStart" onclick="go('obQ1')" style="margin-top:24px;max-width:300px;width:100%">C'est parti 🔥</button>
+
+    <div style="font-family:var(--ah-font-display);font-size:28px;letter-spacing:.18em;color:var(--ah-gold);margin-top:22px;position:relative;z-index:1">TITAN</div>
+    <div class="ah-kicker" style="color:rgba(255,255,255,.55);margin-top:4px;position:relative;z-index:1">Ton coach virtuel</div>
+
+    <!-- Bulle Titan navy (typeText() écrira dedans) -->
+    <div class="ah-titan-bubble" id="titanBubble" style="margin-top:24px;max-width:340px;width:100%;text-align:left;position:relative;z-index:1;border-radius:14px 14px 14px 4px"></div>
+
+    <button class="btn-cta show ah-btn ah-btn-gold ah-btn-lg ah-btn-block" id="btnStart" onclick="go('obQ1')" style="margin-top:28px;max-width:340px;width:100%;position:relative;z-index:1">C'est parti 🔥</button>
   </div>
 </div>
 
