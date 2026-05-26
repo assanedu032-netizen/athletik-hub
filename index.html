@@ -3596,6 +3596,11 @@ button:active:not(.ah-titan-btn):not([class*="nav"]):not([class*="ls-"]):not([cl
       <div class="al-w"><div style="font-family:'Bebas Neue',sans-serif;font-size:28px;color:#fff">AH</div></div>
       <div class="ab-n">ATHLETIK HUB</div><div class="ab-s">Crée ton compte</div>
     </div>
+    <!-- Bulle Titan DS v1.0 -->
+    <div class="ah-titan-bubble" style="background:var(--ah-navy);color:#fff;border-radius:14px 14px 14px 4px;border-left:2px solid var(--ah-gold);padding:12px 14px;margin-bottom:14px;font-family:'Outfit',sans-serif;font-size:13px;line-height:1.5">
+      <div style="font-family:'Bebas Neue',sans-serif;letter-spacing:.18em;color:var(--ah-gold);font-size:13px;margin-bottom:4px">TITAN</div>
+      <div>Crée ton compte. Sans ça, je peux rien sauvegarder de ton travail.</div>
+    </div>
     <div class="ac">
       <div class="ac-t">Rejoins la meute</div>
       <div class="ac-s">Crée ton compte pour accéder à ton programme personnalisé.</div>
@@ -4348,8 +4353,18 @@ button:active:not(.ah-titan-btn):not([class*="nav"]):not([class*="ls-"]):not([cl
     <!-- Bannière reprendre tests — affichée si ah_sat_inprogress existe -->
     <div id="resumeTestsBanner" style="display:none"></div>
 
-    <!-- CARTE SÉANCE — collée sous la photo, style FizzUp TODAY -->
-    <div id="todayCard" style="margin:-1px 0 0;background:var(--surface);border-bottom:1px solid var(--border);padding:20px 20px">
+    <!-- ═══ SCOREBOARD Design System v1.0 — stats clés du jour ═══ -->
+    <div class="ah-scoreboard" id="homeScoreboard" style="margin:14px 20px 0">
+      <div class="grp"><span class="lbl">SET</span><span class="val empty" id="sbSet">—</span></div>
+      <div class="div"></div>
+      <div class="grp"><span class="lbl">CMJ</span><span class="val empty" id="sbCmj">—</span></div>
+      <div class="div"></div>
+      <div class="grp"><span class="lbl">J</span><span class="val empty" id="sbJours">—</span></div>
+    </div>
+
+    <!-- CARTE SÉANCE — collée sous la photo, style FizzUp TODAY (wrappée goldframe DS v1.0) -->
+    <div class="ah-goldframe" id="todayCardFrame" style="margin:14px 18px 0">
+    <div id="todayCard" class="inner" style="background:var(--ah-surface);padding:18px 18px">
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
         <div style="font-size:10px;font-weight:700;letter-spacing:3px;color:var(--gold);text-transform:uppercase">Aujourd'hui</div>
         <div style="font-size:11px;color:var(--muted);font-weight:600" id="pcDur">Semaine 1 / 20</div>
@@ -4359,6 +4374,7 @@ button:active:not(.ah-titan-btn):not([class*="nav"]):not([class*="ls-"]):not([cl
       <button onclick="discoveryStartProfile()" style="width:100%;padding:15px;background:linear-gradient(135deg,var(--gold),var(--gold2));border:none;border-radius:12px;font-family:'Bebas Neue',sans-serif;font-size:16px;letter-spacing:2px;color:var(--navy);cursor:pointer;touch-action:manipulation;box-shadow:0 4px 12px rgba(197,164,78,0.25)">
         LANCER LA SÉANCE →
       </button>
+    </div>
     </div>
 
     <!-- ═══ MON PLANNING ═══ -->
@@ -5032,7 +5048,7 @@ button:active:not(.ah-titan-btn):not([class*="nav"]):not([class*="ls-"]):not([cl
 <div onclick="openProg('vd')" style="position:relative;aspect-ratio:4/5;border-radius:14px;overflow:hidden;cursor:pointer;opacity:0.7;touch-action:manipulation;border:1.5px solid var(--border)">
   <img src="images/vertical-dunk.png" style="width:100%;height:100%;object-fit:cover;object-position:center top" onerror="this.style.background='linear-gradient(135deg,#1B2A4A,#060C18)';this.src=''">
   <div style="position:absolute;inset:0;background:linear-gradient(to top,rgba(6,12,24,.92) 0%,rgba(6,12,24,.15) 55%)"></div>
-  <div style="position:absolute;top:8px;right:8px;padding:3px 8px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.3);border-radius:20px;font-size:8px;font-weight:700;color:rgba(255,255,255,.4);letter-spacing:.5px">🔒 VERROUILLÉ</div>
+  <div style="position:absolute;top:8px;right:8px;padding:4px 9px;background:rgba(0,0,0,.55);border:1px solid rgba(197,164,78,.4);border-radius:999px;font-family:'JetBrains Mono',monospace;font-size:9px;font-weight:500;color:var(--ah-gold);letter-spacing:.14em;text-transform:uppercase;backdrop-filter:blur(4px)">🔒 Programme requis</div>
   <div style="position:absolute;bottom:10px;left:10px;right:10px">
     <div style="font-family:'Bebas Neue',sans-serif;font-size:17px;color:#fff;letter-spacing:1px;line-height:1">VERTICAL DUNK</div>
     <div style="font-size:9px;color:rgba(255,255,255,.6);margin-top:2px">Dunker + Détente max</div>
@@ -5041,7 +5057,7 @@ button:active:not(.ah-titan-btn):not([class*="nav"]):not([class*="ls-"]):not([cl
 <div onclick="openProg('mt')" style="position:relative;aspect-ratio:4/5;border-radius:14px;overflow:hidden;cursor:pointer;opacity:0.7;touch-action:manipulation;border:1.5px solid var(--border)">
   <img src="images/microtraining.png" style="width:100%;height:100%;object-fit:cover;object-position:center top" onerror="this.style.background='linear-gradient(135deg,#1B2A4A,#060C18)';this.src=''">
   <div style="position:absolute;inset:0;background:linear-gradient(to top,rgba(6,12,24,.92) 0%,rgba(6,12,24,.15) 55%)"></div>
-  <div style="position:absolute;top:8px;right:8px;padding:3px 8px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.3);border-radius:20px;font-size:8px;font-weight:700;color:rgba(255,255,255,.4);letter-spacing:.5px">🔒 VERROUILLÉ</div>
+  <div style="position:absolute;top:8px;right:8px;padding:4px 9px;background:rgba(0,0,0,.55);border:1px solid rgba(197,164,78,.4);border-radius:999px;font-family:'JetBrains Mono',monospace;font-size:9px;font-weight:500;color:var(--ah-gold);letter-spacing:.14em;text-transform:uppercase;backdrop-filter:blur(4px)">🔒 Programme requis</div>
   <div style="position:absolute;bottom:10px;left:10px;right:10px">
     <div style="font-family:'Bebas Neue',sans-serif;font-size:17px;color:#fff;letter-spacing:1px;line-height:1">MICROTRAINING</div>
     <div style="font-size:9px;color:rgba(255,255,255,.6);margin-top:2px">Discipline et habitudes</div>
@@ -5050,7 +5066,7 @@ button:active:not(.ah-titan-btn):not([class*="nav"]):not([class*="ls-"]):not([cl
 <div onclick="openProg('tri')" style="position:relative;aspect-ratio:4/5;border-radius:14px;overflow:hidden;cursor:pointer;opacity:0.7;touch-action:manipulation;border:1.5px solid var(--border)">
   <img src="images/triphasique.png" style="width:100%;height:100%;object-fit:cover;object-position:center top" onerror="this.style.background='linear-gradient(135deg,#1B2A4A,#060C18)';this.src=''">
   <div style="position:absolute;inset:0;background:linear-gradient(to top,rgba(6,12,24,.92) 0%,rgba(6,12,24,.15) 55%)"></div>
-  <div style="position:absolute;top:8px;right:8px;padding:3px 8px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.3);border-radius:20px;font-size:8px;font-weight:700;color:rgba(255,255,255,.4);letter-spacing:.5px">🔒 VERROUILLÉ</div>
+  <div style="position:absolute;top:8px;right:8px;padding:4px 9px;background:rgba(0,0,0,.55);border:1px solid rgba(197,164,78,.4);border-radius:999px;font-family:'JetBrains Mono',monospace;font-size:9px;font-weight:500;color:var(--ah-gold);letter-spacing:.14em;text-transform:uppercase;backdrop-filter:blur(4px)">🔒 Programme requis</div>
   <div style="position:absolute;bottom:10px;left:10px;right:10px">
     <div style="font-family:'Bebas Neue',sans-serif;font-size:17px;color:#fff;letter-spacing:1px;line-height:1">TRIPHASIQUE</div>
     <div style="font-size:9px;color:rgba(255,255,255,.6);margin-top:2px">Force sans salle</div>
@@ -5059,7 +5075,7 @@ button:active:not(.ah-titan-btn):not([class*="nav"]):not([class*="ls-"]):not([cl
 <div onclick="openProg('se')" style="position:relative;aspect-ratio:4/5;border-radius:14px;overflow:hidden;cursor:pointer;opacity:0.7;touch-action:manipulation;border:1.5px solid var(--border)">
   <img src="images/shred-explose.png" style="width:100%;height:100%;object-fit:cover;object-position:center top" onerror="this.style.background='linear-gradient(135deg,#1B2A4A,#060C18)';this.src=''">
   <div style="position:absolute;inset:0;background:linear-gradient(to top,rgba(6,12,24,.92) 0%,rgba(6,12,24,.15) 55%)"></div>
-  <div style="position:absolute;top:8px;right:8px;padding:3px 8px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.3);border-radius:20px;font-size:8px;font-weight:700;color:rgba(255,255,255,.4);letter-spacing:.5px">🔒 VERROUILLÉ</div>
+  <div style="position:absolute;top:8px;right:8px;padding:4px 9px;background:rgba(0,0,0,.55);border:1px solid rgba(197,164,78,.4);border-radius:999px;font-family:'JetBrains Mono',monospace;font-size:9px;font-weight:500;color:var(--ah-gold);letter-spacing:.14em;text-transform:uppercase;backdrop-filter:blur(4px)">🔒 Programme requis</div>
   <div style="position:absolute;bottom:10px;left:10px;right:10px">
     <div style="font-family:'Bebas Neue',sans-serif;font-size:17px;color:#fff;letter-spacing:1px;line-height:1">SHRED EXPLOSE</div>
     <div style="font-size:9px;color:rgba(255,255,255,.6);margin-top:2px">Perdre + Exploser</div>
@@ -5068,7 +5084,7 @@ button:active:not(.ah-titan-btn):not([class*="nav"]):not([class*="ls-"]):not([cl
 <div onclick="openProg('ep')" style="position:relative;aspect-ratio:4/5;border-radius:14px;overflow:hidden;cursor:pointer;opacity:0.7;touch-action:manipulation;border:1.5px solid var(--border)">
   <img src="images/explose-plus.png" style="width:100%;height:100%;object-fit:cover;object-position:center top" onerror="this.style.background='linear-gradient(135deg,#1B2A4A,#060C18)';this.src=''">
   <div style="position:absolute;inset:0;background:linear-gradient(to top,rgba(6,12,24,.92) 0%,rgba(6,12,24,.15) 55%)"></div>
-  <div style="position:absolute;top:8px;right:8px;padding:3px 8px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.3);border-radius:20px;font-size:8px;font-weight:700;color:rgba(255,255,255,.4);letter-spacing:.5px">🔒 VERROUILLÉ</div>
+  <div style="position:absolute;top:8px;right:8px;padding:4px 9px;background:rgba(0,0,0,.55);border:1px solid rgba(197,164,78,.4);border-radius:999px;font-family:'JetBrains Mono',monospace;font-size:9px;font-weight:500;color:var(--ah-gold);letter-spacing:.14em;text-transform:uppercase;backdrop-filter:blur(4px)">🔒 Programme requis</div>
   <div style="position:absolute;bottom:10px;left:10px;right:10px">
     <div style="font-family:'Bebas Neue',sans-serif;font-size:17px;color:#fff;letter-spacing:1px;line-height:1">EXPLOSE+</div>
     <div style="font-size:9px;color:rgba(255,255,255,.6);margin-top:2px">Transformation totale</div>
@@ -5134,15 +5150,18 @@ button:active:not(.ah-titan-btn):not([class*="nav"]):not([class*="ls-"]):not([cl
 </div>
 
 <div id="vChat" class="view">
-<!-- Chat Header -->
-  <div class="chat-header">
-    <div class="ch-back" onclick="switchTab('home')">←</div>
-    <div class="ch-avatar"><img src="/icons/titan.png" alt="Titan" decoding="async"></div>
-    <div class="ch-info">
+<!-- Chat Header — DS v1.0 mascotte 88px -->
+  <div class="chat-header" style="flex-direction:column;align-items:center;padding:18px 16px 16px;gap:8px;position:relative">
+    <div class="ch-back" onclick="switchTab('home')" style="position:absolute;left:14px;top:14px;font-size:22px;color:var(--ah-gold);cursor:pointer">←</div>
+    <div class="ch-menu" onclick="switchTab('moi')" style="position:absolute;right:14px;top:14px;font-size:22px;color:rgba(255,255,255,.5);cursor:pointer">⋮</div>
+    <div class="ch-avatar" style="width:88px;height:88px;border-radius:50%;overflow:hidden;border:2.5px solid var(--ah-gold);background:var(--ah-navy-deep);box-shadow:0 6px 22px rgba(197,164,78,.28),0 0 0 4px rgba(197,164,78,.08);display:flex;align-items:center;justify-content:center">
+      <img src="images/titan-mascot.png" alt="Titan" decoding="async" style="width:100%;height:100%;object-fit:cover" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">
+      <span style="display:none;width:100%;height:100%;align-items:center;justify-content:center;font-family:'Bebas Neue',sans-serif;font-size:38px;color:var(--ah-gold)">T</span>
+    </div>
+    <div class="ch-info" style="display:flex;flex-direction:column;align-items:center;gap:2px">
       <div class="ch-name">TITAN</div>
       <div class="ch-status" id="chatStatus">En ligne</div>
     </div>
-    <div class="ch-menu" onclick="switchTab('moi')">⋮</div>
   </div>
 
   <!-- Messages -->
@@ -9477,6 +9496,31 @@ function renderUserData() {
   if (user.vertJump !== null) {
     document.getElementById('vertJump').textContent = user.vertJump;
   }
+
+  // Scoreboard DS v1.0 — SET / CMJ / J (streak)
+  try{
+    var sbSet = document.getElementById('sbSet');
+    var sbCmj = document.getElementById('sbCmj');
+    var sbJ   = document.getElementById('sbJours');
+    if(sbSet){
+      if(user.athScore!==null && user.athScore!==undefined){
+        sbSet.textContent = user.athScore;
+        sbSet.classList.remove('empty');
+      } else { sbSet.textContent='—'; sbSet.classList.add('empty'); }
+    }
+    if(sbCmj){
+      if(user.vertJump!==null && user.vertJump!==undefined && user.vertJump!==''){
+        sbCmj.textContent = user.vertJump;
+        sbCmj.classList.remove('empty');
+      } else { sbCmj.textContent='—'; sbCmj.classList.add('empty'); }
+    }
+    if(sbJ){
+      if(user.streak>0){
+        sbJ.textContent = user.streak;
+        sbJ.classList.remove('empty');
+      } else { sbJ.textContent='—'; sbJ.classList.add('empty'); }
+    }
+  }catch(e){}
 
   // Streak
   document.getElementById('streakCount').textContent = user.streak + ' JOURS';
