@@ -283,6 +283,11 @@
 .ah-live{ background:var(--ah-navy-deep); color:#fff; min-height:100vh; padding:18px; }
 .ah-live .ah-timer-band{ background:var(--ah-gold); color:var(--ah-navy); border-radius:var(--ah-r-md); padding:18px; text-align:center; font-family:var(--ah-font-display); font-size:64px; letter-spacing:.04em; line-height:1; margin:18px 0; }
 .ah-live .ah-play-fab{ width:64px; height:64px; border-radius:50%; background:var(--ah-gold); display:flex; align-items:center; justify-content:center; color:var(--ah-navy); font-size:24px; box-shadow:0 8px 22px rgba(197,164,78,.4); border:0; cursor:pointer; }
+/* Overrides : neutralise les anciens styles .nav-item qui interfèrent dans
+   la nouvelle nav (.ah-bottomnav). On garde .nav-item sur les items pour
+   préserver les index JS, mais on désactive ::after et le radius des items. */
+.ah-bottomnav .nav-item.on::after{ display:none !important; }
+.ah-bottomnav .nav-item{ border-radius:0; padding:6px 0 4px; gap:4px; }
 /* ═══ FIN DESIGN SYSTEM v1.0 ═══ */
 
 :root {
@@ -4951,30 +4956,24 @@ body.test-mode #testSkipBar{display:flex}
   </div>
 </div>
 
-<div class="nav" id="mainNav" style="display:none">
-  <div class="nav-item" onclick="switchTab('home')">
-    <svg class="nav-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 12L12 3l9 9"/><path d="M9 21V12h6v9"/><path d="M3 12v9h18v-9"/></svg>
-    <div class="nav-lb">Home</div>
+<!-- ═══ BOTTOM NAV — Design System v1.0 (.ah-bottomnav) ═══
+     id="mainNav" conservé pour le show/hide JS. .nav-item conservé sur les
+     items pour préserver les index utilisés par switchTab() (navIdx[tab]).
+     L'index 2 est un placeholder invisible (emplacement du bouton TITAN
+     flottant) — sans onclick, juste pour garder l'alignement d'index. -->
+<div class="ah-bottomnav-wrap" id="mainNav" style="display:none;max-width:430px;left:50%;right:auto;transform:translateX(-50%)">
+  <div class="ah-bottomnav">
+    <div class="ni nav-item home" onclick="switchTab('home')"><span class="ico"></span>Home</div>
+    <div class="ni nav-item tracks" onclick="switchTab('tracks')"><span class="ico"></span>Tracks</div>
+    <div class="nav-item" aria-hidden="true" style="visibility:hidden"></div>
+    <div class="ni nav-item train" onclick="switchTab('train')"><span class="ico"></span>Train</div>
+    <div class="ni nav-item nutri" onclick="switchTab('nutrition')"><span class="ico"></span>Nutri</div>
   </div>
-  <div class="nav-item" onclick="switchTab('tracks')">
-    <svg class="nav-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
-    <div class="nav-lb">Tracks</div>
-  </div>
-  <!-- BOUTON TITAN CENTRAL -->
-  <div class="nav-titan" onclick="switchTab('chat')">
-    <div class="nav-titan-btn">
-      <img src="/icons/titan.png" alt="Titan" decoding="async">
-    </div>
-    <div class="nav-lb" style="color:var(--gold);font-size:8px;margin-top:4px">TITAN</div>
-  </div>
-  <div class="nav-item" onclick="switchTab('train')">
-    <svg class="nav-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M6.5 6.5h11M6.5 12h11M6.5 17.5h11"/><circle cx="3" cy="6.5" r="1.5"/><circle cx="3" cy="12" r="1.5"/><circle cx="3" cy="17.5" r="1.5"/></svg>
-    <div class="nav-lb">Train</div>
-  </div>
-  <div class="nav-item" onclick="switchTab('nutrition')">
-    <svg class="nav-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 2a7 7 0 0 1 7 7c0 4-3 7-7 9-4-2-7-5-7-9a7 7 0 0 1 7-7z"/><path d="M12 6v6M9 9h6"/></svg>
-    <div class="nav-lb">Nutri</div>
-  </div>
+  <button class="ah-titan-btn" onclick="switchTab('chat')" aria-label="Coach Titan">
+    <img src="images/titan-mascot.png" alt="Titan" onerror="this.style.display='none';this.nextElementSibling.style.display='flex';">
+    <span class="ah-titan-btn-fallback" style="display:none">T</span>
+  </button>
+  <span class="ah-titan-btn-label">TITAN</span>
 </div>
 
 <!-- ═══ RECIPE MODAL ═══ -->
