@@ -1182,6 +1182,13 @@ body:has(.scr.on) .tim-fab{display:none}
 /* Sépare les onglets "principaux" (chrono/minuteur) des "options" (tabata/hiit/saved) */
 .tim-tabs-divider{flex-shrink:0;align-self:center;width:1px;height:24px;background:var(--border);margin:0 4px}
 .tim-tab.opt{font-size:11px;opacity:.85}
+.tim-snd-details{margin-top:22px;background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:12px 14px}
+.tim-snd-details summary{font-family:'Outfit',sans-serif;font-size:12px;font-weight:700;color:var(--text2);letter-spacing:1px;text-transform:uppercase;cursor:pointer;list-style:none;-webkit-tap-highlight-color:transparent}
+.tim-snd-details summary::-webkit-details-marker{display:none}
+.tim-snd-details summary::before{content:'▸ ';color:var(--gold);margin-right:4px}
+.tim-snd-details[open] summary::before{content:'▾ '}
+.tim-snd-details .tim-snd-row{margin-top:10px}
+.tim-snd-details .tim-test-snd{margin-top:8px}
 
 /* ═══ LEVEL CARD ═══ */
 .level-card{margin:16px 22px 0;background:var(--surface);border:1px solid var(--border);border-radius:var(--r2);padding:18px;box-shadow:var(--card-shadow);display:flex;align-items:center;gap:14px;animation:fadeUp .3s ease both}
@@ -5047,6 +5054,11 @@ body.test-mode #testSkipBar{display:flex}
         <button class="tim-chrono-btn secondary" onclick="tim_chronoLap()">🏁 Tour</button>
       </div>
       <div id="timChronoLaps" class="tim-chrono-laps"><div class="tim-chrono-laps-empty">Aucun tour enregistré. Tape « Tour » pendant le chrono.</div></div>
+      <details class="tim-snd-details">
+        <summary>🎵 Style de son</summary>
+        <div class="tim-snd-row" id="timSndRowChrono"></div>
+        <button class="tim-test-snd" onclick="tim_testSound()">▶ Tester</button>
+      </details>
     </div>
 
     <!-- MINUTEUR — fonction principale -->
@@ -5086,6 +5098,11 @@ body.test-mode #testSkipBar{display:flex}
           <button class="tim-chrono-btn secondary" onclick="tim_minutAdd30()">+30s</button>
         </div>
       </div>
+      <details class="tim-snd-details">
+        <summary>🎵 Style de son</summary>
+        <div class="tim-snd-row" id="timSndRowMinut"></div>
+        <button class="tim-test-snd" onclick="tim_testSound()">▶ Tester</button>
+      </details>
     </div>
 
     <!-- TABATA — 4 inputs visibles, défauts cachés (cycle-rest, countdown) -->
@@ -8705,7 +8722,16 @@ function _bfDrawChart(data) {
 (function(){
   var tim_audioCtx = null;
   var tim_muted = false;
-  var tim_soundStyle = localStorage.getItem('tim_sound') || 'training';
+  // Migration : ceux qui n'ont jamais explicitement choisi un style passent sur 'sport'
+  // (nouveau défaut depuis le retour utilisateur "trop aigu, pas assez sport").
+  try {
+    if (localStorage.getItem('tim_sound_v2_migrated') !== '1') {
+      var curr = localStorage.getItem('tim_sound');
+      if (!curr || curr === 'training') localStorage.setItem('tim_sound', 'sport');
+      localStorage.setItem('tim_sound_v2_migrated', '1');
+    }
+  } catch(e) {}
+  var tim_soundStyle = localStorage.getItem('tim_sound') || 'sport';
   var tim_mode = 'tabata';
   var tim_T = { queue:[], idx:0, rem:0, total:0, running:false, iv:null, startMs:null, doneRounds:0, modeLabel:'', totalWorkPhases:0 };
   var tim_savedLocal = [];
@@ -8760,6 +8786,49 @@ function _bfDrawChart(data) {
     }catch(e){}
   }
   var TIM_SOUNDS = {
+    // 🏋️ SPORT — grave, percutant, fort (basket buzzer + cloche de boxe).
+    // Recommandé pour chrono/minuteur sous l'effort.
+    sport: { label:'🏋️ Sport',
+      depart: function(){
+        tim_noise(.03,.7,0,.02);
+        tim_osc(60,.18,'sine',.75,0);
+        tim_osc(250,.12,'square',.6,.02);
+        tim_osc(800,.1,'sine',.4,.05);
+      },
+      tick: function(){
+        tim_noise(.015,.5,0,.008);
+        tim_osc(150,.06,'sine',.6);
+      },
+      urgence: function(){
+        // Double punch grave-mid (style basket end-of-quarter buzzer)
+        tim_noise(.02,.7,0,.01);
+        tim_osc(200,.09,'square',.7,0);
+        tim_osc(400,.07,'sine',.55,.01);
+        tim_noise(.02,.7,.13,.01);
+        tim_osc(200,.09,'square',.7,.13);
+        tim_osc(400,.07,'sine',.55,.14);
+      },
+      fin: function(){
+        // 3 cloches descendantes + sub pour le poids (cloche de boxe)
+        tim_noise(.06,.55,0,.04);
+        [[0,880,.28,.75],[180,660,.32,.65],[380,440,.5,.58],[700,220,.7,.5]].forEach(function(a){
+          tim_osc(a[1], a[2], 'sine', a[3], a[0]/1000);
+        });
+        tim_osc(110,.85,'sine',.55,.1);
+      },
+      repos: function(){
+        tim_osc(220,.18,'sine',.5);
+        tim_osc(165,.28,'sine',.42,.08);
+      },
+      reprise: function(){
+        // Strike de cloche de boxe (départ de round)
+        tim_noise(.02,.45,0,.01);
+        tim_osc(660,.12,'sine',.7);
+        tim_osc(440,.18,'sine',.55,.02);
+        tim_osc(330,.25,'sine',.42,.06);
+      }
+    },
+
     training: { label:'🏃 Training',
       depart:function(){ tim_osc(880,.12,'square',.5); tim_osc(1108,.1,'square',.4,.15); },
       tick:function(){ tim_osc(800,.06,'sine',.3); },
@@ -8856,6 +8925,7 @@ function _bfDrawChart(data) {
     if (tab === 'tabata') tim_updateTabSummary();
     if (tab === 'hiit') { tim_buildHIITExInputs(); tim_updateHIITSummary(); }
     if (tab === 'saved') tim_attachSavedListener();
+    if (tab === 'chrono' || tab === 'minuteur') tim_renderSoundSelector();
     else if (tim_unsub) { try { tim_unsub(); } catch(e) {} tim_unsub = null; }
   }
 
@@ -9240,16 +9310,20 @@ function _bfDrawChart(data) {
     if (tim_audioCtx && tim_audioCtx.state === 'suspended') tim_audioCtx.resume();
   }
   function tim_renderSoundSelector(){
-    var row = document.getElementById('timSoundRow'); if (!row) return;
-    row.innerHTML = Object.keys(TIM_SOUNDS).map(function(k){
+    var html = Object.keys(TIM_SOUNDS).map(function(k){
       var s = TIM_SOUNDS[k];
       return '<button class="tim-snd-btn' + (tim_soundStyle === k ? ' on' : '') + '" data-style="' + k + '" onclick="tim_setSoundStyle(\'' + k + '\')">' + s.label + '</button>';
     }).join('');
+    // Cible à la fois le panel du timer actif et les sélecteurs inline (chrono/minuteur)
+    ['timSoundRow', 'timSndRowChrono', 'timSndRowMinut'].forEach(function(id){
+      var el = document.getElementById(id);
+      if (el) el.innerHTML = html;
+    });
   }
   function tim_setSoundStyle(s){
     tim_soundStyle = s;
     try { localStorage.setItem('tim_sound', s); } catch(e) {}
-    document.querySelectorAll('#timSoundRow .tim-snd-btn').forEach(function(b){
+    document.querySelectorAll('#tim-overlay .tim-snd-btn').forEach(function(b){
       b.classList.toggle('on', b.getAttribute('data-style') === s);
     });
     tim_toast('✓ ' + TIM_SOUNDS[s].label);
