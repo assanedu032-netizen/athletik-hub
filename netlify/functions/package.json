@@ -1,0 +1,9 @@
+{
+  "name": "athletik-hub-functions",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Netlify Functions for Athletik Hub (Titan proxy)",
+  "dependencies": {
+    "firebase-admin": "^13.0.0"
+  }
+}
