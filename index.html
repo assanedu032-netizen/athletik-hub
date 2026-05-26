@@ -4562,16 +4562,28 @@ body.test-mode #testSkipBar{display:flex}
     <div id="ntab-recettes" class="pg" style="padding:16px 22px">
       <div style="margin-bottom:12px">
         <div style="font-family:'Bebas Neue',sans-serif;font-size:22px;color:var(--text);letter-spacing:1.5px;margin-bottom:4px">RECETTES ATHLÈTE</div>
-        <div style="font-size:12px;color:var(--muted);line-height:1.5">40 recettes calibrées athlète. Ajoute aux <strong style="color:var(--gold)">favoris ⭐</strong> pour générer ta liste de courses.</div>
+        <div style="font-size:12px;color:var(--muted);line-height:1.5">58 recettes calibrées athlète. Ajoute aux <strong style="color:var(--gold)">favoris ⭐</strong> pour générer ta liste de courses.</div>
       </div>
 
-      <!-- Filtres -->
-      <div id="recipeFilters" style="display:flex;gap:8px;margin:14px 0 16px;flex-wrap:wrap">
+      <!-- Filtres catégorie -->
+      <div id="recipeFilters" style="display:flex;gap:8px;margin:14px 0 10px;flex-wrap:wrap">
         <div class="recipe-fc on" data-cat="all" onclick="filterRecipeCat(this,'all')">Tout</div>
         <div class="recipe-fc" data-cat="breakfast" onclick="filterRecipeCat(this,'breakfast')">🥞 Petit-déj</div>
         <div class="recipe-fc" data-cat="smoothie" onclick="filterRecipeCat(this,'smoothie')">🥤 Smoothies</div>
-        <div class="recipe-fc" data-cat="meal" onclick="filterRecipeCat(this,'meal')">🍽️ Plats</div>
+        <div class="recipe-fc" data-cat="meal" onclick="filterRecipeCat(this,'meal')">🍽️ Repas</div>
+        <div class="recipe-fc" data-cat="snack" onclick="filterRecipeCat(this,'snack')">🍪 Snacks</div>
         <div class="recipe-fc" data-cat="favorites" onclick="filterRecipeCat(this,'favorites')">⭐ Favoris</div>
+      </div>
+
+      <!-- Filtres moment (scrollables horizontalement) -->
+      <div id="recipeMomentFilters" style="display:flex;gap:6px;margin:0 0 14px;overflow-x:auto;-webkit-overflow-scrolling:touch;padding-bottom:2px">
+        <div class="recipe-fc on" data-mom="all" onclick="filterRecipeMoment(this,'all')" style="flex-shrink:0;font-size:10px">Tous moments</div>
+        <div class="recipe-fc" data-mom="pre-workout" onclick="filterRecipeMoment(this,'pre-workout')" style="flex-shrink:0;font-size:10px">🌅 Pré-workout</div>
+        <div class="recipe-fc" data-mom="post-workout" onclick="filterRecipeMoment(this,'post-workout')" style="flex-shrink:0;font-size:10px">💪 Post-workout</div>
+        <div class="recipe-fc" data-mom="pre-game" onclick="filterRecipeMoment(this,'pre-game')" style="flex-shrink:0;font-size:10px">🏆 Pré-match</div>
+        <div class="recipe-fc" data-mom="post-game" onclick="filterRecipeMoment(this,'post-game')" style="flex-shrink:0;font-size:10px">🔥 Post-match</div>
+        <div class="recipe-fc" data-mom="recovery" onclick="filterRecipeMoment(this,'recovery')" style="flex-shrink:0;font-size:10px">😌 Récup</div>
+        <div class="recipe-fc" data-mom="before-sleep" onclick="filterRecipeMoment(this,'before-sleep')" style="flex-shrink:0;font-size:10px">🌙 Sommeil</div>
       </div>
 
       <!-- Search -->
@@ -5133,230 +5145,298 @@ function showNutriTab(el, tab) {
   }
 }
 
-// ═══ RECIPE DATA — 40 recettes (Athletik Hub premium content) ═══
-// Catégories : breakfast (petit-déj, 10) · smoothie (smoothies/shakes, 10) · meal (plats, 20)
-// Pour éditer une recette : modifie l'objet correspondant ci-dessous.
+// ═══ RECIPE DATA — 58 recettes Athletik Hub (v2 — JSON-based) ═══
+// 58 recettes : 11 petits-déj · 15 smoothies · 28 repas · 4 snacks
+// Schéma compact : data flat array → window.RECIPES par clé recipe-NNN
 (function(){
-  var IMG = {
-    pancakes:  'https://images.unsplash.com/photo-1567620905732-2d1ec7ab7445?w=800&q=80',
-    oats:      'https://images.unsplash.com/photo-1511690743698-d9d85f2fbf38?w=800&q=80',
-    eggs:      'https://images.unsplash.com/photo-1493770348161-369560ae357d?w=800&q=80',
-    avocado:   'https://images.unsplash.com/photo-1525351484163-7529414344d8?w=800&q=80',
-    muffins:   'https://images.unsplash.com/photo-1481070555726-e2fe8357725c?w=800&q=80',
-    yogurt:    'https://images.unsplash.com/photo-1488477181946-6428a0291777?w=800&q=80',
-    painperdu: 'https://images.unsplash.com/photo-1543339531-7cd05dbb1cee?w=800&q=80',
-    burrito:   'https://images.unsplash.com/photo-1626700051175-6818013e1d4f?w=800&q=80',
-    gaufres:   'https://images.unsplash.com/photo-1568051243851-f9b136146e97?w=800&q=80',
-    chia:      'https://images.unsplash.com/photo-1505252585461-04db1eb84625?w=800&q=80',
-    shakeChoc: 'https://images.unsplash.com/photo-1553530979-7ee52a2670c4?w=800&q=80',
-    smGreen:   'https://images.unsplash.com/photo-1502741338009-cac2772e18bc?w=800&q=80',
-    smBerry:   'https://images.unsplash.com/photo-1505252585461-04db1eb84625?w=800&q=80',
-    smTrop:    'https://images.unsplash.com/photo-1623218960095-2c2c1cd8e6bb?w=800&q=80',
-    smCafe:    'https://images.unsplash.com/photo-1556881124-91d2c4d97b34?w=800&q=80',
-    shakeMass: 'https://images.unsplash.com/photo-1572490122747-3968b75cc699?w=800&q=80',
-    smCoco:    'https://images.unsplash.com/photo-1505252585461-04db1eb84625?w=800&q=80',
-    smBetter:  'https://images.unsplash.com/photo-1610970881699-44a5587cabec?w=800&q=80',
-    shakeVan:  'https://images.unsplash.com/photo-1572490122747-3968b75cc699?w=800&q=80',
-    poulet:    'https://images.unsplash.com/photo-1467003909585-2f8a72700288?w=800&q=80',
-    saumon:    'https://images.unsplash.com/photo-1519708227418-c8fd9a32b7a2?w=800&q=80',
-    lentilles: 'https://images.unsplash.com/photo-1604908176997-125f25cc6f3d?w=800&q=80',
-    pates:     'https://images.unsplash.com/photo-1621996346565-e3dbc646d9a9?w=800&q=80',
-    dinde:     'https://images.unsplash.com/photo-1532550907401-a500c9a57435?w=800&q=80',
-    chili:     'https://images.unsplash.com/photo-1547592180-85f173990554?w=800&q=80',
-    poisChiches:'https://images.unsplash.com/photo-1604908176997-125f25cc6f3d?w=800&q=80',
-    curry:     'https://images.unsplash.com/photo-1604908554007-9b00d68e7c5f?w=800&q=80',
-    tofu:      'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=800&q=80',
-    cabillaud: 'https://images.unsplash.com/photo-1551183053-bf91a1d81141?w=800&q=80',
-    boulettes: 'https://images.unsplash.com/photo-1565958011703-44f9829ba187?w=800&q=80',
-    filet:     'https://images.unsplash.com/photo-1558030006-450675393462?w=800&q=80',
-    maquereau: 'https://images.unsplash.com/photo-1559847844-5315695dadae?w=800&q=80',
-    crevettes: 'https://images.unsplash.com/photo-1599487488170-d11ec9c172f0?w=800&q=80',
-    bowlPoul:  'https://images.unsplash.com/photo-1565299585323-38d6b0865b47?w=800&q=80',
-    soupe:     'https://images.unsplash.com/photo-1547592180-85f173990554?w=800&q=80',
-    poke:      'https://images.unsplash.com/photo-1546833999-b9f581a1996d?w=800&q=80',
-    pouletRoti:'https://images.unsplash.com/photo-1598103442097-8b74394b95c6?w=800&q=80',
-    thonAsp:   'https://images.unsplash.com/photo-1551183053-bf91a1d81141?w=800&q=80',
-    lasagnes:  'https://images.unsplash.com/photo-1619895092538-128f4d8c8b88?w=800&q=80'
+  var TAG_LABELS = { breakfast:'PETIT-DÉJ', smoothie:'SMOOTHIE', meal:'REPAS', snack:'SNACK' };
+  var QUOTE_BY_MOMENT = {
+    'pre-workout':  '"Le bon carburant avant la séance. Mange, bouge, exécute."',
+    'post-workout': '"Fenêtre anabolique. Tu manges, ton corps reconstruit."',
+    'pre-game':     '"Énergie longue, glycémie stable. Prêt pour la guerre."',
+    'post-game':    '"Tu as donné. Maintenant tu rends. Récupère intelligent."',
+    'recovery':     '"Rinçage interne. Tu donnes les outils pour reconstruire."',
+    'before-sleep': '"La récupération commence en mangeant juste avant de dormir."',
+    'any':          '"Mange comme tu t\'entraînes. Discipline, qualité, intention."'
   };
-
-  // Helper compact pour définir une recette
-  function R(name, cat, tagline, cals, prot, carbs, fat, time, img, ingredients, steps, titan) {
-    var tagLabelMap = { breakfast: 'PETIT-DÉJ', smoothie: 'SMOOTHIE', meal: 'REPAS' };
+  function _totalTime(pm, cm, rm) {
+    var t = (pm||0) + (cm||0) + (rm||0);
+    if (t < 60) return t + 'min';
+    var h = Math.floor(t/60), m = t%60;
+    return m ? (h+'h'+(m<10?'0':'')+m) : (h+'h');
+  }
+  function R(o) {
+    var ingredients = (o.ing || []).map(function(s){ var p = s.split('|'); return {name:p[0].trim(), qty:(p[1]||'').trim()}; });
     return {
-      name: name, tag: cat, tagLabel: tagLabelMap[cat] || 'REPAS',
-      tagline: tagline, cals: cals, prot: prot, carbs: carbs, fat: fat,
-      time: time, img: img, titan: titan || tagline,
-      ingredients: ingredients, steps: steps
+      id: o.id, name: o.n, tag: o.c, tagLabel: TAG_LABELS[o.c] || 'RECETTE',
+      tagline: o.tl || (o.kcal + ' kcal · ' + o.p + 'g protéines'),
+      cals: o.kcal, prot: o.p, carbs: o.g, fat: o.l,
+      time: _totalTime(o.pm, o.cm, o.rm),
+      img: 'images/recipes/recipe-' + String(o.id).padStart(3,'0') + '.webp',
+      titan: o.q || QUOTE_BY_MOMENT[o.m] || QUOTE_BY_MOMENT.any,
+      ingredients: ingredients, steps: o.st || [],
+      moment: o.m || 'any', difficulty: o.d || 'facile',
+      servings: o.sv || 1, prepMin: o.pm || 0, cookMin: o.cm || 0, restMin: o.rm || 0,
+      hero: !!o.hr, tags: o.tg || []
     };
   }
+  // Une entrée par recette (compactée pour lisibilité).
+  var DATA = [
+    // ─── PETITS-DÉJEUNERS (11) ───
+    {id:1,n:'Pancakes Protéinés à la Banane',c:'breakfast',m:'pre-workout',d:'facile',pm:5,cm:10,sv:1,kcal:420,p:28,g:55,l:9,hr:1,
+     ing:['Banane mûre|1 moyenne','Œufs|2','Flocons d\'avoine|40g','Whey vanille|1 scoop (30g)','Lait écrémé ou végétal|80ml','Noix concassées|10g','Miel|1 c.à.c','Graines de chia|1 c.à.c'],
+     st:['Écrase la banane à la fourchette dans un bol.','Ajoute les œufs, la whey, les flocons d\'avoine et le lait. Mélange jusqu\'à pâte homogène.','Chauffe une poêle antiadhésive à feu moyen. Verse une petite louche par pancake.','Cuis 1-2 min de chaque côté jusqu\'à doré.','Empile sur l\'assiette. Ajoute noix, miel et graines de chia. Mange dans les 5 min.'],
+     tg:['banane','whey','rapide']},
+    {id:2,n:'Porridge de Nuit (Overnight Oats)',c:'breakfast',m:'pre-workout',d:'facile',pm:5,rm:360,sv:1,kcal:380,p:18,g:58,l:8,hr:1,
+     ing:['Flocons d\'avoine|50g','Lait écrémé ou végétal|150ml','Yaourt grec 0%|100g','Sirop d\'érable|1 c.à.c','Myrtilles fraîches|50g','Fraises tranchées|50g','Amandes effilées|10g'],
+     st:['Dans un bocal en verre, mélange flocons d\'avoine, lait, yaourt grec et sirop d\'érable.','Ferme le bocal et place au frigo minimum 6h (idéalement toute la nuit).','Au matin, sors le bocal. Mélange si nécessaire.','Ajoute myrtilles, fraises et amandes effilées par-dessus. Consomme directement.'],
+     tg:['meal-prep','rapide-matin']},
+    {id:3,n:'Omelette aux Épinards et Feta',c:'breakfast',m:'pre-workout',d:'facile',pm:5,cm:7,sv:1,kcal:410,p:30,g:20,l:22,
+     ing:['Œufs|3','Épinards frais|60g','Feta émiettée|40g','Huile d\'olive|1 c.à.c','Sel, poivre noir|1 pincée','Pain complet|1 tranche'],
+     st:['Bats les œufs dans un bol avec sel et poivre.','Chauffe l\'huile d\'olive dans une poêle. Fais tomber les épinards 1 min.','Verse les œufs battus. Laisse prendre 2 min à feu moyen.','Saupoudre la feta émiettée. Plie l\'omelette en deux. Cuis 1 min de plus.','Sers avec la tranche de pain complet grillée.'],
+     tg:['proteines-hautes','petit-dej-sale']},
+    {id:4,n:'Tartines Avocat et Œuf Poché',c:'breakfast',m:'pre-workout',d:'moyen',pm:5,cm:5,sv:1,kcal:450,p:20,g:35,l:25,
+     ing:['Pain au levain complet|2 tranches','Avocat mûr|1 petit','Œufs|2','Vinaigre blanc|1 c.à.s','Flocons de piment|1 pincée','Graines de sésame|1 c.à.c','Sel, poivre noir|1 pincée'],
+     st:['Fais griller les tranches de pain au toaster.','Porte une casserole d\'eau à frémissement avec le vinaigre. Casse chaque œuf dans une louche puis glisse dans l\'eau. Pôche 3 min.','Écrase l\'avocat à la fourchette avec sel, poivre, flocons de piment.','Étale l\'avocat sur les tartines. Dépose un œuf poché sur chaque.','Saupoudre de graines de sésame et un tour de moulin à poivre. Sers immédiatement.'],
+     tg:['brunch','energie-longue']},
+    {id:5,n:'Muffins aux Œufs et Bacon de Dinde',c:'breakfast',m:'any',d:'facile',pm:10,cm:20,sv:6,kcal:110,p:10,g:2,l:7,hr:1,
+     ing:['Œufs|6','Bacon de dinde tranché|100g','Fromage râpé (emmental)|60g','Ciboulette ciselée|1 c.à.s','Lait|50ml','Sel, poivre|1 pincée'],
+     st:['Préchauffe le four à 180°C. Huile légèrement un moule à 6 muffins.','Coupe le bacon de dinde en petits dés. Répartis dans les empreintes du moule.','Bats les œufs avec le lait, sel et poivre. Verse dans chaque empreinte.','Saupoudre de fromage râpé et de ciboulette.','Enfourne 18-20 min jusqu\'à dorure. Laisse tiédir 2 min avant de démouler.','Conserve au frigo 3 jours. Réchauffe 30 sec au micro-ondes.'],
+     tg:['meal-prep','batch-cooking','petit-dej-sale']},
+    {id:6,n:'Bowl Skyr, Beurre de Cacahuète et Granola',c:'breakfast',m:'post-workout',d:'facile',pm:3,sv:1,kcal:480,p:32,g:50,l:16,hr:1,
+     ing:['Skyr nature|200g','Beurre de cacahuète naturel|1 c.à.s','Granola sans sucre ajouté|40g','Banane tranchée|1/2','Pépites de chocolat noir 70%|10g'],
+     st:['Verse le skyr dans un bol creux.','Dépose une cuillère de beurre de cacahuète au centre.','Ajoute le granola tout autour.','Termine par les tranches de banane et les pépites de chocolat. Mange directement.'],
+     tg:['caseine','post-effort','rapide']},
+    {id:7,n:'Pain Perdu Fit au Fromage Blanc',c:'breakfast',m:'any',d:'facile',pm:5,cm:8,sv:1,kcal:430,p:26,g:55,l:12,
+     ing:['Pain complet rassis|3 tranches','Œuf|1','Lait|80ml','Cannelle|1 pincée','Fromage blanc 0%|100g','Framboises fraîches|40g','Myrtilles fraîches|40g','Miel|1 c.à.c'],
+     st:['Bats l\'œuf avec le lait et la cannelle dans un plat creux.','Trempe chaque tranche de pain 10 sec de chaque côté dans le mélange.','Chauffe une poêle antiadhésive. Fais dorer le pain 2 min de chaque côté.','Dispose le pain sur l\'assiette. Dépose une quenelle de fromage blanc.','Parsème de framboises et myrtilles. Filet de miel. Sers chaud.'],
+     tg:['sucre-controle','petit-dej-gourmand']},
+    {id:8,n:'Burrito de Petit-Déjeuner',c:'breakfast',m:'any',d:'facile',pm:5,cm:8,sv:1,kcal:510,p:25,g:50,l:22,
+     ing:['Tortilla blé complet|1 grande','Œufs|2','Haricots noirs (conserve)|80g','Avocat tranché|1/2','Salsa tomate|2 c.à.s','Coriandre fraîche|2 branches','Huile d\'olive|1 c.à.c'],
+     st:['Bats les œufs. Chauffe l\'huile dans une poêle. Brouille les œufs 2 min à feu doux.','Réchauffe la tortilla 20 sec au micro-ondes pour l\'assouplir.','Au centre de la tortilla, dispose les œufs brouillés, les haricots noirs, l\'avocat, la salsa et la coriandre.','Plie les côtés vers l\'intérieur, puis roule fermement.','Coupe en deux en diagonale. Sers avec un peu de salsa en plus.'],
+     tg:['weekend','rassasiant']},
+    {id:9,n:'Gaufres à la Patate Douce',c:'breakfast',m:'pre-workout',d:'moyen',pm:15,cm:10,sv:2,kcal:410,p:16,g:58,l:12,
+     ing:['Patate douce cuite (purée)|200g','Œufs|2','Farine complète|80g','Lait|100ml','Levure chimique|1 c.à.c','Cannelle|1 c.à.c','Yaourt grec|100g','Baies mélangées|80g','Noix de pécan|15g','Sirop d\'érable|1 c.à.s'],
+     st:['Mixe la patate douce avec les œufs et le lait jusqu\'à pâte lisse.','Ajoute farine, levure et cannelle. Mélange.','Préchauffe le gaufrier. Huile légèrement.','Verse une louche de pâte par gaufre. Cuis selon l\'appareil (3-5 min).','Dépose chaque gaufre sur l\'assiette. Ajoute yaourt, baies, noix de pécan et un filet de sirop d\'érable.'],
+     tg:['compete-day','energie-longue']},
+    {id:10,n:'Chia Pudding aux Fruits Exotiques',c:'breakfast',m:'any',d:'facile',pm:5,rm:240,sv:1,kcal:340,p:10,g:38,l:18,
+     ing:['Graines de chia|30g','Lait de coco|200ml','Sirop d\'érable|1 c.à.c','Mangue fraîche en dés|60g','Kiwi tranché|1/2','Fruit de la passion|1/2','Noix de coco râpée torréfiée|5g'],
+     st:['Dans un bocal, mélange graines de chia, lait de coco et sirop d\'érable.','Place au frigo minimum 4h (ou toute la nuit).','Au moment de servir, remue le pudding s\'il est trop épais.','Dépose par-dessus la mangue, le kiwi, la pulpe de fruit de la passion et la noix de coco.'],
+     tg:['meal-prep','omega-3']},
+    {id:55,n:'Œufs Cocotte aux Épinards et Saumon Fumé',c:'breakfast',m:'any',d:'facile',pm:5,cm:12,sv:1,kcal:380,p:28,g:6,l:26,
+     ing:['Œufs|2','Saumon fumé|60g','Épinards frais|60g','Crème fraîche légère|2 c.à.s','Aneth frais|2 branches','Poivre noir|1 pincée'],
+     st:['Préchauffe le four à 180°C.','Fais tomber les épinards 2 min à la poêle. Sale, poivre.','Répartis les épinards dans 2 ramequins. Ajoute le saumon fumé coupé en lamelles.','Casse un œuf dans chaque ramequin. Ajoute 1 c. à soupe de crème par-dessus.','Enfourne 8-10 min (le blanc doit être pris, le jaune coulant).','Décore d\'aneth frais et de poivre. Sers avec une tranche de pain complet.'],
+     tg:['brunch','omega-3']},
 
-  window.RECIPES = {
-    // ─── PETITS-DÉJEUNERS ÉNERGÉTIQUES (10) ───
-    pancakesBanane: R('PANCAKES PROT BANANE', 'breakfast', 'Sans sucre ajouté, riche en potassium.', 380, 30, 48, 8, '12min', IMG.pancakes,
-      [{name:'Banane mûre',qty:'1'},{name:'Œufs',qty:'2'},{name:'Whey vanille',qty:'30g'},{name:'Flocons d\'avoine',qty:'40g'},{name:'Levure',qty:'1 c.à.c'}],
-      ['Écrase la banane à la fourchette, ajoute œufs + whey + avoine + levure, fouette.','Cuis 2 min par face à feu moyen dans une poêle anti-adhésive.','Empile et sers avec un fruit frais.'],
-      '"Pas de sucre, pas d\'excuse. Glucides complexes + protéines complètes pour démarrer la journée."'),
-    overnightOats: R('OVERNIGHT OATS', 'breakfast', 'Flocons d\'avoine, lait d\'amande et protéines.', 410, 28, 56, 9, '5min + nuit', IMG.oats,
-      [{name:'Flocons d\'avoine',qty:'60g'},{name:'Lait d\'amande',qty:'200ml'},{name:'Whey',qty:'25g'},{name:'Graines de chia',qty:'10g'},{name:'Fruits rouges',qty:'80g'}],
-      ['Mélange tout dans un bocal hermétique le soir.','Laisse au frigo toute la nuit.','Mange direct au réveil, ajoute les fruits rouges.'],
-      '"Tu prépares ton carburant la veille. Discipline = résultats."'),
-    omeletteFeta: R('OMELETTE ÉPINARDS FETA', 'breakfast', 'Protéines rapides et fer.', 360, 28, 6, 24, '8min', IMG.eggs,
-      [{name:'Œufs',qty:'3'},{name:'Épinards frais',qty:'50g'},{name:'Feta',qty:'40g'},{name:'Huile d\'olive',qty:'1 c.à.c'}],
-      ['Bats les œufs avec sel/poivre.','Fais tomber les épinards 1 min dans l\'huile.','Verse les œufs, ajoute la feta, plie en omelette. 3 min.'],
-      '"Pas le temps de discuter. Œufs, fer, gras de qualité. Tu manges et tu bouges."'),
-    tartineAvocat: R('TARTINE AVOCAT ŒUF POCHÉ', 'breakfast', 'Bons lipides et énergie durable.', 420, 22, 38, 22, '10min', IMG.avocado,
-      [{name:'Pain complet',qty:'2 tranches'},{name:'Avocat mûr',qty:'½'},{name:'Œuf',qty:'1'},{name:'Citron',qty:'¼'},{name:'Piment fumé',qty:'pincée'}],
-      ['Toaste les tranches de pain.','Écrase l\'avocat avec citron, sel, piment.','Poche l\'œuf 3 min dans eau frémissante + vinaigre. Pose sur la tartine.'],
-      '"Bons gras + protéines. Le brunch ennemi de la flemme."'),
-    muffinsOeufs: R('MUFFINS ŒUFS BACON DINDE', 'breakfast', 'Snack salé protéiné pour le matin.', 220, 22, 4, 13, '25min', IMG.muffins,
-      [{name:'Œufs',qty:'6'},{name:'Bacon de dinde',qty:'4 tranches'},{name:'Fromage allégé',qty:'40g'},{name:'Ciboulette',qty:'qq brins'}],
-      ['Préchauffe le four à 180°C.','Tapisse 6 moules à muffins de bacon, verse les œufs battus + fromage.','Cuis 18-20 min. Conserve 3 jours au frigo.'],
-      '"Prépare 6 portions le dimanche, oublie la flemme du lundi."'),
-    bowlSkyr: R('BOWL SKYR PB GRANOLA', 'breakfast', 'Très riche en protéines.', 460, 38, 48, 14, '3min', IMG.yogurt,
-      [{name:'Skyr nature',qty:'200g'},{name:'Beurre de cacahuète',qty:'15g'},{name:'Granola',qty:'40g'},{name:'Fruits rouges',qty:'60g'}],
-      ['Verse le skyr dans un bol.','Ajoute le PB, le granola et les fruits.','Mange immédiatement.'],
-      '"38g de protéines en 3 minutes. Aucune excuse."'),
-    painPerdu: R('PAIN PERDU FIT FROMAGE BLANC', 'breakfast', 'Version saine du classique.', 380, 26, 52, 8, '12min', IMG.painperdu,
-      [{name:'Pain complet rassis',qty:'2 tranches'},{name:'Œuf',qty:'1'},{name:'Lait écrémé',qty:'80ml'},{name:'Cannelle',qty:'pincée'},{name:'Fromage blanc 0%',qty:'150g'}],
-      ['Mélange œuf + lait + cannelle.','Trempe les tranches, cuis 2 min/face à la poêle.','Sers avec fromage blanc et un peu de miel.'],
-      '"Le pain perdu de ta grand-mère, recalibré pour ton corps d\'athlète."'),
-    burritoPDej: R('BURRITO PETIT-DÉJ', 'breakfast', 'Œufs brouillés, haricots noirs et avocat.', 480, 28, 52, 18, '12min', IMG.burrito,
-      [{name:'Tortilla complète',qty:'1 grande'},{name:'Œufs',qty:'2'},{name:'Haricots noirs',qty:'80g'},{name:'Avocat',qty:'¼'},{name:'Salsa',qty:'2 c.à.s'}],
-      ['Brouille les œufs 2 min.','Garnis la tortilla : œufs, haricots tièdes, avocat, salsa.','Plie en burrito et toaste 1 min à la poêle.'],
-      '"Carbs + prot + bons gras. Petit-déj de combat."'),
-    gaufresPatate: R('GAUFRES PATATE DOUCE', 'breakfast', 'Glucides complexes pour les grosses journées.', 440, 22, 58, 14, '20min', IMG.gaufres,
-      [{name:'Patate douce cuite',qty:'150g'},{name:'Œufs',qty:'2'},{name:'Farine d\'avoine',qty:'40g'},{name:'Cannelle',qty:'1 c.à.c'},{name:'Levure',qty:'½ c.à.c'}],
-      ['Mixe patate douce + œufs + farine + cannelle + levure.','Verse dans le gaufrier chaud, cuis 4-5 min.','Sers avec sirop d\'érable ou fruits.'],
-      '"Si tu t\'entraînes 2x aujourd\'hui, c\'est ça que tu manges."'),
-    chiaPudding: R('CHIA PUDDING EXOTIQUE', 'breakfast', 'Oméga-3 et fibres.', 340, 18, 36, 14, '5min + nuit', IMG.chia,
-      [{name:'Graines de chia',qty:'30g'},{name:'Lait de coco',qty:'200ml'},{name:'Mangue',qty:'80g'},{name:'Ananas',qty:'60g'}],
-      ['Mélange chia + lait de coco, repos 8h au frigo.','Coupe la mangue et l\'ananas en dés.','Dresse en couches dans un verre.'],
-      '"Tu prépares la veille, tu manges au réveil. Fibres + oméga-3 = digestion clean."'),
+    // ─── SMOOTHIES & SHAKES (15) ───
+    {id:11,n:'Smoothie Explosivité',c:'smoothie',m:'pre-workout',d:'facile',pm:5,sv:1,kcal:460,p:32,g:50,l:14,hr:1,
+     ing:['Banane mûre|1','Whey vanille|1 scoop (30g)','Beurre d\'amande|1 c.à.s','Flocons d\'avoine|30g','Lait écrémé ou amande|300ml','Glaçons|4'],
+     st:['Mets tous les ingrédients dans le blender, glaçons en dernier.','Mixe 45 sec à puissance max jusqu\'à texture crémeuse.','Verse dans un grand verre. Décore avec quelques flocons d\'avoine et un filet de beurre d\'amande.','Bois dans les 30 min suivantes.'],
+     tg:['pre-workout-45min']},
+    {id:12,n:'Shake Récupération Chocolat-Noisette',c:'smoothie',m:'post-workout',d:'facile',pm:3,sv:1,kcal:380,p:30,g:35,l:12,hr:1,
+     ing:['Whey chocolat|1 scoop (30g)','Lait écrémé ou amande|300ml','Banane|1','Cacao en poudre non sucré|1 c.à.c','Beurre de noisette|1 c.à.c','Glaçons|4'],
+     st:['Place tous les ingrédients dans le blender.','Mixe 30 sec jusqu\'à texture lisse.','Verse dans un verre. Saupoudre d\'un peu de cacao.','Consomme dans les 30 min après la séance.'],
+     tg:['post-workout-30min']},
+    {id:13,n:'Smoothie Vert Détox Athlète',c:'smoothie',m:'recovery',d:'facile',pm:5,sv:1,kcal:220,p:6,g:38,l:4,
+     ing:['Épinards frais|50g','Kale|30g','Pomme verte|1','Gingembre frais|1cm','Citron (jus)|1/2','Eau froide|250ml','Spiruline en poudre|1 c.à.c'],
+     st:['Lave épinards et kale. Coupe la pomme en quartiers (avec la peau, sans le trognon).','Place tout dans le blender avec le gingembre épluché et le jus de citron.','Ajoute l\'eau et la spiruline.','Mixe 60 sec à puissance max. Filtre si tu préfères une texture plus liquide.','Bois immédiatement pour préserver les vitamines.'],
+     tg:['lendemain-grosse-seance','anti-inflammatoire']},
+    {id:14,n:'Smoothie Baies Énergie',c:'smoothie',m:'pre-workout',d:'facile',pm:3,sv:1,kcal:250,p:8,g:40,l:6,
+     ing:['Myrtilles surgelées|80g','Framboises surgelées|60g','Yaourt grec 0%|100g','Graines de lin moulues|1 c.à.s','Lait amande|200ml'],
+     st:['Place tous les ingrédients dans le blender.','Mixe 45 sec jusqu\'à texture lisse et bien épaisse.','Verse dans un verre. Décore avec quelques baies fraîches.','Bois directement.'],
+     tg:['antioxydants','matin-leger']},
+    {id:15,n:'Shake Tropical Protéiné',c:'smoothie',m:'post-workout',d:'facile',pm:5,sv:1,kcal:340,p:28,g:45,l:4,
+     ing:['Mangue en morceaux (surgelée)|100g','Ananas en morceaux (surgelé)|80g','Whey vanille|1 scoop (30g)','Lait coco léger|200ml','Eau froide|50ml','Noix de coco râpée|1 c.à.c'],
+     st:['Place mangue, ananas, whey, lait coco et eau dans le blender.','Mixe 45 sec jusqu\'à texture onctueuse.','Verse dans un grand verre. Saupoudre de noix de coco râpée.','Sers bien frais après la séance.'],
+     tg:['post-workout-ete','vitamine-c']},
+    {id:16,n:'Smoothie Café-Protéine',c:'smoothie',m:'pre-workout',d:'facile',pm:3,sv:1,kcal:220,p:28,g:15,l:5,
+     ing:['Café fort refroidi|150ml','Whey chocolat ou vanille|1 scoop (30g)','Lait écrémé|150ml','Cacao en poudre|1 c.à.c','Glaçons|5'],
+     st:['Prépare un café fort la veille (ou le matin) et laisse-le refroidir.','Place tous les ingrédients dans le blender, glaçons en dernier.','Mixe 30 sec jusqu\'à texture mousseuse.','Verse dans un verre. Saupoudre d\'un voile de cacao. Bois 30 min avant ta séance.'],
+     tg:['seance-matin-tot','cafeine']},
+    {id:17,n:'Shake Masse Propre',c:'smoothie',m:'post-workout',d:'facile',pm:5,sv:1,kcal:680,p:42,g:70,l:22,
+     ing:['Whey vanille ou chocolat|1 scoop (30g)','Lait entier|400ml','Flocons d\'avoine|60g','Beurre de cacahuète|2 c.à.s','Banane mûre|1','Miel|1 c.à.s'],
+     st:['Place tous les ingrédients dans le blender.','Mixe 60 sec à puissance max jusqu\'à texture bien crémeuse.','Verse dans un grand verre. Décore avec un peu d\'avoine et un filet de beurre de cacahuète.','Bois lentement après la séance ou en milieu d\'après-midi.'],
+     tg:['prise-de-masse','surplus-calorique-propre']},
+    {id:18,n:'Smoothie Hydratation Coco-Pastèque',c:'smoothie',m:'recovery',d:'facile',pm:5,sv:1,kcal:180,p:3,g:38,l:2,
+     ing:['Pastèque en cubes|300g','Eau de coco|200ml','Citron vert (jus)|1/2','Menthe fraîche|4 feuilles','Glaçons|6'],
+     st:['Place la pastèque, l\'eau de coco, le jus de citron vert et la menthe dans le blender.','Mixe 30 sec jusqu\'à texture lisse.','Ajoute les glaçons et mixe 10 sec de plus pour une boisson glacée.','Verse dans un verre. Décore d\'un cube de pastèque et d\'une feuille de menthe.'],
+     tg:['forte-chaleur','electrolytes-naturels']},
+    {id:19,n:'Smoothie Betterave-Orange',c:'smoothie',m:'pre-workout',d:'facile',pm:5,sv:1,kcal:200,p:4,g:42,l:2,
+     ing:['Betterave cuite|100g','Oranges (jus pressé)|2','Gingembre frais|1cm','Graines de chia|1 c.à.c','Eau froide|100ml'],
+     st:['Place la betterave en morceaux, le jus d\'orange, le gingembre épluché et l\'eau dans le blender.','Mixe 45 sec jusqu\'à texture lisse.','Verse dans un verre. Ajoute les graines de chia par-dessus.','Bois 30-60 min avant l\'effort pour activer les bienfaits des nitrates.'],
+     tg:['endurance','pre-match']},
+    {id:20,n:'Shake Vanille-Amande Douce',c:'smoothie',m:'recovery',d:'facile',pm:3,sv:1,kcal:280,p:22,g:20,l:12,
+     ing:['Whey vanille|1 scoop (30g)','Lait amande non sucré|300ml','Amandes effilées|10g','Cannelle|1 pincée','Glaçons|4'],
+     st:['Place tous les ingrédients dans le blender (sauf 2g d\'amandes pour la déco).','Mixe 30 sec jusqu\'à texture lisse.','Verse dans un verre. Saupoudre des amandes restantes et d\'un voile de cannelle.','Bois en collation du soir ou après une séance légère.'],
+     tg:['soir','leger']},
+    {id:49,n:'Smoothie Récupération Verte',c:'smoothie',m:'post-workout',d:'facile',pm:5,sv:1,kcal:280,p:26,g:35,l:4,
+     ing:['Épinards frais|40g','Kiwi|2','Whey vanille|1 scoop (30g)','Spiruline en poudre|1 c.à.c','Eau de coco|250ml','Miel|1 c.à.c','Glaçons|4'],
+     st:['Épluche les kiwis. Place tous les ingrédients dans le blender.','Mixe 45 sec à puissance max.','Verse dans un verre. Décore d\'une rondelle de kiwi.','Bois dans les 30 min après la séance.'],
+     tg:['post-workout','detox','vegetal']},
+    {id:50,n:'Shake Force Chocolat-Beurre de Cacahuète',c:'smoothie',m:'post-workout',d:'facile',pm:3,sv:1,kcal:580,p:38,g:55,l:22,
+     ing:['Whey chocolat|1 scoop (30g)','Lait d\'amande|300ml','Beurre de cacahuète|2 c.à.s','Flocons d\'avoine|40g','Banane|1','Cacao en poudre non sucré|1 c.à.c','Glaçons|4'],
+     st:['Place tous les ingrédients dans le blender.','Mixe 45 sec à puissance max jusqu\'à texture épaisse.','Verse dans un grand verre. Décore d\'un peu de cacahuète concassée.','Bois après la séance ou en collation prise de masse.'],
+     tg:['prise-de-masse','post-workout']},
+    {id:51,n:'Smoothie Éveil Baies & Gingembre',c:'smoothie',m:'any',d:'facile',pm:5,sv:1,kcal:220,p:12,g:35,l:4,
+     ing:['Framboises surgelées|120g','Gingembre frais|2cm','Citron (jus)|1/2','Collagène en poudre|10g','Yaourt grec 0%|100g','Eau froide|150ml','Menthe fraîche|2 feuilles'],
+     st:['Épluche le gingembre.','Place tous les ingrédients dans le blender.','Mixe 45 sec jusqu\'à texture lisse.','Verse dans un verre. Décore d\'une feuille de menthe. Bois au réveil ou après une séance.'],
+     tg:['matin','anti-inflammatoire','articulations']},
+    {id:52,n:'Smoothie Soleil Tropical',c:'smoothie',m:'any',d:'facile',pm:5,sv:1,kcal:290,p:22,g:45,l:2,
+     ing:['Papaye en cubes|150g','Oranges (jus pressé)|1','Protéine de riz vanille|1 scoop (25g)','Curcuma moulu|1 c.à.c','Noix de coco râpée|1 c.à.c','Eau froide|150ml'],
+     st:['Place papaye, jus d\'orange, protéine de riz, curcuma et eau dans le blender.','Mixe 45 sec jusqu\'à texture lisse.','Verse dans un verre. Saupoudre de noix de coco râpée torréfiée.'],
+     tg:['vegan','digestion','immunite']},
+    {id:53,n:'Shake Nuit Sereine',c:'smoothie',m:'before-sleep',d:'facile',pm:3,sv:1,kcal:260,p:22,g:25,l:8,
+     ing:['Lait de cajou non sucré|250ml','Cerises griottes surgelées|80g','Caséine ou whey vanille|1 scoop (30g)','Magnésium en poudre|1 dose','Menthe fraîche|2 feuilles'],
+     st:['Place tous les ingrédients dans le blender.','Mixe 30 sec jusqu\'à texture lisse.','Verse dans un verre. Décore d\'une feuille de menthe.','Bois 30-60 min avant le coucher.'],
+     tg:['sommeil','recuperation-nerveuse']},
 
-    // ─── SMOOTHIES & SHAKES PERFORMANCE (10) ───
-    smoothieExpl: R('SMOOTHIE EXPLOSIVITÉ', 'smoothie', 'Banane, whey, beurre d\'amande et avoine.', 420, 35, 48, 12, '3min', IMG.shakeChoc,
-      [{name:'Banane',qty:'1'},{name:'Whey vanille',qty:'30g'},{name:'Beurre d\'amande',qty:'15g'},{name:'Flocons d\'avoine',qty:'30g'},{name:'Lait',qty:'250ml'}],
-      ['Mets tout dans le blender.','Mixe 45 secondes.','Bois 30 min avant la séance.'],
-      '"30 min avant ta séance. Tu vas exploser."'),
-    shakeRecupChoco: R('SHAKE RÉCUP CHOCO-NOISETTE', 'smoothie', 'Protéines et magnésium.', 380, 32, 38, 14, '3min', IMG.shakeChoc,
-      [{name:'Whey chocolat',qty:'30g'},{name:'Pâte de noisette',qty:'15g'},{name:'Banane',qty:'½'},{name:'Lait',qty:'300ml'},{name:'Cacao non sucré',qty:'1 c.à.c'}],
-      ['Tout au blender, mixe 30 secondes.','Bois dans les 30 min post-effort.'],
-      '"Fenêtre anabolique. Pas de débat. Tu bois."'),
-    smoothieDetox: R('SMOOTHIE VERT DÉTOX', 'smoothie', 'Épinards, pomme, gingembre et spiruline.', 240, 18, 30, 6, '3min', IMG.smGreen,
-      [{name:'Épinards',qty:'80g'},{name:'Pomme verte',qty:'1'},{name:'Gingembre',qty:'2cm'},{name:'Spiruline',qty:'1 c.à.c'},{name:'Eau de coco',qty:'200ml'}],
-      ['Tout au blender, mixe 1 min.','Bois immédiatement.'],
-      '"Tu rinces ton corps. Repos actif et nettoyage interne."'),
-    smoothieBaies: R('SMOOTHIE BAIES ÉNERGIE', 'smoothie', 'Myrtilles, framboises et graines de lin.', 310, 22, 38, 9, '3min', IMG.smBerry,
-      [{name:'Myrtilles surgelées',qty:'100g'},{name:'Framboises',qty:'80g'},{name:'Whey neutre',qty:'25g'},{name:'Graines de lin',qty:'1 c.à.c'},{name:'Lait',qty:'250ml'}],
-      ['Blender 30s.','Antioxydants en mode shotgun.'],
-      '"Antioxydants. Récupération cellulaire. Anti-inflammation."'),
-    shakeTropical: R('SHAKE TROPICAL PROT', 'smoothie', 'Mangue, ananas et isolat de whey.', 360, 30, 46, 4, '3min', IMG.smTrop,
-      [{name:'Mangue',qty:'120g'},{name:'Ananas',qty:'100g'},{name:'Whey isolate vanille',qty:'30g'},{name:'Eau de coco',qty:'250ml'}],
-      ['Mixe le tout 30s.','Bois bien frais.'],
-      '"Goût soleil, macros sérieuses."'),
-    smoothieCafe: R('SMOOTHIE CAFÉ-PROT', 'smoothie', 'Idéal en pré-workout.', 280, 26, 22, 9, '3min', IMG.smCafe,
-      [{name:'Espresso refroidi',qty:'40ml'},{name:'Whey chocolat',qty:'25g'},{name:'Banane',qty:'½'},{name:'Lait',qty:'250ml'},{name:'Glaçons',qty:'4'}],
-      ['Blender 30s avec glace.','Bois 20 min avant l\'effort.'],
-      '"Caféine + protéine. Le combo qui fait taper plus fort."'),
-    shakeMasse: R('SHAKE MASSE PROPRE', 'smoothie', 'Avoine, beurre de cacahuète, lait et whey.', 620, 42, 68, 18, '3min', IMG.shakeMass,
-      [{name:'Whey',qty:'40g'},{name:'Flocons d\'avoine',qty:'60g'},{name:'Beurre de cacahuète',qty:'20g'},{name:'Banane',qty:'1'},{name:'Lait',qty:'400ml'}],
-      ['Tout dans le blender, mixe 1 min.','Bois en collation entre deux repas.'],
-      '"Si tu prends pas de muscle, c\'est que tu manges pas assez. Ce shake corrige ça."'),
-    smoothieCoco: R('SMOOTHIE COCO-PASTÈQUE', 'smoothie', 'Riche en électrolytes.', 220, 6, 36, 6, '3min', IMG.smCoco,
-      [{name:'Pastèque',qty:'250g'},{name:'Eau de coco',qty:'200ml'},{name:'Citron vert',qty:'¼'},{name:'Menthe',qty:'qq feuilles'}],
-      ['Blender 30s.','Sers très frais avec glace pilée.'],
-      '"Tu transpires, tu rééquilibres. Électrolytes naturels."'),
-    smoothieBetterave: R('SMOOTHIE BETTERAVE-ORANGE', 'smoothie', 'Pour l\'endurance et l\'oxygénation.', 260, 8, 48, 4, '3min', IMG.smBetter,
-      [{name:'Betterave cuite',qty:'100g'},{name:'Orange pressée',qty:'200ml'},{name:'Gingembre',qty:'1cm'},{name:'Citron',qty:'¼'}],
-      ['Blender 45s.','Bois 1h avant ta séance d\'endurance.'],
-      '"Les nitrates de la betterave boostent ton oxygénation. Science, pas marketing."'),
-    shakeVanille: R('SHAKE VANILLE-AMANDE', 'smoothie', 'Récupération légère.', 280, 28, 22, 8, '3min', IMG.shakeVan,
-      [{name:'Whey vanille',qty:'30g'},{name:'Lait d\'amande',qty:'300ml'},{name:'Beurre d\'amande',qty:'10g'},{name:'Cannelle',qty:'pincée'}],
-      ['Shaker ou blender 30s.','Sers frais.'],
-      '"Simple. Efficace. Pas besoin de plus."'),
+    // ─── REPAS (28) ───
+    {id:21,n:'Bowl de Poulet Grillé & Quinoa',c:'meal',m:'pre-game',d:'facile',pm:10,cm:20,sv:1,kcal:560,p:45,g:50,l:18,hr:1,
+     ing:['Blanc de poulet|150g','Quinoa cru|60g','Brocoli en fleurettes|100g','Tomates cerises|80g','Avocat|1/2','Citron|1 quartier','Huile d\'olive|1 c.à.s','Sel, poivre, paprika|1 pincée'],
+     st:['Rince le quinoa. Cuis 15 min dans 120 ml d\'eau salée à frémissement, couvert.','Pendant ce temps, fais cuire le brocoli à la vapeur 6 min.','Assaisonne le poulet avec sel, poivre, paprika. Grille-le 5 min de chaque côté à la poêle.','Tranche le poulet en lanières.','Dans un bowl : quinoa au fond, puis poulet, brocoli, tomates coupées en deux, avocat tranché.','Termine par un filet d\'huile d\'olive et un trait de jus de citron.'],
+     tg:['pre-game-3h']},
+    {id:22,n:'Saumon Teriyaki & Riz Noir',c:'meal',m:'post-workout',d:'moyen',pm:10,cm:25,sv:1,kcal:620,p:38,g:55,l:24,
+     ing:['Pavé de saumon|150g','Riz noir cru|60g','Bok choy|1 petit','Sauce soja|2 c.à.s','Miel|1 c.à.s','Gingembre frais râpé|1 c.à.c','Graines de sésame|1 c.à.c','Oignon vert ciselé|1'],
+     st:['Cuis le riz noir 25 min dans 150 ml d\'eau salée.','Mélange sauce soja, miel, gingembre dans un bol. Fais mariner le saumon 5 min.','Cuis le bok choy 5 min à la vapeur ou poêle.','Chauffe une poêle, dépose le saumon côté peau 4 min, puis 3 min de l\'autre côté en arrosant de marinade.','Sers le riz noir, le saumon glacé et le bok choy. Parsème de sésame et oignon vert.'],
+     tg:['omega-3','recuperation']},
+    {id:23,n:'Salade de Lentilles et Avocat',c:'meal',m:'pre-game',d:'facile',pm:10,sv:1,kcal:480,p:20,g:45,l:22,
+     ing:['Lentilles vertes cuites (conserve)|200g','Avocat|1/2','Tomates cerises|80g','Oignon rouge|1/4','Persil frais|1 poignée','Feta émiettée|30g','Huile d\'olive|1 c.à.s','Citron (jus)|1/2'],
+     st:['Égoutte et rince les lentilles. Verse dans un saladier.','Coupe l\'avocat en cubes, les tomates en deux, l\'oignon rouge en fines lamelles.','Cisèle le persil.','Ajoute tout aux lentilles. Émiette la feta par-dessus.','Arrose d\'huile d\'olive et de jus de citron. Mélange délicatement. Sers à température ambiante.'],
+     tg:['vegetarien','rapide','meal-prep']},
+    {id:24,n:'Pâtes Complètes au Thon et Câpres',c:'meal',m:'pre-game',d:'facile',pm:5,cm:12,sv:1,kcal:540,p:35,g:70,l:12,
+     ing:['Pâtes complètes (penne)|90g cru','Thon au naturel (égoutté)|120g','Câpres|1 c.à.s','Tomates cerises|100g','Basilic frais|5 feuilles','Zeste de citron|1 c.à.c','Huile d\'olive|1 c.à.s','Ail|1 gousse'],
+     st:['Cuis les pâtes selon les indications du paquet. Réserve 2 c. à soupe d\'eau de cuisson.','Pendant ce temps, coupe les tomates en deux. Émince l\'ail.','Égoutte le thon. Ciselle le basilic.','Dans la poêle, fais revenir l\'ail 30 sec dans l\'huile. Ajoute les tomates 2 min.','Ajoute les pâtes égouttées, le thon, les câpres, le zeste. Mélange avec l\'eau de cuisson réservée.','Sers chaud. Parsème de basilic frais.'],
+     tg:['pre-match','rapide-soir']},
+    {id:25,n:'Dinde aux Épices et Patate Douce',c:'meal',m:'post-workout',d:'moyen',pm:10,cm:30,sv:1,kcal:510,p:42,g:50,l:12,
+     ing:['Escalope de dinde|150g','Patate douce|200g','Haricots verts frais|120g','Paprika fumé|1 c.à.c','Cumin|1 c.à.c','Huile d\'olive|1 c.à.s','Thym frais|2 branches','Citron|1 quartier'],
+     st:['Préchauffe le four à 200°C. Coupe la patate douce en cubes de 2 cm.','Sur une plaque, mets les cubes avec un peu d\'huile, sel, poivre. Enfourne 25 min.','Pendant ce temps, fais cuire les haricots verts à la vapeur 7 min.','Saupoudre la dinde de paprika, cumin, sel, poivre. Poêle 4 min de chaque côté.','Tranche la dinde. Sers avec patate douce et haricots verts. Décore de thym frais et d\'un quartier de citron.'],
+     tg:['dimanche-batch','equilibre']},
+    {id:26,n:'Chili con Carne Athlète',c:'meal',m:'post-game',d:'moyen',pm:15,cm:45,sv:4,kcal:480,p:35,g:40,l:18,
+     ing:['Bœuf haché 5% MG|500g','Haricots rouges (conserve)|400g','Tomates concassées|400g','Oignon|1','Ail|2 gousses','Poivron rouge|1','Cumin moulu|1 c.à.s','Paprika fumé|1 c.à.c','Piment en poudre|1 c.à.c','Avocat|1','Coriandre fraîche|1 poignée','Yaourt grec 0%|4 c.à.s','Citron vert|1'],
+     st:['Émince l\'oignon, l\'ail, le poivron en dés. Fais revenir 5 min dans une cocotte avec un peu d\'huile.','Ajoute le bœuf haché. Fais cuire en l\'émiettant 5 min.','Ajoute les épices (cumin, paprika, piment). Mélange 1 min.','Verse les tomates concassées et les haricots rouges égouttés. Sale, poivre.','Laisse mijoter 30 min à feu doux, en remuant de temps en temps.','Sers en bol. Garnis d\'avocat tranché, coriandre, une cuillère de yaourt grec et un quartier de citron vert.'],
+     tg:['batch-cooking','4-portions','freeze-friendly']},
+    {id:27,n:'Salade de Pois Chiches et Feta',c:'meal',m:'any',d:'facile',pm:10,sv:1,kcal:460,p:20,g:40,l:22,
+     ing:['Pois chiches (conserve)|200g','Feta émiettée|60g','Concombre|1/2','Tomates cerises|100g','Oignon rouge|1/4','Persil frais|1 poignée','Huile d\'olive|1 c.à.s','Citron (jus)|1/2','Origan séché|1 pincée'],
+     st:['Égoutte et rince les pois chiches. Verse dans un saladier.','Coupe le concombre en demi-rondelles, les tomates en deux, l\'oignon rouge en lamelles fines.','Cisèle le persil. Ajoute tout aux pois chiches.','Émiette la feta par-dessus.','Mélange huile d\'olive, jus de citron, origan, sel, poivre. Verse sur la salade. Sers frais.'],
+     tg:['lunch-box','vegetarien','meal-prep-3j']},
+    {id:28,n:'Poulet au Curry et Lait de Coco',c:'meal',m:'any',d:'moyen',pm:10,cm:25,sv:2,kcal:580,p:38,g:55,l:22,
+     ing:['Blancs de poulet|300g','Lait de coco|200ml','Riz basmati cru|120g','Oignon|1','Ail|2 gousses','Pâte de curry jaune ou rouge|2 c.à.s','Coriandre fraîche|1 poignée','Piment rouge frais|1 petit','Citron vert|1'],
+     st:['Cuis le riz basmati selon les indications du paquet.','Coupe le poulet en cubes. Émince l\'oignon, hâche l\'ail.','Dans une sauteuse, fais revenir oignon et ail 3 min. Ajoute la pâte de curry, mélange 1 min.','Ajoute les cubes de poulet. Cuis 5 min en remuant.','Verse le lait de coco. Laisse mijoter 12 min à feu doux.','Sers le poulet sur le riz. Décore de coriandre, piment frais, et un quartier de citron vert.'],
+     tg:['epices','comfort']},
+    {id:29,n:'Bowl de Tofu Mariné et Edamames',c:'meal',m:'any',d:'moyen',pm:15,cm:15,rm:30,sv:1,kcal:520,p:28,g:55,l:20,
+     ing:['Tofu ferme|150g','Edamames décortiquées (surgelées)|80g','Riz brun cru|60g','Concombre|1/2','Carotte râpée|60g','Sauce soja|2 c.à.s','Gingembre râpé|1 c.à.c','Huile de sésame|1 c.à.c','Graines de sésame|1 c.à.c'],
+     st:['Égoutte le tofu, presse-le entre 2 essuie-tout pour retirer l\'eau. Coupe en cubes.','Marine 30 min dans sauce soja, gingembre, huile de sésame.','Cuis le riz brun 30 min dans 150 ml d\'eau salée.','Décongèle les edamames 3 min dans de l\'eau chaude. Salée légèrement.','Fais griller le tofu mariné 5 min à la poêle, en retournant.','Dans un bowl : riz, tofu, edamames, concombre en rondelles, carotte râpée. Saupoudre de sésame.'],
+     tg:['vegan']},
+    {id:30,n:'Cabillaud Vapeur et Brocolis',c:'meal',m:'recovery',d:'facile',pm:5,cm:12,sv:1,kcal:320,p:38,g:15,l:10,
+     ing:['Dos de cabillaud|180g','Brocoli en fleurettes|200g','Citron|1 quartier','Aneth frais|2 branches','Huile d\'olive|1 c.à.c','Sel, poivre|1 pincée'],
+     st:['Place le cabillaud dans le panier vapeur, sel, poivre, branches d\'aneth.','Place le brocoli en dessous ou à côté.','Cuis à la vapeur 10-12 min (le cabillaud doit se détacher facilement).','Dépose sur l\'assiette : cabillaud, brocoli à côté.','Filet d\'huile d\'olive, quartier de citron à presser au dernier moment.'],
+     tg:['seche','diner-leger','rapide']},
+    {id:31,n:'Boulettes de Bœuf et Spaghetti de Courgettes',c:'meal',m:'any',d:'moyen',pm:15,cm:20,sv:1,kcal:450,p:40,g:18,l:22,
+     ing:['Bœuf haché 5%|180g','Courgettes|2','Œuf|1','Chapelure|1 c.à.s','Tomates concassées|200g','Ail|1 gousse','Basilic frais|5 feuilles','Parmesan râpé|10g','Huile d\'olive|1 c.à.s'],
+     st:['Spiralise les courgettes (ou coupe en tagliatelles fines avec un économe).','Mélange bœuf haché, œuf, chapelure, sel, poivre. Forme 6 boulettes.','Chauffe l\'huile, fais dorer les boulettes 5 min en les retournant.','Ajoute l\'ail émincé puis les tomates concassées. Laisse mijoter 10 min.','Fais sauter les spaghetti de courgettes 2 min dans une autre poêle avec un peu d\'huile.','Sers les boulettes en sauce sur les courgettes. Parsème de basilic et parmesan.'],
+     tg:['low-carb','seche']},
+    {id:32,n:'Filet Mignon et Purée de Pois Cassés',c:'meal',m:'post-workout',d:'moyen',pm:5,cm:25,sv:1,kcal:580,p:45,g:40,l:22,
+     ing:['Filet mignon de bœuf|150g','Pois cassés secs|70g','Champignons de Paris|100g','Échalote|1','Romarin frais|1 branche','Beurre|10g','Huile d\'olive|1 c.à.s','Sel, poivre|1 pincée'],
+     st:['Fais cuire les pois cassés 25 min dans de l\'eau salée. Mixe en purée lisse avec un peu d\'eau de cuisson.','Sors le filet mignon 20 min avant pour qu\'il soit à température ambiante.','Tranche les champignons. Fais-les sauter 5 min avec l\'échalote émincée.','Chauffe une poêle très chaude. Saisis le filet mignon 2-3 min de chaque côté pour une cuisson saignante.','Ajoute beurre, romarin en fin de cuisson, arrose la viande 1 min.','Laisse reposer 3 min. Sers sur la purée de pois cassés, champignons à côté.'],
+     tg:['recuperation-haut-niveau','weekend']},
+    {id:33,n:'Salade de Riz au Maquereau',c:'meal',m:'any',d:'facile',pm:5,cm:20,sv:1,kcal:530,p:28,g:55,l:20,
+     ing:['Riz complet cru|60g','Maquereau fumé (filets)|120g','Concombre|1/2','Tomates cerises|80g','Radis|4','Aneth frais|2 branches','Citron (jus)|1/2','Huile d\'olive|1 c.à.s'],
+     st:['Cuis le riz complet 25 min dans de l\'eau salée. Égoutte, laisse tiédir.','Coupe le concombre en demi-rondelles, les tomates en deux, les radis en fines rondelles.','Émiette le maquereau en gros morceaux.','Dans un bol, mélange tout. Cisèle l\'aneth dessus.','Assaisonne avec jus de citron, huile d\'olive, sel, poivre. Mélange. Mange tiède ou froid.'],
+     tg:['omega-3','rapide-5min','meal-prep']},
+    {id:34,n:'Crevettes Sautées à l\'Ail et Quinoa',c:'meal',m:'any',d:'facile',pm:10,cm:15,sv:1,kcal:420,p:32,g:45,l:10,
+     ing:['Crevettes décortiquées|150g','Quinoa cru|60g','Ail|3 gousses','Persil plat frais|1 poignée','Flocons de piment|1 pincée','Huile d\'olive|1 c.à.s','Citron|1 quartier','Sel, poivre|1 pincée'],
+     st:['Rince le quinoa. Cuis 15 min dans 120 ml d\'eau salée à frémissement, couvert.','Émince finement l\'ail. Cisèle le persil.','Chauffe l\'huile d\'olive à feu vif. Ajoute l\'ail, laisse colorer 30 sec.','Ajoute les crevettes. Saute 2-3 min jusqu\'à ce qu\'elles soient roses.','Sale, poivre, ajoute les flocons de piment et le persil.','Sers le quinoa, les crevettes par-dessus, quartier de citron à presser.'],
+     tg:['rapide','leger','performance']},
+    {id:35,n:'Burrito Bowl au Poulet',c:'meal',m:'any',d:'moyen',pm:15,cm:25,sv:1,kcal:620,p:42,g:60,l:20,
+     ing:['Blanc de poulet|150g','Riz basmati cru|60g','Haricots noirs (conserve)|80g','Maïs|60g','Avocat|1/2','Tomates cerises|60g','Salade romaine|50g','Coriandre fraîche|1 poignée','Citron vert|1','Cumin, paprika|1 pincée chacun','Huile d\'olive|1 c.à.s'],
+     st:['Cuis le riz. Quand il est cuit, ajoute le jus d\'un demi citron vert et de la coriandre ciselée.','Coupe le poulet en lanières. Assaisonne avec cumin, paprika, sel.','Chauffe l\'huile. Cuis le poulet 5-6 min en remuant.','Coupe les tomates en deux, l\'avocat en lamelles, émince la salade.','Dans un bowl : sur un lit de riz à la lime, dispose poulet, haricots noirs, maïs, tomates, avocat, salade.','Décore de coriandre et d\'un quartier de citron vert.'],
+     tg:['complet','tex-mex']},
+    {id:36,n:'Soupe de Lentilles Corail au Curcuma',c:'meal',m:'recovery',d:'facile',pm:10,cm:25,sv:2,kcal:380,p:18,g:50,l:12,
+     ing:['Lentilles corail|150g','Bouillon de légumes|600ml','Oignon|1','Ail|2 gousses','Curcuma moulu|1 c.à.c','Cumin moulu|1 c.à.c','Lait de coco|100ml','Coriandre fraîche|1 poignée','Huile d\'olive|1 c.à.s','Pain complet|1 tranche par personne'],
+     st:['Émince oignon et ail. Fais revenir dans l\'huile 3 min.','Ajoute curcuma et cumin. Mélange 30 sec.','Ajoute les lentilles corail rincées et le bouillon. Porte à ébullition.','Couvre et laisse mijoter 20 min à feu doux.','Mixe la soupe (immersion ou blender). Ajoute le lait de coco. Sale, poivre.','Sers en bols. Décore d\'un filet de lait de coco, coriandre fraîche. Accompagne d\'une tranche de pain complet.'],
+     tg:['anti-inflammatoire','hiver','freeze-friendly']},
+    {id:37,n:'Poke Bowl au Thon Rouge',c:'meal',m:'any',d:'moyen',pm:20,cm:15,sv:1,kcal:560,p:38,g:55,l:20,
+     ing:['Thon rouge cru qualité sashimi|120g','Riz à sushi cru|70g','Avocat|1/2','Edamames décortiquées|50g','Concombre|1/2','Carotte râpée|40g','Mangue en cubes|50g','Sauce soja|2 c.à.s','Gingembre râpé|1 c.à.c','Huile de sésame|1 c.à.c','Graines de sésame|1 c.à.c'],
+     st:['Cuis le riz à sushi selon les indications du paquet.','Coupe le thon rouge en cubes de 1,5 cm. Marine 10 min dans sauce soja, gingembre, huile de sésame.','Décongèle les edamames 3 min dans l\'eau chaude.','Coupe l\'avocat, le concombre, la mangue en cubes ou lamelles.','Dans un bowl : riz tiède au fond, puis dispose thon mariné, avocat, edamames, concombre, carotte, mangue en zones.','Saupoudre de graines de sésame. Bois immédiatement.'],
+     tg:['frais','performance']},
+    {id:38,n:'Poulet Rôti et Ratatouille',c:'meal',m:'any',d:'moyen',pm:20,cm:60,sv:4,kcal:480,p:38,g:22,l:26,
+     ing:['Cuisses de poulet (avec peau)|4','Courgette|1','Aubergine|1','Poivron rouge|1','Poivron jaune|1','Tomates|3','Oignon|1','Ail|3 gousses','Thym frais|4 branches','Huile d\'olive|3 c.à.s','Sel, poivre|1 pincée'],
+     st:['Préchauffe le four à 200°C. Frotte le poulet avec huile, sel, poivre, thym.','Coupe tous les légumes en gros cubes (2 cm). Émince oignon et ail.','Dans un plat à four, mélange les légumes, huile, sel, poivre.','Dépose les cuisses de poulet par-dessus.','Enfourne 55 min. Arrose le poulet à mi-cuisson avec son jus.','Sers chaud. Le jus de cuisson sert de sauce.'],
+     tg:['dimanche','famille','leftover-3j']},
+    {id:39,n:'Steak de Thon et Asperges Grillées',c:'meal',m:'post-workout',d:'moyen',pm:5,cm:8,sv:1,kcal:380,p:42,g:12,l:18,
+     ing:['Steak de thon frais|180g','Asperges vertes|200g','Huile d\'olive|1 c.à.s','Graines de sésame|1 c.à.c','Citron|1 quartier','Sel, poivre|1 pincée','Pousses de roquette|1 poignée'],
+     st:['Casse la base des asperges. Plonge 4 min dans l\'eau bouillante salée.','Égoutte. Fais griller 3 min à la poêle avec un peu d\'huile, sel, poivre.','Sèche le steak de thon. Sale, poivre, frotte de sésame.','Chauffe une poêle très chaude (fonte si possible). Saisis le thon 1 min de chaque côté pour rester rosé au centre.','Tranche le thon. Sers avec les asperges. Décore de roquette. Quartier de citron à presser.'],
+     tg:['leger','haute-protein','rapide']},
+    {id:40,n:'Lasagnes de Légumes et Ricotta',c:'meal',m:'any',d:'moyen',pm:30,cm:40,sv:4,kcal:520,p:28,g:50,l:22,
+     ing:['Feuilles de lasagnes|12','Ricotta|400g','Épinards frais|300g','Courgette tranchée|1','Aubergine tranchée|1','Sauce tomate|500ml','Mozzarella râpée|150g','Basilic frais|1 bouquet','Ail|2 gousses','Huile d\'olive|2 c.à.s'],
+     st:['Préchauffe le four à 180°C. Grille courgette et aubergine à la poêle 3 min par face.','Fais tomber les épinards 2 min avec l\'ail émincé. Mélange à la ricotta. Sale, poivre.','Dans un plat à four, étale un peu de sauce tomate.','Alterne : couche de lasagnes, ricotta-épinards, légumes grillés, sauce tomate. Répète 3 fois.','Termine par les lasagnes, sauce tomate, mozzarella râpée.','Enfourne 35 min jusqu\'à dorure. Laisse reposer 10 min. Parsème de basilic frais avant de servir.'],
+     tg:['famille','comfort','freeze-friendly']},
+    {id:41,n:'Cabillaud en croûte d\'herbes et écrasé de patate douce',c:'meal',m:'recovery',d:'moyen',pm:15,cm:25,sv:1,kcal:420,p:38,g:38,l:12,
+     ing:['Dos de cabillaud|180g','Patate douce|200g','Chapelure|3 c.à.s','Persil frais|1 poignée','Ciboulette|1 petite poignée','Ail|1 gousse','Huile d\'olive|2 c.à.s','Citron|1 quartier'],
+     st:['Préchauffe le four à 200°C. Épluche et coupe la patate douce en cubes. Cuis 20 min à la vapeur ou eau bouillante.','Mixe chapelure, persil, ciboulette, ail, huile, sel, poivre pour une croûte verte.','Place le cabillaud sur une plaque. Étale la croûte d\'herbes par-dessus en pressant.','Enfourne 10-12 min jusqu\'à ce que le poisson soit cuit et la croûte dorée.','Écrase la patate douce à la fourchette avec un filet d\'huile d\'olive.','Sers le cabillaud sur l\'écrasé. Quartier de citron à presser.'],
+     tg:['seche','performance']},
+    {id:42,n:'Bowl de Boeuf Thaï et Nouilles de Riz',c:'meal',m:'post-workout',d:'moyen',pm:15,cm:15,sv:1,kcal:620,p:38,g:65,l:18,
+     ing:['Bavette de bœuf|150g','Nouilles de riz|60g sec','Carotte râpée|60g','Concombre en julienne|60g','Coriandre fraîche|1 poignée','Cacahuètes concassées|15g','Sauce soja|1 c.à.s','Sauce nuoc-mâm|1 c.à.c','Citron vert (jus)|1','Beurre de cacahuète|1 c.à.s','Miel|1 c.à.c'],
+     st:['Fais tremper les nouilles de riz 8 min dans de l\'eau chaude. Égoutte.','Tranche le bœuf finement contre le grain. Marine 5 min dans sauce soja.','Mélange beurre de cacahuète, miel, nuoc-mâm, jus de citron vert, 2 c. à soupe d\'eau pour la sauce.','Chauffe une poêle très chaude. Saisis le bœuf 1-2 min en remuant.','Dans un bowl : nouilles, bœuf, carotte, concombre, coriandre, cacahuètes.','Nappe de sauce. Mélange et déguste.'],
+     tg:['energetique','asiatique']},
+    {id:43,n:'Curry de Pois Chiches et Épinards au Lait de Coco',c:'meal',m:'any',d:'facile',pm:10,cm:25,sv:2,kcal:520,p:18,g:65,l:18,
+     ing:['Pois chiches (conserve)|400g','Épinards frais|200g','Lait de coco|200ml','Riz basmati cru|120g','Oignon|1','Ail|2 gousses','Curry en poudre|1 c.à.s','Gingembre frais râpé|1 c.à.c','Tomates concassées|200g','Coriandre fraîche|1 poignée','Citron vert|1'],
+     st:['Cuis le riz basmati.','Émince oignon, ail. Fais revenir 3 min dans une casserole avec un peu d\'huile.','Ajoute curry et gingembre. Mélange 1 min.','Ajoute pois chiches égouttés et tomates concassées. Cuis 5 min.','Verse le lait de coco. Mijote 10 min à feu doux.','Incorpore les épinards en fin de cuisson, mélange 2 min jusqu\'à ce qu\'ils tombent. Sers sur le riz, coriandre et quartier de citron vert.'],
+     tg:['vegetarien','epices','freeze-friendly']},
+    {id:44,n:'Crevettes au Citron Vert et Risotto de Chou-Fleur',c:'meal',m:'any',d:'moyen',pm:15,cm:20,sv:1,kcal:380,p:32,g:18,l:22,
+     ing:['Crevettes décortiquées|150g','Chou-fleur|300g','Crème liquide légère|60ml','Parmesan râpé|20g','Citron vert|1','Ail|2 gousses','Coriandre fraîche|1 poignée','Huile d\'olive|1 c.à.s','Flocons de piment|1 pincée'],
+     st:['Mixe le chou-fleur en grains de riz dans un robot ou râpe-le finement.','Chauffe l\'huile dans une poêle. Ajoute le chou-fleur 5 min en remuant.','Ajoute la crème, sel, poivre. Cuis 3 min. Incorpore le parmesan, mélange.','Dans une autre poêle, fais revenir l\'ail émincé 30 sec.','Ajoute les crevettes, le zeste et le jus du citron vert. Cuis 3 min jusqu\'à ce qu\'elles soient roses.','Sers le risotto de chou-fleur, crevettes par-dessus. Décore de coriandre et flocons de piment.'],
+     tg:['low-carb','perte-de-poids']},
+    {id:45,n:'Dinde rôtie, Quinoa rouge et Légumes d\'hiver',c:'meal',m:'any',d:'moyen',pm:15,cm:40,sv:2,kcal:540,p:42,g:55,l:14,
+     ing:['Escalopes de dinde|300g','Quinoa rouge cru|120g','Carottes|2','Panais|1','Choux de Bruxelles|200g','Romarin frais|2 branches','Huile d\'olive|2 c.à.s','Sel, poivre|1 pincée','Miel|1 c.à.c'],
+     st:['Préchauffe le four à 200°C. Coupe carottes et panais en bâtonnets, coupe les choux en deux.','Sur une plaque, mélange les légumes avec huile, sel, poivre, romarin. Enfourne 30 min.','Frotte la dinde avec huile, sel, poivre, miel. Cuis 4 min de chaque côté à la poêle.','Cuis le quinoa rouge 15 min dans 250 ml d\'eau salée.','Tranche la dinde. Sers avec quinoa et légumes rôtis.'],
+     tg:['hiver','batch-cooking']},
+    {id:46,n:'Steak de Thon, Sésame et Salade de Wakamé',c:'meal',m:'any',d:'moyen',pm:15,cm:5,rm:15,sv:1,kcal:410,p:40,g:15,l:22,
+     ing:['Steak de thon frais|180g','Algues wakamé séchées|15g','Graines de sésame|2 c.à.s','Sauce soja|2 c.à.s','Vinaigre de riz|1 c.à.s','Huile de sésame|1 c.à.c','Gingembre râpé|1 c.à.c','Oignon vert|1','Citron|1 quartier'],
+     st:['Réhydrate le wakamé 15 min dans l\'eau froide. Égoutte, presse.','Mélange sauce soja, vinaigre de riz, huile de sésame, gingembre. Verse sur le wakamé. Ajoute oignon vert ciselé.','Sèche le steak de thon. Roule dans les graines de sésame en pressant pour qu\'elles adhèrent.','Chauffe une poêle fonte très chaude. Saisis le thon 1 min de chaque côté (rouge au centre).','Tranche le thon. Sers avec la salade de wakamé et un quartier de citron.'],
+     tg:['performance','asiatique','leger']},
+    {id:47,n:'Pâtes de Sarrasin au Pesto de Kale et Noix',c:'meal',m:'any',d:'facile',pm:10,cm:10,sv:1,kcal:580,p:18,g:65,l:28,
+     ing:['Pâtes de sarrasin (soba)|90g cru','Kale|60g','Noix|30g','Ail|1 gousse','Huile d\'olive|3 c.à.s','Levure maltée|1 c.à.s','Tomates cerises|80g','Basilic frais|5 feuilles','Citron (jus)|1/2'],
+     st:['Cuis les pâtes de sarrasin selon les indications du paquet.','Pendant ce temps, blanchis le kale 1 min dans l\'eau bouillante. Égoutte, presse.','Mixe kale, noix, ail, huile, levure maltée, jus de citron, sel jusqu\'à pesto épais.','Égoutte les pâtes, garde 2 c. à soupe d\'eau de cuisson.','Mélange les pâtes au pesto, avec un peu d\'eau de cuisson pour lier.','Sers avec tomates cerises coupées en deux et basilic frais.'],
+     tg:['vegan','sans-gluten','anti-inflammatoire']},
+    {id:48,n:'Poulet Cajun et Riz Dirty aux Haricots Rouges',c:'meal',m:'post-workout',d:'moyen',pm:15,cm:30,sv:2,kcal:620,p:45,g:65,l:18,
+     ing:['Blancs de poulet|300g','Riz long cru|120g','Haricots rouges (conserve)|200g','Poivron rouge|1','Poivron vert|1','Oignon|1','Épices cajun|2 c.à.s','Ail|3 gousses','Bouillon de volaille|250ml','Persil frais|1 poignée','Huile d\'olive|2 c.à.s'],
+     st:['Frotte les blancs de poulet avec moitié des épices cajun, sel.','Chauffe huile, saisis le poulet 5 min de chaque côté. Réserve.','Dans la même poêle, fais revenir oignon, ail, poivrons en dés 5 min.','Ajoute le riz, les épices cajun restantes, mélange 1 min.','Verse le bouillon, ajoute haricots rouges. Couvre, mijote 20 min.','Tranche le poulet, dépose sur le riz. Parsème de persil frais.'],
+     tg:['prise-de-masse','epices','creole']},
 
-    // ─── PLATS PRINCIPAUX (20) ───
-    bowlPouletQuinoa: R('BOWL POULET QUINOA', 'meal', 'Équilibre parfait macros.', 580, 42, 58, 12, '25min', IMG.poulet,
-      [{name:'Blanc de poulet',qty:'200g'},{name:'Quinoa cuit',qty:'150g'},{name:'Brocoli',qty:'100g'},{name:'Huile d\'olive',qty:'1 c.à.s'},{name:'Herbes',qty:'à goût'}],
-      ['Cuis le quinoa selon notice.','Poêle le poulet 6 min/face.','Cuis le brocoli à la vapeur 5 min. Dresse en bowl.'],
-      '"Le repas parfait. Protéines, glucides complexes, légumes. Ton meilleur allié."'),
-    saumonTeriyaki: R('SAUMON TERIYAKI RIZ NOIR', 'meal', 'Oméga-3 et antioxydants.', 620, 38, 64, 18, '25min', IMG.saumon,
-      [{name:'Saumon',qty:'180g'},{name:'Riz noir',qty:'70g'},{name:'Sauce teriyaki',qty:'2 c.à.s'},{name:'Edamames',qty:'80g'},{name:'Sésame',qty:'1 c.à.c'}],
-      ['Cuis le riz 25 min.','Marine le saumon dans la sauce 10 min, poêle 3 min/face.','Cuis les edamames 4 min. Dresse avec sésame.'],
-      '"Oméga-3 + glucides denses. Repas du jour de combat."'),
-    saladeLentilles: R('SALADE LENTILLES AVOCAT', 'meal', 'Protéines végétales.', 480, 22, 52, 18, '15min', IMG.lentilles,
-      [{name:'Lentilles cuites',qty:'180g'},{name:'Avocat',qty:'½'},{name:'Tomate',qty:'1'},{name:'Oignon rouge',qty:'¼'},{name:'Vinaigrette',qty:'1 c.à.s'}],
-      ['Mélange lentilles + tomate + oignon.','Ajoute avocat coupé et vinaigrette.','Sers frais.'],
-      '"Repas plant-based qui tient au corps. Discipline > viande tous les jours."'),
-    patesThon: R('PÂTES THON & CÂPRES', 'meal', 'Carb loading efficace.', 560, 32, 78, 8, '15min', IMG.pates,
-      [{name:'Pâtes complètes',qty:'100g'},{name:'Thon au naturel',qty:'1 boîte'},{name:'Câpres',qty:'1 c.à.s'},{name:'Tomates cerises',qty:'100g'},{name:'Persil',qty:'qq brins'}],
-      ['Cuis les pâtes al dente.','Mélange avec thon, câpres, tomates coupées, persil.','Filet d\'huile d\'olive.'],
-      '"Carb load. La veille d\'une grosse séance. Pas négociable."'),
-    dindeEpicesPatateDouce: R('DINDE ÉPICES PATATE DOUCE', 'meal', 'Faible en gras, riche en nutriments.', 510, 40, 52, 10, '30min', IMG.dinde,
-      [{name:'Escalope de dinde',qty:'200g'},{name:'Patate douce',qty:'200g'},{name:'Paprika fumé',qty:'1 c.à.c'},{name:'Cumin',qty:'½ c.à.c'},{name:'Huile d\'olive',qty:'1 c.à.c'}],
-      ['Four 200°C. Coupe la patate douce en cubes, enfourne 25 min avec huile et épices.','Poêle la dinde 5 min/face.','Dresse ensemble.'],
-      '"Protéines lean, glucides denses, micronutriments. Cliché qui marche."'),
-    chiliAthlete: R('CHILI ATHLÈTE', 'meal', 'Riche en fer.', 540, 34, 58, 14, '40min', IMG.chili,
-      [{name:'Bœuf haché 5%',qty:'150g'},{name:'Haricots rouges',qty:'150g'},{name:'Tomates concassées',qty:'200g'},{name:'Oignon',qty:'½'},{name:'Cumin/paprika',qty:'à goût'}],
-      ['Fais revenir oignon + bœuf 5 min.','Ajoute tomates, haricots, épices. Mijote 25 min.','Sers chaud.'],
-      '"Mijote, ça encaisse. Fer + protéines + fibres."'),
-    saladePoisChiches: R('SALADE POIS CHICHES FETA', 'meal', 'Énergie stable.', 460, 22, 48, 18, '12min', IMG.poisChiches,
-      [{name:'Pois chiches',qty:'180g'},{name:'Feta',qty:'40g'},{name:'Concombre',qty:'½'},{name:'Tomate',qty:'1'},{name:'Citron + huile d\'olive',qty:'1 c.à.s'}],
-      ['Mélange pois chiches égouttés + concombre + tomate en dés + feta.','Assaisonne avec jus de citron et huile d\'olive.'],
-      '"Sans cuisson, 12 minutes. Tu sors le tupperware, tu manges."'),
-    pouletCurryCoco: R('POULET CURRY COCO', 'meal', 'Anti-inflammatoire.', 580, 38, 38, 26, '25min', IMG.curry,
-      [{name:'Blanc de poulet',qty:'200g'},{name:'Lait de coco',qty:'150ml'},{name:'Curry en poudre',qty:'2 c.à.c'},{name:'Riz basmati',qty:'60g'},{name:'Coriandre',qty:'qq brins'}],
-      ['Saute le poulet en dés 5 min.','Ajoute curry + lait de coco. Mijote 12 min.','Sers sur lit de riz.'],
-      '"Curcuma + protéines. Anti-inflammatoire post-grosse séance."'),
-    tofuMarine: R('TOFU MARINÉ EDAMAMES', 'meal', 'Option végétale haute performance.', 480, 30, 38, 22, '20min', IMG.tofu,
-      [{name:'Tofu ferme',qty:'200g'},{name:'Sauce soja',qty:'2 c.à.s'},{name:'Gingembre',qty:'1cm'},{name:'Edamames',qty:'120g'},{name:'Riz complet',qty:'60g'}],
-      ['Marine le tofu en cubes dans soja + gingembre 10 min.','Poêle le tofu 6 min en le retournant.','Cuis riz + edamames. Dresse.'],
-      '"Plant-based mais athlète. Soja complet, edamames, riz."'),
-    cabillaudVapeur: R('CABILLAUD VAPEUR BROCOLIS', 'meal', 'Digestion facile pour le soir.', 380, 38, 22, 12, '15min', IMG.cabillaud,
-      [{name:'Cabillaud',qty:'200g'},{name:'Brocoli',qty:'200g'},{name:'Citron',qty:'½'},{name:'Aneth',qty:'qq brins'},{name:'Huile d\'olive',qty:'1 c.à.c'}],
-      ['Vapeur 10 min cabillaud + brocoli.','Assaisonne avec citron, aneth, huile d\'olive.','Sers immédiatement.'],
-      '"Repas du soir. Léger, digeste, tu dors mieux."'),
-    boulettesSpaghettiCourgette: R('BOULETTES BŒUF SPAGHETTI COURGETTE', 'meal', 'High protein.', 460, 36, 26, 22, '25min', IMG.boulettes,
-      [{name:'Bœuf haché 5%',qty:'180g'},{name:'Courgette',qty:'2 grandes'},{name:'Œuf',qty:'1'},{name:'Tomates concassées',qty:'200g'},{name:'Ail/origan',qty:'à goût'}],
-      ['Forme des boulettes avec bœuf + œuf + épices. Poêle 8 min.','Mijote dans la sauce tomate 10 min.','Spiralise la courgette, sers les boulettes par-dessus.'],
-      '"Boulettes spaghetti version athlète. Carbs en moins, prot en plus."'),
-    filetMignonPoisCasses: R('FILET MIGNON PURÉE POIS CASSÉS', 'meal', 'Zinc et magnésium.', 520, 38, 42, 18, '40min', IMG.filet,
-      [{name:'Filet mignon de porc',qty:'200g'},{name:'Pois cassés',qty:'80g'},{name:'Échalote',qty:'1'},{name:'Thym',qty:'qq brins'},{name:'Beurre',qty:'10g'}],
-      ['Cuis pois cassés 25 min avec échalote.','Saisis le filet 4 min/face puis four 200°C 10 min.','Mixe pois cassés en purée. Tranche le filet.'],
-      '"Repas dimanche soir. Zinc, magnésium, classe."'),
-    saladeRizMaquereau: R('SALADE RIZ MAQUEREAU', 'meal', 'Énergie longue durée.', 540, 28, 52, 22, '15min', IMG.maquereau,
-      [{name:'Riz complet cuit',qty:'150g'},{name:'Filets de maquereau',qty:'1 boîte'},{name:'Œuf dur',qty:'1'},{name:'Cornichons',qty:'qq'},{name:'Vinaigrette',qty:'1 c.à.s'}],
-      ['Mélange riz + maquereau émietté + œuf coupé + cornichons.','Vinaigrette.','Mange tiède ou froid.'],
-      '"Oméga-3 + glucides longs. Boîte de la lunchbox parfaite."'),
-    crevettesAilQuinoa: R('CREVETTES À L\'AIL QUINOA', 'meal', 'Minéralisant.', 460, 36, 48, 12, '15min', IMG.crevettes,
-      [{name:'Crevettes décortiquées',qty:'200g'},{name:'Quinoa cuit',qty:'150g'},{name:'Ail',qty:'2 gousses'},{name:'Persil',qty:'qq brins'},{name:'Huile d\'olive',qty:'1 c.à.s'}],
-      ['Cuis le quinoa.','Saute les crevettes + ail 3 min.','Mélange, parsème de persil.'],
-      '"15 minutes, 36g de protéines. Iode + zinc + magnésium."'),
-    burritoBowlPoulet: R('BURRITO BOWL POULET', 'meal', 'Personnalisable selon les besoins.', 620, 38, 68, 18, '25min', IMG.bowlPoul,
-      [{name:'Poulet émincé',qty:'180g'},{name:'Riz brun',qty:'70g'},{name:'Haricots noirs',qty:'80g'},{name:'Maïs',qty:'60g'},{name:'Avocat',qty:'¼'}],
-      ['Cuis le riz.','Poêle le poulet épicé 6 min.','Dresse en bowl : riz, haricots, maïs, poulet, avocat.'],
-      '"Customise selon tes macros du jour. Modulaire, scalable."'),
-    soupeLentillesCurcuma: R('SOUPE LENTILLES CURCUMA', 'meal', 'Récupération musculaire.', 380, 22, 48, 10, '30min', IMG.soupe,
-      [{name:'Lentilles corail',qty:'120g'},{name:'Carottes',qty:'2'},{name:'Curcuma',qty:'1 c.à.c'},{name:'Bouillon de légumes',qty:'700ml'},{name:'Lait de coco',qty:'80ml'}],
-      ['Saute carottes en dés 3 min.','Ajoute lentilles, bouillon, curcuma. Mijote 20 min.','Mixe avec lait de coco.'],
-      '"Anti-inflammatoire. Soir de séance lourde, c\'est ça."'),
-    pokeBowlThon: R('POKE BOWL THON ROUGE', 'meal', 'Frais et dense en nutriments.', 580, 38, 62, 16, '20min', IMG.poke,
-      [{name:'Thon rouge frais',qty:'150g'},{name:'Riz sushi',qty:'80g'},{name:'Avocat',qty:'¼'},{name:'Edamames',qty:'60g'},{name:'Sauce soja + sésame',qty:'à goût'}],
-      ['Cuis le riz selon notice.','Coupe le thon en dés, marine 5 min dans soja + sésame.','Dresse en bowl avec avocat et edamames.'],
-      '"Cru, frais, dense. Le repas qui te fait sentir vivant."'),
-    pouletRotiRatatouille: R('POULET RÔTI RATATOUILLE', 'meal', 'Classique équilibré.', 540, 42, 36, 22, '45min', IMG.pouletRoti,
-      [{name:'Cuisses de poulet',qty:'2'},{name:'Aubergine',qty:'1'},{name:'Courgette',qty:'1'},{name:'Tomates',qty:'2'},{name:'Herbes de Provence',qty:'1 c.à.s'}],
-      ['Four 200°C. Légumes en cubes dans un plat avec huile + herbes, 35 min.','Pose les cuisses sur les légumes au milieu, finis au four.','Sers chaud.'],
-      '"Dimanche midi. Repas en famille version athlète."'),
-    steakThonAsperges: R('STEAK DE THON ASPERGES', 'meal', 'Protéines pures.', 420, 42, 16, 18, '15min', IMG.thonAsp,
-      [{name:'Steak de thon',qty:'180g'},{name:'Asperges vertes',qty:'200g'},{name:'Citron',qty:'½'},{name:'Huile d\'olive',qty:'1 c.à.c'},{name:'Sel/poivre',qty:'à goût'}],
-      ['Grille les asperges 6 min.','Saisis le thon 1.5 min/face (rosé au centre).','Citron + huile + sel.'],
-      '"Repas du jour de pesée. Protéines max, calories contrôlées."'),
-    lasagnesLegumesRicotta: R('LASAGNES LÉGUMES RICOTTA', 'meal', 'Confort et nutriments.', 580, 30, 58, 22, '50min', IMG.lasagnes,
-      [{name:'Plaques de lasagne',qty:'6'},{name:'Ricotta',qty:'200g'},{name:'Épinards',qty:'200g'},{name:'Sauce tomate',qty:'300ml'},{name:'Parmesan',qty:'40g'}],
-      ['Four 200°C. Saute les épinards 3 min, mélange avec ricotta.','Alterne plaques + sauce + mélange épinards-ricotta. Termine par sauce + parmesan.','Cuis 30 min.'],
-      '"Repas comfort qui n\'est pas une trahison. Veggie, protéiné, satiété."')
-  };
+    // ─── SNACKS (4) ───
+    {id:54,n:'Muffins Protéinés Myrtilles et Citron',c:'snack',m:'any',d:'moyen',pm:15,cm:20,sv:6,kcal:180,p:12,g:22,l:4,
+     ing:['Farine complète|150g','Whey vanille|2 scoops (60g)','Œufs|2','Yaourt grec 0%|100g','Lait|100ml','Miel|3 c.à.s','Levure chimique|1 c.à.c','Myrtilles fraîches|100g','Zeste de citron|1','Huile neutre|2 c.à.s'],
+     st:['Préchauffe le four à 180°C. Place 6 caissettes dans un moule à muffins.','Dans un bol, mélange farine, whey, levure.','Dans un autre bol, fouette œufs, yaourt, lait, miel, huile, zeste.','Mélange les deux préparations sans trop travailler la pâte. Incorpore délicatement les myrtilles.','Répartis dans les caissettes. Enfourne 18-20 min.','Laisse refroidir. Se conserve 4 jours en boîte hermétique.'],
+     tg:['meal-prep','snack-transportable']},
+    {id:56,n:'Pudding de Perles de Japon au Lait de Coco et Mangue',c:'snack',m:'any',d:'facile',pm:5,cm:15,rm:60,sv:2,kcal:280,p:4,g:50,l:8,
+     ing:['Perles du Japon (tapioca)|60g','Lait de coco|400ml','Sucre de coco ou sirop d\'érable|2 c.à.s','Mangue mûre|1','Noix de coco râpée torréfiée|1 c.à.s','Menthe fraîche|2 feuilles'],
+     st:['Dans une casserole, chauffe le lait de coco avec le sucre. Verse les perles de tapioca.','Cuis à feu doux 15-20 min en remuant souvent, jusqu\'à ce que les perles soient translucides.','Verse dans 2 verres. Laisse refroidir 1h au frigo.','Coupe la mangue en dés. Dépose par-dessus le pudding.','Saupoudre de noix de coco torréfiée. Décore d\'une feuille de menthe.'],
+     tg:['dessert','energie-rapide']},
+    {id:57,n:'Houmous de Betterave et Bâtonnets de Légumes',c:'snack',m:'any',d:'facile',pm:10,sv:2,kcal:220,p:8,g:28,l:10,
+     ing:['Pois chiches (conserve)|200g','Betterave cuite|100g','Tahini (crème de sésame)|2 c.à.s','Citron (jus)|1','Ail|1 gousse','Cumin moulu|1 c.à.c','Huile d\'olive|2 c.à.s','Carottes|2','Concombre|1','Branches de céleri|2','Graines de sésame|1 c.à.c'],
+     st:['Égoutte et rince les pois chiches.','Mixe pois chiches, betterave, tahini, jus de citron, ail, cumin, huile, sel jusqu\'à crème lisse.','Ajuste avec un peu d\'eau si trop épais.','Verse dans un bol. Filet d\'huile et graines de sésame par-dessus.','Sers avec carottes, concombre et céleri en bâtonnets.'],
+     tg:['snack-sain','perte-de-poids','meal-prep-5j']},
+    {id:58,n:'Bowl de Fromage Blanc, Noix et Graines de Courge',c:'snack',m:'any',d:'facile',pm:3,sv:1,kcal:320,p:28,g:18,l:15,hr:1,
+     ing:['Fromage blanc 0% ou skyr|200g','Noix concassées|15g','Graines de courge|10g','Miel|1 c.à.c','Baies fraîches (myrtilles ou framboises)|30g'],
+     st:['Verse le fromage blanc dans un bol.','Ajoute par-dessus noix, graines de courge.','Termine par les baies fraîches et un filet de miel.'],
+     tg:['snack-rapide','caseine']}
+  ];
+  window.RECIPES = {};
+  DATA.forEach(function(d){
+    window.RECIPES['recipe-' + String(d.id).padStart(3,'0')] = R(d);
+  });
+  // Migration v1 → v2 : les clés ont changé (pancakesBanane → recipe-001),
+  // les anciens favoris/listes ne pointent plus vers rien. On wipe une fois.
+  try {
+    if (localStorage.getItem('ah_recipes_v2_migrated') !== '1') {
+      localStorage.removeItem('ah_recipe_favorites');
+      localStorage.removeItem('ah_shopping_checks');
+      localStorage.removeItem('ah_shopping_meal_plan');
+      localStorage.removeItem('ah_shopping_meal_plan_checks');
+      localStorage.setItem('ah_recipes_v2_migrated', '1');
+    }
+  } catch(e) {}
 })();
 
 function showRecipe(key) {
@@ -5455,6 +5535,13 @@ function toggleCurrentRecipeFavorite() {
 
 // Filtres + rendu grille recettes
 window._recipeFilterCat = 'all';
+window._recipeFilterMoment = 'all';
+function filterRecipeMoment(el, mom) {
+  document.querySelectorAll('#recipeMomentFilters .recipe-fc').forEach(function(f){ f.classList.remove('on'); });
+  if (el) el.classList.add('on');
+  window._recipeFilterMoment = mom;
+  renderRecipesList();
+}
 function filterRecipeCat(el, cat) {
   document.querySelectorAll('#recipeFilters .recipe-fc').forEach(function(f){ f.classList.remove('on'); });
   if (el) el.classList.add('on');
@@ -5471,16 +5558,18 @@ function renderRecipesList() {
   var favs = _getRecipeFavorites();
   var html = '';
   var count = 0;
+  var mom = window._recipeFilterMoment || 'all';
   Object.keys(RECIPES).forEach(function(key){
     var r = RECIPES[key]; if (!r) return;
     if (cat === 'favorites' && favs.indexOf(key) === -1) return;
     if (cat !== 'all' && cat !== 'favorites' && r.tag !== cat) return;
+    if (mom !== 'all' && r.moment !== mom && r.moment !== 'any') return;
     if (q && r.name.toLowerCase().indexOf(q) === -1 && (r.tagline||'').toLowerCase().indexOf(q) === -1) return;
     var isFav = favs.indexOf(key) > -1;
     html += '<div class="recipe-card" onclick="showRecipe(\'' + key + '\')">';
     html +=   '<div class="recipe-card-tag">' + r.tagLabel + '</div>';
     html +=   '<div class="recipe-card-fav ' + (isFav?'on':'') + '" onclick="event.stopPropagation();toggleRecipeFavoriteFromCard(\'' + key + '\',this)">' + (isFav?'⭐':'☆') + '</div>';
-    html +=   '<img class="recipe-card-img" src="' + r.img + '" alt="" onerror="this.style.background=\'#1B2A4A\';this.src=\'\'">';
+    html +=   '<img class="recipe-card-img" src="' + r.img + '" alt="" loading="lazy" width="320" height="180" onerror="this.style.background=\'linear-gradient(135deg,#1B2A4A,#0F1B33)\';this.src=\'\'">';
     html +=   '<div class="recipe-card-body">';
     html +=     '<div class="recipe-card-name">' + r.name + '</div>';
     html +=     '<div class="recipe-card-meta"><span class="recipe-card-cals">' + r.cals + ' kcal</span><span>⏱ ' + r.time + '</span></div>';
