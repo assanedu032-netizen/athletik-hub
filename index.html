@@ -3058,112 +3058,121 @@ button:active:not(.ah-titan-btn):not([class*="nav"]):not([class*="ls-"]):not([cl
   color:#fff !important; text-shadow:0 2px 20px rgba(0,0,0,.5) !important;
 }
 
-/* ── Flow d'entrée dark cinéma — même look que #welcome/#titanIntro ── */
+/* ── Flow d'entrée light — base blanche conforme handoff §2 (dark autorisé
+   uniquement sur Splash/Welcome/TitanIntro/LiveSession) ── */
 html body #obQ1, html body #qSATIntro, html body #qNutri,
 html body #profil1, html body #profil2, html body #profil3, html body #profil4,
 html body #result, html body #nutriResult{
-  background:linear-gradient(180deg,var(--ah-navy-deep) 0%,var(--ah-navy) 100%) !important;
-  color:#fff !important;
+  background:var(--ah-bg) !important;
+  color:var(--ah-text) !important;
 }
-/* .ob container dans le dark */
+/* .ob container neutre */
 #obQ1 .ob, #qSATIntro .ob, #qNutri .ob,
 #profil1 .ob, #profil2 .ob, #profil3 .ob, #profil4 .ob{
   background:transparent !important;
-  color:#fff !important;
+  color:var(--ah-text) !important;
 }
-/* Textes onboarding sur dark */
+/* Textes onboarding sur light */
 #obQ1 .ob-q, #qSATIntro .ob-q, #qNutri .ob-q,
 #profil1 .ob-q, #profil2 .ob-q, #profil3 .ob-q, #profil4 .ob-q{
-  color:#fff !important;
+  color:var(--ah-text) !important;
+  font-family:var(--ah-font-display) !important;
+  font-size:28px !important;
+  letter-spacing:.02em !important;
 }
 #obQ1 .ob-sub, #qSATIntro .ob-sub, #qNutri .ob-sub,
 #profil1 .ob-sub, #profil2 .ob-sub, #profil3 .ob-sub, #profil4 .ob-sub{
-  color:rgba(255,255,255,.65) !important;
+  color:var(--ah-text2) !important;
 }
-/* opt-cards sur dark — surface semi-transparente */
+/* opt-cards sur light — surface blanche avec bordure neutre */
 #obQ1 .ob-opt, #qSATIntro .ob-opt, #qNutri .ob-opt,
 #profil1 .ob-opt, #profil2 .ob-opt, #profil3 .ob-opt, #profil4 .ob-opt{
-  background:rgba(255,255,255,.04) !important;
-  border:1.5px solid rgba(255,255,255,.1) !important;
-  color:#fff !important;
+  background:var(--ah-surface) !important;
+  border:1.5px solid var(--ah-border) !important;
+  color:var(--ah-text) !important;
 }
 #obQ1 .ob-opt:hover, #qSATIntro .ob-opt:hover, #qNutri .ob-opt:hover,
 #profil1 .ob-opt:hover, #profil2 .ob-opt:hover, #profil3 .ob-opt:hover, #profil4 .ob-opt:hover,
 #obQ1 .ob-opt.on, #qSATIntro .ob-opt.on, #qNutri .ob-opt.on,
-#profil1 .ob-opt.on, #profil2 .ob-opt.on, #profil3 .ob-opt.on, #profil4 .ob-opt.on{
-  background:rgba(197,164,78,.12) !important;
+#profil1 .ob-opt.on, #profil2 .ob-opt.on, #profil3 .ob-opt.on, #profil4 .ob-opt.on,
+#obQ1 .ob-opt.sel, #qSATIntro .ob-opt.sel, #qNutri .ob-opt.sel,
+#profil1 .ob-opt.sel, #profil2 .ob-opt.sel, #profil3 .ob-opt.sel, #profil4 .ob-opt.sel{
+  background:rgba(197,164,78,.08) !important;
   border-color:var(--ah-gold) !important;
 }
 #obQ1 .ob-opt-txt, #qSATIntro .ob-opt-txt, #qNutri .ob-opt-txt,
 #profil1 .ob-opt-txt, #profil2 .ob-opt-txt, #profil3 .ob-opt-txt, #profil4 .ob-opt-txt{
-  color:#fff !important;
+  color:var(--ah-text) !important;
 }
-/* labels sur dark */
+/* labels sur light */
 #obQ1 .fl, #qSATIntro .fl, #qNutri .fl,
 #profil1 .fl, #profil2 .fl, #profil3 .fl, #profil4 .fl{
-  color:rgba(255,255,255,.7) !important;
+  color:var(--ah-text2) !important;
+  font-family:var(--ah-font-body) !important;
+  font-weight:600 !important;
 }
-/* inputs sur dark */
+/* inputs sur light */
 #obQ1 .fi, #qSATIntro .fi, #qNutri .fi,
 #profil1 .fi, #profil2 .fi, #profil3 .fi, #profil4 .fi{
-  background:rgba(255,255,255,.06) !important;
-  border:1px solid rgba(255,255,255,.14) !important;
-  color:#fff !important;
+  background:var(--ah-surface) !important;
+  border:1px solid var(--ah-border2) !important;
+  color:var(--ah-text) !important;
 }
 #obQ1 .fi::placeholder, #qSATIntro .fi::placeholder, #qNutri .fi::placeholder,
 #profil1 .fi::placeholder, #profil2 .fi::placeholder, #profil3 .fi::placeholder, #profil4 .fi::placeholder{
-  color:rgba(255,255,255,.35) !important;
+  color:var(--ah-muted) !important;
 }
-/* progress bars sur dark */
+/* kicker (étape) en mono or */
 #obQ1 .ob-step, #qSATIntro .ob-step, #qNutri .ob-step,
 #profil1 .ob-step, #profil2 .ob-step, #profil3 .ob-step, #profil4 .ob-step{
   color:var(--ah-gold) !important;
+  font-family:var(--ah-font-mono) !important;
+  font-size:10px !important;
+  letter-spacing:.18em !important;
 }
-/* result screens */
+/* result screens light */
 #result, #nutriResult{
-  color:#fff !important;
+  color:var(--ah-text) !important;
 }
 #result .res-badge, #nutriResult .res-badge{
   background:rgba(197,164,78,.1) !important; color:var(--ah-gold) !important;
   border-color:rgba(197,164,78,.3) !important;
 }
 #result .res-card, #nutriResult .res-card{
-  background:rgba(255,255,255,.04) !important;
-  border:1px solid rgba(255,255,255,.1) !important;
+  background:var(--ah-surface) !important;
+  border:1px solid var(--ah-border) !important;
+  box-shadow:0 6px 18px rgba(20,30,60,.06) !important;
 }
-#result .res-title, #nutriResult .res-title{ color:rgba(255,255,255,.6) !important; }
-#result .res-name, #nutriResult .res-title+*{ color:#fff !important; }
-#result .res-obj, #nutriResult .res-obj{ color:rgba(255,255,255,.6) !important; }
-#result .res-meta-i, #nutriResult .res-meta-i{ color:rgba(255,255,255,.55) !important; }
-/* titres kcal / macros dans nutriResult */
+#result .res-title, #nutriResult .res-title{ color:var(--ah-text2) !important; }
+#result .res-name{ color:var(--ah-text) !important; }
+#result .res-obj, #nutriResult .res-obj{ color:var(--ah-text2) !important; }
+#result .res-meta-i, #nutriResult .res-meta-i{ color:var(--ah-muted) !important; }
 #nutriResult #nrCal{ color:var(--ah-gold) !important; }
-#nutriResult #nrProt,#nutriResult #nrGluc,#nutriResult #nrLip{ color:#fff !important; }
-/* sport chips dark */
+#nutriResult #nrProt,#nutriResult #nrGluc,#nutriResult #nrLip{ color:var(--ah-text) !important; }
+/* sport chips light */
 #qNutri .sport-chip{
-  background:rgba(255,255,255,.05) !important;
-  border:1.5px solid rgba(255,255,255,.12) !important;
-  color:#fff !important;
+  background:var(--ah-surface) !important;
+  border:1.5px solid var(--ah-border) !important;
+  color:var(--ah-text) !important;
   border-radius:var(--ah-r-lg) !important;
 }
 #qNutri .sport-chip.on{
-  background:rgba(197,164,78,.12) !important;
+  background:rgba(197,164,78,.08) !important;
   border-color:var(--ah-gold) !important;
 }
-#qNutri .sport-name{ color:#fff !important; }
-/* halo arrière-plan ambiance cinéma — sur le .ob interne pour ne pas casser
-   le position:absolute du .scr (fullscreen layout) */
+#qNutri .sport-name{ color:var(--ah-text) !important; }
+/* halo or subtil sur l'arrière-plan light — pas obligatoire mais ajoute la signature */
 #obQ1 .ob::before, #qSATIntro .ob::before, #qNutri .ob::before,
 #profil1 .ob::before, #profil2 .ob::before, #profil3 .ob::before, #profil4 .ob::before{
-  content:''; position:absolute; top:-40px; left:50%; transform:translateX(-50%);
-  width:280px; height:280px;
-  background:radial-gradient(circle,rgba(197,164,78,.12) 0%,transparent 70%);
+  content:''; position:absolute; top:0; left:50%; transform:translateX(-50%);
+  width:280px; height:200px;
+  background:radial-gradient(ellipse,rgba(197,164,78,.06) 0%,transparent 70%);
   pointer-events:none; z-index:0;
 }
 #obQ1 .ob, #qSATIntro .ob, #qNutri .ob,
 #profil1 .ob, #profil2 .ob, #profil3 .ob, #profil4 .ob{
   position:relative;
 }
-/* ob enfants au-dessus du halo */
 #obQ1 .ob > *, #qSATIntro .ob > *, #qNutri .ob > *,
 #profil1 .ob > *, #profil2 .ob > *, #profil3 .ob > *, #profil4 .ob > *{
   position:relative; z-index:1;
