@@ -4465,21 +4465,20 @@ window.tiResetOnEnter = function(){ window.tiShowStep(1); };
 <div id="vHome" class="view">
   <div class="main" style="padding-bottom:90px">
 
-    <!-- HERO PHOTO style Coach Mike G -->
-    <div style="position:relative;height:260px;overflow:hidden">
-      <img src="https://images.unsplash.com/photo-1571019614242-c5c5dee9f50b?w=800&q=80" 
-           style="width:100%;height:100%;object-fit:cover;object-position:center top"
-           onerror="this.style.background='linear-gradient(135deg,#1B2A4A,#060C18)';this.src=''">
-      <!-- Overlay gradient -->
-      <div style="position:absolute;inset:0;background:linear-gradient(to bottom,rgba(6,12,24,.3) 0%,rgba(6,12,24,.0) 40%,rgba(6,12,24,.95) 100%)"></div>
-      <!-- Avatar profil haut droite -->
-      <div onclick="switchTab('moi')" style="position:absolute;top:16px;right:16px;width:40px;height:40px;border-radius:50%;background:rgba(6,12,24,.7);border:2px solid var(--gold);display:flex;align-items:center;justify-content:center;cursor:pointer;backdrop-filter:blur(8px)">
-        <span id="userInitial" style="font-family:'Bebas Neue',sans-serif;font-size:16px;color:var(--gold)">A</span>
-      </div>
-      <!-- Nom + salutation sur la photo -->
-      <div style="position:absolute;bottom:16px;left:20px;right:20px">
-        <div id="greetText" style="font-size:11px;color:rgba(255,255,255,.5);font-weight:600;letter-spacing:2px;text-transform:uppercase;margin-bottom:2px">Bonjour</div>
-        <div id="userName" style="font-family:'Bebas Neue',sans-serif;font-size:32px;color:#fff;letter-spacing:3px;line-height:1;text-shadow:0 2px 20px rgba(0,0,0,.5)">ATHLÈTE</div>
+    <!-- ═══ HEADER LIGHT (date + greeting + avatar) — DS v1.0 ═══ -->
+    <div style="padding:18px 20px 12px;background:var(--ah-bg)">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:14px">
+        <div style="flex:1;min-width:0">
+          <div id="homeDateLine" style="font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:.22em;color:var(--ah-gold);text-transform:uppercase;margin-bottom:8px"></div>
+          <div style="font-family:'Bebas Neue',sans-serif;font-size:36px;letter-spacing:.04em;line-height:1;color:var(--ah-text)">
+            <span id="greetText">BONJOUR</span>,<br>
+            <span id="userName" style="color:var(--ah-gold)">ATHLÈTE.</span>
+          </div>
+        </div>
+        <div onclick="switchTab('moi')" style="width:44px;height:44px;border-radius:50%;background:var(--ah-navy-deep);border:2px solid var(--ah-gold);overflow:hidden;cursor:pointer;flex-shrink:0;display:flex;align-items:center;justify-content:center">
+          <img src="images/titan-mascot.png" alt="" style="width:100%;height:100%;object-fit:cover" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">
+          <span id="userInitial" style="display:none;font-family:'Bebas Neue',sans-serif;font-size:16px;color:var(--ah-gold);align-items:center;justify-content:center;width:100%;height:100%">A</span>
+        </div>
       </div>
     </div>
 
@@ -4492,8 +4491,8 @@ window.tiResetOnEnter = function(){ window.tiShowStep(1); };
     <!-- Bannière reprendre tests — affichée si ah_sat_inprogress existe -->
     <div id="resumeTestsBanner" style="display:none"></div>
 
-    <!-- ═══ SCOREBOARD Design System v1.0 — stats clés du jour ═══ -->
-    <div class="ah-scoreboard" id="homeScoreboard" style="margin:14px 20px 0">
+    <!-- ═══ SCOREBOARD navy-deep DS v1.0 ═══ -->
+    <div class="ah-scoreboard" id="homeScoreboard" style="margin:6px 20px 0;background:var(--ah-navy-deep);padding:14px 18px;border-radius:14px">
       <div class="grp"><span class="lbl">SET</span><span class="val empty" id="sbSet">—</span></div>
       <div class="div"></div>
       <div class="grp"><span class="lbl">CMJ</span><span class="val empty" id="sbCmj">—</span></div>
@@ -4501,19 +4500,42 @@ window.tiResetOnEnter = function(){ window.tiShowStep(1); };
       <div class="grp"><span class="lbl">J</span><span class="val empty" id="sbJours">—</span></div>
     </div>
 
-    <!-- CARTE SÉANCE — collée sous la photo, style FizzUp TODAY (wrappée goldframe DS v1.0) -->
-    <div class="ah-goldframe" id="todayCardFrame" style="margin:14px 18px 0">
-    <div id="todayCard" class="inner" style="background:var(--ah-surface);padding:18px 18px">
-      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
-        <div style="font-size:10px;font-weight:700;letter-spacing:3px;color:var(--gold);text-transform:uppercase">Aujourd'hui</div>
-        <div style="font-size:11px;color:var(--muted);font-weight:600" id="pcDur">Semaine 1 / 20</div>
+    <!-- ═══ CARTE PROFIL ATHLETIK (mode discovery — locked) ═══
+         Wrapping div + id="todayCard" préservés (renderUserData() lit pcName/pcObj/pcDur). -->
+    <div id="todayCardFrame" style="margin:14px 18px 0">
+    <div id="todayCard" style="background:var(--ah-navy-deep);border-radius:14px;padding:18px 18px;color:#fff;border-left:3px solid var(--ah-gold);position:relative;overflow:hidden">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+        <div style="font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:.22em;color:var(--ah-gold);text-transform:uppercase" id="pcDur">PROFIL ATHLETIK · 0/4</div>
+        <div style="font-family:'JetBrains Mono',monospace;font-size:9px;letter-spacing:.18em;color:var(--ah-gold);background:rgba(197,164,78,.12);border:1px solid rgba(197,164,78,.35);border-radius:999px;padding:3px 10px;text-transform:uppercase" id="todayCardPill">À FINIR</div>
       </div>
-      <div style="font-family:'Bebas Neue',sans-serif;font-size:24px;color:var(--text);letter-spacing:2px;margin-bottom:2px" id="pcName">ELITE ATHLETE</div>
-      <div style="font-size:13px;color:var(--text2);margin-bottom:16px" id="pcObj">Explosivité globale</div>
-      <button onclick="discoveryStartProfile()" style="width:100%;padding:15px;background:linear-gradient(135deg,var(--gold),var(--gold2));border:none;border-radius:12px;font-family:'Bebas Neue',sans-serif;font-size:16px;letter-spacing:2px;color:var(--navy);cursor:pointer;touch-action:manipulation;box-shadow:0 4px 12px rgba(197,164,78,0.25)">
-        LANCER LA SÉANCE →
+      <div style="font-family:'Bebas Neue',sans-serif;font-size:24px;color:#fff;letter-spacing:.04em;line-height:1.1;margin-bottom:4px" id="pcName">DÉBLOQUE TA SÉANCE</div>
+      <div style="font-family:'Outfit',sans-serif;font-size:13px;color:rgba(255,255,255,.65);line-height:1.45;margin-bottom:14px" id="pcObj">Commence par tes mesures. Sans ça, je ne peux pas te programmer un travail honnête.</div>
+      <div style="height:1px;background:rgba(255,255,255,.08);margin-bottom:14px"></div>
+      <button onclick="discoveryStartProfile()" style="width:100%;padding:14px 16px;background:var(--ah-navy2);color:#fff;border:1px solid rgba(255,255,255,.1);border-radius:10px;font-family:'Outfit',sans-serif;font-size:14px;font-weight:600;cursor:pointer;touch-action:manipulation;letter-spacing:.02em;display:flex;align-items:center;justify-content:center;gap:8px">
+        <span id="todayCardCtaLabel">Commencer mon profil</span> <span style="color:var(--ah-gold)">→</span>
       </button>
+      <!-- Progress bar (mode discovery profil X/4) -->
+      <div id="todayCardProgress" style="display:none;height:3px;background:rgba(255,255,255,.08);border-radius:2px;overflow:hidden;margin-top:14px">
+        <div id="todayCardProgressFill" style="height:100%;background:var(--ah-gold);width:0%;transition:width .35s ease"></div>
+      </div>
     </div>
+    </div>
+
+    <!-- ═══ Section "TA SÉANCE DU JOUR · VERROUILLÉ" + hero card locked ═══ -->
+    <div id="lockedSessionWrap" style="padding:24px 20px 0;display:none">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+        <div style="font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:.22em;color:var(--ah-muted);text-transform:uppercase">Ta séance du jour</div>
+        <div style="font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:.22em;color:var(--ah-muted);text-transform:uppercase">Verrouillé</div>
+      </div>
+      <div style="position:relative;border-radius:14px;overflow:hidden;border:1px solid var(--ah-border)">
+        <img src="images/vertical-dunk.png" alt="" style="width:100%;height:170px;object-fit:cover;object-position:center;filter:grayscale(100%) brightness(.55)" onerror="this.style.background='linear-gradient(135deg,#1B2A4A,#0B1228)';this.src=''">
+        <div style="position:absolute;top:10px;left:10px;background:rgba(255,255,255,.94);border-radius:999px;padding:4px 10px;font-family:'JetBrains Mono',monospace;font-size:9px;letter-spacing:.16em;color:var(--ah-text);text-transform:uppercase" id="lockedSessionPill">PROFIL 0/4 REQUIS</div>
+        <div style="position:absolute;bottom:12px;left:14px;right:14px;color:#fff">
+          <div style="font-family:'JetBrains Mono',monospace;font-size:9px;letter-spacing:.18em;color:rgba(255,255,255,.7);text-transform:uppercase;margin-bottom:2px">À déterminer</div>
+          <div style="font-family:'Bebas Neue',sans-serif;font-size:22px;letter-spacing:.04em;line-height:1">SÉANCE VERROUILLÉE</div>
+          <div style="font-family:'JetBrains Mono',monospace;font-size:9px;letter-spacing:.18em;color:rgba(255,255,255,.55);text-transform:uppercase;margin-top:4px">— MIN · — EXOS</div>
+        </div>
+      </div>
     </div>
 
     <!-- ═══ MON PLANNING ═══ -->
@@ -9558,15 +9580,8 @@ function showResult(key) {
 
 // ── INIT ──
 
-// ── GREETING ──
-function setGreeting() {
-  const h = new Date().getHours();
-  let greet = 'Bonsoir';
-  if (h < 12) greet = 'Bonjour';
-  else if (h < 18) greet = 'Bon après-midi';
-  document.getElementById('greetText').textContent = greet;
-  document.getElementById('userName').textContent = user.name;
-}
+// ── GREETING (no-op : géré par renderUserData() en DS v1.0) ──
+function setGreeting() { /* moved to renderUserData() */ }
 
 // ── WEEK VIEW ──
 function renderWeek() {
@@ -9606,18 +9621,71 @@ function renderUserData() {
   var profile = {};
   try { profile = JSON.parse(localStorage.getItem('ah_profile') || '{}'); } catch(e) {}
   var programAttributed = !!(profile.programKey && profile.program);
+
+  // ── Date line + greeting (DS v1.0) ──
+  try {
+    var DAYS = ['DIMANCHE','LUNDI','MARDI','MERCREDI','JEUDI','VENDREDI','SAMEDI'];
+    var MONTHS = ['JANVIER','FÉVRIER','MARS','AVRIL','MAI','JUIN','JUILLET','AOÛT','SEPTEMBRE','OCTOBRE','NOVEMBRE','DÉCEMBRE'];
+    var now = new Date();
+    var dateLineEl = document.getElementById('homeDateLine');
+    if (dateLineEl) {
+      var modeLabel = programAttributed ? 'PROGRAMME' : 'DÉCOUVERTE';
+      dateLineEl.textContent = DAYS[now.getDay()] + ' ' + now.getDate() + ' ' + MONTHS[now.getMonth()] + ' · ' + modeLabel;
+    }
+    var greet = document.getElementById('greetText');
+    if (greet) {
+      var h = now.getHours();
+      greet.textContent = (h < 12 ? 'BONJOUR' : h < 18 ? 'BON APRÈS-MIDI' : 'BONSOIR');
+    }
+    var nm = document.getElementById('userName');
+    if (nm) nm.textContent = (profile.prenom ? profile.prenom.toUpperCase() : (user.name || 'ATHLÈTE')) + '.';
+  } catch(e){}
+
+  // ── Compute discovery step (0-4) ──
+  var dStep = 0;
+  if (profile.objectif) dStep = 1;
+  if (profile.programKey) dStep = 2;
+  if (profile.satDone || profile.satSelf) dStep = 3;
+  if (profile.nutriObj || profile.nutriDone) dStep = 4;
+  var inDiscovery = (dStep < 4) && !programAttributed;
+
+  // ── Today card : two modes (discovery locked vs. session unlocked) ──
+  var pcName = document.getElementById('pcName');
+  var pcObj  = document.getElementById('pcObj');
+  var pcDur  = document.getElementById('pcDur');
+  var pill   = document.getElementById('todayCardPill');
+  var ctaLbl = document.getElementById('todayCardCtaLabel');
+  var prog   = document.getElementById('todayCardProgress');
+  var progFill = document.getElementById('todayCardProgressFill');
+  var lockedWrap = document.getElementById('lockedSessionWrap');
+  var lockedPill = document.getElementById('lockedSessionPill');
+
   if (programAttributed) {
-    document.getElementById('pcName').textContent = user.program;
-    document.getElementById('pcObj').textContent = user.programObj;
+    // Mode complet : séance du jour
+    if (pcDur)  pcDur.textContent = 'AUJOURD\'HUI · SEMAINE ' + (user.weekNum || 1) + '/' + (user.totalWeeks || 12);
+    if (pcName) pcName.textContent = user.program;
+    if (pcObj)  pcObj.textContent  = user.programObj;
+    if (pill)   pill.style.display = 'none';
+    if (ctaLbl) ctaLbl.textContent = 'LANCER LA SÉANCE';
+    if (prog)   prog.style.display = 'none';
+    if (lockedWrap) lockedWrap.style.display = 'none';
   } else {
-    // Pas encore de programme attribué (Q1 fait mais profil1 pas fini)
-    document.getElementById('pcName').textContent = profile.objectif ? 'À DÉTERMINER' : 'PROGRAMME';
-    document.getElementById('pcObj').textContent = 'Complète ton profil pour révéler ton programme';
+    // Mode discovery : carte profil X/4
+    if (pcDur)  pcDur.textContent = 'PROFIL ATHLETIK · ' + dStep + '/4';
+    if (pcName) pcName.textContent = (dStep === 0 ? 'DÉBLOQUE TA SÉANCE' : 'CONTINUE TON PROFIL');
+    if (pcObj)  pcObj.textContent  = (dStep === 0
+      ? 'Commence par tes mesures. Sans ça, je ne peux pas te programmer un travail honnête.'
+      : 'Encore ' + (4 - dStep) + ' étape' + (4 - dStep > 1 ? 's' : '') + '. Tu y es presque.');
+    if (pill)   { pill.style.display = ''; pill.textContent = dStep === 0 ? 'À FINIR' : 'EN COURS'; }
+    if (ctaLbl) ctaLbl.textContent = (dStep === 0 ? 'Commencer mon profil' : 'Reprendre où je suis');
+    if (prog)   { prog.style.display = ''; if (progFill) progFill.style.width = (dStep * 25) + '%'; }
+    if (lockedWrap) lockedWrap.style.display = '';
+    if (lockedPill) lockedPill.textContent = 'PROFIL ' + dStep + '/4 REQUIS';
   }
-  document.getElementById('pcPhase').textContent = `Phase ${user.phase} — Fondations`;
-  document.getElementById('pcPct').textContent = user.progressPct + '%';
-  document.getElementById('pcBar').style.width = user.progressPct + '%';
-  document.getElementById('pcDur').textContent = `⏱ Semaine ${user.weekNum} / ${user.totalWeeks}`;
+  // Optionnels (legacy) — ces ids n'existent pas forcément dans la nouvelle structure
+  var pcPhase = document.getElementById('pcPhase'); if (pcPhase) pcPhase.textContent = `Phase ${user.phase} — Fondations`;
+  var pcPct = document.getElementById('pcPct'); if (pcPct) pcPct.textContent = user.progressPct + '%';
+  var pcBar = document.getElementById('pcBar'); if (pcBar) pcBar.style.width = user.progressPct + '%';
 
   // Athletik Score
   if (user.athScore !== null) {
