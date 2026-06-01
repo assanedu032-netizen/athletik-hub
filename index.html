@@ -2666,33 +2666,8 @@ div.titan-bubble,div.t-bubble{
   border-radius:3px !important;
 }
 
-/* ── vHome — Today Card goldframe ── */
-#todayCard{
-  background:var(--ah-surface) !important;
-  border:none !important;
-  border-bottom:1px solid var(--ah-border) !important;
-  padding:20px 20px !important;
-}
-#todayCard > div:first-child > div:first-child{
-  font-family:var(--ah-font-mono) !important;
-  font-size:10px !important;
-  letter-spacing:.22em !important;
-  color:var(--ah-gold) !important;
-  text-transform:uppercase !important;
-}
-#pcName{
-  font-family:var(--ah-font-display) !important;
-  font-size:26px !important;
-  color:var(--ah-text) !important;
-  letter-spacing:.08em !important;
-}
-#pcObj{
-  font-family:var(--ah-font-body) !important;
-  font-size:13px !important;
-  color:var(--ah-text2) !important;
-}
-/* Bouton LANCER SÉANCE */
-#todayCard button[onclick*="discoveryStartProfile"],
+/* ── vHome — Today Card (DS v1.0 navy-deep, styling via markup inline) ── */
+/* Bouton LANCER SÉANCE (mode unlocked uniquement) */
 #todayCard button[onclick*="launchToday"],
 #todayCard button[onclick*="startSession"]{
   background:var(--ah-gold) !important;
@@ -3046,17 +3021,7 @@ button:active:not(.ah-titan-btn):not([class*="nav"]):not([class*="ls-"]):not([cl
   transform:scale(.97) !important; transition:transform .12s !important;
 }
 
-/* ── vHome profil header ── */
-#greetText{
-  font-family:var(--ah-font-mono) !important;
-  font-size:10px !important; letter-spacing:.2em !important;
-  color:rgba(255,255,255,.55) !important; text-transform:uppercase !important;
-}
-#userName{
-  font-family:var(--ah-font-display) !important;
-  font-size:34px !important; letter-spacing:.1em !important;
-  color:#fff !important; text-shadow:0 2px 20px rgba(0,0,0,.5) !important;
-}
+/* ── vHome profil header (DS v1.0 — base light, géré par markup inline) ── */
 
 /* ── Opt-cards DS v1.0 — picto SVG + Bebas titre + sous-texte + arrow ── */
 .ah-opt-card{
@@ -3633,7 +3598,7 @@ window.tiResetOnEnter = function(){ window.tiShowStep(1); };
     </div>
 
     <!-- CTA continuer + bulle Titan en bas -->
-    <button class="res-btn ah-q1-cta" onclick="go('qSATIntro')" style="margin-top:18px;width:100%;padding:15px;background:var(--ah-surface2);color:var(--ah-muted);border:1px solid var(--ah-border);border-radius:12px;font-family:'Bebas Neue',sans-serif;font-size:14px;letter-spacing:.12em;cursor:pointer">CHOISIS POUR CONTINUER</button>
+    <button class="ah-q1-cta" onclick="go('qSATIntro')" style="margin-top:18px;width:100%;padding:15px;background:var(--ah-surface2);color:var(--ah-muted);border:1px solid var(--ah-border);border-radius:12px;font-family:'Bebas Neue',sans-serif;font-size:14px;letter-spacing:.12em;cursor:pointer">CHOISIS POUR CONTINUER</button>
 
     <div style="display:flex;align-items:flex-start;gap:10px;margin-top:14px;padding:0 2px">
       <div style="width:32px;height:32px;border-radius:50%;border:1.5px solid var(--ah-gold);overflow:hidden;flex-shrink:0;background:var(--ah-navy-deep);display:flex;align-items:center;justify-content:center">
@@ -9022,20 +8987,10 @@ function launchTodaySession() {
 window.launchTodaySession = launchTodaySession;
 
 function renderTodayCard() {
-  var container = document.getElementById('todayCard');
-  if (!container) return;
-  var s = getTodaySession();
-  var icon = s.type === 'training' ? '🏋️' : '🧘';
-  var html = '<div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:12px">';
-  html += '<div>';
-  html += '<div style="font-family:Bebas Neue,sans-serif;font-size:11px;letter-spacing:2px;color:var(--gold);margin-bottom:4px">' + s.title + '</div>';
-  html += '<div style="font-size:18px;font-weight:800;color:var(--text);line-height:1.2">' + s.subtitle + '</div>';
-  html += '<div style="font-size:12px;color:var(--muted);margin-top:4px">⏱ ' + s.duration + '</div>';
-  html += '</div>';
-  html += '<div style="font-size:32px">' + icon + '</div>';
-  html += '</div>';
-  html += '<button onclick="' + s.action + '" style="width:100%;padding:14px;background:linear-gradient(135deg,#C5A44E,#D4B86A);border:none;border-radius:12px;font-family:Bebas Neue,sans-serif;font-size:16px;letter-spacing:1px;color:#0A0F1E;cursor:pointer">' + s.btnLabel + '</button>';
-  container.innerHTML = html;
+  // Legacy : la carte aujourd'hui est maintenant rendue par renderUserData()
+  // avec la structure DS v1.0 (discovery / unlocked). No-op pour éviter
+  // que innerHTML écrase notre nouveau markup.
+  return;
 }
 
 
@@ -17912,25 +17867,9 @@ function renderDiscoveryBanner() {
 
   banner.style.display = 'block';
 
-  // Verrouiller le bouton "LANCER LA SÉANCE" si profil pas complet
-  var todayBtn = document.querySelector('#todayCard button');
-  if (todayBtn) {
-    if (pct < 100) {
-      todayBtn.innerHTML = '🔒 Compléter ton profil pour débloquer';
-      todayBtn.style.background = 'var(--surface2)';
-      todayBtn.style.color = 'var(--muted)';
-      todayBtn.style.boxShadow = 'none';
-      todayBtn.style.border = '1.5px dashed var(--border2)';
-      todayBtn.onclick = function() { discoveryStartProfile(); };
-    } else {
-      todayBtn.innerHTML = 'LANCER LA SÉANCE →';
-      todayBtn.style.background = 'linear-gradient(135deg,var(--gold),var(--gold2))';
-      todayBtn.style.color = 'var(--navy)';
-      todayBtn.style.boxShadow = '0 4px 12px rgba(197,164,78,0.25)';
-      todayBtn.style.border = 'none';
-      todayBtn.onclick = function() { goToProgrammes(); };
-    }
-  }
+  // Legacy : le todayCard est maintenant rendu en DS v1.0 par renderUserData()
+  // (modes discovery / unlocked branchés sur dStep et programAttributed).
+  // On ne touche plus au bouton ici.
 }
 
 function discoveryStartProfile() {
