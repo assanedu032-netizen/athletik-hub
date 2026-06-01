@@ -3058,6 +3058,58 @@ button:active:not(.ah-titan-btn):not([class*="nav"]):not([class*="ls-"]):not([cl
   color:#fff !important; text-shadow:0 2px 20px rgba(0,0,0,.5) !important;
 }
 
+/* ── Opt-cards DS v1.0 — picto SVG + Bebas titre + sous-texte + arrow ── */
+.ah-opt-card{
+  display:flex !important; align-items:center; gap:14px;
+  width:100%; padding:14px 16px !important;
+  background:var(--ah-surface) !important;
+  border:1.5px solid var(--ah-border) !important;
+  border-radius:14px !important; cursor:pointer; text-align:left;
+  transition:border-color .15s, background .15s, transform .12s;
+}
+.ah-opt-card:active{ transform:scale(.985); }
+.ah-opt-card .ah-opt-ico{
+  width:42px; height:42px; flex-shrink:0;
+  border-radius:10px; background:var(--ah-surface2);
+  border:1px solid var(--ah-border);
+  display:flex; align-items:center; justify-content:center;
+  color:var(--ah-navy);
+}
+.ah-opt-card .ah-opt-body{ flex:1; min-width:0; }
+.ah-opt-card .ah-opt-title{
+  font-family:'Bebas Neue',sans-serif; font-size:15px;
+  letter-spacing:.08em; color:var(--ah-text); line-height:1.1;
+}
+.ah-opt-card .ah-opt-sub{
+  font-family:'Outfit',sans-serif; font-size:12px;
+  color:var(--ah-text2); line-height:1.4; margin-top:3px;
+}
+.ah-opt-card .ah-opt-arrow{
+  font-family:'Outfit',sans-serif; font-size:18px;
+  color:var(--ah-muted); flex-shrink:0;
+}
+.ah-opt-card.on, .ah-opt-card.sel{
+  background:rgba(197,164,78,.06) !important;
+  border-color:var(--ah-gold) !important;
+  border-width:2px !important;
+}
+.ah-opt-card.on .ah-opt-ico, .ah-opt-card.sel .ah-opt-ico{
+  background:var(--ah-gold) !important;
+  border-color:var(--ah-gold) !important;
+  color:var(--ah-navy) !important;
+}
+.ah-opt-card.on .ah-opt-arrow, .ah-opt-card.sel .ah-opt-arrow{
+  color:var(--ah-gold);
+}
+/* CTA Q1 — passe en or quand une option est sélectionnée */
+.ah-q1 .ob-opts:has(.ah-opt-card.on) ~ .ah-q1-cta,
+.ah-q1 .ob-opts:has(.ah-opt-card.sel) ~ .ah-q1-cta{
+  background:var(--ah-gold) !important;
+  color:var(--ah-navy) !important;
+  border:none !important;
+  box-shadow:0 8px 24px rgba(197,164,78,.32);
+}
+
 /* ── Flow d'entrée light — base blanche conforme handoff §2 (dark autorisé
    uniquement sur Splash/Welcome/TitanIntro/LiveSession) ── */
 html body #obQ1, html body #qSATIntro, html body #qNutri,
@@ -3356,11 +3408,14 @@ html body #result, html body #nutriResult{
 <!-- Container des toasts (notifications in-app) -->
 <div id="toastContainer"></div>
 
-<div id="splash" class="scr on">
-  <img class="sp-logo" src="/images/logo.png" alt="Athletik Hub" onerror="this.outerHTML='<div class=&quot;sp-logo&quot;>AH</div>'">
-  <div class="sp-name">ATHLETIK HUB</div>
-  <div class="sp-sub">Deviens ce que tu peux être</div>
-  <div class="sp-bar"><div class="sp-bar-in" id="splashBar"></div></div>
+<div id="splash" class="scr on" style="background:var(--ah-bg);justify-content:center;align-items:center;padding:32px 24px">
+  <div style="display:flex;flex-direction:column;align-items:center;gap:24px;max-width:340px;width:100%">
+    <img class="sp-logo" src="/images/logo.png" alt="Athletik Hub" style="width:130px;height:130px;object-fit:contain;background:transparent;border:none;box-shadow:none;animation:popIn .6s ease both" onerror="this.outerHTML='<div class=&quot;sp-logo&quot;>AH</div>'">
+    <div class="sp-name" style="font-family:'Bebas Neue',sans-serif;font-size:54px;line-height:.92;color:var(--ah-text);letter-spacing:.04em;text-align:center">ATHLETIK<br>HUB</div>
+    <div style="width:48px;height:2px;background:var(--ah-gold);border-radius:2px"></div>
+    <div class="sp-sub" style="font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:.22em;color:var(--ah-text2);text-transform:uppercase;text-align:center">Les secrets de la détente verticale</div>
+    <div class="sp-bar" style="width:200px;height:2px;background:var(--ah-border);border-radius:2px;overflow:hidden;margin-top:8px"><div class="sp-bar-in" id="splashBar" style="height:100%;background:var(--ah-gold);width:0;transition:width .25s"></div></div>
+  </div>
   <div style="position:absolute;bottom:40px;left:0;right:0;text-align:center">
     <button onclick="localStorage.clear();location.reload()" style="background:none;border:none;color:rgba(255,255,255,.25);font-size:11px;cursor:pointer;font-family:Outfit,sans-serif;padding:8px 16px">Réinitialiser</button>
   </div>
@@ -3368,63 +3423,46 @@ html body #result, html body #nutriResult{
 
 <!-- ═══ WELCOME — Page d'accueil pour visiteurs ═══ -->
 <div id="welcome" class="scr">
-  <div style="flex:1;display:flex;flex-direction:column;padding:24px 22px;min-height:100vh;background:linear-gradient(180deg,var(--ah-navy-deep) 0%,var(--ah-navy) 100%);position:relative;overflow:hidden;color:#fff">
+  <div style="flex:1;display:flex;flex-direction:column;min-height:100vh;background:var(--ah-navy-deep);position:relative;overflow:hidden;color:#fff">
 
-    <!-- Halo or arrière-plan -->
-    <div style="position:absolute;top:-100px;left:50%;transform:translateX(-50%);width:300px;height:300px;background:radial-gradient(circle,rgba(197,164,78,.15) 0%,transparent 70%);pointer-events:none"></div>
-
-    <!-- Logo (Design System v1.0) -->
-    <div style="display:flex;align-items:center;gap:10px;padding-top:20px;position:relative;z-index:1">
-      <img src="/images/logo.png" alt="" style="width:42px;height:42px;object-fit:contain;filter:drop-shadow(0 0 12px rgba(197,164,78,.35))" onerror="this.outerHTML='<div style=&quot;width:38px;height:38px;border-radius:10px;background:linear-gradient(135deg,#1B2A4A,#0B1228);border:1.5px solid #C5A44E;display:flex;align-items:center;justify-content:center;font-family:Bebas Neue,sans-serif;font-size:16px;color:#C5A44E&quot;>AH</div>'">
-      <div style="font-family:var(--ah-font-display);font-size:14px;color:#fff;letter-spacing:.2em">ATHLETIK HUB</div>
+    <!-- Photo full-bleed athlète dunk -->
+    <div style="position:absolute;inset:0;z-index:0">
+      <img src="images/vertical-dunk.png" alt="" style="width:100%;height:100%;object-fit:cover;object-position:center top" onerror="this.style.background='linear-gradient(135deg,#1B2A4A,#0B1228)';this.src=''">
+      <div style="position:absolute;inset:0;background:linear-gradient(180deg,rgba(11,18,40,.55) 0%,rgba(11,18,40,.2) 35%,rgba(11,18,40,.75) 65%,rgba(11,18,40,.96) 100%)"></div>
     </div>
 
-    <!-- Contenu principal centré -->
-    <div style="flex:1;display:flex;flex-direction:column;justify-content:center;padding:40px 0;position:relative;z-index:1">
+    <!-- Header logo + compagnon du livre -->
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:18px 22px 0;position:relative;z-index:1">
+      <div style="display:flex;align-items:center;gap:10px">
+        <div style="width:36px;height:36px;border-radius:10px;background:rgba(255,255,255,.08);border:1px solid rgba(197,164,78,.4);backdrop-filter:blur(8px);display:flex;align-items:center;justify-content:center;overflow:hidden">
+          <img src="/images/logo.png" alt="" style="width:80%;height:80%;object-fit:contain" onerror="this.outerHTML='<span style=&quot;font-family:Bebas Neue,sans-serif;font-size:14px;color:#C5A44E&quot;>AH</span>'">
+        </div>
+        <div style="font-family:'Bebas Neue',sans-serif;font-size:13px;color:#fff;letter-spacing:.22em">ATHLETIK HUB</div>
+      </div>
+      <div style="font-family:'JetBrains Mono',monospace;font-size:9px;letter-spacing:.18em;color:rgba(255,255,255,.55);text-transform:uppercase">Compagnon du livre</div>
+    </div>
 
-      <!-- Headline Bebas massif -->
-      <h1 class="ah-display" style="font-size:48px;color:#fff;margin-bottom:18px">
-        +10 CM<br>
-        <span style="color:var(--ah-gold)">EN 12 SEMAINES</span>
+    <!-- Spacer pour pousser le contenu vers le bas -->
+    <div style="flex:1"></div>
+
+    <!-- Contenu bas — kicker + headline + texte + CTAs -->
+    <div style="padding:0 22px 28px;position:relative;z-index:1">
+      <div style="font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:.22em;color:var(--ah-gold);text-transform:uppercase;margin-bottom:14px">Performance · Discipline</div>
+      <h1 style="font-family:'Bebas Neue',sans-serif;font-size:56px;line-height:.95;color:#fff;letter-spacing:.02em;margin:0 0 16px">
+        GAGNE TA<br>
+        <span style="color:var(--ah-gold)">DÉTENTE.</span>
       </h1>
-      <hr class="ah-rule-gold" style="margin-bottom:20px">
-
-      <p class="ah-body" style="color:rgba(255,255,255,.65);margin-bottom:40px">
-        Le programme officiel du livre <strong style="color:#fff">Les Secrets de la Détente Verticale</strong>. Méthode testée, résultats mesurés.
+      <p style="font-family:'Outfit',sans-serif;font-size:14px;line-height:1.55;color:rgba(255,255,255,.7);margin:0 0 28px;max-width:340px">
+        Le programme jour-par-jour de mon livre, coaché par Titan. Pas de motivation creuse — du travail mesuré.
       </p>
 
-      <!-- Bénéfices -->
-      <div style="margin-bottom:48px;display:flex;flex-direction:column;gap:14px">
-        <div style="display:flex;align-items:flex-start;gap:12px">
-          <div style="width:24px;height:24px;border-radius:50%;background:rgba(197,164,78,.15);border:1.5px solid var(--ah-gold);display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:2px;color:var(--ah-gold);font-size:12px;font-weight:800">✓</div>
-          <div>
-            <div style="font-size:14px;font-weight:700;color:#fff">Programme personnalisé</div>
-            <div class="ah-small" style="color:rgba(255,255,255,.55);margin-top:2px">Adapté à ton niveau, ton matériel, tes contraintes</div>
-          </div>
-        </div>
-        <div style="display:flex;align-items:flex-start;gap:12px">
-          <div style="width:24px;height:24px;border-radius:50%;background:rgba(197,164,78,.15);border:1.5px solid var(--ah-gold);display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:2px;color:var(--ah-gold);font-size:12px;font-weight:800">✓</div>
-          <div>
-            <div style="font-size:14px;font-weight:700;color:#fff">Coach IA Titan</div>
-            <div class="ah-small" style="color:rgba(255,255,255,.55);margin-top:2px">Direct, exigeant, jamais flatteur. Comme dans le livre.</div>
-          </div>
-        </div>
-        <div style="display:flex;align-items:flex-start;gap:12px">
-          <div style="width:24px;height:24px;border-radius:50%;background:rgba(197,164,78,.15);border:1.5px solid var(--ah-gold);display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:2px;color:var(--ah-gold);font-size:12px;font-weight:800">✓</div>
-          <div>
-            <div style="font-size:14px;font-weight:700;color:#fff">Suivi mesuré</div>
-            <div class="ah-small" style="color:rgba(255,255,255,.55);margin-top:2px">Athletik Score chiffré, courbe de progression réelle</div>
-          </div>
-        </div>
+      <button onclick="welcomeStart()" style="width:100%;padding:17px 20px;background:var(--ah-gold);color:var(--ah-navy);border:none;border-radius:12px;font-family:'Bebas Neue',sans-serif;font-size:16px;letter-spacing:.12em;cursor:pointer;box-shadow:0 8px 24px rgba(197,164,78,.32);margin-bottom:14px">COMMENCER MON PARCOURS</button>
+
+      <div style="display:flex;justify-content:center;gap:8px;align-items:center">
+        <button onclick="welcomeLogin()" style="background:none;border:none;color:rgba(255,255,255,.7);font-family:'Outfit',sans-serif;font-size:13px;text-decoration:underline;text-underline-offset:3px;cursor:pointer;padding:6px 8px">J'ai déjà un compte</button>
+        <span style="color:rgba(255,255,255,.3)">·</span>
+        <button onclick="openAccessCode()" style="background:none;border:none;color:var(--ah-gold);font-family:'Outfit',sans-serif;font-size:13px;cursor:pointer;padding:6px 8px">J'ai le livre</button>
       </div>
-
-    </div>
-
-    <!-- CTAs en bas -->
-    <div style="padding-bottom:24px;position:relative;z-index:1;display:flex;flex-direction:column;gap:10px">
-      <button class="ah-btn ah-btn-gold ah-btn-lg ah-btn-block" onclick="welcomeStart()">Commencer mon parcours →</button>
-      <button class="ah-btn ah-btn-block" onclick="welcomeLogin()" style="background:transparent;border:1.5px solid rgba(255,255,255,.18);color:rgba(255,255,255,.75)">J'ai déjà un compte</button>
-      <button class="ah-btn ah-btn-block" onclick="openAccessCode()" style="background:rgba(197,164,78,.08);border:1.5px solid rgba(197,164,78,.35);color:var(--ah-gold)">📕 J'ai le livre — Saisir mon code</button>
     </div>
 
   </div>
@@ -3432,87 +3470,177 @@ html body #result, html body #nutriResult{
 
 <!-- ═══ TITAN INTRO ═══ -->
 <div id="titanIntro" class="scr">
-  <div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:32px 24px;text-align:center;background:linear-gradient(180deg,var(--ah-navy-deep) 0%,var(--ah-navy) 100%);color:#fff;min-height:100vh;position:relative;overflow:hidden">
+  <div style="flex:1;display:flex;flex-direction:column;background:var(--ah-bg);min-height:100vh;position:relative">
 
-    <!-- Halo or arrière-plan -->
-    <div style="position:absolute;top:20%;left:50%;transform:translate(-50%,-50%);width:320px;height:320px;background:radial-gradient(circle,rgba(197,164,78,.18) 0%,transparent 70%);pointer-events:none"></div>
-
-    <!-- Mascotte 140px Design System v1.0 (.ah-titan + image + anneau or) -->
-    <div class="ah-titan" style="width:140px;height:140px;position:relative;z-index:1;box-shadow:0 20px 60px rgba(0,0,0,.5)">
-      <img src="images/titan-mascot.png" alt="Titan" onerror="this.parentElement.classList.add('fallback');this.style.display='none';this.nextElementSibling.style.display='flex'">
-      <span style="display:none;width:100%;height:100%;align-items:center;justify-content:center;font-family:var(--ah-font-display);font-size:54px;color:var(--ah-gold)">T</span>
+    <!-- Header step indicator + skip -->
+    <div style="display:flex;justify-content:space-between;align-items:center;padding:18px 24px 0">
+      <div style="font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:.22em;color:var(--ah-gold);text-transform:uppercase"><span id="tiStepNum">01</span> / 03</div>
+      <button onclick="go('obQ1')" style="background:none;border:none;font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:.22em;color:var(--ah-muted);text-transform:uppercase;cursor:pointer;padding:6px">PASSER</button>
     </div>
 
-    <div style="font-family:var(--ah-font-display);font-size:28px;letter-spacing:.18em;color:var(--ah-gold);margin-top:22px;position:relative;z-index:1">TITAN</div>
-    <div class="ah-kicker" style="color:rgba(255,255,255,.55);margin-top:4px;position:relative;z-index:1">Ton coach virtuel</div>
+    <!-- STEP 1 — Je suis Titan -->
+    <div class="ti-step" data-ti-step="1" style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:24px;text-align:center">
+      <div class="ah-titan" style="width:140px;height:140px;border-radius:50%;border:3px solid var(--ah-gold);background:var(--ah-surface);overflow:hidden;box-shadow:0 12px 36px rgba(20,30,60,.15);display:flex;align-items:center;justify-content:center">
+        <img src="images/titan-mascot.png" alt="Titan" style="width:100%;height:100%;object-fit:cover" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">
+        <span style="display:none;width:100%;height:100%;align-items:center;justify-content:center;font-family:'Bebas Neue',sans-serif;font-size:54px;color:var(--ah-gold)">T</span>
+      </div>
+      <div style="font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:.22em;color:var(--ah-gold);text-transform:uppercase;margin-top:24px">Coach IA</div>
+      <div style="font-family:'Bebas Neue',sans-serif;font-size:42px;letter-spacing:.04em;color:var(--ah-text);margin-top:4px">JE SUIS TITAN.</div>
+      <p style="font-family:'Outfit',sans-serif;font-size:14px;line-height:1.55;color:var(--ah-text2);margin:14px auto 0;max-width:300px">Pas un assistant poli. Pas un ami. Un coach qui sait ce que tu peux donner — et qui te le demande.</p>
+    </div>
 
-    <!-- Bulle Titan navy (typeText() écrira dedans) -->
-    <div class="ah-titan-bubble" id="titanBubble" style="margin-top:24px;max-width:340px;width:100%;text-align:left;position:relative;z-index:1;border-radius:14px 14px 14px 4px"></div>
+    <!-- STEP 2 — La promesse -->
+    <div class="ti-step" data-ti-step="2" style="display:none;flex:1;flex-direction:column;align-items:center;justify-content:center;padding:24px;text-align:center">
+      <div class="ah-titan" style="width:110px;height:110px;border-radius:50%;border:3px solid var(--ah-gold);background:var(--ah-surface);overflow:hidden;box-shadow:0 12px 36px rgba(20,30,60,.15);display:flex;align-items:center;justify-content:center">
+        <img src="images/titan-mascot.png" alt="Titan" style="width:100%;height:100%;object-fit:cover" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">
+        <span style="display:none;width:100%;height:100%;align-items:center;justify-content:center;font-family:'Bebas Neue',sans-serif;font-size:42px;color:var(--ah-gold)">T</span>
+      </div>
+      <div style="font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:.22em;color:var(--ah-gold);text-transform:uppercase;margin-top:24px">La méthode</div>
+      <div style="font-family:'Bebas Neue',sans-serif;font-size:38px;letter-spacing:.04em;color:var(--ah-text);margin-top:4px;line-height:1.05">DU TRAVAIL.<br>MESURÉ.</div>
+      <p style="font-family:'Outfit',sans-serif;font-size:14px;line-height:1.55;color:var(--ah-text2);margin:14px auto 0;max-width:300px">Chaque séance est notée. Chaque test est tracé. Tu vois ce que tu progresses — ou pas.</p>
+    </div>
 
-    <button class="btn-cta show ah-btn ah-btn-gold ah-btn-lg ah-btn-block" id="btnStart" onclick="go('obQ1')" style="margin-top:28px;max-width:340px;width:100%;position:relative;z-index:1">C'est parti 🔥</button>
+    <!-- STEP 3 — Avant de commencer -->
+    <div class="ti-step" data-ti-step="3" style="display:none;flex:1;flex-direction:column;align-items:center;padding:24px 24px 12px;text-align:center">
+      <div class="ah-titan" style="width:90px;height:90px;border-radius:50%;border:3px solid var(--ah-gold);background:var(--ah-surface);overflow:hidden;box-shadow:0 10px 28px rgba(20,30,60,.15);display:flex;align-items:center;justify-content:center;margin-top:8px">
+        <img src="images/titan-mascot.png" alt="Titan" style="width:100%;height:100%;object-fit:cover" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">
+        <span style="display:none;width:100%;height:100%;align-items:center;justify-content:center;font-family:'Bebas Neue',sans-serif;font-size:36px;color:var(--ah-gold)">T</span>
+      </div>
+      <div style="margin-top:22px;width:100%;max-width:340px;display:flex;flex-direction:column;gap:10px;text-align:center">
+        <div style="background:var(--ah-navy-deep);border-left:3px solid var(--ah-gold);border-radius:12px 12px 12px 4px;padding:14px 16px">
+          <div style="font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:.2em;color:var(--ah-gold);text-transform:uppercase;margin-bottom:6px">TITAN</div>
+          <div style="font-family:'Outfit',sans-serif;font-size:13.5px;line-height:1.5;color:#fff">Avant de commencer : je vais te poser quelques questions. Pas de bla-bla, juste ton objectif et tes mesures.</div>
+        </div>
+        <div style="background:var(--ah-navy-deep);border-left:3px solid var(--ah-gold);border-radius:12px 12px 12px 4px;padding:14px 16px">
+          <div style="font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:.2em;color:var(--ah-gold);text-transform:uppercase;margin-bottom:6px">TITAN</div>
+          <div style="font-family:'Outfit',sans-serif;font-size:13.5px;line-height:1.5;color:#fff">Si tu mens sur tes chiffres, tu te mens à toi. Pas à moi.</div>
+        </div>
+      </div>
+      <div style="width:100%;max-width:340px;height:1px;background:var(--ah-border);margin:22px 0 16px"></div>
+      <div style="font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:.14em;color:var(--ah-muted);text-transform:none">Ça prend 3 minutes. Sois honnête.</div>
+      <!-- Bulle invisible pour compat JS typeText (référence #titanBubble) -->
+      <div id="titanBubble" style="display:none"></div>
+    </div>
+
+    <!-- Pagination dots -->
+    <div style="display:flex;justify-content:center;gap:8px;padding:0 0 16px">
+      <span class="ti-dot" data-ti-dot="1" style="width:8px;height:8px;border-radius:50%;background:var(--ah-gold);transition:background .15s"></span>
+      <span class="ti-dot" data-ti-dot="2" style="width:8px;height:8px;border-radius:50%;background:var(--ah-border2);transition:background .15s"></span>
+      <span class="ti-dot" data-ti-dot="3" style="width:8px;height:8px;border-radius:50%;background:var(--ah-border2);transition:background .15s"></span>
+    </div>
+
+    <!-- CTA bas -->
+    <div style="padding:0 24px 28px">
+      <button id="btnStart" onclick="tiNextOrStart()" style="width:100%;padding:17px 20px;background:var(--ah-gold);color:var(--ah-navy);border:none;border-radius:12px;font-family:'Bebas Neue',sans-serif;font-size:16px;letter-spacing:.12em;cursor:pointer;box-shadow:0 8px 24px rgba(197,164,78,.32)"><span id="tiCtaLabel">CONTINUER</span></button>
+    </div>
   </div>
 </div>
 
+<script>
+// Navigation multi-step TitanIntro — préserve la signature go('titanIntro') et go('obQ1')
+window._tiStep = 1;
+window.tiShowStep = function(n){
+  window._tiStep = n;
+  document.querySelectorAll('.ti-step').forEach(function(el){
+    el.style.display = (parseInt(el.getAttribute('data-ti-step'),10) === n) ? 'flex' : 'none';
+  });
+  document.querySelectorAll('.ti-dot').forEach(function(el){
+    var i = parseInt(el.getAttribute('data-ti-dot'),10);
+    el.style.background = (i === n) ? 'var(--ah-gold)' : 'var(--ah-border2)';
+  });
+  var num = document.getElementById('tiStepNum'); if(num) num.textContent = String(n).padStart(2,'0');
+  var lbl = document.getElementById('tiCtaLabel'); if(lbl) lbl.textContent = (n === 3) ? 'JE SUIS PRÊT' : 'CONTINUER';
+};
+window.tiNextOrStart = function(){
+  if(window._tiStep < 3){ window.tiShowStep(window._tiStep + 1); }
+  else { go('obQ1'); }
+};
+// Reset à 1 quand on entre dans titanIntro
+window.tiResetOnEnter = function(){ window.tiShowStep(1); };
+</script>
+
 <!-- ═══ OB Q1 — OBJECTIF ═══ -->
 <div id="obQ1" class="scr">
-  <div class="ob">
-    <div style="display:flex;gap:6px;margin-bottom:16px">
-      <div style="flex:1;height:3px;border-radius:2px;background:var(--gold)"></div>
-      <div style="flex:3;height:3px;border-radius:2px;background:var(--border)"></div>
+  <div class="ob ah-q1">
+    <!-- Header mono : question + temps -->
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+      <div style="font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:.22em;color:var(--ah-gold);text-transform:uppercase">QUESTION 01 / 01 · AVANT COMPTE</div>
+      <div style="font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:.22em;color:var(--ah-muted);text-transform:uppercase">2 min</div>
     </div>
-    <div class="ob-step">1 question avant de commencer</div>
-    <div class="ob-q">Pourquoi t'es là ?</div>
-    <div class="ob-sub">Un seul objectif. Celui pour lequel tu es vraiment là.</div>
+    <div style="height:2px;width:60px;background:var(--ah-gold);border-radius:2px;margin-bottom:14px"></div>
+    <div class="ob-q" style="font-family:'Bebas Neue',sans-serif;font-size:36px;letter-spacing:.04em;line-height:1;color:var(--ah-text);margin-bottom:6px">TON OBJECTIF.</div>
+    <div class="ob-sub" style="color:var(--ah-text2);font-size:13px;margin-bottom:18px">Un seul. Le bon. Tu pourras affiner après.</div>
 
-    <div class="ob-opts" style="margin-top:20px">
+    <div class="ob-opts" style="display:flex;flex-direction:column;gap:10px">
 
-      <button class="ob-opt" onclick="obPickObj(this,'dunker')" style="padding:18px 16px">
-        <div style="font-size:28px;flex-shrink:0">🏀</div>
-        <div class="ob-opt-txt" style="font-size:15px;font-weight:700">Dunker au basket</div>
+      <!-- DÉTENTE VERTICALE (dunker + vertical) -->
+      <button class="ob-opt ah-opt-card" onclick="obPickObj(this,'dunker')">
+        <div class="ah-opt-ico"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19V5"/><path d="M5 12l7-7 7 7"/></svg></div>
+        <div class="ah-opt-body">
+          <div class="ah-opt-title">DÉTENTE VERTICALE</div>
+          <div class="ah-opt-sub">Sauter plus haut. Dunker, claquer le rebond.</div>
+        </div>
+        <div class="ah-opt-arrow">→</div>
       </button>
 
-      <button class="ob-opt" onclick="obPickObj(this,'vertical')" style="padding:18px 16px">
-        <div style="font-size:28px;flex-shrink:0">🦘</div>
-        <div class="ob-opt-txt" style="font-size:15px;font-weight:700">Devenir pro de la détente verticale</div>
+      <!-- EXPLOSIVITÉ GLOBALE -->
+      <button class="ob-opt ah-opt-card" onclick="obPickObj(this,'explosif')">
+        <div class="ah-opt-ico"><svg viewBox="0 0 24 24" width="22" height="22" fill="currentColor"><path d="M13 2L3 14h7l-1 8 11-14h-7z"/></svg></div>
+        <div class="ah-opt-body">
+          <div class="ah-opt-title">EXPLOSIVITÉ GLOBALE</div>
+          <div class="ah-opt-sub">Puissance complète — saut, sprint, change of direction.</div>
+        </div>
+        <div class="ah-opt-arrow">→</div>
       </button>
 
-      <button class="ob-opt" onclick="obPickObj(this,'explosif')" style="padding:18px 16px">
-        <div style="font-size:28px;flex-shrink:0">⚡</div>
-        <div class="ob-opt-txt" style="font-size:15px;font-weight:700">Explosivité générale</div>
+      <!-- VITESSE + PERTE DE GRAS -->
+      <button class="ob-opt ah-opt-card" onclick="obPickObj(this,'poids')">
+        <div class="ah-opt-ico"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 17l6-6 4 4 8-8"/><path d="M14 7h7v7"/></svg></div>
+        <div class="ah-opt-body">
+          <div class="ah-opt-title">VITESSE + PERTE DE GRAS</div>
+          <div class="ah-opt-sub">Plus sec, plus rapide. Relative strength.</div>
+        </div>
+        <div class="ah-opt-arrow">→</div>
       </button>
 
-      <!-- Bouton Autre qui dévoile les options avancées -->
-      <button id="q1AutreBtn" class="ob-opt" onclick="q1ToggleAutre()" style="padding:14px 16px;background:transparent;border:1.5px dashed var(--border2);margin-top:4px">
-        <div style="font-size:18px;flex-shrink:0">+</div>
-        <div class="ob-opt-txt" style="font-size:13px;color:var(--muted);font-weight:600">Autre objectif spécifique</div>
+      <!-- FORCE SANS SALLE -->
+      <button class="ob-opt ah-opt-card" onclick="obPickObj(this,'force')">
+        <div class="ah-opt-ico"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12h16"/><path d="M7 8l-4 4 4 4"/><path d="M17 8l4 4-4 4"/></svg></div>
+        <div class="ah-opt-body">
+          <div class="ah-opt-title">FORCE SANS SALLE</div>
+          <div class="ah-opt-sub">Triphasique poids du corps + matériel léger.</div>
+        </div>
+        <div class="ah-opt-arrow">→</div>
       </button>
 
-      <!-- Options avancées (cachées par défaut) -->
-      <div id="q1AutreOpts" style="display:none;margin-top:4px">
-        <button class="ob-opt" onclick="obPickObj(this,'force')" style="padding:14px 16px">
-          <div style="font-size:22px;flex-shrink:0">💪</div>
-          <div class="ob-opt-txt" style="font-size:13px">Développer ma force sans salle</div>
-        </button>
-        <button class="ob-opt" onclick="obPickObj(this,'poids')" style="padding:14px 16px">
-          <div style="font-size:22px;flex-shrink:0">🔥</div>
-          <div class="ob-opt-txt" style="font-size:13px">Perdre du poids en devenant explosif</div>
-        </button>
-        <button class="ob-opt" onclick="obPickObj(this,'discipline')" style="padding:14px 16px">
-          <div style="font-size:22px;flex-shrink:0">🎯</div>
-          <div class="ob-opt-txt" style="font-size:13px">Créer ma discipline et ma régularité</div>
-        </button>
-        <button class="ob-opt" onclick="obPickObj(this,'tout')" style="padding:14px 16px">
-          <div style="font-size:22px;flex-shrink:0">🔱</div>
-          <div class="ob-opt-txt" style="font-size:13px">Optimiser tout (mental + nutri + entraînement)</div>
-        </button>
+      <!-- DISCIPLINE & HABITUDES -->
+      <button class="ob-opt ah-opt-card" onclick="obPickObj(this,'discipline')">
+        <div class="ah-opt-ico"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg></div>
+        <div class="ah-opt-body">
+          <div class="ah-opt-title">DISCIPLINE &amp; HABITUDES</div>
+          <div class="ah-opt-sub">Micro-séances quotidiennes pour t'installer.</div>
+        </div>
+        <div class="ah-opt-arrow">→</div>
+      </button>
+
+      <!-- Options avancées (gardées invisibles pour compat JS — vertical/tout) -->
+      <button id="q1AutreBtn" onclick="q1ToggleAutre()" style="display:none"></button>
+      <div id="q1AutreOpts" style="display:none">
+        <button class="ob-opt ah-opt-card" onclick="obPickObj(this,'vertical')" style="display:none"><div class="ah-opt-title">VERTICAL</div></button>
+        <button class="ob-opt ah-opt-card" onclick="obPickObj(this,'tout')" style="display:none"><div class="ah-opt-title">TOUT</div></button>
       </div>
 
     </div>
-    <div class="res-titan">
-      <img class="res-t-av" id="rTitanImg" src="" alt="T">
-      <div class="res-t-txt" id="rMsg">"Ton profil montre que tu as besoin d'un programme complet."</div>
+
+    <!-- CTA continuer + bulle Titan en bas -->
+    <button class="res-btn ah-q1-cta" onclick="go('qSATIntro')" style="margin-top:18px;width:100%;padding:15px;background:var(--ah-surface2);color:var(--ah-muted);border:1px solid var(--ah-border);border-radius:12px;font-family:'Bebas Neue',sans-serif;font-size:14px;letter-spacing:.12em;cursor:pointer">CHOISIS POUR CONTINUER</button>
+
+    <div style="display:flex;align-items:flex-start;gap:10px;margin-top:14px;padding:0 2px">
+      <div style="width:32px;height:32px;border-radius:50%;border:1.5px solid var(--ah-gold);overflow:hidden;flex-shrink:0;background:var(--ah-navy-deep);display:flex;align-items:center;justify-content:center">
+        <img class="res-t-av" id="rTitanImg" src="images/titan-mascot.png" alt="T" style="width:100%;height:100%;object-fit:cover" onerror="this.style.display='none'">
+      </div>
+      <div class="res-t-txt" id="rMsg" style="font-family:'Outfit',sans-serif;font-size:12.5px;color:var(--ah-text2);line-height:1.5;font-style:normal">Le mauvais objectif, c'est 3 mois perdus. Choisis ce que tu veux <em>vraiment</em>.</div>
     </div>
-    <button class="res-btn" onclick="go('qSATIntro')">Étape 2/3 — Test physique →</button>
   </div>
 </div>
 
@@ -9273,15 +9401,9 @@ function go(id) {
   nxt.classList.add('on');
   if (window.TEST_MODE && typeof _testRefreshSkip === 'function') _testRefreshSkip();
 
-  // Trigger typing on Titan intro
-  if (id === 'titanIntro') {
-    setTimeout(() => {
-      const msg = "La motivation c'est des conneries.\n\nMoi je m'appelle Titan.\nAlassane m'a créé pour une seule mission — <b>te faire progresser.</b>\n\nPas te flatter. Pas te ménager.\nTe faire progresser.\n\nDis-moi qui tu es.";
-      typeText(document.getElementById('titanBubble'), msg, 22, () => {
-        var btn = document.getElementById('btnStart');
-        if (btn) { btn.classList.add('show'); btn.style.opacity='1'; btn.style.pointerEvents='auto'; }
-      });
-    }, 600);
+  // Reset multi-step TitanIntro à 1 quand on y entre
+  if (id === 'titanIntro' && typeof window.tiShowStep === 'function') {
+    window.tiShowStep(1);
   }
 
   // Trigger thinking → result
