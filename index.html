@@ -3766,13 +3766,11 @@ window.tiResetOnEnter = function(){ window.tiShowStep(1); };
 <!-- ═══ PROFIL 1/3 — QUESTIONNAIRE ═══ -->
 <div id="profil1" class="scr">
   <div class="ob">
-    <div style="display:flex;gap:6px;margin-bottom:4px">
-      <div style="flex:1;height:4px;border-radius:2px;background:var(--gold)"></div>
-      <div style="flex:1;height:4px;border-radius:2px;background:var(--border)"></div>
-      <div style="flex:1;height:4px;border-radius:2px;background:var(--border)"></div>
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+      <div style="font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:.22em;color:var(--ah-gold);text-transform:uppercase">ÉTAPE 02 / 04 · PROFIL</div>
+      <div style="font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:.22em;color:var(--ah-muted);text-transform:uppercase">3 min</div>
     </div>
-    <div style="font-size:10px;color:var(--muted);font-weight:700;letter-spacing:1px;margin-bottom:12px">PROFIL 1/3 — PROGRAMME ADAPTÉ</div>
-    <div style="height:2px;background:var(--border);border-radius:2px;overflow:hidden;margin-bottom:20px"><div id="p1bar" style="height:100%;background:var(--gold);width:20%;transition:width .4s"></div></div>
+    <div style="height:3px;background:var(--ah-border);border-radius:2px;overflow:hidden;margin-bottom:18px"><div id="p1bar" style="height:100%;background:var(--ah-gold);width:20%;transition:width .4s ease"></div></div>
     <div id="p1err" style="display:none;color:#E05252;font-size:12px;font-weight:700;margin-bottom:10px;padding:8px 12px;background:#FEF0F0;border-radius:8px"></div>
 
     <!-- Identité -->
@@ -4138,8 +4136,8 @@ window.tiResetOnEnter = function(){ window.tiShowStep(1); };
       <!-- Sprint 60m -->
       <div style="background:var(--surface);border:1.5px solid var(--border);border-radius:14px;padding:16px;margin-bottom:10px">
         <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px">
-          <div style="width:36px;height:36px;border-radius:10px;background:var(--navy);display:flex;align-items:center;justify-content:center;font-size:18px">⚡</div>
-          <div><div style="font-size:13px;font-weight:700;color:var(--text)">Sprint 60m</div><div style="font-size:11px;color:var(--muted)">3 essais • repos 3 min entre chaque • meilleur temps retenu</div></div>
+          <div style="width:40px;height:40px;border-radius:10px;background:var(--ah-navy);display:flex;align-items:center;justify-content:center;color:var(--ah-gold)"><svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor"><path d="M13 2L3 14h7l-1 8 11-14h-7z"/></svg></div>
+          <div><div style="font-family:'Bebas Neue',sans-serif;font-size:15px;letter-spacing:.08em;color:var(--ah-text)">SPRINT 60M</div><div style="font-size:11px;color:var(--ah-text2);margin-top:2px">3 essais · repos 3 min · meilleur temps retenu</div></div>
         </div>
         <div style="display:flex;align-items:center;gap:8px">
           <input class="fi" type="number" id="setSprintTime" placeholder="8.5" step="0.01" style="flex:1">
@@ -4150,8 +4148,8 @@ window.tiResetOnEnter = function(){ window.tiShowStep(1); };
       <!-- 94 Feet Drill -->
       <div style="background:var(--surface);border:1.5px solid var(--border);border-radius:14px;padding:16px;margin-bottom:10px">
         <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px">
-          <div style="width:36px;height:36px;border-radius:10px;background:var(--navy);display:flex;align-items:center;justify-content:center;font-size:18px">🏀</div>
-          <div><div style="font-size:13px;font-weight:700;color:var(--text)">94 Feet Drill</div><div style="font-size:11px;color:var(--muted)">Allers-retours terrain basket (28.65m × 2) pendant 3 min</div></div>
+          <div style="width:40px;height:40px;border-radius:10px;background:var(--ah-navy);display:flex;align-items:center;justify-content:center;color:var(--ah-gold)"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M3 12h18"/><path d="M3 7l4 5-4 5"/><path d="M21 7l-4 5 4 5"/></svg></div>
+          <div><div style="font-family:'Bebas Neue',sans-serif;font-size:15px;letter-spacing:.08em;color:var(--ah-text)">94 FEET DRILL</div><div style="font-size:11px;color:var(--ah-text2);margin-top:2px">Allers-retours terrain basket (28.65m × 2) pendant 3 min</div></div>
         </div>
         <div style="display:flex;align-items:center;gap:8px">
           <input class="fi" type="number" id="set94FeetAR" placeholder="16" style="flex:1">
@@ -4162,8 +4160,8 @@ window.tiResetOnEnter = function(){ window.tiShowStep(1); };
       <!-- Lane Agility -->
       <div style="background:var(--surface);border:1.5px solid var(--border);border-radius:14px;padding:16px;margin-bottom:10px">
         <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px">
-          <div style="width:36px;height:36px;border-radius:10px;background:var(--navy);display:flex;align-items:center;justify-content:center;font-size:18px">🔄</div>
-          <div><div style="font-size:13px;font-weight:700;color:var(--text)">Lane Agility Test</div><div style="font-size:11px;color:var(--muted)">Sprint + shuffle latéral + backpedal — surface raquette NBA</div></div>
+          <div style="width:40px;height:40px;border-radius:10px;background:var(--ah-navy);display:flex;align-items:center;justify-content:center;color:var(--ah-gold)"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-9-9"/><polyline points="21 3 21 9 15 9"/></svg></div>
+          <div><div style="font-family:'Bebas Neue',sans-serif;font-size:15px;letter-spacing:.08em;color:var(--ah-text)">LANE AGILITY</div><div style="font-size:11px;color:var(--ah-text2);margin-top:2px">Sprint + shuffle latéral + backpedal — surface raquette NBA</div></div>
         </div>
         <div style="display:flex;align-items:center;gap:8px">
           <input class="fi" type="number" id="setLaneAgility" placeholder="11.5" step="0.01" style="flex:1">
@@ -4174,8 +4172,8 @@ window.tiResetOnEnter = function(){ window.tiShowStep(1); };
       <!-- Détente + Force (identiques SAT) -->
       <div style="background:var(--surface);border:1.5px solid var(--border);border-radius:14px;padding:16px;margin-bottom:10px">
         <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px">
-          <div style="width:36px;height:36px;border-radius:10px;background:var(--navy);display:flex;align-items:center;justify-content:center;font-size:18px">🦘</div>
-          <div><div style="font-size:13px;font-weight:700;color:var(--text)">Détente verticale</div><div style="font-size:11px;color:var(--muted)">Même protocole Sargent Test que SAT</div></div>
+          <div style="width:40px;height:40px;border-radius:10px;background:var(--ah-navy);display:flex;align-items:center;justify-content:center;color:var(--ah-gold)"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19V5"/><path d="M5 12l7-7 7 7"/></svg></div>
+          <div><div style="font-family:'Bebas Neue',sans-serif;font-size:15px;letter-spacing:.08em;color:var(--ah-text)">DÉTENTE VERTICALE</div><div style="font-size:11px;color:var(--ah-text2);margin-top:2px">Même protocole Sargent Test que SAT</div></div>
         </div>
         <div style="display:flex;gap:10px">
           <div style="flex:1">
@@ -4192,8 +4190,8 @@ window.tiResetOnEnter = function(){ window.tiShowStep(1); };
       <!-- Test physiologique -->
       <div style="background:var(--surface);border:1.5px solid var(--border);border-radius:14px;padding:16px;margin-bottom:18px">
         <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px">
-          <div style="width:36px;height:36px;border-radius:10px;background:var(--navy);display:flex;align-items:center;justify-content:center;font-size:18px">📸</div>
-          <div><div style="font-size:13px;font-weight:700;color:var(--text)">Test physiologique</div><div style="font-size:11px;color:var(--muted)">Poids + photos face / profil / dos — avant/après comparaison</div></div>
+          <div style="width:40px;height:40px;border-radius:10px;background:var(--ah-navy);display:flex;align-items:center;justify-content:center;color:var(--ah-gold)"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg></div>
+          <div><div style="font-family:'Bebas Neue',sans-serif;font-size:15px;letter-spacing:.08em;color:var(--ah-text)">TEST PHYSIOLOGIQUE</div><div style="font-size:11px;color:var(--ah-text2);margin-top:2px">Poids + photos face / profil / dos — avant/après</div></div>
         </div>
         <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
           <input class="fi" type="number" id="setPoids" placeholder="75" style="flex:1">
@@ -4246,32 +4244,29 @@ window.tiResetOnEnter = function(){ window.tiShowStep(1); };
       </div>
 
       <div id="p4ObjGrid" style="display:flex;flex-direction:column;gap:10px;margin-bottom:24px">
-        <div class="p4-obj-card" data-obj="optimisation" onclick="p4SelectObj(this,'optimisation')" style="background:var(--surface2);border:1.5px solid var(--border);border-radius:12px;padding:14px;cursor:pointer;transition:all .2s">
-          <div style="display:flex;align-items:center;gap:12px">
-            <div style="font-size:28px">⚡</div>
-            <div style="flex:1">
-              <div style="font-family:'Bebas Neue',sans-serif;font-size:16px;letter-spacing:1.5px;color:var(--text);margin-bottom:2px">OPTIMISATION</div>
-              <div style="font-size:11px;color:var(--muted);line-height:1.4">Tu es au bon poids. On maximise ta performance — qualité, timing, récupération.</div>
-            </div>
+        <div class="p4-obj-card ah-opt-card" data-obj="optimisation" onclick="p4SelectObj(this,'optimisation')">
+          <div class="ah-opt-ico"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M12 1v6m0 10v6"/><path d="M4.22 4.22l4.24 4.24m7.08 7.08l4.24 4.24"/><path d="M1 12h6m10 0h6"/><path d="M4.22 19.78l4.24-4.24m7.08-7.08l4.24-4.24"/></svg></div>
+          <div class="ah-opt-body">
+            <div class="ah-opt-title">OPTIMISATION</div>
+            <div class="ah-opt-sub">Tu es au bon poids. On maximise ta performance — qualité, timing, récupération.</div>
           </div>
+          <div class="ah-opt-arrow">→</div>
         </div>
-        <div class="p4-obj-card" data-obj="priseMuscle" onclick="p4SelectObj(this,'priseMuscle')" style="background:var(--surface2);border:1.5px solid var(--border);border-radius:12px;padding:14px;cursor:pointer;transition:all .2s">
-          <div style="display:flex;align-items:center;gap:12px">
-            <div style="font-size:28px">💪</div>
-            <div style="flex:1">
-              <div style="font-family:'Bebas Neue',sans-serif;font-size:16px;letter-spacing:1.5px;color:var(--text);margin-bottom:2px">PRISE DE MUSCLE</div>
-              <div style="font-size:11px;color:var(--muted);line-height:1.4">Construire du muscle qui produit de la puissance. Surplus calorique contrôlé.</div>
-            </div>
+        <div class="p4-obj-card ah-opt-card" data-obj="priseMuscle" onclick="p4SelectObj(this,'priseMuscle')">
+          <div class="ah-opt-ico"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12h3"/><path d="M18 12h3"/><path d="M6 9v6"/><path d="M18 9v6"/><path d="M9 6v12"/><path d="M15 6v12"/><path d="M9 12h6"/></svg></div>
+          <div class="ah-opt-body">
+            <div class="ah-opt-title">PRISE DE MUSCLE</div>
+            <div class="ah-opt-sub">Construire du muscle qui produit de la puissance. Surplus calorique contrôlé.</div>
           </div>
+          <div class="ah-opt-arrow">→</div>
         </div>
-        <div class="p4-obj-card" data-obj="pertePoids" onclick="p4SelectObj(this,'pertePoids')" style="background:var(--surface2);border:1.5px solid var(--border);border-radius:12px;padding:14px;cursor:pointer;transition:all .2s">
-          <div style="display:flex;align-items:center;gap:12px">
-            <div style="font-size:28px">🔥</div>
-            <div style="flex:1">
-              <div style="font-family:'Bebas Neue',sans-serif;font-size:16px;letter-spacing:1.5px;color:var(--text);margin-bottom:2px">PERTE DE POIDS</div>
-              <div style="font-size:11px;color:var(--muted);line-height:1.4">Gagner en relative strength et exploser plus haut. Déficit contrôlé, protéines hautes.</div>
-            </div>
+        <div class="p4-obj-card ah-opt-card" data-obj="pertePoids" onclick="p4SelectObj(this,'pertePoids')">
+          <div class="ah-opt-ico"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 17l6-6 4 4 8-8"/><path d="M14 7h7v7"/></svg></div>
+          <div class="ah-opt-body">
+            <div class="ah-opt-title">PERTE DE POIDS</div>
+            <div class="ah-opt-sub">Gagner en relative strength. Déficit contrôlé, protéines hautes.</div>
           </div>
+          <div class="ah-opt-arrow">→</div>
         </div>
       </div>
 
@@ -21100,15 +21095,8 @@ function p4SelectFlux(card, flux) {
 
 function p4SelectObj(card, obj) {
   OB.objNutri = obj;
-  document.querySelectorAll('.p4-obj-card').forEach(function(c) {
-    c.style.background = 'var(--surface2)';
-    c.style.borderColor = 'var(--border)';
-  });
-  if (card) {
-    card.style.background = 'rgba(197,164,78,.12)';
-    card.style.borderColor = 'var(--gold)';
-    card.dataset.obj = obj;
-  }
+  document.querySelectorAll('.p4-obj-card').forEach(function(c) { c.classList.remove('on','sel'); });
+  if (card) { card.classList.add('on'); card.dataset.obj = obj; }
   p4CalcBesoins();
   p4UpdateValid();
 }
