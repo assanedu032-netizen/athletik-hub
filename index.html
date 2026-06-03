@@ -7703,99 +7703,175 @@ function _sumQtys(qtys) {
   return parts.concat(unparsed).join(' · ');
 }
 
-// ═══ ESTIMATION PRIX — France supermarché moyen, € par kg/L/unité ═══
+// ═══ ESTIMATION PRIX — calibré Carrefour / Auchan drive 2025 (MDD) ═══
 // Lookup par mot-clé (ordre du plus spécifique au plus générique).
-// Renvoie un prix € approximatif (±20%) ou null si inconnu.
+// Renvoie un prix € approximatif (±15%) ou null si inconnu.
+//
+// Propriétés :
+//   e  : prix € par unité de référence
+//   t  : 'kg' | 'L' | 'unit' | 'tsp' (c.à.s/c.à.c)
+//   tw : (optionnel, pour t='kg') poids typique par unité quand qty est
+//        un compte (ex: "1 orange" = 150g) — fixe le bug "1 = 0,00 €"
 var _PRICE_DB = [
-  // [keywords, €/kg ou €/L ou €/unité, type: 'kg'|'L'|'unit']
-  // Protéines & laitages
-  { kw:['whey','protéine en poudre','proteine en poudre'],  e: 50, t:'kg' },
-  { kw:['œuf','oeuf'],                                       e: 0.30, t:'unit' },
-  { kw:['blanc d\'œuf','blanc d\'oeuf','blanc oeuf'],        e: 0.20, t:'unit' },
-  { kw:['skyr','fromage blanc','quark','cottage'],           e: 4, t:'kg' },
-  { kw:['yaourt grec','yaourt nature'],                      e: 4, t:'kg' },
-  { kw:['yaourt'],                                           e: 3, t:'kg' },
-  { kw:['mozzarella','feta','parmesan','gruyère','emmental','comté','cheddar'], e: 18, t:'kg' },
-  { kw:['fromage'],                                          e: 14, t:'kg' },
-  { kw:['lait végétal','lait amande','lait avoine','lait soja','lait coco'], e: 2.50, t:'L' },
-  { kw:['lait écrémé','lait demi-écrémé','lait entier','lait'], e: 1.20, t:'L' },
-  // Viande / poisson
-  { kw:['blanc de poulet','escalope de poulet','poulet'],    e: 12, t:'kg' },
-  { kw:['escalope de dinde','dinde','blanc de dinde'],       e: 12, t:'kg' },
-  { kw:['steak haché','bœuf haché','boeuf haché'],           e: 14, t:'kg' },
-  { kw:['bœuf','boeuf','steak','rumsteck','filet bœuf'],     e: 22, t:'kg' },
-  { kw:['agneau'],                                           e: 24, t:'kg' },
-  { kw:['porc','jambon blanc','jambon'],                     e: 14, t:'kg' },
-  { kw:['saumon'],                                           e: 22, t:'kg' },
-  { kw:['cabillaud','colin','merlu','lieu','sole'],          e: 18, t:'kg' },
-  { kw:['thon en boîte','thon boîte'],                       e: 14, t:'kg' },
-  { kw:['thon'],                                             e: 18, t:'kg' },
-  { kw:['crevette','gambas'],                                e: 22, t:'kg' },
-  { kw:['sardine','maquereau'],                              e: 10, t:'kg' },
-  { kw:['tofu','tempeh'],                                    e: 10, t:'kg' },
-  // Glucides / féculents
-  { kw:['avoine','flocons','muesli','granola'],              e: 3, t:'kg' },
-  { kw:['quinoa'],                                           e: 9, t:'kg' },
-  { kw:['riz basmati','riz complet','riz'],                  e: 3, t:'kg' },
-  { kw:['pâtes complètes','pâtes','spaghetti','penne'],      e: 2, t:'kg' },
-  { kw:['patate douce'],                                     e: 3, t:'kg' },
-  { kw:['pomme de terre'],                                   e: 1.80, t:'kg' },
-  { kw:['lentille','pois chiche','haricot rouge','flageolet','fève'], e: 3, t:'kg' },
-  { kw:['pain complet','pain'],                              e: 4, t:'kg' },
-  { kw:['tortilla','wrap'],                                  e: 0.80, t:'unit' },
-  { kw:['biscotte'],                                         e: 0.10, t:'unit' },
-  // Légumes
-  { kw:['avocat'],                                           e: 1.20, t:'unit' },
-  { kw:['brocoli','chou-fleur','chou rouge','chou'],         e: 3, t:'kg' },
-  { kw:['épinard','salade','roquette','mâche'],              e: 8, t:'kg' },
-  { kw:['tomate cerise'],                                    e: 6, t:'kg' },
-  { kw:['tomate'],                                           e: 3.50, t:'kg' },
-  { kw:['concombre','courgette','aubergine','poivron'],      e: 3, t:'kg' },
-  { kw:['carotte','radis','navet','panais'],                 e: 2, t:'kg' },
-  { kw:['oignon','échalote','ail'],                          e: 3, t:'kg' },
-  { kw:['champignon'],                                       e: 5, t:'kg' },
-  { kw:['haricot vert','petits pois'],                       e: 4, t:'kg' },
-  { kw:['légume'],                                           e: 3, t:'kg' },
-  // Fruits
-  { kw:['banane'],                                           e: 2, t:'kg' },
-  { kw:['pomme','poire'],                                    e: 2.50, t:'kg' },
-  { kw:['orange','mandarine','clémentine'],                  e: 2.50, t:'kg' },
-  { kw:['citron','citron vert','lime'],                      e: 4, t:'kg' },
-  { kw:['fraise','framboise','myrtille','mûre','cassis'],    e: 14, t:'kg' },
-  { kw:['mangue','ananas'],                                  e: 3, t:'kg' },
-  { kw:['kiwi'],                                             e: 4, t:'kg' },
-  { kw:['raisin'],                                           e: 4, t:'kg' },
-  { kw:['fruit'],                                            e: 3.50, t:'kg' },
-  // Bons gras / oléagineux
-  { kw:['huile d\'olive','huile olive'],                     e: 8, t:'L' },
-  { kw:['huile de coco','huile coco'],                       e: 12, t:'L' },
-  { kw:['huile colza','huile tournesol','huile'],            e: 3, t:'L' },
-  { kw:['beurre cacahuète','beurre arachide'],               e: 10, t:'kg' },
-  { kw:['beurre amande','beurre noisette'],                  e: 22, t:'kg' },
-  { kw:['beurre'],                                           e: 8, t:'kg' },
-  { kw:['amande','noix de cajou','noisette','pistache','noix'], e: 22, t:'kg' },
-  { kw:['graine de chia','graine de lin','graine de courge','graine de tournesol','graine'], e: 15, t:'kg' },
-  // Divers
-  { kw:['miel'],                                             e: 12, t:'kg' },
-  { kw:['sirop d\'érable','sirop érable'],                   e: 18, t:'L' },
-  { kw:['sirop d\'agave','sirop agave'],                     e: 10, t:'L' },
-  { kw:['chocolat noir','cacao'],                            e: 18, t:'kg' },
-  { kw:['chocolat'],                                         e: 12, t:'kg' },
-  { kw:['cannelle','curcuma','paprika','curry','poivre','piment','cumin','herbes de provence','origan','thym','basilic'], e: 0.12, t:'tsp' },
-  { kw:['sel'],                                              e: 1, t:'kg' },
-  { kw:['sucre','édulcorant'],                               e: 1.50, t:'kg' },
-  { kw:['vanille'],                                          e: 0.30, t:'tsp' },
-  { kw:['levure'],                                           e: 0.30, t:'unit' },
-  { kw:['vinaigre balsamique','vinaigre'],                   e: 3, t:'L' },
-  { kw:['sauce soja','tamari'],                              e: 6, t:'L' },
-  { kw:['moutarde'],                                         e: 6, t:'kg' },
-  { kw:['ketchup','mayonnaise','sauce tomate'],              e: 4, t:'kg' },
-  { kw:['café'],                                             e: 16, t:'kg' },
-  { kw:['thé'],                                              e: 0.10, t:'unit' }
+  // ═ Eau / boissons gratuites ═
+  { kw:['eau froide','eau chaude','eau bouillante','eau tiède','eau pétillante','eau gazeuse','eau plate','eau filtrée','glaçon','glace pilée'], e: 0, t:'unit' },
+
+  // ═ Protéines en poudre ═
+  { kw:['whey isolat','whey hydrolysat'],                                 e: 35, t:'kg' },
+  { kw:['whey','protéine de riz','protéine de pois','protéine végétale','protéine en poudre','proteine en poudre','isolat','caséine','casein'], e: 30, t:'kg' },
+
+  // ═ Œufs ═
+  { kw:['blanc d\'œuf','blanc d\'oeuf','blanc oeuf','blancs d\'œuf'],     e: 0.20, t:'unit', tw: 33 },
+  { kw:['jaune d\'œuf','jaune d\'oeuf'],                                  e: 0.18, t:'unit', tw: 18 },
+  { kw:['œuf','oeuf'],                                                    e: 0.28, t:'unit', tw: 55 },
+
+  // ═ Laitages ═
+  { kw:['skyr','fromage blanc 0%','fromage blanc','quark','cottage cheese','cottage'], e: 3.50, t:'kg' },
+  { kw:['yaourt grec','yaourt à la grec'],                                e: 4, t:'kg' },
+  { kw:['yaourt nature','yaourt'],                                        e: 3, t:'kg' },
+  { kw:['mozzarella','mozza'],                                            e: 12, t:'kg' },
+  { kw:['ricotta'],                                                       e: 8, t:'kg' },
+  { kw:['feta'],                                                          e: 14, t:'kg' },
+  { kw:['parmesan','parmigiano','grana padano'],                          e: 22, t:'kg' },
+  { kw:['gruyère','emmental','cheddar','comté'],                          e: 14, t:'kg' },
+  { kw:['fromage'],                                                       e: 14, t:'kg' },
+  { kw:['crème fraîche','crème liquide','crème'],                         e: 6, t:'L' },
+  { kw:['lait végétal','lait d\'amande','lait amande','lait d\'avoine','lait avoine','lait soja','lait coco','lait de coco','lait riz'], e: 2.20, t:'L' },
+  { kw:['lait écrémé','lait demi-écrémé','lait entier','lait'],           e: 1.00, t:'L' },
+  { kw:['beurre'],                                                        e: 7.50, t:'kg' },
+
+  // ═ Viande / poisson ═
+  { kw:['blanc de poulet','escalope de poulet','filet de poulet','poulet'], e: 11, t:'kg' },
+  { kw:['escalope de dinde','filet de dinde','blanc de dinde','dinde'],   e: 11, t:'kg' },
+  { kw:['steak haché','bœuf haché','boeuf haché','viande hachée'],        e: 12, t:'kg' },
+  { kw:['bavette','onglet','rumsteck','filet de bœuf','filet de boeuf','bœuf','boeuf','steak'], e: 20, t:'kg' },
+  { kw:['agneau','gigot'],                                                e: 22, t:'kg' },
+  { kw:['jambon blanc','jambon de paris'],                                e: 14, t:'kg' },
+  { kw:['jambon cru','jambon de parme'],                                  e: 30, t:'kg' },
+  { kw:['porc','filet mignon','rôti de porc'],                            e: 11, t:'kg' },
+  { kw:['saumon fumé','saumon fume'],                                     e: 35, t:'kg' },
+  { kw:['saumon'],                                                        e: 22, t:'kg' },
+  { kw:['cabillaud','colin','merlu','lieu noir','lieu','sole','julienne'], e: 16, t:'kg' },
+  { kw:['truite'],                                                        e: 16, t:'kg' },
+  { kw:['thon en boîte','thon boîte','thon au naturel'],                  e: 12, t:'kg' },
+  { kw:['thon'],                                                          e: 18, t:'kg' },
+  { kw:['crevette','gambas'],                                             e: 18, t:'kg' },
+  { kw:['sardine','maquereau','anchois'],                                 e: 8, t:'kg' },
+  { kw:['tempeh'],                                                        e: 12, t:'kg' },
+  { kw:['tofu fumé','tofu mariné'],                                       e: 11, t:'kg' },
+  { kw:['tofu'],                                                          e: 9, t:'kg' },
+  { kw:['seitan'],                                                        e: 14, t:'kg' },
+
+  // ═ Glucides / féculents ═
+  { kw:['flocons d\'avoine','flocons avoine','avoine','muesli'],          e: 2.50, t:'kg' },
+  { kw:['granola','crunchy'],                                             e: 8, t:'kg' },
+  { kw:['quinoa','boulgour','sarrasin','épeautre','millet'],              e: 7, t:'kg' },
+  { kw:['riz basmati','riz complet','riz thaï','riz long','riz'],         e: 2.50, t:'kg' },
+  { kw:['pâtes complètes','pâtes','spaghetti','penne','farfalle','tagliatelle','lasagne'], e: 1.80, t:'kg' },
+  { kw:['semoule','couscous'],                                            e: 2.50, t:'kg' },
+  { kw:['patate douce'],                                                  e: 3, t:'kg', tw: 250 },
+  { kw:['pomme de terre'],                                                e: 1.50, t:'kg', tw: 180 },
+  { kw:['lentille corail','lentille verte','lentille beluga','lentille'], e: 2.50, t:'kg' },
+  { kw:['pois chiche'],                                                   e: 3, t:'kg' },
+  { kw:['haricot rouge','haricot blanc','flageolet','fève'],              e: 3, t:'kg' },
+  { kw:['pain complet rassis','pain complet','pain de mie','pain de seigle','pain'], e: 4, t:'kg' },
+  { kw:['tortilla','wrap','pita','naan'],                                 e: 0.80, t:'unit' },
+  { kw:['biscotte','cracotte'],                                           e: 0.10, t:'unit' },
+  { kw:['farine'],                                                        e: 1.50, t:'kg' },
+
+  // ═ Légumes ═
+  { kw:['avocat'],                                                        e: 1.50, t:'unit', tw: 200 },
+  { kw:['brocoli','chou-fleur','chou rouge','chou kale','chou'],          e: 3, t:'kg', tw: 400 },
+  { kw:['épinard','salade','roquette','mâche','laitue'],                  e: 7, t:'kg' },
+  { kw:['tomate cerise'],                                                 e: 6, t:'kg' },
+  { kw:['tomate'],                                                        e: 3, t:'kg', tw: 120 },
+  { kw:['concombre'],                                                     e: 2, t:'kg', tw: 300 },
+  { kw:['courgette','aubergine'],                                         e: 2.50, t:'kg', tw: 200 },
+  { kw:['poivron'],                                                       e: 3.50, t:'kg', tw: 180 },
+  { kw:['carotte','radis','navet','panais','betterave'],                  e: 1.80, t:'kg', tw: 100 },
+  { kw:['oignon','échalote'],                                             e: 2, t:'kg', tw: 100 },
+  { kw:['ail','gousse d\'ail','gousse'],                                  e: 14, t:'kg', tw: 5 },
+  { kw:['champignon de paris','champignon'],                              e: 5, t:'kg' },
+  { kw:['haricot vert','petits pois','edamame'],                          e: 4, t:'kg' },
+  { kw:['maïs'],                                                          e: 3, t:'kg' },
+  { kw:['gingembre','gingembre frais'],                                   e: 8, t:'kg' },
+  { kw:['céleri','fenouil'],                                              e: 3, t:'kg' },
+  { kw:['légume'],                                                        e: 3, t:'kg' },
+
+  // ═ Herbes / aromates ═
+  { kw:['menthe','persil','coriandre','ciboulette','aneth','basilic'],    e: 12, t:'kg' },
+
+  // ═ Fruits ═
+  { kw:['banane'],                                                        e: 1.80, t:'kg', tw: 120 },
+  { kw:['pomme','poire'],                                                 e: 2.50, t:'kg', tw: 180 },
+  { kw:['orange'],                                                        e: 2.50, t:'kg', tw: 200 },
+  { kw:['mandarine','clémentine'],                                        e: 2.50, t:'kg', tw: 80 },
+  { kw:['citron vert','lime'],                                            e: 5, t:'kg', tw: 50 },
+  { kw:['citron'],                                                        e: 4, t:'kg', tw: 100 },
+  { kw:['fraise'],                                                        e: 9, t:'kg' },
+  { kw:['framboise fraîche','framboises fraîches'],                       e: 18, t:'kg' },
+  { kw:['myrtille fraîche','myrtilles fraîches'],                         e: 22, t:'kg' },
+  { kw:['baie surgelée','myrtille','framboise','mûre','cassis','baie'],   e: 12, t:'kg' },
+  { kw:['mangue'],                                                        e: 4, t:'kg', tw: 300 },
+  { kw:['ananas'],                                                        e: 2.50, t:'kg', tw: 1200 },
+  { kw:['papaye'],                                                        e: 5, t:'kg', tw: 500 },
+  { kw:['melon','pastèque'],                                              e: 2.50, t:'kg', tw: 1500 },
+  { kw:['kiwi'],                                                          e: 4, t:'kg', tw: 80 },
+  { kw:['raisin'],                                                        e: 4, t:'kg' },
+  { kw:['pêche','nectarine','abricot','prune'],                           e: 3.50, t:'kg', tw: 130 },
+  { kw:['fruit rouge','fruits rouges'],                                   e: 14, t:'kg' },
+  { kw:['fruit'],                                                         e: 3.50, t:'kg' },
+
+  // ═ Bons gras / oléagineux ═
+  { kw:['huile d\'olive','huile olive'],                                  e: 8, t:'L' },
+  { kw:['huile de coco','huile coco'],                                    e: 12, t:'L' },
+  { kw:['huile de sésame','huile sésame'],                                e: 10, t:'L' },
+  { kw:['huile de colza','huile colza','huile de tournesol','huile tournesol','huile'], e: 2.50, t:'L' },
+  { kw:['beurre de cacahuète','beurre cacahuète','beurre d\'arachide'],   e: 10, t:'kg' },
+  { kw:['beurre d\'amande','beurre amande','beurre de noisette','beurre noisette'], e: 22, t:'kg' },
+  { kw:['amande effilée','amande en poudre','poudre d\'amande','amande'], e: 18, t:'kg' },
+  { kw:['noix de cajou'],                                                 e: 22, t:'kg' },
+  { kw:['noisette'],                                                      e: 22, t:'kg' },
+  { kw:['pistache'],                                                      e: 30, t:'kg' },
+  { kw:['noix de pécan','pécan'],                                         e: 28, t:'kg' },
+  { kw:['noix'],                                                          e: 16, t:'kg' },
+  { kw:['cacahuète','cacahuètes'],                                        e: 8, t:'kg' },
+  { kw:['graine de chia','graines de chia'],                              e: 16, t:'kg' },
+  { kw:['graine de lin','graines de lin'],                                e: 7, t:'kg' },
+  { kw:['graine de courge','graines de courge','graine de tournesol','graines de tournesol','graine','graines'], e: 10, t:'kg' },
+  { kw:['noix de coco râpée','coco râpée','noix de coco'],                e: 8, t:'kg' },
+  { kw:['olive noire','olive verte','olive'],                             e: 8, t:'kg' },
+
+  // ═ Sucrants / condiments ═
+  { kw:['miel'],                                                          e: 14, t:'kg' },
+  { kw:['sirop d\'érable','sirop érable'],                                e: 20, t:'L' },
+  { kw:['sirop d\'agave','sirop agave'],                                  e: 8, t:'L' },
+  { kw:['chocolat noir','chocolat 70','chocolat 80'],                     e: 14, t:'kg' },
+  { kw:['cacao en poudre','cacao poudre','cacao'],                        e: 18, t:'kg' },
+  { kw:['chocolat'],                                                      e: 12, t:'kg' },
+  { kw:['pépite de chocolat','pépites de chocolat'],                      e: 12, t:'kg' },
+  { kw:['cannelle','curcuma','paprika','curry','poivre','piment','cumin','herbes de provence','origan','thym','romarin','sauge','muscade','gingembre moulu','cardamome'], e: 0.10, t:'tsp' },
+  { kw:['sel','fleur de sel'],                                            e: 1, t:'kg' },
+  { kw:['sucre roux','sucre blanc','sucre de canne','sucre','édulcorant','stevia','xylitol'], e: 1.50, t:'kg' },
+  { kw:['vanille','extrait de vanille'],                                  e: 0.30, t:'tsp' },
+  { kw:['levure chimique','levure boulanger','levure'],                   e: 0.30, t:'unit' },
+  { kw:['vinaigre balsamique'],                                           e: 6, t:'L' },
+  { kw:['vinaigre de cidre','vinaigre de vin','vinaigre'],                e: 3, t:'L' },
+  { kw:['sauce soja','tamari','sauce nuoc-mam','sauce poisson'],          e: 5, t:'L' },
+  { kw:['sauce sriracha','sriracha'],                                     e: 12, t:'L' },
+  { kw:['moutarde'],                                                      e: 6, t:'kg' },
+  { kw:['ketchup','mayonnaise'],                                          e: 5, t:'kg' },
+  { kw:['sauce tomate','passata','coulis de tomate','concentré de tomate'], e: 4, t:'kg' },
+  { kw:['cornichon','câpres'],                                            e: 8, t:'kg' },
+  { kw:['café soluble','café instantané'],                                e: 30, t:'kg' },
+  { kw:['café'],                                                          e: 14, t:'kg' },
+  { kw:['thé vert','thé noir','thé matcha','thé'],                        e: 0.10, t:'unit' },
+  { kw:['matcha'],                                                        e: 80, t:'kg' }
 ];
 // Trouve l'entrée de prix matching le nom (premier match dans l'ordre)
 function _priceMatch(name){
-  var n = String(name||'').toLowerCase().trim();
+  // Nettoie : strip "(...)" en début (ex: "(25g) protéine de riz" → "protéine de riz")
+  var n = String(name||'').toLowerCase().trim().replace(/^\([^)]*\)\s*/, '');
   if (!n) return null;
   for (var i = 0; i < _PRICE_DB.length; i++){
     var e = _PRICE_DB[i];
@@ -7806,44 +7882,70 @@ function _priceMatch(name){
   return null;
 }
 // Estime le prix € d'un ingrédient
-// qtyValue + unit (g, kg, ml, L, c.à.s, c.à.c, "" pour unité).
+// qtyValue + unit (g, kg, ml, L, c.à.s, c.à.c, scoop, tranche, verre, "" pour unité).
 function _priceEstimate(name, qtyValue, unit){
   var entry = _priceMatch(name);
   if (!entry || qtyValue == null) return null;
+  // Ingrédients gratuits (eau, glace…) : toujours 0 quel que soit l'unité
+  if (entry.e === 0) return 0;
   var u = _normUnit(unit);
+  // Normalisations d'unités custom
+  // scoop ≈ 30g (whey/protéine) — utilisé par la plupart des shakers
+  // tranche ≈ 30g (pain de mie) ou 50g (pain frais — moyenne 30g pour simplicité)
+  // verre ≈ 250ml
+  var GRAMS_PER_UNIT = { scoop: 30, tranche: 30, tranches: 30, doigt: 15, doigts: 15, pincée: 1, pincees: 1 };
+  var ML_PER_UNIT = { verre: 250, verres: 250, tasse: 240, tasses: 240, mug: 300, mugs: 300 };
+  var customG = GRAMS_PER_UNIT[u];
+  var customMl = ML_PER_UNIT[u];
+
   var price = 0;
-  // Conversion vers la base du prix
   if (entry.t === 'kg') {
     if (u === 'kg') price = entry.e * qtyValue;
-    else if (u === 'g' || u === '') price = entry.e * qtyValue / 1000;
+    else if (u === 'g') price = entry.e * qtyValue / 1000;
+    else if (customG) price = entry.e * qtyValue * customG / 1000;
     else if (u === 'cas') price = entry.e * qtyValue * 15 / 1000; // 1 c.à.s ≈ 15g
     else if (u === 'cac') price = entry.e * qtyValue * 5 / 1000;  // 1 c.à.c ≈ 5g
+    else if (u === '' && entry.tw) price = entry.e * qtyValue * entry.tw / 1000; // count × poids typique
+    else if (u === '') price = entry.e * qtyValue * 100 / 1000; // fallback 100g par unité
     else return null;
   } else if (entry.t === 'L') {
     if (u === 'l') price = entry.e * qtyValue;
-    else if (u === 'ml' || u === 'cl') {
-      var mlMult = (u === 'cl') ? 10 : 1;
-      price = entry.e * qtyValue * mlMult / 1000;
-    }
+    else if (u === 'ml') price = entry.e * qtyValue / 1000;
+    else if (u === 'cl') price = entry.e * qtyValue * 10 / 1000;
+    else if (customMl) price = entry.e * qtyValue * customMl / 1000;
     else if (u === 'cas') price = entry.e * qtyValue * 15 / 1000;
     else if (u === 'cac') price = entry.e * qtyValue * 5 / 1000;
+    else if (u === '') price = entry.e * qtyValue * 200 / 1000; // fallback 200ml par unité
     else return null;
   } else if (entry.t === 'unit') {
-    price = entry.e * qtyValue;
+    if (u === '' || u === 'unit' || u === 'unité' || u === 'unités') price = entry.e * qtyValue;
+    else if (u === 'g' && entry.tw) price = entry.e * (qtyValue / entry.tw); // ex: 100g d'œufs → 100/55 ≈ 2 œufs
+    else if (u === 'g') price = entry.e * qtyValue / 100; // fallback
+    else return null;
   } else if (entry.t === 'tsp') {
-    // Épices comptées par c.à.s/c.à.c (très peu cher au volume)
+    // Épices comptées par c.à.s/c.à.c
     if (u === 'cas' || u === 'cac' || u === '') price = entry.e * qtyValue;
     else if (u === 'g') price = entry.e * qtyValue / 5;
+    else if (customG) price = entry.e * qtyValue;
     else return null;
   }
-  if (price <= 0) return null;
-  return Math.round(price * 100) / 100; // 2 décimales
+  if (price < 0) return null;
+  // Eau gratuite : on renvoie 0 (pas null) pour ne pas masquer
+  if (entry.e === 0) return 0;
+  if (price === 0) return null;
+  return Math.round(price * 100) / 100;
 }
 // Format affichage : "12,30 €"
 function _fmtPrice(p){
   if (p == null) return '';
   return p.toFixed(2).replace('.', ',') + ' €';
 }
+// Nettoie le nom affiché : retire "(25g)", "(100ml)", "(1 scoop)" en préfixe
+// (la qty est déjà affichée à part entre parenthèses)
+function _cleanName(name){
+  return String(name||'').replace(/^\(\s*[\d.,]+\s*[a-zA-Zàâéèêëîïôûùç.]*\s*\)\s*/, '').trim();
+}
+window._cleanName = _cleanName;
 // Agrège prix d'une liste de qtys (sumQtys-like) pour 1 ingrédient
 function _priceFromQtys(name, qtys){
   if (!qtys || !qtys.length) return null;
@@ -7961,7 +8063,7 @@ function renderShoppingList() {
       html += '<div style="display:flex;align-items:center;gap:10px;padding:11px 0;border-bottom:1px solid var(--ah-border)">';
       html +=   '<div class="shop-check ' + (isChecked?'on':'') + '" onclick="toggleShopItem(\'' + checkKey.replace(/'/g,"\\'") + '\',this)" style="width:22px;height:22px;border-radius:6px;' + (isChecked?'background:var(--ah-gold);border:2px solid var(--ah-gold);color:var(--ah-navy);display:flex;align-items:center;justify-content:center;font-size:12px':'border:2px solid var(--ah-border2)') + ';cursor:pointer;flex-shrink:0">' + (isChecked?'✓':'') + '</div>';
       html +=   '<div style="flex:1;font-size:13px;line-height:1.35;' + (isChecked?'color:var(--ah-muted);text-decoration:line-through':'color:var(--ah-text)') + '">';
-      html +=     '<span style="font-weight:600">' + it.name + '</span>' + (qtyTxt ? ' <span style="color:var(--ah-text2);font-weight:500">(' + qtyTxt + ')</span>' : '');
+      html +=     '<span style="font-weight:600">' + _cleanName(it.name) + '</span>' + (qtyTxt ? ' <span style="color:var(--ah-text2);font-weight:500">(' + qtyTxt + ')</span>' : '');
       html +=   '</div>';
       if (p != null) html += '<div style="font-family:\'JetBrains Mono\',monospace;font-size:11px;color:' + (isChecked ? 'var(--ah-muted)' : 'var(--ah-text2)') + ';letter-spacing:.04em;flex-shrink:0">~' + _fmtPrice(p) + '</div>';
       html += '</div>';
@@ -17064,7 +17166,7 @@ function renderMealPlanShoppingList() {
     if (price != null) { grandTotal += price; anyPriced = true; }
     html += '<div style="display:flex;align-items:center;gap:10px;padding:7px 0;border-bottom:1px solid var(--ah-border);cursor:pointer;font-size:13px;' + (isChecked ? 'color:var(--ah-muted);text-decoration:line-through' : 'color:var(--ah-text)') + '" onclick="_toggleMealPlanCheck(' + i + ')">'
       + '<input type="checkbox" ' + (isChecked ? 'checked' : '') + ' style="cursor:pointer;flex-shrink:0" onclick="event.stopPropagation();_toggleMealPlanCheck(' + i + ')">'
-      + '<div style="flex:1;line-height:1.35"><span style="font-weight:600">' + p.name + '</span>' + (qtyTxt ? ' <span style="color:var(--ah-text2);font-weight:500">(' + qtyTxt + ')</span>' : '') + '</div>'
+      + '<div style="flex:1;line-height:1.35"><span style="font-weight:600">' + _cleanName(p.name) + '</span>' + (qtyTxt ? ' <span style="color:var(--ah-text2);font-weight:500">(' + qtyTxt + ')</span>' : '') + '</div>'
       + (price != null ? '<div style="font-family:\'JetBrains Mono\',monospace;font-size:11px;color:var(--ah-text2);letter-spacing:.04em;flex-shrink:0">~' + _fmtPrice(price) + '</div>' : '')
       + '</div>';
   });
