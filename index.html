@@ -7773,7 +7773,7 @@ var _PRICE_DB = [
   { kw:['pomme de terre'],                                                e: 1.50, t:'kg', tw: 180 },
   { kw:['lentille corail','lentille verte','lentille beluga','lentille'], e: 2.50, t:'kg' },
   { kw:['pois chiche'],                                                   e: 3, t:'kg' },
-  { kw:['haricot rouge','haricot blanc','flageolet','fève'],              e: 3, t:'kg' },
+  { kw:['haricot noir','haricot rouge','haricot blanc','flageolet','fève'], e: 3, t:'kg' },
   { kw:['pain complet rassis','pain complet','pain de mie','pain de seigle','pain'], e: 4, t:'kg' },
   { kw:['tortilla','wrap','pita','naan'],                                 e: 0.80, t:'unit' },
   { kw:['biscotte','cracotte'],                                           e: 0.10, t:'unit' },
@@ -7868,15 +7868,36 @@ var _PRICE_DB = [
   { kw:['thé vert','thé noir','thé matcha','thé'],                        e: 0.10, t:'unit' },
   { kw:['matcha'],                                                        e: 80, t:'kg' }
 ];
+// Normalise pour matching insensible aux pluriels/accents/parenthèses.
+// "tomates cerises" → "tomate cerise" → match "tomate cerise" keyword.
+// "haricots noirs (conserve)" → "haricot noir" → match "haricot noir".
+function _normNameForMatch(s){
+  return String(s||'')
+    .toLowerCase()
+    .replace(/^\([^)]*\)\s*/, '')     // strip leading "(25g)"
+    .replace(/\([^)]*\)/g, '')        // strip ALL parens content (ex "(conserve)")
+    .replace(/[àâä]/g,'a').replace(/[éèêë]/g,'e').replace(/[îï]/g,'i')
+    .replace(/[ôö]/g,'o').replace(/[ûüù]/g,'u').replace(/[ç]/g,'c')
+    .split(/\s+/)
+    .map(function(w){
+      // Singularise : strip 's' final si mot > 3 lettres et ne finit pas en 'ss'
+      if (w.length > 3 && w.charAt(w.length-1) === 's' && w.charAt(w.length-2) !== 's') {
+        return w.slice(0, -1);
+      }
+      return w;
+    })
+    .filter(Boolean)
+    .join(' ');
+}
 // Trouve l'entrée de prix matching le nom (premier match dans l'ordre)
 function _priceMatch(name){
-  // Nettoie : strip "(...)" en début (ex: "(25g) protéine de riz" → "protéine de riz")
-  var n = String(name||'').toLowerCase().trim().replace(/^\([^)]*\)\s*/, '');
+  var n = _normNameForMatch(name);
   if (!n) return null;
   for (var i = 0; i < _PRICE_DB.length; i++){
     var e = _PRICE_DB[i];
     for (var j = 0; j < e.kw.length; j++){
-      if (n.indexOf(e.kw[j]) !== -1) return e;
+      var k = _normNameForMatch(e.kw[j]);
+      if (n.indexOf(k) !== -1) return e;
     }
   }
   return null;
@@ -7898,6 +7919,10 @@ function _priceEstimate(name, qtyValue, unit){
   var customG = GRAMS_PER_UNIT[u];
   var customMl = ML_PER_UNIT[u];
 
+  // Adjectifs de taille — applique multi sur le tw
+  var SIZE_MULT_KG = { petit:0.7, petite:0.7, petits:0.7, petites:0.7, moyen:1.0, moyenne:1.0, moyens:1.0, moyennes:1.0, gros:1.4, grosse:1.4, grosses:1.4 };
+  var sizeMult = SIZE_MULT_KG[u];
+
   var price = 0;
   if (entry.t === 'kg') {
     if (u === 'kg') price = entry.e * qtyValue;
@@ -7905,6 +7930,7 @@ function _priceEstimate(name, qtyValue, unit){
     else if (customG) price = entry.e * qtyValue * customG / 1000;
     else if (u === 'cas') price = entry.e * qtyValue * 15 / 1000; // 1 c.à.s ≈ 15g
     else if (u === 'cac') price = entry.e * qtyValue * 5 / 1000;  // 1 c.à.c ≈ 5g
+    else if (sizeMult != null && entry.tw) price = entry.e * qtyValue * (entry.tw * sizeMult) / 1000;
     else if (u === '' && entry.tw) price = entry.e * qtyValue * entry.tw / 1000; // count × poids typique
     else if (u === '') price = entry.e * qtyValue * 100 / 1000; // fallback 100g par unité
     else return null;
@@ -7918,7 +7944,10 @@ function _priceEstimate(name, qtyValue, unit){
     else if (u === '') price = entry.e * qtyValue * 200 / 1000; // fallback 200ml par unité
     else return null;
   } else if (entry.t === 'unit') {
+    // Adjectifs de taille (petit/moyen/gros) = unité count (avec léger ajustement de taille)
+    var SIZE_MULT = { petit:0.7, petite:0.7, petits:0.7, petites:0.7, moyen:1.0, moyenne:1.0, moyens:1.0, moyennes:1.0, gros:1.4, grosse:1.4, grosses:1.4 };
     if (u === '' || u === 'unit' || u === 'unité' || u === 'unités') price = entry.e * qtyValue;
+    else if (SIZE_MULT[u] != null) price = entry.e * qtyValue * SIZE_MULT[u];
     else if (u === 'g' && entry.tw) price = entry.e * (qtyValue / entry.tw); // ex: 100g d'œufs → 100/55 ≈ 2 œufs
     else if (u === 'g') price = entry.e * qtyValue / 100; // fallback
     else return null;
@@ -8037,9 +8066,32 @@ function renderShoppingList() {
   var checked = {};
   try { checked = JSON.parse(localStorage.getItem('ah_shopping_checks') || '{}'); } catch(e) {}
 
+  // Pré-calcule le total avant le rendu (pour le sticky en haut)
+  var totalSummary = (function(){
+    var t = 0, priced = 0, total = 0;
+    Object.keys(agg).forEach(function(k){
+      total++;
+      var p = _priceFromQtys(agg[k].name, agg[k].qtys);
+      if (p != null) { t += p; priced++; }
+    });
+    return { total: t, priced: priced, count: total };
+  })();
+
   // Ordre stable des catégories
   var catOrder = ['PROTÉINES & LAITAGES','GLUCIDES & FÉCULENTS','LÉGUMES & HERBES','FRUITS','BONS GRAS','ÉPICES & DIVERS'];
   var html = '';
+
+  // ── Sticky total en haut (visible sans scroller) ──
+  if (totalSummary.priced > 0) {
+    html += '<div style="position:sticky;top:0;z-index:5;background:var(--ah-navy-deep);color:#fff;border-radius:12px;padding:14px 18px;margin-bottom:14px;display:flex;justify-content:space-between;align-items:center;box-shadow:0 4px 14px rgba(11,18,40,.12)">'
+         + '<div>'
+         +   '<div style="font-family:\'JetBrains Mono\',monospace;font-size:10px;letter-spacing:.22em;color:var(--ah-gold);text-transform:uppercase;margin-bottom:2px">Total estimé</div>'
+         +   '<div style="font-family:\'Outfit\',sans-serif;font-size:11px;color:rgba(255,255,255,.55)">' + totalSummary.count + ' ingrédient' + (totalSummary.count>1?'s':'') + (totalSummary.priced < totalSummary.count ? ' · ' + (totalSummary.count - totalSummary.priced) + ' sans prix' : '') + '</div>'
+         + '</div>'
+         + '<div style="font-family:\'Bebas Neue\',sans-serif;font-size:30px;letter-spacing:.04em;color:#fff">' + _fmtPrice(totalSummary.total) + '</div>'
+         + '</div>';
+  }
+
   var grandTotal = 0; var anyPriced = false;
   catOrder.forEach(function(cat){
     var items = byCat[cat]; if (!items || !items.length) return;
@@ -8070,13 +8122,9 @@ function renderShoppingList() {
     });
     html += '</div>';
   });
-  // Total général
+  // Disclaimer prix (le total est sticky en haut)
   if (anyPriced) {
-    html += '<div style="margin-top:18px;padding:14px 16px;background:var(--ah-navy-deep);border-radius:12px;display:flex;justify-content:space-between;align-items:center;color:#fff">'
-         + '<div style="font-family:\'JetBrains Mono\',monospace;font-size:10px;letter-spacing:.22em;color:var(--ah-gold)">TOTAL ESTIMÉ</div>'
-         + '<div style="font-family:\'Bebas Neue\',sans-serif;font-size:24px;letter-spacing:.04em;color:#fff">' + _fmtPrice(grandTotal) + '</div>'
-         + '</div>'
-         + '<div style="font-family:\'Outfit\',sans-serif;font-size:11px;color:var(--ah-muted);margin-top:6px;text-align:center;line-height:1.4">Estimation prix moyen supermarché France · ±20%. Certains ingrédients (épices, sel, levure) sont approximés.</div>';
+    html += '<div style="font-family:\'Outfit\',sans-serif;font-size:11px;color:var(--ah-muted);margin-top:10px;text-align:center;line-height:1.5">Estimation basée sur les prix moyens Carrefour / Auchan drive · ±15%.<br>Les épices, sel et levure sont approximés.</div>';
   }
   container.innerHTML = html;
 }
