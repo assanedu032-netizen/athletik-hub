@@ -5982,9 +5982,12 @@ window.tiResetOnEnter = function(){ window.tiShowStep(1); };
     </div>
 
     <div id="ntab-courses" class="pg" style="padding:16px 22px">
-      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;gap:8px">
         <div style="font-family:'Bebas Neue',sans-serif;font-size:20px;color:var(--text);letter-spacing:1px">LISTE DE COURSES</div>
-        <button onclick="generateList()" style="padding:8px 16px;background:linear-gradient(135deg,var(--gold),var(--gold2));border:none;border-radius:10px;color:var(--navy);font-size:12px;font-weight:800;cursor:pointer">Générer 🛒</button>
+        <div style="display:flex;gap:6px">
+          <button onclick="clearShoppingList()" title="Vider la liste" aria-label="Vider la liste" style="padding:8px 12px;background:var(--ah-surface);border:1px solid var(--ah-border2);border-radius:10px;color:var(--ah-text2);font-size:11px;font-weight:700;cursor:pointer;font-family:'Outfit',sans-serif">🗑 Vider</button>
+          <button onclick="generateList()" style="padding:8px 16px;background:linear-gradient(135deg,var(--gold),var(--gold2));border:none;border-radius:10px;color:var(--navy);font-size:12px;font-weight:800;cursor:pointer">Générer 🛒</button>
+        </div>
       </div>
       <div id="coursesSource" style="font-size:11px;color:var(--muted);line-height:1.5;margin-bottom:10px">Agrège les ingrédients de tes <strong style="color:var(--gold)">recettes favorites ⭐</strong>. Ajoute des recettes via l'onglet Recettes.</div>
 
@@ -6610,9 +6613,68 @@ window.tiResetOnEnter = function(){ window.tiShowStep(1); };
   <div class="mp-day-content" id="mpDayContent"></div>
 
   <div class="mp-footer">
+    <button class="mp-fbtn" onclick="openMealPlanSettings()" aria-label="Paramètres du plan">⚙️</button>
     <button class="mp-fbtn" onclick="addMealPlanToShopping()">🛒 Courses</button>
     <button class="mp-fbtn" onclick="exportMealPlanDocx()">📄 .docx</button>
     <button class="mp-fbtn primary" onclick="generateMealPlan()">🔄 Régénérer</button>
+  </div>
+</div>
+
+<!-- ═══ MEAL PLAN — Sheet "Paramètres" (édite cible kcal + objectif + poids/taille) ═══ -->
+<div id="mealPlanSettings" class="mp-overlay" style="background:rgba(0,0,0,.55);align-items:flex-end">
+  <div style="width:100%;max-width:430px;margin:auto;background:var(--ah-surface);border-radius:20px 20px 0 0;max-height:90vh;overflow-y:auto;display:flex;flex-direction:column">
+    <div style="display:flex;justify-content:space-between;align-items:center;padding:18px 22px 8px;border-bottom:1px solid var(--ah-border)">
+      <div style="font-family:'Bebas Neue',sans-serif;font-size:22px;letter-spacing:.06em;color:var(--ah-text)">PARAMÈTRES DU PLAN</div>
+      <button onclick="closeMealPlanSettings()" aria-label="Fermer" style="background:none;border:none;font-size:24px;color:var(--ah-muted);cursor:pointer;padding:4px 10px">×</button>
+    </div>
+
+    <div style="padding:18px 22px;display:flex;flex-direction:column;gap:18px;flex:1">
+
+      <!-- Objectif -->
+      <div>
+        <div style="font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:.18em;color:var(--ah-text2);text-transform:uppercase;margin-bottom:8px">Objectif</div>
+        <div class="ah-seg" id="mpsObj">
+          <button class="ah-seg-item" data-val="optimisation" onclick="mpsPickObj(this)">Optimisation</button>
+          <button class="ah-seg-item" data-val="priseMuscle" onclick="mpsPickObj(this)">Prise muscle</button>
+          <button class="ah-seg-item" data-val="pertePoids" onclick="mpsPickObj(this)">Perte gras</button>
+        </div>
+      </div>
+
+      <!-- Poids / Taille -->
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+        <div>
+          <div style="font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:.18em;color:var(--ah-text2);text-transform:uppercase;margin-bottom:6px">Poids (kg)</div>
+          <input id="mpsPoids" type="number" step="0.1" min="30" max="200" style="width:100%;padding:12px;background:var(--ah-surface);border:1px solid var(--ah-border2);border-radius:10px;font-family:'Bebas Neue',sans-serif;font-size:24px;letter-spacing:.04em;color:var(--ah-text);text-align:center" oninput="mpsRecalcPreview()">
+        </div>
+        <div>
+          <div style="font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:.18em;color:var(--ah-text2);text-transform:uppercase;margin-bottom:6px">Taille (cm)</div>
+          <input id="mpsTaille" type="number" step="1" min="120" max="220" style="width:100%;padding:12px;background:var(--ah-surface);border:1px solid var(--ah-border2);border-radius:10px;font-family:'Bebas Neue',sans-serif;font-size:24px;letter-spacing:.04em;color:var(--ah-text);text-align:center" oninput="mpsRecalcPreview()">
+        </div>
+      </div>
+
+      <!-- Cible kcal manuelle -->
+      <div>
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+          <div style="font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:.18em;color:var(--ah-text2);text-transform:uppercase">Cible kcal / jour</div>
+          <button onclick="mpsAutoCalc()" style="background:none;border:none;font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:.18em;color:var(--ah-gold);text-transform:uppercase;cursor:pointer;padding:0">↻ Auto-calculer</button>
+        </div>
+        <input id="mpsKcal" type="number" step="10" min="1200" max="6000" style="width:100%;padding:12px;background:var(--ah-surface);border:1px solid var(--ah-gold);border-radius:10px;font-family:'Bebas Neue',sans-serif;font-size:32px;letter-spacing:.04em;color:var(--ah-gold);text-align:center">
+        <div id="mpsKcalHint" style="font-family:'Outfit',sans-serif;font-size:11px;color:var(--ah-muted);margin-top:6px;text-align:center"></div>
+      </div>
+
+      <!-- Macros (auto-derivées) -->
+      <div style="background:var(--ah-surface2);border-radius:12px;padding:12px;display:grid;grid-template-columns:repeat(3,1fr);gap:8px;text-align:center">
+        <div><div style="font-family:'Bebas Neue',sans-serif;font-size:20px;color:var(--ah-text)" id="mpsProt">—</div><div style="font-family:'JetBrains Mono',monospace;font-size:9px;color:var(--ah-muted);letter-spacing:.14em">PROT g</div></div>
+        <div><div style="font-family:'Bebas Neue',sans-serif;font-size:20px;color:var(--ah-text)" id="mpsGluc">—</div><div style="font-family:'JetBrains Mono',monospace;font-size:9px;color:var(--ah-muted);letter-spacing:.14em">GLUC g</div></div>
+        <div><div style="font-family:'Bebas Neue',sans-serif;font-size:20px;color:var(--ah-text)" id="mpsLip">—</div><div style="font-family:'JetBrains Mono',monospace;font-size:9px;color:var(--ah-muted);letter-spacing:.14em">LIP g</div></div>
+      </div>
+
+    </div>
+
+    <div style="padding:14px 22px 22px;display:flex;gap:10px;border-top:1px solid var(--ah-border);background:var(--ah-surface)">
+      <button onclick="closeMealPlanSettings()" style="flex:1;padding:14px;background:var(--ah-surface2);border:1px solid var(--ah-border2);border-radius:12px;font-family:'Outfit',sans-serif;font-weight:600;color:var(--ah-text);cursor:pointer">Annuler</button>
+      <button onclick="mpsSave()" style="flex:2;padding:14px;background:var(--ah-gold);border:none;border-radius:12px;font-family:'Bebas Neue',sans-serif;font-size:14px;letter-spacing:.12em;color:var(--ah-navy);cursor:pointer;box-shadow:0 6px 18px rgba(197,164,78,.28)">SAUVEGARDER &amp; RÉGÉNÉRER</button>
+    </div>
   </div>
 </div>
 
@@ -7191,6 +7253,119 @@ function closeMealPlan() {
 }
 window.closeMealPlan = closeMealPlan;
 
+// ═══ MEAL PLAN — Paramètres (cible kcal + objectif + poids/taille) ═══
+// Sheet d'édition. Sauvegarder met à jour ah_profile et régénère le plan
+// avec la nouvelle cible. Corrige le bug "779 kcal/jour qui reste affiché".
+function _mpsBmrFromInputs(poids, taille, age, sex){
+  if (!poids || !taille) return null;
+  var a = parseInt(age) || 25;
+  var bmr = (sex === 'femme')
+    ? (10*poids + 6.25*taille - 5*a - 161)
+    : (10*poids + 6.25*taille - 5*a + 5);
+  return bmr;
+}
+function _mpsTdeeForObj(bmr, obj){
+  if (!bmr) return null;
+  var adj = { priseMuscle:1.10, pertePoids:0.85, optimisation:1.0 }[obj] || 1.0;
+  return Math.round(bmr * 1.6 * adj);
+}
+function mpsRecalcPreview(){
+  var p = parseFloat((document.getElementById('mpsPoids')||{}).value);
+  var t = parseFloat((document.getElementById('mpsTaille')||{}).value);
+  var prof = {};
+  try { prof = JSON.parse(localStorage.getItem('ah_profile') || '{}'); } catch(e){}
+  var obj = window._mpsObj || 'optimisation';
+  var bmr = _mpsBmrFromInputs(p, t, prof.age, prof.sexe);
+  var tdee = _mpsTdeeForObj(bmr, obj);
+  var hint = document.getElementById('mpsKcalHint');
+  if (hint) hint.textContent = tdee ? ('Auto-calc : ' + tdee + ' kcal/jour (BMR Mifflin × 1.6 × facteur ' + (obj==='priseMuscle'?'+10%':obj==='pertePoids'?'-15%':'objectif') + ')') : 'Saisis poids + taille pour auto-calc';
+  // Recalc macros côté preview
+  var kcalEl = document.getElementById('mpsKcal');
+  var k = parseInt(kcalEl && kcalEl.value) || tdee || 0;
+  var prot = p ? Math.round(p * 2.0) : Math.round(k * 0.22 / 4);
+  var lip  = Math.round((k * 0.25) / 9);
+  var gluc = Math.round((k - prot*4 - lip*9) / 4);
+  var pEl = document.getElementById('mpsProt'); if (pEl) pEl.textContent = prot || '—';
+  var gEl = document.getElementById('mpsGluc'); if (gEl) gEl.textContent = gluc || '—';
+  var lEl = document.getElementById('mpsLip');  if (lEl) lEl.textContent = lip || '—';
+}
+function mpsPickObj(btn){
+  document.querySelectorAll('#mpsObj .ah-seg-item').forEach(function(b){ b.classList.remove('on'); });
+  if (btn) { btn.classList.add('on'); window._mpsObj = btn.getAttribute('data-val'); }
+  mpsRecalcPreview();
+}
+function mpsAutoCalc(){
+  var p = parseFloat((document.getElementById('mpsPoids')||{}).value);
+  var t = parseFloat((document.getElementById('mpsTaille')||{}).value);
+  if (!p || !t) { if (typeof showToast === 'function') showToast('Saisis poids + taille avant auto-calc.', 'info'); return; }
+  var prof = {};
+  try { prof = JSON.parse(localStorage.getItem('ah_profile') || '{}'); } catch(e){}
+  var obj = window._mpsObj || 'optimisation';
+  var bmr = _mpsBmrFromInputs(p, t, prof.age, prof.sexe);
+  var tdee = _mpsTdeeForObj(bmr, obj);
+  if (tdee) {
+    var k = document.getElementById('mpsKcal'); if (k) k.value = tdee;
+    mpsRecalcPreview();
+  }
+}
+function openMealPlanSettings(){
+  var prof = {};
+  try { prof = JSON.parse(localStorage.getItem('ah_profile') || '{}'); } catch(e){}
+  window._mpsObj = prof.nutriObj || 'optimisation';
+  document.querySelectorAll('#mpsObj .ah-seg-item').forEach(function(b){
+    b.classList.toggle('on', b.getAttribute('data-val') === window._mpsObj);
+  });
+  var pp = document.getElementById('mpsPoids'); if (pp) pp.value = prof.poids || '';
+  var tt = document.getElementById('mpsTaille'); if (tt) tt.value = prof.taille || '';
+  var kk = document.getElementById('mpsKcal');  if (kk) kk.value = prof.nutriCal || '';
+  mpsRecalcPreview();
+  var ov = document.getElementById('mealPlanSettings'); if (ov) ov.classList.add('on');
+}
+function closeMealPlanSettings(){
+  var ov = document.getElementById('mealPlanSettings'); if (ov) ov.classList.remove('on');
+}
+function mpsSave(){
+  var kcalEl = document.getElementById('mpsKcal');
+  var newKcal = parseInt(kcalEl && kcalEl.value);
+  if (!newKcal || newKcal < 1000 || newKcal > 6000) {
+    if (typeof showToast === 'function') showToast('Cible kcal invalide (1000-6000).', 'err');
+    return;
+  }
+  var p = parseFloat((document.getElementById('mpsPoids')||{}).value);
+  var t = parseFloat((document.getElementById('mpsTaille')||{}).value);
+  var obj = window._mpsObj || 'optimisation';
+  var prof = {};
+  try { prof = JSON.parse(localStorage.getItem('ah_profile') || '{}'); } catch(e){}
+  // Recalc macros à partir du nouveau kcal
+  var prot = p ? Math.round(p * 2.0) : Math.round(newKcal * 0.22 / 4);
+  var lip  = Math.round((newKcal * 0.25) / 9);
+  var gluc = Math.round((newKcal - prot*4 - lip*9) / 4);
+  prof.nutriCal = newKcal;
+  prof.nutriProt = prot;
+  prof.nutriGluc = gluc;
+  prof.nutriLip = lip;
+  prof.nutriObj = obj;
+  if (p) prof.poids = p;
+  if (t) prof.taille = t;
+  try { localStorage.setItem('ah_profile', JSON.stringify(prof)); } catch(e){}
+  // Sync user en mémoire si dispo
+  if (typeof user !== 'undefined') {
+    user.nutriCal = newKcal; user.nutriProt = prot; user.nutriGluc = gluc; user.nutriLip = lip;
+    if (p) user.poids = p; if (t) user.taille = t; user.nutriObj = obj;
+  }
+  // Sync Firestore best-effort
+  try { if (typeof fbSaveProfile === 'function') fbSaveProfile(); } catch(e){}
+  closeMealPlanSettings();
+  if (typeof showToast === 'function') showToast('Plan recalibré sur ' + newKcal + ' kcal. Régénération…', 'ok');
+  try { generateMealPlan(); } catch(e){}
+}
+window.openMealPlanSettings = openMealPlanSettings;
+window.closeMealPlanSettings = closeMealPlanSettings;
+window.mpsPickObj = mpsPickObj;
+window.mpsAutoCalc = mpsAutoCalc;
+window.mpsRecalcPreview = mpsRecalcPreview;
+window.mpsSave = mpsSave;
+
 function _mpRenderHeader(plan) {
   var obj = plan.objectif || 'optimisation';
   var bdg = document.getElementById('mpObjBadge');
@@ -7538,6 +7713,34 @@ function _categorizeIngredient(name) {
   if (/banane|fruit|baie|myrtill|framboise|mangue|ananas|orange|pomme|past[èe]que|coco|citron/.test(n)) return 'FRUITS';
   return 'ÉPICES & DIVERS';
 }
+
+// Vider toute la liste de courses (favoris recettes + plan repas + checks).
+// Demande confirmation, puis efface les 3 stores localStorage et re-render.
+function clearShoppingList(){
+  var hasShopping = false;
+  try {
+    var favs = JSON.parse(localStorage.getItem('ah_recipe_favorites') || '[]');
+    var mp = JSON.parse(localStorage.getItem('ah_shopping_meal_plan') || '[]');
+    hasShopping = (favs.length > 0) || (mp.length > 0);
+  } catch(e){}
+  if (!hasShopping) {
+    if (typeof showToast === 'function') showToast('Ta liste est déjà vide.', 'info');
+    return;
+  }
+  if (!confirm('Vider toute la liste de courses ? Les ingrédients du plan repas et les favoris cochés seront retirés.')) return;
+  try {
+    // Wipe les 3 stores qui composent la liste
+    localStorage.removeItem('ah_shopping_checks');
+    localStorage.removeItem('ah_shopping_meal_plan');
+    localStorage.removeItem('ah_shopping_meal_plan_checks');
+    // Vide aussi les favoris recettes car ils alimentent la liste
+    localStorage.removeItem('ah_recipe_favorites');
+  } catch(e){}
+  try { renderShoppingList(); } catch(e){}
+  try { renderMealPlanShoppingList(); } catch(e){}
+  if (typeof showToast === 'function') showToast('Liste de courses vidée.', 'ok');
+}
+window.clearShoppingList = clearShoppingList;
 
 function renderShoppingList() {
   var container = document.getElementById('shoppingList');
@@ -16623,12 +16826,39 @@ function addMealPlanToShopping() {
   // Sync to Firestore profile if logged in
   try { if (typeof fbSaveProfile === 'function') fbSaveProfile(); } catch(e) {}
 
-  if (typeof toast === 'function') toast('🛒 ' + items.length + ' ingrédients ajoutés à la liste de courses');
-  else alert('🛒 ' + items.length + ' ingrédients agrégés depuis le plan repas. Va dans Nutrition > Courses pour les voir.');
-
   // If a shopping list renderer exists, refresh it
   try { if (typeof renderMealPlanShoppingList === 'function') renderMealPlanShoppingList(); } catch(e) {}
+
+  // Ouvre la feuille de choix : download .docx / partage / voir dans Courses
+  try { openMealPlanShoppingSheet(items.length); }
+  catch(e) {
+    if (typeof showToast === 'function') showToast('🛒 ' + items.length + ' ingrédients ajoutés à Courses.', 'ok');
+  }
 }
+
+// Action sheet : que faire de la liste de courses agrégée
+function openMealPlanShoppingSheet(count){
+  // Supprime un éventuel sheet précédent
+  var prev = document.getElementById('mpShopSheet'); if (prev) prev.remove();
+  var sheet = document.createElement('div');
+  sheet.id = 'mpShopSheet';
+  sheet.style.cssText = 'position:fixed;inset:0;z-index:9800;background:rgba(0,0,0,.55);display:flex;align-items:flex-end;justify-content:center';
+  sheet.innerHTML =
+    '<div style="width:100%;max-width:430px;background:var(--ah-surface);border-radius:20px 20px 0 0;padding:18px 22px 22px;display:flex;flex-direction:column;gap:10px">'
+    + '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">'
+    +   '<div style="font-family:\'Bebas Neue\',sans-serif;font-size:20px;letter-spacing:.06em;color:var(--ah-text)">LISTE DE COURSES</div>'
+    +   '<button onclick="document.getElementById(\'mpShopSheet\').remove()" aria-label="Fermer" style="background:none;border:none;font-size:22px;color:var(--ah-muted);cursor:pointer;padding:4px 10px">×</button>'
+    + '</div>'
+    + '<div style="font-family:\'Outfit\',sans-serif;font-size:13px;color:var(--ah-text2);line-height:1.5;margin-bottom:6px">' + count + ' ingrédient' + (count>1?'s':'') + ' agrégé' + (count>1?'s':'') + ' depuis ton plan repas.</div>'
+    + '<button onclick="exportShoppingDocx();document.getElementById(\'mpShopSheet\').remove()" style="width:100%;padding:14px;background:var(--ah-gold);color:var(--ah-navy);border:none;border-radius:12px;font-family:\'Bebas Neue\',sans-serif;font-size:14px;letter-spacing:.12em;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;box-shadow:0 6px 18px rgba(197,164,78,.28)"><span>📄</span> TÉLÉCHARGER .DOCX</button>'
+    + '<button onclick="shareShopping();document.getElementById(\'mpShopSheet\').remove()" style="width:100%;padding:14px;background:var(--ah-surface);color:var(--ah-text);border:1.5px solid var(--ah-border2);border-radius:12px;font-family:\'Outfit\',sans-serif;font-size:14px;font-weight:600;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px"><span>📤</span> Partager</button>'
+    + '<button onclick="document.getElementById(\'mpShopSheet\').remove();try{closeMealPlan()}catch(e){};try{switchTab(\'nutrition\');var t=document.querySelector(\'#vNutri .sub-tab:nth-child(4)\');if(t)showNutriTab(t,\'courses\')}catch(e){}" style="width:100%;padding:14px;background:none;color:var(--ah-text2);border:1px dashed var(--ah-border2);border-radius:12px;font-family:\'Outfit\',sans-serif;font-size:13px;font-weight:600;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px"><span>🛒</span> Voir dans l\'onglet Courses</button>'
+    + '</div>';
+  document.body.appendChild(sheet);
+  // Clic sur overlay = ferme
+  sheet.addEventListener('click', function(e){ if (e.target === sheet) sheet.remove(); });
+}
+window.openMealPlanShoppingSheet = openMealPlanShoppingSheet;
 
 function renderMealPlanShoppingList() {
   var el = document.getElementById('mealPlanShoppingList');
