@@ -7703,6 +7703,164 @@ function _sumQtys(qtys) {
   return parts.concat(unparsed).join(' · ');
 }
 
+// ═══ ESTIMATION PRIX — France supermarché moyen, € par kg/L/unité ═══
+// Lookup par mot-clé (ordre du plus spécifique au plus générique).
+// Renvoie un prix € approximatif (±20%) ou null si inconnu.
+var _PRICE_DB = [
+  // [keywords, €/kg ou €/L ou €/unité, type: 'kg'|'L'|'unit']
+  // Protéines & laitages
+  { kw:['whey','protéine en poudre','proteine en poudre'],  e: 50, t:'kg' },
+  { kw:['œuf','oeuf'],                                       e: 0.30, t:'unit' },
+  { kw:['blanc d\'œuf','blanc d\'oeuf','blanc oeuf'],        e: 0.20, t:'unit' },
+  { kw:['skyr','fromage blanc','quark','cottage'],           e: 4, t:'kg' },
+  { kw:['yaourt grec','yaourt nature'],                      e: 4, t:'kg' },
+  { kw:['yaourt'],                                           e: 3, t:'kg' },
+  { kw:['mozzarella','feta','parmesan','gruyère','emmental','comté','cheddar'], e: 18, t:'kg' },
+  { kw:['fromage'],                                          e: 14, t:'kg' },
+  { kw:['lait végétal','lait amande','lait avoine','lait soja','lait coco'], e: 2.50, t:'L' },
+  { kw:['lait écrémé','lait demi-écrémé','lait entier','lait'], e: 1.20, t:'L' },
+  // Viande / poisson
+  { kw:['blanc de poulet','escalope de poulet','poulet'],    e: 12, t:'kg' },
+  { kw:['escalope de dinde','dinde','blanc de dinde'],       e: 12, t:'kg' },
+  { kw:['steak haché','bœuf haché','boeuf haché'],           e: 14, t:'kg' },
+  { kw:['bœuf','boeuf','steak','rumsteck','filet bœuf'],     e: 22, t:'kg' },
+  { kw:['agneau'],                                           e: 24, t:'kg' },
+  { kw:['porc','jambon blanc','jambon'],                     e: 14, t:'kg' },
+  { kw:['saumon'],                                           e: 22, t:'kg' },
+  { kw:['cabillaud','colin','merlu','lieu','sole'],          e: 18, t:'kg' },
+  { kw:['thon en boîte','thon boîte'],                       e: 14, t:'kg' },
+  { kw:['thon'],                                             e: 18, t:'kg' },
+  { kw:['crevette','gambas'],                                e: 22, t:'kg' },
+  { kw:['sardine','maquereau'],                              e: 10, t:'kg' },
+  { kw:['tofu','tempeh'],                                    e: 10, t:'kg' },
+  // Glucides / féculents
+  { kw:['avoine','flocons','muesli','granola'],              e: 3, t:'kg' },
+  { kw:['quinoa'],                                           e: 9, t:'kg' },
+  { kw:['riz basmati','riz complet','riz'],                  e: 3, t:'kg' },
+  { kw:['pâtes complètes','pâtes','spaghetti','penne'],      e: 2, t:'kg' },
+  { kw:['patate douce'],                                     e: 3, t:'kg' },
+  { kw:['pomme de terre'],                                   e: 1.80, t:'kg' },
+  { kw:['lentille','pois chiche','haricot rouge','flageolet','fève'], e: 3, t:'kg' },
+  { kw:['pain complet','pain'],                              e: 4, t:'kg' },
+  { kw:['tortilla','wrap'],                                  e: 0.80, t:'unit' },
+  { kw:['biscotte'],                                         e: 0.10, t:'unit' },
+  // Légumes
+  { kw:['avocat'],                                           e: 1.20, t:'unit' },
+  { kw:['brocoli','chou-fleur','chou rouge','chou'],         e: 3, t:'kg' },
+  { kw:['épinard','salade','roquette','mâche'],              e: 8, t:'kg' },
+  { kw:['tomate cerise'],                                    e: 6, t:'kg' },
+  { kw:['tomate'],                                           e: 3.50, t:'kg' },
+  { kw:['concombre','courgette','aubergine','poivron'],      e: 3, t:'kg' },
+  { kw:['carotte','radis','navet','panais'],                 e: 2, t:'kg' },
+  { kw:['oignon','échalote','ail'],                          e: 3, t:'kg' },
+  { kw:['champignon'],                                       e: 5, t:'kg' },
+  { kw:['haricot vert','petits pois'],                       e: 4, t:'kg' },
+  { kw:['légume'],                                           e: 3, t:'kg' },
+  // Fruits
+  { kw:['banane'],                                           e: 2, t:'kg' },
+  { kw:['pomme','poire'],                                    e: 2.50, t:'kg' },
+  { kw:['orange','mandarine','clémentine'],                  e: 2.50, t:'kg' },
+  { kw:['citron','citron vert','lime'],                      e: 4, t:'kg' },
+  { kw:['fraise','framboise','myrtille','mûre','cassis'],    e: 14, t:'kg' },
+  { kw:['mangue','ananas'],                                  e: 3, t:'kg' },
+  { kw:['kiwi'],                                             e: 4, t:'kg' },
+  { kw:['raisin'],                                           e: 4, t:'kg' },
+  { kw:['fruit'],                                            e: 3.50, t:'kg' },
+  // Bons gras / oléagineux
+  { kw:['huile d\'olive','huile olive'],                     e: 8, t:'L' },
+  { kw:['huile de coco','huile coco'],                       e: 12, t:'L' },
+  { kw:['huile colza','huile tournesol','huile'],            e: 3, t:'L' },
+  { kw:['beurre cacahuète','beurre arachide'],               e: 10, t:'kg' },
+  { kw:['beurre amande','beurre noisette'],                  e: 22, t:'kg' },
+  { kw:['beurre'],                                           e: 8, t:'kg' },
+  { kw:['amande','noix de cajou','noisette','pistache','noix'], e: 22, t:'kg' },
+  { kw:['graine de chia','graine de lin','graine de courge','graine de tournesol','graine'], e: 15, t:'kg' },
+  // Divers
+  { kw:['miel'],                                             e: 12, t:'kg' },
+  { kw:['sirop d\'érable','sirop érable'],                   e: 18, t:'L' },
+  { kw:['sirop d\'agave','sirop agave'],                     e: 10, t:'L' },
+  { kw:['chocolat noir','cacao'],                            e: 18, t:'kg' },
+  { kw:['chocolat'],                                         e: 12, t:'kg' },
+  { kw:['cannelle','curcuma','paprika','curry','poivre','piment','cumin','herbes de provence','origan','thym','basilic'], e: 0.12, t:'tsp' },
+  { kw:['sel'],                                              e: 1, t:'kg' },
+  { kw:['sucre','édulcorant'],                               e: 1.50, t:'kg' },
+  { kw:['vanille'],                                          e: 0.30, t:'tsp' },
+  { kw:['levure'],                                           e: 0.30, t:'unit' },
+  { kw:['vinaigre balsamique','vinaigre'],                   e: 3, t:'L' },
+  { kw:['sauce soja','tamari'],                              e: 6, t:'L' },
+  { kw:['moutarde'],                                         e: 6, t:'kg' },
+  { kw:['ketchup','mayonnaise','sauce tomate'],              e: 4, t:'kg' },
+  { kw:['café'],                                             e: 16, t:'kg' },
+  { kw:['thé'],                                              e: 0.10, t:'unit' }
+];
+// Trouve l'entrée de prix matching le nom (premier match dans l'ordre)
+function _priceMatch(name){
+  var n = String(name||'').toLowerCase().trim();
+  if (!n) return null;
+  for (var i = 0; i < _PRICE_DB.length; i++){
+    var e = _PRICE_DB[i];
+    for (var j = 0; j < e.kw.length; j++){
+      if (n.indexOf(e.kw[j]) !== -1) return e;
+    }
+  }
+  return null;
+}
+// Estime le prix € d'un ingrédient
+// qtyValue + unit (g, kg, ml, L, c.à.s, c.à.c, "" pour unité).
+function _priceEstimate(name, qtyValue, unit){
+  var entry = _priceMatch(name);
+  if (!entry || qtyValue == null) return null;
+  var u = _normUnit(unit);
+  var price = 0;
+  // Conversion vers la base du prix
+  if (entry.t === 'kg') {
+    if (u === 'kg') price = entry.e * qtyValue;
+    else if (u === 'g' || u === '') price = entry.e * qtyValue / 1000;
+    else if (u === 'cas') price = entry.e * qtyValue * 15 / 1000; // 1 c.à.s ≈ 15g
+    else if (u === 'cac') price = entry.e * qtyValue * 5 / 1000;  // 1 c.à.c ≈ 5g
+    else return null;
+  } else if (entry.t === 'L') {
+    if (u === 'l') price = entry.e * qtyValue;
+    else if (u === 'ml' || u === 'cl') {
+      var mlMult = (u === 'cl') ? 10 : 1;
+      price = entry.e * qtyValue * mlMult / 1000;
+    }
+    else if (u === 'cas') price = entry.e * qtyValue * 15 / 1000;
+    else if (u === 'cac') price = entry.e * qtyValue * 5 / 1000;
+    else return null;
+  } else if (entry.t === 'unit') {
+    price = entry.e * qtyValue;
+  } else if (entry.t === 'tsp') {
+    // Épices comptées par c.à.s/c.à.c (très peu cher au volume)
+    if (u === 'cas' || u === 'cac' || u === '') price = entry.e * qtyValue;
+    else if (u === 'g') price = entry.e * qtyValue / 5;
+    else return null;
+  }
+  if (price <= 0) return null;
+  return Math.round(price * 100) / 100; // 2 décimales
+}
+// Format affichage : "12,30 €"
+function _fmtPrice(p){
+  if (p == null) return '';
+  return p.toFixed(2).replace('.', ',') + ' €';
+}
+// Agrège prix d'une liste de qtys (sumQtys-like) pour 1 ingrédient
+function _priceFromQtys(name, qtys){
+  if (!qtys || !qtys.length) return null;
+  var total = 0, any = false;
+  qtys.forEach(function(q){
+    var p = _parseQty(q);
+    if (p.value !== null) {
+      var pr = _priceEstimate(name, p.value, p.unit);
+      if (pr != null) { total += pr; any = true; }
+    }
+  });
+  return any ? Math.round(total * 100) / 100 : null;
+}
+window._priceEstimate = _priceEstimate;
+window._fmtPrice = _fmtPrice;
+window._priceFromQtys = _priceFromQtys;
+
 // Catégorise un ingrédient (heuristique simple sur le nom)
 function _categorizeIngredient(name) {
   var n = name.toLowerCase();
@@ -7780,24 +7938,44 @@ function renderShoppingList() {
   // Ordre stable des catégories
   var catOrder = ['PROTÉINES & LAITAGES','GLUCIDES & FÉCULENTS','LÉGUMES & HERBES','FRUITS','BONS GRAS','ÉPICES & DIVERS'];
   var html = '';
+  var grandTotal = 0; var anyPriced = false;
   catOrder.forEach(function(cat){
     var items = byCat[cat]; if (!items || !items.length) return;
+    // Total catégorie
+    var catTotal = 0; var catPriced = false;
+    items.forEach(function(it){
+      var p = _priceFromQtys(it.name, it.qtys);
+      if (p != null) { catTotal += p; catPriced = true; grandTotal += p; anyPriced = true; }
+    });
     html += '<div style="margin-bottom:16px">';
-    html +=   '<div style="font-size:10px;font-weight:700;color:var(--gold);letter-spacing:1px;margin-bottom:8px">' + cat + '</div>';
+    html +=   '<div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:8px">';
+    html +=     '<div style="font-family:\'JetBrains Mono\',monospace;font-size:10px;font-weight:500;color:var(--ah-gold);letter-spacing:.18em">' + cat + '</div>';
+    if (catPriced) html += '<div style="font-family:\'JetBrains Mono\',monospace;font-size:10px;color:var(--ah-text2);letter-spacing:.08em">~' + _fmtPrice(catTotal) + '</div>';
+    html +=   '</div>';
     items.forEach(function(it){
       var checkKey = it.name.toLowerCase().trim();
       var isChecked = !!checked[checkKey];
       var qtyTxt = _sumQtys(it.qtys);
-      html += '<div style="display:flex;align-items:center;gap:10px;padding:11px 0;border-bottom:1px solid var(--border)">';
-      html +=   '<div class="shop-check ' + (isChecked?'on':'') + '" onclick="toggleShopItem(\'' + checkKey.replace(/'/g,"\\'") + '\',this)" style="width:22px;height:22px;border-radius:6px;' + (isChecked?'background:var(--gold);border:2px solid var(--gold);color:var(--navy);display:flex;align-items:center;justify-content:center;font-size:12px':'border:2px solid var(--border2)') + ';cursor:pointer;flex-shrink:0">' + (isChecked?'✓':'') + '</div>';
-      html +=   '<div style="flex:1;font-size:13px;' + (isChecked?'color:var(--muted);text-decoration:line-through':'color:var(--text)') + '">';
-      html +=     '<div style="font-weight:600">' + it.name + '</div>';
-      html +=     '<div style="font-size:10px;color:var(--muted);margin-top:2px">' + qtyTxt + '</div>';
+      var p = _priceFromQtys(it.name, it.qtys);
+      // Format demandé : "Aliment (gramage)" sur 1 ligne + prix à droite
+      html += '<div style="display:flex;align-items:center;gap:10px;padding:11px 0;border-bottom:1px solid var(--ah-border)">';
+      html +=   '<div class="shop-check ' + (isChecked?'on':'') + '" onclick="toggleShopItem(\'' + checkKey.replace(/'/g,"\\'") + '\',this)" style="width:22px;height:22px;border-radius:6px;' + (isChecked?'background:var(--ah-gold);border:2px solid var(--ah-gold);color:var(--ah-navy);display:flex;align-items:center;justify-content:center;font-size:12px':'border:2px solid var(--ah-border2)') + ';cursor:pointer;flex-shrink:0">' + (isChecked?'✓':'') + '</div>';
+      html +=   '<div style="flex:1;font-size:13px;line-height:1.35;' + (isChecked?'color:var(--ah-muted);text-decoration:line-through':'color:var(--ah-text)') + '">';
+      html +=     '<span style="font-weight:600">' + it.name + '</span>' + (qtyTxt ? ' <span style="color:var(--ah-text2);font-weight:500">(' + qtyTxt + ')</span>' : '');
       html +=   '</div>';
+      if (p != null) html += '<div style="font-family:\'JetBrains Mono\',monospace;font-size:11px;color:' + (isChecked ? 'var(--ah-muted)' : 'var(--ah-text2)') + ';letter-spacing:.04em;flex-shrink:0">~' + _fmtPrice(p) + '</div>';
       html += '</div>';
     });
     html += '</div>';
   });
+  // Total général
+  if (anyPriced) {
+    html += '<div style="margin-top:18px;padding:14px 16px;background:var(--ah-navy-deep);border-radius:12px;display:flex;justify-content:space-between;align-items:center;color:#fff">'
+         + '<div style="font-family:\'JetBrains Mono\',monospace;font-size:10px;letter-spacing:.22em;color:var(--ah-gold)">TOTAL ESTIMÉ</div>'
+         + '<div style="font-family:\'Bebas Neue\',sans-serif;font-size:24px;letter-spacing:.04em;color:#fff">' + _fmtPrice(grandTotal) + '</div>'
+         + '</div>'
+         + '<div style="font-family:\'Outfit\',sans-serif;font-size:11px;color:var(--ah-muted);margin-top:6px;text-align:center;line-height:1.4">Estimation prix moyen supermarché France · ±20%. Certains ingrédients (épices, sel, levure) sont approximés.</div>';
+  }
   container.innerHTML = html;
 }
 
@@ -16868,14 +17046,35 @@ function renderMealPlanShoppingList() {
   if (!items.length) { el.innerHTML = ''; return; }
   var checked = {};
   try { checked = JSON.parse(localStorage.getItem('ah_shopping_meal_plan_checks') || '{}'); } catch(e) {}
-  var html = '<div style="margin-top:12px;padding:12px;background:var(--surface);border:1px solid var(--border);border-radius:10px"><div style="font-size:10px;color:var(--gold);font-weight:800;letter-spacing:1.5px;margin-bottom:8px">DEPUIS LE PLAN REPAS</div>';
+  // Parse "qty<unit> name" → {name, qty, unit} pour pouvoir formater + estimer prix
+  // Lignes générées par addMealPlanToShopping : "120g Whey vanille", "2x Œufs"
+  function _parseLine(line){
+    var s = String(line||'').trim();
+    var m = s.match(/^([\d.,]+)\s*([a-zA-Zàâéèêëîïôûùç.]*)\s+(.+)$/);
+    if (!m) return { qty:null, unit:'', name:s };
+    return { qty: parseFloat(m[1].replace(',', '.')), unit: m[2] === 'x' ? '' : m[2], name: m[3] };
+  }
+  var grandTotal = 0; var anyPriced = false;
+  var html = '<div style="margin-top:12px;padding:12px;background:var(--ah-surface);border:1px solid var(--ah-border);border-radius:12px"><div style="font-family:\'JetBrains Mono\',monospace;font-size:10px;color:var(--ah-gold);font-weight:500;letter-spacing:.22em;margin-bottom:10px">DEPUIS LE PLAN REPAS</div>';
   items.forEach(function(line, i){
     var isChecked = !!checked[i];
-    html += '<label style="display:flex;align-items:center;gap:8px;padding:5px 0;cursor:pointer;font-size:13px;color:' + (isChecked ? 'var(--muted)' : 'var(--text)') + ';text-decoration:' + (isChecked ? 'line-through' : 'none') + '">'
-      + '<input type="checkbox" ' + (isChecked ? 'checked' : '') + ' onchange="_toggleMealPlanCheck(' + i + ')" style="cursor:pointer">'
-      + line + '</label>';
+    var p = _parseLine(line);
+    var qtyTxt = (p.qty != null) ? ((Math.round(p.qty * 10) / 10) + (p.unit || '')) : '';
+    var price = (p.qty != null) ? _priceEstimate(p.name, p.qty, p.unit) : null;
+    if (price != null) { grandTotal += price; anyPriced = true; }
+    html += '<div style="display:flex;align-items:center;gap:10px;padding:7px 0;border-bottom:1px solid var(--ah-border);cursor:pointer;font-size:13px;' + (isChecked ? 'color:var(--ah-muted);text-decoration:line-through' : 'color:var(--ah-text)') + '" onclick="_toggleMealPlanCheck(' + i + ')">'
+      + '<input type="checkbox" ' + (isChecked ? 'checked' : '') + ' style="cursor:pointer;flex-shrink:0" onclick="event.stopPropagation();_toggleMealPlanCheck(' + i + ')">'
+      + '<div style="flex:1;line-height:1.35"><span style="font-weight:600">' + p.name + '</span>' + (qtyTxt ? ' <span style="color:var(--ah-text2);font-weight:500">(' + qtyTxt + ')</span>' : '') + '</div>'
+      + (price != null ? '<div style="font-family:\'JetBrains Mono\',monospace;font-size:11px;color:var(--ah-text2);letter-spacing:.04em;flex-shrink:0">~' + _fmtPrice(price) + '</div>' : '')
+      + '</div>';
   });
-  html += '<button onclick="_clearMealPlanShoppingList()" style="margin-top:8px;padding:6px 12px;background:transparent;color:var(--muted);border:1px solid var(--border);border-radius:8px;font-size:11px;cursor:pointer">Vider la liste</button>';
+  if (anyPriced) {
+    html += '<div style="margin-top:10px;padding:10px 12px;background:var(--ah-navy-deep);border-radius:10px;display:flex;justify-content:space-between;align-items:center;color:#fff">'
+         + '<div style="font-family:\'JetBrains Mono\',monospace;font-size:10px;letter-spacing:.22em;color:var(--ah-gold)">TOTAL ESTIMÉ</div>'
+         + '<div style="font-family:\'Bebas Neue\',sans-serif;font-size:20px;letter-spacing:.04em;color:#fff">' + _fmtPrice(grandTotal) + '</div>'
+         + '</div>';
+  }
+  html += '<button onclick="_clearMealPlanShoppingList()" style="margin-top:10px;padding:8px 12px;background:transparent;color:var(--ah-muted);border:1px solid var(--ah-border);border-radius:8px;font-size:11px;cursor:pointer;font-family:\'Outfit\',sans-serif">🗑 Vider la liste</button>';
   html += '</div>';
   el.innerHTML = html;
 }
