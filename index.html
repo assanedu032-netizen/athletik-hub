@@ -3281,6 +3281,85 @@ html body #result, html body #nutriResult{
   width:100% !important; text-align:center !important;
   margin-bottom:18px !important;
 }
+
+/* ════════════════════════════════════════════════════════════════════════════
+   BOTTOM NAV — Mobile UX & Safe Area (iOS notch / Android gesture bar)
+   ────────────────────────────────────────────────────────────────────────────
+   1) Wrapper : padding-bottom = env(safe-area-inset-bottom) → ne se cache plus
+      sous la barre système Android/iOS
+   2) Bouton central TITAN + son label : remontés au-dessus de la safe area,
+      label "TITAN" no-wrap pour ne plus être coupé
+   3) Onglets (HOME / TRACKS / TRAIN / NUTRI) : padding équilibré pour qu'ils
+      respirent et que les icônes ne soient plus collées au bord
+   4) Contenu scrollable (.main, chat-body, ntab) : padding-bottom = nav height
+      + safe area, pour que le dernier item ne soit pas caché
+   5) FAB chrono : bottom = nav height + safe area + offset, ne chevauche plus
+      la barre ni la liste
+   ──────────────────────────────────────────────────────────────────────────── */
+:root{
+  --ah-safe-bottom: env(safe-area-inset-bottom, 0px);
+  --ah-nav-height: 78px;            /* hauteur visuelle ≈ pill + padding */
+  --ah-nav-clearance: calc(var(--ah-nav-height) + var(--ah-safe-bottom) + 16px);
+}
+
+/* 1) Wrapper safe area */
+.ah-bottomnav-wrap{
+  padding: 10px 12px calc(8px + var(--ah-safe-bottom)) !important;
+}
+
+/* 3) Tabs respirent — padding vertical équilibré, recentrés */
+.ah-bottomnav{
+  align-items:center !important;
+  padding:8px 6px !important;
+}
+.ah-bottomnav .ni,
+.ah-bottomnav .nav-item{
+  min-height:60px !important;
+  padding:10px 0 8px !important;
+  gap:6px !important;
+  justify-content:center !important;
+}
+.ah-bottomnav .ni .ico,
+.ah-bottomnav .nav-item .ico{
+  width:22px !important; height:22px !important;
+}
+
+/* 2) Bouton TITAN + label — au-dessus de la safe area, label visible */
+.ah-titan-btn{
+  bottom: calc(34px + var(--ah-safe-bottom)) !important;
+}
+.ah-titan-btn-label{
+  bottom: calc(12px + var(--ah-safe-bottom)) !important;
+  font-size:9px !important;
+  letter-spacing:.22em !important;
+  white-space:nowrap !important;
+  text-align:center !important;
+  line-height:1 !important;
+  color:var(--ah-gold) !important;
+  text-shadow:0 1px 2px rgba(255,255,255,.4) !important;
+}
+
+/* 4) Contenu scrollable — clearance pour ne pas se cacher derrière la nav */
+#vHome .main,
+#vTrain .main,
+#vMoi .main,
+#vTracks .main,
+#vNutri .main,
+#vChat .chat-body,
+#ntab-journal, #ntab-recettes, #ntab-scan, #ntab-courses{
+  padding-bottom: var(--ah-nav-clearance) !important;
+}
+/* L'input du chat reste fixé au-dessus de la nav */
+#vChat .chat-input{
+  padding-bottom: calc(10px + var(--ah-safe-bottom)) !important;
+  margin-bottom: var(--ah-nav-height) !important;
+}
+
+/* 5) FAB chronomètre — au-dessus de la nav, respecte la safe area */
+.ah-fab{
+  bottom: calc(var(--ah-nav-height) + var(--ah-safe-bottom) + 16px) !important;
+  right: 18px !important;
+}
 </style>
 
 <template id="__bundler_thumbnail" data-bg-color="#1F305F">
