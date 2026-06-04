@@ -22644,3 +22644,69 @@ async function fbSaveProfile() {
   } catch (e) { console.warn('fbSaveProfile:', e); return false; }
 }
 </script>
+
+<!-- ════════════════════════════════════════════════════════════════════════
+     SERVICE WORKER — registration + auto-update
+     ────────────────────────────────────────────────────────────────────────
+     Enregistre /sw.js (cache PWA des assets) et force le reload de la page
+     quand une nouvelle version est détectée et installée. Sans ça, le user
+     reste bloqué sur l'ancien HTML/CSS jusqu'à un hard-refresh manuel.
+
+     Flux :
+       1) Au load, registerServiceWorker('/sw.js')
+       2) updatefound → un nouveau SW est en train d'installer
+       3) Quand son state passe à 'installed' ET un controller existe déjà
+          (= il y avait une version précédente), on lui dit skipWaiting
+       4) Le nouveau SW prend le contrôle → controllerchange firé
+       5) On reload une seule fois (guard refreshing pour éviter boucle)
+     ════════════════════════════════════════════════════════════════════════ -->
+<script>
+(function(){
+  if (!('serviceWorker' in navigator)) return;
+
+  // On ne re-recharge qu'une fois par cycle d'update (évite boucle infinie).
+  var refreshing = false;
+  navigator.serviceWorker.addEventListener('controllerchange', function(){
+    if (refreshing) return;
+    refreshing = true;
+    console.info('[SW] Nouvelle version activée → reload');
+    window.location.reload();
+  });
+
+  // Enregistre le SW après le load pour ne pas concurrencer le rendering initial.
+  window.addEventListener('load', function(){
+    navigator.serviceWorker.register('/sw.js')
+      .then(function(reg){
+        // Si une mise à jour est déjà en attente au moment où on s'inscrit,
+        // active-la tout de suite.
+        if (reg.waiting && navigator.serviceWorker.controller) {
+          reg.waiting.postMessage({ action: 'skipWaiting' });
+        }
+        // Détection d'une future mise à jour
+        reg.addEventListener('updatefound', function(){
+          var nw = reg.installing;
+          if (!nw) return;
+          nw.addEventListener('statechange', function(){
+            if (nw.state === 'installed' && navigator.serviceWorker.controller) {
+              // Un SW contrôle déjà la page (ancienne version) → on bascule.
+              console.info('[SW] Nouvelle version installée → skipWaiting');
+              nw.postMessage({ action: 'skipWaiting' });
+            }
+          });
+        });
+        // Force un check d'update à chaque ouverture (utile en PWA installée).
+        // Si une nouvelle version existe côté serveur, elle commencera son install.
+        try { reg.update(); } catch(e) {}
+      })
+      .catch(function(err){ console.warn('[SW] register failed:', err); });
+  });
+
+  // Re-check chaque retour-au-foreground (passage onglet ou retour app PWA).
+  document.addEventListener('visibilitychange', function(){
+    if (document.visibilityState !== 'visible') return;
+    navigator.serviceWorker.getRegistration('/sw.js').then(function(reg){
+      if (reg) { try { reg.update(); } catch(e) {} }
+    });
+  });
+})();
+</script>
