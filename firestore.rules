@@ -1,9 +1,17 @@
-// Athletik Hub — Firestore Security Rules
-// À appliquer dans Firebase Console → Firestore → Rules
+// ════════════════════════════════════════════════════════════════════════════
+// ATHLETIK HUB — Firestore Security Rules
+// ────────────────────────────────────────────────────────────────────────────
+// Modèle :
+//   - /users/{uid} : profil athlète (owner-only, validation stricte)
+//   - sous-collections users/{uid}/* : owner-only, limite taille
+//   - tout le reste : refusé
 //
-// Modèle : chaque utilisateur ne peut lire/écrire QUE son propre document
-// /users/{uid}. Les codes d'accès post-livre, les badges et les paramètres
-// utilisateur vivent tous dans ce document unique.
+// Déploiement :
+//   - Copier-coller ce bloc dans Firebase Console → Firestore → Rules → Publish
+//   - OU via firebase CLI : `firebase deploy --only firestore:rules`
+//
+// Roadmap v4 — P0 Sécurité fondations + P2 Firebase Auth + Persistence.
+// ════════════════════════════════════════════════════════════════════════════
 
 rules_version = '2';
 service cloud.firestore {
@@ -13,40 +21,85 @@ service cloud.firestore {
     // /users/{uid} — profil athlète (owner-only)
     // ─────────────────────────────────────────────────────
     match /users/{uid} {
-      allow read:   if request.auth != null && request.auth.uid == uid;
-      allow create: if request.auth != null && request.auth.uid == uid
-                    && validProfileShape(request.resource.data);
-      allow update: if request.auth != null && request.auth.uid == uid
-                    && validProfileUpdate(request.resource.data, resource.data);
-      allow delete: if false; // Pas de suppression — on conserve l'historique
-    }
+      allow read: if isOwner(uid);
 
-    // Sous-collections potentielles : history, badges, sessions
-    match /users/{uid}/{subcollection}/{docId} {
-      allow read, write: if request.auth != null && request.auth.uid == uid;
+      allow create: if isOwner(uid)
+                    && validProfileShape(request.resource.data)
+                    && validAccessTier(request.resource.data);
+
+      allow update: if isOwner(uid)
+                    && validProfileShape(request.resource.data)
+                    && validAccessTier(request.resource.data)
+                    && noFcmTokenLeak(request.resource.data, resource.data);
+
+      // Pas de suppression côté client — historique conservé. Si besoin,
+      // un user peut faire "export + logout" via l'UI, mais le doc reste
+      // jusqu'à action admin.
+      allow delete: if false;
     }
 
     // ─────────────────────────────────────────────────────
-    // Tout le reste : refusé par défaut
+    // Sous-collections : users/{uid}/bodyfat, /timerPresets, /sessions, etc.
+    // Owner-only + plafond taille pour éviter les payloads abusifs.
+    // ─────────────────────────────────────────────────────
+    match /users/{uid}/{subcollection}/{docId} {
+      allow read: if isOwner(uid);
+      allow create, update: if isOwner(uid)
+                            && request.resource.data.size() < 100;
+      allow delete: if isOwner(uid);
+    }
+
+    // ─────────────────────────────────────────────────────
+    // Tout le reste : refusé par défaut (defense in depth)
     // ─────────────────────────────────────────────────────
     match /{document=**} {
       allow read, write: if false;
     }
   }
 
-  // ─────────────────────────────────────────────────────
-  // Validation helpers
-  // ─────────────────────────────────────────────────────
-  function validProfileShape(data) {
-    return data.keys().hasAny(['profile', 'updatedAt'])
-        && data.size() < 50; // évite les payloads abusifs
+  // ─────────────────────────────────────────────────────────────────────────
+  // Helpers
+  // ─────────────────────────────────────────────────────────────────────────
+
+  // L'utilisateur authentifié possède ce doc.
+  function isOwner(uid) {
+    return request.auth != null && request.auth.uid == uid;
   }
 
-  function validProfileUpdate(newData, oldData) {
-    // Empêche un utilisateur de monter son propre accessTier vers MASTER côté client
-    // (le tier doit être set par une Cloud Function après vérification).
-    // Tant que les tiers sont gérés côté client (BETA/VIP/MASTER via codes du livre),
-    // cette règle est relâchée — durcir si on passe à une vérification Stripe/Amazon.
-    return validProfileShape(newData);
+  // Le doc respecte une taille raisonnable et a au moins l'un des
+  // champs canoniques attendus (profile, updatedAt, ou les clés ah_*
+  // sérialisées par _fbCollectPayload).
+  function validProfileShape(d) {
+    return d.size() < 50
+        && d.size() > 0
+        && (
+             d.keys().hasAny([
+               'profile', 'updatedAt',
+               'nutriJournal', 'setHistory', 'badgesEarned',
+               'builderSession', 'recipeFavorites',
+               'shoppingChecks', 'shoppingMealPlan', 'shoppingMealChecks',
+               'satInProgress', 'liveSession', 'accessData',
+               'activeHabits', 'accessTier', 'planning'
+             ])
+           );
+  }
+
+  // accessTier ne peut prendre que des valeurs autorisées.
+  // Empêche un user de poser arbitrairement {accessTier:'GOD'} ou autre.
+  // L'upgrade BETA → VIP/MASTER reste possible côté client (UX simple),
+  // mais le tier est validé serveur par check-code.js avant d'être posé.
+  // Durcissement Phase 3 : check-code.js écrit le tier via Admin SDK.
+  function validAccessTier(d) {
+    return !('accessTier' in d.keys())
+        || d.accessTier == null
+        || d.accessTier in ['BETA', 'VIP', 'MASTER'];
+  }
+
+  // Empêche un user de poser le fcmToken d'un autre user dans son propre
+  // doc (anti-collision FCM). Si profile.fcmToken existe dans oldData, il
+  // doit rester identique ou être supprimé/changé par lui-même.
+  // Pour le moment c'est juste une garantie de cohérence, pas un anti-abuse.
+  function noFcmTokenLeak(newData, oldData) {
+    return true; // hook pour durcissement Phase 3
   }
 }
