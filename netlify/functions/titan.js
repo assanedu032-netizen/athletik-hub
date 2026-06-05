@@ -3,10 +3,15 @@
 // CORS restreint, prompt caching Anthropic, logs sécurité.
 
 const admin = require('firebase-admin');
+const { getStore } = require('@netlify/blobs');
 
 const RATE_LIMIT = 20; // messages / jour / uid
 const MODEL = 'claude-sonnet-4-6';
 const MAX_TOKENS = 400;
+const EMBED_MODEL = 'text-embedding-3-small';
+const RAG_TOP_K = 3;
+const RAG_MIN_SIMILARITY = 0.35;
+const RAG_MIN_QUERY_LEN = 12;
 
 // ---------- Firebase Admin (init paresseuse, partagée entre invocations chaudes) ----------
 let firebaseReady = false;
@@ -320,6 +325,75 @@ Objectif nutrition : ${ctx.nutriObj || 'Non renseigné'}
 Accès : ${ctx.accessTier || 'Essai gratuit'}`;
 }
 
+// ---------- RAG : index livre chargé une fois par instance chaude ----------
+let bookIndexCache = null;     // { dim, chunks: [{ id, page, text, e }] }
+let bookIndexLoadedAt = 0;
+const BOOK_INDEX_TTL_MS = 10 * 60 * 1000; // 10 min
+
+async function getBookIndex() {
+  const now = Date.now();
+  if (bookIndexCache && (now - bookIndexLoadedAt) < BOOK_INDEX_TTL_MS) return bookIndexCache;
+  try {
+    const store = getStore('titan-book-index');
+    const data = await store.get('main', { type: 'json' });
+    if (data && Array.isArray(data.chunks) && data.chunks.length > 0) {
+      bookIndexCache = data;
+      bookIndexLoadedAt = now;
+      return data;
+    }
+  } catch (e) {
+    console.warn('[titan] book index load failed:', e.message);
+  }
+  return null;
+}
+
+async function embedQuery(text) {
+  const key = process.env.OPENAI_API_KEY;
+  if (!key) return null;
+  try {
+    const r = await fetch('https://api.openai.com/v1/embeddings', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + key },
+      body: JSON.stringify({ model: EMBED_MODEL, input: text }),
+    });
+    if (!r.ok) return null;
+    const data = await r.json();
+    return data.data && data.data[0] && data.data[0].embedding ? data.data[0].embedding : null;
+  } catch (e) {
+    console.warn('[titan] embed query failed:', e.message);
+    return null;
+  }
+}
+
+function cosine(a, b) {
+  let dot = 0, na = 0, nb = 0;
+  for (let i = 0; i < a.length; i++) { dot += a[i] * b[i]; na += a[i] * a[i]; nb += b[i] * b[i]; }
+  return dot / (Math.sqrt(na) * Math.sqrt(nb) + 1e-9);
+}
+
+async function retrieveBookPassages(query) {
+  if (!query || query.length < RAG_MIN_QUERY_LEN) return [];
+  const index = await getBookIndex();
+  if (!index) return [];
+  const qVec = await embedQuery(query);
+  if (!qVec) return [];
+
+  const scored = index.chunks.map(c => ({ id: c.id, page: c.page, text: c.text, score: cosine(qVec, c.e) }));
+  scored.sort((a, b) => b.score - a.score);
+  const top = scored.slice(0, RAG_TOP_K).filter(c => c.score >= RAG_MIN_SIMILARITY);
+  return top;
+}
+
+function buildRagBlock(passages) {
+  if (!passages || passages.length === 0) return null;
+  const lines = passages.map(p => `[Page ${p.page}]\n${p.text}`);
+  return [
+    "PASSAGES PERTINENTS DU LIVRE D'ALASSANE (à mobiliser si utile, à citer en attribuant à Alassane + numéro de page exact) :",
+    '',
+    lines.join('\n\n---\n\n'),
+  ].join('\n');
+}
+
 // ---------- Réponses de sécurité (cas critiques) ----------
 const CARE_RESPONSE = "Ce que tu ressens compte. Là, tu n'es pas seul·e : appelle le 3114 (gratuit, 24/7) ou écris à un proche maintenant. Ton entraînement attendra. Reviens me parler quand tu es en sécurité.";
 const REFUSE_RESPONSE = "Je ne peux pas répondre à ça. On reste sur ton entraînement.";
@@ -403,6 +477,15 @@ exports.handler = async function(event) {
     return { statusCode: 200, headers, body: JSON.stringify({ reply: REFUSE_RESPONSE }) };
   }
 
+  // RAG : récupérer 0 à 3 passages pertinents du livre
+  const passages = await retrieveBookPassages(lastText);
+  const ragBlock = buildRagBlock(passages);
+  const systemBlocks = [
+    { type: 'text', text: STATIC_SYSTEM, cache_control: { type: 'ephemeral' } },
+    { type: 'text', text: buildAthleteContext(ctx) },
+  ];
+  if (ragBlock) systemBlocks.push({ type: 'text', text: ragBlock });
+
   // Appel Anthropic avec prompt caching
   try {
     const resp = await fetch('https://api.anthropic.com/v1/messages', {
@@ -415,10 +498,7 @@ exports.handler = async function(event) {
       body: JSON.stringify({
         model: MODEL,
         max_tokens: MAX_TOKENS,
-        system: [
-          { type: 'text', text: STATIC_SYSTEM, cache_control: { type: 'ephemeral' } },
-          { type: 'text', text: buildAthleteContext(ctx) },
-        ],
+        system: systemBlocks,
         messages: messages.slice(-10),
       }),
     });

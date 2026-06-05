@@ -4,6 +4,7 @@
   "private": true,
   "description": "Netlify Functions for Athletik Hub (Titan proxy)",
   "dependencies": {
+    "@netlify/blobs": "^9.0.0",
     "firebase-admin": "^13.0.0"
   }
 }
