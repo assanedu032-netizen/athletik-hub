@@ -3317,34 +3317,35 @@ html body #result, html body #nutriResult{
 }
 
 /* ════════════════════════════════════════════════════════════════════════════
-   BOTTOM NAV — Mobile UX & Safe Area (iOS notch / Android gesture bar)
+   BOTTOM NAV — Ancrée au bas de l'écran (mission 2026-06-05)
    ────────────────────────────────────────────────────────────────────────────
-   1) Wrapper : padding-bottom = env(safe-area-inset-bottom) → ne se cache plus
-      sous la barre système Android/iOS
-   2) Bouton central TITAN + son label : remontés au-dessus de la safe area,
-      label "TITAN" no-wrap pour ne plus être coupé
-   3) Onglets (HOME / TRACKS / TRAIN / NUTRI) : padding équilibré pour qu'ils
-      respirent et que les icônes ne soient plus collées au bord
-   4) Contenu scrollable (.main, chat-body, ntab) : padding-bottom = nav height
-      + safe area, pour que le dernier item ne soit pas caché
-   5) FAB chrono : bottom = nav height + safe area + offset, ne chevauche plus
-      la barre ni la liste
+   Brief user : "Elle doit toucher le bas de l'écran, sans espace vide. Pas
+   d'effet pilule flottant. Ombre quasi nulle. Bouton TITAN moins dominant.
+   Continuité visuelle de l'app, comme une nav native mobile."
    ──────────────────────────────────────────────────────────────────────────── */
 :root{
   --ah-safe-bottom: env(safe-area-inset-bottom, 0px);
-  --ah-nav-height: 62px;            /* hauteur visuelle réduite — mission compacte */
-  --ah-nav-clearance: calc(var(--ah-nav-height) + var(--ah-safe-bottom) + 12px);
+  --ah-nav-height: 60px;
+  --ah-nav-clearance: calc(var(--ah-nav-height) + var(--ah-safe-bottom) + 16px);
 }
 
-/* 1) Wrapper safe area */
+/* 1) Wrapper collé au bas — plus de padding extérieur, plus de border-radius */
 .ah-bottomnav-wrap{
-  padding: 6px 10px calc(6px + var(--ah-safe-bottom)) !important;
+  padding: 0 !important;
+  bottom: 0 !important;
+  width: 100% !important;
+  max-width: 430px !important;
 }
 
-/* 3) Tabs respirent — padding vertical équilibré et compact */
+/* 2) Barre nav — ancrée, fond solide, fine ligne supérieure, pas d'ombre flottante */
 .ah-bottomnav{
   align-items:center !important;
-  padding:4px 4px !important;
+  padding: 4px 0 calc(2px + var(--ah-safe-bottom)) !important;
+  border-radius: 0 !important;
+  border: none !important;
+  border-top: 1px solid var(--ah-border) !important;
+  box-shadow: none !important;
+  background: var(--ah-surface) !important;
 }
 .ah-bottomnav .ni,
 .ah-bottomnav .nav-item{
@@ -3358,19 +3359,26 @@ html body #result, html body #nutriResult{
   width:22px !important; height:22px !important;
 }
 
-/* 2) Bouton TITAN + label — au-dessus de la safe area, label visible */
+/* 3) Bouton TITAN — intégré dans la barre, ne dépasse que légèrement */
 .ah-titan-btn{
-  bottom: calc(34px + var(--ah-safe-bottom)) !important;
+  width: 50px !important;
+  height: 50px !important;
+  bottom: calc(14px + var(--ah-safe-bottom)) !important;
+  box-shadow: 0 2px 8px rgba(20,30,60,.18), 0 0 0 3px var(--ah-surface) !important;
+}
+.ah-titan-btn img{
+  width: 32px !important; height: 32px !important; object-fit: contain !important;
 }
 .ah-titan-btn-label{
-  bottom: calc(12px + var(--ah-safe-bottom)) !important;
-  font-size:9px !important;
+  bottom: calc(2px + var(--ah-safe-bottom)) !important;
+  font-size:8px !important;
   letter-spacing:.22em !important;
   white-space:nowrap !important;
   text-align:center !important;
   line-height:1 !important;
-  color:var(--ah-gold) !important;
-  text-shadow:0 1px 2px rgba(255,255,255,.4) !important;
+  color:var(--ah-navy) !important;
+  text-shadow:none !important;
+  opacity:.7 !important;
 }
 
 /* 4) Contenu scrollable — clearance pour ne pas se cacher derrière la nav */
@@ -3426,16 +3434,20 @@ html body #result, html body #nutriResult{
 <!-- Container des toasts (notifications in-app) -->
 <div id="toastContainer"></div>
 
+<!-- ═══ SPLASH — version refonte 2026-06-05
+     Mission user : "Logo trop petit dans le carré blanc, pas assez premium."
+     Fix : logo agrandi 220px (vs 130), pas de container badge, drop-shadow
+     navy subtile pour profondeur. Cohérent avec l'icône installée 88%. ═══ -->
 <div id="splash" class="scr on" style="background:var(--ah-bg);justify-content:center;align-items:center;padding:32px 24px">
-  <div style="display:flex;flex-direction:column;align-items:center;gap:24px;max-width:340px;width:100%">
-    <img class="sp-logo" src="/images/logo.png" alt="Athletik Hub" style="width:130px;height:130px;object-fit:contain;background:transparent;border:none;box-shadow:none;animation:popIn .6s ease both" onerror="this.outerHTML='<div class=&quot;sp-logo&quot;>AH</div>'">
-    <div class="sp-name" style="font-family:'Bebas Neue',sans-serif;font-size:54px;line-height:.92;color:var(--ah-text);letter-spacing:.04em;text-align:center">ATHLETIK<br>HUB</div>
-    <div style="width:48px;height:2px;background:var(--ah-gold);border-radius:2px"></div>
-    <div class="sp-sub" style="font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:.22em;color:var(--ah-text2);text-transform:uppercase;text-align:center">Les secrets de la détente verticale</div>
-    <div class="sp-bar" style="width:200px;height:2px;background:var(--ah-border);border-radius:2px;overflow:hidden;margin-top:8px"><div class="sp-bar-in" id="splashBar" style="height:100%;background:var(--ah-gold);width:0;transition:width .25s"></div></div>
+  <div style="display:flex;flex-direction:column;align-items:center;gap:28px;max-width:380px;width:100%">
+    <img class="sp-logo" src="/images/logo.png" alt="Athletik Hub" style="width:220px;height:220px;object-fit:contain;background:transparent;border:none;box-shadow:none;filter:drop-shadow(0 8px 24px rgba(27,42,74,.10));animation:popIn .6s ease both" onerror="this.outerHTML='<div class=&quot;sp-logo&quot; style=&quot;width:220px;height:220px&quot;>AH</div>'">
+    <div class="sp-name" style="font-family:'Bebas Neue',sans-serif;font-size:48px;line-height:.95;color:var(--ah-text);letter-spacing:.06em;text-align:center">ATHLETIK HUB</div>
+    <div style="width:56px;height:2px;background:var(--ah-gold);border-radius:2px"></div>
+    <div class="sp-sub" style="font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:.22em;color:var(--ah-text2);text-transform:uppercase;text-align:center;line-height:1.5">Les secrets de la<br>détente verticale</div>
+    <div class="sp-bar" style="width:160px;height:2px;background:var(--ah-border);border-radius:2px;overflow:hidden;margin-top:12px"><div class="sp-bar-in" id="splashBar" style="height:100%;background:var(--ah-gold);width:0;transition:width .25s"></div></div>
   </div>
-  <div style="position:absolute;bottom:40px;left:0;right:0;text-align:center">
-    <button onclick="localStorage.clear();location.reload()" style="background:none;border:none;color:rgba(255,255,255,.25);font-size:11px;cursor:pointer;font-family:Outfit,sans-serif;padding:8px 16px">Réinitialiser</button>
+  <div style="position:absolute;bottom:32px;left:0;right:0;text-align:center">
+    <button onclick="localStorage.clear();location.reload()" style="background:none;border:none;color:var(--ah-muted);font-size:11px;cursor:pointer;font-family:Outfit,sans-serif;padding:8px 16px;opacity:.5">Réinitialiser</button>
   </div>
 </div>
 
