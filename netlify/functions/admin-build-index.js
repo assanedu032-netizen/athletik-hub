@@ -30,14 +30,18 @@ async function embedBatch(texts, key) {
 exports.handler = async function(event) {
   const headers = { 'Content-Type': 'application/json' };
 
-  if (event.httpMethod !== 'POST') {
-    return { statusCode: 405, headers, body: JSON.stringify({ error: 'POST only' }) };
+  // Accepte POST (avec header X-Admin-Token) OU GET (avec ?token=XXX dans l'URL).
+  if (event.httpMethod !== 'POST' && event.httpMethod !== 'GET') {
+    return { statusCode: 405, headers, body: JSON.stringify({ error: 'POST ou GET seulement' }) };
   }
   const adminToken = process.env.ADMIN_BUILD_TOKEN;
   if (!adminToken) {
     return { statusCode: 503, headers, body: JSON.stringify({ error: 'ADMIN_BUILD_TOKEN non configuré.' }) };
   }
-  const supplied = event.headers['x-admin-token'] || event.headers['X-Admin-Token'];
+  const supplied =
+    event.headers['x-admin-token'] ||
+    event.headers['X-Admin-Token'] ||
+    (event.queryStringParameters && event.queryStringParameters.token);
   if (supplied !== adminToken) {
     return { statusCode: 401, headers, body: JSON.stringify({ error: 'Token admin invalide.' }) };
   }
