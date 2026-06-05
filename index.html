@@ -5660,27 +5660,30 @@ window.tiResetOnEnter = function(){ window.tiShowStep(1); };
           <div style="font-family:'Bebas Neue',sans-serif;font-size:28px;color:#fff;letter-spacing:3px">NUTRITION</div>
           <div style="font-size:11px;color:rgba(255,255,255,.4);letter-spacing:2px;text-transform:uppercase">Mange comme tu t'entraînes</div>
         </div>
-        <div onclick="openNPI()" style="padding:8px 14px;background:rgba(197,164,78,.15);border:1px solid rgba(197,164,78,.25);border-radius:20px;cursor:pointer">
-          <div style="font-size:10px;font-weight:700;color:var(--gold);letter-spacing:1px">MON NPI</div>
+        <div onclick="openNPI()" class="ah-npi-pill" style="cursor:pointer">
+          <span class="dot"></span>
+          <span>MON NPI</span>
         </div>
       </div>
-      <!-- Macros du jour -->
+      <!-- Macros du jour — 4 couleurs distinctes (audit design B-11) :
+           kcal=or · prot=bleu · carbs=orange · fat=magenta. Carbs n'est
+           plus en or (conflit avec kcal). -->
       <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px">
         <div style="background:rgba(255,255,255,.05);border-radius:12px;padding:10px;text-align:center">
-          <div style="font-family:'Bebas Neue',sans-serif;font-size:20px;color:var(--gold)" id="nutri-kcal">1240</div>
-          <div style="font-size:9px;color:rgba(255,255,255,.4);font-weight:700;text-transform:uppercase;margin-top:2px">kcal</div>
+          <div style="font-family:'Bebas Neue',sans-serif;font-size:20px;color:var(--ah-gold)" id="nutri-kcal">1240</div>
+          <div style="font-size:9px;color:rgba(255,255,255,.45);font-weight:700;text-transform:uppercase;margin-top:2px">kcal</div>
         </div>
         <div style="background:rgba(255,255,255,.05);border-radius:12px;padding:10px;text-align:center">
-          <div style="font-family:'Bebas Neue',sans-serif;font-size:20px;color:#3B82F6" id="nutri-prot">95g</div>
-          <div style="font-size:9px;color:rgba(255,255,255,.4);font-weight:700;text-transform:uppercase;margin-top:2px">Prot</div>
+          <div style="font-family:'Bebas Neue',sans-serif;font-size:20px;color:#5B9CF6" id="nutri-prot">95g</div>
+          <div style="font-size:9px;color:rgba(255,255,255,.45);font-weight:700;text-transform:uppercase;margin-top:2px">Prot</div>
         </div>
         <div style="background:rgba(255,255,255,.05);border-radius:12px;padding:10px;text-align:center">
-          <div style="font-family:'Bebas Neue',sans-serif;font-size:20px;color:var(--gold)" id="nutri-carbs">120g</div>
-          <div style="font-size:9px;color:rgba(255,255,255,.4);font-weight:700;text-transform:uppercase;margin-top:2px">Carbs</div>
+          <div style="font-family:'Bebas Neue',sans-serif;font-size:20px;color:#F59E0B" id="nutri-carbs">120g</div>
+          <div style="font-size:9px;color:rgba(255,255,255,.45);font-weight:700;text-transform:uppercase;margin-top:2px">Carbs</div>
         </div>
         <div style="background:rgba(255,255,255,.05);border-radius:12px;padding:10px;text-align:center">
           <div style="font-family:'Bebas Neue',sans-serif;font-size:20px;color:#EC4899" id="nutri-fat">42g</div>
-          <div style="font-size:9px;color:rgba(255,255,255,.4);font-weight:700;text-transform:uppercase;margin-top:2px">Fat</div>
+          <div style="font-size:9px;color:rgba(255,255,255,.45);font-weight:700;text-transform:uppercase;margin-top:2px">Fat</div>
         </div>
       </div>
     </div>
