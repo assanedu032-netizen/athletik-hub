@@ -4639,8 +4639,9 @@ window.tiResetOnEnter = function(){ window.tiShowStep(1); };
 
     </div>
 
-    <!-- PROGRESSION -->
-    <div style="padding:16px 20px;border-bottom:1px solid var(--border)">
+    <!-- PROGRESSION — masquée si 0% via le rendu (renderUserData) pour éviter
+         l'effet "vide en cascade" sur une Home post-onboarding fraîche. -->
+    <div id="homeProgressWrap" style="padding:16px 20px;border-bottom:1px solid var(--border);display:none">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
         <div style="font-size:12px;color:var(--text2);font-weight:600" id="pcPhase">Phase 1 — Fondations</div>
         <div style="font-family:'Bebas Neue',sans-serif;font-size:18px;color:var(--gold)" id="pcPct">0%</div>
@@ -7189,11 +7190,20 @@ function renderHomeMealPlan() {
   var plan = null;
   try { plan = JSON.parse(localStorage.getItem('ah_meal_plan') || 'null'); } catch(e) {}
   if (!plan || !plan.days || !plan.days.length) {
-    // Pas de plan généré : affiche un CTA discret
+    // Audit design C-2 : empty state premium au lieu d'un message tristounet
+    // → card avec icône or + CTA gold "Générer mon plan repas" qui amène
+    // directement dans la nutrition.
     wrap.style.display = 'block';
-    content.innerHTML = '<div style="background:var(--surface);border:1px dashed var(--border);border-radius:12px;padding:14px;text-align:center;font-size:12px;color:var(--muted)">'
-      + 'Pas de plan repas généré.<br>'
-      + '<a onclick="switchTab(\'nutrition\')" style="color:var(--gold);font-weight:700;cursor:pointer">Aller dans Nutri → Journal → Générer</a>'
+    content.innerHTML = ''
+      + '<div onclick="switchTab(\'nutrition\')" style="background:var(--ah-surface);border:1.5px solid var(--ah-border);border-radius:14px;padding:16px;cursor:pointer;display:flex;align-items:center;gap:14px;transition:border-color .15s">'
+      +   '<div style="width:44px;height:44px;border-radius:12px;background:rgba(197,164,78,.1);border:1px solid rgba(197,164,78,.3);display:flex;align-items:center;justify-content:center;flex-shrink:0;color:var(--ah-gold)">'
+      +     '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 9V2H9v7c0 1.66 1.34 3 3 3v9h2V2h-2zM16 6v8h2.5v8H21V2c-2.76 0-5 2.24-5 4z"/></svg>'
+      +   '</div>'
+      +   '<div style="flex:1;min-width:0">'
+      +     '<div style="font-family:\'Bebas Neue\',sans-serif;font-size:15px;letter-spacing:.06em;color:var(--ah-text);line-height:1.1">GÉNÈRE TON PLAN REPAS</div>'
+      +     '<div style="font-family:\'Outfit\',sans-serif;font-size:12px;color:var(--ah-text2);margin-top:3px">7 jours calibrés sur ton objectif</div>'
+      +   '</div>'
+      +   '<div style="color:var(--ah-gold);font-size:20px;flex-shrink:0">→</div>'
       + '</div>';
     return;
   }
@@ -10197,6 +10207,11 @@ function renderUserData() {
   var pcPhase = document.getElementById('pcPhase'); if (pcPhase) pcPhase.textContent = `Phase ${user.phase} — Fondations`;
   var pcPct = document.getElementById('pcPct'); if (pcPct) pcPct.textContent = user.progressPct + '%';
   var pcBar = document.getElementById('pcBar'); if (pcBar) pcBar.style.width = user.progressPct + '%';
+  // Audit design C-2 : masque le bloc progression tant qu'aucune séance
+  // n'a été faite (évite l'effet "sections vides en cascade" sur la Home
+  // fraîchement post-onboarding).
+  var pcWrap = document.getElementById('homeProgressWrap');
+  if (pcWrap) pcWrap.style.display = (user.progressPct > 0) ? 'block' : 'none';
 
   // Athletik Score
   if (user.athScore !== null) {
@@ -10478,11 +10493,18 @@ function renderHomeAgenda() {
   if (!row) return;
   var edit = document.getElementById('homePlanEdit');
   if (typeof trainingDays === 'undefined' || trainingDays.size === 0) {
+    // Audit design C-2 : empty state premium au lieu d'un message tristounet
     if (edit) edit.style.display = 'none';
-    row.innerHTML =
-      '<div style="text-align:center">'
-      + '<div style="font-size:12px;color:var(--text2);margin-bottom:12px">Choisis tes jours d\'entraînement pour voir ta semaine.</div>'
-      + '<button onclick="openPlanModal()" style="width:100%;padding:13px;background:linear-gradient(135deg,var(--gold),var(--gold2));border:none;border-radius:12px;font-family:\'Bebas Neue\',sans-serif;font-size:15px;letter-spacing:1.5px;color:var(--navy);cursor:pointer">📅 CONFIGURER MON PLANNING</button>'
+    row.innerHTML = ''
+      + '<div onclick="openPlanModal()" style="background:var(--ah-surface);border:1.5px solid var(--ah-border);border-radius:14px;padding:16px;cursor:pointer;display:flex;align-items:center;gap:14px">'
+      +   '<div style="width:44px;height:44px;border-radius:12px;background:rgba(197,164,78,.1);border:1px solid rgba(197,164,78,.3);display:flex;align-items:center;justify-content:center;flex-shrink:0;color:var(--ah-gold)">'
+      +     '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>'
+      +   '</div>'
+      +   '<div style="flex:1;min-width:0">'
+      +     '<div style="font-family:\'Bebas Neue\',sans-serif;font-size:15px;letter-spacing:.06em;color:var(--ah-text);line-height:1.1">CONFIGURE TES JOURS</div>'
+      +     '<div style="font-family:\'Outfit\',sans-serif;font-size:12px;color:var(--ah-text2);margin-top:3px">Choisis quand tu t\'entraînes cette semaine</div>'
+      +   '</div>'
+      +   '<div style="color:var(--ah-gold);font-size:20px;flex-shrink:0">→</div>'
       + '</div>';
     return;
   }
