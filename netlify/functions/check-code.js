@@ -7,6 +7,13 @@
 //
 // Codes "legacy" (3 codes fixes hérités) toujours acceptés pour rétro-compat.
 // Le secret HMAC vit UNIQUEMENT dans la variable d'env Netlify ACCESS_CODE_SECRET.
+//
+// ── Rate limiting (P4 sécurité — anti-bruteforce) ──
+// Max RL_MAX tentatives par IP toutes les RL_WINDOW_MS ms. Stocké en mémoire
+// de l'instance Lambda (warm). En cold start le compteur repart à zéro, c'est
+// acceptable : un attaquant qui forcerait des cold starts paye plus que ce que
+// ça coûte de bloquer. Pour anti-bruteforce distribué (botnet), Phase 3
+// passera sur Upstash Redis ou Firestore counter.
 
 const crypto = require('crypto');
 
@@ -24,6 +31,65 @@ const TIER_META = {
   MASTER: { label: 'MASTER', color: '#EF4444', valid: null, msg: 'Accès MASTER — Titan illimité + tout débloqué.' },
 };
 
+// ─── Rate limiting in-memory ────────────────────────────────────────────────
+const RL_MAX        = 5;             // 5 tentatives
+const RL_WINDOW_MS  = 15 * 60 * 1000; // par 15 minutes
+const RL_BLOCK_MS   = 60 * 60 * 1000; // bloqué 1h après dépassement
+const _rlAttempts   = new Map();     // ip → { count, firstAt, blockedUntil }
+
+function _rlGc() {
+  const now = Date.now();
+  if (_rlAttempts.size < 1000) return;
+  for (const [ip, st] of _rlAttempts) {
+    if ((st.blockedUntil || 0) < now && (now - st.firstAt) > RL_WINDOW_MS) {
+      _rlAttempts.delete(ip);
+    }
+  }
+}
+
+// Renvoie { allowed: bool, retryAfter?: seconds }
+function rateLimit(ip) {
+  if (!ip) return { allowed: true }; // pas d'IP → on laisse passer (proxy mal configuré)
+  const now = Date.now();
+  let st = _rlAttempts.get(ip);
+  if (!st) {
+    st = { count: 0, firstAt: now, blockedUntil: 0 };
+    _rlAttempts.set(ip, st);
+  }
+  // Encore bloqué ?
+  if (st.blockedUntil > now) {
+    return { allowed: false, retryAfter: Math.ceil((st.blockedUntil - now) / 1000) };
+  }
+  // Fenêtre expirée → reset
+  if (now - st.firstAt > RL_WINDOW_MS) {
+    st.count = 0;
+    st.firstAt = now;
+    st.blockedUntil = 0;
+  }
+  st.count += 1;
+  if (st.count > RL_MAX) {
+    st.blockedUntil = now + RL_BLOCK_MS;
+    _rlGc();
+    return { allowed: false, retryAfter: Math.ceil(RL_BLOCK_MS / 1000) };
+  }
+  return { allowed: true };
+}
+
+// Sur succès, on reset le compteur pour ne pas pénaliser un user légitime
+// qui a tapé son code correctement après un essai foireux.
+function rateLimitReset(ip) {
+  if (ip) _rlAttempts.delete(ip);
+}
+
+function clientIp(event) {
+  const h = event.headers || {};
+  // Netlify priorité, puis fallback CloudFront / standard
+  return h['x-nf-client-connection-ip']
+      || (h['x-forwarded-for'] || '').split(',')[0].trim()
+      || h['client-ip']
+      || null;
+}
+
 function computeCheck(tierLetter, random, secret) {
   return crypto.createHmac('sha256', secret)
     .update(tierLetter + '-' + random)
@@ -37,13 +103,13 @@ function safeEq(a, b) {
   return crypto.timingSafeEqual(Buffer.from(a), Buffer.from(b));
 }
 
-function resp(statusCode, payload) {
+function resp(statusCode, payload, extraHeaders) {
   return {
     statusCode: statusCode,
-    headers: {
+    headers: Object.assign({
       'Access-Control-Allow-Origin': '*',
       'Content-Type': 'application/json',
-    },
+    }, extraHeaders || {}),
     body: JSON.stringify(payload),
   };
 }
@@ -65,6 +131,17 @@ exports.handler = async function(event) {
     return { statusCode: 405, body: 'Method Not Allowed' };
   }
 
+  // ─── Rate limiting (avant parsing du body, économise du CPU) ───
+  const ip = clientIp(event);
+  const rl = rateLimit(ip);
+  if (!rl.allowed) {
+    return resp(429, {
+      ok: false,
+      error: 'rate_limited',
+      message: 'Trop de tentatives. Réessaie dans ' + Math.ceil(rl.retryAfter / 60) + ' min.',
+    }, { 'Retry-After': String(rl.retryAfter) });
+  }
+
   let body;
   try { body = JSON.parse(event.body || '{}'); }
   catch { return resp(400, { ok: false, error: 'invalid_json' }); }
@@ -75,6 +152,7 @@ exports.handler = async function(event) {
   // 1) Codes legacy fixes (toujours acceptés)
   if (LEGACY_CODES[code]) {
     const tier = LEGACY_CODES[code];
+    rateLimitReset(ip);
     return resp(200, { ok: true, tier: tier, meta: TIER_META[tier] });
   }
 
@@ -102,5 +180,6 @@ exports.handler = async function(event) {
     return resp(200, { ok: false, error: 'invalid' });
   }
 
+  rateLimitReset(ip);
   return resp(200, { ok: true, tier: tier, meta: TIER_META[tier] });
 };
