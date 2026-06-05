@@ -11544,16 +11544,39 @@ function _bfDrawChart(data) {
     } catch(e){}
   }
 
+  // Joue UNIQUEMENT la fin du MP3 (les X dernières secondes).
+  // User 2026-06-05 : "Je veux vraiment la fin du timer pas le début"
+  // → on seek à duration - tailMs avant play. Si duration pas encore connu
+  // (audio pas chargé), fallback play depuis le début.
+  function tim_beepPlayEnd(tailMs){
+    if (tim_muted || tim_beepFailed) return;
+    var a = tim_beepInit();
+    if (!a) return;
+    try {
+      clearTimeout(tim_beepStopT);
+      try { a.pause(); } catch(e){}
+      var dur = a.duration;
+      var tail = (tailMs || 2000) / 1000;
+      if (isFinite(dur) && dur > 0) {
+        a.currentTime = Math.max(0, dur - tail);
+      } else {
+        a.currentTime = 0;
+      }
+      var p = a.play();
+      if (p && p.catch) p.catch(function(){});
+    } catch(e){}
+  }
+
   // Précharge dès l'ouverture du module
   tim_beepInit();
 
-  // Wrappers : SEUL le son de fin joue le MP3.
+  // Wrappers : SEUL le son de fin joue le MP3 (et seulement sa FIN).
   // Les autres alertes (start/tick/urgence/rest/reprise) gardent uniquement
-  // la vibration — choix user 2026-06-05 : "Juste le bruit de la fin".
+  // la vibration — choix user 2026-06-05.
   function tim_sndDepart(){ tim_vib([60,30,60]); }
   function tim_sndTick(){ /* silencieux */ }
   function tim_sndUrgence(){ tim_vib([20]); }
-  function tim_sndFinish(){ tim_beepPlay(); tim_vib([60,40,60,40,120]); }
+  function tim_sndFinish(){ tim_beepPlayEnd(2000); tim_vib([60,40,60,40,120]); }
   function tim_sndRest(){ tim_vib([40]); }
   function tim_sndReprise(){ tim_vib([30,20,50]); }
 
