@@ -3317,19 +3317,19 @@ html body #result, html body #nutriResult{
 }
 
 /* ════════════════════════════════════════════════════════════════════════════
-   BOTTOM NAV — Ancrée au bas de l'écran (mission 2026-06-05)
+   BOTTOM NAV — Refonte premium 2026-06-05 (mission UI/UX chirurgicale)
    ────────────────────────────────────────────────────────────────────────────
-   Brief user : "Elle doit toucher le bas de l'écran, sans espace vide. Pas
-   d'effet pilule flottant. Ombre quasi nulle. Bouton TITAN moins dominant.
-   Continuité visuelle de l'app, comme une nav native mobile."
+   Brief : hauteur 88px + safe area, fond blanc, bordure haute fine, ombre
+   très subtile. TITAN comme vrai 3e slot (cercle navy + gold thin border).
+   Alignement icônes/labels strict, active state = barre gold discrète.
    ──────────────────────────────────────────────────────────────────────────── */
 :root{
   --ah-safe-bottom: env(safe-area-inset-bottom, 0px);
-  --ah-nav-height: 60px;
-  --ah-nav-clearance: calc(var(--ah-nav-height) + var(--ah-safe-bottom) + 16px);
+  --ah-nav-height: 88px;
+  --ah-nav-clearance: calc(var(--ah-nav-height) + var(--ah-safe-bottom) + 14px);
 }
 
-/* 1) Wrapper collé au bas — plus de padding extérieur, plus de border-radius */
+/* 1) Wrapper collé au bas */
 .ah-bottomnav-wrap{
   padding: 0 !important;
   bottom: 0 !important;
@@ -3337,48 +3337,104 @@ html body #result, html body #nutriResult{
   max-width: 430px !important;
 }
 
-/* 2) Barre nav — ancrée, fond solide, fine ligne supérieure, pas d'ombre flottante */
+/* 2) Barre nav — fond blanc, bordure haute fine, ombre très douce */
 .ah-bottomnav{
-  align-items:center !important;
-  padding: 4px 0 calc(2px + var(--ah-safe-bottom)) !important;
+  display: grid !important;
+  grid-template-columns: repeat(5, 1fr) !important;
+  align-items: center !important;
+  padding: 6px 0 calc(8px + var(--ah-safe-bottom)) !important;
+  min-height: var(--ah-nav-height) !important;
   border-radius: 0 !important;
   border: none !important;
   border-top: 1px solid var(--ah-border) !important;
-  box-shadow: none !important;
-  background: var(--ah-surface) !important;
+  box-shadow: 0 -2px 12px rgba(20,30,60,.04) !important;
+  background: #fff !important;
+  box-sizing: border-box !important;
 }
+
+/* 3) Onglets — icône au-dessus, label dessous */
 .ah-bottomnav .ni,
 .ah-bottomnav .nav-item{
-  min-height:48px !important;
-  padding:6px 0 4px !important;
-  gap:3px !important;
-  justify-content:center !important;
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 5px !important;
+  padding: 6px 0 !important;
+  min-height: 56px !important;
+  font-family: 'Outfit', sans-serif !important;
+  font-size: 10px !important;
+  letter-spacing: .14em !important;
+  font-weight: 600 !important;
+  text-transform: uppercase !important;
+  color: var(--ah-text2) !important;
+  cursor: pointer !important;
+  position: relative !important;
+  -webkit-tap-highlight-color: transparent !important;
+}
+.ah-bottomnav .ni.on,
+.ah-bottomnav .nav-item.on{
+  color: var(--ah-navy) !important;
+  font-weight: 700 !important;
 }
 .ah-bottomnav .ni .ico,
 .ah-bottomnav .nav-item .ico{
-  width:22px !important; height:22px !important;
+  width: 24px !important;
+  height: 24px !important;
 }
 
-/* 3) Bouton TITAN — intégré dans la barre, ne dépasse que légèrement */
-.ah-titan-btn{
-  width: 50px !important;
-  height: 50px !important;
-  bottom: calc(14px + var(--ah-safe-bottom)) !important;
-  box-shadow: 0 2px 8px rgba(20,30,60,.18), 0 0 0 3px var(--ah-surface) !important;
+/* 4) Active state — barre gold discrète tout en haut */
+.ah-bottomnav .ni.on::before{
+  content: "" !important;
+  position: absolute !important;
+  top: 0 !important;
+  left: 50% !important;
+  transform: translateX(-50%) !important;
+  width: 26px !important;
+  height: 2px !important;
+  background: var(--ah-gold) !important;
+  border-radius: 0 0 2px 2px !important;
+  box-shadow: none !important;
 }
-.ah-titan-btn img{
-  width: 32px !important; height: 32px !important; object-fit: contain !important;
+
+/* 5) TITAN slot — bouton intégré inline, label "Titan" dessous */
+.ah-bottomnav .ah-titan-slot{
+  gap: 4px !important;
+  padding: 0 !important;
 }
-.ah-titan-btn-label{
-  bottom: calc(2px + var(--ah-safe-bottom)) !important;
-  font-size:8px !important;
-  letter-spacing:.22em !important;
-  white-space:nowrap !important;
-  text-align:center !important;
-  line-height:1 !important;
-  color:var(--ah-navy) !important;
-  text-shadow:none !important;
-  opacity:.7 !important;
+.ah-bottomnav .ah-titan-slot .ah-titan-btn{
+  position: relative !important;
+  left: auto !important;
+  bottom: auto !important;
+  transform: none !important;
+  width: 48px !important;
+  height: 48px !important;
+  border-radius: 50% !important;
+  background: var(--ah-navy) !important;
+  border: 1.5px solid var(--ah-gold) !important;
+  box-shadow: 0 4px 12px rgba(20,30,60,.18) !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  overflow: hidden !important;
+  margin-top: -10px !important;
+  padding: 0 !important;
+  cursor: pointer !important;
+}
+.ah-bottomnav .ah-titan-slot .ah-titan-btn img{
+  width: 32px !important;
+  height: 32px !important;
+  object-fit: contain !important;
+}
+.ah-bottomnav .ah-titan-slot.on .ah-titan-btn{
+  box-shadow: 0 4px 14px rgba(197,164,78,.45), 0 0 0 2px rgba(197,164,78,.20) !important;
+}
+.ah-bottomnav .ah-titan-slot.on::before{ display: none !important; }
+
+/* 6) Anciens éléments TITAN absolus (markup legacy) → masqués */
+.ah-bottomnav-wrap > .ah-titan-btn,
+.ah-bottomnav-wrap > .ah-titan-btn-label{
+  display: none !important;
 }
 
 /* 4) Contenu scrollable — clearance pour ne pas se cacher derrière la nav */
@@ -6105,19 +6161,20 @@ window.tiResetOnEnter = function(){ window.tiShowStep(1); };
      items pour préserver les index utilisés par switchTab() (navIdx[tab]).
      L'index 2 est un placeholder invisible (emplacement du bouton TITAN
      flottant) — sans onclick, juste pour garder l'alignement d'index. -->
-<div class="ah-bottomnav-wrap" id="mainNav" style="display:none;width:calc(100% - 0px);max-width:430px;left:50%;right:auto;transform:translateX(-50%)">
+<div class="ah-bottomnav-wrap" id="mainNav" style="display:none;width:100%;max-width:430px;left:50%;right:auto;transform:translateX(-50%)">
   <div class="ah-bottomnav">
     <div class="ni nav-item home" onclick="switchTab('home')"><span class="ico"></span>Home</div>
     <div class="ni nav-item tracks" onclick="switchTab('tracks')"><span class="ico"></span>Suivi</div>
-    <div class="nav-item" aria-hidden="true" style="visibility:hidden"></div>
+    <div class="ni nav-item chat ah-titan-slot" onclick="switchTab('chat')">
+      <button class="ah-titan-btn" type="button" aria-label="Coach Titan" tabindex="-1">
+        <img src="images/titan-mascot.png" alt="" onerror="this.style.display='none';this.nextElementSibling.style.display='flex';">
+        <span class="ah-titan-btn-fallback" style="display:none;color:var(--ah-gold);font-family:'Bebas Neue',sans-serif;font-size:22px">T</span>
+      </button>
+      <span>Titan</span>
+    </div>
     <div class="ni nav-item train" onclick="switchTab('train')"><span class="ico"></span>Train</div>
     <div class="ni nav-item nutri" onclick="switchTab('nutrition')"><span class="ico"></span>Nutri</div>
   </div>
-  <button class="ah-titan-btn" onclick="switchTab('chat')" aria-label="Coach Titan">
-    <img src="images/titan-mascot.png" alt="Titan" onerror="this.style.display='none';this.nextElementSibling.style.display='flex';">
-    <span class="ah-titan-btn-fallback" style="display:none">T</span>
-  </button>
-  <span class="ah-titan-btn-label">TITAN</span>
 </div>
 
 <!-- ═══ RECIPE MODAL ═══ -->
@@ -9822,7 +9879,7 @@ function switchTab(tab){
   // (sinon switchTab ajoute .on mais l'inline display:none gagne → écran blanc)
   document.querySelectorAll('.view').forEach(function(v){v.classList.remove('on');v.style.display='';});
   document.querySelectorAll('.nav-item').forEach(function(n){n.classList.remove('on');});
-  var map={home:'vHome',tracks:'vTracks',train:'vTrain',chat:'vChat',moi:'vMoi',nutrition:'vNutri'},navIdx={home:0,tracks:1,train:3,nutrition:4};
+  var map={home:'vHome',tracks:'vTracks',train:'vTrain',chat:'vChat',moi:'vMoi',nutrition:'vNutri'},navIdx={home:0,tracks:1,chat:2,train:3,nutrition:4};
   // Handoff §12 : FAB chrono masqué sur Nutri et Chat (pas pertinent là).
   // Toggle via classe .ah-no-fab sur body (CSS ligne 274 cible .ah-no-fab .ah-fab).
   try {
