@@ -11547,13 +11547,15 @@ function _bfDrawChart(data) {
   // Précharge dès l'ouverture du module
   tim_beepInit();
 
-  // Wrappers : tous routés sur le MP3. cutMs adapté à chaque alerte.
-  function tim_sndDepart(){ tim_beepPlay(700); tim_vib([60,30,60]); }
-  function tim_sndTick(){ tim_beepPlay(120); }
-  function tim_sndUrgence(){ tim_beepPlay(250); tim_vib([20]); }
+  // Wrappers : SEUL le son de fin joue le MP3.
+  // Les autres alertes (start/tick/urgence/rest/reprise) gardent uniquement
+  // la vibration — choix user 2026-06-05 : "Juste le bruit de la fin".
+  function tim_sndDepart(){ tim_vib([60,30,60]); }
+  function tim_sndTick(){ /* silencieux */ }
+  function tim_sndUrgence(){ tim_vib([20]); }
   function tim_sndFinish(){ tim_beepPlay(); tim_vib([60,40,60,40,120]); }
-  function tim_sndRest(){ tim_beepPlay(180); tim_vib([40]); }
-  function tim_sndReprise(){ tim_beepPlay(400); tim_vib([30,20,50]); }
+  function tim_sndRest(){ tim_vib([40]); }
+  function tim_sndReprise(){ tim_vib([30,20,50]); }
 
   function tim_toast(msg){
     var el = document.getElementById('timToast');
