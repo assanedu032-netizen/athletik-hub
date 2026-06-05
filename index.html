@@ -11489,12 +11489,71 @@ function _bfDrawChart(data) {
     }
   };
   function tim_vib(p){ if(!tim_muted && navigator.vibrate) try { navigator.vibrate(p || [40]); } catch(e) {} }
-  function tim_sndDepart(){ if(!tim_muted && TIM_SOUNDS[tim_soundStyle]) TIM_SOUNDS[tim_soundStyle].depart(); tim_vib([60,30,60]); }
-  function tim_sndTick(){ if(!tim_muted && TIM_SOUNDS[tim_soundStyle]) TIM_SOUNDS[tim_soundStyle].tick(); }
-  function tim_sndUrgence(){ if(!tim_muted && TIM_SOUNDS[tim_soundStyle]) TIM_SOUNDS[tim_soundStyle].urgence(); tim_vib([20]); }
-  function tim_sndFinish(){ if(!tim_muted && TIM_SOUNDS[tim_soundStyle]) TIM_SOUNDS[tim_soundStyle].fin(); tim_vib([60,40,60,40,120]); }
-  function tim_sndRest(){ if(!tim_muted && TIM_SOUNDS[tim_soundStyle]) TIM_SOUNDS[tim_soundStyle].repos(); tim_vib([40]); }
-  function tim_sndReprise(){ if(!tim_muted && TIM_SOUNDS[tim_soundStyle]) TIM_SOUNDS[tim_soundStyle].reprise(); tim_vib([30,20,50]); }
+
+  // ── AUDIO MP3 — son officiel du minuteur (2026-06-05) ──
+  // L'ancien moteur Web Audio (TIM_SOUNDS / tim_osc / tim_noise) reste défini
+  // au-dessus pour compat mais n'est PLUS appelé : tous les bips passent par
+  // le MP3 fourni par l'user (assets/sounds/timer-beep.mp3).
+  // Un seul système audio actif = un seul <audio> partagé, rejoué via
+  // currentTime=0 + play(). cutMs coupe la lecture pour les alertes courtes
+  // (tick / urgence / reprise) qui doivent rester brèves.
+  var tim_beepUrl = 'assets/sounds/timer-beep.mp3';
+  var tim_beepEl = null;
+  var tim_beepFailed = false;
+  var tim_beepStopT = null;
+  function tim_beepInit(){
+    if (tim_beepEl || tim_beepFailed) return tim_beepEl;
+    try {
+      tim_beepEl = new Audio(tim_beepUrl);
+      tim_beepEl.preload = 'auto';
+      tim_beepEl.addEventListener('error', function(){
+        tim_beepFailed = true;
+        try { console.warn('[timer] timer-beep.mp3 introuvable — son désactivé, vibration seule.'); } catch(e){}
+      });
+      try { tim_beepEl.load(); } catch(e){}
+    } catch(e){ tim_beepFailed = true; }
+    return tim_beepEl;
+  }
+  function tim_beepUnlock(){
+    // Appelé depuis les actions user (Start / Resume) : iOS/Android n'autorise
+    // la lecture audio qu'après un geste user — on amorce muet puis on coupe.
+    var a = tim_beepInit();
+    if (!a || tim_beepFailed) return;
+    try {
+      a.muted = true;
+      var p = a.play();
+      if (p && p.then) p.then(function(){ try{ a.pause(); a.currentTime = 0; }catch(e){} a.muted = false; })
+                       .catch(function(){ a.muted = false; });
+      else { try{ a.pause(); a.currentTime = 0; }catch(e){} a.muted = false; }
+    } catch(e){ a.muted = false; }
+  }
+  function tim_beepPlay(cutMs){
+    if (tim_muted || tim_beepFailed) return;
+    var a = tim_beepInit();
+    if (!a) return;
+    try {
+      clearTimeout(tim_beepStopT);
+      try { a.pause(); a.currentTime = 0; } catch(e){}
+      var p = a.play();
+      if (p && p.catch) p.catch(function(){ /* user gesture pas encore acquis */ });
+      if (cutMs && cutMs > 0) {
+        tim_beepStopT = setTimeout(function(){
+          try { a.pause(); a.currentTime = 0; } catch(e){}
+        }, cutMs);
+      }
+    } catch(e){}
+  }
+
+  // Précharge dès l'ouverture du module
+  tim_beepInit();
+
+  // Wrappers : tous routés sur le MP3. cutMs adapté à chaque alerte.
+  function tim_sndDepart(){ tim_beepPlay(700); tim_vib([60,30,60]); }
+  function tim_sndTick(){ tim_beepPlay(120); }
+  function tim_sndUrgence(){ tim_beepPlay(250); tim_vib([20]); }
+  function tim_sndFinish(){ tim_beepPlay(); tim_vib([60,40,60,40,120]); }
+  function tim_sndRest(){ tim_beepPlay(180); tim_vib([40]); }
+  function tim_sndReprise(){ tim_beepPlay(400); tim_vib([30,20,50]); }
 
   function tim_toast(msg){
     var el = document.getElementById('timToast');
@@ -11588,7 +11647,7 @@ function _bfDrawChart(data) {
       _tim_chrono.running = false;
       var b = document.getElementById('timChronoBtn'); if (b) b.textContent = '▶';
     } else {
-      if (tim_audioCtx && tim_audioCtx.state === 'suspended') tim_audioCtx.resume();
+      if (tim_audioCtx && tim_audioCtx.state === 'suspended') tim_audioCtx.resume(); tim_beepUnlock();
       _tim_chrono.startMs = Date.now() - _tim_chrono.elapsed;
       _tim_chrono.iv = setInterval(function(){
         _tim_chrono.elapsed = Date.now() - _tim_chrono.startMs;
@@ -11661,7 +11720,7 @@ function _bfDrawChart(data) {
     _tim_minut.totalMs = secs * 1000;
     _tim_minut.remMs = _tim_minut.totalMs;
     _tim_minut.startMs = Date.now();
-    if (tim_audioCtx && tim_audioCtx.state === 'suspended') tim_audioCtx.resume();
+    if (tim_audioCtx && tim_audioCtx.state === 'suspended') tim_audioCtx.resume(); tim_beepUnlock();
     _tim_minut.iv = setInterval(_tim_minutTick, 200);
     _tim_minut.running = true;
     document.getElementById('timMinutSetup').style.display = 'none';
@@ -11697,7 +11756,7 @@ function _bfDrawChart(data) {
     } else {
       if (_tim_minut.remMs <= 0) return;
       _tim_minut.startMs = Date.now() - (_tim_minut.totalMs - _tim_minut.remMs);
-      if (tim_audioCtx && tim_audioCtx.state === 'suspended') tim_audioCtx.resume();
+      if (tim_audioCtx && tim_audioCtx.state === 'suspended') tim_audioCtx.resume(); tim_beepUnlock();
       _tim_minut.iv = setInterval(_tim_minutTick, 200);
       _tim_minut.running = true;
       document.getElementById('timMinutBtn').textContent = '⏸';
@@ -11882,7 +11941,7 @@ function _bfDrawChart(data) {
       tim_toast('En pause');
     } else {
       if (!tim_T.startMs) tim_T.startMs = Date.now();
-      if (tim_audioCtx && tim_audioCtx.state === 'suspended') tim_audioCtx.resume();
+      if (tim_audioCtx && tim_audioCtx.state === 'suspended') tim_audioCtx.resume(); tim_beepUnlock();
       tim_T.iv = setInterval(tim_tick, 1000); tim_T.running = true;
       var b2 = document.getElementById('timPlayBtn'); if (b2) b2.textContent = '⏸';
     }
@@ -11917,7 +11976,7 @@ function _bfDrawChart(data) {
     var open = !p.classList.contains('on');
     p.classList.toggle('on', open);
     if (open) tim_renderSoundSelector();
-    if (tim_audioCtx && tim_audioCtx.state === 'suspended') tim_audioCtx.resume();
+    if (tim_audioCtx && tim_audioCtx.state === 'suspended') tim_audioCtx.resume(); tim_beepUnlock();
   }
   function tim_renderSoundSelector(){
     var html = Object.keys(TIM_SOUNDS).map(function(k){
@@ -11939,7 +11998,7 @@ function _bfDrawChart(data) {
     tim_toast('✓ ' + TIM_SOUNDS[s].label);
   }
   function tim_testSound(){
-    if (tim_audioCtx && tim_audioCtx.state === 'suspended') tim_audioCtx.resume();
+    if (tim_audioCtx && tim_audioCtx.state === 'suspended') tim_audioCtx.resume(); tim_beepUnlock();
     tim_sndDepart();
     setTimeout(tim_sndTick, 600);
     setTimeout(tim_sndUrgence, 1100);

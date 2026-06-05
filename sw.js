@@ -1,10 +1,11 @@
-const CACHE = 'athletik-v61';
+const CACHE = 'athletik-v62';
 const ASSETS = [
   '/',
   '/index.html',
   '/ciqual-data.js',
   '/icons/icon-192.png',
-  '/icons/icon-512.png'
+  '/icons/icon-512.png',
+  '/assets/sounds/timer-beep.mp3'
 ];
 
 self.addEventListener('install', e => {
