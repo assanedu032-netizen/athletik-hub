@@ -17,7 +17,7 @@
 <!-- ═══ FIREBASE SDK ═══ -->
 <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-app.js";
-  import { getAuth, setPersistence, browserLocalPersistence, createUserWithEmailAndPassword, signInWithEmailAndPassword, signInWithPopup, GoogleAuthProvider, onAuthStateChanged, signOut, sendPasswordResetEmail } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-auth.js";
+  import { getAuth, setPersistence, browserLocalPersistence, createUserWithEmailAndPassword, signInWithEmailAndPassword, signInWithPopup, GoogleAuthProvider, sendEmailVerification, onAuthStateChanged, signOut, sendPasswordResetEmail } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-auth.js";
   import { getFirestore, doc, setDoc, getDoc, serverTimestamp, collection, addDoc, deleteDoc, query, orderBy, onSnapshot } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore.js";
   import { getMessaging, getToken, onMessage, isSupported } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-messaging.js";
 
@@ -64,7 +64,7 @@
   window.fb = {
     auth, db, googleProvider,
     createUserWithEmailAndPassword, signInWithEmailAndPassword, signInWithPopup,
-    onAuthStateChanged, signOut, sendPasswordResetEmail,
+    sendEmailVerification, onAuthStateChanged, signOut, sendPasswordResetEmail,
     doc, setDoc, getDoc, serverTimestamp,
     collection, addDoc, deleteDoc, query, orderBy, onSnapshot
   };
@@ -3373,78 +3373,8 @@ html body #result, html body #nutriResult{
 </head>
 <body>
 
-<!-- ═══════════════════════════════════════════════
-     FIREBASE v10 — Auth + Firestore (modular CDN)
-     ═══════════════════════════════════════════════ -->
-<script type="module">
-  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-app.js";
-  import {
-    getAuth,
-    setPersistence,
-    browserLocalPersistence,
-    createUserWithEmailAndPassword,
-    signInWithEmailAndPassword,
-    GoogleAuthProvider,
-    signInWithPopup,
-    sendEmailVerification,
-    onAuthStateChanged,
-    signOut,
-    sendPasswordResetEmail
-  } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-auth.js";
-  import {
-    getFirestore,
-    doc,
-    setDoc,
-    getDoc,
-    serverTimestamp,
-    collection,
-    addDoc,
-    deleteDoc,
-    query,
-    orderBy,
-    onSnapshot
-  } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore.js";
-
-  const firebaseConfig = {
-    apiKey: "AIzaSyBMeuLan21LGxUKB5XCmLN1110VJWvyM5s",
-    authDomain: "athletik-hub.firebaseapp.com",
-    projectId: "athletik-hub",
-    storageBucket: "athletik-hub.firebasestorage.app",
-    messagingSenderId: "106927728638",
-    appId: "1:106927728638:web:976000a60011dc4004c2af",
-    measurementId: "G-ENR6Y0PESP"
-  };
-
-  const app = initializeApp(firebaseConfig);
-  const auth = getAuth(app);
-  const db = getFirestore(app);
-  const googleProvider = new GoogleAuthProvider();
-
-  // Persistance locale (l'utilisateur reste connecté entre les sessions)
-  setPersistence(auth, browserLocalPersistence).catch(console.error);
-
-  // Expose pour usage dans le reste du code
-  window.fb = {
-    auth, db, googleProvider,
-    createUserWithEmailAndPassword,
-    signInWithEmailAndPassword,
-    signInWithPopup,
-    sendEmailVerification,
-    onAuthStateChanged,
-    signOut,
-    sendPasswordResetEmail,
-    doc, setDoc, getDoc, serverTimestamp,
-    collection, addDoc, deleteDoc, query, orderBy, onSnapshot
-  };
-
-  // Listener état d'authentification
-  onAuthStateChanged(auth, function(user) {
-    window.fbUser = user || null;
-    if (typeof onFirebaseAuthChange === 'function') {
-      try { onFirebaseAuthChange(user); } catch(e) { console.warn('onFirebaseAuthChange error:', e); }
-    }
-  });
-</script>
+<!-- Firebase initialization moved to <head> (was duplicated here, causing
+     double initializeApp + double onAuthStateChanged listener). -->
 
 <div id="app">
 
