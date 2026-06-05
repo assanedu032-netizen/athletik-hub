@@ -3409,10 +3409,13 @@ html body #result, html body #nutriResult{
 <div id="welcome" class="scr">
   <div style="flex:1;display:flex;flex-direction:column;min-height:100vh;background:var(--ah-navy-deep);position:relative;overflow:hidden;color:#fff">
 
-    <!-- Photo full-bleed athlète dunk -->
+    <!-- Photo full-bleed athlète dunk
+         Audit design B-5 : la photo source contient un texte "VERTICAL DUNK"
+         baked dans l'image. Le gradient bas est renforcé (.85 dès 55%, opaque
+         à 75%) pour masquer ce texte fantôme et faire ressortir le CTA. -->
     <div style="position:absolute;inset:0;z-index:0">
       <img src="images/vertical-dunk.png" alt="" style="width:100%;height:100%;object-fit:cover;object-position:center top" onerror="this.style.background='linear-gradient(135deg,#1F305F,#1B2D5C)';this.src=''">
-      <div style="position:absolute;inset:0;background:linear-gradient(180deg,rgba(11,18,40,.55) 0%,rgba(11,18,40,.2) 35%,rgba(11,18,40,.75) 65%,rgba(11,18,40,.96) 100%)"></div>
+      <div style="position:absolute;inset:0;background:linear-gradient(180deg,rgba(11,18,40,.55) 0%,rgba(11,18,40,.2) 30%,rgba(11,18,40,.85) 55%,rgba(11,18,40,.98) 75%,rgba(11,18,40,1) 100%)"></div>
     </div>
 
     <!-- Header logo + compagnon du livre -->
@@ -4230,7 +4233,10 @@ window.tiResetOnEnter = function(){ window.tiShowStep(1); };
       </div>
 
       <div class="titan-msg" style="margin-bottom:20px">
-        <div class="titan-avatar">T</div>
+        <!-- Audit design B-9 : avatar mascotte 32px au lieu du "T" cercle -->
+        <div class="titan-avatar" style="background:var(--ah-navy-deep);border:2px solid var(--ah-gold);overflow:hidden;padding:0">
+          <img src="images/titan-mascot.png" alt="T" style="width:100%;height:100%;object-fit:cover" onerror="this.style.display='none';this.parentElement.innerHTML='T'">
+        </div>
         <div class="titan-bubble">Le carburant compte autant que le moteur. Choisis bien ce que tu veux, c'est de là qu'on part.</div>
       </div>
 
