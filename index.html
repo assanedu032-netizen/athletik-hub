@@ -271,14 +271,10 @@
 /* 13. FAB chronomètre */
 .ah-fab{ position:fixed; right:14px; bottom:96px; width:56px; height:56px; border-radius:50%; background:radial-gradient(circle at 30% 25%, var(--ah-gold2) 0%, var(--ah-gold) 70%); display:flex; align-items:center; justify-content:center; box-shadow:0 8px 18px rgba(197,164,78,.32); z-index:40; cursor:pointer; }
 .ah-fab .ico{ width:26px; height:26px; background:var(--ah-navy); -webkit-mask:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'><path fill='black' d='M15 1H9v2h6V1m-3 13h2v-6h-2v6m7-10.4 1.4 1.4 1.4-1.4-1.4-1.4-1.4 1.4M12 22a9 9 0 1 0-9-9 9 9 0 0 0 9 9m0-16a7 7 0 1 1-7 7 7 7 0 0 1 7-7z'/></svg>") center/contain no-repeat; mask:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'><path fill='black' d='M15 1H9v2h6V1m-3 13h2v-6h-2v6m7-10.4 1.4 1.4 1.4-1.4-1.4-1.4-1.4 1.4M12 22a9 9 0 1 0-9-9 9 9 0 0 0 9 9m0-16a7 7 0 1 1-7 7 7 7 0 0 1 7-7z'/></svg>") center/contain no-repeat; }
-.ah-no-fab .ah-fab{ display:none; }
-/* Handoff §12 — FAB masqué sur les vues où il n'a pas sa place
-   (Chat Titan et Nutrition n'ont rien à mesurer chronométriquement). */
-#vChat.view.on ~ .ah-fab,
-#vNutri.view.on ~ .ah-fab{ display:none !important; }
-/* Variante fallback : si le FAB est dans le DOM en frère, on cible via :has */
-body:has(#vChat.view.on) .ah-fab,
-body:has(#vNutri.view.on) .ah-fab{ display:none !important; }
+/* Handoff §12 — FAB masqué via classe .ah-no-fab posée sur body par
+   switchTab() quand l'onglet actif est Chat ou Nutrition. !important
+   pour battre la display:flex de .ah-fab. */
+.ah-no-fab .ah-fab{ display:none !important; }
 
 /* 14. ANIMATIONS */
 @keyframes ah-pulse{ 0%,100%{ transform:scale(1); opacity:1; } 50%{ transform:scale(1.35); opacity:.7; } }
@@ -9773,6 +9769,12 @@ function switchTab(tab){
   document.querySelectorAll('.view').forEach(function(v){v.classList.remove('on');v.style.display='';});
   document.querySelectorAll('.nav-item').forEach(function(n){n.classList.remove('on');});
   var map={home:'vHome',tracks:'vTracks',train:'vTrain',chat:'vChat',moi:'vMoi',nutrition:'vNutri'},navIdx={home:0,tracks:1,train:3,nutrition:4};
+  // Handoff §12 : FAB chrono masqué sur Nutri et Chat (pas pertinent là).
+  // Toggle via classe .ah-no-fab sur body (CSS ligne 274 cible .ah-no-fab .ah-fab).
+  try {
+    var noFab = (tab === 'chat' || tab === 'nutrition');
+    document.body.classList.toggle('ah-no-fab', noFab);
+  } catch(e) {}
   var v=document.getElementById(map[tab]);if(v){v.classList.add('on');v.scrollTop=0;}
   var ni=document.querySelectorAll('.nav-item');if(navIdx[tab]!==undefined&&ni[navIdx[tab]])ni[navIdx[tab]].classList.add('on');
   // Active le bouton Titan si chat
