@@ -1,4 +1,4 @@
-const CACHE = 'athletik-v33';
+const CACHE = 'athletik-v54';
 const ASSETS = [
   '/',
   '/index.html',
@@ -11,16 +11,27 @@ self.addEventListener('install', e => {
   e.waitUntil(
     caches.open(CACHE).then(c => c.addAll(ASSETS))
   );
-  self.skipWaiting();
+  // self.skipWaiting() ici activerait le nouveau SW dès la fin de l'install,
+  // mais alors le user reste sur l'ancienne page (CSS legacy) jusqu'au prochain
+  // reload manuel. On préfère attendre le message 'skipWaiting' envoyé depuis
+  // la page (voir le bloc registration dans index.html) : il déclenche un
+  // 'controllerchange' que la page intercepte pour faire window.location.reload().
 });
 
+// Activation : nettoie les anciens caches puis claim tous les clients ouverts.
 self.addEventListener('activate', e => {
-  e.waitUntil(
-    caches.keys().then(keys =>
-      Promise.all(keys.filter(k => k !== CACHE).map(k => caches.delete(k)))
-    )
-  );
-  self.clients.claim();
+  e.waitUntil((async () => {
+    const keys = await caches.keys();
+    await Promise.all(keys.filter(k => k !== CACHE).map(k => caches.delete(k)));
+    await self.clients.claim();
+  })());
+});
+
+// Permet à la page d'activer immédiatement le nouveau SW (auto-update flow).
+self.addEventListener('message', e => {
+  if (e.data && e.data.action === 'skipWaiting') {
+    self.skipWaiting();
+  }
 });
 
 self.addEventListener('fetch', e => {
