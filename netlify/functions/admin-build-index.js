@@ -3,8 +3,13 @@
 
 const fs = require('fs');
 const path = require('path');
-const { getStore } = require('@netlify/blobs');
 const { chunkBook } = require('./lib/chunk');
+
+function loadBlobs() {
+  try { return require('@netlify/blobs'); } catch (e) {
+    throw new Error('Dependency @netlify/blobs introuvable: ' + e.message);
+  }
+}
 
 const EMBED_MODEL = 'text-embedding-3-small';
 
@@ -75,6 +80,7 @@ exports.handler = async function(event) {
   };
 
   try {
+    const { getStore } = loadBlobs();
     const store = getStore('titan-book-index');
     await store.setJSON('main', index);
   } catch (e) {
