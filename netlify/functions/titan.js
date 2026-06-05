@@ -3,7 +3,15 @@
 // CORS restreint, prompt caching Anthropic, logs sécurité.
 
 const admin = require('firebase-admin');
-const { getStore } = require('@netlify/blobs');
+
+let _getStore = null;
+function getBlobStore(name) {
+  if (!_getStore) {
+    try { _getStore = require('@netlify/blobs').getStore; }
+    catch (e) { console.warn('[titan] @netlify/blobs unavailable:', e.message); return null; }
+  }
+  try { return _getStore(name); } catch (e) { console.warn('[titan] getStore failed:', e.message); return null; }
+}
 
 const RATE_LIMIT = 20; // messages / jour / uid
 const MODEL = 'claude-sonnet-4-6';
@@ -333,8 +341,9 @@ const BOOK_INDEX_TTL_MS = 10 * 60 * 1000; // 10 min
 async function getBookIndex() {
   const now = Date.now();
   if (bookIndexCache && (now - bookIndexLoadedAt) < BOOK_INDEX_TTL_MS) return bookIndexCache;
+  const store = getBlobStore('titan-book-index');
+  if (!store) return null;
   try {
-    const store = getStore('titan-book-index');
     const data = await store.get('main', { type: 'json' });
     if (data && Array.isArray(data.chunks) && data.chunks.length > 0) {
       bookIndexCache = data;
