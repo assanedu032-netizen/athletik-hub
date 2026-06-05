@@ -2361,20 +2361,30 @@ body.test-mode #testSkipBar{display:flex}
    ════════════════════════════════════════════════════════════════════════════ */
 
 /* ── Phase 3a — Bottom Nav Polish ── */
-.ah-bottomnav .nav-item{ min-height:54px !important; padding:8px 0 6px !important; gap:5px !important; }
-.ah-bottomnav .nav-item .ico{ width:22px !important; height:22px !important; }
-.ah-bottomnav-wrap{ padding:10px 12px 6px !important; width:100% !important; max-width:430px !important; box-sizing:border-box !important; }
-.ah-bottomnav{ width:100% !important; box-sizing:border-box !important; display:grid !important; grid-template-columns:repeat(5,1fr) !important; }
-.ah-bottomnav{ padding:6px 4px !important; }
-.ah-bottomnav .ni{ font-size:9.5px !important; letter-spacing:.14em !important; }
-.ah-bottomnav .ni.on::before{ width:22px !important; height:2.5px !important; box-shadow:0 0 6px rgba(197,164,78,.55); }
+/* ════════════════════════════════════════════════════════════════════════
+   BOTTOM NAV COMPACTE (mission user 2026-06-05) — barre plus fine,
+   TITAN intégré au lieu d'une grosse bulle flottante, look "vraie app
+   mobile premium" inspiré apps fitness/nutrition pro.
+   - Hauteur globale réduite ~62px (vs 78px avant)
+   - TITAN 50px au lieu de 64px, bottom plus bas → moins dépasse
+   - Ombres plus subtiles (rgba .04 au lieu de .25-.32)
+   - Border-radius 16 au lieu de 20 → look plus pro
+   - Aucune modif markup ni JS, garde IDs/classes pour routing.
+   ════════════════════════════════════════════════════════════════════════ */
+.ah-bottomnav .nav-item{ min-height:48px !important; padding:6px 0 4px !important; gap:3px !important; }
+.ah-bottomnav .nav-item .ico{ width:20px !important; height:20px !important; }
+.ah-bottomnav-wrap{ padding:6px 10px 4px !important; width:100% !important; max-width:430px !important; box-sizing:border-box !important; }
+.ah-bottomnav{ width:100% !important; box-sizing:border-box !important; display:grid !important; grid-template-columns:repeat(5,1fr) !important; border-radius:16px !important; box-shadow:0 2px 12px rgba(20,30,60,.04) !important; border:1px solid var(--ah-border) !important; }
+.ah-bottomnav{ padding:4px 4px !important; }
+.ah-bottomnav .ni{ font-size:9px !important; letter-spacing:.12em !important; }
+.ah-bottomnav .ni.on::before{ width:20px !important; height:2px !important; box-shadow:0 0 4px rgba(197,164,78,.4); }
 
-/* Bouton TITAN central — plus marqué, plus premium */
-.ah-titan-btn{ width:64px !important; height:64px !important; bottom:32px !important; box-shadow:0 10px 28px rgba(20,30,60,.32), 0 0 0 5px var(--ah-surface) !important; }
-.ah-titan-btn::after{ inset:-4px !important; border-width:2.5px !important; }
+/* Bouton TITAN central — INTÉGRÉ (plus petit, moins de glow) */
+.ah-titan-btn{ width:50px !important; height:50px !important; bottom:18px !important; box-shadow:0 4px 12px rgba(20,30,60,.18), 0 0 0 3px var(--ah-surface) !important; }
+.ah-titan-btn::after{ inset:-2px !important; border-width:1.5px !important; }
 .ah-titan-btn:active{ transform:translateX(-50%) scale(.92); transition:transform .15s; }
-.ah-titan-btn-label{ bottom:10px !important; font-size:9px !important; color:var(--ah-gold) !important; letter-spacing:.22em !important; opacity:.85; }
-.ah-titan-btn-fallback{ font-size:26px !important; }
+.ah-titan-btn-label{ bottom:5px !important; font-size:8px !important; color:var(--ah-gold) !important; letter-spacing:.18em !important; opacity:.85; }
+.ah-titan-btn-fallback{ font-size:20px !important; }
 
 /* ── Phase 3b — Overrides globaux (LE GROS COUP) ──
    Réécrit les composants existants pour qu'ils adoptent le DS visuellement.
@@ -3322,25 +3332,25 @@ html body #result, html body #nutriResult{
    ──────────────────────────────────────────────────────────────────────────── */
 :root{
   --ah-safe-bottom: env(safe-area-inset-bottom, 0px);
-  --ah-nav-height: 78px;            /* hauteur visuelle ≈ pill + padding */
-  --ah-nav-clearance: calc(var(--ah-nav-height) + var(--ah-safe-bottom) + 16px);
+  --ah-nav-height: 62px;            /* hauteur visuelle réduite — mission compacte */
+  --ah-nav-clearance: calc(var(--ah-nav-height) + var(--ah-safe-bottom) + 12px);
 }
 
 /* 1) Wrapper safe area */
 .ah-bottomnav-wrap{
-  padding: 10px 12px calc(8px + var(--ah-safe-bottom)) !important;
+  padding: 6px 10px calc(6px + var(--ah-safe-bottom)) !important;
 }
 
-/* 3) Tabs respirent — padding vertical équilibré, recentrés */
+/* 3) Tabs respirent — padding vertical équilibré et compact */
 .ah-bottomnav{
   align-items:center !important;
-  padding:8px 6px !important;
+  padding:4px 4px !important;
 }
 .ah-bottomnav .ni,
 .ah-bottomnav .nav-item{
-  min-height:60px !important;
-  padding:10px 0 8px !important;
-  gap:6px !important;
+  min-height:48px !important;
+  padding:6px 0 4px !important;
+  gap:3px !important;
   justify-content:center !important;
 }
 .ah-bottomnav .ni .ico,
@@ -3373,16 +3383,26 @@ html body #result, html body #nutriResult{
 #ntab-journal, #ntab-recettes, #ntab-scan, #ntab-courses{
   padding-bottom: var(--ah-nav-clearance) !important;
 }
-/* L'input du chat reste fixé au-dessus de la nav */
+/* L'input du chat reste fixé au-dessus de la nav.
+   Mission 2026-06-05 : le chat input + bouton micro + send doivent respirer
+   et ne JAMAIS être écrasés par la nav. */
 #vChat .chat-input{
-  padding-bottom: calc(10px + var(--ah-safe-bottom)) !important;
-  margin-bottom: var(--ah-nav-height) !important;
+  padding: 10px 12px calc(12px + var(--ah-safe-bottom)) !important;
+  margin-bottom: calc(var(--ah-nav-height) + 4px) !important;
+  background:var(--ah-navy) !important;
+  border-top:1px solid rgba(197,164,78,.12) !important;
 }
 
-/* 5) FAB chronomètre — au-dessus de la nav, respecte la safe area */
-.ah-fab{
-  bottom: calc(var(--ah-nav-height) + var(--ah-safe-bottom) + 16px) !important;
-  right: 18px !important;
+/* 5) FAB chronomètre / .tim-fab — au-dessus de la nav, respecte la safe area
+   + ajusté pour ne plus jamais chevaucher contenu. */
+.ah-fab, .tim-fab{
+  bottom: calc(var(--ah-nav-height) + var(--ah-safe-bottom) + 14px) !important;
+  right: 16px !important;
+}
+/* Polish global — ombres plus subtiles, look pro */
+.tim-fab{
+  width:48px !important; height:48px !important;
+  box-shadow:0 4px 14px rgba(197,164,78,.30) !important;
 }
 </style>
 
@@ -6076,7 +6096,7 @@ window.tiResetOnEnter = function(){ window.tiShowStep(1); };
 <div class="ah-bottomnav-wrap" id="mainNav" style="display:none;width:calc(100% - 0px);max-width:430px;left:50%;right:auto;transform:translateX(-50%)">
   <div class="ah-bottomnav">
     <div class="ni nav-item home" onclick="switchTab('home')"><span class="ico"></span>Home</div>
-    <div class="ni nav-item tracks" onclick="switchTab('tracks')"><span class="ico"></span>Tracks</div>
+    <div class="ni nav-item tracks" onclick="switchTab('tracks')"><span class="ico"></span>Suivi</div>
     <div class="nav-item" aria-hidden="true" style="visibility:hidden"></div>
     <div class="ni nav-item train" onclick="switchTab('train')"><span class="ico"></span>Train</div>
     <div class="ni nav-item nutri" onclick="switchTab('nutrition')"><span class="ico"></span>Nutri</div>
@@ -9794,7 +9814,10 @@ function switchTab(tab){
   // Handoff §12 : FAB chrono masqué sur Nutri et Chat (pas pertinent là).
   // Toggle via classe .ah-no-fab sur body (CSS ligne 274 cible .ah-no-fab .ah-fab).
   try {
-    var noFab = (tab === 'chat' || tab === 'nutrition');
+    // Mission user 2026-06-05 : FAB chrono visible UNIQUEMENT sur Train
+    // (où l'user lance une séance) ou Suivi/tracks (tests timés).
+    // Masqué sur Home / Nutri / Chat où il intrusive sur le contenu.
+    var noFab = (tab === 'home' || tab === 'chat' || tab === 'nutrition' || tab === 'moi');
     document.body.classList.toggle('ah-no-fab', noFab);
   } catch(e) {}
   var v=document.getElementById(map[tab]);if(v){v.classList.add('on');v.scrollTop=0;}
@@ -10192,7 +10215,13 @@ function renderUserData() {
       greet.textContent = (h < 12 ? 'BONJOUR' : h < 18 ? 'BON APRÈS-MIDI' : 'BONSOIR');
     }
     var nm = document.getElementById('userName');
-    if (nm) nm.textContent = (profile.prenom ? profile.prenom.toUpperCase() : (user.name || 'ATHLÈTE')) + '.';
+    if (nm) {
+      // Mission user 2026-06-05 : "ALASS AS." s'affichait coupé.
+      // On prend seulement le PREMIER mot du prénom (jamais d'espace inclus).
+      var raw = profile.prenom || user.name || 'ATHLÈTE';
+      var firstWord = String(raw).trim().split(/\s+/)[0] || 'ATHLÈTE';
+      nm.textContent = firstWord.toUpperCase() + '.';
+    }
   } catch(e){}
 
   // ── Compute discovery step (0-4) ──
