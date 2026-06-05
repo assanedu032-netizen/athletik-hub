@@ -1147,6 +1147,21 @@ body{background:var(--bg);color:var(--text);font-family:'Outfit',sans-serif;disp
 .ci-field:focus{border-color:var(--gold)}
 .ci-field::placeholder{color:var(--muted);opacity:.6}
 .ci-send{width:40px;height:40px;border-radius:50%;background:var(--gold);border:none;display:flex;align-items:center;justify-content:center;cursor:pointer;transition:all .2s;flex-shrink:0}
+/* Bouton micro : à gauche du textarea. État repos = surface DS, hover = or pâle.
+   État recording = navy + pulse + carré stop au lieu du micro. */
+.ci-mic{width:40px;height:40px;border-radius:50%;background:var(--ah-surface);border:1.5px solid var(--ah-border2);color:var(--ah-text2);display:flex;align-items:center;justify-content:center;cursor:pointer;transition:all .15s;flex-shrink:0}
+.ci-mic:hover{border-color:var(--ah-gold);color:var(--ah-gold)}
+.ci-mic.rec{background:var(--ah-navy);border-color:var(--ah-gold);color:var(--ah-gold);animation:ci-mic-pulse 1.6s ease-in-out infinite}
+.ci-mic.rec:hover{background:var(--ah-navy2)}
+.ci-mic.unsupported{display:none}
+@keyframes ci-mic-pulse{
+  0%,100%{box-shadow:0 0 0 0 rgba(197,164,78,.45);transform:scale(1)}
+  50%{box-shadow:0 0 0 8px rgba(197,164,78,0);transform:scale(1.05)}
+}
+/* Dark mode chat — bouton mic adapté */
+#vChat .ci-mic{background:rgba(255,255,255,.05);border:1.5px solid rgba(255,255,255,.18);color:rgba(255,255,255,.7)}
+#vChat .ci-mic:hover{border-color:var(--ah-gold);color:var(--ah-gold)}
+#vChat .ci-mic.rec{background:var(--ah-navy);border-color:var(--ah-gold);color:var(--ah-gold)}
 .ci-send:active{transform:scale(.9)}
 .ci-send svg{width:18px;height:18px;fill:var(--navy)}
 .ci-send.disabled{background:var(--border);cursor:not-allowed}
@@ -5338,7 +5353,11 @@ window.tiResetOnEnter = function(){ window.tiShowStep(1); };
 
   <!-- Input -->
   <div class="chat-input">
-    <textarea class="ci-field" id="chatInput" placeholder="Écris à Titan..." rows="1" oninput="autoResize(this)" onkeydown="handleEnter(event)"></textarea>
+    <button class="ci-mic" id="micBtn" onclick="toggleMicRecord()" aria-label="Parler à Titan" title="Parler à Titan">
+      <svg id="micIconIdle" viewBox="0 0 24 24" width="20" height="20" fill="currentColor"><path d="M12 14c1.66 0 3-1.34 3-3V5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3zm5-3c0 2.76-2.24 5-5 5s-5-2.24-5-5H5c0 3.53 2.61 6.43 6 6.92V21h2v-3.08c3.39-.49 6-3.39 6-6.92h-2z"/></svg>
+      <svg id="micIconRec" viewBox="0 0 24 24" width="18" height="18" fill="currentColor" style="display:none"><rect x="6" y="6" width="12" height="12" rx="2"/></svg>
+    </button>
+    <textarea class="ci-field" id="chatInput" placeholder="Écris ou parle à Titan..." rows="1" oninput="autoResize(this)" onkeydown="handleEnter(event)"></textarea>
     <button class="ci-send" id="sendBtn" onclick="sendMessage()">
       <svg viewBox="0 0 24 24"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg>
     </button>
@@ -15554,6 +15573,121 @@ function handleEnter(e) {
     sendMessage();
   }
 }
+
+// ═══════════════════════════════════════
+// CHAT VOCAL — Web Speech API (parle à Titan)
+// ────────────────────────────────────────
+// Bouton micro → SpeechRecognition fr-FR. La transcription remplit le
+// textarea #chatInput, l'user vérifie/édite puis envoie via le bouton Send
+// existant. Aucune modif de sendMessage / callAnthropicAPI : le vocal
+// alimente juste l'input.
+// Support : Chrome / Edge / Safari iOS 14.5+ / Samsung Internet.
+// Firefox : pas de support natif → bouton masqué (.ci-mic.unsupported).
+// ═══════════════════════════════════════
+(function initVoiceChat(){
+  var SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+  if (!SR) {
+    // Masque le bouton si non supporté (Firefox, vieux navigateurs)
+    document.addEventListener('DOMContentLoaded', function(){
+      var btn = document.getElementById('micBtn');
+      if (btn) btn.classList.add('unsupported');
+    });
+    return;
+  }
+  var rec = null;
+  var listening = false;
+  var stopAttempts = 0;
+
+  function btnEl(){ return document.getElementById('micBtn'); }
+  function inputEl(){ return document.getElementById('chatInput'); }
+  function iconIdle(){ return document.getElementById('micIconIdle'); }
+  function iconRec(){ return document.getElementById('micIconRec'); }
+
+  function setUI(rec){
+    var b = btnEl(); if (b) b.classList.toggle('rec', !!rec);
+    var i1 = iconIdle(); if (i1) i1.style.display = rec ? 'none' : '';
+    var i2 = iconRec(); if (i2) i2.style.display = rec ? '' : 'none';
+    if (b) b.setAttribute('aria-label', rec ? 'Arrêter l’enregistrement' : 'Parler à Titan');
+  }
+
+  function ensureRec(){
+    if (rec) return rec;
+    rec = new SR();
+    rec.lang = 'fr-FR';
+    rec.interimResults = true;
+    rec.maxAlternatives = 1;
+    rec.continuous = false;
+
+    var finalText = '';
+    var initialText = '';
+
+    rec.onstart = function(){
+      listening = true;
+      var inp = inputEl();
+      initialText = (inp && inp.value) ? (inp.value.trim() + ' ') : '';
+      finalText = '';
+      setUI(true);
+    };
+
+    rec.onresult = function(e){
+      var interim = '';
+      for (var i = e.resultIndex; i < e.results.length; i++) {
+        var r = e.results[i];
+        if (r.isFinal) finalText += r[0].transcript;
+        else interim += r[0].transcript;
+      }
+      var inp = inputEl();
+      if (inp) {
+        inp.value = initialText + finalText + interim;
+        try { autoResize(inp); } catch(_) {}
+      }
+    };
+
+    rec.onerror = function(e){
+      // 'no-speech' → silence : on stoppe sans bruit
+      // 'aborted'   → arrêt manuel : OK
+      // 'not-allowed' / 'service-not-allowed' → permission micro refusée
+      if (e && e.error === 'not-allowed') {
+        try { if (typeof showToast === 'function') showToast('Autorise le micro dans les réglages du navigateur.', 'err'); }
+        catch(_) {}
+      } else if (e && e.error && e.error !== 'no-speech' && e.error !== 'aborted') {
+        try { if (typeof showToast === 'function') showToast('Erreur micro : ' + e.error, 'info'); }
+        catch(_) {}
+      }
+      listening = false;
+      setUI(false);
+    };
+
+    rec.onend = function(){
+      listening = false;
+      setUI(false);
+      // Focus le textarea pour que l'user puisse éditer
+      var inp = inputEl();
+      if (inp) try { inp.focus(); } catch(_) {}
+    };
+
+    return rec;
+  }
+
+  window.toggleMicRecord = function(){
+    var r = ensureRec();
+    if (!r) return;
+    if (listening) {
+      try { r.stop(); } catch(_) {}
+      stopAttempts++;
+      // Sécurité : si onend ne se déclenche pas en 1s, force le UI off
+      setTimeout(function(){ if (listening) { listening = false; setUI(false); } }, 1200);
+    } else {
+      try {
+        r.start();
+      } catch(e) {
+        // start() jette si déjà en cours (race condition) → on reset
+        try { r.abort(); } catch(_) {}
+        setTimeout(function(){ try { r.start(); } catch(_) {} }, 200);
+      }
+    }
+  };
+})();
 
 // ═══════════════════════════════════════
 // ATHLETIK HUB V5 — STEP 6: PROFIL
