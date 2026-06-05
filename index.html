@@ -272,6 +272,13 @@
 .ah-fab{ position:fixed; right:14px; bottom:96px; width:56px; height:56px; border-radius:50%; background:radial-gradient(circle at 30% 25%, var(--ah-gold2) 0%, var(--ah-gold) 70%); display:flex; align-items:center; justify-content:center; box-shadow:0 8px 18px rgba(197,164,78,.32); z-index:40; cursor:pointer; }
 .ah-fab .ico{ width:26px; height:26px; background:var(--ah-navy); -webkit-mask:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'><path fill='black' d='M15 1H9v2h6V1m-3 13h2v-6h-2v6m7-10.4 1.4 1.4 1.4-1.4-1.4-1.4-1.4 1.4M12 22a9 9 0 1 0-9-9 9 9 0 0 0 9 9m0-16a7 7 0 1 1-7 7 7 7 0 0 1 7-7z'/></svg>") center/contain no-repeat; mask:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'><path fill='black' d='M15 1H9v2h6V1m-3 13h2v-6h-2v6m7-10.4 1.4 1.4 1.4-1.4-1.4-1.4-1.4 1.4M12 22a9 9 0 1 0-9-9 9 9 0 0 0 9 9m0-16a7 7 0 1 1-7 7 7 7 0 0 1 7-7z'/></svg>") center/contain no-repeat; }
 .ah-no-fab .ah-fab{ display:none; }
+/* Handoff §12 — FAB masqué sur les vues où il n'a pas sa place
+   (Chat Titan et Nutrition n'ont rien à mesurer chronométriquement). */
+#vChat.view.on ~ .ah-fab,
+#vNutri.view.on ~ .ah-fab{ display:none !important; }
+/* Variante fallback : si le FAB est dans le DOM en frère, on cible via :has */
+body:has(#vChat.view.on) .ah-fab,
+body:has(#vNutri.view.on) .ah-fab{ display:none !important; }
 
 /* 14. ANIMATIONS */
 @keyframes ah-pulse{ 0%,100%{ transform:scale(1); opacity:1; } 50%{ transform:scale(1.35); opacity:.7; } }
@@ -9166,10 +9173,11 @@ function renderSATStep() {
   html += '</div>';
   html += '<div style="font-size:13px;color:var(--text2);line-height:1.5;margin-bottom:12px;padding:10px;background:rgba(255,255,255,.03);border-radius:10px">' + ex.desc + '</div>';
   // Bouton vidéo — ouvre la fiche dans Train → Librairie
+  // Handoff §5 : .ah-btn-outline + ▶ or, jamais le rouge YouTube.
   if (ex.libraryName) {
-    html += '<button onclick="openLibraryFromTest(\'' + ex.libraryName.replace(/\'/g, "\\'") + '\')" style="display:flex;align-items:center;justify-content:center;gap:8px;padding:10px 14px;background:rgba(255,0,0,.08);border:1px solid rgba(255,0,0,.2);border-radius:10px;margin-bottom:12px;cursor:pointer;width:100%;font-family:Outfit,sans-serif">';
-    html += '<svg width="16" height="16" viewBox="0 0 24 24" fill="#FF4444"><path d="M21.543 6.498C22 8.28 22 12 22 12s0 3.72-.457 5.502c-.254.985-.997 1.76-1.938 2.022C17.896 20 12 20 12 20s-5.895 0-7.605-.476c-.945-.266-1.687-1.04-1.938-2.022C2 15.72 2 12 2 12s0-3.72.457-5.502c.254-.985.997-1.76 1.938-2.022C6.105 4 12 4 12 4s5.896 0 7.605.476c.945.266 1.687 1.04 1.938 2.022zM10 15.5l6-3.5-6-3.5v7z"/></svg>';
-    html += '<span style="font-size:12px;font-weight:700;color:#FF6666">Voir la démonstration vidéo</span>';
+    html += '<button onclick="openLibraryFromTest(\'' + ex.libraryName.replace(/\'/g, "\\'") + '\')" style="display:flex;align-items:center;justify-content:center;gap:8px;padding:11px 14px;background:var(--ah-surface);border:1.5px solid var(--ah-border2);border-radius:10px;margin-bottom:12px;cursor:pointer;width:100%;font-family:Outfit,sans-serif;color:var(--ah-text);font-size:12px;font-weight:600">';
+    html += '<span style="color:var(--ah-gold);font-size:14px;line-height:1">▶</span>';
+    html += '<span style="letter-spacing:.02em">Voir la démonstration</span>';
     html += '</button>';
   }
   
