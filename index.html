@@ -3702,6 +3702,24 @@ html body #result, html body #nutriResult{
 .install-prompt-cta:active{transform:scale(.96)}
 .install-prompt-close{position:absolute;top:6px;right:8px;background:none;border:none;color:rgba(255,255,255,.5);font-size:20px;cursor:pointer;line-height:1;padding:4px 8px}
 .install-prompt-close:hover{color:#fff}
+
+/* ── Builder loading : animation "Titan réfléchit" ── */
+.bl-load-ic{font-size:48px;display:inline-block;animation:blPulse 1.4s ease-in-out infinite}
+@keyframes blPulse{0%,100%{transform:scale(1) translateY(0);opacity:1}50%{transform:scale(1.12) translateY(-4px);opacity:.85}}
+.bl-dots{display:inline-block}
+.bl-dots span{display:inline-block;animation:blDot 1.2s ease-in-out infinite;color:var(--ah-gold);font-weight:700;margin-left:1px}
+.bl-dots span:nth-child(2){animation-delay:.18s}
+.bl-dots span:nth-child(3){animation-delay:.36s}
+@keyframes blDot{0%,80%,100%{opacity:.25;transform:translateY(0)}40%{opacity:1;transform:translateY(-3px)}}
+.bl-progress{width:200px;height:3px;background:var(--ah-border);border-radius:2px;margin:18px auto 22px;overflow:hidden;position:relative}
+.bl-progress-bar{position:absolute;left:-40%;top:0;width:40%;height:100%;background:linear-gradient(90deg,transparent,var(--ah-gold) 50%,transparent);animation:blSlide 1.6s linear infinite}
+@keyframes blSlide{0%{left:-40%}100%{left:100%}}
+.bl-skel{display:flex;flex-direction:column;gap:10px;max-width:320px;margin:0 auto;padding:0 4px}
+.bl-skel-row{display:flex;align-items:center;justify-content:space-between;background:var(--ah-surface);border:1px solid var(--ah-border);border-radius:10px;padding:12px 14px}
+.bl-skel-bar{height:10px;background:linear-gradient(90deg,var(--ah-surface2) 0%,var(--ah-border) 50%,var(--ah-surface2) 100%);background-size:200% 100%;border-radius:5px;animation:blShimmer 1.4s linear infinite}
+.bl-skel-bar.w-55{width:55%}.bl-skel-bar.w-65{width:65%}.bl-skel-bar.w-70{width:70%}.bl-skel-bar.w-80{width:80%}
+.bl-skel-pill{width:42px;height:18px;border-radius:9px;background:linear-gradient(90deg,var(--ah-surface2) 0%,var(--ah-border) 50%,var(--ah-surface2) 100%);background-size:200% 100%;animation:blShimmer 1.4s linear infinite}
+@keyframes blShimmer{0%{background-position:200% 0}100%{background-position:-200% 0}}
 </style>
 
 <template id="__bundler_thumbnail" data-bg-color="#1F305F">
@@ -5646,11 +5664,23 @@ window.tiResetOnEnter = function(){ window.tiShowStep(1); };
       </div>
     </div>
 
-    <!-- LOADING -->
-    <div id="builderLoading" style="display:none;padding:48px 20px;text-align:center;color:var(--muted)">
-      <div style="font-size:40px;margin-bottom:12px">🏋️</div>
-      <div style="font-family:'Bebas Neue',sans-serif;font-size:18px;letter-spacing:1px;color:var(--text)">TITAN PROGRAMME TA SÉANCE…</div>
+    <!-- LOADING — animation "Titan réfléchit" : icône pulse + dots animés
+         + skeleton bars qui pulsent pour montrer que Titan construit la séance. -->
+    <div id="builderLoading" style="display:none;padding:36px 20px 24px;text-align:center;color:var(--muted)">
+      <div class="bl-load-ic" aria-hidden="true">🏋️</div>
+      <div style="font-family:'Bebas Neue',sans-serif;font-size:18px;letter-spacing:1px;color:var(--text);margin-top:14px">
+        TITAN PROGRAMME TA SÉANCE<span class="bl-dots"><span>.</span><span>.</span><span>.</span></span>
+      </div>
       <div style="font-size:12px;margin-top:6px">Il analyse ton objectif, ton état et la méthode Athletik Hub.</div>
+      <!-- Barre de progression indéterminée gold -->
+      <div class="bl-progress" aria-hidden="true"><div class="bl-progress-bar"></div></div>
+      <!-- Skeleton de la séance qui s'annonce -->
+      <div class="bl-skel" aria-hidden="true">
+        <div class="bl-skel-row"><div class="bl-skel-bar w-65"></div><div class="bl-skel-pill"></div></div>
+        <div class="bl-skel-row"><div class="bl-skel-bar w-80"></div><div class="bl-skel-pill"></div></div>
+        <div class="bl-skel-row"><div class="bl-skel-bar w-55"></div><div class="bl-skel-pill"></div></div>
+        <div class="bl-skel-row"><div class="bl-skel-bar w-70"></div><div class="bl-skel-pill"></div></div>
+      </div>
     </div>
 
     <!-- RÉSULTAT -->
