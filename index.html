@@ -3724,6 +3724,18 @@ html body #result, html body #nutriResult{
 .bl-skel-pill{width:42px;height:18px;border-radius:9px;background:linear-gradient(90deg,var(--ah-surface2) 0%,var(--ah-border) 50%,var(--ah-surface2) 100%);background-size:200% 100%;animation:blShimmer 1.4s linear infinite}
 @keyframes blShimmer{0%{background-position:200% 0}100%{background-position:-200% 0}}
 
+/* ── Librairie : chips de filtre par catégorie / programme ── */
+.lib-filters{display:flex;flex-wrap:nowrap;gap:8px;overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none;padding:6px 16px 12px;margin:0 -16px}
+.lib-filters::-webkit-scrollbar{display:none}
+.lib-flt-chip{flex-shrink:0;padding:8px 14px;border-radius:999px;background:#fff;border:1.5px solid rgba(20,30,60,.10);color:#1B2A4A;font-family:'Outfit',sans-serif;font-size:12px;font-weight:700;letter-spacing:.02em;cursor:pointer;white-space:nowrap;box-shadow:0 1px 3px rgba(20,30,60,.04);transition:transform .12s,background .15s}
+.lib-flt-chip:active{transform:scale(.96)}
+.lib-flt-chip.on{background:#1B2A4A;border-color:#1B2A4A;color:#C5A44E;box-shadow:0 4px 12px rgba(27,42,74,.18)}
+
+/* ── Librairie : ombre sur les vignettes YouTube pour lisibilité des badges ── */
+.yt-thumb.has-thumb{position:relative;background-color:#0F1A30}
+.yt-thumb-shade{position:absolute;inset:0;background:linear-gradient(180deg,rgba(0,0,0,.25) 0%,rgba(0,0,0,0) 35%,rgba(0,0,0,0) 65%,rgba(0,0,0,.45) 100%);pointer-events:none;z-index:1}
+.yt-thumb.has-thumb .yt-cat-pill,.yt-thumb.has-thumb .yt-play-btn,.yt-thumb.has-thumb .yt-dur{z-index:2}
+
 /* ═══════════════════════════════════════════════════════════════════════════
    ATHLETIK TIMER — Refonte premium (override CSS uniquement)
    ───────────────────────────────────────────────────────────────────────────
@@ -5723,6 +5735,10 @@ window.tiResetOnEnter = function(){ window.tiShowStep(1); };
 
 <!-- Search bar -->
 <div class="search-wrap"><div class="search-ic">🔍</div><input class="search-input" id="libSearch" placeholder="Rechercher un exercice..." oninput="_libSearchInput()"></div>
+
+<!-- Filtres : Tous / Mon programme / qualités athlétiques. Rempli par
+     _libRenderFilterChips() au load + sur showPg('lib'). -->
+<div class="lib-filters" id="libFilters"></div>
 
 <!-- Exercise grid (YouTube-style 2 col) -->
 <div class="yt-grid" id="libYtGrid"></div>
@@ -16415,7 +16431,7 @@ function _menerShowResult() {
 window._menerShowResult = _menerShowResult;
 
 const progPhases={ea:{name:'ELITE ATHLETE',obj:'Explosivité globale',phases:[[{name:'Échauffement',detail:'5 min'},{name:'Activation fessiers',detail:'2×12'},{name:'Squat progressif',detail:'3×8 (60%)'},{name:'Pogo Jumps',detail:'3×10'},{name:'Sprint 10m',detail:'5 passages'},{name:'Planche',detail:'3×30s'}],[{name:'Back Squat',detail:'4×5 (75%)'},{name:'Box Jump',detail:'4×5'},{name:'Hip Thrust',detail:'3×8 (70%)'},{name:'Sprint 30m',detail:'4 passages'},{name:'Depth Jump',detail:'3×3'}],[{name:'Power Clean',detail:'5×3 (85%)'},{name:'Back Squat',detail:'5×3 (85%)'},{name:'Depth Jump',detail:'4×3'},{name:'Sprint 60m',detail:'3 passages'},{name:'Box Jump Max',detail:'3×3'}]]},vd:{name:'VERTICAL DUNK',obj:'Dunker + Détente max',phases:[[{name:'CMJ',detail:'5×3'},{name:'Squat Jump',detail:'4×5'},{name:'Pogo Jumps',detail:'3×15'}],[{name:'Depth Jump',detail:'4×3'},{name:'Back Squat',detail:'4×5 (80%)'},{name:'Approach Jump',detail:'5×3'}],[{name:'Box Jump Max',detail:'5×2'},{name:'Single Leg Bound',detail:'3×5/jambe'},{name:'Sprint 10m',detail:'6 passages'}]]},mt:{name:'MICROTRAINING',obj:'Discipline et habitudes',phases:[[{name:'Squat Jump',detail:'3×5'},{name:'Pompes explosives',detail:'3×8'},{name:'Planche',detail:'3×30s'}],[{name:'Pogo Jumps',detail:'3×10'},{name:'V-Ups',detail:'3×12'},{name:'Skip A',detail:'3×15'}],[{name:'Box Jump',detail:'3×5'},{name:'Sprint 10m',detail:'4 passages'}]]},tri:{name:'TRIPHASIQUE',obj:'Force sans salle',phases:[[{name:'Squat PDC',detail:'4×15'},{name:'Fentes',detail:'3×10/jambe'},{name:'Pompes',detail:'4×12'}],[{name:'Squat Jump',detail:'4×8'},{name:'Single Leg Bound',detail:'3×6/jambe'}],[{name:'Pogo Jumps',detail:'4×12'},{name:'Sprint 10m',detail:'5 passages'}]]},se:{name:'SHRED EXPLOSE',obj:'Perdre + Exploser',phases:[[{name:'Circuit cardio',detail:'15 min'},{name:'Squat',detail:'3×12'},{name:'Pogo Jumps',detail:'3×15'}],[{name:'HIIT Sprint',detail:'10×10m'},{name:'Back Squat',detail:'4×8 (65%)'},{name:'Box Jump',detail:'3×8'}],[{name:'Sprint 30m',detail:'6 passages'},{name:'Depth Jump',detail:'3×3'}]]},ep:{name:'EXPLOSE+',obj:'Transformation totale',phases:[[{name:'Questionnaire MENER',detail:'Identifier pilier faible'},{name:'15 engagements',detail:'4 semaines'}],[{name:'Back Squat',detail:'5×5 (80%)'},{name:'Power Clean',detail:'4×3'},{name:'Sprint 30m',detail:'5 passages'}],[{name:'Depth Jump',detail:'5×3'},{name:'Back Squat',detail:'5×3 (90%)'},{name:'Sprint 60m',detail:'4 passages'}]]}};
-function showPg(id){document.querySelectorAll('.pg').forEach(p=>p.classList.remove('on'));document.querySelectorAll('.sub-tab').forEach(t=>t.classList.remove('on'));({lib:'pgLib',prog:'pgProg',builder:'pgBuilder'})[id]&&document.getElementById(({lib:'pgLib',prog:'pgProg',builder:'pgBuilder'})[id]).classList.add('on');event.currentTarget.classList.add('on');var __v=document.getElementById('vTrain');if(__v)__v.scrollTop=0;if(id==='lib'){try{_libCloseDetail();}catch(e){}try{_libRender('all');}catch(e){}}if(id==='prog'){try{closeProg();}catch(e){}try{updateProgrammeLocks();}catch(e){}}}
+function showPg(id){document.querySelectorAll('.pg').forEach(p=>p.classList.remove('on'));document.querySelectorAll('.sub-tab').forEach(t=>t.classList.remove('on'));({lib:'pgLib',prog:'pgProg',builder:'pgBuilder'})[id]&&document.getElementById(({lib:'pgLib',prog:'pgProg',builder:'pgBuilder'})[id]).classList.add('on');event.currentTarget.classList.add('on');var __v=document.getElementById('vTrain');if(__v)__v.scrollTop=0;if(id==='lib'){try{_libCloseDetail();}catch(e){}try{_libRenderFilterChips();}catch(e){}try{_libRender(_libCurrentFilter||'all');}catch(e){}}if(id==='prog'){try{closeProg();}catch(e){}try{updateProgrammeLocks();}catch(e){}}}
 function openCatLegacy(n,ic,k){currentCat=n;currentCatData=catData[k]||[];var t=document.getElementById('catTitle');if(t)t.textContent=ic+' '+n.toUpperCase();var lg=document.getElementById('libGrid');if(lg)lg.classList.add('hidden');var cv=document.getElementById('libCatView');if(cv)cv.classList.remove('hidden');var dv=document.getElementById('libDetailView');if(dv)dv.classList.add('hidden');currentFilter='all';renderCatEx();var __v=document.getElementById('vTrain');if(__v)__v.scrollTop=0}
 function closeCatLegacy(){var lg=document.getElementById('libGrid');if(lg)lg.classList.remove('hidden');var cv=document.getElementById('libCatView');if(cv)cv.classList.add('hidden');var dv=document.getElementById('libDetailView');if(dv)dv.classList.add('hidden')}
 function filterCat(el,lv){document.querySelectorAll('.filter-row .fc').forEach(f=>f.classList.remove('on'));el.classList.add('on');currentFilter=lv;renderCatEx()}
@@ -16700,10 +16716,18 @@ function _libCardHtml(it) {
   var mat = ex.mat && ex.mat !== 'Aucun' ? ex.mat : '';
   var nm = ex.name.replace(/'/g,"\\'").replace(/"/g,'&quot;');
   var initial = it.catLabel.charAt(0).toUpperCase();
+  // Vignette YouTube si une vidéo est associée à cet exo. hqdefault = 480x360,
+  // assez net pour la grille 2 col. Fallback onerror → mqdefault (toujours dispo).
+  var ytId = ex.video || _LIB_VIDEO_MAP[ex.name] || null;
+  var thumbStyle = '';
+  if (ytId) {
+    thumbStyle = ' style="background-image:url(https://i.ytimg.com/vi/' + ytId + '/hqdefault.jpg);background-size:cover;background-position:center"';
+  }
   var h = '';
   h += '<div class="yt-card" onclick="_libOpenDetail(\'' + nm + '\',\'' + it.catKey + '\')">';
-  // Thumbnail — dark uniform background
-  h +=   '<div class="yt-thumb">';
+  // Thumbnail — image YouTube si dispo, sinon placeholder dark uniforme
+  h +=   '<div class="yt-thumb' + (ytId ? ' has-thumb' : '') + '"' + thumbStyle + '>';
+  if (ytId) h += '<div class="yt-thumb-shade"></div>';
   h +=     '<div class="yt-play-btn"><div class="yt-play-tri"></div></div>';
   h +=     '<div class="yt-cat-pill">' + it.catLabel.toUpperCase() + '</div>';
   if (ex.tag) h += '<div class="yt-dur">' + ex.tag + '</div>';
@@ -16723,6 +16747,35 @@ function _libCardHtml(it) {
   h += '</div>';
   return h;
 }
+
+// Render les chips de filtre : Tous / Mon programme / + 1 chip par catégorie
+// athlétique (Échauffement, Mobilité, Pliométrie, Force, etc.). Click → appelle
+// _libRender(key) qui re-construit la grille filtrée.
+function _libRenderFilterChips(){
+  var wrap = document.getElementById('libFilters');
+  if (!wrap) return;
+  var cur = _libCurrentFilter || 'all';
+  var chips = [
+    { key:'all',       label:'Tous',           icon:'' },
+    { key:'myprogram', label:'Mon programme',  icon:'🎯' }
+  ];
+  Object.keys(_LIB_CAT_MAP).forEach(function(ck){
+    chips.push({ key: ck, label: _LIB_CAT_MAP[ck].label, icon: '' });
+  });
+  wrap.innerHTML = chips.map(function(c){
+    var on = (c.key === cur) ? ' on' : '';
+    var lbl = (c.icon ? c.icon + ' ' : '') + c.label;
+    return '<button type="button" class="lib-flt-chip' + on + '" data-key="' + c.key + '" onclick="window._libPickFilter(this, \'' + c.key + '\')">' + lbl + '</button>';
+  }).join('');
+}
+window._libPickFilter = function(btn, key){
+  var wrap = document.getElementById('libFilters');
+  if (wrap) wrap.querySelectorAll('.lib-flt-chip').forEach(function(c){ c.classList.remove('on'); });
+  if (btn) btn.classList.add('on');
+  _libRender(key);
+  var v = document.getElementById('vTrain'); if (v) v.scrollTop = 0;
+};
+window._libRenderFilterChips = _libRenderFilterChips;
 
 function _libRender(filterKey) {
   _libCurrentFilter = filterKey || 'all';
