@@ -12953,41 +12953,110 @@ function _bfDrawChart(data) {
   }
 
   // Programme une notification système qui se déclenche à `endsAt` (timestamp
-   // absolu), même quand la PWA est fermée. Utilise Notification Triggers
-   // (TimestampTrigger) sur Android Chrome PWA. Sur iOS / navigateurs non
-   // supportés, c'est silencieux : le fallback reste la persistance + bip
-   // retro au prochain reload.
+  // absolu), même quand la PWA est fermée. 3 couches de défense :
+  //   1) TimestampTrigger côté page (Chrome récent — best-effort)
+  //   2) Message TIMER_SCHEDULE au SW → setTimeout dans le SW + showNotification
+  //   3) setTimeout dans la page (fallback foreground si tout le reste échoue)
+  // Plus Wake Lock pour empêcher l'OS de tuer trop vite la PWA.
+  var _tim_pageTimeout = null;
+  var _tim_wakeLock = null;
   function tim_minutScheduleNotif(endsAt){
-    if (typeof Notification === 'undefined') return;
-    var schedule = function(){
-      if (!navigator.serviceWorker || !navigator.serviceWorker.ready) return;
+    if (typeof Notification === 'undefined') {
+      console.warn('[timer] Notification API indisponible');
+      return;
+    }
+    // Demande la permission si pas encore acquise
+    if (Notification.permission === 'default') {
+      Notification.requestPermission().then(function(p){
+        if (p === 'granted') tim_minutScheduleNotif(endsAt);
+        else if (p === 'denied') {
+          try { tim_toast('Active les notifications pour être alerté quand l\'app est fermée'); } catch(e){}
+        }
+      });
+      return;
+    }
+    if (Notification.permission !== 'granted') {
+      try { tim_toast('Notifications désactivées — autorise-les dans les réglages'); } catch(e){}
+      return;
+    }
+
+    // Wake Lock : essaie d'empêcher l'écran de s'éteindre pendant la course.
+    // L'OS endort moins agressivement la PWA, le setInterval reste actif.
+    try {
+      if (navigator.wakeLock && !_tim_wakeLock) {
+        navigator.wakeLock.request('screen').then(function(lock){
+          _tim_wakeLock = lock;
+          lock.addEventListener('release', function(){ _tim_wakeLock = null; });
+        }).catch(function(){});
+      }
+    } catch(e){}
+
+    var delay = endsAt - Date.now();
+    var opts = {
+      body: 'Le minuteur a sonné',
+      icon: '/icons/icon-192.png',
+      badge: '/icons/icon-192.png',
+      tag: 'tim-minut',
+      requireInteraction: true,
+      vibrate: [300, 100, 300, 100, 500],
+      silent: false,
+      renotify: true
+    };
+
+    // Couche 1 : TimestampTrigger côté page (peut être absent)
+    if (navigator.serviceWorker && navigator.serviceWorker.ready) {
       navigator.serviceWorker.ready.then(function(reg){
         if (!reg || !reg.showNotification) return;
-        var opts = {
-          body: 'Le minuteur a sonné',
-          icon: '/icons/icon-192.png',
-          badge: '/icons/icon-192.png',
-          tag: 'tim-minut',
-          requireInteraction: true,
-          vibrate: [300, 100, 300, 100, 500],
-          silent: false
-        };
         if ('TimestampTrigger' in window) {
           try {
-            opts.showTrigger = new TimestampTrigger(endsAt);
-            return reg.showNotification('⏰ Timer terminé', opts);
-          } catch(e){ console.warn('TimestampTrigger fail:', e); }
+            var optsTT = Object.assign({}, opts);
+            optsTT.showTrigger = new TimestampTrigger(endsAt);
+            reg.showNotification('⏰ Timer terminé', optsTT);
+            console.log('[timer] notif programmée via TimestampTrigger pour T+' + Math.round(delay/1000) + 's');
+          } catch(e){ console.warn('[timer] TimestampTrigger fail:', e); }
         }
-        // Pas de planification possible (iOS, vieux Chrome…) — silencieux.
-      }).catch(function(e){ console.warn('tim notif schedule:', e); });
-    };
-    if (Notification.permission === 'granted') { schedule(); return; }
-    if (Notification.permission === 'default') {
-      Notification.requestPermission().then(function(p){ if (p === 'granted') schedule(); });
+      }).catch(function(){});
     }
+
+    // Couche 2 : Demande au SW de programmer en setTimeout
+    if (navigator.serviceWorker && navigator.serviceWorker.controller) {
+      try {
+        navigator.serviceWorker.controller.postMessage({
+          type: 'TIMER_SCHEDULE',
+          endsAt: endsAt,
+          body: opts.body
+        });
+        console.log('[timer] message TIMER_SCHEDULE envoyé au SW pour T+' + Math.round(delay/1000) + 's');
+      } catch(e){ console.warn('[timer] SW postMessage fail:', e); }
+    }
+
+    // Couche 3 : setTimeout dans la page (fallback foreground)
+    if (_tim_pageTimeout) clearTimeout(_tim_pageTimeout);
+    _tim_pageTimeout = setTimeout(function(){
+      _tim_pageTimeout = null;
+      // Si la page est encore vivante quand le timer expire, on déclenche aussi
+      if (navigator.serviceWorker && navigator.serviceWorker.ready) {
+        navigator.serviceWorker.ready.then(function(reg){
+          if (!reg || !reg.showNotification) return;
+          reg.showNotification('⏰ Timer terminé', opts);
+        });
+      } else if (typeof Notification === 'function') {
+        try { new Notification('⏰ Timer terminé', { body: opts.body, icon: opts.icon }); } catch(e){}
+      }
+    }, Math.max(0, delay));
   }
   // Annule la notif planifiée (à la pause / reset).
   function tim_minutCancelNotif(){
+    if (_tim_pageTimeout) { clearTimeout(_tim_pageTimeout); _tim_pageTimeout = null; }
+    // Libère le wake lock
+    try {
+      if (_tim_wakeLock) { _tim_wakeLock.release(); _tim_wakeLock = null; }
+    } catch(e){}
+    // Message d'annulation au SW
+    if (navigator.serviceWorker && navigator.serviceWorker.controller) {
+      try { navigator.serviceWorker.controller.postMessage({ type: 'TIMER_CANCEL' }); } catch(e){}
+    }
+    // Cleanup des notifs déjà émises (rare)
     if (!navigator.serviceWorker || !navigator.serviceWorker.ready) return;
     navigator.serviceWorker.ready.then(function(reg){
       if (!reg.getNotifications) return;

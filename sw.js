@@ -1,4 +1,4 @@
-const CACHE = 'athletik-v92';
+const CACHE = 'athletik-v93';
 const ASSETS = [
   '/',
   '/index.html',
@@ -29,9 +29,64 @@ self.addEventListener('activate', e => {
 });
 
 // Permet à la page d'activer immédiatement le nouveau SW (auto-update flow).
+// ──
+// TIMER_SCHEDULE / TIMER_CANCEL : la page demande au SW de programmer une
+// notification système à un instant T absolu. Plus fiable que setTimeout dans
+// la page (qui meurt quand l'OS endort la PWA). Le SW vit plus longtemps mais
+// peut aussi être tué par l'OS — défense en profondeur avec TimestampTrigger
+// côté page si disponible.
+const _swTimers = new Map();
 self.addEventListener('message', e => {
-  if (e.data && e.data.action === 'skipWaiting') {
-    self.skipWaiting();
+  const d = e.data || {};
+  if (d.action === 'skipWaiting') { self.skipWaiting(); return; }
+  if (d.type === 'TIMER_SCHEDULE') {
+    const endsAt = d.endsAt;
+    const delay = Math.max(0, endsAt - Date.now());
+    // Annule un éventuel timer précédent
+    const prev = _swTimers.get('tim-minut');
+    if (prev) clearTimeout(prev);
+    const t = setTimeout(() => {
+      _swTimers.delete('tim-minut');
+      try {
+        self.registration.showNotification('⏰ Timer terminé', {
+          body: d.body || 'Le minuteur a sonné',
+          icon: '/icons/icon-192.png',
+          badge: '/icons/icon-192.png',
+          tag: 'tim-minut',
+          requireInteraction: true,
+          vibrate: [300, 100, 300, 100, 500],
+          renotify: true,
+          silent: false
+        });
+      } catch (err) { /* SW dead — TimestampTrigger côté page prend le relais */ }
+    }, delay);
+    _swTimers.set('tim-minut', t);
+    return;
+  }
+  if (d.type === 'TIMER_CANCEL') {
+    const prev = _swTimers.get('tim-minut');
+    if (prev) { clearTimeout(prev); _swTimers.delete('tim-minut'); }
+    self.registration.getNotifications({ tag: 'tim-minut', includeTriggered: true })
+      .then(arr => arr.forEach(n => { try { n.close(); } catch(_){} }))
+      .catch(() => {});
+    return;
+  }
+});
+
+// Click sur la notif → focus la PWA si déjà ouverte, sinon l'ouvre.
+self.addEventListener('notificationclick', e => {
+  if (e.notification && e.notification.tag === 'tim-minut') {
+    e.notification.close();
+    e.waitUntil((async () => {
+      const wins = await self.clients.matchAll({ type: 'window', includeUncontrolled: true });
+      for (const w of wins) {
+        if (w.url.indexOf(self.location.origin) === 0) {
+          await w.focus();
+          return;
+        }
+      }
+      await self.clients.openWindow('/');
+    })());
   }
 });
 
