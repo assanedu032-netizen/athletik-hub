@@ -3508,6 +3508,32 @@ html body #result, html body #nutriResult{
   width:48px !important; height:48px !important;
   box-shadow:0 4px 14px rgba(197,164,78,.30) !important;
 }
+
+/* ═══ FEEDBACK DE FIN DE SÉANCE — modal post-séance ═══ */
+.se-feedback{position:fixed;inset:0;z-index:10000;background:rgba(11,18,40,.96);display:flex;align-items:flex-start;justify-content:center;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:0;animation:fadeUp .25s ease}
+.se-fb-inner{width:100%;max-width:430px;min-height:100%;background:var(--ah-bg);display:flex;flex-direction:column;padding:24px 20px calc(20px + env(safe-area-inset-bottom,0px));box-sizing:border-box}
+.se-fb-head{margin-bottom:18px}
+.se-fb-title{font-family:'Bebas Neue',sans-serif;font-size:24px;letter-spacing:.06em;color:var(--ah-text);line-height:1}
+.se-fb-sub{font-family:'Outfit',sans-serif;font-size:13px;color:var(--ah-text2);margin-top:6px;line-height:1.4}
+.se-fb-micro{font-size:11px;color:var(--ah-muted);margin-top:6px;line-height:1.4;font-style:italic}
+.se-fb-body{display:flex;flex-direction:column;gap:18px;flex:1}
+.se-fb-q{background:var(--ah-surface);border:1px solid var(--ah-border);border-radius:14px;padding:14px}
+.se-fb-q-head{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:8px}
+.se-fb-q-label{font-family:'Outfit',sans-serif;font-size:13px;font-weight:700;color:var(--ah-text);letter-spacing:.02em}
+.se-fb-q-val{font-family:'Bebas Neue',sans-serif;font-size:22px;color:var(--ah-gold);line-height:1}
+.se-fb-q-hint{font-size:11px;color:var(--ah-text2);margin-top:6px;font-weight:600}
+.se-fb-slider{-webkit-appearance:none;appearance:none;width:100%;height:6px;background:var(--ah-surface2);border-radius:3px;outline:none;cursor:pointer}
+.se-fb-slider::-webkit-slider-thumb{-webkit-appearance:none;appearance:none;width:24px;height:24px;border-radius:50%;background:var(--ah-gold);border:2px solid var(--ah-navy);cursor:pointer;box-shadow:0 2px 6px rgba(20,30,60,.20)}
+.se-fb-slider::-moz-range-thumb{width:24px;height:24px;border-radius:50%;background:var(--ah-gold);border:2px solid var(--ah-navy);cursor:pointer;box-shadow:0 2px 6px rgba(20,30,60,.20)}
+.se-fb-chips{display:flex;flex-wrap:wrap;gap:6px}
+.se-fb-chip{padding:9px 13px;border-radius:999px;background:var(--ah-surface);border:1.5px solid var(--ah-border2);color:var(--ah-text2);font-family:'Outfit',sans-serif;font-size:12px;font-weight:600;cursor:pointer;transition:all .15s;-webkit-tap-highlight-color:transparent}
+.se-fb-chip:hover{border-color:var(--ah-gold)}
+.se-fb-chip.on{background:var(--ah-navy);color:#fff;border-color:var(--ah-gold)}
+.se-fb-note{width:100%;box-sizing:border-box;background:var(--ah-surface);border:1.5px solid var(--ah-border2);border-radius:10px;padding:10px 12px;font-family:'Outfit',sans-serif;font-size:13px;color:var(--ah-text);resize:none;outline:none;line-height:1.4}
+.se-fb-note:focus{border-color:var(--ah-gold)}
+.se-fb-foot{position:sticky;bottom:0;background:var(--ah-bg);padding:14px 0 0;margin-top:14px}
+.se-fb-validate{width:100%;padding:16px;background:linear-gradient(135deg,#C5A44E,#D4B86A);color:#1B2D5C;border:none;border-radius:12px;font-family:'Outfit',sans-serif;font-size:15px;font-weight:800;letter-spacing:.04em;cursor:pointer;box-shadow:0 6px 18px rgba(197,164,78,.28)}
+.se-fb-validate:active{transform:scale(.98)}
 </style>
 
 <template id="__bundler_thumbnail" data-bg-color="#1F305F">
@@ -6448,6 +6474,75 @@ window.tiResetOnEnter = function(){ window.tiShowStep(1); };
 
   </div><!-- /ls-body -->
 </div><!-- /liveSession -->
+
+<!-- ═══ FEEDBACK DE FIN DE SÉANCE — intercepte la validation séance ═══
+     Affichée avant lsComplete par _lsShowComplete. Aucune séance n'est
+     validée définitivement sans passer par cette modal. -->
+<div id="seFeedback" class="se-feedback" style="display:none">
+  <div class="se-fb-inner">
+    <div class="se-fb-head">
+      <div class="se-fb-title">FEEDBACK DE FIN DE SÉANCE</div>
+      <div class="se-fb-sub">30 secondes. Dis à Titan comment ça s'est vraiment passé.</div>
+      <div class="se-fb-micro">Ces réponses aident Titan à comprendre ton niveau réel, pas ton niveau imaginé.</div>
+    </div>
+    <div class="se-fb-body">
+      <!-- Q1 — Productivité -->
+      <div class="se-fb-q">
+        <div class="se-fb-q-head">
+          <div class="se-fb-q-label">Productivité</div>
+          <div class="se-fb-q-val" id="seFbProdVal">80%</div>
+        </div>
+        <input type="range" min="0" max="110" step="1" value="80" id="seFbProd" class="se-fb-slider" oninput="window._seFbOnSlider('prod', this.value)">
+        <div class="se-fb-q-hint" id="seFbProdHint">Solide</div>
+      </div>
+      <!-- Q2 — Intensité -->
+      <div class="se-fb-q">
+        <div class="se-fb-q-head">
+          <div class="se-fb-q-label">Intensité</div>
+          <div class="se-fb-q-val" id="seFbIntVal">80%</div>
+        </div>
+        <input type="range" min="0" max="110" step="1" value="80" id="seFbInt" class="se-fb-slider" oninput="window._seFbOnSlider('int', this.value)">
+        <div class="se-fb-q-hint" id="seFbIntHint">Bonne intensité</div>
+      </div>
+      <!-- Q3 — Focus -->
+      <div class="se-fb-q">
+        <div class="se-fb-q-head">
+          <div class="se-fb-q-label">Focus</div>
+          <div class="se-fb-q-val" id="seFbFocusVal">80%</div>
+        </div>
+        <input type="range" min="0" max="110" step="1" value="80" id="seFbFocus" class="se-fb-slider" oninput="window._seFbOnSlider('focus', this.value)">
+        <div class="se-fb-q-hint" id="seFbFocusHint">Bien focus</div>
+      </div>
+      <!-- Q4 — Difficultés (chips multi-sélection) -->
+      <div class="se-fb-q">
+        <div class="se-fb-q-label" style="margin-bottom:8px">Difficultés du jour</div>
+        <div class="se-fb-chips" id="seFbDifficulties">
+          <button type="button" class="se-fb-chip" data-val="none" onclick="window._seFbToggleChip(this,true)">Aucun problème</button>
+          <button type="button" class="se-fb-chip" data-val="energy" onclick="window._seFbToggleChip(this,false)">Énergie basse</button>
+          <button type="button" class="se-fb-chip" data-val="hard" onclick="window._seFbToggleChip(this,false)">Trop difficile</button>
+          <button type="button" class="se-fb-chip" data-val="tech" onclick="window._seFbToggleChip(this,false)">Problème de technique</button>
+          <button type="button" class="se-fb-chip" data-val="pain" onclick="window._seFbToggleChip(this,false)">Douleur ou gêne</button>
+          <button type="button" class="se-fb-chip" data-val="time" onclick="window._seFbToggleChip(this,false)">Manque de temps</button>
+          <button type="button" class="se-fb-chip" data-val="gear" onclick="window._seFbToggleChip(this,false)">Manque de matériel</button>
+          <button type="button" class="se-fb-chip" data-val="motiv" onclick="window._seFbToggleChip(this,false)">Motivation basse</button>
+        </div>
+      </div>
+      <!-- Q5 — Exercice compliqué (rempli dynamiquement depuis _LS.exos) -->
+      <div class="se-fb-q">
+        <div class="se-fb-q-label" style="margin-bottom:8px">Exercice où tu as galéré ?</div>
+        <div class="se-fb-chips" id="seFbExos"></div>
+      </div>
+      <!-- Q6 — Note libre -->
+      <div class="se-fb-q">
+        <div class="se-fb-q-label" style="margin-bottom:6px">Ajouter quelque chose pour Titan ?</div>
+        <textarea id="seFbNote" class="se-fb-note" rows="2" placeholder="Ex : j'étais fatigué, j'ai senti mes genoux, j'ai manqué d'explosivité, j'ai eu du mal sur les sauts…"></textarea>
+      </div>
+    </div>
+    <div class="se-fb-foot">
+      <button class="se-fb-validate" onclick="window._seFbValidate()">Valider ma séance</button>
+    </div>
+  </div>
+</div>
 
 <!-- ═══ BODY FAT 7-SITES (overlay plein écran, ouvert depuis Tracks) ═══ -->
 <div id="bodyfat" style="display:none;position:fixed;inset:0;z-index:1000;background:var(--bg);overflow-y:auto;-webkit-overflow-scrolling:touch">
@@ -18190,10 +18285,7 @@ function generateMealPlan() {
     var usedKeys = window._mpWeekUsed;
     // Week-end (sam/dim = idx 5,6) : décale fort le seed pour varier vs lundi/mardi
     // → évite l'impression "le week-end recopie le début de semaine".
-    var weekendOffset = (i >= 5) ? (Math.floor(arr.length / 2) + i * 3) : 0;
-    var picker = function(arr, target, offset){
-      return _mpPickAndPortion(arr, target, offset + weekendOffset, objectif, usedKeys);
-    };
+    var weekendOffset = (i >= 5) ? (Math.floor(meals.length / 2) + i * 3) : 0;
     // Picker intelligent : recette la plus proche du target du slot + portions adaptées
     var b = _mpPickAndPortion(breakfasts,  slotTargets.b, i + seed + weekendOffset,                  objectif, usedKeys);
     var l = _mpPickAndPortion(meals,       slotTargets.l, i + seed + 3 + weekendOffset,              objectif, usedKeys);
@@ -23690,24 +23782,162 @@ function _advanceProgramProgress(progKey, sessKey) {
   return weekDone;
 }
 
-function _lsShowComplete() {
-  clearInterval(_LS.restInterval);
-  _LS.restActive = false;
-  document.getElementById('lsRestOverlay').classList.remove('ls-rest-active');
+// ─── FEEDBACK DE FIN DE SÉANCE ──────────────────────────────────────────────
+// Brief 2026-06-05 : intercepte la validation avant lsComplete pour collecter
+// productivité/intensité/focus/difficultés/exos/note. Aucune séance n'est
+// validée définitivement sans ce check rapide (~30s).
+var _SE_FB_HINTS = {
+  prod: [{m:30,t:'Séance ratée'},{m:55,t:'Moyen'},{m:80,t:'Solide'},{m:101,t:'Très bonne séance'},{m:111,t:'Titan mode'}],
+  int:  [{m:30,t:'Aucune intensité'},{m:55,t:'Correct'},{m:80,t:'Bonne intensité'},{m:101,t:'Très intense'},{m:111,t:"J'ai tout donné"}],
+  focus:[{m:30,t:'Pas concentré'},{m:55,t:'Moyen'},{m:80,t:'Bien focus'},{m:101,t:'Très concentré'},{m:111,t:'Mental verrouillé'}]
+};
+function _seFbHintFor(kind, val) {
+  var arr = _SE_FB_HINTS[kind] || [];
+  for (var i = 0; i < arr.length; i++) if (val < arr[i].m) return arr[i].t;
+  return arr.length ? arr[arr.length-1].t : '';
+}
+window._seFbOnSlider = function(kind, val) {
+  var ids = { prod: ['seFbProdVal','seFbProdHint'], int: ['seFbIntVal','seFbIntHint'], focus: ['seFbFocusVal','seFbFocusHint'] }[kind];
+  if (!ids) return;
+  var v = parseInt(val, 10) || 0;
+  var ve = document.getElementById(ids[0]); if (ve) ve.textContent = v + '%';
+  var he = document.getElementById(ids[1]); if (he) he.textContent = _seFbHintFor(kind, v);
+};
+window._seFbToggleChip = function(btn, isNone) {
+  var wasOn = btn.classList.contains('on');
+  var parent = btn.parentElement;
+  if (!parent) return;
+  if (isNone) {
+    // "Aucun problème" / "Aucun exercice" : exclusif
+    parent.querySelectorAll('.se-fb-chip').forEach(function(c){ c.classList.remove('on'); });
+    if (!wasOn) btn.classList.add('on');
+  } else {
+    // Désélectionne le bouton "aucun" si présent
+    var none = parent.querySelector('.se-fb-chip[data-val="none"]');
+    if (none) none.classList.remove('on');
+    btn.classList.toggle('on');
+  }
+};
+function _seFbBuildExoChips() {
+  var wrap = document.getElementById('seFbExos');
+  if (!wrap) return;
+  var exos = (window._LS && _LS.exos) || [];
+  var html = '<button type="button" class="se-fb-chip" data-val="none" onclick="window._seFbToggleChip(this,true)">Aucun exercice en particulier</button>';
+  exos.forEach(function(ex, i){
+    var name = String(ex && (ex.name || ex.n) || ('Exo ' + (i+1))).replace(/[<>]/g, '');
+    html += '<button type="button" class="se-fb-chip" data-val="' + i + '" onclick="window._seFbToggleChip(this,false)">' + name + '</button>';
+  });
+  wrap.innerHTML = html;
+}
+function _seFbReset() {
+  ['seFbProd','seFbInt','seFbFocus'].forEach(function(id){
+    var el = document.getElementById(id); if (el) el.value = 80;
+  });
+  window._seFbOnSlider('prod', 80);
+  window._seFbOnSlider('int', 80);
+  window._seFbOnSlider('focus', 80);
+  var diff = document.getElementById('seFbDifficulties');
+  if (diff) diff.querySelectorAll('.se-fb-chip').forEach(function(c){ c.classList.remove('on'); });
+  var note = document.getElementById('seFbNote'); if (note) note.value = '';
+}
+function _seFbCollectChipsVals(wrapId) {
+  var wrap = document.getElementById(wrapId);
+  if (!wrap) return [];
+  var out = [];
+  wrap.querySelectorAll('.se-fb-chip.on').forEach(function(c){
+    var v = c.getAttribute('data-val');
+    if (v) out.push(v);
+  });
+  return out;
+}
+function _seFbCollectExoNames() {
+  var wrap = document.getElementById('seFbExos');
+  if (!wrap) return [];
+  var out = [];
+  var exos = (window._LS && _LS.exos) || [];
+  wrap.querySelectorAll('.se-fb-chip.on').forEach(function(c){
+    var v = c.getAttribute('data-val');
+    if (v === 'none') { out.push('Aucun'); return; }
+    var idx = parseInt(v, 10);
+    if (!isNaN(idx) && exos[idx]) out.push(exos[idx].name || ('Exo ' + (idx+1)));
+  });
+  return out;
+}
+function _seFbStatusFromScore(score) {
+  if (score >= 90) return 'Excellente séance';
+  if (score >= 75) return 'Bonne séance';
+  if (score >= 55) return 'Séance correcte';
+  if (score >= 30) return 'Séance faible';
+  return 'Séance ratée ou incomplète';
+}
+function _seFbTitanMsg(fb) {
+  if (fb.difficulties.indexOf('pain') >= 0) return 'Tu as signalé une gêne. Ne force pas bêtement. On surveille ça et on adapte si nécessaire.';
+  if (fb.difficulties.indexOf('tech') >= 0) return 'Tu as identifié un problème technique. C\'est une bonne chose. Titan va en tenir compte pour t\'aider à mieux exécuter les prochains exercices.';
+  if (fb.sessionQualityScore >= 90) return 'Grosse séance. Productivité, intensité et focus sont alignés. C\'est comme ça qu\'on construit un athlète.';
+  if (fb.intensity < 55) return 'Tu as terminé, c\'est bien. Mais l\'intensité était trop basse pour créer une vraie adaptation. La prochaine fois, tu viens pour progresser, pas juste cocher une case.';
+  if (fb.focus < 55) return 'Ton corps était là, mais ton mental n\'était pas verrouillé. La qualité d\'une séance dépend aussi de ton attention.';
+  if (fb.sessionQualityScore >= 75) return 'Bonne séance. Tu construis brique par brique. Continue.';
+  return 'Séance validée. Ce n\'était pas parfait, mais tu as fait le travail. Maintenant, l\'objectif c\'est de faire mieux à la prochaine.';
+}
+function _seFbOpen() {
+  _seFbReset();
+  _seFbBuildExoChips();
+  var modal = document.getElementById('seFeedback');
+  if (modal) { modal.style.display = 'flex'; modal.scrollTop = 0; }
+}
+function _seFbClose() {
+  var modal = document.getElementById('seFeedback');
+  if (modal) modal.style.display = 'none';
+}
+window._seFbValidate = function() {
+  var prod = parseInt((document.getElementById('seFbProd') || {}).value, 10);
+  var inten = parseInt((document.getElementById('seFbInt') || {}).value, 10);
+  var focus = parseInt((document.getElementById('seFbFocus') || {}).value, 10);
+  if (isNaN(prod) || isNaN(inten) || isNaN(focus)) return;
+  var score = Math.round((prod + inten + focus) / 3);
+  var difficulties = _seFbCollectChipsVals('seFbDifficulties');
+  // "none" seul = pas de difficulté → on garde un tableau vide pour clarté data
+  if (difficulties.length === 1 && difficulties[0] === 'none') difficulties = [];
+  var difficultExercises = _seFbCollectExoNames();
+  if (difficultExercises.length === 1 && difficultExercises[0] === 'Aucun') difficultExercises = [];
+  var note = String((document.getElementById('seFbNote') || {}).value || '').trim();
+  var feedback = {
+    productivity: prod,
+    intensity: inten,
+    focus: focus,
+    difficulties: difficulties,
+    difficultExercises: difficultExercises,
+    note: note,
+    sessionQualityScore: score,
+    titanStatus: _seFbStatusFromScore(score),
+    completedAt: new Date().toISOString()
+  };
+  _seFbClose();
+  _lsFinalizeSession(feedback);
+};
+window.openSessionEndFeedback = _seFbOpen; // pour réutilisation future
+
+// Persistance + UI complete + msg Titan, appelé par _seFbValidate après feedback OK.
+function _lsFinalizeSession(feedback) {
   var body = document.getElementById('lsBody');
-  // Hide all body content except complete
-  var children = body.children;
-  for (var i = 0; i < children.length; i++) {
-    if (children[i].id !== 'lsComplete') children[i].style.display = 'none';
+  if (body) {
+    var children = body.children;
+    for (var i = 0; i < children.length; i++) {
+      if (children[i].id !== 'lsComplete') children[i].style.display = 'none';
+    }
   }
   var complete = document.getElementById('lsComplete');
-  complete.style.display = 'flex';
-  var msg = 'Tu viens de terminer <strong>' + _LS.sessName + '</strong>.<br>Récupère bien — tu l\'as mérité, athlète.';
-  document.getElementById('lsCompleteMsg').innerHTML = msg;
+  if (complete) complete.style.display = 'flex';
+  var titanMsg = _seFbTitanMsg(feedback);
+  var msg = 'Tu viens de terminer <strong>' + (_LS.sessName || 'cette séance') + '</strong>.<br>'
+          + '<span style="display:inline-block;margin-top:6px;font-size:11px;color:var(--ah-gold);letter-spacing:1px;font-weight:700">SCORE ' + feedback.sessionQualityScore + '% — ' + feedback.titanStatus.toUpperCase() + '</span><br>'
+          + '<span style="display:inline-block;margin-top:8px;font-size:13px;color:var(--ah-text2);line-height:1.4;font-style:italic">"' + titanMsg + '"</span>';
+  var msgEl = document.getElementById('lsCompleteMsg');
+  if (msgEl) msgEl.innerHTML = msg;
   if (body) body.scrollTop = 0;
-  showToast('Séance terminée 🔥', 'ok');
+  showToast('Séance validée 🔥', 'ok');
 
-  // Tracking complétion : sessionsDone + historique + check programme terminé.
+  // Tracking complétion : sessionsDone + historique avec feedback attaché.
   try {
     _bumpProfileCounter('sessionsDone', 1);
     var hist = JSON.parse(localStorage.getItem('ah_set_history') || '[]');
@@ -23717,11 +23947,11 @@ function _lsShowComplete() {
       sessKey: _LS.sessKey || '',
       progName: _LS.progName || '',
       sessName: _LS.sessName || '',
-      date: new Date().toISOString()
+      date: new Date().toISOString(),
+      sessionEndFeedback: feedback
     });
     localStorage.setItem('ah_set_history', JSON.stringify(hist));
     if (typeof renderBadges === 'function') renderBadges();
-    // P2 — fait avancer semaine/phase si la semaine type est complète
     if (_LS.progKey && _LS.sessKey) {
       try {
         var weekDone = _advanceProgramProgress(_LS.progKey, _LS.sessKey);
@@ -23742,6 +23972,16 @@ function _lsShowComplete() {
 
   _lsClearPersist();
   try { renderResumeSessionBanner(); } catch(e) {}
+}
+
+function _lsShowComplete() {
+  clearInterval(_LS.restInterval);
+  _LS.restActive = false;
+  var ov = document.getElementById('lsRestOverlay');
+  if (ov) ov.classList.remove('ls-rest-active');
+  // Avant de valider la séance, on demande le feedback (3 sliders + chips).
+  // C'est dans _seFbValidate qu'on appellera _lsFinalizeSession.
+  _seFbOpen();
 }
 
 function _lsClose() {
