@@ -3737,6 +3737,149 @@ html body #result, html body #nutriResult{
 .yt-thumb.has-thumb .yt-cat-pill,.yt-thumb.has-thumb .yt-play-btn,.yt-thumb.has-thumb .yt-dur{z-index:2}
 
 /* ═══════════════════════════════════════════════════════════════════════════
+   TRAIN > BUILDER — Refonte design premium (CSS overrides uniquement)
+   ───────────────────────────────────────────────────────────────────────────
+   Brief user : "Plus premium, plus intuitif, moins nuage de tags."
+   Aucune logique JS touchée. Zéro overflow horizontal en 360-430px.
+   ═══════════════════════════════════════════════════════════════════════════ */
+#pgBuilder, #pgBuilder *{box-sizing:border-box}
+
+/* Petit label "Objectif de la séance" injecté par CSS avant le bloc convo */
+#pgBuilder #builderUnlocked::before{
+  content:'OBJECTIF DE LA SÉANCE';
+  display:block;
+  font-family:'JetBrains Mono','Outfit',sans-serif;
+  font-size:10px;letter-spacing:.18em;
+  color:rgba(20,30,60,.5);
+  font-weight:700;
+  padding:14px 18px 4px;
+}
+
+/* Bulle Titan : meilleur alignement avatar + bulle */
+#pgBuilder #builderConvo{ padding:10px 16px 6px !important; gap:10px !important; }
+#pgBuilder #builderConvo > div{
+  align-items:flex-start !important;
+}
+#pgBuilder #builderConvo .bld-avatar,
+#pgBuilder #builderConvo > div > div:first-child{
+  flex-shrink:0;
+}
+
+/* Chips objectifs : hauteur uniforme, padding régulier */
+#pgBuilder #builderChips{
+  padding:4px 16px 12px !important;
+  gap:8px !important;
+}
+#pgBuilder #builderChips > *{
+  height:38px !important;
+  padding:0 14px !important;
+  border-radius:999px !important;
+  background:#fff !important;
+  border:1.5px solid rgba(20,30,60,.10) !important;
+  color:#1B2A4A !important;
+  font-family:'Outfit',sans-serif !important;
+  font-size:13px !important;
+  font-weight:600 !important;
+  line-height:36px !important;
+  letter-spacing:.01em !important;
+  white-space:nowrap !important;
+  box-shadow:0 1px 3px rgba(20,30,60,.04) !important;
+  transition:transform .12s, background .15s, border-color .15s !important;
+}
+#pgBuilder #builderChips > *:active{
+  transform:scale(.96);
+  background:#FAFBFC !important;
+}
+/* Mise en avant des objectifs principaux (5 premiers) — bordure gold subtle */
+#pgBuilder #builderChips > *:nth-child(-n+5){
+  border-color:rgba(197,164,78,.40) !important;
+  color:#1B2A4A !important;
+  font-weight:700 !important;
+}
+#pgBuilder #builderChips > *.on,
+#pgBuilder #builderChips > *.selected{
+  background:#1B2A4A !important;
+  border-color:#1B2A4A !important;
+  color:#C5A44E !important;
+  box-shadow:0 4px 12px rgba(27,42,74,.18) !important;
+}
+
+/* Bloc input : plus compact + premium */
+#pgBuilder #builderConvoWrap > div[style*="padding:12px 18px 6px"]{
+  padding:14px 16px 8px !important;
+}
+#pgBuilder #builderConvoWrap > div[style*="padding:12px 18px 6px"] > div{
+  background:#fff !important;
+  border:1.5px solid rgba(20,30,60,.10) !important;
+  border-radius:16px !important;
+  padding:5px 5px 5px 8px !important;
+  box-shadow:0 2px 8px rgba(20,30,60,.04) !important;
+  gap:6px !important;
+}
+#pgBuilder #builderConvoWrap > div[style*="padding:12px 18px 6px"] > div:focus-within{
+  border-color:rgba(197,164,78,.55) !important;
+  box-shadow:0 4px 14px rgba(197,164,78,.10) !important;
+}
+#pgBuilder #builderMicBtn{
+  width:40px !important; height:40px !important;
+  background:#FAFBFC !important;
+  border:1px solid rgba(20,30,60,.08) !important;
+  color:#C5A44E !important;
+}
+#pgBuilder #builderConvoInput{
+  font-size:14px !important;
+  padding:10px 4px !important;
+}
+#pgBuilder #builderConvoInput::placeholder{ color:rgba(20,30,60,.45) !important; }
+/* Bouton envoi premium gold */
+#pgBuilder #builderConvoWrap button[aria-label="Envoyer"]{
+  width:42px !important; height:42px !important;
+  background:linear-gradient(135deg,#D4B86A 0%,#C5A44E 50%,#A0853A 100%) !important;
+  box-shadow:0 4px 12px rgba(197,164,78,.35) !important;
+}
+
+/* Actions secondaires : bouton vocal et reset alignés */
+#pgBuilder #builderConvoWrap > div[style*="padding:2px 18px 22px"]{
+  padding:4px 16px 20px !important;
+  gap:10px !important;
+}
+#pgBuilder .bld-free-btn{
+  height:46px !important;
+  border-radius:14px !important;
+  background:#fff !important;
+  border:1.5px solid rgba(197,164,78,.45) !important;
+  color:#C5A44E !important;
+  font-family:'Outfit',sans-serif !important;
+  font-size:13px !important;
+  font-weight:700 !important;
+  letter-spacing:.02em !important;
+  box-shadow:0 2px 6px rgba(20,30,60,.04) !important;
+}
+#pgBuilder .bld-free-btn:active{ background:#FFFCEF !important; transform:scale(.98); }
+#pgBuilder .bld-reset-btn{
+  width:46px !important; height:46px !important;
+  padding:0 !important;
+  border-radius:14px !important;
+  background:#fff !important;
+  border:1px solid rgba(20,30,60,.10) !important;
+  color:rgba(20,30,60,.55) !important;
+  font-size:18px !important;
+  display:flex !important; align-items:center !important; justify-content:center !important;
+  box-shadow:0 1px 3px rgba(20,30,60,.04) !important;
+}
+#pgBuilder .bld-reset-btn:active{ background:#FAFBFC !important; transform:scale(.96); }
+
+/* FAB timer plus discret quand on est sur Train (concurrence la nav) */
+#vTrain .tim-fab{
+  width:48px !important; height:48px !important;
+  bottom:calc(var(--ah-nav-height,88px) + var(--ah-safe-bottom,0px) + 12px) !important;
+  background:linear-gradient(135deg,#D4B86A,#A0853A) !important;
+  box-shadow:0 4px 12px rgba(197,164,78,.30) !important;
+  font-size:18px !important;
+  opacity:.88;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
    ATHLETIK TIMER — Refonte premium (override CSS uniquement)
    ───────────────────────────────────────────────────────────────────────────
    User brief : "Rendre l'écran beaucoup plus premium, simple, lisible,
@@ -5856,7 +5999,7 @@ window.tiResetOnEnter = function(){ window.tiShowStep(1); };
           <button id="builderMicBtn" onclick="builderToggleMic()" aria-label="Parler à Titan" title="Parler à Titan" style="flex-shrink:0;width:38px;height:38px;border-radius:50%;border:0;background:var(--surface2);color:var(--gold);cursor:pointer;display:flex;align-items:center;justify-content:center">
             <svg viewBox="0 0 24 24" width="19" height="19" fill="currentColor"><path d="M12 14c1.66 0 3-1.34 3-3V5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3zm5-3c0 2.76-2.24 5-5 5s-5-2.24-5-5H5c0 3.53 2.61 6.43 6 6.92V21h2v-3.08c3.39-.49 6-3.39 6-6.92h-2z"/></svg>
           </button>
-          <textarea id="builderConvoInput" rows="1" placeholder="Réponds à Titan…" onkeydown="_bInputKey(event)" oninput="_bAutoGrow(this)" style="flex:1;min-width:0;max-height:120px;padding:9px 4px;background:transparent;border:0;color:var(--text);font-size:14px;outline:none;resize:none;font-family:inherit;line-height:1.4"></textarea>
+          <textarea id="builderConvoInput" rows="1" placeholder="Décris ta séance à Titan…" onkeydown="_bInputKey(event)" oninput="_bAutoGrow(this)" style="flex:1;min-width:0;max-height:120px;padding:9px 4px;background:transparent;border:0;color:var(--text);font-size:14px;outline:none;resize:none;font-family:inherit;line-height:1.4"></textarea>
           <button onclick="_bSubmitInput()" aria-label="Envoyer" style="flex-shrink:0;width:38px;height:38px;border-radius:50%;border:0;background:linear-gradient(135deg,var(--gold),var(--gold2));color:var(--navy);cursor:pointer;display:flex;align-items:center;justify-content:center">
             <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg>
           </button>
@@ -5865,8 +6008,8 @@ window.tiResetOnEnter = function(){ window.tiShowStep(1); };
 
       <!-- Actions secondaires -->
       <div style="display:flex;gap:8px;padding:2px 18px 22px">
-        <button onclick="_bFreeMode()" id="builderFreeBtn" style="flex:1;padding:10px;background:var(--surface);border:1px solid var(--border);border-radius:10px;color:var(--gold);font-size:12px;font-weight:700;cursor:pointer">🎙️ Dis tout d'un coup</button>
-        <button onclick="_builderStartConvo()" style="flex-shrink:0;padding:10px 14px;background:var(--surface);border:1px solid var(--border);border-radius:10px;color:var(--muted);font-size:12px;font-weight:700;cursor:pointer">↺</button>
+        <button onclick="_bFreeMode()" id="builderFreeBtn" class="bld-free-btn" style="flex:1;padding:10px;background:var(--surface);border:1px solid var(--border);border-radius:10px;color:var(--gold);font-size:12px;font-weight:700;cursor:pointer">🎙️ Parler à Titan</button>
+        <button onclick="_builderStartConvo()" class="bld-reset-btn" aria-label="Recommencer" title="Recommencer" style="flex-shrink:0;padding:10px 14px;background:var(--surface);border:1px solid var(--border);border-radius:10px;color:var(--muted);font-size:12px;font-weight:700;cursor:pointer">↺</button>
       </div>
     </div>
 
