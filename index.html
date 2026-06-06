@@ -12745,11 +12745,34 @@ function _bfDrawChart(data) {
     });
     wrap.innerHTML = h;
   }
+  // Persistance chrono (mêmes principes que le minuteur) : survit au close,
+  // resume avec elapsed correct via wall-clock (Date.now() - startMs).
+  function _tim_chronoPersist(){
+    try {
+      if (!_tim_chrono.elapsed && !_tim_chrono.running) {
+        localStorage.removeItem('ah_tim_chrono'); return;
+      }
+      var state = {
+        running: !!_tim_chrono.running,
+        elapsed: _tim_chrono.elapsed,
+        startMs: _tim_chrono.startMs,
+        laps:    _tim_chrono.laps,
+        lastLap: _tim_chrono.lastLap,
+        savedAt: Date.now()
+      };
+      localStorage.setItem('ah_tim_chrono', JSON.stringify(state));
+    } catch(e){}
+  }
+  function _tim_chronoClearPersist(){
+    try { localStorage.removeItem('ah_tim_chrono'); } catch(e){}
+  }
+
   function tim_chronoToggle(){
     if (_tim_chrono.running) {
       clearInterval(_tim_chrono.iv);
       _tim_chrono.running = false;
       var b = document.getElementById('timChronoBtn'); if (b) b.textContent = '▶';
+      _tim_chronoPersist();
     } else {
       if (tim_audioCtx && tim_audioCtx.state === 'suspended') tim_audioCtx.resume(); tim_beepUnlock();
       _tim_chrono.startMs = Date.now() - _tim_chrono.elapsed;
@@ -12759,6 +12782,7 @@ function _bfDrawChart(data) {
       }, 50);
       _tim_chrono.running = true;
       var b2 = document.getElementById('timChronoBtn'); if (b2) b2.textContent = '⏸';
+      _tim_chronoPersist();
     }
   }
   function tim_chronoReset(){
@@ -12770,6 +12794,7 @@ function _bfDrawChart(data) {
     var b = document.getElementById('timChronoBtn'); if (b) b.textContent = '▶';
     _tim_chronoRender();
     _tim_chronoRenderLaps();
+    _tim_chronoClearPersist();
   }
   function tim_chronoLap(){
     if (!_tim_chrono.running) return;
@@ -12778,7 +12803,59 @@ function _bfDrawChart(data) {
     _tim_chrono.lastLap = _tim_chrono.elapsed;
     _tim_chronoRenderLaps();
     if (typeof tim_vib === 'function') tim_vib([20]);
+    _tim_chronoPersist();
   }
+
+  // Restore au chargement : si le chrono tournait, on recalcule elapsed
+  // depuis startMs (wall clock) et on relance l'interval. Si en pause,
+  // on restaure juste l'elapsed accumulé.
+  function _tim_chronoRestore(){
+    var raw;
+    try { raw = localStorage.getItem('ah_tim_chrono'); } catch(e){ return; }
+    if (!raw) return;
+    var st;
+    try { st = JSON.parse(raw); } catch(e){ return; }
+    if (!st) return;
+    _tim_chrono.laps = st.laps || [];
+    _tim_chrono.lastLap = st.lastLap || 0;
+    if (st.running && st.startMs) {
+      _tim_chrono.startMs = st.startMs;
+      _tim_chrono.elapsed = Date.now() - st.startMs;
+      _tim_chrono.running = true;
+      _tim_chrono.iv = setInterval(function(){
+        _tim_chrono.elapsed = Date.now() - _tim_chrono.startMs;
+        _tim_chronoRender();
+      }, 50);
+      var b = document.getElementById('timChronoBtn'); if (b) b.textContent = '⏸';
+    } else {
+      _tim_chrono.elapsed = st.elapsed || 0;
+    }
+    _tim_chronoRender();
+    _tim_chronoRenderLaps();
+  }
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', _tim_chronoRestore);
+  } else {
+    setTimeout(_tim_chronoRestore, 100);
+  }
+  // Resync chrono au retour sur la PWA (même logique que le minuteur).
+  document.addEventListener('visibilitychange', function(){
+    if (document.visibilityState !== 'visible') return;
+    if (_tim_chrono.running) {
+      _tim_chrono.elapsed = Date.now() - _tim_chrono.startMs;
+      _tim_chronoRender();
+      if (!_tim_chrono.iv) {
+        _tim_chrono.iv = setInterval(function(){
+          _tim_chrono.elapsed = Date.now() - _tim_chrono.startMs;
+          _tim_chronoRender();
+        }, 50);
+      }
+    } else if (!_tim_chrono.elapsed) {
+      // Pas en cours et pas elapsed local → peut-être qu'un autre tab a
+      // démarré → relit le storage
+      _tim_chronoRestore();
+    }
+  });
 
   // ── MINUTEUR (compte à rebours simple — fonction principale) ──
   var _tim_minut = { running:false, totalMs:0, remMs:0, startMs:0, iv:null };
