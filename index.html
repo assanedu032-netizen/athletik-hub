@@ -19031,13 +19031,15 @@ function builderRenderResult(w) {
       var meta = [];
       if (e.rest && e.rest !== '-') meta.push('repos ' + e.rest);
       if (e.catLabel) meta.push(e.catLabel);
-      html += '<div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:11px 13px">';
+      var safeName = String(e.n || '').replace(/'/g, "\\'").replace(/"/g, '&quot;');
+      var safeNote = String(e.note || '').replace(/'/g, "\\'").replace(/"/g, '&quot;');
+      // Carte entière cliquable → ouvre la fiche exercice (lib si dispo, sinon
+      // fallback avec ce qu'on a de la séance générée).
+      html += '<div onclick="window._builderOpenExoDetail(\'' + safeName + '\', \'' + safeNote + '\')" style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:11px 13px;cursor:pointer;transition:border-color .15s, transform .12s" onmouseover="this.style.borderColor=\'var(--gold)\'" onmouseout="this.style.borderColor=\'var(--border)\'">';
       html += '<div style="display:flex;align-items:center;gap:10px">';
       html += '<div style="flex:1;min-width:0"><div style="font-size:13.5px;font-weight:800;color:var(--text)">' + esc(e.n) + '</div>';
       html += '<div style="font-size:12px;color:var(--gold);font-weight:700;margin-top:2px">' + esc(prescr || '—') + '</div></div>';
-      if (e.video) {
-        html += '<button onclick="builderOpenVideo(\'' + esc(e.video) + '\',\'' + esc(e.n).replace(/'/g,'') + '\')" style="flex-shrink:0;padding:7px 11px;border-radius:8px;border:1px solid var(--border);background:var(--surface2);color:var(--gold);font-size:11px;font-weight:700;cursor:pointer">▶ Vidéo</button>';
-      }
+      html += '<div style="flex-shrink:0;color:var(--gold);font-size:18px;font-weight:700;line-height:1">›</div>';
       html += '</div>';
       if (meta.length) html += '<div style="font-size:11px;color:var(--muted);margin-top:5px">' + esc(meta.join(' · ')) + '</div>';
       if (e.note && String(e.note).trim()) html += '<div style="font-size:11px;color:var(--text2);margin-top:4px;font-style:italic">' + esc(e.note) + '</div>';
@@ -19058,6 +19060,45 @@ function builderRenderResult(w) {
   el.scrollTop = 0;
 }
 window.builderRenderResult = builderRenderResult;
+
+// Tap sur une carte exo du Builder → ouvre la fiche exercice de la
+// Librairie si l'exo y existe. Sinon → fallback modal léger qui montre
+// le nom + la note Titan, plus un lien YouTube de secours.
+window._builderOpenExoDetail = function(name, note){
+  if (!name) return;
+  try {
+    var found = false;
+    if (typeof window._libFlatExos === 'function') {
+      var all = window._libFlatExos('all');
+      found = !!(all && all.find && all.find(function(it){ return it.ex && it.ex.name === name; }));
+    }
+    if (found && typeof window._libOpenDetail === 'function') {
+      window._libOpenDetail(name);
+      return;
+    }
+  } catch(e){}
+  // Fallback : modal mini autonome avec ce qu'on a + lien YouTube
+  var prev = document.getElementById('builderExoFallback');
+  if (prev) prev.remove();
+  var safeName = String(name).replace(/[<>]/g, '');
+  var safeNote = String(note || '').replace(/[<>]/g, '');
+  var q = encodeURIComponent(name + ' technique tutoriel');
+  var modal = document.createElement('div');
+  modal.id = 'builderExoFallback';
+  modal.style.cssText = 'position:fixed;inset:0;z-index:9900;background:rgba(11,18,40,.65);display:flex;align-items:center;justify-content:center;padding:18px;backdrop-filter:blur(4px)';
+  modal.innerHTML =
+      '<div style="width:100%;max-width:420px;background:var(--ah-surface);border-radius:18px;padding:22px 22px 18px;display:flex;flex-direction:column;gap:12px;box-shadow:0 12px 40px rgba(20,30,60,.30)">'
+    +   '<div style="display:flex;align-items:center;justify-content:space-between;gap:10px">'
+    +     '<div style="font-family:\'Bebas Neue\',sans-serif;font-size:20px;color:var(--ah-text);letter-spacing:.04em;line-height:1.1">' + safeName + '</div>'
+    +     '<button onclick="document.getElementById(\'builderExoFallback\').remove()" aria-label="Fermer" style="background:none;border:none;font-size:24px;color:var(--ah-muted);cursor:pointer;padding:0 8px;line-height:1">×</button>'
+    +   '</div>'
+    +   (safeNote ? '<div style="font-size:13px;color:var(--ah-text2);line-height:1.5;font-style:italic;padding:10px 12px;background:var(--ah-surface2);border-radius:10px;border-left:3px solid var(--ah-gold)">' + safeNote + '</div>' : '')
+    +   '<div style="font-size:12px;color:var(--ah-muted);line-height:1.5">Pas encore de vidéo officielle pour cet exercice dans la librairie. Tu peux chercher une démo sur YouTube en attendant.</div>'
+    +   '<a href="https://www.youtube.com/results?search_query=' + q + '" target="_blank" rel="noopener" style="display:flex;align-items:center;justify-content:center;gap:8px;padding:13px;background:linear-gradient(135deg,var(--ah-gold),#A0853A);color:var(--ah-navy);border-radius:12px;font-family:\'Bebas Neue\',sans-serif;font-size:14px;letter-spacing:.08em;text-decoration:none;font-weight:700;box-shadow:0 6px 18px rgba(197,164,78,.30)">🔍 Chercher sur YouTube</a>'
+    + '</div>';
+  modal.addEventListener('click', function(e){ if (e.target === modal) modal.remove(); });
+  document.body.appendChild(modal);
+};
 
 // ─── Lecteur vidéo (overlay autonome) ──────────────────────────────
 function builderOpenVideo(ytId, name) {
