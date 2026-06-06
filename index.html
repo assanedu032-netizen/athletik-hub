@@ -1164,10 +1164,17 @@ body{background:var(--bg);color:var(--text);font-family:'Outfit',sans-serif;disp
 #vChat .ci-mic.rec{background:var(--ah-navy);border-color:var(--ah-gold);color:var(--ah-gold)}
 
 /* ── Tracks — bouton micro pour saisie vocale des résultats de test ── */
-.trk-voice-btn{width:42px;height:42px;border-radius:10px;background:var(--ah-surface);border:1.5px solid var(--ah-border2);color:var(--ah-text2);font-size:17px;display:flex;align-items:center;justify-content:center;cursor:pointer;transition:all .15s;flex-shrink:0;padding:0;line-height:1}
-.trk-voice-btn:hover{border-color:var(--ah-gold);color:var(--ah-gold)}
-.trk-voice-btn.rec{background:var(--ah-navy);border-color:var(--ah-gold);color:var(--ah-gold);animation:ci-mic-pulse 1.6s ease-in-out infinite}
-body.no-voice .trk-voice-btn{display:none}
+.trk-voice-btn,.trk-voice-btn-sm{background:var(--ah-surface);border:1.5px solid var(--ah-border2);color:var(--ah-text2);display:flex;align-items:center;justify-content:center;cursor:pointer;transition:all .15s;flex-shrink:0;padding:0;line-height:1}
+.trk-voice-btn{width:42px;height:42px;border-radius:10px;font-size:17px}
+.trk-voice-btn-sm{width:34px;height:34px;border-radius:8px;font-size:14px}
+.trk-voice-btn:hover,.trk-voice-btn-sm:hover{border-color:var(--ah-gold);color:var(--ah-gold)}
+.trk-voice-btn.rec,.trk-voice-btn-sm.rec{background:var(--ah-navy);border-color:var(--ah-gold);color:var(--ah-gold);animation:ci-mic-pulse 1.6s ease-in-out infinite}
+body.no-voice .trk-voice-btn,body.no-voice .trk-voice-btn-sm{display:none}
+.trk-vp-multi{display:flex;flex-direction:column;gap:6px;margin:8px 0 10px}
+.trk-vp-row{display:flex;justify-content:space-between;align-items:center;padding:8px 10px;background:var(--ah-surface);border:1px solid var(--ah-border);border-radius:8px}
+.trk-vp-row-label{font-size:10px;letter-spacing:.16em;font-weight:700;color:var(--ah-text2);text-transform:uppercase}
+.trk-vp-row-value{font-family:'Bebas Neue',sans-serif;font-size:22px;color:var(--ah-navy);line-height:1}
+.trk-vp-row-value span{font-size:13px;color:var(--ah-gold);margin-left:4px}
 .trk-voice-preview{position:fixed;left:50%;bottom:calc(var(--ah-nav-height,88px) + var(--ah-safe-bottom,0px) + 20px);transform:translateX(-50%);width:min(360px,calc(100vw - 24px));background:#fff;border:1.5px solid var(--ah-gold);border-radius:14px;padding:14px 16px;box-shadow:0 12px 32px rgba(20,30,60,.25);z-index:200;animation:fadeUp .22s ease;box-sizing:border-box}
 .trk-voice-preview.err{border-color:#EF4444}
 .trk-vp-label{font-size:10px;letter-spacing:.18em;font-weight:800;color:var(--ah-text2);text-transform:uppercase}
@@ -9220,10 +9227,14 @@ function satAddSerie(exoId, ph) {
   var rows = document.getElementById('satSeriesRows_' + exoId);
   if (rows) {
     var div = document.createElement('div');
-    div.style.cssText = 'display:grid;grid-template-columns:38px 1fr 1fr;gap:8px;margin-bottom:8px;align-items:center;animation:fadeUp .2s ease';
+    div.style.cssText = 'display:grid;grid-template-columns:38px 1fr 1fr 34px;gap:8px;margin-bottom:8px;align-items:center;animation:fadeUp .2s ease';
+    var ridD = 'sat_r_' + exoId + '_' + s;
+    var kidD = 'sat_kg_' + exoId + '_' + s;
+    var voiceCfgD = '[{&quot;id&quot;:&quot;' + ridD + '&quot;,&quot;unit&quot;:&quot;reps&quot;,&quot;label&quot;:&quot;Reps&quot;},{&quot;id&quot;:&quot;' + kidD + '&quot;,&quot;unit&quot;:&quot;kg&quot;,&quot;label&quot;:&quot;Charge&quot;}]';
     div.innerHTML = '<div style="font-family:\'Bebas Neue\',sans-serif;font-size:16px;color:var(--gold);text-align:center">S' + s + '</div>'
-      + '<input class="fi" type="number" id="sat_r_' + exoId + '_' + s + '" placeholder="reps" style="text-align:center;font-size:14px;font-weight:700;padding:10px 4px">'
-      + '<input class="fi" type="number" id="sat_kg_' + exoId + '_' + s + '" placeholder="' + ph + '" style="text-align:center;font-size:14px;font-weight:700;padding:10px 4px" oninput="satCalc1RM(\'' + exoId + '\')">';
+      + '<input class="fi" type="number" id="' + ridD + '" placeholder="reps" style="text-align:center;font-size:14px;font-weight:700;padding:10px 4px">'
+      + '<input class="fi" type="number" id="' + kidD + '" placeholder="' + ph + '" style="text-align:center;font-size:14px;font-weight:700;padding:10px 4px" oninput="satCalc1RM(\'' + exoId + '\')">'
+      + '<button type="button" class="trk-voice-btn-sm" onclick="window._trkVoiceMultiById(this, ' + voiceCfgD + ', &quot;' + exoId + '&quot;, &quot;' + exoId + '&quot;)" aria-label="Saisie vocale">🎙</button>';
     rows.appendChild(div);
     setTimeout(function(){ var el = document.getElementById('sat_kg_' + exoId + '_' + s); if(el) el.focus(); }, 80);
   }
@@ -9345,20 +9356,26 @@ function renderSATStep() {
     var sc = window.satSeriesCount[exId];
     var ph = ex.fields[0].placeholder;
 
-    // Header colonnes
-    html += '<div style="display:grid;grid-template-columns:38px 1fr 1fr;gap:8px;margin-bottom:6px">';
+    // Header colonnes (4e colonne = micro pour saisie vocale)
+    html += '<div style="display:grid;grid-template-columns:38px 1fr 1fr 34px;gap:8px;margin-bottom:6px">';
     html += '<div></div>';
     html += '<div style="text-align:center;font-size:10px;font-weight:700;color:var(--muted);letter-spacing:1px">RÉPÉTITIONS</div>';
     html += '<div style="text-align:center;font-size:10px;font-weight:700;color:var(--muted);letter-spacing:1px">CHARGE (KG)</div>';
+    html += '<div></div>';
     html += '</div>';
 
-    // Lignes de séries
+    // Lignes de séries — mic par ligne, fill reps+kg via voix
+    var exNameSafe = (ex.name || '').replace(/'/g, "\\'");
     html += '<div id="satSeriesRows_' + exId + '">';
     for (var s = 1; s <= sc; s++) {
-      html += '<div style="display:grid;grid-template-columns:38px 1fr 1fr;gap:8px;margin-bottom:8px;align-items:center">';
+      var ridF = 'sat_r_' + exId + '_' + s;
+      var kidF = 'sat_kg_' + exId + '_' + s;
+      var voiceCfg = '[{&quot;id&quot;:&quot;' + ridF + '&quot;,&quot;unit&quot;:&quot;reps&quot;,&quot;label&quot;:&quot;Reps&quot;},{&quot;id&quot;:&quot;' + kidF + '&quot;,&quot;unit&quot;:&quot;kg&quot;,&quot;label&quot;:&quot;Charge&quot;}]';
+      html += '<div style="display:grid;grid-template-columns:38px 1fr 1fr 34px;gap:8px;margin-bottom:8px;align-items:center">';
       html += '<div style="font-family:Bebas Neue,sans-serif;font-size:16px;color:var(--gold);text-align:center">S' + s + '</div>';
-      html += '<input class="fi" type="number" id="sat_r_' + exId + '_' + s + '" placeholder="reps" style="text-align:center;font-size:14px;font-weight:700;padding:10px 4px">';
-      html += '<input class="fi" type="number" id="sat_kg_' + exId + '_' + s + '" placeholder="' + ph + '" style="text-align:center;font-size:14px;font-weight:700;padding:10px 4px" oninput="satCalc1RM(\'' + exId + '\')">';
+      html += '<input class="fi" type="number" id="' + ridF + '" placeholder="reps" style="text-align:center;font-size:14px;font-weight:700;padding:10px 4px">';
+      html += '<input class="fi" type="number" id="' + kidF + '" placeholder="' + ph + '" style="text-align:center;font-size:14px;font-weight:700;padding:10px 4px" oninput="satCalc1RM(\'' + exId + '\')">';
+      html += '<button type="button" class="trk-voice-btn-sm" onclick="window._trkVoiceMultiById(this, ' + voiceCfg + ', &quot;' + exId + '&quot;, &quot;' + exNameSafe + '&quot;)" aria-label="Saisie vocale">🎙</button>';
       html += '</div>';
     }
     html += '</div>';
@@ -9377,13 +9394,16 @@ function renderSATStep() {
     html += '<span style="font-family:Bebas Neue,sans-serif;font-size:22px;color:var(--gold)" id="sat_1rm_' + exId + '">— kg</span>';
     html += '</div>';
   } else if (isSprint) {
-    // 5 essais — meilleur temps retenu
+    // 5 essais — meilleur temps retenu (mic par essai pour saisie vocale)
     html += '<div style="font-size:10px;color:var(--muted);font-weight:700;letter-spacing:1px;margin-bottom:8px">5 ESSAIS — MEILLEUR TEMPS RETENU</div>';
     for (var i = 1; i <= 5; i++) {
-      html += '<div style="display:grid;grid-template-columns:50px 1fr 40px;gap:8px;margin-bottom:8px;align-items:center">';
+      var spId = 'trk_sprint_' + i;
+      var spCfg = '[{&quot;id&quot;:&quot;' + spId + '&quot;,&quot;unit&quot;:&quot;sec&quot;,&quot;label&quot;:&quot;Temps&quot;}]';
+      html += '<div style="display:grid;grid-template-columns:50px 1fr 40px 34px;gap:8px;margin-bottom:8px;align-items:center">';
       html += '<div style="font-family:Bebas Neue,sans-serif;font-size:15px;color:var(--gold);text-align:center">E' + i + '</div>';
-      html += '<input class="fi" type="number" id="trk_sprint_' + i + '" placeholder="' + (i===1?'4.20':'—') + '" step="0.01" style="text-align:center;font-size:15px;font-weight:700;padding:10px 4px" oninput="_trkSprintCalcBest()">';
+      html += '<input class="fi" type="number" id="' + spId + '" placeholder="' + (i===1?'4.20':'—') + '" step="0.01" style="text-align:center;font-size:15px;font-weight:700;padding:10px 4px" oninput="_trkSprintCalcBest()">';
       html += '<div style="font-size:11px;color:var(--muted);font-weight:700">sec</div>';
+      html += '<button type="button" class="trk-voice-btn-sm" onclick="window._trkVoiceMultiById(this, ' + spCfg + ', &quot;sprint&quot;, &quot;Sprint 30m&quot;)" aria-label="Saisie vocale">🎙</button>';
       html += '</div>';
     }
     html += '<div style="background:var(--surface2);border-radius:10px;padding:11px 14px;display:flex;justify-content:space-between;align-items:center;margin-top:6px">';
@@ -12745,39 +12765,54 @@ function updateTrackFields() {
 function _essaiRowHtml(method, idx) {
   var num = '<div class="tr-essai-num">' + (idx + 1) + '</div>';
   var rm = '<button type="button" class="tr-essai-rm" onclick="removeEssai(this)" aria-label="Supprimer">✕</button>';
+  // Micro vocal — résolution par sélecteur relatif au .tr-essai car les
+  // inputs n'ont pas d'ID stable (data-key seulement).
+  function micRel(cfgJson){
+    return '<button type="button" class="trk-voice-btn-sm tr-essai-mic" onclick="window._trkVoiceMultiRel(this, &quot;.tr-essai&quot;, ' + cfgJson + ', &quot;track&quot;, &quot;Track exercise&quot;, &quot;tracks_track&quot;)" aria-label="Saisie vocale">🎙</button>';
+  }
   if (method === 'charge') {
+    var cfgCharge = '[{&quot;sel&quot;:&quot;[data-key=load]&quot;,&quot;unit&quot;:&quot;kg&quot;,&quot;label&quot;:&quot;Charge&quot;},{&quot;sel&quot;:&quot;[data-key=reps]&quot;,&quot;unit&quot;:&quot;reps&quot;,&quot;label&quot;:&quot;Reps&quot;}]';
     return '<div class="tr-essai" data-idx="' + idx + '">' + num
       + '<div class="tr-essai-inputs">'
       +   '<input class="fi tr-essai-input" data-key="load" type="number" inputmode="decimal" placeholder="100"><span class="tr-essai-unit">kg</span>'
       +   '<span class="tr-essai-x">×</span>'
       +   '<input class="fi tr-essai-input" data-key="reps" type="number" inputmode="numeric" placeholder="5"><span class="tr-essai-unit">reps</span>'
+      +   micRel(cfgCharge)
       + '</div>' + rm + '</div>';
   }
   if (method === 'temps') {
+    var cfgTemps = '[{&quot;sel&quot;:&quot;[data-key=time]&quot;,&quot;unit&quot;:&quot;sec&quot;,&quot;label&quot;:&quot;Temps&quot;}]';
     return '<div class="tr-essai" data-idx="' + idx + '">' + num
       + '<div class="tr-essai-inputs">'
       +   '<input class="fi tr-essai-input" data-key="time" type="number" step="0.01" inputmode="decimal" placeholder="0.00"><span class="tr-essai-unit">s</span>'
       +   '<button type="button" class="trk-chrono" data-state="idle" onclick="_trkChrono(this)" aria-label="Chronomètre">▶</button>'
+      +   micRel(cfgTemps)
       + '</div>' + rm + '</div>';
   }
   if (method === 'distance') {
+    var cfgDist = '[{&quot;sel&quot;:&quot;[data-key=distance]&quot;,&quot;unit&quot;:&quot;m&quot;,&quot;label&quot;:&quot;Distance&quot;}]';
     return '<div class="tr-essai" data-idx="' + idx + '">' + num
       + '<div class="tr-essai-inputs">'
       +   '<input class="fi tr-essai-input" data-key="distance" type="number" step="0.1" inputmode="decimal" placeholder="25"><span class="tr-essai-unit">m</span>'
+      +   micRel(cfgDist)
       + '</div>' + rm + '</div>';
   }
   if (method === 'hauteur') {
+    var cfgHaut = '[{&quot;sel&quot;:&quot;[data-key=height]&quot;,&quot;unit&quot;:&quot;cm&quot;,&quot;label&quot;:&quot;Hauteur&quot;},{&quot;sel&quot;:&quot;[data-key=reps]&quot;,&quot;unit&quot;:&quot;reps&quot;,&quot;label&quot;:&quot;Reps&quot;}]';
     return '<div class="tr-essai" data-idx="' + idx + '">' + num
       + '<div class="tr-essai-inputs">'
       +   '<input class="fi tr-essai-input" data-key="height" type="number" inputmode="numeric" placeholder="60"><span class="tr-essai-unit">cm</span>'
       +   '<span class="tr-essai-x">×</span>'
       +   '<input class="fi tr-essai-input" data-key="reps" type="number" inputmode="numeric" placeholder="3"><span class="tr-essai-unit">reps</span>'
+      +   micRel(cfgHaut)
       + '</div>' + rm + '</div>';
   }
   if (method === 'reps') {
+    var cfgReps = '[{&quot;sel&quot;:&quot;[data-key=reps]&quot;,&quot;unit&quot;:&quot;reps&quot;,&quot;label&quot;:&quot;Reps&quot;}]';
     return '<div class="tr-essai" data-idx="' + idx + '">' + num
       + '<div class="tr-essai-inputs">'
       +   '<input class="fi tr-essai-input" data-key="reps" type="number" inputmode="numeric" placeholder="10"><span class="tr-essai-unit">reps</span>'
+      +   micRel(cfgReps)
       + '</div>' + rm + '</div>';
   }
   return '';
@@ -15957,6 +15992,51 @@ function handleEnter(e) {
     return { value: num, unit: detected || (hintUnit || null), raw: rawText };
   }
 
+  // Multi-paires : "8 reps 80 kilos" → [{value:8,unit:'reps'},{value:80,unit:'kg'}]
+  function parseAll(rawText){
+    var t = normalize(rawText);
+    var pairs = [];
+    var re = /(-?\d+(?:[.,]\d+)?)((?:\s+[a-zàâäéèêëîïôöùûüç.]+){0,2})/gi;
+    var m;
+    while ((m = re.exec(t)) !== null) {
+      var num = parseFloat(m[1].replace(',', '.'));
+      if (!isFinite(num)) continue;
+      var ctx = (m[2] || '').toLowerCase();
+      var detected = null;
+      for (var i = 0; i < UNIT_PATTERNS.length; i++) {
+        if (UNIT_PATTERNS[i].re.test(ctx)) { detected = UNIT_PATTERNS[i].unit; break; }
+      }
+      pairs.push({ value: num, unit: detected });
+    }
+    return pairs;
+  }
+
+  // Mappe N paires sur M champs : 1) match par unité, 2) fallback positionnel
+  function assignToFields(pairs, fields){
+    var out = new Array(fields.length);
+    var usedPair = {};
+    fields.forEach(function(f, fi){
+      for (var i = 0; i < pairs.length; i++) {
+        if (usedPair[i]) continue;
+        if (pairs[i].unit && f.unit && pairs[i].unit === f.unit) {
+          out[fi] = { el: f.el, id: f.id, value: pairs[i].value, unit: pairs[i].unit, label: f.label || (f.unit || '') };
+          usedPair[i] = 1;
+          break;
+        }
+      }
+    });
+    fields.forEach(function(f, fi){
+      if (out[fi]) return;
+      for (var i = 0; i < pairs.length; i++) {
+        if (usedPair[i]) continue;
+        out[fi] = { el: f.el, id: f.id, value: pairs[i].value, unit: pairs[i].unit || (f.unit || null), label: f.label || (f.unit || '') };
+        usedPair[i] = 1;
+        break;
+      }
+    });
+    return out.filter(Boolean);
+  }
+
   function closePreview(){
     var el = document.getElementById('trkVoicePreview');
     if (el && el.parentNode) el.parentNode.removeChild(el);
@@ -16006,11 +16086,58 @@ function handleEnter(e) {
           source: 'voice',
           confirmed: true,
           createdAt: new Date().toISOString(),
-          context: 'tracks_physical_test'
+          context: opts.context || 'tracks_physical_test'
         }}));
       } catch(e){}
       closePreview();
       try { if (typeof showToast === 'function') showToast('✓ ' + parsed.value + ' ' + (parsed.unit || '') + ' enregistré', 'ok'); } catch(_){}
+    };
+  }
+
+  function showPreviewMulti(assigned, rawText, opts){
+    closePreview();
+    var safeRaw = (rawText || '').replace(/[<>]/g, '');
+    var rows = assigned.map(function(a){
+      return '<div class="trk-vp-row">'
+        + '<div class="trk-vp-row-label">' + (a.label || a.unit || '—') + '</div>'
+        + '<div class="trk-vp-row-value">' + a.value + ' <span>' + (a.unit || '') + '</span></div>'
+        + '</div>';
+    }).join('');
+    var box = document.createElement('div');
+    box.id = 'trkVoicePreview';
+    box.className = 'trk-voice-preview';
+    box.innerHTML =
+        '<div class="trk-vp-label">Résultats détectés</div>'
+      + '<div class="trk-vp-multi">' + rows + '</div>'
+      + '<div class="trk-vp-raw">« ' + safeRaw + ' »</div>'
+      + '<div class="trk-vp-actions">'
+      + '  <button type="button" class="trk-vp-cancel">Annuler</button>'
+      + '  <button type="button" class="trk-vp-confirm">Confirmer</button>'
+      + '</div>';
+    document.body.appendChild(box);
+    box.querySelector('.trk-vp-cancel').onclick = closePreview;
+    box.querySelector('.trk-vp-confirm').onclick = function(){
+      assigned.forEach(function(a){
+        var field = a.el || (a.id ? document.getElementById(a.id) : null);
+        if (field) {
+          field.value = a.value;
+          try { field.dispatchEvent(new Event('input', { bubbles:true })); } catch(e){}
+        }
+        try {
+          document.dispatchEvent(new CustomEvent('ah:voiceResult', { detail: {
+            exerciseId: opts.exerciseId || null,
+            exerciseName: opts.exerciseName || null,
+            value: a.value,
+            unit: a.unit,
+            source: 'voice',
+            confirmed: true,
+            createdAt: new Date().toISOString(),
+            context: opts.context || 'tracks_physical_test'
+          }}));
+        } catch(e){}
+      });
+      closePreview();
+      try { if (typeof showToast === 'function') showToast('✓ ' + assigned.length + ' valeur(s) enregistrée(s)', 'ok'); } catch(_){}
     };
   }
 
@@ -16067,8 +16194,79 @@ function handleEnter(e) {
     catch(e){ setBtnState(btn, false); showError('Erreur démarrage micro'); }
   }
 
-  window.trkVoice = { supported: supported, start: start, parse: parse };
+  function startMulti(opts){
+    if (!supported) return;
+    opts = opts || {};
+    var btn = opts.btn || null;
+    var fields = opts.fields || [];
+    if (!fields.length) return;
+    var rec;
+    try {
+      rec = new SR();
+      rec.lang = 'fr-FR';
+      rec.interimResults = false;
+      rec.maxAlternatives = 1;
+      rec.continuous = false;
+    } catch(e){ showError('Reconnaissance vocale indisponible.'); return; }
+    var transcript = '';
+    rec.onstart = function(){ setBtnState(btn, true); };
+    rec.onresult = function(e){
+      for (var i = e.resultIndex; i < e.results.length; i++) {
+        if (e.results[i].isFinal) transcript += e.results[i][0].transcript;
+      }
+    };
+    rec.onerror = function(e){
+      setBtnState(btn, false);
+      if (e && e.error === 'not-allowed') showError('Autorise l’accès au micro dans les réglages du navigateur.');
+      else if (e && e.error && e.error !== 'aborted' && e.error !== 'no-speech') showError('Erreur micro : ' + e.error);
+    };
+    rec.onend = function(){
+      setBtnState(btn, false);
+      if (!transcript) { showError('Je n’ai pas compris. Entre-le manuellement.'); return; }
+      var pairs = parseAll(transcript);
+      if (!pairs.length) { showError('Je n’ai pas compris. Entre-le manuellement.'); return; }
+      var assigned = assignToFields(pairs, fields);
+      if (!assigned.length) { showError('Je n’ai pas compris. Entre-le manuellement.'); return; }
+      showPreviewMulti(assigned, transcript, opts);
+    };
+    try { rec.start(); }
+    catch(e){ setBtnState(btn, false); showError('Erreur démarrage micro'); }
+  }
+
+  window.trkVoice = { supported: supported, start: start, startMulti: startMulti, parse: parse, parseAll: parseAll };
 })();
+
+// ═══════════════════════════════════════
+// TRACKS — Helpers HTML pour injecter le micro dans les renders
+// ───────────────────────────────────────
+// Deux variantes, selon que les inputs ont des IDs stables ou pas :
+// 1) _trkVoiceMultiById(btn, fieldsCfg, exoId, exoName)
+//    fieldsCfg = [{id:'sat_r_squat_1', unit:'reps', label:'Reps'},
+//                 {id:'sat_kg_squat_1', unit:'kg', label:'Charge'}]
+//
+// 2) _trkVoiceMultiRel(btn, parentSelector, fieldsCfg, exoId, exoName)
+//    fieldsCfg = [{sel:'[data-key=load]', unit:'kg', label:'Charge'},
+//                 {sel:'[data-key=reps]', unit:'reps', label:'Reps'}]
+//    Utile pour Track / Body Fat où les inputs n'ont pas d'ID.
+// ═══════════════════════════════════════
+window._trkVoiceMultiById = function(btn, fieldsCfg, exoId, exoName){
+  if (!window.trkVoice) return;
+  var fields = (fieldsCfg || []).map(function(f){
+    return { id: f.id, unit: f.unit, label: f.label || '' };
+  });
+  window.trkVoice.startMulti({ fields: fields, exerciseId: exoId, exerciseName: exoName, btn: btn });
+};
+window._trkVoiceMultiRel = function(btn, parentSel, fieldsCfg, exoId, exoName, context){
+  if (!window.trkVoice) return;
+  var parent = btn.closest(parentSel);
+  if (!parent) return;
+  var fields = (fieldsCfg || []).map(function(f){
+    var el = parent.querySelector(f.sel);
+    return { el: el, unit: f.unit, label: f.label || '' };
+  }).filter(function(f){ return f.el; });
+  if (!fields.length) return;
+  window.trkVoice.startMulti({ fields: fields, exerciseId: exoId, exerciseName: exoName, btn: btn, context: context || 'tracks_physical_test' });
+};
 
 // ═══════════════════════════════════════
 // ATHLETIK HUB V5 — STEP 6: PROFIL
@@ -20545,17 +20743,23 @@ function renderSETStep() {
     if (!window.setSeriesCount[ex.id]) window.setSeriesCount[ex.id] = 1;
     var sc = window.setSeriesCount[ex.id];
     var phKg = (ex.fields[0] && ex.fields[0].placeholder) || '0';
-    html += '<div style="display:grid;grid-template-columns:38px 1fr 1fr;gap:8px;margin-bottom:6px">';
+    html += '<div style="display:grid;grid-template-columns:38px 1fr 1fr 34px;gap:8px;margin-bottom:6px">';
     html += '<div></div>';
     html += '<div style="text-align:center;font-size:10px;font-weight:700;color:var(--muted);letter-spacing:1px">RÉPÉTITIONS</div>';
     html += '<div style="text-align:center;font-size:10px;font-weight:700;color:var(--muted);letter-spacing:1px">CHARGE (KG)</div>';
+    html += '<div></div>';
     html += '</div>';
+    var setExNameSafe = (ex.name || '').replace(/'/g, "\\'");
     html += '<div id="setSeriesRows_' + ex.id + '">';
     for (var s = 1; s <= sc; s++) {
-      html += '<div style="display:grid;grid-template-columns:38px 1fr 1fr;gap:8px;margin-bottom:8px;align-items:center">';
+      var ridS = 'set_r_' + ex.id + '_' + s;
+      var kidS = 'set_kg_' + ex.id + '_' + s;
+      var voiceCfgS = '[{&quot;id&quot;:&quot;' + ridS + '&quot;,&quot;unit&quot;:&quot;reps&quot;,&quot;label&quot;:&quot;Reps&quot;},{&quot;id&quot;:&quot;' + kidS + '&quot;,&quot;unit&quot;:&quot;kg&quot;,&quot;label&quot;:&quot;Charge&quot;}]';
+      html += '<div style="display:grid;grid-template-columns:38px 1fr 1fr 34px;gap:8px;margin-bottom:8px;align-items:center">';
       html += '<div style="font-family:\'Bebas Neue\',sans-serif;font-size:16px;color:var(--gold);text-align:center">S' + s + '</div>';
-      html += '<input class="fi" type="number" id="set_r_' + ex.id + '_' + s + '" placeholder="reps" style="text-align:center;font-size:14px;font-weight:700;padding:10px 4px" oninput="setUpdateValid()">';
-      html += '<input class="fi" type="number" id="set_kg_' + ex.id + '_' + s + '" placeholder="' + phKg + '" style="text-align:center;font-size:14px;font-weight:700;padding:10px 4px" oninput="setCalc1RM(\'' + ex.id + '\');setUpdateValid()">';
+      html += '<input class="fi" type="number" id="' + ridS + '" placeholder="reps" style="text-align:center;font-size:14px;font-weight:700;padding:10px 4px" oninput="setUpdateValid()">';
+      html += '<input class="fi" type="number" id="' + kidS + '" placeholder="' + phKg + '" style="text-align:center;font-size:14px;font-weight:700;padding:10px 4px" oninput="setCalc1RM(\'' + ex.id + '\');setUpdateValid()">';
+      html += '<button type="button" class="trk-voice-btn-sm" onclick="window._trkVoiceMultiById(this, ' + voiceCfgS + ', &quot;' + ex.id + '&quot;, &quot;' + setExNameSafe + '&quot;)" aria-label="Saisie vocale">🎙</button>';
       html += '</div>';
     }
     html += '</div>';
@@ -20569,12 +20773,15 @@ function renderSETStep() {
     html += '<span style="font-family:\'Bebas Neue\',sans-serif;font-size:22px;color:var(--gold)" id="set_1rm_' + ex.id + '">— kg</span>';
     html += '</div>';
   } else {
+    var setSimpleExName = (ex.name || '').replace(/'/g, "\\'").replace(/"/g, '&quot;');
     ex.fields.forEach(function(f) {
+      var fUnit = (f.unit === 'cm' || f.unit === 'sec' || f.unit === 'kg' || f.unit === 'm' || f.unit === 'reps') ? f.unit : '';
       html += '<div style="margin-bottom:12px">';
       html += '<label style="font-size:11px;color:var(--text2);font-weight:700;letter-spacing:1px;text-transform:uppercase;display:block;margin-bottom:6px">' + f.label + '</label>';
       html += '<div style="display:flex;align-items:center;gap:8px">';
       html += '<input class="fi" type="number" id="' + f.id + '" placeholder="' + f.placeholder + '" step="0.01" style="flex:1;font-size:18px;font-weight:700;text-align:center" oninput="setValues[this.id]=parseFloat(this.value)||0;setUpdateValid()">';
       html += '<div style="font-size:14px;color:var(--muted);font-weight:700;min-width:30px">' + f.unit + '</div>';
+      html += '<button type="button" class="trk-voice-btn" data-field="' + f.id + '" data-unit="' + fUnit + '" data-exoid="' + ex.id + '" data-exoname="' + setSimpleExName + '" onclick="window.trkVoice && window.trkVoice.start({fieldId:this.dataset.field, unit:this.dataset.unit, exerciseId:this.dataset.exoid, exerciseName:this.dataset.exoname, btn:this})" aria-label="Saisie vocale">🎙</button>';
       html += '</div></div>';
     });
     if (ex.id === 'jump') {
@@ -20653,10 +20860,14 @@ function setAddSerie(exoId, ph) {
   var rows = document.getElementById('setSeriesRows_' + exoId);
   if (rows) {
     var div = document.createElement('div');
-    div.style.cssText = 'display:grid;grid-template-columns:38px 1fr 1fr;gap:8px;margin-bottom:8px;align-items:center';
+    div.style.cssText = 'display:grid;grid-template-columns:38px 1fr 1fr 34px;gap:8px;margin-bottom:8px;align-items:center';
+    var ridSA = 'set_r_' + exoId + '_' + s;
+    var kidSA = 'set_kg_' + exoId + '_' + s;
+    var voiceCfgSA = '[{&quot;id&quot;:&quot;' + ridSA + '&quot;,&quot;unit&quot;:&quot;reps&quot;,&quot;label&quot;:&quot;Reps&quot;},{&quot;id&quot;:&quot;' + kidSA + '&quot;,&quot;unit&quot;:&quot;kg&quot;,&quot;label&quot;:&quot;Charge&quot;}]';
     div.innerHTML = '<div style="font-family:\'Bebas Neue\',sans-serif;font-size:16px;color:var(--gold);text-align:center">S' + s + '</div>'
-      + '<input class="fi" type="number" id="set_r_' + exoId + '_' + s + '" placeholder="reps" style="text-align:center;font-size:14px;font-weight:700;padding:10px 4px" oninput="setUpdateValid()">'
-      + '<input class="fi" type="number" id="set_kg_' + exoId + '_' + s + '" placeholder="' + ph + '" style="text-align:center;font-size:14px;font-weight:700;padding:10px 4px" oninput="setCalc1RM(\'' + exoId + '\');setUpdateValid()">';
+      + '<input class="fi" type="number" id="' + ridSA + '" placeholder="reps" style="text-align:center;font-size:14px;font-weight:700;padding:10px 4px" oninput="setUpdateValid()">'
+      + '<input class="fi" type="number" id="' + kidSA + '" placeholder="' + ph + '" style="text-align:center;font-size:14px;font-weight:700;padding:10px 4px" oninput="setCalc1RM(\'' + exoId + '\');setUpdateValid()">'
+      + '<button type="button" class="trk-voice-btn-sm" onclick="window._trkVoiceMultiById(this, ' + voiceCfgSA + ', &quot;' + exoId + '&quot;, &quot;' + exoId + '&quot;)" aria-label="Saisie vocale">🎙</button>';
     rows.appendChild(div);
     setTimeout(function(){ var el = document.getElementById('set_kg_' + exoId + '_' + s); if(el) el.focus(); }, 80);
   }
