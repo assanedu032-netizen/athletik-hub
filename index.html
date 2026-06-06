@@ -12810,6 +12810,51 @@ function _bfDrawChart(data) {
     try { localStorage.removeItem('ah_tim_minut'); } catch(e){}
   }
 
+  // Programme une notification système qui se déclenche à `endsAt` (timestamp
+   // absolu), même quand la PWA est fermée. Utilise Notification Triggers
+   // (TimestampTrigger) sur Android Chrome PWA. Sur iOS / navigateurs non
+   // supportés, c'est silencieux : le fallback reste la persistance + bip
+   // retro au prochain reload.
+  function tim_minutScheduleNotif(endsAt){
+    if (typeof Notification === 'undefined') return;
+    var schedule = function(){
+      if (!navigator.serviceWorker || !navigator.serviceWorker.ready) return;
+      navigator.serviceWorker.ready.then(function(reg){
+        if (!reg || !reg.showNotification) return;
+        var opts = {
+          body: 'Le minuteur a sonné',
+          icon: '/icons/icon-192.png',
+          badge: '/icons/icon-192.png',
+          tag: 'tim-minut',
+          requireInteraction: true,
+          vibrate: [300, 100, 300, 100, 500],
+          silent: false
+        };
+        if ('TimestampTrigger' in window) {
+          try {
+            opts.showTrigger = new TimestampTrigger(endsAt);
+            return reg.showNotification('⏰ Timer terminé', opts);
+          } catch(e){ console.warn('TimestampTrigger fail:', e); }
+        }
+        // Pas de planification possible (iOS, vieux Chrome…) — silencieux.
+      }).catch(function(e){ console.warn('tim notif schedule:', e); });
+    };
+    if (Notification.permission === 'granted') { schedule(); return; }
+    if (Notification.permission === 'default') {
+      Notification.requestPermission().then(function(p){ if (p === 'granted') schedule(); });
+    }
+  }
+  // Annule la notif planifiée (à la pause / reset).
+  function tim_minutCancelNotif(){
+    if (!navigator.serviceWorker || !navigator.serviceWorker.ready) return;
+    navigator.serviceWorker.ready.then(function(reg){
+      if (!reg.getNotifications) return;
+      reg.getNotifications({ tag: 'tim-minut', includeTriggered: true }).then(function(arr){
+        arr.forEach(function(n){ try { n.close(); } catch(e){} });
+      }).catch(function(){});
+    }).catch(function(){});
+  }
+
   function tim_minutStart(){
     var secs = tim_minutGetSeconds();
     // Si pas de durée via inputs, on accepte la durée déjà accumulée via +30s
@@ -12826,6 +12871,7 @@ function _bfDrawChart(data) {
     var b = document.getElementById('timMinutBtn'); if (b) b.textContent = '⏸';
     _tim_minutRender();
     _tim_minutPersist();
+    tim_minutScheduleNotif(Date.now() + _tim_minut.totalMs);
   }
   function _tim_minutTick(){
     _tim_minut.remMs = _tim_minut.totalMs - (Date.now() - _tim_minut.startMs);
@@ -12856,6 +12902,7 @@ function _bfDrawChart(data) {
       _tim_minut.running = false;
       document.getElementById('timMinutBtn').textContent = '▶';
       _tim_minutPersist();
+      tim_minutCancelNotif();
     } else {
       // Resume ou démarrage initial (si remMs > 0 via +30s mais jamais lancé)
       if (_tim_minut.remMs <= 0) {
@@ -12869,6 +12916,7 @@ function _bfDrawChart(data) {
       _tim_minut.running = true;
       document.getElementById('timMinutBtn').textContent = '⏸';
       _tim_minutPersist();
+      tim_minutScheduleNotif(Date.now() + _tim_minut.remMs);
     }
   }
   function tim_minutReset(){
@@ -12880,6 +12928,7 @@ function _bfDrawChart(data) {
     var b = document.getElementById('timMinutBtn'); if (b) b.textContent = '▶';
     _tim_minutRender();
     _tim_minutClearPersist();
+    tim_minutCancelNotif();
   }
   // Modal "Régler la durée" — texte ou voix.
   // Formats acceptés : "90", "1:30", "2min30", "2 minutes 30",
@@ -12940,6 +12989,7 @@ function _bfDrawChart(data) {
       _tim_minut.remMs += secs * 1000;
       _tim_minut.startMs = Date.now() - (_tim_minut.totalMs - _tim_minut.remMs);
       _tim_minutPersist();
+      tim_minutScheduleNotif(Date.now() + _tim_minut.remMs);
       try { tim_toast('+' + secs + 's ajoutées'); } catch(e){}
     } else {
       _tim_minut.totalMs = secs * 1000;
@@ -12987,6 +13037,7 @@ function _bfDrawChart(data) {
     if (_tim_minut.running) {
       _tim_minut.startMs = Date.now() - (_tim_minut.totalMs - _tim_minut.remMs);
       _tim_minutPersist();
+      tim_minutScheduleNotif(Date.now() + _tim_minut.remMs);
     }
     _tim_minutRender();
     if (typeof tim_toast === 'function') tim_toast('+30 secondes');
