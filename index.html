@@ -1186,6 +1186,20 @@ body.no-voice .trk-voice-btn,body.no-voice .trk-voice-btn-sm{display:none}
 .trk-vp-actions .trk-vp-confirm{background:linear-gradient(135deg,#C5A44E,#D4B86A);color:#1B2D5C;border:0}
 .trk-vp-msg{font-size:13px;color:var(--ah-text);line-height:1.4;margin-bottom:8px}
 .trk-vp-close{padding:8px 14px;border-radius:10px;border:0;background:var(--ah-surface2);color:var(--ah-text2);cursor:pointer;font-weight:700;font-family:'Outfit',sans-serif}
+
+/* ── Tracks → Exercices : cartes de progression Départ/Actuel/Record/Δ ── */
+.trk-prog-head{font-size:11px;letter-spacing:.18em;font-weight:800;color:var(--ah-text2);text-transform:uppercase;padding:0 4px 10px;margin-top:4px}
+.trk-prog-list{display:flex;flex-direction:column;gap:10px;margin-bottom:18px}
+.trk-prog-card{background:var(--ah-surface);border:1px solid var(--ah-border);border-radius:14px;padding:14px;box-shadow:0 2px 8px rgba(20,30,60,.04);display:flex;flex-direction:column;gap:10px}
+.trk-prog-name{font-family:'Outfit',sans-serif;font-size:14px;font-weight:700;color:var(--ah-text);line-height:1.2}
+.trk-prog-vals{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px}
+.trk-prog-cell{display:flex;flex-direction:column;align-items:center;gap:3px;padding:8px 4px;background:var(--ah-surface2);border-radius:10px}
+.trk-prog-cell span{font-size:9px;letter-spacing:.14em;font-weight:700;color:var(--ah-text2);text-transform:uppercase}
+.trk-prog-cell b{font-family:'Bebas Neue',sans-serif;font-size:18px;color:var(--ah-navy);letter-spacing:.02em;line-height:1;font-weight:400}
+.trk-prog-delta{align-self:flex-start;display:inline-flex;align-items:center;gap:6px;padding:6px 12px;border-radius:999px;font-size:12px;font-weight:700;font-family:'Outfit',sans-serif}
+.trk-prog-delta.up{background:rgba(34,197,94,.10);color:#22C55E}
+.trk-prog-delta.down{background:rgba(239,68,68,.10);color:#EF4444}
+.trk-prog-delta.flat{background:var(--ah-surface2);color:var(--ah-text2)}
 .ci-send:active{transform:scale(.9)}
 .ci-send svg{width:18px;height:18px;fill:var(--navy)}
 .ci-send.disabled{background:var(--border);cursor:not-allowed}
@@ -4898,7 +4912,7 @@ window.tiResetOnEnter = function(){ window.tiShowStep(1); };
   <div class="sub-tabs">
     <div class="sub-tab on" onclick="showSec('sat',this)">SAT</div>
     <div class="sub-tab" onclick="showSec('set',this)">SET</div>
-    <div class="sub-tab" onclick="showSec('track',this)">Track</div>
+    <div class="sub-tab" onclick="showSec('track',this)">Exercices</div>
   </div>
 
   <!-- ══════════════════════════════════════════ -->
@@ -5057,6 +5071,10 @@ window.tiResetOnEnter = function(){ window.tiShowStep(1); };
   <!-- SECTION 2: TRACK EXERCICES                 -->
   <!-- ══════════════════════════════════════════ -->
   <div id="secTrack" class="sec">
+
+    <!-- Cartes de progression — affichées au-dessus du formulaire si l'user
+         a déjà tracké au moins un exercice. Rempli par _trkRenderProgression(). -->
+    <div id="trkProgression"></div>
 
     <!-- Exercise selector -->
     <div class="card">
@@ -12369,6 +12387,8 @@ function showSec(id,_el) {
   if(id==='set') { try { initSET(); } catch(e) { console.warn('initSET error:', e); } }
   // Init Tracks > SAT : restaure les valeurs et rend les vidéos
   if(id==='sat') { try { initTracksSAT(); } catch(e) { console.warn('initTracksSAT error:', e); } }
+  // Tracks > Exercices : rafraîchit les cartes de progression à l'ouverture
+  if(id==='track') { try { _trkRenderProgression(); } catch(e) {} }
 }
 
 // ══════════════════════════════════
@@ -12720,6 +12740,7 @@ window._trkClearExo = _trkClearExo;
 function _trkInit() {
   try { _trkBuildIndex(); } catch(e) {}
   try { _trkRenderHistory(); } catch(e) {}
+  try { _trkRenderProgression(); } catch(e) {}
 }
 window._trkInit = _trkInit;
 
@@ -12974,6 +12995,113 @@ function _trkRenderHistory() {
 }
 window._trkRenderHistory = _trkRenderHistory;
 
+// ─── Progression par exercice (P3) ─────────────────────────────────────
+// Extrait la métrique principale d'une entrée trackHistory selon la méthode.
+// Retourne { value, unit, higherIsBetter } ou null si pas extractible.
+function _trkMetricOf(entry) {
+  var es = (entry && entry.essais) || [];
+  if (!es.length) return null;
+  var vals;
+  switch (entry.method) {
+    case 'charge':
+      vals = es.map(function(e){ return parseFloat(e.load); }).filter(function(v){ return !isNaN(v); });
+      return vals.length ? { value: Math.max.apply(null, vals), unit: 'kg', higherIsBetter: true } : null;
+    case 'temps':
+      vals = es.map(function(e){ return parseFloat(e.time); }).filter(function(v){ return !isNaN(v) && v > 0; });
+      return vals.length ? { value: Math.min.apply(null, vals), unit: 'sec', higherIsBetter: false } : null;
+    case 'distance':
+      vals = es.map(function(e){ return parseFloat(e.distance); }).filter(function(v){ return !isNaN(v); });
+      return vals.length ? { value: Math.max.apply(null, vals), unit: 'm', higherIsBetter: true } : null;
+    case 'hauteur':
+      vals = es.map(function(e){ return parseFloat(e.height); }).filter(function(v){ return !isNaN(v); });
+      return vals.length ? { value: Math.max.apply(null, vals), unit: 'cm', higherIsBetter: true } : null;
+    case 'reps':
+      vals = es.map(function(e){ return parseFloat(e.reps); }).filter(function(v){ return !isNaN(v); });
+      return vals.length ? { value: Math.max.apply(null, vals), unit: 'reps', higherIsBetter: true } : null;
+  }
+  return null;
+}
+
+// Agrège trackHistory par (exo, method). Retourne tableau de cartes.
+function _trkProgressionAggregate() {
+  var hist = window.trackHistory || [];
+  var byKey = {};
+  hist.forEach(function(entry){
+    if (!entry || !entry.exo) return;
+    var m = _trkMetricOf(entry);
+    if (!m) return;
+    var key = entry.exo + '|' + entry.method;
+    if (!byKey[key]) byKey[key] = { exo: entry.exo, method: entry.method, unit: m.unit, higherIsBetter: m.higherIsBetter, entries: [] };
+    byKey[key].entries.push({ date: entry.date, value: m.value });
+  });
+  var rows = [];
+  Object.keys(byKey).forEach(function(k){
+    var b = byKey[k];
+    b.entries.sort(function(a,c){ return new Date(a.date) - new Date(c.date); });
+    var values = b.entries.map(function(e){ return e.value; });
+    var start = values[0];
+    var current = values[values.length - 1];
+    var record = b.higherIsBetter ? Math.max.apply(null, values) : Math.min.apply(null, values);
+    rows.push({
+      exo: b.exo,
+      method: b.method,
+      unit: b.unit,
+      higherIsBetter: b.higherIsBetter,
+      start: start,
+      current: current,
+      record: record,
+      delta: current - start,
+      count: b.entries.length
+    });
+  });
+  // Tri : plus récents en haut (par date du dernier essai)
+  rows.sort(function(a,c){
+    var aL = byKey[a.exo + '|' + a.method].entries.slice(-1)[0].date;
+    var cL = byKey[c.exo + '|' + c.method].entries.slice(-1)[0].date;
+    return new Date(cL) - new Date(aL);
+  });
+  return rows;
+}
+
+// Formate un nombre avec 1 ou 2 décimales selon l'unité.
+function _trkFmt(v, unit) {
+  if (unit === 'sec') return (Math.round(v * 100) / 100).toFixed(2);
+  if (unit === 'm' || unit === 'cm' || unit === 'kg' || unit === 'reps') return String(Math.round(v * 100) / 100);
+  return String(v);
+}
+
+function _trkRenderProgression() {
+  var wrap = document.getElementById('trkProgression');
+  if (!wrap) return;
+  var rows = _trkProgressionAggregate();
+  if (!rows.length) { wrap.innerHTML = ''; return; }
+  var h = '<div class="trk-prog-head">📈 TES PROGRESSIONS</div><div class="trk-prog-list">';
+  rows.forEach(function(r){
+    // Pour les temps : baisse = progression. Sinon : hausse = progression.
+    var progressUp = r.higherIsBetter ? (r.delta > 0) : (r.delta < 0);
+    var flat = r.delta === 0;
+    var statusCls = flat ? 'flat' : (progressUp ? 'up' : 'down');
+    var sign = r.delta > 0 ? '+' : (r.delta < 0 ? '' : '');
+    var deltaStr = flat ? '0 ' + r.unit : (sign + _trkFmt(r.delta, r.unit) + ' ' + r.unit);
+    var arrow = flat ? '→' : (progressUp ? '↗' : (r.higherIsBetter ? '↘' : '↘'));
+    // Note : pour 'temps' une baisse = "progrès" → on garde la flèche basse en
+    // pratique pour montrer "le temps a baissé", mais le statusCls=up colore vert.
+    var displayArrow = r.delta === 0 ? '→' : (r.delta > 0 ? '↗' : '↘');
+    h += '<div class="trk-prog-card">'
+       + '<div class="trk-prog-name">' + _trkEsc(r.exo) + '</div>'
+       + '<div class="trk-prog-vals">'
+       +   '<div class="trk-prog-cell"><span>Départ</span><b>' + _trkFmt(r.start, r.unit) + ' ' + r.unit + '</b></div>'
+       +   '<div class="trk-prog-cell"><span>Actuel</span><b>' + _trkFmt(r.current, r.unit) + ' ' + r.unit + '</b></div>'
+       +   '<div class="trk-prog-cell"><span>Record</span><b>' + _trkFmt(r.record, r.unit) + ' ' + r.unit + '</b></div>'
+       + '</div>'
+       + '<div class="trk-prog-delta ' + statusCls + '">' + displayArrow + ' ' + deltaStr + '</div>'
+       + '</div>';
+  });
+  h += '</div>';
+  wrap.innerHTML = h;
+}
+window._trkRenderProgression = _trkRenderProgression;
+
 function saveTrack() {
   var sel = document.getElementById('trackExSelect');
   var exoName = sel && sel.value;
@@ -13015,6 +13143,7 @@ function saveTrack() {
   currentRPE = 0;
 
   try { _trkRenderHistory(); } catch(e) {}
+  try { _trkRenderProgression(); } catch(e) {}
   if (typeof showToast === 'function') showToast('Exercice enregistré ✓', 'success');
 }
 
