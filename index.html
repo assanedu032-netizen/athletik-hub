@@ -3675,6 +3675,21 @@ html body #result, html body #nutriResult{
   font-size: 22px !important;
   box-shadow: 0 6px 18px rgba(197,164,78,.40) !important;
 }
+
+/* Modal Régler la durée (texte + voix) */
+.tim-set-modal{position:fixed;inset:0;z-index:9900;background:rgba(11,18,40,.55);display:flex;align-items:flex-end;justify-content:center;padding:0;backdrop-filter:blur(4px)}
+.tim-set-inner{width:100%;max-width:430px;background:var(--ah-surface);border-radius:20px 20px 0 0;padding:20px 22px calc(22px + env(safe-area-inset-bottom,0px));display:flex;flex-direction:column;gap:14px;animation:fadeUp .2s ease}
+.tim-set-title{font-family:'Bebas Neue',sans-serif;font-size:22px;letter-spacing:.06em;color:var(--ah-text);line-height:1}
+.tim-set-sub{font-size:12px;color:var(--ah-text2);line-height:1.4}
+.tim-set-row{display:flex;gap:10px;align-items:center}
+.tim-set-input{flex:1;background:var(--ah-surface);border:1.5px solid var(--ah-border2);border-radius:12px;padding:14px 16px;font-family:'Bebas Neue',sans-serif;font-size:28px;color:var(--ah-navy);outline:none;letter-spacing:1px;text-align:center}
+.tim-set-input:focus{border-color:var(--ah-gold)}
+.tim-set-mic{width:54px;height:54px;border-radius:50%;background:var(--ah-surface);border:1.5px solid var(--ah-border2);color:var(--ah-text2);font-size:18px;display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0;transition:all .15s}
+.tim-set-mic:hover{border-color:var(--ah-gold);color:var(--ah-gold)}
+.tim-set-mic.rec{background:var(--ah-navy);border-color:var(--ah-gold);color:var(--ah-gold);animation:ci-mic-pulse 1.6s ease-in-out infinite}
+.tim-set-actions{display:flex;gap:10px;margin-top:4px}
+.tim-set-cancel{flex:1;padding:13px;background:var(--ah-surface2);border:1px solid var(--ah-border2);border-radius:12px;color:var(--ah-text2);font-family:'Outfit',sans-serif;font-weight:600;font-size:14px;cursor:pointer}
+.tim-set-ok{flex:2;padding:13px;background:linear-gradient(135deg,var(--ah-gold),#A0853A);border:none;border-radius:12px;color:var(--ah-navy);font-family:'Bebas Neue',sans-serif;font-weight:700;font-size:15px;letter-spacing:.1em;cursor:pointer;box-shadow:0 6px 18px rgba(197,164,78,.30)}
 </style>
 
 <template id="__bundler_thumbnail" data-bg-color="#1F305F">
@@ -6864,7 +6879,7 @@ window.tiResetOnEnter = function(){ window.tiShowStep(1); };
         <div class="tim-chrono-controls">
           <button class="tim-chrono-btn secondary" onclick="tim_minutReset()">↺ Annuler</button>
           <button class="tim-chrono-btn primary" id="timMinutBtn" onclick="tim_minutToggle()">▶</button>
-          <button class="tim-chrono-btn secondary" onclick="tim_minutAdd30()">+30s</button>
+          <button class="tim-chrono-btn secondary" onclick="tim_minutOpenSet()" aria-label="Régler la durée">⏱ Régler</button>
         </div>
       </div>
       <details class="tim-snd-details">
@@ -6872,6 +6887,24 @@ window.tiResetOnEnter = function(){ window.tiShowStep(1); };
         <div class="tim-snd-row" id="timSndRowMinut"></div>
         <button class="tim-test-snd" onclick="tim_testSound()">▶ Tester</button>
       </details>
+
+      <!-- ═══ MODAL — Réglage durée timer (texte ou voix) ═══
+           Ouverte via le bouton "⏱ Régler". Accepte les formats :
+           "90", "1:30", "2min30", "deux minutes trente". Voix via trkVoice. -->
+      <div id="timMinutSetModal" class="tim-set-modal" style="display:none">
+        <div class="tim-set-inner">
+          <div class="tim-set-title">Régler la durée</div>
+          <div class="tim-set-sub">Tape ou dicte (ex : 90, 1:30, 2 minutes)</div>
+          <div class="tim-set-row">
+            <input type="text" id="timSetInput" class="tim-set-input" placeholder="90" inputmode="numeric" autocomplete="off">
+            <button type="button" class="tim-set-mic" onclick="tim_minutVoiceSet(this)" aria-label="Voix">🎙</button>
+          </div>
+          <div class="tim-set-actions">
+            <button class="tim-set-cancel" onclick="tim_minutCloseSet()">Annuler</button>
+            <button class="tim-set-ok" onclick="tim_minutConfirmSet()">Valider</button>
+          </div>
+        </div>
+      </div>
     </div>
 
     <!-- TABATA — Masqué sur demande user (timer simplifié) — markup préservé
@@ -12848,6 +12881,106 @@ function _bfDrawChart(data) {
     _tim_minutRender();
     _tim_minutClearPersist();
   }
+  // Modal "Régler la durée" — texte ou voix.
+  // Formats acceptés : "90", "1:30", "2min30", "2 minutes 30",
+  //                    "deux minutes trente", "30 secondes", etc.
+  function tim_minutOpenSet(){
+    var ov = document.getElementById('timMinutSetModal');
+    if (!ov) return;
+    ov.style.display = 'flex';
+    var input = document.getElementById('timSetInput');
+    if (input) { input.value = ''; setTimeout(function(){ input.focus(); }, 50); }
+  }
+  function tim_minutCloseSet(){
+    var ov = document.getElementById('timMinutSetModal');
+    if (ov) ov.style.display = 'none';
+  }
+  // Parse une chaîne en secondes. Retourne null si non parsable.
+  function tim_parseDuration(text){
+    if (!text) return null;
+    var t = String(text).toLowerCase().trim();
+    // Mots-chiffres FR fréquents
+    var WORDS = { 'zéro':0,'zero':0,'un':1,'une':1,'deux':2,'trois':3,'quatre':4,'cinq':5,'six':6,'sept':7,'huit':8,'neuf':9,'dix':10,'onze':11,'douze':12,'treize':13,'quatorze':14,'quinze':15,'seize':16,'vingt':20,'trente':30,'quarante':40,'cinquante':50,'soixante':60,'quatre-vingt':80,'quatre-vingts':80 };
+    t = t.split(/\s+/).map(function(w){ return WORDS[w] != null ? String(WORDS[w]) : w; }).join(' ');
+    // Format M:SS ou MM:SS
+    var mss = t.match(/^(\d+)\s*:\s*(\d+)$/);
+    if (mss) return parseInt(mss[1],10) * 60 + parseInt(mss[2],10);
+    // Format "X min Y" / "X minutes Y secondes"
+    var minMatch = t.match(/(\d+)\s*(?:min(?:utes?)?|m)\s*(\d*)/i);
+    if (minMatch) {
+      var mins = parseInt(minMatch[1],10) || 0;
+      var secs = parseInt(minMatch[2],10) || 0;
+      // Cherche un "Y secondes" ailleurs si pas trouvé après min
+      if (!secs) {
+        var sm = t.match(/(\d+)\s*sec(?:ondes?)?/i);
+        if (sm) secs = parseInt(sm[1],10) || 0;
+      }
+      return mins * 60 + secs;
+    }
+    // Format "X secondes"
+    var secOnly = t.match(/(\d+)\s*sec(?:ondes?)?/i);
+    if (secOnly) return parseInt(secOnly[1],10);
+    // Nombre brut → secondes
+    var num = t.match(/(\d+)/);
+    if (num) return parseInt(num[1],10);
+    return null;
+  }
+  function tim_minutConfirmSet(){
+    var input = document.getElementById('timSetInput');
+    var val = input ? input.value : '';
+    var secs = tim_parseDuration(val);
+    if (secs == null || secs <= 0) {
+      tim_toast('Format invalide. Ex : 90, 1:30, 2 minutes');
+      return;
+    }
+    if (secs > 36000) secs = 36000; // cap à 10h
+    // Si timer en cours : on additionne. Sinon on remplace.
+    if (_tim_minut.running) {
+      _tim_minut.totalMs += secs * 1000;
+      _tim_minut.remMs += secs * 1000;
+      _tim_minut.startMs = Date.now() - (_tim_minut.totalMs - _tim_minut.remMs);
+      _tim_minutPersist();
+      try { tim_toast('+' + secs + 's ajoutées'); } catch(e){}
+    } else {
+      _tim_minut.totalMs = secs * 1000;
+      _tim_minut.remMs = _tim_minut.totalMs;
+      try { tim_toast('Durée réglée : ' + secs + 's'); } catch(e){}
+    }
+    _tim_minutRender();
+    tim_minutCloseSet();
+  }
+  // Saisie vocale via window.trkVoice (déjà câblé fr-FR pour Tracks).
+  function tim_minutVoiceSet(btn){
+    if (!window.trkVoice || !window.trkVoice.supported) {
+      tim_toast('Reconnaissance vocale indisponible');
+      return;
+    }
+    var SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (!SR) return;
+    var rec = new SR();
+    rec.lang = 'fr-FR';
+    rec.interimResults = false;
+    rec.maxAlternatives = 1;
+    var transcript = '';
+    rec.onstart = function(){ if (btn) btn.classList.add('rec'); };
+    rec.onresult = function(e){
+      for (var i = e.resultIndex; i < e.results.length; i++) {
+        if (e.results[i].isFinal) transcript += e.results[i][0].transcript;
+      }
+    };
+    rec.onerror = function(){ if (btn) btn.classList.remove('rec'); };
+    rec.onend = function(){
+      if (btn) btn.classList.remove('rec');
+      if (!transcript) return;
+      var input = document.getElementById('timSetInput');
+      if (input) input.value = transcript;
+      // Auto-confirm si on a pu parser une durée valide
+      var secs = tim_parseDuration(transcript);
+      if (secs != null && secs > 0) tim_minutConfirmSet();
+    };
+    try { rec.start(); } catch(e){ if (btn) btn.classList.remove('rec'); }
+  }
+
   function tim_minutAdd30(){
     _tim_minut.totalMs += 30000;
     _tim_minut.remMs += 30000;
