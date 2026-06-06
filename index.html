@@ -1162,6 +1162,23 @@ body{background:var(--bg);color:var(--text);font-family:'Outfit',sans-serif;disp
 #vChat .ci-mic{background:rgba(255,255,255,.05);border:1.5px solid rgba(255,255,255,.18);color:rgba(255,255,255,.7)}
 #vChat .ci-mic:hover{border-color:var(--ah-gold);color:var(--ah-gold)}
 #vChat .ci-mic.rec{background:var(--ah-navy);border-color:var(--ah-gold);color:var(--ah-gold)}
+
+/* ── Tracks — bouton micro pour saisie vocale des résultats de test ── */
+.trk-voice-btn{width:42px;height:42px;border-radius:10px;background:var(--ah-surface);border:1.5px solid var(--ah-border2);color:var(--ah-text2);font-size:17px;display:flex;align-items:center;justify-content:center;cursor:pointer;transition:all .15s;flex-shrink:0;padding:0;line-height:1}
+.trk-voice-btn:hover{border-color:var(--ah-gold);color:var(--ah-gold)}
+.trk-voice-btn.rec{background:var(--ah-navy);border-color:var(--ah-gold);color:var(--ah-gold);animation:ci-mic-pulse 1.6s ease-in-out infinite}
+body.no-voice .trk-voice-btn{display:none}
+.trk-voice-preview{position:fixed;left:50%;bottom:calc(var(--ah-nav-height,88px) + var(--ah-safe-bottom,0px) + 20px);transform:translateX(-50%);width:min(360px,calc(100vw - 24px));background:#fff;border:1.5px solid var(--ah-gold);border-radius:14px;padding:14px 16px;box-shadow:0 12px 32px rgba(20,30,60,.25);z-index:200;animation:fadeUp .22s ease;box-sizing:border-box}
+.trk-voice-preview.err{border-color:#EF4444}
+.trk-vp-label{font-size:10px;letter-spacing:.18em;font-weight:800;color:var(--ah-text2);text-transform:uppercase}
+.trk-vp-value{font-family:'Bebas Neue',sans-serif;font-size:32px;color:var(--ah-navy);letter-spacing:.04em;margin-top:4px;line-height:1}
+.trk-vp-value span{font-size:18px;color:var(--ah-gold);margin-left:6px}
+.trk-vp-raw{font-size:11px;color:var(--ah-text2);font-style:italic;margin:8px 0 12px;line-height:1.4}
+.trk-vp-actions{display:flex;gap:8px;justify-content:flex-end}
+.trk-vp-actions button{padding:9px 14px;border-radius:10px;font-weight:700;font-size:13px;cursor:pointer;font-family:'Outfit',sans-serif;border:1.5px solid var(--ah-border2);background:#fff;color:var(--ah-text2)}
+.trk-vp-actions .trk-vp-confirm{background:linear-gradient(135deg,#C5A44E,#D4B86A);color:#1B2D5C;border:0}
+.trk-vp-msg{font-size:13px;color:var(--ah-text);line-height:1.4;margin-bottom:8px}
+.trk-vp-close{padding:8px 14px;border-radius:10px;border:0;background:var(--ah-surface2);color:var(--ah-text2);cursor:pointer;font-weight:700;font-family:'Outfit',sans-serif}
 .ci-send:active{transform:scale(.9)}
 .ci-send svg{width:18px;height:18px;fill:var(--navy)}
 .ci-send.disabled{background:var(--border);cursor:not-allowed}
@@ -9375,11 +9392,17 @@ function renderSATStep() {
     html += '</div>';
   } else {
     ex.fields.forEach(function(f) {
+      // Indice d'unité pour le parsing vocal — utilisé si l'user ne dit pas
+      // l'unité explicitement ("j'ai sauté 62" → unité = cm via le champ).
+      var voiceUnit = (f.unit === 'cm' || f.unit === 'sec' || f.unit === 'kg' || f.unit === 'm' || f.unit === 'reps') ? f.unit : '';
+      var exName = (ex.name || '').replace(/'/g, "\\'").replace(/"/g, '&quot;');
       html += '<div style="margin-bottom:12px">';
       html += '<label style="font-size:12px;color:var(--text2);font-weight:600;display:block;margin-bottom:6px">' + f.label.toUpperCase() + '</label>';
       html += '<div style="display:flex;align-items:center;gap:8px">';
       html += '<input class="fi" type="number" id="' + f.id + '" placeholder="' + f.placeholder + '" step="0.1" style="flex:1;font-size:18px;font-weight:700;text-align:center" oninput="satValues[this.id]=parseFloat(this.value)||0">';
       html += '<div style="font-size:14px;color:var(--muted);font-weight:700;min-width:30px">' + f.unit + '</div>';
+      // Bouton micro — masqué automatiquement si SpeechRecognition pas dispo
+      html += '<button type="button" class="trk-voice-btn" data-field="' + f.id + '" data-unit="' + voiceUnit + '" data-exoid="' + ex.id + '" data-exoname="' + exName + '" onclick="window.trkVoice && window.trkVoice.start({fieldId:this.dataset.field, unit:this.dataset.unit, exerciseId:this.dataset.exoid, exerciseName:this.dataset.exoname, btn:this})" aria-label="Saisie vocale">🎙</button>';
       html += '</div></div>';
     });
   }
@@ -15875,6 +15898,176 @@ function handleEnter(e) {
       }
     }
   };
+})();
+
+// ═══════════════════════════════════════
+// TRACKS — Saisie vocale tests physiques (2026-06-05)
+// ───────────────────────────────────────
+// MVP : bouton 🎙 à côté de chaque champ résultat. SpeechRecognition fr-FR →
+// transcription → parsing regex {value, unit} → preview "X reps" + "Confirmer"
+// → fill du champ. Pas d'IA, pas de Firebase write direct : on dispatch un
+// CustomEvent `ah:voiceResult` avec un payload normalisé pour stockage futur.
+// Si SR pas supporté (Firefox), `body.no-voice` masque tous les boutons.
+// ═══════════════════════════════════════
+(function initTrkVoice(){
+  var SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+  var supported = !!SR;
+
+  document.addEventListener('DOMContentLoaded', function(){
+    if (!supported) document.body.classList.add('no-voice');
+  });
+
+  // Mots → digit, pour les expressions parlées courantes
+  var WORDS = {
+    'zéro':0,'zero':0,'un':1,'une':1,'deux':2,'trois':3,'quatre':4,
+    'cinq':5,'six':6,'sept':7,'huit':8,'neuf':9,'dix':10,
+    'onze':11,'douze':12,'treize':13,'quatorze':14,'quinze':15,
+    'seize':16,'vingt':20,'trente':30,'quarante':40,'cinquante':50,
+    'soixante':60,'soixante-dix':70,'quatre-vingt':80,'quatre-vingts':80,
+    'quatre-vingt-dix':90,'cent':100
+  };
+
+  var UNIT_PATTERNS = [
+    { unit:'reps', re:/\b(?:r[ée]p[ée]titions?|reps?)\b/i },
+    { unit:'sec',  re:/\b(?:secondes?|sec(?:ondes?)?\.?)\b/i },
+    { unit:'cm',   re:/\b(?:centim[èe]tres?|cm)\b/i },
+    { unit:'kg',   re:/\b(?:kilos?(?:grammes?)?|kg)\b/i },
+    { unit:'m',    re:/\b(?:m[èe]tres?|m)\b/i }
+  ];
+
+  function normalize(t){
+    if (!t) return '';
+    return t.toLowerCase()
+            .replace(/\bvirgule\b/g, '.')
+            .split(/\s+/)
+            .map(function(w){ return WORDS[w] != null ? String(WORDS[w]) : w; })
+            .join(' ');
+  }
+
+  function parse(rawText, hintUnit){
+    var t = normalize(rawText);
+    var m = t.match(/(-?\d+(?:[.,]\d+)?)/);
+    if (!m) return null;
+    var num = parseFloat(m[1].replace(',', '.'));
+    if (!isFinite(num)) return null;
+    var detected = null;
+    for (var i=0;i<UNIT_PATTERNS.length;i++){
+      if (UNIT_PATTERNS[i].re.test(t)) { detected = UNIT_PATTERNS[i].unit; break; }
+    }
+    return { value: num, unit: detected || (hintUnit || null), raw: rawText };
+  }
+
+  function closePreview(){
+    var el = document.getElementById('trkVoicePreview');
+    if (el && el.parentNode) el.parentNode.removeChild(el);
+  }
+
+  function showError(msg){
+    closePreview();
+    var box = document.createElement('div');
+    box.id = 'trkVoicePreview';
+    box.className = 'trk-voice-preview err';
+    box.innerHTML = '<div class="trk-vp-msg">' + msg + '</div>'
+      + '<button class="trk-vp-close" type="button">OK</button>';
+    document.body.appendChild(box);
+    box.querySelector('.trk-vp-close').onclick = closePreview;
+    setTimeout(closePreview, 5000);
+  }
+
+  function showPreview(parsed, opts){
+    closePreview();
+    var unitLabel = parsed.unit || '';
+    var safeRaw = (parsed.raw || '').replace(/[<>]/g, '');
+    var box = document.createElement('div');
+    box.id = 'trkVoicePreview';
+    box.className = 'trk-voice-preview';
+    box.innerHTML =
+        '<div class="trk-vp-label">Résultat détecté</div>'
+      + '<div class="trk-vp-value">' + parsed.value + ' <span>' + unitLabel + '</span></div>'
+      + '<div class="trk-vp-raw">« ' + safeRaw + ' »</div>'
+      + '<div class="trk-vp-actions">'
+      + '  <button type="button" class="trk-vp-cancel">Annuler</button>'
+      + '  <button type="button" class="trk-vp-confirm">Confirmer</button>'
+      + '</div>';
+    document.body.appendChild(box);
+    box.querySelector('.trk-vp-cancel').onclick = closePreview;
+    box.querySelector('.trk-vp-confirm').onclick = function(){
+      var field = opts.fieldId ? document.getElementById(opts.fieldId) : null;
+      if (field) {
+        field.value = parsed.value;
+        try { field.dispatchEvent(new Event('input', { bubbles:true })); } catch(e){}
+      }
+      try {
+        document.dispatchEvent(new CustomEvent('ah:voiceResult', { detail: {
+          exerciseId: opts.exerciseId || null,
+          exerciseName: opts.exerciseName || null,
+          value: parsed.value,
+          unit: parsed.unit,
+          source: 'voice',
+          confirmed: true,
+          createdAt: new Date().toISOString(),
+          context: 'tracks_physical_test'
+        }}));
+      } catch(e){}
+      closePreview();
+      try { if (typeof showToast === 'function') showToast('✓ ' + parsed.value + ' ' + (parsed.unit || '') + ' enregistré', 'ok'); } catch(_){}
+    };
+  }
+
+  function setBtnState(btn, on){
+    if (!btn) return;
+    btn.classList.toggle('rec', !!on);
+    btn.textContent = on ? '●' : '🎙';
+    btn.setAttribute('aria-label', on ? 'Arrêter l’enregistrement' : 'Saisie vocale');
+  }
+
+  function start(opts){
+    if (!supported) return;
+    opts = opts || {};
+    var btn = opts.btn || null;
+    var rec;
+    try {
+      rec = new SR();
+      rec.lang = 'fr-FR';
+      rec.interimResults = false;
+      rec.maxAlternatives = 1;
+      rec.continuous = false;
+    } catch(e){ showError('Reconnaissance vocale indisponible.'); return; }
+
+    var transcript = '';
+    rec.onstart = function(){ setBtnState(btn, true); };
+    rec.onresult = function(e){
+      for (var i = e.resultIndex; i < e.results.length; i++) {
+        if (e.results[i].isFinal) transcript += e.results[i][0].transcript;
+      }
+    };
+    rec.onerror = function(e){
+      setBtnState(btn, false);
+      if (e && e.error === 'not-allowed') {
+        showError('Autorise l’accès au micro dans les réglages du navigateur.');
+      } else if (e && e.error && e.error !== 'aborted' && e.error !== 'no-speech') {
+        showError('Erreur micro : ' + e.error);
+      }
+    };
+    rec.onend = function(){
+      setBtnState(btn, false);
+      if (!transcript) {
+        showError('Je n’ai pas compris le résultat. Entre-le manuellement.');
+        return;
+      }
+      var parsed = parse(transcript, opts.unit);
+      if (!parsed) {
+        showError('Je n’ai pas compris le résultat. Entre-le manuellement.');
+        return;
+      }
+      showPreview(parsed, opts);
+    };
+
+    try { rec.start(); }
+    catch(e){ setBtnState(btn, false); showError('Erreur démarrage micro'); }
+  }
+
+  window.trkVoice = { supported: supported, start: start, parse: parse };
 })();
 
 // ═══════════════════════════════════════
