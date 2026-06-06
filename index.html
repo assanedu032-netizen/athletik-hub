@@ -5292,42 +5292,35 @@ window.tiResetOnEnter = function(){ window.tiShowStep(1); };
     <div class="bl-count" id="builderCount">0 / 2 programmes terminés</div>
   </div>
 
-  <!-- État débloqué : crée ta séance avec Titan -->
+  <!-- État débloqué : conversation avec Titan -->
   <div id="builderUnlocked" style="display:none">
 
-    <!-- FORMULAIRE D'INTENTION -->
-    <div id="builderForm" style="padding:14px 20px 4px">
-      <div style="font-family:'Bebas Neue',sans-serif;font-size:22px;letter-spacing:1.5px;color:var(--text)">CRÉE TA SÉANCE AVEC TITAN</div>
-      <div style="font-size:11.5px;color:var(--muted);margin-top:2px;line-height:1.4">Dis à Titan ce que tu veux travailler. Il programme la séance pour toi — séries, repos, structure — selon la méthode Athletik Hub.</div>
+    <!-- CONVERSATION (Titan pose les questions, l'athlète répond à la voix ou au tap) -->
+    <div id="builderConvoWrap" style="display:flex;flex-direction:column">
 
-      <!-- Objectif -->
-      <div style="margin-top:16px;font-size:11px;font-weight:800;letter-spacing:.5px;color:var(--text);text-transform:uppercase">Objectif de la séance</div>
-      <div id="bChipsObjectif" class="b-chips" style="display:flex;flex-wrap:wrap;gap:6px;margin-top:8px"></div>
+      <!-- Fil de discussion -->
+      <div id="builderConvo" style="padding:16px 18px 6px;display:flex;flex-direction:column;gap:12px"></div>
 
-      <!-- Durée -->
-      <div style="margin-top:16px;font-size:11px;font-weight:800;letter-spacing:.5px;color:var(--text);text-transform:uppercase">Durée disponible</div>
-      <div id="bChipsDuree" class="b-chips" style="display:flex;flex-wrap:wrap;gap:6px;margin-top:8px"></div>
+      <!-- Puces de réponse rapide pour la question en cours -->
+      <div id="builderChips" style="display:flex;flex-wrap:wrap;gap:6px;padding:0 18px"></div>
 
-      <!-- Matériel -->
-      <div style="margin-top:16px;font-size:11px;font-weight:800;letter-spacing:.5px;color:var(--text);text-transform:uppercase">Matériel disponible</div>
-      <div id="bChipsMateriel" class="b-chips" style="display:flex;flex-wrap:wrap;gap:6px;margin-top:8px"></div>
-
-      <!-- État du jour -->
-      <div style="margin-top:16px;font-size:11px;font-weight:800;letter-spacing:.5px;color:var(--text);text-transform:uppercase">État du jour</div>
-      <div id="bChipsEtat" class="b-chips" style="display:flex;flex-wrap:wrap;gap:6px;margin-top:8px"></div>
-
-      <!-- Phrase libre + vocal -->
-      <div style="margin-top:18px;font-size:11px;font-weight:800;letter-spacing:.5px;color:var(--text);text-transform:uppercase">Parle à Titan (exercices, envies…)</div>
-      <div style="position:relative;margin-top:8px">
-        <textarea id="builderPhrase" rows="3" placeholder="Ex : Je veux faire du squat jump, du sprint et du gainage. Je suis un peu fatigué aujourd'hui." style="width:100%;padding:12px 44px 12px 12px;background:var(--surface);border:1px solid var(--border);border-radius:12px;color:var(--text);font-size:13px;outline:none;box-sizing:border-box;resize:vertical;font-family:inherit"></textarea>
-        <button id="builderMicBtn" onclick="builderToggleMic()" aria-label="Parler à Titan" title="Parler à Titan" style="position:absolute;right:8px;top:8px;width:32px;height:32px;border-radius:50%;border:0;background:var(--surface2);color:var(--gold);cursor:pointer;display:flex;align-items:center;justify-content:center">
-          <svg viewBox="0 0 24 24" width="17" height="17" fill="currentColor"><path d="M12 14c1.66 0 3-1.34 3-3V5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3zm5-3c0 2.76-2.24 5-5 5s-5-2.24-5-5H5c0 3.53 2.61 6.43 6 6.92V21h2v-3.08c3.39-.49 6-3.39 6-6.92h-2z"/></svg>
-        </button>
+      <!-- Barre de saisie : micro + texte + envoi -->
+      <div style="padding:12px 18px 6px">
+        <div style="display:flex;align-items:flex-end;gap:8px;background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:6px 6px 6px 10px">
+          <button id="builderMicBtn" onclick="builderToggleMic()" aria-label="Parler à Titan" title="Parler à Titan" style="flex-shrink:0;width:38px;height:38px;border-radius:50%;border:0;background:var(--surface2);color:var(--gold);cursor:pointer;display:flex;align-items:center;justify-content:center">
+            <svg viewBox="0 0 24 24" width="19" height="19" fill="currentColor"><path d="M12 14c1.66 0 3-1.34 3-3V5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3zm5-3c0 2.76-2.24 5-5 5s-5-2.24-5-5H5c0 3.53 2.61 6.43 6 6.92V21h2v-3.08c3.39-.49 6-3.39 6-6.92h-2z"/></svg>
+          </button>
+          <textarea id="builderConvoInput" rows="1" placeholder="Réponds à Titan…" onkeydown="_bInputKey(event)" oninput="_bAutoGrow(this)" style="flex:1;min-width:0;max-height:120px;padding:9px 4px;background:transparent;border:0;color:var(--text);font-size:14px;outline:none;resize:none;font-family:inherit;line-height:1.4"></textarea>
+          <button onclick="_bSubmitInput()" aria-label="Envoyer" style="flex-shrink:0;width:38px;height:38px;border-radius:50%;border:0;background:linear-gradient(135deg,var(--gold),var(--gold2));color:var(--navy);cursor:pointer;display:flex;align-items:center;justify-content:center">
+            <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg>
+          </button>
+        </div>
       </div>
 
-      <!-- Générer -->
-      <div style="padding:18px 0 24px">
-        <button onclick="builderGenerate()" id="builderGenBtn" style="width:100%;padding:15px;background:linear-gradient(135deg,var(--gold),var(--gold2));border:0;border-radius:12px;color:var(--navy);font-family:'Bebas Neue',sans-serif;font-size:18px;letter-spacing:2px;cursor:pointer">✨ GÉNÉRER MA SÉANCE</button>
+      <!-- Actions secondaires -->
+      <div style="display:flex;gap:8px;padding:2px 18px 22px">
+        <button onclick="_bFreeMode()" id="builderFreeBtn" style="flex:1;padding:10px;background:var(--surface);border:1px solid var(--border);border-radius:10px;color:var(--gold);font-size:12px;font-weight:700;cursor:pointer">🎙️ Dis tout d'un coup</button>
+        <button onclick="_builderStartConvo()" style="flex-shrink:0;padding:10px 14px;background:var(--surface);border:1px solid var(--border);border-radius:10px;color:var(--muted);font-size:12px;font-weight:700;cursor:pointer">↺</button>
       </div>
     </div>
 
@@ -16438,67 +16431,206 @@ function renderBuilder() {
   }
   locked.style.display = 'none';
   unlocked.style.display = '';
-  _builderShowForm();
-  _builderRenderChips();
+  // Ne relance pas la conversation si une séance est déjà générée à l'écran.
+  var result = document.getElementById('builderResult');
+  if (result && result.style.display !== 'none' && _builderWorkout) return;
+  _builderStartConvo();
 }
 
-// ─── Vues (form / loading / result) ────────────────────────────────
+// ─── Vues (convo / loading / result) ───────────────────────────────
 function _builderShow(which) {
-  var f = document.getElementById('builderForm');
+  var c = document.getElementById('builderConvoWrap');
   var l = document.getElementById('builderLoading');
   var r = document.getElementById('builderResult');
-  if (f) f.style.display = which === 'form' ? '' : 'none';
+  if (c) c.style.display = which === 'convo' ? 'flex' : 'none';
   if (l) l.style.display = which === 'loading' ? '' : 'none';
   if (r) r.style.display = which === 'result' ? '' : 'none';
 }
-function _builderShowForm() { _builderShow('form'); }
+function _builderShowForm() { _builderShow('convo'); } // alias compat
+window._builderShowForm = _builderShowForm;
 
-// ─── Chips de sélection ────────────────────────────────────────────
-function _builderRenderChips() {
-  _builderRenderChipGroup('bChipsObjectif', _BUILDER_OBJECTIFS, 'objectif');
-  _builderRenderChipGroup('bChipsDuree',    _BUILDER_DUREES,    'duree');
-  _builderRenderChipGroup('bChipsMateriel', _BUILDER_MATERIELS, 'materiel');
-  _builderRenderChipGroup('bChipsEtat',     _BUILDER_ETATS,     'etat');
+// ═══════════════════════════════════════════════════════════════════
+// CONVERSATION GUIDÉE — Titan pose une question à la fois.
+// L'athlète répond à la voix, au tap (puces) ou en tapant. Les questions
+// sont pilotées côté client (aucun appel réseau par étape) ; seul le bouton
+// de génération final appelle Titan.
+// ═══════════════════════════════════════════════════════════════════
+var _B_STEPS = [
+  { key:'objectif', q:"Salut 👊 Quel est ton objectif aujourd'hui ?", options:function(){ return _BUILDER_OBJECTIFS; }, multi:false },
+  { key:'exos',     q:"Quels exercices tu veux faire ? Dis-les-moi, ou choisis « Peu importe ».", options:function(){ return ['Squat jump','Sprint','Gainage','Pogo jumps','Box jump','Fentes sautées','Peu importe']; }, multi:false, free:true },
+  { key:'duree',    q:"Combien de temps tu as ?", options:function(){ return _BUILDER_DUREES; }, multi:false },
+  { key:'materiel', q:"Quel matériel tu as sous la main ? (plusieurs choix possibles)", options:function(){ return _BUILDER_MATERIELS; }, multi:true },
+  { key:'etat',     q:"Dernière chose : comment tu te sens aujourd'hui ?", options:function(){ return _BUILDER_ETATS; }, multi:false }
+];
+var _bConvo = { step: 0, answers: {}, free: false, multiSel: [] };
+
+function _builderStartConvo() {
+  _bConvo = { step: 0, answers: {}, free: false, multiSel: [] };
+  _builderIntent = { objectif:'', duree:'', materiel:[], etat:'', exos:'', phrase:'' };
+  _builderWorkout = null;
+  var convo = document.getElementById('builderConvo'); if (convo) convo.innerHTML = '';
+  var chips = document.getElementById('builderChips'); if (chips) chips.innerHTML = '';
+  var inp = document.getElementById('builderConvoInput'); if (inp) { inp.value = ''; _bAutoGrow(inp); }
+  var freeBtn = document.getElementById('builderFreeBtn'); if (freeBtn) freeBtn.style.display = '';
+  _builderShow('convo');
+  _bAskStep();
+}
+window._builderStartConvo = _builderStartConvo;
+
+function _bAskStep() {
+  if (_bConvo.free) return;
+  var step = _B_STEPS[_bConvo.step];
+  if (!step) { _bGenerateFromConvo(); return; }
+  _bConvo.multiSel = [];
+  _bPostTitan(step.q);
+  _bRenderStepChips(step);
+  var inp = document.getElementById('builderConvoInput');
+  if (inp) inp.placeholder = step.free ? 'Réponds ou parle à Titan…' : 'Tape, parle, ou choisis ci-dessus…';
 }
 
-function _builderRenderChipGroup(containerId, values, group) {
-  var el = document.getElementById(containerId);
+function _bRenderStepChips(step) {
+  var el = document.getElementById('builderChips');
   if (!el) return;
+  var opts = (typeof step.options === 'function') ? step.options() : (step.options || []);
   var html = '';
-  values.forEach(function(v){
-    var active = group === 'materiel'
-      ? (_builderIntent.materiel.indexOf(v) > -1)
-      : (_builderIntent[group] === v);
-    var bg = active ? 'var(--gold)' : 'var(--surface)';
-    var col = active ? 'var(--navy)' : 'var(--text2)';
-    var bd = active ? 'var(--gold)' : 'var(--border)';
+  opts.forEach(function(v){
+    var sel = step.multi && _bConvo.multiSel.indexOf(v) > -1;
+    var bg = sel ? 'var(--gold)' : 'var(--surface)';
+    var col = sel ? 'var(--navy)' : 'var(--text2)';
+    var bd = sel ? 'var(--gold)' : 'var(--border)';
     var safe = v.replace(/'/g, "\\'");
-    html += '<button onclick="builderToggleChip(\'' + group + '\',\'' + safe + '\')" style="padding:8px 12px;border-radius:20px;border:1px solid ' + bd + ';background:' + bg + ';color:' + col + ';font-size:12px;font-weight:700;cursor:pointer;transition:all .15s">' + v + '</button>';
+    html += '<button onclick="_bChip(\'' + safe + '\')" style="padding:8px 12px;border-radius:20px;border:1px solid '+bd+';background:'+bg+';color:'+col+';font-size:12px;font-weight:700;cursor:pointer">' + v + '</button>';
   });
+  if (step.multi) {
+    html += '<button onclick="_bConfirmMulti()" style="padding:8px 14px;border-radius:20px;border:0;background:linear-gradient(135deg,var(--gold),var(--gold2));color:var(--navy);font-size:12px;font-weight:800;cursor:pointer">✓ Valider</button>';
+  }
   el.innerHTML = html;
 }
 
-function builderToggleChip(group, value) {
-  if (group === 'materiel') {
-    var i = _builderIntent.materiel.indexOf(value);
-    if (i > -1) _builderIntent.materiel.splice(i, 1);
-    else _builderIntent.materiel.push(value);
-    _builderRenderChipGroup('bChipsMateriel', _BUILDER_MATERIELS, 'materiel');
+function _bChip(value) {
+  var step = _B_STEPS[_bConvo.step];
+  if (!step) return;
+  if (step.multi) {
+    var i = _bConvo.multiSel.indexOf(value);
+    if (i > -1) _bConvo.multiSel.splice(i, 1); else _bConvo.multiSel.push(value);
+    _bRenderStepChips(step);
     return;
   }
-  // Single-select : re-cliquer désélectionne.
-  _builderIntent[group] = (_builderIntent[group] === value) ? '' : value;
-  var map = { objectif:['bChipsObjectif',_BUILDER_OBJECTIFS], duree:['bChipsDuree',_BUILDER_DUREES], etat:['bChipsEtat',_BUILDER_ETATS] };
-  if (map[group]) _builderRenderChipGroup(map[group][0], map[group][1], group);
+  _bAcceptAnswer(value);
 }
-window.builderToggleChip = builderToggleChip;
+window._bChip = _bChip;
 
-// ─── Vocal (réutilise SpeechRecognition fr-FR) ─────────────────────
+function _bConfirmMulti() {
+  var step = _B_STEPS[_bConvo.step];
+  if (!step) return;
+  _bAcceptAnswer(_bConvo.multiSel.length ? _bConvo.multiSel.join(', ') : 'Peu importe');
+}
+window._bConfirmMulti = _bConfirmMulti;
+
+// Enregistre la réponse de l'étape courante, l'affiche, et passe à la suivante.
+function _bAcceptAnswer(value) {
+  var step = _B_STEPS[_bConvo.step];
+  if (!step) return;
+  _bConvo.answers[step.key] = value;
+  _bPostUser(value);
+  var el = document.getElementById('builderChips'); if (el) el.innerHTML = '';
+  _bConvo.step++;
+  setTimeout(_bAskStep, 350);
+}
+
+// Soumission depuis la barre de saisie (texte ou transcription vocale).
+function _bSubmitInput() {
+  var inp = document.getElementById('builderConvoInput');
+  var val = (inp && inp.value || '').trim();
+  if (!val) return;
+  inp.value = ''; _bAutoGrow(inp);
+  if (_bConvo.free) { _bRunFree(val); return; }
+  _bAcceptAnswer(val);
+}
+window._bSubmitInput = _bSubmitInput;
+
+function _bInputKey(e) {
+  if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); _bSubmitInput(); }
+}
+window._bInputKey = _bInputKey;
+
+function _bAutoGrow(el) {
+  if (!el) return;
+  el.style.height = 'auto';
+  el.style.height = Math.min(120, el.scrollHeight) + 'px';
+}
+window._bAutoGrow = _bAutoGrow;
+
+// Mode « dis tout d'un coup » : l'athlète décrit toute sa séance en une fois.
+function _bFreeMode() {
+  _bConvo.free = true;
+  var el = document.getElementById('builderChips'); if (el) el.innerHTML = '';
+  var freeBtn = document.getElementById('builderFreeBtn'); if (freeBtn) freeBtn.style.display = 'none';
+  _bPostTitan("Ok, dis-moi tout d'un coup : ton objectif, les exercices, le temps que t'as, ton matériel et comment tu te sens. Je m'occupe du reste.");
+  var inp = document.getElementById('builderConvoInput');
+  if (inp) { inp.placeholder = 'Ex : séance détente 30 min, squat jump et sprint, un peu fatigué…'; try { inp.focus(); } catch(e){} }
+}
+window._bFreeMode = _bFreeMode;
+
+function _bRunFree(text) {
+  _bPostUser(text);
+  _builderIntent = { objectif:'', duree:'', materiel:[], etat:'', exos:'', phrase: text };
+  _bGenerate();
+}
+
+// Construit l'intention à partir des réponses de la conversation puis génère.
+function _bGenerateFromConvo() {
+  var a = _bConvo.answers;
+  var mat = a.materiel || '';
+  _builderIntent = {
+    objectif: a.objectif || '',
+    duree: a.duree || '',
+    materiel: mat ? [mat] : [],
+    etat: a.etat || '',
+    exos: (a.exos && a.exos.toLowerCase().indexOf('peu importe') === -1) ? a.exos : '',
+    phrase: ''
+  };
+  _bPostTitan('Reçu 💪 Je te construis ta séance…');
+  _bGenerate();
+}
+
+// ─── Bulles de conversation ────────────────────────────────────────
+function _bEsc(s){ return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+function _bPostTitan(text) {
+  var convo = document.getElementById('builderConvo');
+  if (!convo) return;
+  var wrap = document.createElement('div');
+  wrap.style.cssText = 'display:flex;gap:8px;align-items:flex-start;max-width:90%';
+  wrap.innerHTML = '<div style="flex-shrink:0;width:26px;height:26px;border-radius:50%;background:var(--navy);color:var(--gold);display:flex;align-items:center;justify-content:center;font-family:\'Bebas Neue\',sans-serif;font-size:13px">T</div>'
+    + '<div style="background:var(--surface2);border:1px solid var(--border);border-radius:14px;border-top-left-radius:4px;padding:10px 13px;font-size:13.5px;color:var(--text);line-height:1.45">' + _bEsc(text) + '</div>';
+  convo.appendChild(wrap);
+  _bScroll();
+}
+
+function _bPostUser(text) {
+  var convo = document.getElementById('builderConvo');
+  if (!convo) return;
+  var wrap = document.createElement('div');
+  wrap.style.cssText = 'align-self:flex-end;max-width:90%';
+  wrap.innerHTML = '<div style="background:linear-gradient(135deg,var(--gold),var(--gold2));color:var(--navy);border-radius:14px;border-top-right-radius:4px;padding:10px 13px;font-size:13.5px;font-weight:600;line-height:1.4">' + _bEsc(text) + '</div>';
+  convo.appendChild(wrap);
+  _bScroll();
+}
+
+function _bScroll() {
+  var convo = document.getElementById('builderConvo');
+  if (convo && convo.lastElementChild) {
+    try { convo.lastElementChild.scrollIntoView({ behavior:'smooth', block:'nearest' }); } catch(e) {}
+  }
+}
+
+// ─── Vocal (SpeechRecognition fr-FR) → remplit la barre de saisie ──
 var _builderRec = null, _builderListening = false;
 function builderToggleMic() {
   var SR = window.SpeechRecognition || window.webkitSpeechRecognition;
-  if (!SR) { if (typeof showToast === 'function') showToast('Vocal non supporté sur ce navigateur. Écris ta demande.', 'info'); return; }
-  var inp = document.getElementById('builderPhrase');
+  if (!SR) { if (typeof showToast === 'function') showToast('Vocal non supporté sur ce navigateur. Écris ta réponse.', 'info'); return; }
+  var inp = document.getElementById('builderConvoInput');
   var btn = document.getElementById('builderMicBtn');
   if (_builderListening && _builderRec) { try { _builderRec.stop(); } catch(e) {} return; }
   if (!_builderRec) {
@@ -16507,17 +16639,17 @@ function builderToggleMic() {
     _builderRec.interimResults = true;
     _builderRec.continuous = false;
     var initial = '', finalT = '';
-    _builderRec.onstart = function(){ _builderListening = true; initial = (inp && inp.value) ? (inp.value.trim() + ' ') : ''; finalT = ''; if (btn) btn.style.background = 'var(--gold)'; if (btn) btn.style.color = 'var(--navy)'; };
+    _builderRec.onstart = function(){ _builderListening = true; initial = (inp && inp.value) ? (inp.value.trim() + ' ') : ''; finalT = ''; if (btn){ btn.style.background='var(--gold)'; btn.style.color='var(--navy)'; } };
     _builderRec.onresult = function(e){
       var interim = '';
       for (var i = e.resultIndex; i < e.results.length; i++) {
         if (e.results[i].isFinal) finalT += e.results[i][0].transcript;
         else interim += e.results[i][0].transcript;
       }
-      if (inp) inp.value = initial + finalT + interim;
+      if (inp) { inp.value = initial + finalT + interim; _bAutoGrow(inp); }
     };
-    _builderRec.onerror = function(){ _builderListening = false; if (btn){ btn.style.background = 'var(--surface2)'; btn.style.color = 'var(--gold)'; } };
-    _builderRec.onend = function(){ _builderListening = false; if (btn){ btn.style.background = 'var(--surface2)'; btn.style.color = 'var(--gold)'; } if (inp) try { inp.focus(); } catch(e){} };
+    _builderRec.onerror = function(){ _builderListening = false; if (btn){ btn.style.background='var(--surface2)'; btn.style.color='var(--gold)'; } };
+    _builderRec.onend = function(){ _builderListening = false; if (btn){ btn.style.background='var(--surface2)'; btn.style.color='var(--gold)'; } if (inp) try { inp.focus(); } catch(e){} };
   }
   try { _builderRec.start(); } catch(e) { try { _builderRec.abort(); } catch(_){} }
 }
@@ -16598,18 +16730,15 @@ function _builderReconcile(workout) {
 }
 
 // ─── Génération via Titan (backend, JSON structuré) ────────────────
-async function builderGenerate() {
+async function _bGenerate() {
   if (_builderGenerating) return;
-  var phrase = (document.getElementById('builderPhrase') || {}).value || '';
-  _builderIntent.phrase = phrase.trim();
-
-  if (!_builderIntent.objectif && !_builderIntent.phrase) {
-    if (typeof showToast === 'function') showToast('Choisis un objectif ou décris ta séance à Titan.', 'info');
-    return;
+  if (!_builderIntent.objectif && !_builderIntent.phrase && !_builderIntent.exos) {
+    if (typeof showToast === 'function') showToast('Dis au moins un objectif ou décris ta séance.', 'info');
+    _builderShow('convo'); return;
   }
   if (!window.fbUser) {
     if (typeof showToast === 'function') showToast('Connecte-toi pour générer une séance avec Titan.', 'info');
-    return;
+    _builderShow('convo'); return;
   }
 
   _builderGenerating = true;
@@ -16620,11 +16749,12 @@ async function builderGenerate() {
     ctx: _builderCtx(),
     library: _builderLibraryPayload(),
     intent: {
-      objectif: _builderIntent.objectif,
+      objectif: _builderIntent.objectif || '',
       duree: (_builderIntent.duree || '').replace(' min', ''),
-      materiel: _builderIntent.materiel.join(', '),
-      etat: _builderIntent.etat,
-      phrase: _builderIntent.phrase
+      materiel: (_builderIntent.materiel || []).join(', '),
+      etat: _builderIntent.etat || '',
+      exos: _builderIntent.exos || '',
+      phrase: _builderIntent.phrase || ''
     }
   };
 
@@ -16643,12 +16773,13 @@ async function builderGenerate() {
     _builderShow('result');
   } catch (err) {
     if (typeof showToast === 'function') showToast(err.message || 'Erreur de génération. Réessaie.', 'err');
-    _builderShow('form');
+    _builderShow('convo');
   } finally {
     _builderGenerating = false;
   }
 }
-window.builderGenerate = builderGenerate;
+window._bGenerate = _bGenerate;
+window.builderGenerate = _bGenerate; // alias compat
 
 // ─── Rendu de la séance générée ────────────────────────────────────
 function builderRenderResult(w) {
@@ -16706,8 +16837,8 @@ function builderRenderResult(w) {
   html += '<div style="padding:22px 0 4px;display:flex;flex-direction:column;gap:10px">';
   html += '<button onclick="builderStartGenerated()" style="width:100%;padding:15px;background:linear-gradient(135deg,var(--gold),var(--gold2));border:0;border-radius:12px;color:var(--navy);font-family:\'Bebas Neue\',sans-serif;font-size:18px;letter-spacing:2px;cursor:pointer">▶ DÉMARRER MA SÉANCE</button>';
   html += '<div style="display:flex;gap:8px">';
-  html += '<button onclick="builderGenerate()" style="flex:1;padding:11px;background:var(--surface);border:1px solid var(--border);border-radius:10px;color:var(--text2);font-size:12px;font-weight:700;cursor:pointer">🔄 Régénérer</button>';
-  html += '<button onclick="_builderShowForm()" style="flex:1;padding:11px;background:var(--surface);border:1px solid var(--border);border-radius:10px;color:var(--text2);font-size:12px;font-weight:700;cursor:pointer">✏️ Modifier ma demande</button>';
+  html += '<button onclick="_bGenerate()" style="flex:1;padding:11px;background:var(--surface);border:1px solid var(--border);border-radius:10px;color:var(--text2);font-size:12px;font-weight:700;cursor:pointer">🔄 Régénérer</button>';
+  html += '<button onclick="_builderStartConvo()" style="flex:1;padding:11px;background:var(--surface);border:1px solid var(--border);border-radius:10px;color:var(--text2);font-size:12px;font-weight:700;cursor:pointer">💬 Nouvelle séance</button>';
   html += '</div></div>';
 
   el.innerHTML = html;
@@ -23067,13 +23198,14 @@ function _lsClose() {
     document.getElementById('lsRestOverlay').classList.remove('ls-rest-active');
   }
   // Nettoyage du panneau de feedback Builder injecté + marqueurs.
+  var wasBuilder = !!(_LS && _LS.builderMeta);
   var bf = document.getElementById('builderFeedback');
   if (bf && bf.parentNode) bf.parentNode.removeChild(bf);
   if (_LS) _LS.builderMeta = null;
   window._builderLastSessionRef = null;
   window._bfDifficulte = null;
-  // Si la séance venait du Builder, on revient sur le formulaire propre.
-  try { if (typeof renderBuilder === 'function' && document.getElementById('builderUnlocked')) _builderShowForm(); } catch(e) {}
+  // Si la séance venait du Builder, on repart sur une conversation fraîche.
+  try { if (wasBuilder && typeof _builderStartConvo === 'function') _builderStartConvo(); } catch(e) {}
 }
 
 function _lsOpenVideo() {
