@@ -8693,95 +8693,99 @@ function _buildShoppingV2(rawItems) {
 //   perBox  : œufs uniquement (box6/12/18/30 selon la quantité)
 //   fixed   : prix d'1 paquet/pot/brique/bouteille (cas par défaut épicerie),
 //             monté à 2-3 paquets si quantité très grosse.
+// Prix calibrés Carrefour drive (juin 2026). Sources de référence :
+// Carrefour Le Marché (frais), Carrefour Bio, Reflets de France (premium),
+// MDD Carrefour (standard). Plus chers que Leclerc/Intermarché mais plus
+// proches du retail français urbain réel.
 var _PACKAGE_PRICES = {
   // ── PROTÉINES (au kg sauf paquets) ──
-  'Poulet':                { min: 9,  max: 14,  perKg:true },
-  'Dinde':                 { min: 10, max: 14,  perKg:true },
-  'Bœuf':                  { min: 12, max: 22,  perKg:true },
-  'Porc':                  { min: 9,  max: 13,  perKg:true },
-  'Saumon':                { min: 18, max: 30,  perKg:true },
-  'Thon':                  { min: 14, max: 22,  perKg:true },
-  'Poisson blanc':         { min: 14, max: 20,  perKg:true },
-  'Crevettes':             { min: 16, max: 26,  perKg:true },
-  'Bacon de dinde':        { min: 2,  max: 4,   fixed:true,   pkgG: 150 },
-  'Tofu':                  { min: 3,  max: 6,   fixed:true,   pkgG: 250 },
+  'Poulet':                { min: 11, max: 16,  perKg:true },   // Carrefour escalope ~12-13 €/kg, label 14-16
+  'Dinde':                 { min: 11, max: 15,  perKg:true },
+  'Bœuf':                  { min: 14, max: 24,  perKg:true },   // Carrefour bœuf 14-18 (haché/bavette) jusqu'à 24 (filet)
+  'Porc':                  { min: 10, max: 14,  perKg:true },
+  'Saumon':                { min: 22, max: 32,  perKg:true },   // Carrefour saumon frais Atlantique ~25-28
+  'Thon':                  { min: 16, max: 24,  perKg:true },
+  'Poisson blanc':         { min: 16, max: 22,  perKg:true },
+  'Crevettes':             { min: 18, max: 28,  perKg:true },
+  'Bacon de dinde':        { min: 2.5,max: 4,   fixed:true,   pkgG: 150 },
+  'Tofu':                  { min: 3,  max: 5,   fixed:true,   pkgG: 250 },
   'Œufs':                  { perBox:true,
-                              box6:  { min: 2.5, max: 4 },
-                              box12: { min: 4,   max: 6.5 },
-                              box18: { min: 5.5, max: 9 },
-                              box30: { min: 7,   max: 12 } },
-  'Whey':                  { min: 20, max: 35,  fixed:true,   pkgG: 1000 },
+                              box6:  { min: 2.5, max: 4.5 },
+                              box12: { min: 4,   max: 7 },
+                              box18: { min: 6,   max: 10 },
+                              box30: { min: 9,   max: 14 } },  // Carrefour 30 œufs plein air ~10-12
+  'Whey':                  { min: 25, max: 40,  fixed:true,   pkgG: 1000 },   // Carrefour drive pot 1kg ~30-35
 
   // ── PRODUITS LAITIERS ──
-  'Lait':                  { min: 1,   max: 2,   fixed:true,   pkgMl: 1000 },
-  "Lait d'amande":         { min: 2,   max: 4,   fixed:true,   pkgMl: 1000 },
-  'Lait de coco':          { min: 1.5, max: 3,   fixed:true,   pkgMl: 400 },
+  'Lait':                  { min: 1,   max: 1.5, fixed:true,   pkgMl: 1000 }, // Carrefour UHT brique 1L ~1.10-1.30
+  "Lait d'amande":         { min: 2.5, max: 4.5, fixed:true,   pkgMl: 1000 },
+  'Lait de coco':          { min: 2,   max: 3.5, fixed:true,   pkgMl: 400 },
   'Lait de soja':          { min: 2,   max: 4,   fixed:true,   pkgMl: 1000 },
-  'Skyr / fromage blanc':  { min: 2,   max: 5,   fixed:true,   pkgG: 500 },
+  'Skyr / fromage blanc':  { min: 2.5, max: 5,   fixed:true,   pkgG: 450 },   // Carrefour skyr pot ~3-4 €
   'Yaourts':               { min: 2,   max: 4,   fixed:true,   pkgG: 500 },
-  'Feta':                  { min: 2,   max: 4,   fixed:true,   pkgG: 200 },
-  'Mozzarella':            { min: 1.5, max: 3.5, fixed:true,   pkgG: 125 },
-  'Parmesan':              { min: 3,   max: 6,   fixed:true,   pkgG: 100 },
-  'Ricotta':               { min: 2,   max: 4,   fixed:true,   pkgG: 250 },
+  'Feta':                  { min: 2.5, max: 4.5, fixed:true,   pkgG: 200 },
+  'Mozzarella':            { min: 1.5, max: 3,   fixed:true,   pkgG: 125 },
+  'Parmesan':              { min: 3.5, max: 6,   fixed:true,   pkgG: 100 },
+  'Ricotta':               { min: 2.5, max: 4,   fixed:true,   pkgG: 250 },
   'Cheddar':               { min: 3,   max: 6,   fixed:true,   pkgG: 200 },
-  'Fromage râpé':          { min: 2,   max: 5,   fixed:true,   pkgG: 200 },
+  'Fromage râpé':          { min: 2.5, max: 5,   fixed:true,   pkgG: 200 },
   'Fromage':               { min: 3,   max: 7,   fixed:true,   pkgG: 200 },
 
-  // ── FÉCULENTS ──
-  'Riz':                   { min: 2,   max: 4,   fixed:true,   pkgG: 1000 },
-  'Pâtes':                 { min: 1,   max: 3,   fixed:true,   pkgG: 500 },
-  'Quinoa':                { min: 4,   max: 7,   fixed:true,   pkgG: 500 },
-  'Pain complet / levain': { min: 2,   max: 4,   fixed:true },
-  'Pain pita':             { min: 1.5, max: 3,   fixed:true },
-  'Tortillas complètes':   { min: 2,   max: 4,   fixed:true },
-  "Flocons d'avoine":      { min: 2,   max: 4,   fixed:true,   pkgG: 500 },
-  'Granola':               { min: 3,   max: 7,   fixed:true,   pkgG: 400 },
-  'Farine':                { min: 1,   max: 3,   fixed:true,   pkgG: 1000 },
-  'Patates douces':        { min: 3,   max: 5,   perKg:true },
+  // ── FÉCULENTS (Carrefour drive) ──
+  'Riz':                   { min: 2.5, max: 4.5, fixed:true,   pkgG: 1000 },  // Carrefour riz basmati 1kg ~3-4 €
+  'Pâtes':                 { min: 1.2, max: 3,   fixed:true,   pkgG: 500 },
+  'Quinoa':                { min: 4.5, max: 7,   fixed:true,   pkgG: 500 },
+  'Pain complet / levain': { min: 2.5, max: 4.5, fixed:true },
+  'Pain pita':             { min: 2,   max: 3.5, fixed:true },
+  'Tortillas complètes':   { min: 2.5, max: 4,   fixed:true },
+  "Flocons d'avoine":      { min: 2.5, max: 4,   fixed:true,   pkgG: 500 },
+  'Granola':               { min: 3.5, max: 7,   fixed:true,   pkgG: 400 },
+  'Farine':                { min: 1.2, max: 3,   fixed:true,   pkgG: 1000 },
+  'Patates douces':        { min: 3.5, max: 5.5, perKg:true },
   'Pommes de terre':       { min: 1.5, max: 3,   perKg:true },
-  'Nouilles de riz':       { min: 1.5, max: 3,   fixed:true,   pkgG: 250 },
-  'Lentilles':             { min: 2,   max: 4,   fixed:true,   pkgG: 500 },
-  'Pois chiches':          { min: 1,   max: 3,   fixed:true,   pkgG: 400 },
-  'Haricots':              { min: 1,   max: 3,   fixed:true,   pkgG: 400 },
-  'Haricots rouges':       { min: 1,   max: 3,   fixed:true,   pkgG: 400 },
+  'Nouilles de riz':       { min: 2,   max: 3.5, fixed:true,   pkgG: 250 },
+  'Lentilles':             { min: 2.5, max: 4,   fixed:true,   pkgG: 500 },
+  'Pois chiches':          { min: 1.2, max: 3,   fixed:true,   pkgG: 400 },
+  'Haricots':              { min: 1.2, max: 3,   fixed:true,   pkgG: 400 },
+  'Haricots rouges':       { min: 1.2, max: 3,   fixed:true,   pkgG: 400 },
 
-  // ── FRUITS (perUnit par défaut, barquettes en fixed) ──
-  'Bananes':               { min: 0.3, max: 0.5, perUnit:true },
+  // ── FRUITS (Carrefour Le Marché, prix unité ou barquette) ──
+  'Bananes':               { min: 0.35,max: 0.55,perUnit:true },
   'Pommes':                { min: 0.5, max: 1,   perUnit:true },
-  'Oranges':               { min: 0.4, max: 0.8, perUnit:true },
-  'Citrons':               { min: 0.3, max: 0.8, perUnit:true },
-  'Citrons verts':         { min: 0.5, max: 1,   perUnit:true },
-  'Avocats':               { min: 1,   max: 2,   perUnit:true },
-  'Mangue':                { min: 1.5, max: 3,   perUnit:true },
-  'Ananas':                { min: 2.5, max: 5,   perUnit:true },
-  'Pastèque':              { min: 3,   max: 7,   perUnit:true },
-  'Myrtilles':             { min: 2,   max: 5,   fixed:true,   pkgG: 125 },
-  'Framboises':            { min: 2.5, max: 5,   fixed:true,   pkgG: 125 },
-  'Fraises':               { min: 3,   max: 6,   fixed:true,   pkgG: 250 },
-  'Noix de coco':          { min: 2,   max: 4,   perUnit:true },
-  'Dattes':                { min: 3,   max: 6,   fixed:true,   pkgG: 250 },
+  'Oranges':               { min: 0.5, max: 1,   perUnit:true },
+  'Citrons':               { min: 0.4, max: 0.9, perUnit:true },
+  'Citrons verts':         { min: 0.5, max: 1.2, perUnit:true },
+  'Avocats':               { min: 1.2, max: 2.5, perUnit:true },
+  'Mangue':                { min: 2,   max: 4,   perUnit:true },
+  'Ananas':                { min: 3,   max: 5,   perUnit:true },
+  'Pastèque':              { min: 4,   max: 8,   perUnit:true },
+  'Myrtilles':             { min: 3,   max: 6,   fixed:true,   pkgG: 125 },   // Carrefour barquette 125g hors saison plus cher
+  'Framboises':            { min: 3,   max: 6,   fixed:true,   pkgG: 125 },
+  'Fraises':               { min: 3.5, max: 7,   fixed:true,   pkgG: 250 },
+  'Noix de coco':          { min: 2.5, max: 4,   perUnit:true },
+  'Dattes':                { min: 3.5, max: 7,   fixed:true,   pkgG: 250 },
 
-  // ── LÉGUMES ──
-  'Épinards':              { min: 1.5, max: 3,   fixed:true,   pkgG: 250 },
+  // ── LÉGUMES (Carrefour drive — prix par pièce ou barquette/sachet) ──
+  'Épinards':              { min: 2,   max: 3.5, fixed:true,   pkgG: 250 },
   'Brocoli':               { min: 1.5, max: 3,   perUnit:true },
-  'Courgettes':            { min: 0.6, max: 1.2, perUnit:true },
-  'Poivrons':              { min: 0.8, max: 1.5, perUnit:true },
-  'Tomates':               { min: 0.3, max: 0.7, perUnit:true },
-  'Tomates cerises':       { min: 2,   max: 4,   fixed:true,   pkgG: 250 },
-  'Salade verte':          { min: 1,   max: 2.5, fixed:true },
+  'Courgettes':            { min: 0.8, max: 1.5, perUnit:true },
+  'Poivrons':              { min: 1,   max: 2,   perUnit:true },
+  'Tomates':               { min: 0.4, max: 0.8, perUnit:true },
+  'Tomates cerises':       { min: 2.5, max: 4.5, fixed:true,   pkgG: 250 },
+  'Salade verte':          { min: 1.5, max: 3,   fixed:true },
   'Oignons':               { min: 1.5, max: 3,   fixed:true,   pkgG: 1000 },
-  'Ail':                   { min: 0.7, max: 1.5, perUnit:true },
-  'Carottes':              { min: 1,   max: 2,   fixed:true,   pkgG: 1000 },
-  'Concombre':             { min: 0.8, max: 1.5, perUnit:true },
-  'Aubergines':            { min: 1,   max: 2,   perUnit:true },
-  'Champignons':           { min: 2,   max: 4,   fixed:true,   pkgG: 250 },
+  'Ail':                   { min: 0.8, max: 1.5, perUnit:true },
+  'Carottes':              { min: 1.2, max: 2.5, fixed:true,   pkgG: 1000 },
+  'Concombre':             { min: 0.9, max: 1.5, perUnit:true },
+  'Aubergines':            { min: 1.2, max: 2.5, perUnit:true },
+  'Champignons':           { min: 2.5, max: 4,   fixed:true,   pkgG: 250 },
   'Gingembre':             { min: 1,   max: 2,   fixed:true },
   'Coriandre':             { min: 1,   max: 2,   fixed:true },
   'Persil':                { min: 1,   max: 2,   fixed:true },
   'Basilic':               { min: 1.5, max: 3,   fixed:true },
   'Menthe':                { min: 1,   max: 2,   fixed:true },
   'Ciboulette':            { min: 1,   max: 2,   fixed:true },
-  'Asperges':              { min: 5,   max: 10,  fixed:true,   pkgG: 500 },
+  'Asperges':              { min: 6,   max: 12,  fixed:true,   pkgG: 500 },
   'Betteraves':            { min: 1.5, max: 3,   fixed:true },
 
   // ── ÉPICERIE / BONS GRAS ──
@@ -8797,14 +8801,14 @@ var _PACKAGE_PRICES = {
   'Graines de sésame':     { min: 2,   max: 5,   fixed:true,   pkgG: 200 },
   'Graines de courge':     { min: 2,   max: 5,   fixed:true,   pkgG: 200 },
 
-  // ── BASIQUES (à vérifier à la maison — pricing utile si l'user n'en a pas) ──
-  "Huile d'olive":         { min: 5,   max: 12,  fixed:true,   pkgMl: 750 },
-  'Huile de coco':         { min: 4,   max: 9,   fixed:true,   pkgMl: 500 },
-  'Huile':                 { min: 3,   max: 7,   fixed:true,   pkgMl: 1000 },
-  'Sauce soja':            { min: 2,   max: 5,   fixed:true,   pkgMl: 250 },
-  'Sauce poisson':         { min: 2,   max: 5,   fixed:true,   pkgMl: 250 },
-  'Vinaigre':              { min: 1.5, max: 4,   fixed:true,   pkgMl: 500 },
-  'Miel':                  { min: 3,   max: 8,   fixed:true,   pkgG: 250 },
+  // ── BASIQUES (Carrefour drive — pricing utile si l'user n'en a pas) ──
+  "Huile d'olive":         { min: 6,   max: 15,  fixed:true,   pkgMl: 750 },  // Carrefour Bio jusqu'à 12-15, MDD 6-8
+  'Huile de coco':         { min: 4.5, max: 9,   fixed:true,   pkgMl: 500 },
+  'Huile':                 { min: 3,   max: 6,   fixed:true,   pkgMl: 1000 },
+  'Sauce soja':            { min: 2.5, max: 5,   fixed:true,   pkgMl: 250 },
+  'Sauce poisson':         { min: 2.5, max: 5,   fixed:true,   pkgMl: 250 },
+  'Vinaigre':              { min: 1.5, max: 5,   fixed:true,   pkgMl: 500 },  // balsamique premium plus cher
+  'Miel':                  { min: 4,   max: 9,   fixed:true,   pkgG: 250 },   // Carrefour MDD ~4, marques 6-9
   'Cannelle':              { min: 1.5, max: 4,   fixed:true },
   'Cacao':                 { min: 2,   max: 5,   fixed:true },
   'Cumin':                 { min: 1.5, max: 4,   fixed:true },
@@ -9405,7 +9409,7 @@ function _buildDocXml(data) {
   if (anyPrice) {
     var tot = 'BUDGET ESTIMÉ : ' + _fmtPriceRange({ min: grandLo, max: grandHi });
     p.push('<w:p><w:pPr><w:spacing w:before="360" w:after="60"/><w:jc w:val="center"/></w:pPr><w:r><w:rPr><w:b/><w:sz w:val="28"/><w:color w:val="1B2A4A"/></w:rPr><w:t>' + _xmlEsc(tot) + '</w:t></w:r></w:p>');
-    p.push('<w:p><w:pPr><w:jc w:val="center"/><w:spacing w:after="240"/></w:pPr><w:r><w:rPr><w:i/><w:sz w:val="18"/><w:color w:val="999999"/></w:rPr><w:t>Prix approximatifs basés sur des références de grande distribution française (Carrefour, Leclerc, Auchan, Intermarché). Les prix peuvent varier selon le magasin, la marque, la ville, la saison et les promotions. Hors basiques.</w:t></w:r></w:p>');
+    p.push('<w:p><w:pPr><w:jc w:val="center"/><w:spacing w:after="240"/></w:pPr><w:r><w:rPr><w:i/><w:sz w:val="18"/><w:color w:val="999999"/></w:rPr><w:t>Prix approximatifs calibrés sur les références Carrefour drive (juin 2026). Les prix peuvent varier selon le magasin, la marque, la ville, la saison et les promotions. Hors basiques.</w:t></w:r></w:p>');
   }
   // Footer
   p.push('<w:p><w:pPr><w:spacing w:before="480"/><w:jc w:val="center"/></w:pPr><w:r><w:rPr><w:i/><w:sz w:val="18"/><w:color w:val="999999"/></w:rPr><w:t>Généré par Athletik Hub</w:t></w:r></w:p>');
