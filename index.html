@@ -8680,13 +8680,226 @@ function _buildShoppingV2(rawItems) {
 // ═══ PRIX FOURCHETTE & PRÉFÉRENCES NUTRI (2026-06-06) ═══
 // Brief : afficher des prix min-max réalistes (±20%) + sous-totaux par
 // catégorie + total. Filtrer les recettes avant génération selon les
-// allergies / intolérances / dislikes de l'user. Tout est approximatif,
-// affiché clairement comme une estimation.
+// allergies / intolérances / dislikes de l'user.
 
-// Renvoie {min, max, avg} à partir de _priceEstimate, fourchette ±20%.
+// Base de prix calibrée sur les références Carrefour / Leclerc / Auchan
+// (juin 2026). Indexée par canonical name (= sortie de _shopCanonical),
+// pas par mots-clés ingrédients bruts → évite les extrapolations bizarres
+// du genre "180g de whey utilisée = 5€" quand l'user achète un pot 1kg.
+//
+// Types :
+//   perKg   : prix au kilo, total = qty * price (viandes, poissons, légumes au poids)
+//   perUnit : prix à la pièce, total = ceil(qty) * price (avocats, citrons, poivrons)
+//   perBox  : œufs uniquement (box6/12/18/30 selon la quantité)
+//   fixed   : prix d'1 paquet/pot/brique/bouteille (cas par défaut épicerie),
+//             monté à 2-3 paquets si quantité très grosse.
+var _PACKAGE_PRICES = {
+  // ── PROTÉINES (au kg sauf paquets) ──
+  'Poulet':                { min: 9,  max: 14,  perKg:true },
+  'Dinde':                 { min: 10, max: 14,  perKg:true },
+  'Bœuf':                  { min: 12, max: 22,  perKg:true },
+  'Porc':                  { min: 9,  max: 13,  perKg:true },
+  'Saumon':                { min: 18, max: 30,  perKg:true },
+  'Thon':                  { min: 14, max: 22,  perKg:true },
+  'Poisson blanc':         { min: 14, max: 20,  perKg:true },
+  'Crevettes':             { min: 16, max: 26,  perKg:true },
+  'Bacon de dinde':        { min: 2,  max: 4,   fixed:true,   pkgG: 150 },
+  'Tofu':                  { min: 3,  max: 6,   fixed:true,   pkgG: 250 },
+  'Œufs':                  { perBox:true,
+                              box6:  { min: 2.5, max: 4 },
+                              box12: { min: 4,   max: 6.5 },
+                              box18: { min: 5.5, max: 9 },
+                              box30: { min: 7,   max: 12 } },
+  'Whey':                  { min: 20, max: 35,  fixed:true,   pkgG: 1000 },
+
+  // ── PRODUITS LAITIERS ──
+  'Lait':                  { min: 1,   max: 2,   fixed:true,   pkgMl: 1000 },
+  "Lait d'amande":         { min: 2,   max: 4,   fixed:true,   pkgMl: 1000 },
+  'Lait de coco':          { min: 1.5, max: 3,   fixed:true,   pkgMl: 400 },
+  'Lait de soja':          { min: 2,   max: 4,   fixed:true,   pkgMl: 1000 },
+  'Skyr / fromage blanc':  { min: 2,   max: 5,   fixed:true,   pkgG: 500 },
+  'Yaourts':               { min: 2,   max: 4,   fixed:true,   pkgG: 500 },
+  'Feta':                  { min: 2,   max: 4,   fixed:true,   pkgG: 200 },
+  'Mozzarella':            { min: 1.5, max: 3.5, fixed:true,   pkgG: 125 },
+  'Parmesan':              { min: 3,   max: 6,   fixed:true,   pkgG: 100 },
+  'Ricotta':               { min: 2,   max: 4,   fixed:true,   pkgG: 250 },
+  'Cheddar':               { min: 3,   max: 6,   fixed:true,   pkgG: 200 },
+  'Fromage râpé':          { min: 2,   max: 5,   fixed:true,   pkgG: 200 },
+  'Fromage':               { min: 3,   max: 7,   fixed:true,   pkgG: 200 },
+
+  // ── FÉCULENTS ──
+  'Riz':                   { min: 2,   max: 4,   fixed:true,   pkgG: 1000 },
+  'Pâtes':                 { min: 1,   max: 3,   fixed:true,   pkgG: 500 },
+  'Quinoa':                { min: 4,   max: 7,   fixed:true,   pkgG: 500 },
+  'Pain complet / levain': { min: 2,   max: 4,   fixed:true },
+  'Pain pita':             { min: 1.5, max: 3,   fixed:true },
+  'Tortillas complètes':   { min: 2,   max: 4,   fixed:true },
+  "Flocons d'avoine":      { min: 2,   max: 4,   fixed:true,   pkgG: 500 },
+  'Granola':               { min: 3,   max: 7,   fixed:true,   pkgG: 400 },
+  'Farine':                { min: 1,   max: 3,   fixed:true,   pkgG: 1000 },
+  'Patates douces':        { min: 3,   max: 5,   perKg:true },
+  'Pommes de terre':       { min: 1.5, max: 3,   perKg:true },
+  'Nouilles de riz':       { min: 1.5, max: 3,   fixed:true,   pkgG: 250 },
+  'Lentilles':             { min: 2,   max: 4,   fixed:true,   pkgG: 500 },
+  'Pois chiches':          { min: 1,   max: 3,   fixed:true,   pkgG: 400 },
+  'Haricots':              { min: 1,   max: 3,   fixed:true,   pkgG: 400 },
+  'Haricots rouges':       { min: 1,   max: 3,   fixed:true,   pkgG: 400 },
+
+  // ── FRUITS (perUnit par défaut, barquettes en fixed) ──
+  'Bananes':               { min: 0.3, max: 0.5, perUnit:true },
+  'Pommes':                { min: 0.5, max: 1,   perUnit:true },
+  'Oranges':               { min: 0.4, max: 0.8, perUnit:true },
+  'Citrons':               { min: 0.3, max: 0.8, perUnit:true },
+  'Citrons verts':         { min: 0.5, max: 1,   perUnit:true },
+  'Avocats':               { min: 1,   max: 2,   perUnit:true },
+  'Mangue':                { min: 1.5, max: 3,   perUnit:true },
+  'Ananas':                { min: 2.5, max: 5,   perUnit:true },
+  'Pastèque':              { min: 3,   max: 7,   perUnit:true },
+  'Myrtilles':             { min: 2,   max: 5,   fixed:true,   pkgG: 125 },
+  'Framboises':            { min: 2.5, max: 5,   fixed:true,   pkgG: 125 },
+  'Fraises':               { min: 3,   max: 6,   fixed:true,   pkgG: 250 },
+  'Noix de coco':          { min: 2,   max: 4,   perUnit:true },
+  'Dattes':                { min: 3,   max: 6,   fixed:true,   pkgG: 250 },
+
+  // ── LÉGUMES ──
+  'Épinards':              { min: 1.5, max: 3,   fixed:true,   pkgG: 250 },
+  'Brocoli':               { min: 1.5, max: 3,   perUnit:true },
+  'Courgettes':            { min: 0.6, max: 1.2, perUnit:true },
+  'Poivrons':              { min: 0.8, max: 1.5, perUnit:true },
+  'Tomates':               { min: 0.3, max: 0.7, perUnit:true },
+  'Tomates cerises':       { min: 2,   max: 4,   fixed:true,   pkgG: 250 },
+  'Salade verte':          { min: 1,   max: 2.5, fixed:true },
+  'Oignons':               { min: 1.5, max: 3,   fixed:true,   pkgG: 1000 },
+  'Ail':                   { min: 0.7, max: 1.5, perUnit:true },
+  'Carottes':              { min: 1,   max: 2,   fixed:true,   pkgG: 1000 },
+  'Concombre':             { min: 0.8, max: 1.5, perUnit:true },
+  'Aubergines':            { min: 1,   max: 2,   perUnit:true },
+  'Champignons':           { min: 2,   max: 4,   fixed:true,   pkgG: 250 },
+  'Gingembre':             { min: 1,   max: 2,   fixed:true },
+  'Coriandre':             { min: 1,   max: 2,   fixed:true },
+  'Persil':                { min: 1,   max: 2,   fixed:true },
+  'Basilic':               { min: 1.5, max: 3,   fixed:true },
+  'Menthe':                { min: 1,   max: 2,   fixed:true },
+  'Ciboulette':            { min: 1,   max: 2,   fixed:true },
+  'Asperges':              { min: 5,   max: 10,  fixed:true,   pkgG: 500 },
+  'Betteraves':            { min: 1.5, max: 3,   fixed:true },
+
+  // ── ÉPICERIE / BONS GRAS ──
+  'Amandes':               { min: 4,   max: 9,   fixed:true,   pkgG: 200 },
+  'Noix de cajou':         { min: 4,   max: 9,   fixed:true,   pkgG: 200 },
+  'Noix de pécan':         { min: 5,   max: 11,  fixed:true,   pkgG: 200 },
+  'Noisettes':             { min: 4,   max: 9,   fixed:true,   pkgG: 200 },
+  'Noix':                  { min: 3,   max: 7,   fixed:true,   pkgG: 200 },
+  'Beurre de cacahuète':   { min: 3,   max: 7,   fixed:true,   pkgG: 400 },
+  'Cacahuètes':            { min: 2,   max: 5,   fixed:true,   pkgG: 200 },
+  'Graines de chia':       { min: 3,   max: 6,   fixed:true,   pkgG: 200 },
+  'Graines de lin':        { min: 2,   max: 5,   fixed:true,   pkgG: 200 },
+  'Graines de sésame':     { min: 2,   max: 5,   fixed:true,   pkgG: 200 },
+  'Graines de courge':     { min: 2,   max: 5,   fixed:true,   pkgG: 200 },
+
+  // ── BASIQUES (à vérifier à la maison — pricing utile si l'user n'en a pas) ──
+  "Huile d'olive":         { min: 5,   max: 12,  fixed:true,   pkgMl: 750 },
+  'Huile de coco':         { min: 4,   max: 9,   fixed:true,   pkgMl: 500 },
+  'Huile':                 { min: 3,   max: 7,   fixed:true,   pkgMl: 1000 },
+  'Sauce soja':            { min: 2,   max: 5,   fixed:true,   pkgMl: 250 },
+  'Sauce poisson':         { min: 2,   max: 5,   fixed:true,   pkgMl: 250 },
+  'Vinaigre':              { min: 1.5, max: 4,   fixed:true,   pkgMl: 500 },
+  'Miel':                  { min: 3,   max: 8,   fixed:true,   pkgG: 250 },
+  'Cannelle':              { min: 1.5, max: 4,   fixed:true },
+  'Cacao':                 { min: 2,   max: 5,   fixed:true },
+  'Cumin':                 { min: 1.5, max: 4,   fixed:true },
+  'Paprika':               { min: 1.5, max: 4,   fixed:true },
+  'Curcuma':               { min: 1.5, max: 4,   fixed:true },
+  'Curry':                 { min: 1.5, max: 4,   fixed:true },
+  'Herbes de Provence':    { min: 1.5, max: 4,   fixed:true },
+  'Origan':                { min: 1.5, max: 3.5, fixed:true },
+  'Thym / romarin':        { min: 1.5, max: 4,   fixed:true },
+  'Piment':                { min: 1.5, max: 4,   fixed:true },
+  'Levure':                { min: 1,   max: 3,   fixed:true },
+  "Sirop d'érable":        { min: 4,   max: 10,  fixed:true,   pkgMl: 250 },
+  "Sirop d'agave":         { min: 3,   max: 7,   fixed:true,   pkgMl: 250 },
+  'Moutarde':              { min: 1.5, max: 4,   fixed:true },
+  'Ketchup':               { min: 1.5, max: 4,   fixed:true },
+  'Sel':                   { min: 0.5, max: 2,   fixed:true },
+  'Poivre':                { min: 2,   max: 5,   fixed:true }
+};
+window._PACKAGE_PRICES = _PACKAGE_PRICES;
+
+// Liste des canonicals utilisés sans entrée prix → utile pour enrichir la
+// base. Logge en console.warn (rapport interne).
+var _PRICE_MISSING_LOG = {};
+
+// Renvoie {min, max, packs} pour un (canonical, value, unit) en s'appuyant
+// sur _PACKAGE_PRICES. Null si non trouvé (l'appelant fallback sur l'estim ±20%).
+function _canonicalPriceRange(canonical, value, unit) {
+  var pkg = _PACKAGE_PRICES[canonical];
+  if (!pkg) return null;
+  var u = (unit || '').toLowerCase();
+
+  // Œufs : choisit la boîte selon la quantité
+  if (pkg.perBox) {
+    var n = Math.max(1, Math.ceil(value));
+    if (n <= 6)  return Object.assign({ packs: 1 }, pkg.box6);
+    if (n <= 12) return Object.assign({ packs: 1 }, pkg.box12);
+    if (n <= 18) return Object.assign({ packs: 1 }, pkg.box18);
+    if (n <= 30) return Object.assign({ packs: 1 }, pkg.box30);
+    var k = Math.ceil(n / 30);
+    return { min: pkg.box30.min * k, max: pkg.box30.max * k, packs: k };
+  }
+
+  // Au kilo : viandes, poissons, légumes vendus au poids
+  if (pkg.perKg) {
+    var kg = (u === 'kg') ? value : (value / 1000);
+    if (kg < 0.4) kg = 0.5; // arrondi minimum 500g (format magasin)
+    return { min: pkg.min * kg, max: pkg.max * kg, packs: 1 };
+  }
+
+  // À la pièce : fruits/légumes comptables (avocats, citrons, poivrons...)
+  if (pkg.perUnit) {
+    var qPieces;
+    if (u === 'g' || u === 'kg') {
+      // Si le qty est en grammes, on convertit (poids moyen ~150g par défaut)
+      var grams = (u === 'kg') ? value * 1000 : value;
+      qPieces = Math.max(1, Math.ceil(grams / 150));
+    } else {
+      qPieces = Math.max(1, Math.ceil(value));
+    }
+    return { min: pkg.min * qPieces, max: pkg.max * qPieces, packs: qPieces };
+  }
+
+  // Format paquet fixe : 1 paquet (ou 2-3 si la qté dépasse fortement le pkg standard)
+  if (pkg.fixed) {
+    var packs = 1;
+    if (pkg.pkgG && (u === 'g' || u === 'kg')) {
+      var totalG = (u === 'kg') ? value * 1000 : value;
+      packs = Math.max(1, Math.min(3, Math.ceil(totalG / pkg.pkgG)));
+    } else if (pkg.pkgMl && (u === 'ml' || u === 'cl' || u === 'l')) {
+      var totalMl = value;
+      if (u === 'l')  totalMl = value * 1000;
+      if (u === 'cl') totalMl = value * 10;
+      packs = Math.max(1, Math.min(3, Math.ceil(totalMl / pkg.pkgMl)));
+    }
+    return { min: pkg.min * packs, max: pkg.max * packs, packs: packs };
+  }
+
+  return null;
+}
+window._canonicalPriceRange = _canonicalPriceRange;
+
+// Renvoie {min, max, avg} : essaie _PACKAGE_PRICES en priorité (réaliste,
+// format magasin), fallback sur _priceEstimate (par poids/volume) ±20%.
 function _priceEstimateRange(name, qtyValue, unit) {
+  var pkgR = _canonicalPriceRange(name, qtyValue, unit);
+  if (pkgR) return { min: pkgR.min, max: pkgR.max, avg: (pkgR.min + pkgR.max) / 2, packs: pkgR.packs };
   var avg = _priceEstimate(name, qtyValue, unit);
-  if (avg == null) return null;
+  if (avg == null) {
+    // Rapport interne — utile pour enrichir _PACKAGE_PRICES
+    if (name && !_PRICE_MISSING_LOG[name]) {
+      _PRICE_MISSING_LOG[name] = true;
+      try { console.warn('[price] non estimé : "' + name + '" — ajouter à _PACKAGE_PRICES'); } catch(_){}
+    }
+    return null;
+  }
   if (avg === 0) return { min: 0, max: 0, avg: 0 };
   return { min: avg * 0.8, max: avg * 1.25, avg: avg };
 }
@@ -9140,6 +9353,8 @@ function _buildShoppingText(data) {
       var priceTxt = '';
       if (it.priceRange) {
         priceTxt = ' — ' + _fmtPriceRange(it.priceRange) + (isBasics ? ' si besoin' : '');
+      } else {
+        priceTxt = ' — prix non estimé';
       }
       lines.push('• ' + it.name + (it.qty ? ' — ' + it.qty : '') + priceTxt);
     });
@@ -9175,6 +9390,7 @@ function _buildDocXml(data) {
     cat.items.forEach(function(it) {
       var priceTxt = '';
       if (it.priceRange) priceTxt = ' — ' + _fmtPriceRange(it.priceRange) + (isBasics ? ' si besoin' : '');
+      else priceTxt = ' — prix non estimé';
       var line = '• ' + it.name + (it.qty ? ' — ' + it.qty : '') + priceTxt;
       p.push('<w:p><w:pPr><w:spacing w:after="60"/></w:pPr><w:r><w:rPr><w:sz w:val="22"/></w:rPr><w:t xml:space="preserve">' + _xmlEsc(line) + '</w:t></w:r></w:p>');
     });
@@ -9189,7 +9405,7 @@ function _buildDocXml(data) {
   if (anyPrice) {
     var tot = 'BUDGET ESTIMÉ : ' + _fmtPriceRange({ min: grandLo, max: grandHi });
     p.push('<w:p><w:pPr><w:spacing w:before="360" w:after="60"/><w:jc w:val="center"/></w:pPr><w:r><w:rPr><w:b/><w:sz w:val="28"/><w:color w:val="1B2A4A"/></w:rPr><w:t>' + _xmlEsc(tot) + '</w:t></w:r></w:p>');
-    p.push('<w:p><w:pPr><w:jc w:val="center"/><w:spacing w:after="240"/></w:pPr><w:r><w:rPr><w:i/><w:sz w:val="18"/><w:color w:val="999999"/></w:rPr><w:t>Prix approximatifs grande distribution, hors basiques. Variations selon magasin, marque et saison.</w:t></w:r></w:p>');
+    p.push('<w:p><w:pPr><w:jc w:val="center"/><w:spacing w:after="240"/></w:pPr><w:r><w:rPr><w:i/><w:sz w:val="18"/><w:color w:val="999999"/></w:rPr><w:t>Prix approximatifs basés sur des références de grande distribution française (Carrefour, Leclerc, Auchan, Intermarché). Les prix peuvent varier selon le magasin, la marque, la ville, la saison et les promotions. Hors basiques.</w:t></w:r></w:p>');
   }
   // Footer
   p.push('<w:p><w:pPr><w:spacing w:before="480"/><w:jc w:val="center"/></w:pPr><w:r><w:rPr><w:i/><w:sz w:val="18"/><w:color w:val="999999"/></w:rPr><w:t>Généré par Athletik Hub</w:t></w:r></w:p>');
