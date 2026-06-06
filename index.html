@@ -13090,6 +13090,25 @@ function _bfDrawChart(data) {
     setTimeout(_tim_minutRestore, 100);
   }
 
+  // Resync à chaque retour sur la PWA (autre app, écran verrouillé...)
+  // Android peut suspendre le setInterval quand backgroundé → l'affichage
+  // est en retard. On force un re-tick immédiat ET on relance l'interval
+  // si jamais il a été tué. Pas de dégât si tout va bien : tick est idempotent.
+  document.addEventListener('visibilitychange', function(){
+    if (document.visibilityState !== 'visible') return;
+    if (_tim_minut.running) {
+      // Re-calcule remMs depuis startMs et Date.now() — instantané
+      _tim_minutTick();
+      // Si l'interval a été tué, on le relance
+      if (_tim_minut.running && !_tim_minut.iv) {
+        _tim_minut.iv = setInterval(_tim_minutTick, 200);
+      }
+    } else {
+      // Pas en cours mais peut-être expiré pendant l'absence → re-vérifie persist
+      _tim_minutRestore();
+    }
+  });
+
   // ── TABATA ──
   function tim_sumHTML(stats, totalTime, totalRight, totalRightLabel){
     var statsH = stats.map(function(s){ return '<div class="tim-sum-stat"><div class="v">' + s[0] + '</div><div class="l">' + s[1] + '</div></div>'; }).join('');
