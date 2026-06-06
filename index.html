@@ -6565,7 +6565,8 @@ window.tiResetOnEnter = function(){ window.tiShowStep(1); };
     <button class="tim-tab on" data-timtab="chrono" onclick="tim_showTab('chrono')">⏱ CHRONO</button>
     <button class="tim-tab" data-timtab="minuteur" onclick="tim_showTab('minuteur')">⏰ MINUTEUR</button>
     <div class="tim-tabs-divider" aria-hidden="true"></div>
-    <button class="tim-tab opt" data-timtab="tabata" onclick="tim_showTab('tabata')">⚡ Tabata</button>
+    <!-- Tabata retiré sur demande user 2026-06-05 (timer simplifié style téléphone) -->
+    <button class="tim-tab opt" data-timtab="tabata" onclick="tim_showTab('tabata')" style="display:none">⚡ Tabata</button>
     <button class="tim-tab opt" data-timtab="hiit" onclick="tim_showTab('hiit')">🔥 HIIT</button>
     <button class="tim-tab opt" data-timtab="saved" onclick="tim_showTab('saved')">💾 Sauv.</button>
   </div>
@@ -6632,8 +6633,10 @@ window.tiResetOnEnter = function(){ window.tiShowStep(1); };
       </details>
     </div>
 
-    <!-- TABATA — 4 inputs visibles, défauts cachés (cycle-rest, countdown) -->
-    <div id="timScreenTabata" class="tim-screen">
+    <!-- TABATA — Masqué sur demande user (timer simplifié) — markup préservé
+         pour ne pas casser les références dans tim_showTab/launchTabata,
+         mais inaccessible depuis l'UI car la tab Tabata est display:none. -->
+    <div id="timScreenTabata" class="tim-screen" style="display:none !important">
       <div class="tim-sec">Effort</div>
       <div class="tim-row">
         <div class="tim-field"><label>Travail</label><input type="number" id="timTabWork" value="20" min="1" max="600"><div class="tim-field-unit">secondes</div></div>
@@ -11385,7 +11388,7 @@ function _bfDrawChart(data) {
     }
   } catch(e) {}
   var tim_soundStyle = localStorage.getItem('tim_sound') || 'sport';
-  var tim_mode = 'tabata';
+  var tim_mode = 'minuteur'; // Tabata retiré sur demande user — défaut Minuteur
   var tim_T = { queue:[], idx:0, rem:0, total:0, running:false, iv:null, startMs:null, doneRounds:0, modeLabel:'', totalWorkPhases:0 };
   var tim_savedLocal = [];
   var tim_unsub = null;
