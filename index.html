@@ -17998,19 +17998,115 @@ function _mpRotate(arr, offset) {
 }
 
 // Répartition standard des kcal sur la journée pour atteindre le total cible.
-var MP_SLOT_RATIOS = { breakfast: 0.25, lunch: 0.35, snack: 0.10, dinner: 0.30 };
+// Brief 2026-06-05 : Matin 22-28%, Midi 27-33%, Collation 12-18%, Soir 27-33%.
+var MP_SLOT_RATIOS = { breakfast: 0.25, lunch: 0.30, snack: 0.15, dinner: 0.30 };
+
+// Boosters caloriques propres pour combler le gap quand les portions des
+// recettes plafonnent sous la cible. Affichés visiblement dans le plan
+// (transparence : pas de kcal fantômes). kcal calculées par 100g.
+var MP_BOOSTERS = [
+  { name:"Huile d'olive",       qty:'10 g',  kcal: 90, p:0,  c:0,  f:10 },
+  { name:'Beurre de cacahuète', qty:'20 g',  kcal:120, p:5,  c:4,  f:10 },
+  { name:'Granola',             qty:'30 g',  kcal:130, p:3,  c:18, f:5  },
+  { name:'Noix (mix)',          qty:'15 g',  kcal: 95, p:3,  c:3,  f:9  },
+  { name:'Avocat',              qty:'½ moyen',kcal:110, p:1,  c:6,  f:10 },
+  { name:'Amandes',             qty:'20 g',  kcal:120, p:4,  c:4,  f:10 },
+  { name:'Banane',              qty:'1 moyenne', kcal:90,  p:1,  c:23, f:0 },
+  { name:'Riz blanc cuit',      qty:'80 g',  kcal:105, p:2,  c:23, f:0  }
+];
+
+// Distribue des boosters pour combler `gap` kcal manquantes. Retourne la
+// liste des boosters choisis (max 3) — au-delà on remonte les portions.
+function _mpPickBoosters(gap, seed) {
+  if (gap <= 0) return [];
+  var pool = MP_BOOSTERS.slice();
+  // Mélange déterministe par seed pour varier les boosters entre jours
+  for (var i = 0; i < pool.length; i++) {
+    var j = (i + seed) % pool.length;
+    var tmp = pool[i]; pool[i] = pool[j]; pool[j] = tmp;
+  }
+  var picked = [];
+  var remaining = gap;
+  for (var k = 0; k < pool.length && picked.length < 3 && remaining > 40; k++) {
+    var b = pool[k];
+    if (b.kcal <= remaining + 60) {
+      picked.push(b);
+      remaining -= b.kcal;
+    }
+  }
+  return picked;
+}
+
+// Validateur : vérifie qu'un plan respecte les règles du brief MVP.
+// Retourne un tableau d'issues (vide = OK). Appelé en console.warn après génération.
+function validateMealPlan(plan) {
+  var issues = [];
+  if (!plan || !plan.days || !plan.days.length) return ['Plan vide'];
+  var target = plan.targetCal || 0;
+  var tolerance = Math.max(50, Math.round(target * 0.02));
+
+  var dayHashes = {};
+  var snackKeys = {};
+  var breakfastKeys = {};
+
+  plan.days.forEach(function(d, idx){
+    // 1. Somme repas = total affiché
+    var sum = 0;
+    ['breakfast','lunch','snack','dinner'].forEach(function(slot){
+      var s = d[slot];
+      if (!s) return;
+      var c = (s.plannedCals != null ? s.plannedCals : (s.cals || 0));
+      if (s.boosters) s.boosters.forEach(function(b){ c += (b.kcal || 0); });
+      sum += c;
+    });
+    if (Math.abs(sum - d.total) > 5) {
+      issues.push('[Jour ' + (idx+1) + '] Total affiché ' + d.total + ' ≠ somme repas ' + sum);
+    }
+
+    // 2. Total proche de l'objectif (±tolerance)
+    if (target > 0 && Math.abs(d.total - target) > tolerance) {
+      issues.push('[Jour ' + (idx+1) + '] ' + d.total + ' kcal vs cible ' + target + ' (gap=' + (d.total - target) + ')');
+    }
+
+    // 3. Pas de journée copiée-collée
+    var hash = ['breakfast','lunch','snack','dinner'].map(function(s){
+      return d[s] && d[s].key ? d[s].key : '_';
+    }).join('|');
+    if (dayHashes[hash]) issues.push('[Jour ' + (idx+1) + '] identique au jour ' + dayHashes[hash]);
+    dayHashes[hash] = idx + 1;
+
+    // 4. Pas de collation répétée trop souvent (max 2x)
+    if (d.snack && d.snack.key) {
+      snackKeys[d.snack.key] = (snackKeys[d.snack.key] || 0) + 1;
+    }
+    if (d.breakfast && d.breakfast.key) {
+      breakfastKeys[d.breakfast.key] = (breakfastKeys[d.breakfast.key] || 0) + 1;
+    }
+  });
+
+  Object.keys(snackKeys).forEach(function(k){
+    if (snackKeys[k] > 2) issues.push('Collation ' + k + ' utilisée ' + snackKeys[k] + 'x (max 2)');
+  });
+  Object.keys(breakfastKeys).forEach(function(k){
+    if (breakfastKeys[k] > 2) issues.push('Petit-déj ' + k + ' utilisé ' + breakfastKeys[k] + 'x (max 2)');
+  });
+
+  return issues;
+}
+window.validateMealPlan = validateMealPlan;
 
 // Picke la recette la plus proche du target du slot + calcule les portions
 // nécessaires pour matcher le target exact. Renvoie un objet enrichi de
 // plannedPortions, plannedCals, plannedProt, plannedCarbs, plannedFat.
-function _mpPickAndPortion(arr, slotTarget, dayOffset, objectif) {
+// `usedKeys` (optional) : keys déjà utilisées cette semaine, déprioriser.
+function _mpPickAndPortion(arr, slotTarget, dayOffset, objectif, usedKeys) {
   if (!arr.length) return null;
   // Trie par proximité au target du slot
   var ranked = arr.slice().sort(function(a,b){
     return Math.abs((a.cals||0) - slotTarget) - Math.abs((b.cals||0) - slotTarget);
   });
-  // Garde les 5 plus proches (variété entre jours)
-  var top = ranked.slice(0, Math.min(5, ranked.length));
+  // Garde les 6 plus proches (variété entre jours)
+  var top = ranked.slice(0, Math.min(6, ranked.length));
   // Bias secondaire selon objectif : parmi les "proches", préfère ratio prot/kcal
   // pour pertePoids (satiété + maintien muscle), raw cals pour priseMuscle.
   if (objectif === 'pertePoids') {
@@ -18018,11 +18114,20 @@ function _mpPickAndPortion(arr, slotTarget, dayOffset, objectif) {
       return ((b.prot||0)/Math.max(1,b.cals||1)) - ((a.prot||0)/Math.max(1,a.cals||1));
     });
   }
-  var picked = top[dayOffset % top.length];
+  // Anti-répétition : essaie d'abord une recette non utilisée cette semaine
+  var picked = null;
+  if (usedKeys) {
+    for (var i = 0; i < top.length; i++) {
+      var idx = (dayOffset + i) % top.length;
+      if (!usedKeys[top[idx].key]) { picked = top[idx]; break; }
+    }
+  }
+  if (!picked) picked = top[dayOffset % top.length];
   if (!picked || !picked.cals) return picked;
-  // Calcule les portions nécessaires pour matcher le slot target (0.5 → 3x)
+  // Calcule les portions nécessaires pour matcher le slot target (0.5 → 4x
+  // pour pouvoir atteindre les gros objectifs caloriques)
   var rawRatio = slotTarget / picked.cals;
-  var portions = Math.max(0.5, Math.min(3, Math.round(rawRatio * 2) / 2));
+  var portions = Math.max(0.5, Math.min(4, Math.round(rawRatio * 2) / 2));
   return Object.assign({}, picked, {
     plannedPortions: portions,
     plannedCals: Math.round((picked.cals||0) * portions),
@@ -18080,17 +18185,52 @@ function generateMealPlan() {
     d: Math.round(targetCal * MP_SLOT_RATIOS.dinner)
   };
   for (var i = 0; i < 7; i++) {
+    // Anti-répétition : tracker des keys déjà utilisées cette semaine
+    if (i === 0) window._mpWeekUsed = {};
+    var usedKeys = window._mpWeekUsed;
+    // Week-end (sam/dim = idx 5,6) : décale fort le seed pour varier vs lundi/mardi
+    // → évite l'impression "le week-end recopie le début de semaine".
+    var weekendOffset = (i >= 5) ? (Math.floor(arr.length / 2) + i * 3) : 0;
+    var picker = function(arr, target, offset){
+      return _mpPickAndPortion(arr, target, offset + weekendOffset, objectif, usedKeys);
+    };
     // Picker intelligent : recette la plus proche du target du slot + portions adaptées
-    // Offsets distincts par slot pour éviter doublons dans la même journée
-    var b = _mpPickAndPortion(breakfasts,  slotTargets.b, i + seed,       objectif);
-    var l = _mpPickAndPortion(meals,       slotTargets.l, i + seed + 3,   objectif);
-    var c = _mpPickAndPortion(collations,  slotTargets.c, i + seed + 7,   objectif);
-    var d = _mpPickAndPortion(meals,       slotTargets.d, i + seed + Math.ceil(meals.length/2), objectif);
+    var b = _mpPickAndPortion(breakfasts,  slotTargets.b, i + seed + weekendOffset,                  objectif, usedKeys);
+    var l = _mpPickAndPortion(meals,       slotTargets.l, i + seed + 3 + weekendOffset,              objectif, usedKeys);
+    var c = _mpPickAndPortion(collations,  slotTargets.c, i + seed + 7 + weekendOffset,              objectif, usedKeys);
+    var d = _mpPickAndPortion(meals,       slotTargets.d, i + seed + Math.ceil(meals.length/2) + weekendOffset, objectif, usedKeys);
+    // Marque comme utilisé
+    if (b && b.key) usedKeys[b.key] = (usedKeys[b.key] || 0) + 1;
+    if (l && l.key) usedKeys[l.key] = (usedKeys[l.key] || 0) + 1;
+    if (c && c.key) usedKeys[c.key] = (usedKeys[c.key] || 0) + 1;
+    if (d && d.key) usedKeys[d.key] = (usedKeys[d.key] || 0) + 1;
     // Total avec portions ajustées
+    var mealsTotal = (b ? b.plannedCals : 0) + (l ? l.plannedCals : 0) + (c ? c.plannedCals : 0) + (d ? d.plannedCals : 0);
+    // Si on est sous la cible de plus de 100 kcal → boosters caloriques visibles
+    // distribués sur les repas pour combler le gap (huile, beurre cacahuète, noix...)
+    var gap = targetCal - mealsTotal;
+    if (gap > 100) {
+      var boosters = _mpPickBoosters(gap, i + seed);
+      if (boosters.length && d) {
+        // Attache les boosters au dîner pour qu'ils soient visibles
+        d.boosters = boosters;
+        var boostCal = 0, boostProt = 0, boostCarb = 0, boostFat = 0;
+        boosters.forEach(function(bo){
+          boostCal += bo.kcal || 0;
+          boostProt += bo.p || 0;
+          boostCarb += bo.c || 0;
+          boostFat += bo.f || 0;
+        });
+        d.plannedCals = (d.plannedCals || 0) + boostCal;
+        d.plannedProt = (d.plannedProt || 0) + boostProt;
+        d.plannedCarbs = (d.plannedCarbs || 0) + boostCarb;
+        d.plannedFat = (d.plannedFat || 0) + boostFat;
+      }
+    }
     var total = (b ? b.plannedCals : 0) + (l ? l.plannedCals : 0) + (c ? c.plannedCals : 0) + (d ? d.plannedCals : 0);
     var diff = total - targetCal;
     var diffTxt = (diff > 0 ? '+' : '') + diff;
-    var diffCls = Math.abs(diff) > 250 ? 'warn' : 'ok';
+    var diffCls = Math.abs(diff) > Math.max(50, Math.round(targetCal * 0.02)) ? 'warn' : 'ok';
     // Snapshot pour le storage (utilisé par renderHomeMealPlan + overlay)
     var snap = function(r){
       if (!r) return null;
@@ -18098,10 +18238,11 @@ function generateMealPlan() {
         key: r.key, name: r.name, img: r.img, moment: r.moment,
         // Macros par portion (réf de la recette)
         cals: r.cals, prot: r.prot, carbs: r.carbs, fat: r.fat,
-        // Macros planifiées (avec multiplicateur)
+        // Macros planifiées (avec multiplicateur + boosters)
         plannedPortions: r.plannedPortions,
         plannedCals: r.plannedCals, plannedProt: r.plannedProt,
-        plannedCarbs: r.plannedCarbs, plannedFat: r.plannedFat
+        plannedCarbs: r.plannedCarbs, plannedFat: r.plannedFat,
+        boosters: r.boosters || null
       };
     };
     planForStorage.days.push({ name: days[i], total: total, breakfast: snap(b), lunch: snap(l), snack: snap(c), dinner: snap(d) });
@@ -18115,6 +18256,18 @@ function generateMealPlan() {
       + '<button class="mp-log-day" onclick="logMealPlanDay(' + i + ')" style="width:100%;margin-top:6px;padding:8px;background:rgba(34,197,94,.1);border:1px solid rgba(34,197,94,.4);border-radius:8px;color:#16A34A;font-size:11px;font-weight:700;letter-spacing:.5px;cursor:pointer">✓ J\'ai mangé cette journée — logger au journal (+' + total + ' kcal)</button>'
       + '</div>';
   }
+  // Validation déterministe : log les écarts si la cible n'est pas tenue ou
+  // si les règles anti-répétition échouent. MVP : on warn et on affiche.
+  // Roadmap : si le plan est invalide, on régénère automatiquement (TODO P2).
+  try {
+    var issues = validateMealPlan(planForStorage);
+    if (issues.length) {
+      console.warn('[mealPlan] Validation issues:', issues);
+    } else {
+      console.log('[mealPlan] OK — ' + planForStorage.days.length + ' jours validés (cible ' + targetCal + ' kcal).');
+    }
+  } catch(e) { console.warn('validateMealPlan failed:', e); }
+
   // Persiste le plan pour le widget Home (Repas du jour) + l'overlay plein écran
   try { localStorage.setItem('ah_meal_plan', JSON.stringify(planForStorage)); } catch(e) {}
   html += '<button class="btn btn-outline" onclick="addMealPlanToShopping()" style="margin-top:8px">🛒 Ajouter à la liste de courses</button>'
@@ -18133,10 +18286,21 @@ function _mealRowHtml(slot, r) {
   var portions = r.plannedPortions || 1;
   var cals = r.plannedCals != null ? r.plannedCals : (r.cals || 0);
   var portionTxt = (portions !== 1) ? ' <strong style="color:var(--gold)">× ' + portions + '</strong>' : '';
+  // Boosters caloriques : affichés sous le repas pour rester transparent.
+  // Brief : "Si un booster est ajouté, il doit être visible dans les ingrédients."
+  var boostersTxt = '';
+  if (r.boosters && r.boosters.length) {
+    boostersTxt = '<div class="mp-meal-boosters" style="grid-column:1/-1;padding:6px 0 0 8px;font-size:11px;color:var(--gold);line-height:1.5">'
+      + r.boosters.map(function(b){
+          return '+ ' + b.name + ' <span style="color:var(--muted)">' + b.qty + ' · ' + b.kcal + ' kcal</span>';
+        }).join('<br>')
+      + '</div>';
+  }
   return '<div class="mp-meal"' + (onclick ? ' onclick="' + onclick + '" style="cursor:pointer"' : '') + '>'
     + '<div class="mp-meal-slot">' + slot + '</div>'
     + '<div class="mp-meal-name">' + r.name + portionTxt + '</div>'
     + '<div class="mp-meal-cals">' + cals + 'kcal</div>'
+    + boostersTxt
     + '</div>';
 }
 
