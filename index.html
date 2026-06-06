@@ -10595,6 +10595,8 @@ function startSatTimer(seconds, btn) {
   if (!display) return;
   display.style.display = 'block';
   btn.disabled = true; btn.textContent = '⏳ En cours...';
+  // Unlock audio sur le user gesture (clic du bouton).
+  try { if (typeof window.tim_beepUnlock === 'function') window.tim_beepUnlock(); } catch(e){}
   var remaining = seconds;
   display.textContent = Math.floor(remaining/60) + ':' + String(remaining%60).padStart(2,'0');
   satTimerInterval = setInterval(function() {
@@ -10605,6 +10607,8 @@ function startSatTimer(seconds, btn) {
       display.textContent = 'GO ! ✅';
       display.style.color = '#22C55E';
       btn.disabled = false; btn.textContent = '⏱ Relancer';
+      // Son partagé timer + vibration
+      try { if (typeof window.tim_sndFinish === 'function') window.tim_sndFinish(); } catch(e){}
     }
   }, 1000);
 }
@@ -13661,6 +13665,16 @@ function _bfDrawChart(data) {
   window.tim_minutConfirmSet = tim_minutConfirmSet;
   window.tim_minutVoiceSet = tim_minutVoiceSet;
   window.tim_parseDuration = tim_parseDuration;
+  // Helpers son partagés (utilisés par startSatTimer, _lsStartRest, etc.)
+  window.tim_sndFinish = tim_sndFinish;
+  window.tim_sndUrgence = tim_sndUrgence;
+  window.tim_sndRest = tim_sndRest;
+  window.tim_sndReprise = tim_sndReprise;
+  window.tim_sndDepart = tim_sndDepart;
+  window.tim_sndTick = tim_sndTick;
+  window.tim_beepUnlock = tim_beepUnlock;
+  window.tim_minutScheduleNotif = tim_minutScheduleNotif;
+  window.tim_minutCancelNotif = tim_minutCancelNotif;
 
   window.tim_open = tim_open;
   window.tim_close = tim_close;
@@ -25291,6 +25305,17 @@ function _lsStartRest(sec) {
   bar.style.width = '100%';
   bar.style.transition = 'none';
 
+  // Unlock audio sur la fenêtre user (clic du bouton qui a déclenché le rest)
+  try { if (typeof window.tim_beepUnlock === 'function') window.tim_beepUnlock(); } catch(e){}
+
+  // Programme une notification système au moment où le rest finit, pour que
+  // l'user soit alerté même s'il est parti sur une autre app (YouTube...).
+  try {
+    if (typeof window.tim_minutScheduleNotif === 'function') {
+      window.tim_minutScheduleNotif(Date.now() + sec * 1000);
+    }
+  } catch(e){}
+
   setTimeout(function() {
     bar.style.transition = 'width ' + (sec > 1 ? (sec - 1) : 1) + 's linear';
     bar.style.width = '0%';
@@ -25303,6 +25328,8 @@ function _lsStartRest(sec) {
       clearInterval(_LS.restInterval);
       _LS.restActive = false;
       overlay.classList.remove('ls-rest-active');
+      // Son partagé timer + vibration → fin de récup, on enchaîne
+      try { if (typeof window.tim_sndFinish === 'function') window.tim_sndFinish(); } catch(e){}
       _lsApplyPending();
     }
   }, 1000);
@@ -25312,6 +25339,8 @@ function _lsSkipRest() {
   clearInterval(_LS.restInterval);
   _LS.restActive = false;
   document.getElementById('lsRestOverlay').classList.remove('ls-rest-active');
+  // Annule la notif planifiée si on skip avant la fin
+  try { if (typeof window.tim_minutCancelNotif === 'function') window.tim_minutCancelNotif(); } catch(e){}
   _lsApplyPending();
 }
 
