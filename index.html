@@ -8659,11 +8659,7 @@ function _buildShoppingV2(rawItems) {
       }
     });
     var qtyStr = (targetCat === BASICS) ? '' : _shopFormatBuyable(canonical, bestVal, bestUnit);
-    // Estimation de prix fourchette (±20%). Sur les basiques on calcule
-    // quand même : utile si l'user n'en a pas chez lui.
-    var priceRange = null;
-    try { priceRange = _priceEstimateRange(canonical, bestVal, bestUnit); } catch(e) {}
-    newCats[targetCat].push({ name: canonical, qty: qtyStr, priceRange: priceRange });
+    newCats[targetCat].push({ name: canonical, qty: qtyStr });
   });
 
   var cats = []; var totalItems = 0;
@@ -9139,66 +9135,43 @@ function renderShoppingList() {
   var checked = {};
   try { checked = JSON.parse(localStorage.getItem('ah_shopping_checks') || '{}'); } catch(e) {}
 
-  // Pré-calcule le total avant le rendu (pour le sticky en haut)
-  var totalSummary = (function(){
-    var t = 0, priced = 0, total = 0;
-    Object.keys(agg).forEach(function(k){
-      total++;
-      var p = _priceFromQtys(agg[k].name, agg[k].qtys);
-      if (p != null) { t += p; priced++; }
-    });
-    return { total: t, priced: priced, count: total };
-  })();
+  // Compteur ingrédients (plus de total prix — prix retirés sur demande user)
+  var totalCount = Object.keys(agg).length;
 
   // Ordre stable des catégories
   var catOrder = ['PROTÉINES & LAITAGES','GLUCIDES & FÉCULENTS','LÉGUMES & HERBES','FRUITS','BONS GRAS','ÉPICES & DIVERS'];
   var html = '';
 
-  // ── Sticky total en haut (visible sans scroller) ──
-  if (totalSummary.priced > 0) {
+  // ── Sticky header en haut ──
+  if (totalCount > 0) {
     html += '<div style="position:sticky;top:0;z-index:5;background:var(--ah-navy-deep);color:#fff;border-radius:12px;padding:14px 18px;margin-bottom:14px;display:flex;justify-content:space-between;align-items:center;box-shadow:0 4px 14px rgba(11,18,40,.12)">'
          + '<div>'
-         +   '<div style="font-family:\'JetBrains Mono\',monospace;font-size:10px;letter-spacing:.22em;color:var(--ah-gold);text-transform:uppercase;margin-bottom:2px">Total estimé</div>'
-         +   '<div style="font-family:\'Outfit\',sans-serif;font-size:11px;color:rgba(255,255,255,.55)">' + totalSummary.count + ' ingrédient' + (totalSummary.count>1?'s':'') + (totalSummary.priced < totalSummary.count ? ' · ' + (totalSummary.count - totalSummary.priced) + ' sans prix' : '') + '</div>'
+         +   '<div style="font-family:\'JetBrains Mono\',monospace;font-size:10px;letter-spacing:.22em;color:var(--ah-gold);text-transform:uppercase;margin-bottom:2px">Liste de courses</div>'
+         +   '<div style="font-family:\'Outfit\',sans-serif;font-size:11px;color:rgba(255,255,255,.55)">' + totalCount + ' ingrédient' + (totalCount>1?'s':'') + '</div>'
          + '</div>'
-         + '<div style="font-family:\'Bebas Neue\',sans-serif;font-size:30px;letter-spacing:.04em;color:#fff">' + _fmtPrice(totalSummary.total) + '</div>'
+         + '<div style="font-family:\'Bebas Neue\',sans-serif;font-size:30px;letter-spacing:.04em;color:var(--ah-gold)">🛒</div>'
          + '</div>';
   }
 
-  var grandTotal = 0; var anyPriced = false;
   catOrder.forEach(function(cat){
     var items = byCat[cat]; if (!items || !items.length) return;
-    // Total catégorie
-    var catTotal = 0; var catPriced = false;
-    items.forEach(function(it){
-      var p = _priceFromQtys(it.name, it.qtys);
-      if (p != null) { catTotal += p; catPriced = true; grandTotal += p; anyPriced = true; }
-    });
     html += '<div style="margin-bottom:16px">';
     html +=   '<div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:8px">';
     html +=     '<div style="font-family:\'JetBrains Mono\',monospace;font-size:10px;font-weight:500;color:var(--ah-gold);letter-spacing:.18em">' + cat + '</div>';
-    if (catPriced) html += '<div style="font-family:\'JetBrains Mono\',monospace;font-size:10px;color:var(--ah-text2);letter-spacing:.08em">~' + _fmtPrice(catTotal) + '</div>';
     html +=   '</div>';
     items.forEach(function(it){
       var checkKey = it.name.toLowerCase().trim();
       var isChecked = !!checked[checkKey];
       var qtyTxt = _sumQtys(it.qtys);
-      var p = _priceFromQtys(it.name, it.qtys);
-      // Format demandé : "Aliment (gramage)" sur 1 ligne + prix à droite
       html += '<div style="display:flex;align-items:center;gap:10px;padding:11px 0;border-bottom:1px solid var(--ah-border)">';
       html +=   '<div class="shop-check ' + (isChecked?'on':'') + '" onclick="toggleShopItem(\'' + checkKey.replace(/'/g,"\\'") + '\',this)" style="width:22px;height:22px;border-radius:6px;' + (isChecked?'background:var(--ah-gold);border:2px solid var(--ah-gold);color:var(--ah-navy);display:flex;align-items:center;justify-content:center;font-size:12px':'border:2px solid var(--ah-border2)') + ';cursor:pointer;flex-shrink:0">' + (isChecked?'✓':'') + '</div>';
       html +=   '<div style="flex:1;font-size:13px;line-height:1.35;' + (isChecked?'color:var(--ah-muted);text-decoration:line-through':'color:var(--ah-text)') + '">';
       html +=     '<span style="font-weight:600">' + _cleanName(it.name) + '</span>' + (qtyTxt ? ' <span style="color:var(--ah-text2);font-weight:500">(' + qtyTxt + ')</span>' : '');
       html +=   '</div>';
-      if (p != null) html += '<div style="font-family:\'JetBrains Mono\',monospace;font-size:11px;color:' + (isChecked ? 'var(--ah-muted)' : 'var(--ah-text2)') + ';letter-spacing:.04em;flex-shrink:0">~' + _fmtPrice(p) + '</div>';
       html += '</div>';
     });
     html += '</div>';
   });
-  // Disclaimer prix (le total est sticky en haut)
-  if (anyPriced) {
-    html += '<div style="font-family:\'Outfit\',sans-serif;font-size:11px;color:var(--ah-muted);margin-top:10px;text-align:center;line-height:1.5">Estimation basée sur les prix moyens Carrefour / Auchan drive · ±15%.<br>Les épices, sel et levure sont approximés.</div>';
-  }
   container.innerHTML = html;
 }
 
@@ -9334,83 +9307,34 @@ function _collectShoppingForExport() {
 }
 
 // Texte plain pour Native Share / clipboard
-// Accumulateurs de prix : sous-total catégorie + grand total (hors basiques).
-function _shoppingSubtotal(items) {
-  var loSum = 0, hiSum = 0, any = false;
-  items.forEach(function(it){
-    if (!it.priceRange) return;
-    loSum += it.priceRange.min;
-    hiSum += it.priceRange.max;
-    any = true;
-  });
-  return any ? { min: loSum, max: hiSum } : null;
-}
-
 function _buildShoppingText(data) {
-  var BASICS_NAME = 'À vérifier à la maison';
   var lines = ['🛒 LISTE DE COURSES', _fmtShopDate(), ''];
-  var grandLo = 0, grandHi = 0, anyPrice = false;
   data.cats.forEach(function(cat) {
-    var isBasics = cat.name === BASICS_NAME;
     lines.push('— ' + cat.name + ' —');
     cat.items.forEach(function(it) {
-      var priceTxt = '';
-      if (it.priceRange) {
-        priceTxt = ' — ' + _fmtPriceRange(it.priceRange) + (isBasics ? ' si besoin' : '');
-      } else {
-        priceTxt = ' — prix non estimé';
-      }
-      lines.push('• ' + it.name + (it.qty ? ' — ' + it.qty : '') + priceTxt);
+      lines.push('• ' + it.name + (it.qty ? ' — ' + it.qty : ''));
     });
-    var sub = _shoppingSubtotal(cat.items);
-    if (sub && !isBasics) {
-      lines.push('  Sous-total : ' + _fmtPriceRange({ min: sub.min, max: sub.max }));
-      grandLo += sub.min; grandHi += sub.max; anyPrice = true;
-    }
     lines.push('');
   });
-  if (anyPrice) {
-    lines.push('💰 BUDGET ESTIMÉ : ' + _fmtPriceRange({ min: grandLo, max: grandHi }));
-    lines.push('(prix approximatifs grande distribution, hors basiques)');
-    lines.push('');
-  }
   lines.push('Généré par Athletik Hub 💪');
   return lines.join('\n');
 }
 
 // Construit document.xml — corps du .docx avec mise en forme
 function _buildDocXml(data) {
-  var BASICS_NAME = 'À vérifier à la maison';
   var p = [];
   // Titre
   p.push('<w:p><w:pPr><w:spacing w:after="240"/><w:jc w:val="center"/></w:pPr><w:r><w:rPr><w:b/><w:sz w:val="44"/><w:color w:val="1B2A4A"/></w:rPr><w:t>LISTE DE COURSES</w:t></w:r></w:p>');
   // Date
   p.push('<w:p><w:pPr><w:jc w:val="center"/><w:spacing w:after="360"/></w:pPr><w:r><w:rPr><w:i/><w:color w:val="666666"/></w:rPr><w:t>' + _xmlEsc(_fmtShopDate()) + '</w:t></w:r></w:p>');
   // Catégories
-  var grandLo = 0, grandHi = 0, anyPrice = false;
   data.cats.forEach(function(cat) {
-    var isBasics = cat.name === BASICS_NAME;
     p.push('<w:p><w:pPr><w:spacing w:before="240" w:after="120"/></w:pPr><w:r><w:rPr><w:b/><w:sz w:val="28"/><w:color w:val="C5A44E"/></w:rPr><w:t>' + _xmlEsc(cat.name) + '</w:t></w:r></w:p>');
     cat.items.forEach(function(it) {
-      var priceTxt = '';
-      if (it.priceRange) priceTxt = ' — ' + _fmtPriceRange(it.priceRange) + (isBasics ? ' si besoin' : '');
-      else priceTxt = ' — prix non estimé';
-      var line = '• ' + it.name + (it.qty ? ' — ' + it.qty : '') + priceTxt;
+      var line = '• ' + it.name + (it.qty ? ' — ' + it.qty : '');
       p.push('<w:p><w:pPr><w:spacing w:after="60"/></w:pPr><w:r><w:rPr><w:sz w:val="22"/></w:rPr><w:t xml:space="preserve">' + _xmlEsc(line) + '</w:t></w:r></w:p>');
     });
-    var sub = _shoppingSubtotal(cat.items);
-    if (sub && !isBasics) {
-      var subTxt = 'Sous-total : ' + _fmtPriceRange({ min: sub.min, max: sub.max });
-      p.push('<w:p><w:pPr><w:spacing w:before="60" w:after="60"/><w:ind w:left="240"/></w:pPr><w:r><w:rPr><w:i/><w:sz w:val="20"/><w:color w:val="6B7588"/></w:rPr><w:t>' + _xmlEsc(subTxt) + '</w:t></w:r></w:p>');
-      grandLo += sub.min; grandHi += sub.max; anyPrice = true;
-    }
   });
-  // Total budget estimé
-  if (anyPrice) {
-    var tot = 'BUDGET ESTIMÉ : ' + _fmtPriceRange({ min: grandLo, max: grandHi });
-    p.push('<w:p><w:pPr><w:spacing w:before="360" w:after="60"/><w:jc w:val="center"/></w:pPr><w:r><w:rPr><w:b/><w:sz w:val="28"/><w:color w:val="1B2A4A"/></w:rPr><w:t>' + _xmlEsc(tot) + '</w:t></w:r></w:p>');
-    p.push('<w:p><w:pPr><w:jc w:val="center"/><w:spacing w:after="240"/></w:pPr><w:r><w:rPr><w:i/><w:sz w:val="18"/><w:color w:val="999999"/></w:rPr><w:t>Prix approximatifs calibrés sur les références Carrefour drive (juin 2026). Les prix peuvent varier selon le magasin, la marque, la ville, la saison et les promotions. Hors basiques.</w:t></w:r></w:p>');
-  }
   // Footer
   p.push('<w:p><w:pPr><w:spacing w:before="480"/><w:jc w:val="center"/></w:pPr><w:r><w:rPr><w:i/><w:sz w:val="18"/><w:color w:val="999999"/></w:rPr><w:t>Généré par Athletik Hub</w:t></w:r></w:p>');
   return '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'
@@ -19348,26 +19272,16 @@ function renderMealPlanShoppingList() {
     if (!m) return { qty:null, unit:'', name:s };
     return { qty: parseFloat(m[1].replace(',', '.')), unit: m[2] === 'x' ? '' : m[2], name: m[3] };
   }
-  var grandTotal = 0; var anyPriced = false;
   var html = '<div style="margin-top:12px;padding:12px;background:var(--ah-surface);border:1px solid var(--ah-border);border-radius:12px"><div style="font-family:\'JetBrains Mono\',monospace;font-size:10px;color:var(--ah-gold);font-weight:500;letter-spacing:.22em;margin-bottom:10px">DEPUIS LE PLAN REPAS</div>';
   items.forEach(function(line, i){
     var isChecked = !!checked[i];
     var p = _parseLine(line);
     var qtyTxt = (p.qty != null) ? ((Math.round(p.qty * 10) / 10) + (p.unit || '')) : '';
-    var price = (p.qty != null) ? _priceEstimate(p.name, p.qty, p.unit) : null;
-    if (price != null) { grandTotal += price; anyPriced = true; }
     html += '<div style="display:flex;align-items:center;gap:10px;padding:7px 0;border-bottom:1px solid var(--ah-border);cursor:pointer;font-size:13px;' + (isChecked ? 'color:var(--ah-muted);text-decoration:line-through' : 'color:var(--ah-text)') + '" onclick="_toggleMealPlanCheck(' + i + ')">'
       + '<input type="checkbox" ' + (isChecked ? 'checked' : '') + ' style="cursor:pointer;flex-shrink:0" onclick="event.stopPropagation();_toggleMealPlanCheck(' + i + ')">'
       + '<div style="flex:1;line-height:1.35"><span style="font-weight:600">' + _cleanName(p.name) + '</span>' + (qtyTxt ? ' <span style="color:var(--ah-text2);font-weight:500">(' + qtyTxt + ')</span>' : '') + '</div>'
-      + (price != null ? '<div style="font-family:\'JetBrains Mono\',monospace;font-size:11px;color:var(--ah-text2);letter-spacing:.04em;flex-shrink:0">~' + _fmtPrice(price) + '</div>' : '')
       + '</div>';
   });
-  if (anyPriced) {
-    html += '<div style="margin-top:10px;padding:10px 12px;background:var(--ah-navy-deep);border-radius:10px;display:flex;justify-content:space-between;align-items:center;color:#fff">'
-         + '<div style="font-family:\'JetBrains Mono\',monospace;font-size:10px;letter-spacing:.22em;color:var(--ah-gold)">TOTAL ESTIMÉ</div>'
-         + '<div style="font-family:\'Bebas Neue\',sans-serif;font-size:20px;letter-spacing:.04em;color:#fff">' + _fmtPrice(grandTotal) + '</div>'
-         + '</div>';
-  }
   html += '<button onclick="_clearMealPlanShoppingList()" style="margin-top:10px;padding:8px 12px;background:transparent;color:var(--ah-muted);border:1px solid var(--ah-border);border-radius:8px;font-size:11px;cursor:pointer;font-family:\'Outfit\',sans-serif">🗑 Vider la liste</button>';
   html += '</div>';
   el.innerHTML = html;
