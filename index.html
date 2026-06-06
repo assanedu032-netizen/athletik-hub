@@ -3534,6 +3534,13 @@ html body #result, html body #nutriResult{
 .se-fb-foot{position:sticky;bottom:0;background:var(--ah-bg);padding:14px 0 0;margin-top:14px}
 .se-fb-validate{width:100%;padding:16px;background:linear-gradient(135deg,#C5A44E,#D4B86A);color:#1B2D5C;border:none;border-radius:12px;font-family:'Outfit',sans-serif;font-size:15px;font-weight:800;letter-spacing:.04em;cursor:pointer;box-shadow:0 6px 18px rgba(197,164,78,.28)}
 .se-fb-validate:active{transform:scale(.98)}
+
+/* ── Modal restrictions alimentaires : chips ── */
+.np-chips{display:flex;flex-wrap:wrap;gap:6px}
+.np-chip{padding:9px 13px;border-radius:999px;background:var(--ah-surface);border:1.5px solid var(--ah-border2);color:var(--ah-text2);font-family:'Outfit',sans-serif;font-size:12px;font-weight:600;cursor:pointer;transition:all .15s;-webkit-tap-highlight-color:transparent}
+.np-chip:hover{border-color:var(--ah-gold)}
+.np-chip.on{background:var(--ah-navy);color:#fff;border-color:var(--ah-gold)}
+#nutriPrefsModal.on{display:flex !important}
 </style>
 
 <template id="__bundler_thumbnail" data-bg-color="#1F305F">
@@ -6954,11 +6961,87 @@ window.tiResetOnEnter = function(){ window.tiShowStep(1); };
         <div><div style="font-family:'Bebas Neue',sans-serif;font-size:20px;color:var(--ah-text)" id="mpsLip">—</div><div style="font-family:'JetBrains Mono',monospace;font-size:9px;color:var(--ah-muted);letter-spacing:.14em">LIP g</div></div>
       </div>
 
+      <!-- Restrictions alimentaires : ouvre une modal dédiée (prefs sauvegardées
+           dans prof.nutritionPreferences et appliquées avant génération du plan) -->
+      <button type="button" onclick="openNutriPrefs()" style="display:flex;align-items:center;justify-content:space-between;padding:14px 16px;background:var(--ah-surface2);border:1px solid var(--ah-border);border-radius:12px;cursor:pointer;font-family:'Outfit',sans-serif;color:var(--ah-text);font-size:13px;font-weight:600;text-align:left">
+        <span><span style="margin-right:8px">🥗</span>Restrictions alimentaires</span>
+        <span style="color:var(--ah-gold);font-size:18px">→</span>
+      </button>
+
     </div>
 
     <div style="padding:14px 22px 22px;display:flex;gap:10px;border-top:1px solid var(--ah-border);background:var(--ah-surface)">
       <button onclick="closeMealPlanSettings()" style="flex:1;padding:14px;background:var(--ah-surface2);border:1px solid var(--ah-border2);border-radius:12px;font-family:'Outfit',sans-serif;font-weight:600;color:var(--ah-text);cursor:pointer">Annuler</button>
       <button onclick="mpsSave()" style="flex:2;padding:14px;background:var(--ah-gold);border:none;border-radius:12px;font-family:'Bebas Neue',sans-serif;font-size:14px;letter-spacing:.12em;color:var(--ah-navy);cursor:pointer;box-shadow:0 6px 18px rgba(197,164,78,.28)">SAUVEGARDER &amp; RÉGÉNÉRER</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ MODAL RESTRICTIONS ALIMENTAIRES ═══ -->
+<div id="nutriPrefsModal" class="mp-overlay" style="background:rgba(0,0,0,.55);align-items:flex-end;display:none">
+  <div style="width:100%;max-width:430px;margin:auto;background:var(--ah-surface);border-radius:20px 20px 0 0;max-height:90vh;overflow-y:auto;display:flex;flex-direction:column">
+    <div style="display:flex;justify-content:space-between;align-items:center;padding:18px 22px 8px;border-bottom:1px solid var(--ah-border)">
+      <div style="font-family:'Bebas Neue',sans-serif;font-size:20px;letter-spacing:.06em;color:var(--ah-text)">RESTRICTIONS ALIMENTAIRES</div>
+      <button onclick="closeNutriPrefs()" aria-label="Fermer" style="background:none;border:none;font-size:24px;color:var(--ah-muted);cursor:pointer;padding:4px 10px">×</button>
+    </div>
+    <div style="padding:18px 22px;display:flex;flex-direction:column;gap:18px;flex:1">
+      <div style="font-size:12px;color:var(--ah-text2);line-height:1.5">Dis-nous ce que tu ne peux pas ou ne veux pas manger. Titan ne te générera pas de repas incompatibles.</div>
+
+      <div>
+        <div style="font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:.18em;color:var(--ah-text2);text-transform:uppercase;margin-bottom:8px">Allergies & intolérances</div>
+        <div class="np-chips" id="npAllergies">
+          <button type="button" class="np-chip" data-val="lactose" onclick="_npToggleChip(this)">Lactose</button>
+          <button type="button" class="np-chip" data-val="gluten" onclick="_npToggleChip(this)">Gluten</button>
+          <button type="button" class="np-chip" data-val="oeufs" onclick="_npToggleChip(this)">Œufs</button>
+          <button type="button" class="np-chip" data-val="fruits_coque" onclick="_npToggleChip(this)">Fruits à coque</button>
+          <button type="button" class="np-chip" data-val="arachides" onclick="_npToggleChip(this)">Arachides</button>
+          <button type="button" class="np-chip" data-val="poisson" onclick="_npToggleChip(this)">Poisson</button>
+          <button type="button" class="np-chip" data-val="fruits_mer" onclick="_npToggleChip(this)">Fruits de mer</button>
+          <button type="button" class="np-chip" data-val="soja" onclick="_npToggleChip(this)">Soja</button>
+        </div>
+      </div>
+
+      <div>
+        <div style="font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:.18em;color:var(--ah-text2);text-transform:uppercase;margin-bottom:8px">Aliments exclus</div>
+        <div class="np-chips" id="npExcluded">
+          <button type="button" class="np-chip" data-val="porc" onclick="_npToggleChip(this)">Porc</button>
+          <button type="button" class="np-chip" data-val="boeuf" onclick="_npToggleChip(this)">Bœuf</button>
+          <button type="button" class="np-chip" data-val="poulet" onclick="_npToggleChip(this)">Poulet</button>
+          <button type="button" class="np-chip" data-val="poisson" onclick="_npToggleChip(this)">Poisson</button>
+          <button type="button" class="np-chip" data-val="laitiers" onclick="_npToggleChip(this)">Produits laitiers</button>
+          <button type="button" class="np-chip" data-val="viande" onclick="_npToggleChip(this)">Viande</button>
+        </div>
+      </div>
+
+      <div>
+        <div style="font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:.18em;color:var(--ah-text2);text-transform:uppercase;margin-bottom:8px">Régime alimentaire</div>
+        <div class="ah-seg" id="npDiet">
+          <button class="ah-seg-item on" data-val="" onclick="_npPickDiet(this)">Aucun</button>
+          <button class="ah-seg-item" data-val="vegetarien" onclick="_npPickDiet(this)">Végétarien</button>
+          <button class="ah-seg-item" data-val="vegan" onclick="_npPickDiet(this)">Vegan</button>
+          <button class="ah-seg-item" data-val="sans_lactose" onclick="_npPickDiet(this)">Sans lactose</button>
+          <button class="ah-seg-item" data-val="sans_gluten" onclick="_npPickDiet(this)">Sans gluten</button>
+          <button class="ah-seg-item" data-val="sans_porc" onclick="_npPickDiet(this)">Sans porc</button>
+        </div>
+      </div>
+
+      <div>
+        <div style="font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:.18em;color:var(--ah-text2);text-transform:uppercase;margin-bottom:6px">Aliments que tu n'aimes pas</div>
+        <textarea id="npDislikes" rows="2" placeholder="Ex : brocoli, thon, champignons (un par ligne ou séparés par virgule)" style="width:100%;box-sizing:border-box;background:var(--ah-surface);border:1.5px solid var(--ah-border2);border-radius:10px;padding:10px 12px;font-family:'Outfit',sans-serif;font-size:13px;color:var(--ah-text);resize:none;outline:none;line-height:1.4"></textarea>
+      </div>
+
+      <div>
+        <div style="font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:.18em;color:var(--ah-text2);text-transform:uppercase;margin-bottom:8px">Budget courses</div>
+        <div class="ah-seg" id="npBudget">
+          <button class="ah-seg-item" data-val="economique" onclick="_npPickBudget(this)">Économique</button>
+          <button class="ah-seg-item on" data-val="standard" onclick="_npPickBudget(this)">Standard</button>
+          <button class="ah-seg-item" data-val="premium" onclick="_npPickBudget(this)">Premium</button>
+        </div>
+      </div>
+    </div>
+    <div style="padding:14px 22px 22px;display:flex;gap:10px;border-top:1px solid var(--ah-border);background:var(--ah-surface)">
+      <button onclick="closeNutriPrefs()" style="flex:1;padding:14px;background:var(--ah-surface2);border:1px solid var(--ah-border2);border-radius:12px;font-family:'Outfit',sans-serif;font-weight:600;color:var(--ah-text);cursor:pointer">Annuler</button>
+      <button onclick="_npSave()" style="flex:2;padding:14px;background:var(--ah-gold);border:none;border-radius:12px;font-family:'Bebas Neue',sans-serif;font-size:14px;letter-spacing:.12em;color:var(--ah-navy);cursor:pointer;box-shadow:0 6px 18px rgba(197,164,78,.28)">SAUVEGARDER</button>
     </div>
   </div>
 </div>
@@ -8551,7 +8634,11 @@ function _buildShoppingV2(rawItems) {
       }
     });
     var qtyStr = (targetCat === BASICS) ? '' : _shopFormatBuyable(canonical, bestVal, bestUnit);
-    newCats[targetCat].push({ name: canonical, qty: qtyStr });
+    // Estimation de prix fourchette (±20%). Sur les basiques on calcule
+    // quand même : utile si l'user n'en a pas chez lui.
+    var priceRange = null;
+    try { priceRange = _priceEstimateRange(canonical, bestVal, bestUnit); } catch(e) {}
+    newCats[targetCat].push({ name: canonical, qty: qtyStr, priceRange: priceRange });
   });
 
   var cats = []; var totalItems = 0;
@@ -8564,6 +8651,177 @@ function _buildShoppingV2(rawItems) {
   });
   return { cats: cats, totalItems: totalItems };
 }
+
+// ═══ PRIX FOURCHETTE & PRÉFÉRENCES NUTRI (2026-06-06) ═══
+// Brief : afficher des prix min-max réalistes (±20%) + sous-totaux par
+// catégorie + total. Filtrer les recettes avant génération selon les
+// allergies / intolérances / dislikes de l'user. Tout est approximatif,
+// affiché clairement comme une estimation.
+
+// Renvoie {min, max, avg} à partir de _priceEstimate, fourchette ±20%.
+function _priceEstimateRange(name, qtyValue, unit) {
+  var avg = _priceEstimate(name, qtyValue, unit);
+  if (avg == null) return null;
+  if (avg === 0) return { min: 0, max: 0, avg: 0 };
+  return { min: avg * 0.8, max: avg * 1.25, avg: avg };
+}
+window._priceEstimateRange = _priceEstimateRange;
+
+// Format "X € à Y €" pour une fourchette, ou "gratuit" / "~X €" si égal.
+function _fmtPriceRange(r) {
+  if (!r) return '';
+  if (r.min === 0 && r.max === 0) return 'gratuit';
+  var lo = Math.max(1, Math.round(r.min));
+  var hi = Math.max(lo, Math.round(r.max));
+  if (lo === hi) return '~' + lo + ' €';
+  return lo + ' € à ' + hi + ' €';
+}
+window._fmtPriceRange = _fmtPriceRange;
+
+// ─── Préférences alimentaires de l'user ─────────────────────────────────
+// Clé : prof.nutritionPreferences = {allergies[], excludedFoods[],
+//                                     dislikedFoods[], dietType, budget}
+function getNutriPrefs() {
+  try {
+    var prof = JSON.parse(localStorage.getItem('ah_profile') || '{}');
+    var p = prof.nutritionPreferences || {};
+    return {
+      allergies: Array.isArray(p.allergies) ? p.allergies : [],
+      excludedFoods: Array.isArray(p.excludedFoods) ? p.excludedFoods : [],
+      dislikedFoods: Array.isArray(p.dislikedFoods) ? p.dislikedFoods : [],
+      dietType: p.dietType || '',
+      budget: p.budget || 'standard'
+    };
+  } catch(e) {
+    return { allergies:[], excludedFoods:[], dislikedFoods:[], dietType:'', budget:'standard' };
+  }
+}
+window.getNutriPrefs = getNutriPrefs;
+
+function saveNutriPrefs(prefs) {
+  try {
+    var prof = JSON.parse(localStorage.getItem('ah_profile') || '{}');
+    prof.nutritionPreferences = prefs;
+    localStorage.setItem('ah_profile', JSON.stringify(prof));
+    try { if (typeof fbSaveProfile === 'function') fbSaveProfile(); } catch(e) {}
+  } catch(e) { console.warn('saveNutriPrefs:', e); }
+}
+window.saveNutriPrefs = saveNutriPrefs;
+
+// Mots-clés à exclure par tag (allergie ou restriction)
+var _NUTRI_EXCLUDE_KW = {
+  lactose:       ['lait','fromage','skyr','yaourt','crème','beurre','ricotta','mozzarella','feta','parmesan','cheddar','emmental'],
+  gluten:        ['blé','pâte','pain','tortilla','avoine','farine','biscuit','couscous','semoule','granola'],
+  oeufs:         ['œuf','oeuf'],
+  fruits_coque:  ['amande','noisette','noix','cajou','pécan','pecan','pistache','macadam'],
+  arachides:     ['cacahu','arachide','peanut'],
+  poisson:       ['saumon','thon','cabillaud','poisson','merlu','maquereau','sardine','dorade'],
+  fruits_mer:    ['crevett','crabe','moule','huître','huitre','calamar','poulpe','fruits de mer'],
+  soja:          ['soja','tofu','tempeh','edamame'],
+  porc:          ['porc','jambon','lardon','bacon'],
+  boeuf:         ['bœuf','boeuf','steak haché'],
+  poulet:        ['poulet','volaille','dinde'],
+  viande:        ['poulet','bœuf','boeuf','porc','dinde','agneau','veau','jambon','steak','lardon','bacon'],
+  laitiers:      ['lait','fromage','skyr','yaourt','crème','ricotta','mozzarella','feta','parmesan','beurre','cheddar','emmental']
+};
+
+// True si la recette est compatible avec les préférences user.
+function _recipeIsCompatible(recipe, prefs) {
+  if (!recipe || !recipe.ingredients) return true;
+  var excludeKws = [];
+  function pushKws(tag) {
+    var kws = _NUTRI_EXCLUDE_KW[tag] || [tag];
+    kws.forEach(function(k){ excludeKws.push(String(k).toLowerCase()); });
+  }
+  (prefs.allergies || []).forEach(pushKws);
+  (prefs.excludedFoods || []).forEach(pushKws);
+  // Dislikes : champ libre, on push tel quel (lowercase)
+  (prefs.dislikedFoods || []).forEach(function(d){
+    if (d && String(d).trim()) excludeKws.push(String(d).trim().toLowerCase());
+  });
+  // dietType implique des exclusions
+  if (prefs.dietType === 'vegetarien' || prefs.dietType === 'vegan') {
+    pushKws('viande'); pushKws('poisson'); pushKws('fruits_mer');
+  }
+  if (prefs.dietType === 'vegan') { pushKws('laitiers'); pushKws('oeufs'); excludeKws.push('miel'); }
+  if (prefs.dietType === 'sans_lactose') pushKws('lactose');
+  if (prefs.dietType === 'sans_gluten') pushKws('gluten');
+  if (prefs.dietType === 'sans_porc') pushKws('porc');
+  if (!excludeKws.length) return true;
+  for (var i = 0; i < recipe.ingredients.length; i++) {
+    var n = String((recipe.ingredients[i] && recipe.ingredients[i].name) || '').toLowerCase();
+    if (!n) continue;
+    for (var j = 0; j < excludeKws.length; j++) {
+      if (n.indexOf(excludeKws[j]) !== -1) return false;
+    }
+  }
+  return true;
+}
+window._recipeIsCompatible = _recipeIsCompatible;
+
+// ── Modal restrictions : ouverture/fermeture + chips + persistance ──
+function openNutriPrefs() {
+  var ov = document.getElementById('nutriPrefsModal');
+  if (!ov) return;
+  // Restaure les valeurs depuis le profil
+  var prefs = getNutriPrefs();
+  document.querySelectorAll('#npAllergies .np-chip').forEach(function(c){
+    c.classList.toggle('on', prefs.allergies.indexOf(c.getAttribute('data-val')) >= 0);
+  });
+  document.querySelectorAll('#npExcluded .np-chip').forEach(function(c){
+    c.classList.toggle('on', prefs.excludedFoods.indexOf(c.getAttribute('data-val')) >= 0);
+  });
+  document.querySelectorAll('#npDiet .ah-seg-item').forEach(function(b){
+    b.classList.toggle('on', (b.getAttribute('data-val') || '') === (prefs.dietType || ''));
+  });
+  document.querySelectorAll('#npBudget .ah-seg-item').forEach(function(b){
+    b.classList.toggle('on', b.getAttribute('data-val') === (prefs.budget || 'standard'));
+  });
+  var ta = document.getElementById('npDislikes');
+  if (ta) ta.value = (prefs.dislikedFoods || []).join(', ');
+  ov.classList.add('on');
+}
+window.openNutriPrefs = openNutriPrefs;
+
+function closeNutriPrefs() {
+  var ov = document.getElementById('nutriPrefsModal');
+  if (ov) ov.classList.remove('on');
+}
+window.closeNutriPrefs = closeNutriPrefs;
+
+window._npToggleChip = function(btn) { btn.classList.toggle('on'); };
+window._npPickDiet = function(btn) {
+  var p = btn.parentElement; if (!p) return;
+  p.querySelectorAll('.ah-seg-item').forEach(function(b){ b.classList.remove('on'); });
+  btn.classList.add('on');
+};
+window._npPickBudget = window._npPickDiet;
+
+window._npSave = function() {
+  function collectChips(id) {
+    var out = [];
+    document.querySelectorAll('#' + id + ' .np-chip.on').forEach(function(c){
+      out.push(c.getAttribute('data-val'));
+    });
+    return out;
+  }
+  function pickedSeg(id) {
+    var on = document.querySelector('#' + id + ' .ah-seg-item.on');
+    return on ? (on.getAttribute('data-val') || '') : '';
+  }
+  var ta = document.getElementById('npDislikes');
+  var dislikes = ta ? ta.value.split(/[,\n]/).map(function(s){ return s.trim(); }).filter(Boolean) : [];
+  var prefs = {
+    allergies: collectChips('npAllergies'),
+    excludedFoods: collectChips('npExcluded'),
+    dislikedFoods: dislikes,
+    dietType: pickedSeg('npDiet'),
+    budget: pickedSeg('npBudget') || 'standard'
+  };
+  saveNutriPrefs(prefs);
+  closeNutriPrefs();
+  try { if (typeof showToast === 'function') showToast('✓ Préférences enregistrées', 'ok'); } catch(_){}
+};
 
 // Catégorise un ingrédient (heuristique simple sur le nom)
 function _categorizeIngredient(name) {
@@ -8834,34 +9092,80 @@ function _collectShoppingForExport() {
 }
 
 // Texte plain pour Native Share / clipboard
+// Accumulateurs de prix : sous-total catégorie + grand total (hors basiques).
+function _shoppingSubtotal(items) {
+  var loSum = 0, hiSum = 0, any = false;
+  items.forEach(function(it){
+    if (!it.priceRange) return;
+    loSum += it.priceRange.min;
+    hiSum += it.priceRange.max;
+    any = true;
+  });
+  return any ? { min: loSum, max: hiSum } : null;
+}
+
 function _buildShoppingText(data) {
+  var BASICS_NAME = 'À vérifier à la maison';
   var lines = ['🛒 LISTE DE COURSES', _fmtShopDate(), ''];
+  var grandLo = 0, grandHi = 0, anyPrice = false;
   data.cats.forEach(function(cat) {
+    var isBasics = cat.name === BASICS_NAME;
     lines.push('— ' + cat.name + ' —');
     cat.items.forEach(function(it) {
-      lines.push('• ' + it.name + (it.qty ? ' — ' + it.qty : ''));
+      var priceTxt = '';
+      if (it.priceRange) {
+        priceTxt = ' — ' + _fmtPriceRange(it.priceRange) + (isBasics ? ' si besoin' : '');
+      }
+      lines.push('• ' + it.name + (it.qty ? ' — ' + it.qty : '') + priceTxt);
     });
+    var sub = _shoppingSubtotal(cat.items);
+    if (sub && !isBasics) {
+      lines.push('  Sous-total : ' + _fmtPriceRange({ min: sub.min, max: sub.max }));
+      grandLo += sub.min; grandHi += sub.max; anyPrice = true;
+    }
     lines.push('');
   });
+  if (anyPrice) {
+    lines.push('💰 BUDGET ESTIMÉ : ' + _fmtPriceRange({ min: grandLo, max: grandHi }));
+    lines.push('(prix approximatifs grande distribution, hors basiques)');
+    lines.push('');
+  }
   lines.push('Généré par Athletik Hub 💪');
   return lines.join('\n');
 }
 
 // Construit document.xml — corps du .docx avec mise en forme
 function _buildDocXml(data) {
+  var BASICS_NAME = 'À vérifier à la maison';
   var p = [];
   // Titre
   p.push('<w:p><w:pPr><w:spacing w:after="240"/><w:jc w:val="center"/></w:pPr><w:r><w:rPr><w:b/><w:sz w:val="44"/><w:color w:val="1B2A4A"/></w:rPr><w:t>LISTE DE COURSES</w:t></w:r></w:p>');
   // Date
   p.push('<w:p><w:pPr><w:jc w:val="center"/><w:spacing w:after="360"/></w:pPr><w:r><w:rPr><w:i/><w:color w:val="666666"/></w:rPr><w:t>' + _xmlEsc(_fmtShopDate()) + '</w:t></w:r></w:p>');
   // Catégories
+  var grandLo = 0, grandHi = 0, anyPrice = false;
   data.cats.forEach(function(cat) {
+    var isBasics = cat.name === BASICS_NAME;
     p.push('<w:p><w:pPr><w:spacing w:before="240" w:after="120"/></w:pPr><w:r><w:rPr><w:b/><w:sz w:val="28"/><w:color w:val="C5A44E"/></w:rPr><w:t>' + _xmlEsc(cat.name) + '</w:t></w:r></w:p>');
     cat.items.forEach(function(it) {
-      var line = '• ' + it.name + (it.qty ? ' — ' + it.qty : '');
+      var priceTxt = '';
+      if (it.priceRange) priceTxt = ' — ' + _fmtPriceRange(it.priceRange) + (isBasics ? ' si besoin' : '');
+      var line = '• ' + it.name + (it.qty ? ' — ' + it.qty : '') + priceTxt;
       p.push('<w:p><w:pPr><w:spacing w:after="60"/></w:pPr><w:r><w:rPr><w:sz w:val="22"/></w:rPr><w:t xml:space="preserve">' + _xmlEsc(line) + '</w:t></w:r></w:p>');
     });
+    var sub = _shoppingSubtotal(cat.items);
+    if (sub && !isBasics) {
+      var subTxt = 'Sous-total : ' + _fmtPriceRange({ min: sub.min, max: sub.max });
+      p.push('<w:p><w:pPr><w:spacing w:before="60" w:after="60"/><w:ind w:left="240"/></w:pPr><w:r><w:rPr><w:i/><w:sz w:val="20"/><w:color w:val="6B7588"/></w:rPr><w:t>' + _xmlEsc(subTxt) + '</w:t></w:r></w:p>');
+      grandLo += sub.min; grandHi += sub.max; anyPrice = true;
+    }
   });
+  // Total budget estimé
+  if (anyPrice) {
+    var tot = 'BUDGET ESTIMÉ : ' + _fmtPriceRange({ min: grandLo, max: grandHi });
+    p.push('<w:p><w:pPr><w:spacing w:before="360" w:after="60"/><w:jc w:val="center"/></w:pPr><w:r><w:rPr><w:b/><w:sz w:val="28"/><w:color w:val="1B2A4A"/></w:rPr><w:t>' + _xmlEsc(tot) + '</w:t></w:r></w:p>');
+    p.push('<w:p><w:pPr><w:jc w:val="center"/><w:spacing w:after="240"/></w:pPr><w:r><w:rPr><w:i/><w:sz w:val="18"/><w:color w:val="999999"/></w:rPr><w:t>Prix approximatifs grande distribution, hors basiques. Variations selon magasin, marque et saison.</w:t></w:r></w:p>');
+  }
   // Footer
   p.push('<w:p><w:pPr><w:spacing w:before="480"/><w:jc w:val="center"/></w:pPr><w:r><w:rPr><w:i/><w:sz w:val="18"/><w:color w:val="999999"/></w:rPr><w:t>Généré par Athletik Hub</w:t></w:r></w:p>');
   return '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'
@@ -18511,7 +18815,26 @@ function generateMealPlan() {
     else if (r.tag === 'snack')     snacks.push(r);
     else if (r.tag === 'smoothie')  smoothies.push(r);
   });
-  if (!breakfasts.length || !meals.length) { alert('Pas assez de recettes pour générer un plan.'); return; }
+
+  // Filtre selon les préférences alimentaires (allergies, exclusions, dislikes,
+  // dietType). On filtre AVANT la génération pour que Titan ne propose JAMAIS
+  // d'aliment interdit — pas de substitution post-hoc.
+  try {
+    var prefs = (typeof getNutriPrefs === 'function') ? getNutriPrefs() : null;
+    if (prefs && (prefs.allergies.length || prefs.excludedFoods.length || prefs.dislikedFoods.length || prefs.dietType)) {
+      var beforeB = breakfasts.length, beforeM = meals.length;
+      breakfasts = breakfasts.filter(function(r){ return _recipeIsCompatible(r, prefs); });
+      meals      = meals.filter(function(r){ return _recipeIsCompatible(r, prefs); });
+      snacks     = snacks.filter(function(r){ return _recipeIsCompatible(r, prefs); });
+      smoothies  = smoothies.filter(function(r){ return _recipeIsCompatible(r, prefs); });
+      console.log('[mealPlan] préférences appliquées : petits-déj ' + beforeB + '→' + breakfasts.length + ', repas ' + beforeM + '→' + meals.length);
+    }
+  } catch(e) { console.warn('Prefs filter:', e); }
+
+  if (!breakfasts.length || !meals.length) {
+    alert('Pas assez de recettes compatibles — adapte tes préférences alimentaires ou retire des restrictions.');
+    return;
+  }
 
   // Tri selon l'objectif
   breakfasts = _mpSortByObjectif(breakfasts, objectif);
