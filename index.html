@@ -3704,6 +3704,9 @@ html body #result, html body #nutriResult{
 .install-prompt-close:hover{color:#fff}
 
 /* ── Builder loading : animation "Titan réfléchit" ── */
+.bl-load-coach{width:140px;height:140px;object-fit:contain;display:inline-block;border-radius:50%;background:radial-gradient(circle at 50% 45%,rgba(197,164,78,.18) 0%,rgba(197,164,78,0) 65%);animation:blPulse 1.6s ease-in-out infinite;cursor:pointer;user-select:none;-webkit-user-select:none;-webkit-tap-highlight-color:transparent;touch-action:manipulation}
+.bl-load-coach.active{animation:blShake .25s ease-in-out infinite}
+@keyframes blShake{0%,100%{transform:translateX(0) scale(1.05)}25%{transform:translateX(-2px) scale(1.05)}75%{transform:translateX(2px) scale(1.05)}}
 .bl-load-ic{font-size:48px;display:inline-block;animation:blPulse 1.4s ease-in-out infinite}
 @keyframes blPulse{0%,100%{transform:scale(1) translateY(0);opacity:1}50%{transform:scale(1.12) translateY(-4px);opacity:.85}}
 .bl-dots{display:inline-block}
@@ -5664,14 +5667,20 @@ window.tiResetOnEnter = function(){ window.tiShowStep(1); };
       </div>
     </div>
 
-    <!-- LOADING — animation "Titan réfléchit" : icône pulse + dots animés
-         + skeleton bars qui pulsent pour montrer que Titan construit la séance. -->
-    <div id="builderLoading" style="display:none;padding:36px 20px 24px;text-align:center;color:var(--muted)">
-      <div class="bl-load-ic" aria-hidden="true">🏋️</div>
+    <!-- LOADING — Titan réfléchit : image coach pulse + dots animés + barre
+         + skeleton. Long-press sur l'image → vibration continue pour montrer
+         à l'user que le programme est en train de se créer. -->
+    <div id="builderLoading" style="display:none;padding:24px 20px;text-align:center;color:var(--muted)">
+      <img class="bl-load-coach" id="blLoadCoach" src="images/titan-coach.png" alt="Titan réfléchit" draggable="false"
+           ontouchstart="window._blStartVibe(this)" ontouchend="window._blStopVibe(this)" ontouchcancel="window._blStopVibe(this)"
+           onmousedown="window._blStartVibe(this)" onmouseup="window._blStopVibe(this)" onmouseleave="window._blStopVibe(this)"
+           onerror="this.style.display='none';this.nextElementSibling.style.display='inline-block'">
+      <div class="bl-load-ic" style="display:none" aria-hidden="true">🏋️</div>
       <div style="font-family:'Bebas Neue',sans-serif;font-size:18px;letter-spacing:1px;color:var(--text);margin-top:14px">
         TITAN PROGRAMME TA SÉANCE<span class="bl-dots"><span>.</span><span>.</span><span>.</span></span>
       </div>
       <div style="font-size:12px;margin-top:6px">Il analyse ton objectif, ton état et la méthode Athletik Hub.</div>
+      <div style="font-size:10px;margin-top:6px;color:var(--ah-gold);letter-spacing:.06em;opacity:.7">Touche Titan et garde le doigt — tu vas le sentir bosser.</div>
       <!-- Barre de progression indéterminée gold -->
       <div class="bl-progress" aria-hidden="true"><div class="bl-progress-bar"></div></div>
       <!-- Skeleton de la séance qui s'annonce -->
@@ -19264,6 +19273,28 @@ function builderRenderResult(w) {
   el.scrollTop = 0;
 }
 window.builderRenderResult = builderRenderResult;
+
+// ─── Long-press sur Titan pendant le loading → vibration continue ──
+// Brief user : "Je peux mettre mon doigt et ça fait vibrer le téléphone
+// pour montrer que le programme est en train de se créer."
+// Pattern de pulse léger répété tant que le doigt reste posé. Ajout d'un
+// shake léger sur l'image pour le feedback visuel.
+var _blVibeT = null;
+window._blStartVibe = function(img){
+  if (!img) return;
+  img.classList.add('active');
+  // Vibration courte initiale puis loop
+  try { if (navigator.vibrate) navigator.vibrate([40, 80, 40]); } catch(e){}
+  if (_blVibeT) clearInterval(_blVibeT);
+  _blVibeT = setInterval(function(){
+    try { if (navigator.vibrate) navigator.vibrate([30, 100]); } catch(e){}
+  }, 350);
+};
+window._blStopVibe = function(img){
+  if (img) img.classList.remove('active');
+  if (_blVibeT) { clearInterval(_blVibeT); _blVibeT = null; }
+  try { if (navigator.vibrate) navigator.vibrate(0); } catch(e){}
+};
 
 // Tap sur une carte exo du Builder → ouvre la fiche exercice de la
 // Librairie si l'exo y existe. Sinon → fallback modal léger qui montre
