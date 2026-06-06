@@ -1,4 +1,4 @@
-const CACHE = 'athletik-v97';
+const CACHE = 'athletik-v98';
 const ASSETS = [
   '/',
   '/index.html',
@@ -42,30 +42,49 @@ self.addEventListener('message', e => {
   if (d.type === 'TIMER_SCHEDULE') {
     const endsAt = d.endsAt;
     const delay = Math.max(0, endsAt - Date.now());
-    // Annule un éventuel timer précédent
+    // Annule un éventuel timer précédent (peut être un seul ID ou une liste)
     const prev = _swTimers.get('tim-minut');
-    if (prev) clearTimeout(prev);
-    const t = setTimeout(() => {
-      _swTimers.delete('tim-minut');
-      try {
-        self.registration.showNotification('⏰ Timer terminé', {
-          body: d.body || 'Le minuteur a sonné',
-          icon: '/icons/icon-192.png',
-          badge: '/icons/icon-192.png',
-          tag: 'tim-minut',
-          requireInteraction: true,
-          vibrate: [300, 100, 300, 100, 500],
-          renotify: true,
-          silent: false
-        });
-      } catch (err) { /* SW dead — TimestampTrigger côté page prend le relais */ }
-    }, delay);
-    _swTimers.set('tim-minut', t);
+    if (prev) (Array.isArray(prev) ? prev : [prev]).forEach(t => clearTimeout(t));
+    // 3 notifications rapprochées pour être SÛR que l'user entende (la première
+    // peut être ratée si l'écran est éteint). Tags différents → chacune ré-alerte.
+    // Vibration agressive [1s vibre, 0.3s pause, ×3 + 1.5s final].
+    const ALERTS = [0, 1800, 3600];
+    const handles = [];
+    ALERTS.forEach((offset, i) => {
+      const t = setTimeout(() => {
+        try {
+          self.registration.showNotification(
+            i === 0 ? '⏰ Timer terminé' : '⏰ Rappel timer',
+            {
+              body: d.body || 'Le minuteur a sonné',
+              icon: '/icons/icon-192.png',
+              badge: '/icons/icon-192.png',
+              tag: 'tim-minut-' + i,
+              requireInteraction: true,
+              vibrate: [1000, 300, 1000, 300, 1000, 300, 1500],
+              renotify: true,
+              silent: false
+            }
+          );
+        } catch (err) { /* SW killed — TimestampTrigger côté page prend le relais */ }
+      }, delay + offset);
+      handles.push(t);
+    });
+    _swTimers.set('tim-minut', handles);
     return;
   }
   if (d.type === 'TIMER_CANCEL') {
     const prev = _swTimers.get('tim-minut');
-    if (prev) { clearTimeout(prev); _swTimers.delete('tim-minut'); }
+    if (prev) {
+      (Array.isArray(prev) ? prev : [prev]).forEach(t => clearTimeout(t));
+      _swTimers.delete('tim-minut');
+    }
+    // Ferme les 3 alertes (tags 0/1/2) + ancien tag legacy "tim-minut"
+    [0, 1, 2].forEach(i => {
+      self.registration.getNotifications({ tag: 'tim-minut-' + i, includeTriggered: true })
+        .then(arr => arr.forEach(n => { try { n.close(); } catch(_){} }))
+        .catch(() => {});
+    });
     self.registration.getNotifications({ tag: 'tim-minut', includeTriggered: true })
       .then(arr => arr.forEach(n => { try { n.close(); } catch(_){} }))
       .catch(() => {});
