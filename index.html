@@ -308,7 +308,9 @@
   --r:12px;--r2:18px;--r3:24px;
 }
 *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
-html,body{height:100%;overflow:hidden}
+html,body{height:100%;overflow:hidden;overscroll-behavior-x:none}
+#app{overscroll-behavior-x:none}
+.view,.scr,.sec{overscroll-behavior-x:none;overflow-x:hidden}
 body{background:#E5E7EB;color:var(--text);font-family:'Outfit',sans-serif;display:flex;justify-content:center;align-items:center}
 #app{width:100%;max-width:430px;height:100vh;height:100dvh;background:var(--bg);position:relative;overflow:hidden;box-shadow:0 0 80px rgba(15,23,42,0.10)}
 
@@ -16399,6 +16401,148 @@ window._trkVoiceMultiRel = function(btn, parentSel, fieldsCfg, exoId, exoName, c
   if (!fields.length) return;
   window.trkVoice.startMulti({ fields: fields, exerciseId: exoId, exerciseName: exoName, btn: btn, context: context || 'tracks_physical_test' });
 };
+
+// ═══════════════════════════════════════
+// SWIPE NAV — Navigation tactile interne (2026-06-05)
+// ───────────────────────────────────────
+// Problème user : sur mobile, swipe horizontal → retour/quit système.
+// Solution :
+//   1) overscroll-behavior-x:none sur html/body/#app (déjà ajouté en CSS)
+//   2) handler touchstart/touchend qui transforme les swipes horizontaux en
+//      switchTab(next/prev) entre les 5 onglets principaux
+//   3) Dans #vTracks, le swipe change d'abord le sous-onglet (sat/set/track)
+//   4) Ignore : bords écran (back gesture natif), cibles interactives,
+//      conteneurs scrollables horizontaux (chips libray, day strip, etc.)
+//   5) Intercept basique de l'historique : pousse un state à l'install,
+//      popstate déclenche switchTab plutôt que de fermer l'app
+// ═══════════════════════════════════════
+(function initSwipeNav(){
+  var MAIN_ORDER = ['home', 'tracks', 'chat', 'train', 'nutrition'];
+  var SUIVI_ORDER = ['sat', 'set', 'track'];
+  var EDGE_PX = 30;
+  var H_THRESHOLD = 70;
+  var ANGLE_RATIO = 1.4;
+  var MAX_DURATION = 800;
+  var IGNORE_SEL = 'input, textarea, select, button, video, iframe, [contenteditable="true"], .ah-titan-btn, .trk-voice-btn, .trk-voice-btn-sm, .tim-fab, .tim-tab, .trk-chrono, .rpe-btn, .ah-bottomnav, .lv2-swipe, [data-no-swipe]';
+
+  var sx = 0, sy = 0, sT = 0, tracking = false;
+
+  function viewIdToTab(id){
+    return { vHome:'home', vTracks:'tracks', vChat:'chat', vTrain:'train', vNutri:'nutrition', vMoi:'moi' }[id] || null;
+  }
+
+  function getCurrentMain(){
+    var on = document.querySelector('.view.on');
+    if (!on) return null;
+    return viewIdToTab(on.id);
+  }
+
+  function getCurrentSuiviSec(){
+    var on = document.querySelector('#vTracks .sec.on');
+    if (!on) return null;
+    var m = on.id.match(/^sec([A-Z][a-z]+)/);
+    return m ? m[1].toLowerCase() : null;
+  }
+
+  function nextInArr(arr, current, dir){
+    var i = arr.indexOf(current);
+    if (i < 0) return null;
+    var j = i + dir;
+    return (j >= 0 && j < arr.length) ? arr[j] : null;
+  }
+
+  function hasHScroll(el){
+    while (el && el !== document.body){
+      try {
+        var s = getComputedStyle(el);
+        if ((s.overflowX === 'auto' || s.overflowX === 'scroll') && el.scrollWidth > el.clientWidth + 4) return true;
+      } catch(_){}
+      el = el.parentElement;
+    }
+    return false;
+  }
+
+  function shouldIgnore(target, x){
+    if (!target) return true;
+    var w = window.innerWidth || document.documentElement.clientWidth;
+    if (x < EDGE_PX || x > (w - EDGE_PX)) return true;
+    // Si un .scr est actif (onboarding/auth/profil), pas de swipe nav
+    if (document.querySelector('.scr.on')) return true;
+    // Si une modale plein-écran est ouverte
+    if (document.body.classList && document.body.classList.contains('modal-open')) return true;
+    // Live session ou bodyfat overlay actif → pas de swipe
+    var ls = document.getElementById('liveSession');
+    if (ls && getComputedStyle(ls).display !== 'none') return true;
+    var bf = document.getElementById('bodyfat');
+    if (bf && getComputedStyle(bf).display !== 'none') return true;
+    var rm = document.getElementById('recipeModal');
+    if (rm && rm.classList && rm.classList.contains('open')) return true;
+    // Cibles interactives ou conteneurs scrollables horizontaux
+    if (target.closest && target.closest(IGNORE_SEL)) return true;
+    if (hasHScroll(target)) return true;
+    return false;
+  }
+
+  document.addEventListener('touchstart', function(e){
+    if (!e.touches || e.touches.length !== 1) { tracking = false; return; }
+    var t = e.touches[0];
+    if (shouldIgnore(e.target, t.clientX)) { tracking = false; return; }
+    tracking = true;
+    sx = t.clientX; sy = t.clientY; sT = Date.now();
+  }, { passive: true });
+
+  document.addEventListener('touchend', function(e){
+    if (!tracking) return;
+    tracking = false;
+    var t = e.changedTouches && e.changedTouches[0];
+    if (!t) return;
+    var dx = t.clientX - sx;
+    var dy = t.clientY - sy;
+    var dt = Date.now() - sT;
+    if (Math.abs(dx) < H_THRESHOLD) return;
+    if (Math.abs(dx) < Math.abs(dy) * ANGLE_RATIO) return;
+    if (dt > MAX_DURATION) return;
+
+    var dir = (dx < 0) ? 1 : -1; // swipe gauche → next, swipe droite → prev
+    var current = getCurrentMain();
+    if (!current) return;
+
+    // Cas Tracks : sous-onglet d'abord
+    if (current === 'tracks'){
+      var sub = getCurrentSuiviSec();
+      var nextSub = sub ? nextInArr(SUIVI_ORDER, sub, dir) : null;
+      if (nextSub){
+        var subBtn = document.querySelector('#vTracks .sub-tab[onclick*="\'' + nextSub + '\'"]');
+        if (typeof window.showSec === 'function'){
+          window.showSec(nextSub, subBtn);
+          return;
+        }
+      }
+      // En bord (sat à gauche, track à droite) → on tombe sur la nav principale
+    }
+
+    var nextMain = nextInArr(MAIN_ORDER, current, dir);
+    if (nextMain && typeof window.switchTab === 'function'){
+      window.switchTab(nextMain);
+    }
+  }, { passive: true });
+
+  // ── Anti retour système : pousse un state au load et intercepte popstate
+  // pour rester dans l'app sans créer de boucle bloquante. Quand on est à
+  // home et qu'on essaie de revenir, on laisse l'OS gérer (back natif).
+  try {
+    if (history.state == null) history.replaceState({ ah:1, root:1 }, '');
+    window.addEventListener('popstate', function(e){
+      var st = e.state;
+      if (!st || !st.ah) return;
+      var current = getCurrentMain();
+      if (!current || current === 'home') return; // laisse l'OS gérer
+      try { window.switchTab && window.switchTab('home'); } catch(_){}
+      // Re-pousse pour qu'un autre back ait quelque chose à consommer
+      try { history.pushState({ ah:1, tab:'home' }, ''); } catch(_){}
+    });
+  } catch(_){}
+})();
 
 // ═══════════════════════════════════════
 // ATHLETIK HUB V5 — STEP 6: PROFIL
