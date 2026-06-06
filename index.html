@@ -6847,38 +6847,23 @@ window.tiResetOnEnter = function(){ window.tiShowStep(1); };
 
     <!-- MINUTEUR — fonction principale -->
     <div id="timScreenMinuteur" class="tim-screen">
-      <div id="timMinutSetup">
-        <div class="tim-sec">Durée</div>
-        <div class="tim-minut-pickers">
-          <div class="tim-minut-picker">
-            <div class="tim-minut-lbl">Heures</div>
-            <div class="tim-stepper"><button onclick="tim_minutStep('h',-1)">−</button><input type="number" id="timMinutH" value="0" min="0" max="23"><button onclick="tim_minutStep('h',1)">+</button></div>
-          </div>
-          <div class="tim-minut-picker">
-            <div class="tim-minut-lbl">Minutes</div>
-            <div class="tim-stepper"><button onclick="tim_minutStep('m',-1)">−</button><input type="number" id="timMinutM" value="5" min="0" max="59"><button onclick="tim_minutStep('m',1)">+</button></div>
-          </div>
-          <div class="tim-minut-picker">
-            <div class="tim-minut-lbl">Secondes</div>
-            <div class="tim-stepper"><button onclick="tim_minutStep('s',-1)">−</button><input type="number" id="timMinutS" value="0" min="0" max="59"><button onclick="tim_minutStep('s',1)">+</button></div>
-          </div>
-        </div>
-        <div class="tim-sec">Presets rapides</div>
-        <div class="tim-minut-presets">
-          <button onclick="tim_minutPreset(30)">30s</button>
-          <button onclick="tim_minutPreset(60)">1min</button>
-          <button onclick="tim_minutPreset(120)">2min</button>
-          <button onclick="tim_minutPreset(300)">5min</button>
-          <button onclick="tim_minutPreset(600)">10min</button>
-          <button onclick="tim_minutPreset(1200)">20min</button>
-        </div>
-        <button class="tim-launch" onclick="tim_minutStart()">⚡ Démarrer</button>
+      <!-- Setup retiré (DURÉE steppers + PRESETS RAPIDES rectangulaires +
+           DÉMARRER) sur demande user 2026-06-07 : interface unifiée autour
+           du gros cercle. Inputs cachés conservés pour compat des fonctions
+           tim_minutGetSeconds / tim_minutSetSeconds. -->
+      <div id="timMinutSetup" style="display:none">
+        <input type="hidden" id="timMinutH" value="0">
+        <input type="hidden" id="timMinutM" value="0">
+        <input type="hidden" id="timMinutS" value="0">
       </div>
-      <div id="timMinutRunning" style="display:none">
-        <div class="tim-chrono-display" id="timMinutDisplay">--:--</div>
+      <!-- Interface toujours visible : grand cercle + 3 contrôles ronds.
+           Au repos : 00:00. Tape +30s plusieurs fois pour ajouter du temps,
+           puis ▶ pour lancer. Pendant la course : ↺ annule, ⏸ pause, +30s ajoute. -->
+      <div id="timMinutRunning" style="">
+        <div class="tim-chrono-display" id="timMinutDisplay">00:00</div>
         <div class="tim-chrono-controls">
           <button class="tim-chrono-btn secondary" onclick="tim_minutReset()">↺ Annuler</button>
-          <button class="tim-chrono-btn primary" id="timMinutBtn" onclick="tim_minutToggle()">⏸</button>
+          <button class="tim-chrono-btn primary" id="timMinutBtn" onclick="tim_minutToggle()">▶</button>
           <button class="tim-chrono-btn secondary" onclick="tim_minutAdd30()">+30s</button>
         </div>
       </div>
@@ -12769,19 +12754,45 @@ function _bfDrawChart(data) {
     v = Math.max(0, Math.min(max, v));
     el.value = v;
   }
+  // Persistance localStorage : permet au timer de survivre au refresh / close.
+  // On stocke endsAt (timestamp absolu) + totalMs. Au reload, _tim_minutRestore
+  // recalcule remMs et reprend l'affichage.
+  function _tim_minutPersist(){
+    try {
+      if (!_tim_minut.totalMs || (_tim_minut.remMs <= 0 && !_tim_minut.running)) {
+        localStorage.removeItem('ah_tim_minut');
+        return;
+      }
+      var state = {
+        totalMs: _tim_minut.totalMs,
+        remMs:   _tim_minut.remMs,
+        running: !!_tim_minut.running,
+        endsAt:  _tim_minut.running ? (Date.now() + _tim_minut.remMs) : null,
+        savedAt: Date.now()
+      };
+      localStorage.setItem('ah_tim_minut', JSON.stringify(state));
+    } catch(e){}
+  }
+  function _tim_minutClearPersist(){
+    try { localStorage.removeItem('ah_tim_minut'); } catch(e){}
+  }
+
   function tim_minutStart(){
     var secs = tim_minutGetSeconds();
-    if (secs <= 0) { tim_toast('Choisis une durée'); return; }
+    // Si pas de durée via inputs, on accepte la durée déjà accumulée via +30s
+    if (secs <= 0 && _tim_minut.remMs > 0) {
+      secs = Math.ceil(_tim_minut.remMs / 1000);
+    }
+    if (secs <= 0) { tim_toast('Tape +30s pour ajouter du temps'); return; }
     _tim_minut.totalMs = secs * 1000;
     _tim_minut.remMs = _tim_minut.totalMs;
     _tim_minut.startMs = Date.now();
     if (tim_audioCtx && tim_audioCtx.state === 'suspended') tim_audioCtx.resume(); tim_beepUnlock();
     _tim_minut.iv = setInterval(_tim_minutTick, 200);
     _tim_minut.running = true;
-    document.getElementById('timMinutSetup').style.display = 'none';
-    document.getElementById('timMinutRunning').style.display = '';
     var b = document.getElementById('timMinutBtn'); if (b) b.textContent = '⏸';
     _tim_minutRender();
+    _tim_minutPersist();
   }
   function _tim_minutTick(){
     _tim_minut.remMs = _tim_minut.totalMs - (Date.now() - _tim_minut.startMs);
@@ -12795,44 +12806,104 @@ function _bfDrawChart(data) {
       clearInterval(_tim_minut.iv);
       _tim_minut.running = false;
       _tim_minut.remMs = 0;
+      _tim_minut.totalMs = 0;
       _tim_minutRender();
       if (typeof tim_sndFinish === 'function') tim_sndFinish();
       tim_toast('⏰ Temps écoulé !');
       var b = document.getElementById('timMinutBtn'); if (b) b.textContent = '▶';
+      _tim_minutClearPersist();
       return;
     }
     _tim_minutRender();
   }
   function tim_minutToggle(){
     if (_tim_minut.running) {
+      // Pause
       clearInterval(_tim_minut.iv);
       _tim_minut.running = false;
       document.getElementById('timMinutBtn').textContent = '▶';
+      _tim_minutPersist();
     } else {
-      if (_tim_minut.remMs <= 0) return;
+      // Resume ou démarrage initial (si remMs > 0 via +30s mais jamais lancé)
+      if (_tim_minut.remMs <= 0) {
+        tim_toast('Tape +30s pour ajouter du temps');
+        return;
+      }
+      if (!_tim_minut.totalMs) _tim_minut.totalMs = _tim_minut.remMs;
       _tim_minut.startMs = Date.now() - (_tim_minut.totalMs - _tim_minut.remMs);
       if (tim_audioCtx && tim_audioCtx.state === 'suspended') tim_audioCtx.resume(); tim_beepUnlock();
       _tim_minut.iv = setInterval(_tim_minutTick, 200);
       _tim_minut.running = true;
       document.getElementById('timMinutBtn').textContent = '⏸';
+      _tim_minutPersist();
     }
   }
   function tim_minutReset(){
     clearInterval(_tim_minut.iv);
     _tim_minut.running = false;
+    _tim_minut.totalMs = 0;
     _tim_minut.remMs = 0;
     _tim_minut.lastBipSec = -1;
-    document.getElementById('timMinutSetup').style.display = '';
-    document.getElementById('timMinutRunning').style.display = 'none';
+    var b = document.getElementById('timMinutBtn'); if (b) b.textContent = '▶';
+    _tim_minutRender();
+    _tim_minutClearPersist();
   }
   function tim_minutAdd30(){
     _tim_minut.totalMs += 30000;
     _tim_minut.remMs += 30000;
     if (_tim_minut.running) {
       _tim_minut.startMs = Date.now() - (_tim_minut.totalMs - _tim_minut.remMs);
+      _tim_minutPersist();
     }
     _tim_minutRender();
     if (typeof tim_toast === 'function') tim_toast('+30 secondes');
+  }
+
+  // Restaure l'état du timer au chargement de la page si présent et valide.
+  // 3 cas :
+  //   - running + endsAt > now      → reprend la course (remMs = endsAt - now)
+  //   - running + endsAt <= now     → timer expiré pendant l'absence → bip fin + clear
+  //   - paused (running:false)      → restaure remMs en pause, prêt à reprendre
+  function _tim_minutRestore(){
+    var raw;
+    try { raw = localStorage.getItem('ah_tim_minut'); } catch(e){ return; }
+    if (!raw) return;
+    var st;
+    try { st = JSON.parse(raw); } catch(e){ return; }
+    if (!st || !st.totalMs) return;
+    _tim_minut.totalMs = st.totalMs;
+    if (st.running && st.endsAt) {
+      var now = Date.now();
+      if (st.endsAt > now) {
+        // Encore en course → reprend
+        _tim_minut.remMs = st.endsAt - now;
+        _tim_minut.startMs = now - (st.totalMs - _tim_minut.remMs);
+        _tim_minut.running = true;
+        _tim_minut.iv = setInterval(_tim_minutTick, 200);
+        var b = document.getElementById('timMinutBtn'); if (b) b.textContent = '⏸';
+        _tim_minutRender();
+        try { tim_toast('⏱ Timer en cours…'); } catch(e){}
+      } else {
+        // Expiré pendant l'absence → bip rétro + clear
+        _tim_minut.remMs = 0;
+        _tim_minut.totalMs = 0;
+        _tim_minutRender();
+        try { if (typeof tim_sndFinish === 'function') tim_sndFinish(); } catch(e){}
+        try { tim_toast('⏰ Le timer a sonné pendant ton absence'); } catch(e){}
+        _tim_minutClearPersist();
+      }
+    } else {
+      // Pause restaurée
+      _tim_minut.remMs = st.remMs || st.totalMs;
+      _tim_minut.running = false;
+      _tim_minutRender();
+    }
+  }
+  // Restore au chargement DOMContentLoaded (le SW peut servir cached HTML)
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', _tim_minutRestore);
+  } else {
+    setTimeout(_tim_minutRestore, 100);
   }
 
   // ── TABATA ──
