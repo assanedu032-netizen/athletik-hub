@@ -8286,6 +8286,285 @@ window._priceEstimate = _priceEstimate;
 window._fmtPrice = _fmtPrice;
 window._priceFromQtys = _priceFromQtys;
 
+// ═══ SHOPPING V2 — Simplification "liste supermarché" (2026-06-06) ═══
+// Brief : la liste doit être pensée pour un humain au supermarché, pas
+// pour une balance. Regroupe les synonymes, arrondit les quantités,
+// convertit en formats achetables (paquets, briques, boîtes...) et
+// déplace les basiques (sel/poivre/huile...) dans une section dédiée.
+var _SHOP_CANON_RULES = [
+  // ── Protéines ──
+  [/blanc.* de poulet|blancs de poulet|cuisse.*poulet|poulet/i,            'Poulet',                'Protéines'],
+  [/b[oeœ]uf|steak.*hach|viande.*hach/i,                                    'Bœuf',                  'Protéines'],
+  [/saumon/i,                                                               'Saumon',                'Protéines'],
+  [/thon/i,                                                                 'Thon',                  'Protéines'],
+  [/cabillaud|merlu|maquereau|poisson blanc/i,                              'Poisson blanc',         'Protéines'],
+  [/crevett/i,                                                              'Crevettes',             'Protéines'],
+  [/bacon de dinde/i,                                                       'Bacon de dinde',        'Protéines'],
+  [/dinde/i,                                                                'Dinde',                 'Protéines'],
+  [/porc|jambon/i,                                                          'Porc',                  'Protéines'],
+  [/œuf|oeuf/i,                                                             'Œufs',                  'Protéines'],
+  [/tofu/i,                                                                 'Tofu',                  'Protéines'],
+  // ── Produits laitiers ──
+  [/skyr|fromage blanc|yaourt grec/i,                                       'Skyr / fromage blanc',  'Produits laitiers'],
+  [/yaourt/i,                                                               'Yaourts',               'Produits laitiers'],
+  [/lait.*amande/i,                                                         "Lait d'amande",         'Produits laitiers'],
+  [/lait.*coco|cr[èe]me de coco/i,                                          'Lait de coco',          'Produits laitiers'],
+  [/lait.*soja|boisson soja/i,                                              'Lait de soja',          'Produits laitiers'],
+  [/lait/i,                                                                 'Lait',                  'Produits laitiers'],
+  [/feta/i,                                                                 'Feta',                  'Produits laitiers'],
+  [/mozzarella|mozza/i,                                                     'Mozzarella',            'Produits laitiers'],
+  [/parmesan/i,                                                             'Parmesan',              'Produits laitiers'],
+  [/ricotta/i,                                                              'Ricotta',               'Produits laitiers'],
+  [/cheddar/i,                                                              'Cheddar',               'Produits laitiers'],
+  [/emmental|comt[ée]|gruy[èe]re|fromage r[âa]p[ée]/i,                      'Fromage râpé',          'Produits laitiers'],
+  [/cottage|ch[èe]vre|brebis/i,                                             'Fromage',               'Produits laitiers'],
+  [/whey/i,                                                                 'Whey',                  'Produits laitiers'],
+  // ── Féculents ──
+  [/quinoa/i,                                                               'Quinoa',                'Féculents'],
+  [/nouille.*riz/i,                                                         'Nouilles de riz',       'Féculents'],
+  [/riz/i,                                                                  'Riz',                   'Féculents'],
+  [/p[âa]te/i,                                                              'Pâtes',                 'Féculents'],
+  [/pain.*complet|pain.*levain|pain.*int[ée]gral|pain.*ras/i,               'Pain complet / levain', 'Féculents'],
+  [/pita/i,                                                                 'Pain pita',             'Féculents'],
+  [/tortilla/i,                                                             'Tortillas complètes',   'Féculents'],
+  [/flocons.*avoine|^avoine/i,                                              "Flocons d'avoine",      'Féculents'],
+  [/granola/i,                                                              'Granola',               'Féculents'],
+  [/farine/i,                                                               'Farine',                'Féculents'],
+  [/patate.*douce/i,                                                        'Patates douces',        'Féculents'],
+  [/pomme.*de.*terre|patate/i,                                              'Pommes de terre',       'Féculents'],
+  [/lentille/i,                                                             'Lentilles',             'Féculents'],
+  [/pois chich/i,                                                           'Pois chiches',          'Féculents'],
+  [/haricot/i,                                                              'Haricots',              'Féculents'],
+  // ── Fruits ──
+  [/banane/i,                                                               'Bananes',               'Fruits'],
+  [/myrtill|baie/i,                                                         'Myrtilles',             'Fruits'],
+  [/framboise/i,                                                            'Framboises',            'Fruits'],
+  [/fraise/i,                                                               'Fraises',               'Fruits'],
+  [/mangue/i,                                                               'Mangue',                'Fruits'],
+  [/ananas/i,                                                               'Ananas',                'Fruits'],
+  [/past[èe]que/i,                                                          'Pastèque',              'Fruits'],
+  [/pomme/i,                                                                'Pommes',                'Fruits'],
+  [/citron vert|lime/i,                                                     'Citrons verts',         'Fruits'],
+  [/citron/i,                                                               'Citrons',               'Fruits'],
+  [/avocat/i,                                                               'Avocats',               'Fruits'],
+  [/coco r[âa]p[ée]|noix de coco/i,                                         'Noix de coco',          'Fruits'],
+  [/datte/i,                                                                'Dattes',                'Fruits'],
+  [/orange/i,                                                               'Oranges',               'Fruits'],
+  // ── Légumes ──
+  [/[ée]pinard/i,                                                           'Épinards',              'Légumes'],
+  [/brocoli/i,                                                              'Brocoli',               'Légumes'],
+  [/courgette/i,                                                            'Courgettes',            'Légumes'],
+  [/poivron/i,                                                              'Poivrons',              'Légumes'],
+  [/tomate.*cerise/i,                                                       'Tomates cerises',       'Légumes'],
+  [/tomate/i,                                                               'Tomates',               'Légumes'],
+  [/salade|romaine|laitue|roquette/i,                                       'Salade verte',          'Légumes'],
+  [/oignon/i,                                                               'Oignons',               'Légumes'],
+  [/^ail|gousse.*ail/i,                                                     'Ail',                   'Légumes'],
+  [/carotte/i,                                                              'Carottes',              'Légumes'],
+  [/concombre/i,                                                            'Concombre',             'Légumes'],
+  [/aubergine/i,                                                            'Aubergines',            'Légumes'],
+  [/champignon/i,                                                           'Champignons',           'Légumes'],
+  [/gingembre/i,                                                            'Gingembre',             'Légumes'],
+  [/coriandre/i,                                                            'Coriandre',             'Légumes'],
+  [/persil/i,                                                               'Persil',                'Légumes'],
+  [/basilic/i,                                                              'Basilic',               'Légumes'],
+  [/menthe/i,                                                               'Menthe',                'Légumes'],
+  [/ciboulette/i,                                                           'Ciboulette',            'Légumes'],
+  [/asperge/i,                                                              'Asperges',              'Légumes'],
+  [/betterave/i,                                                            'Betteraves',            'Légumes'],
+  // ── Épicerie ──
+  [/amande/i,                                                               'Amandes',               'Épicerie'],
+  [/noix.*cajou/i,                                                          'Noix de cajou',         'Épicerie'],
+  [/noix.*p[ée]can|pécan/i,                                                 'Noix de pécan',         'Épicerie'],
+  [/noisette/i,                                                             'Noisettes',             'Épicerie'],
+  [/noix/i,                                                                 'Noix',                  'Épicerie'],
+  [/beurre.*cacahu/i,                                                       'Beurre de cacahuète',   'Épicerie'],
+  [/cacahu/i,                                                               'Cacahuètes',            'Épicerie'],
+  [/graines.*chia|^chia/i,                                                  'Graines de chia',       'Épicerie'],
+  [/graines.*lin/i,                                                         'Graines de lin',        'Épicerie'],
+  [/graines.*s[ée]same|s[ée]same/i,                                         'Graines de sésame',     'Épicerie'],
+  [/graines.*courge/i,                                                      'Graines de courge',     'Épicerie'],
+  // ── À vérifier à la maison (basiques) ──
+  [/^sel\b|sel fin|fleur de sel/i,                                          'Sel',                   '__BASIC__'],
+  [/poivre/i,                                                               'Poivre',                '__BASIC__'],
+  [/huile.*olive/i,                                                         "Huile d'olive",         '__BASIC__'],
+  [/huile.*coco/i,                                                          'Huile de coco',         '__BASIC__'],
+  [/huile/i,                                                                'Huile',                 '__BASIC__'],
+  [/sauce soja|sauce.*soja/i,                                               'Sauce soja',            '__BASIC__'],
+  [/nuoc.*mam|sauce poisson/i,                                              'Sauce poisson',         '__BASIC__'],
+  [/vinaigre/i,                                                             'Vinaigre',              '__BASIC__'],
+  [/miel/i,                                                                 'Miel',                  '__BASIC__'],
+  [/cannelle/i,                                                             'Cannelle',              '__BASIC__'],
+  [/cacao/i,                                                                'Cacao',                 '__BASIC__'],
+  [/cumin/i,                                                                'Cumin',                 '__BASIC__'],
+  [/paprika/i,                                                              'Paprika',               '__BASIC__'],
+  [/curcuma/i,                                                              'Curcuma',               '__BASIC__'],
+  [/curry/i,                                                                'Curry',                 '__BASIC__'],
+  [/herbes.*provence/i,                                                     'Herbes de Provence',    '__BASIC__'],
+  [/origan/i,                                                               'Origan',                '__BASIC__'],
+  [/thym|romarin/i,                                                         'Thym / romarin',        '__BASIC__'],
+  [/piment/i,                                                               'Piment',                '__BASIC__'],
+  [/levure/i,                                                               'Levure',                '__BASIC__'],
+  [/sirop.*[ée]rable/i,                                                     "Sirop d'érable",        '__BASIC__'],
+  [/sirop.*agave/i,                                                         "Sirop d'agave",         '__BASIC__'],
+  [/moutarde/i,                                                             'Moutarde',              '__BASIC__'],
+  [/ketchup/i,                                                              'Ketchup',               '__BASIC__']
+];
+
+function _shopCanonical(name) {
+  var n = String(name || '').toLowerCase().trim();
+  for (var i = 0; i < _SHOP_CANON_RULES.length; i++) {
+    var r = _SHOP_CANON_RULES[i];
+    if (r[0].test(n)) return { canonical: r[1], category: r[2] };
+  }
+  // Default : capitalize + Épicerie
+  var cap = String(name || '').trim();
+  cap = cap.charAt(0).toUpperCase() + cap.slice(1).toLowerCase();
+  return { canonical: cap, category: 'Épicerie' };
+}
+
+// Convertit (canonical, value, unit) en chaîne format achetable supermarché.
+function _shopFormatBuyable(canonical, value, unit) {
+  if (value == null || !isFinite(value) || value <= 0) return '';
+  var c = canonical;
+  var u = (unit || '').toLowerCase();
+  // Œufs → boîtes
+  if (/œufs|oeufs/i.test(c)) {
+    var eggs = Math.ceil(value);
+    if (eggs <= 6)  return '1 boîte de 6';
+    if (eggs <= 12) return '1 boîte de 12';
+    if (eggs <= 18) return '1 boîte de 18';
+    if (eggs <= 30) return '1 boîte de 30';
+    return Math.ceil(eggs / 30) + ' boîtes de 30';
+  }
+  // Pain : paquets
+  if (/^pain/i.test(c)) return value >= 12 ? '2 paquets' : '1 paquet';
+  // Tortillas : paquets de 8
+  if (/tortilla/i.test(c)) {
+    var packs = Math.max(1, Math.ceil(value / 8));
+    return packs + ' paquet' + (packs > 1 ? 's' : '');
+  }
+  // Féculents secs (riz/pâtes/avoine/farine/granola/lentilles/...)
+  if (/riz|p[âa]te|quinoa|farine|avoine|granola|lentille|pois chich|haricot|nouille/i.test(c)) {
+    var grams = (u === 'kg') ? value * 1000 : value;
+    if (grams < 800) return '1 paquet';
+    return 'environ ' + (Math.round(grams / 100) / 10) + ' kg';
+  }
+  // Viandes / poissons : kg
+  if (/poulet|bœuf|dinde|saumon|thon|poisson|crevett|porc|bacon|tofu/i.test(c)) {
+    var g2 = (u === 'kg') ? value * 1000 : value;
+    if (g2 < 400) return 'environ 500 g';
+    return 'environ ' + (Math.round(g2 / 100) / 10) + ' kg';
+  }
+  // Lait & boissons végétales : briques 1L
+  if (/lait|boisson/i.test(c)) {
+    var ml = value;
+    if (u === 'l') ml = value * 1000;
+    else if (u === 'cl') ml = value * 10;
+    var n = Math.max(1, Math.ceil(ml / 1000));
+    return n + ' brique' + (n > 1 ? 's' : '');
+  }
+  // Skyr/fromage blanc/ricotta : kg
+  if (/skyr|fromage blanc|yaourt|ricotta/i.test(c)) {
+    var g4 = (u === 'kg') ? value * 1000 : value;
+    if (g4 < 600) return '1 pot';
+    return 'environ ' + (Math.round(g4 / 100) / 10) + ' kg';
+  }
+  // Fromages durs / morceaux : paquet
+  if (/feta|parmesan|mozzarella|fromage|cheddar/i.test(c)) {
+    var g5 = (u === 'kg') ? value * 1000 : value;
+    if (g5 < 250) return '1 paquet';
+    return Math.ceil(g5 / 250) + ' paquets';
+  }
+  // Herbes fraîches : bouquets
+  if (/coriandre|persil|basilic|menthe|ciboulette/i.test(c)) {
+    return '2 bouquets';
+  }
+  // Ail : têtes
+  if (/^ail$/i.test(c)) {
+    var heads = Math.max(1, Math.ceil(value / 8));
+    return heads + ' tête' + (heads > 1 ? 's' : '');
+  }
+  // Fruits/légumes comptables
+  if (/bananes|avocats|citron|pomme|orange|tomate|poivron|oignon|carotte|aubergine|courgette|concombre|mangue|ananas/i.test(c)) {
+    if (u === 'g' || u === 'kg') {
+      var kg = u === 'kg' ? value : value / 1000;
+      return 'environ ' + (Math.round(kg * 10) / 10) + ' kg';
+    }
+    return String(Math.max(1, Math.ceil(value)));
+  }
+  // Salades / épinards : sachets
+  if (/salade|épinard|roquette/i.test(c)) return '1 sachet';
+  // Oléagineux / beurres : pots
+  if (/beurre|amande|noix|cacahu|cajou|noisette|pécan/i.test(c)) {
+    var g6 = (u === 'kg') ? value * 1000 : value;
+    return g6 < 300 ? '1 pot' : '1 grand pot';
+  }
+  // Whey : kg
+  if (/^whey$/i.test(c)) return '1 pot (1 kg)';
+  // Default
+  var v = (Math.abs(value % 1) < 0.05) ? Math.round(value) : Math.round(value * 10) / 10;
+  return v + (unit ? ' ' + unit : '');
+}
+
+// Construit la liste de courses V2 (simplifiée supermarché) à partir des
+// items bruts collectés depuis favoris + plan repas.
+function _buildShoppingV2(rawItems) {
+  var grouped = {}; // canonical → { canonical, category, byUnit:{}, count }
+  rawItems.forEach(function(it){
+    var name = it.name || '';
+    if (!name) return;
+    var c = _shopCanonical(name);
+    if (!grouped[c.canonical]) grouped[c.canonical] = { canonical: c.canonical, category: c.category, byUnit: {} };
+    var qStr = String(it.qty || '');
+    var parts = qStr.split(/[·,]/);
+    var matched = false;
+    parts.forEach(function(part){
+      var p = (typeof _parseQty === 'function') ? _parseQty(part.trim()) : { value: parseFloat(part), unit: '' };
+      if (p.value == null || !isFinite(p.value)) return;
+      var u = (typeof _normUnit === 'function') ? _normUnit(p.unit || '') : (p.unit || '');
+      if (!grouped[c.canonical].byUnit[u]) grouped[c.canonical].byUnit[u] = 0;
+      grouped[c.canonical].byUnit[u] += p.value;
+      matched = true;
+    });
+    if (!matched) {
+      // Compte au moins l'occurrence pour les ingrédients sans qty parsable
+      if (!grouped[c.canonical].byUnit['']) grouped[c.canonical].byUnit[''] = 0;
+      grouped[c.canonical].byUnit[''] += 1;
+    }
+  });
+
+  var CATEGORIES = ['Protéines', 'Produits laitiers', 'Féculents', 'Fruits', 'Légumes', 'Épicerie'];
+  var BASICS = 'À vérifier à la maison';
+  var newCats = {}; CATEGORIES.forEach(function(c){ newCats[c] = []; }); newCats[BASICS] = [];
+
+  Object.keys(grouped).forEach(function(canonical){
+    var g = grouped[canonical];
+    var targetCat = (g.category === '__BASIC__') ? BASICS : (newCats[g.category] ? g.category : 'Épicerie');
+    // Choisit l'unité dominante (priorité kg/L > g/ml > pièces)
+    var bestUnit = ''; var bestVal = 0; var bestRank = -1;
+    Object.keys(g.byUnit).forEach(function(u){
+      var v = g.byUnit[u];
+      var rank = (u === 'kg' || u === 'l') ? 3 : (u === 'g' || u === 'ml' || u === 'cl') ? 2 : 1;
+      if (rank > bestRank || (rank === bestRank && v > bestVal)) {
+        bestUnit = u; bestVal = v; bestRank = rank;
+      }
+    });
+    var qtyStr = (targetCat === BASICS) ? '' : _shopFormatBuyable(canonical, bestVal, bestUnit);
+    newCats[targetCat].push({ name: canonical, qty: qtyStr });
+  });
+
+  var cats = []; var totalItems = 0;
+  CATEGORIES.concat([BASICS]).forEach(function(c){
+    var items = newCats[c];
+    if (!items.length) return;
+    items.sort(function(a,b){ return a.name.localeCompare(b.name, 'fr'); });
+    cats.push({ name: c, items: items });
+    totalItems += items.length;
+  });
+  return { cats: cats, totalItems: totalItems };
+}
+
 // Catégorise un ingrédient (heuristique simple sur le nom)
 function _categorizeIngredient(name) {
   var n = name.toLowerCase();
@@ -8524,15 +8803,10 @@ function _fmtShopDate() {
 }
 
 // Collecte les ingrédients depuis : favoris + plan repas auto.
-// Regroupe par catégorie. Retourne { cats: [{name, items:[{name, qty}]}], totalItems }.
+// Passe par la V2 (simplification supermarché : synonymes, formats achetables,
+// section "À vérifier à la maison"). Retourne { cats, totalItems }.
 function _collectShoppingForExport() {
-  var byCat = {};
-  function addItem(cat, name, qty) {
-    if (!byCat[cat]) byCat[cat] = {};
-    var k = name.toLowerCase().trim();
-    if (!byCat[cat][k]) byCat[cat][k] = { name: name.trim(), qtys: [] };
-    if (qty) byCat[cat][k].qtys.push(String(qty).trim());
-  }
+  var rawItems = []; // [{name, qty}]
   // 1. Favoris
   if (typeof RECIPES !== 'undefined' && window.RECIPES) {
     var favs = (typeof _getRecipeFavorites === 'function') ? _getRecipeFavorites() : [];
@@ -8540,11 +8814,11 @@ function _collectShoppingForExport() {
       var r = RECIPES[key]; if (!r) return;
       (r.ingredients || []).forEach(function(ing) {
         if (!ing || !ing.name) return;
-        addItem(_categorizeIngredient(ing.name), ing.name, ing.qty);
+        rawItems.push({ name: ing.name, qty: ing.qty || '' });
       });
     });
   }
-  // 2. Plan repas auto (lignes pré-agrégées)
+  // 2. Plan repas auto (lignes pré-agrégées, ex "120g Whey vanille")
   try {
     var mp = JSON.parse(localStorage.getItem('ah_shopping_meal_plan') || '[]');
     mp.forEach(function(line) {
@@ -8552,23 +8826,11 @@ function _collectShoppingForExport() {
       var qty = m ? m[1].trim() : '';
       var name = m ? m[2].trim() : String(line).trim();
       if (!name) return;
-      addItem(_categorizeIngredient(name), name, qty);
+      rawItems.push({ name: name, qty: qty });
     });
   } catch(e) {}
-  // Tri stable par catégorie
-  var catOrder = ['PROTÉINES & LAITAGES','GLUCIDES & FÉCULENTS','LÉGUMES & HERBES','FRUITS','BONS GRAS','ÉPICES & DIVERS'];
-  var cats = [], totalItems = 0;
-  catOrder.forEach(function(cn) {
-    if (!byCat[cn]) return;
-    var keys = Object.keys(byCat[cn]).sort();
-    var items = keys.map(function(k) {
-      var it = byCat[cn][k];
-      var q = _sumQtys(it.qtys);
-      return { name: it.name, qty: q };
-    });
-    if (items.length) { cats.push({ name: cn, items: items }); totalItems += items.length; }
-  });
-  return { cats: cats, totalItems: totalItems };
+  if (!rawItems.length) return { cats: [], totalItems: 0 };
+  return _buildShoppingV2(rawItems);
 }
 
 // Texte plain pour Native Share / clipboard
