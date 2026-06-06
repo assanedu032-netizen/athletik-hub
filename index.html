@@ -5287,50 +5287,60 @@ window.tiResetOnEnter = function(){ window.tiShowStep(1); };
   <div id="builderLocked" class="builder-locked">
     <div class="bl-ic">🔒</div>
     <div class="bl-title">WORKOUT BUILDER</div>
-    <div class="bl-sub">Crée tes propres séances. Débloqué après <strong>2 programmes terminés</strong>.</div>
+    <div class="bl-sub">Le Workout Builder sera débloqué après avoir terminé <strong>2 programmes d'entraînement</strong>. Cette fonctionnalité te permettra de créer tes propres séances personnalisées avec Titan.</div>
     <div class="bl-bar"><div id="builderBar" class="bl-bar-in" style="width:0%"></div></div>
     <div class="bl-count" id="builderCount">0 / 2 programmes terminés</div>
   </div>
 
-  <!-- État débloqué : éditeur de séance -->
+  <!-- État débloqué : crée ta séance avec Titan -->
   <div id="builderUnlocked" style="display:none">
-    <div style="padding:14px 20px 8px;display:flex;justify-content:space-between;align-items:center">
-      <div>
-        <div style="font-family:'Bebas Neue',sans-serif;font-size:20px;letter-spacing:1.5px;color:var(--text)">MA SÉANCE</div>
-        <div style="font-size:11px;color:var(--muted);margin-top:2px" id="builderMeta">0 exercice · 0 min</div>
+
+    <!-- FORMULAIRE D'INTENTION -->
+    <div id="builderForm" style="padding:14px 20px 4px">
+      <div style="font-family:'Bebas Neue',sans-serif;font-size:22px;letter-spacing:1.5px;color:var(--text)">CRÉE TA SÉANCE AVEC TITAN</div>
+      <div style="font-size:11.5px;color:var(--muted);margin-top:2px;line-height:1.4">Dis à Titan ce que tu veux travailler. Il programme la séance pour toi — séries, repos, structure — selon la méthode Athletik Hub.</div>
+
+      <!-- Objectif -->
+      <div style="margin-top:16px;font-size:11px;font-weight:800;letter-spacing:.5px;color:var(--text);text-transform:uppercase">Objectif de la séance</div>
+      <div id="bChipsObjectif" class="b-chips" style="display:flex;flex-wrap:wrap;gap:6px;margin-top:8px"></div>
+
+      <!-- Durée -->
+      <div style="margin-top:16px;font-size:11px;font-weight:800;letter-spacing:.5px;color:var(--text);text-transform:uppercase">Durée disponible</div>
+      <div id="bChipsDuree" class="b-chips" style="display:flex;flex-wrap:wrap;gap:6px;margin-top:8px"></div>
+
+      <!-- Matériel -->
+      <div style="margin-top:16px;font-size:11px;font-weight:800;letter-spacing:.5px;color:var(--text);text-transform:uppercase">Matériel disponible</div>
+      <div id="bChipsMateriel" class="b-chips" style="display:flex;flex-wrap:wrap;gap:6px;margin-top:8px"></div>
+
+      <!-- État du jour -->
+      <div style="margin-top:16px;font-size:11px;font-weight:800;letter-spacing:.5px;color:var(--text);text-transform:uppercase">État du jour</div>
+      <div id="bChipsEtat" class="b-chips" style="display:flex;flex-wrap:wrap;gap:6px;margin-top:8px"></div>
+
+      <!-- Phrase libre + vocal -->
+      <div style="margin-top:18px;font-size:11px;font-weight:800;letter-spacing:.5px;color:var(--text);text-transform:uppercase">Parle à Titan (exercices, envies…)</div>
+      <div style="position:relative;margin-top:8px">
+        <textarea id="builderPhrase" rows="3" placeholder="Ex : Je veux faire du squat jump, du sprint et du gainage. Je suis un peu fatigué aujourd'hui." style="width:100%;padding:12px 44px 12px 12px;background:var(--surface);border:1px solid var(--border);border-radius:12px;color:var(--text);font-size:13px;outline:none;box-sizing:border-box;resize:vertical;font-family:inherit"></textarea>
+        <button id="builderMicBtn" onclick="builderToggleMic()" aria-label="Parler à Titan" title="Parler à Titan" style="position:absolute;right:8px;top:8px;width:32px;height:32px;border-radius:50%;border:0;background:var(--surface2);color:var(--gold);cursor:pointer;display:flex;align-items:center;justify-content:center">
+          <svg viewBox="0 0 24 24" width="17" height="17" fill="currentColor"><path d="M12 14c1.66 0 3-1.34 3-3V5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3zm5-3c0 2.76-2.24 5-5 5s-5-2.24-5-5H5c0 3.53 2.61 6.43 6 6.92V21h2v-3.08c3.39-.49 6-3.39 6-6.92h-2z"/></svg>
+        </button>
       </div>
-      <button onclick="builderClear()" style="padding:7px 12px;background:transparent;border:1px solid var(--border);border-radius:8px;color:var(--muted);font-size:11px;cursor:pointer">Vider</button>
+
+      <!-- Générer -->
+      <div style="padding:18px 0 24px">
+        <button onclick="builderGenerate()" id="builderGenBtn" style="width:100%;padding:15px;background:linear-gradient(135deg,var(--gold),var(--gold2));border:0;border-radius:12px;color:var(--navy);font-family:'Bebas Neue',sans-serif;font-size:18px;letter-spacing:2px;cursor:pointer">✨ GÉNÉRER MA SÉANCE</button>
+      </div>
     </div>
 
-    <!-- Liste exos sélectionnés -->
-    <div id="builderList" style="padding:6px 20px;display:flex;flex-direction:column;gap:8px"></div>
-
-    <div id="builderEmpty" style="padding:24px 20px;text-align:center;color:var(--muted);font-size:12px">
-      <div style="font-size:36px;margin-bottom:8px">🧱</div>
-      <div>Ta séance est vide.<br>Tape l'icône <strong style="color:var(--gold)">+</strong> ci-dessous pour ajouter un exercice depuis la librairie.</div>
+    <!-- LOADING -->
+    <div id="builderLoading" style="display:none;padding:48px 20px;text-align:center;color:var(--muted)">
+      <div style="font-size:40px;margin-bottom:12px">🏋️</div>
+      <div style="font-family:'Bebas Neue',sans-serif;font-size:18px;letter-spacing:1px;color:var(--text)">TITAN PROGRAMME TA SÉANCE…</div>
+      <div style="font-size:12px;margin-top:6px">Il analyse ton objectif, ton état et la méthode Athletik Hub.</div>
     </div>
 
-    <!-- Bouton ajout -->
-    <div style="padding:14px 20px">
-      <button onclick="builderOpenAdd()" style="width:100%;padding:13px;background:var(--surface);border:1.5px dashed var(--border);border-radius:12px;color:var(--gold);font-family:'Outfit',sans-serif;font-weight:800;font-size:13px;cursor:pointer">+ AJOUTER UN EXERCICE</button>
-    </div>
+    <!-- RÉSULTAT -->
+    <div id="builderResult" style="display:none;padding:14px 20px 28px"></div>
 
-    <!-- Action : lancer la séance -->
-    <div style="padding:6px 20px 24px">
-      <button onclick="builderStart()" id="builderStartBtn" style="width:100%;padding:15px;background:linear-gradient(135deg,var(--gold),var(--gold2));border:0;border-radius:12px;color:var(--navy);font-family:'Bebas Neue',sans-serif;font-size:18px;letter-spacing:2px;cursor:pointer;opacity:.5;pointer-events:none">▶ LANCER MA SÉANCE</button>
-    </div>
-  </div>
-</div>
-
-<!-- Modal de sélection d'exercice pour le Builder -->
-<div id="builderAddModal" style="display:none;position:fixed;inset:0;background:rgba(6,12,24,.92);backdrop-filter:blur(6px);z-index:9400;align-items:center;justify-content:center;padding:24px">
-  <div style="max-width:420px;width:100%;max-height:80vh;background:#1B2D5C;border:1px solid #1F305F;border-radius:16px;padding:18px;display:flex;flex-direction:column">
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
-      <div style="font-family:'Bebas Neue',sans-serif;font-size:16px;color:#fff;letter-spacing:1.5px">CHOISIS UN EXERCICE</div>
-      <button onclick="builderCloseAdd()" style="background:transparent;border:0;color:#8a93a8;font-size:20px;cursor:pointer">×</button>
-    </div>
-    <input id="builderAddSearch" type="search" placeholder="Rechercher…" oninput="builderRenderAddList()" style="width:100%;padding:10px;background:#1B2D5C;border:1px solid #1F305F;border-radius:8px;color:#fff;font-size:13px;outline:none;box-sizing:border-box;margin-bottom:8px">
-    <div id="builderAddList" style="flex:1;overflow-y:auto"></div>
   </div>
 </div>
 
@@ -16378,21 +16388,30 @@ function exitTestMode() {
 // Débloqué après 2 programmes terminés (ou tier VIP/MASTER pour skip).
 // programsDone est incrémenté quand un programme entier est complété.
 var BUILDER_UNLOCK_PROGRAMS = 2;
-var builderState = { exos: [] };
+// Comptes fondateur / dev — accès anticipé au Builder pour tests avant lancement public.
+var BUILDER_FOUNDER_EMAILS = ['assanedu032@gmail.com'];
 
-function _builderLoad() {
+// Intention en cours (réinitialisée à chaque ouverture du Builder).
+var _builderIntent = { objectif: '', duree: '', materiel: [], etat: '', phrase: '' };
+var _builderWorkout = null;       // séance générée par Titan (réconciliée librairie)
+var _builderGenerating = false;
+
+var _BUILDER_OBJECTIFS = ['Détente verticale','Explosivité','Force','Vitesse','Puissance','Mobilité','Prévention blessure','Haut du corps','Bas du corps','Full body','Récupération active'];
+var _BUILDER_DUREES    = ['20 min','30 min','45 min','60 min'];
+var _BUILDER_MATERIELS = ['Aucun matériel','Salle de sport','Haltères','Élastiques','Terrain','Box jump'];
+var _BUILDER_ETATS     = ['En forme','Fatigue normale','Fatigué','Douleur ou gêne'];
+
+// ─── Accès ─────────────────────────────────────────────────────────
+function _builderIsDev() {
   try {
-    var saved = JSON.parse(localStorage.getItem('ah_builder_session') || '{"exos":[]}');
-    if (saved && Array.isArray(saved.exos)) builderState = saved;
-  } catch(e) {}
-}
-
-function _builderPersist() {
-  try { localStorage.setItem('ah_builder_session', JSON.stringify(builderState)); } catch(e) {}
+    var email = (window.fbUser && window.fbUser.email) || '';
+    return BUILDER_FOUNDER_EMAILS.indexOf((email || '').toLowerCase()) > -1;
+  } catch(e) { return false; }
 }
 
 function _builderCheckUnlock() {
-  // VIP/MASTER tier unlocks immediately + 2 programmes complétés débloquent aussi
+  // Accès dev/fondateur (test avant lancement) > VIP/MASTER > 2 programmes terminés.
+  if (_builderIsDev()) return true;
   if (typeof window.hasAccessTier === 'function' && window.hasAccessTier('VIP')) return true;
   try {
     var prof = JSON.parse(localStorage.getItem('ah_profile') || '{}');
@@ -16408,7 +16427,6 @@ function renderBuilder() {
   if (!_builderCheckUnlock()) {
     locked.style.display = '';
     unlocked.style.display = 'none';
-    // Progression : programmes terminés (pas séances)
     var done = 0;
     try { done = JSON.parse(localStorage.getItem('ah_profile') || '{}').programsDone || 0; } catch(e) {}
     var pct = Math.min(100, (done / BUILDER_UNLOCK_PROGRAMS) * 100);
@@ -16420,158 +16438,436 @@ function renderBuilder() {
   }
   locked.style.display = 'none';
   unlocked.style.display = '';
-  _builderLoad();
-  _builderRenderList();
+  _builderShowForm();
+  _builderRenderChips();
 }
 
-function _builderRenderList() {
-  var list = document.getElementById('builderList');
-  var empty = document.getElementById('builderEmpty');
-  var meta = document.getElementById('builderMeta');
-  var startBtn = document.getElementById('builderStartBtn');
-  if (!list) return;
+// ─── Vues (form / loading / result) ────────────────────────────────
+function _builderShow(which) {
+  var f = document.getElementById('builderForm');
+  var l = document.getElementById('builderLoading');
+  var r = document.getElementById('builderResult');
+  if (f) f.style.display = which === 'form' ? '' : 'none';
+  if (l) l.style.display = which === 'loading' ? '' : 'none';
+  if (r) r.style.display = which === 'result' ? '' : 'none';
+}
+function _builderShowForm() { _builderShow('form'); }
 
-  if (!builderState.exos.length) {
-    list.innerHTML = '';
-    if (empty) empty.style.display = '';
-    if (meta) meta.textContent = '0 exercice · 0 min';
-    if (startBtn) { startBtn.style.opacity = '.5'; startBtn.style.pointerEvents = 'none'; }
-    return;
-  }
-  if (empty) empty.style.display = 'none';
+// ─── Chips de sélection ────────────────────────────────────────────
+function _builderRenderChips() {
+  _builderRenderChipGroup('bChipsObjectif', _BUILDER_OBJECTIFS, 'objectif');
+  _builderRenderChipGroup('bChipsDuree',    _BUILDER_DUREES,    'duree');
+  _builderRenderChipGroup('bChipsMateriel', _BUILDER_MATERIELS, 'materiel');
+  _builderRenderChipGroup('bChipsEtat',     _BUILDER_ETATS,     'etat');
+}
 
+function _builderRenderChipGroup(containerId, values, group) {
+  var el = document.getElementById(containerId);
+  if (!el) return;
   var html = '';
-  builderState.exos.forEach(function(ex, i){
-    html += '<div style="display:flex;align-items:center;gap:10px;background:var(--surface2);border:1px solid var(--border);border-radius:12px;padding:10px 12px">'
-      + '<div style="width:28px;height:28px;border-radius:50%;background:var(--gold);color:var(--navy);display:flex;align-items:center;justify-content:center;font-family:\'Bebas Neue\',sans-serif;font-size:13px">' + (i+1) + '</div>'
-      + '<div style="flex:1;min-width:0">'
-      +   '<div style="font-size:13px;font-weight:700;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">' + ex.name + '</div>'
-      +   '<div style="font-size:11px;color:var(--muted);margin-top:2px">'
-      +     '<input type="number" min="1" max="10" value="' + (ex.sets || 3) + '" onchange="builderSetField(' + i + ',\'sets\',this.value)" style="width:40px;padding:2px 4px;background:transparent;border:1px solid var(--border);border-radius:4px;color:var(--text);font-size:11px;text-align:center"> séries · '
-      +     '<input type="text" value="' + (ex.reps || '10') + '" onchange="builderSetField(' + i + ',\'reps\',this.value)" style="width:54px;padding:2px 4px;background:transparent;border:1px solid var(--border);border-radius:4px;color:var(--text);font-size:11px;text-align:center"> reps · '
-      +     '<input type="text" value="' + (ex.rest || '60s') + '" onchange="builderSetField(' + i + ',\'rest\',this.value)" style="width:50px;padding:2px 4px;background:transparent;border:1px solid var(--border);border-radius:4px;color:var(--text);font-size:11px;text-align:center"> repos'
-      +   '</div>'
-      + '</div>'
-      + '<button onclick="builderMove(' + i + ',-1)" style="background:transparent;border:0;color:var(--muted);font-size:14px;cursor:pointer;width:24px">↑</button>'
-      + '<button onclick="builderMove(' + i + ',1)" style="background:transparent;border:0;color:var(--muted);font-size:14px;cursor:pointer;width:24px">↓</button>'
-      + '<button onclick="builderRemove(' + i + ')" style="background:transparent;border:0;color:#EF4444;font-size:16px;cursor:pointer;width:28px">×</button>'
-      + '</div>';
+  values.forEach(function(v){
+    var active = group === 'materiel'
+      ? (_builderIntent.materiel.indexOf(v) > -1)
+      : (_builderIntent[group] === v);
+    var bg = active ? 'var(--gold)' : 'var(--surface)';
+    var col = active ? 'var(--navy)' : 'var(--text2)';
+    var bd = active ? 'var(--gold)' : 'var(--border)';
+    var safe = v.replace(/'/g, "\\'");
+    html += '<button onclick="builderToggleChip(\'' + group + '\',\'' + safe + '\')" style="padding:8px 12px;border-radius:20px;border:1px solid ' + bd + ';background:' + bg + ';color:' + col + ';font-size:12px;font-weight:700;cursor:pointer;transition:all .15s">' + v + '</button>';
   });
-  list.innerHTML = html;
-  if (meta) {
-    var minutes = builderState.exos.reduce(function(acc, e){
-      return acc + (parseInt(e.sets || 3) * 2);
-    }, 0);
-    meta.textContent = builderState.exos.length + ' exercice' + (builderState.exos.length > 1 ? 's' : '') + ' · ~' + minutes + ' min';
-  }
-  if (startBtn) { startBtn.style.opacity = '1'; startBtn.style.pointerEvents = 'auto'; }
+  el.innerHTML = html;
 }
 
-function builderSetField(i, key, val) {
-  if (!builderState.exos[i]) return;
-  builderState.exos[i][key] = val;
-  _builderPersist();
-  _builderRenderList();
-}
-
-function builderMove(i, dir) {
-  var ni = i + dir;
-  if (ni < 0 || ni >= builderState.exos.length) return;
-  var tmp = builderState.exos[i];
-  builderState.exos[i] = builderState.exos[ni];
-  builderState.exos[ni] = tmp;
-  _builderPersist();
-  _builderRenderList();
-}
-
-function builderRemove(i) {
-  builderState.exos.splice(i, 1);
-  _builderPersist();
-  _builderRenderList();
-}
-
-function builderClear() {
-  if (!confirm('Vider toute la séance ?')) return;
-  builderState.exos = [];
-  _builderPersist();
-  _builderRenderList();
-}
-
-function builderOpenAdd() {
-  var m = document.getElementById('builderAddModal');
-  if (m) m.style.display = 'flex';
-  builderRenderAddList();
-}
-
-function builderCloseAdd() {
-  var m = document.getElementById('builderAddModal');
-  if (m) m.style.display = 'none';
-}
-
-function builderRenderAddList() {
-  var list = document.getElementById('builderAddList');
-  var search = (document.getElementById('builderAddSearch') || {}).value || '';
-  if (!list) return;
-  if (typeof catData === 'undefined') {
-    list.innerHTML = '<div style="color:#8a93a8;padding:20px;text-align:center;font-size:12px">Bibliothèque non chargée.</div>';
+function builderToggleChip(group, value) {
+  if (group === 'materiel') {
+    var i = _builderIntent.materiel.indexOf(value);
+    if (i > -1) _builderIntent.materiel.splice(i, 1);
+    else _builderIntent.materiel.push(value);
+    _builderRenderChipGroup('bChipsMateriel', _BUILDER_MATERIELS, 'materiel');
     return;
   }
-  // Flatten all categories
-  var all = [];
-  Object.keys(catData).forEach(function(catKey){
-    var items = catData[catKey] || [];
-    items.forEach(function(it){
-      all.push({ name: it.name, cat: catKey });
+  // Single-select : re-cliquer désélectionne.
+  _builderIntent[group] = (_builderIntent[group] === value) ? '' : value;
+  var map = { objectif:['bChipsObjectif',_BUILDER_OBJECTIFS], duree:['bChipsDuree',_BUILDER_DUREES], etat:['bChipsEtat',_BUILDER_ETATS] };
+  if (map[group]) _builderRenderChipGroup(map[group][0], map[group][1], group);
+}
+window.builderToggleChip = builderToggleChip;
+
+// ─── Vocal (réutilise SpeechRecognition fr-FR) ─────────────────────
+var _builderRec = null, _builderListening = false;
+function builderToggleMic() {
+  var SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+  if (!SR) { if (typeof showToast === 'function') showToast('Vocal non supporté sur ce navigateur. Écris ta demande.', 'info'); return; }
+  var inp = document.getElementById('builderPhrase');
+  var btn = document.getElementById('builderMicBtn');
+  if (_builderListening && _builderRec) { try { _builderRec.stop(); } catch(e) {} return; }
+  if (!_builderRec) {
+    _builderRec = new SR();
+    _builderRec.lang = 'fr-FR';
+    _builderRec.interimResults = true;
+    _builderRec.continuous = false;
+    var initial = '', finalT = '';
+    _builderRec.onstart = function(){ _builderListening = true; initial = (inp && inp.value) ? (inp.value.trim() + ' ') : ''; finalT = ''; if (btn) btn.style.background = 'var(--gold)'; if (btn) btn.style.color = 'var(--navy)'; };
+    _builderRec.onresult = function(e){
+      var interim = '';
+      for (var i = e.resultIndex; i < e.results.length; i++) {
+        if (e.results[i].isFinal) finalT += e.results[i][0].transcript;
+        else interim += e.results[i][0].transcript;
+      }
+      if (inp) inp.value = initial + finalT + interim;
+    };
+    _builderRec.onerror = function(){ _builderListening = false; if (btn){ btn.style.background = 'var(--surface2)'; btn.style.color = 'var(--gold)'; } };
+    _builderRec.onend = function(){ _builderListening = false; if (btn){ btn.style.background = 'var(--surface2)'; btn.style.color = 'var(--gold)'; } if (inp) try { inp.focus(); } catch(e){} };
+  }
+  try { _builderRec.start(); } catch(e) { try { _builderRec.abort(); } catch(_){} }
+}
+window.builderToggleMic = builderToggleMic;
+
+// ─── Librairie + contexte envoyés à Titan ──────────────────────────
+function _builderLibraryPayload() {
+  var out = [];
+  if (typeof catData !== 'object' || !catData) return out;
+  Object.keys(catData).forEach(function(cat){
+    (catData[cat] || []).forEach(function(ex){
+      if (ex && ex.name) out.push({ n: ex.name, c: cat, d: ex.diff || '', m: ex.mat || 'Aucun' });
     });
   });
-  var q = search.trim().toLowerCase();
-  if (q) all = all.filter(function(it){ return it.name.toLowerCase().indexOf(q) !== -1; });
-  if (!all.length) {
-    list.innerHTML = '<div style="color:#8a93a8;padding:20px;text-align:center;font-size:12px">Aucun exercice trouvé.</div>';
+  return out;
+}
+
+function _builderCtx() {
+  var prof = {};
+  try { prof = JSON.parse(localStorage.getItem('ah_profile') || '{}'); } catch(e) {}
+  return {
+    name: prof.prenom || 'Athlète',
+    program: prof.program || 'Non attribué',
+    programKey: prof.programKey || '',
+    athScore: prof.athScore != null ? prof.athScore : null,
+    vertJump: prof.vertJump != null ? prof.vertJump : null,
+    satDone: !!prof.satDone,
+    streak: prof.streak || 0,
+    programsDone: prof.programsDone || 0,
+    accessTier: prof.accessTier || null
+  };
+}
+
+// ─── Réconciliation séance ↔ librairie (vidéos, catégorie, matériel) ─
+function _builderFindExo(name) {
+  if (!name || typeof catData !== 'object') return null;
+  var target = name.toLowerCase().trim();
+  var keys = Object.keys(catData);
+  // 1) Exact (insensible casse)
+  for (var k = 0; k < keys.length; k++) {
+    var arr = catData[keys[k]] || [];
+    for (var i = 0; i < arr.length; i++) {
+      if ((arr[i].name || '').toLowerCase().trim() === target) return { ex: arr[i], catKey: keys[k] };
+    }
+  }
+  // 2) Substring bidirectionnel
+  for (var k2 = 0; k2 < keys.length; k2++) {
+    var arr2 = catData[keys[k2]] || [];
+    for (var j = 0; j < arr2.length; j++) {
+      var nm = (arr2[j].name || '').toLowerCase().trim();
+      if (nm && (nm.indexOf(target) > -1 || target.indexOf(nm) > -1)) return { ex: arr2[j], catKey: keys[k2] };
+    }
+  }
+  return null;
+}
+
+function _builderVideoId(name) {
+  var f = _builderFindExo(name);
+  if (f && f.ex && f.ex.video) return f.ex.video;
+  if (typeof _LIB_VIDEO_MAP !== 'undefined' && _LIB_VIDEO_MAP[name]) return _LIB_VIDEO_MAP[name];
+  return null;
+}
+
+function _builderReconcile(workout) {
+  if (!workout || !Array.isArray(workout.blocs)) return workout;
+  workout.blocs.forEach(function(bloc){
+    (bloc.exos || []).forEach(function(e){
+      var f = _builderFindExo(e.n);
+      e.video = _builderVideoId(e.n);
+      if (f && f.ex) {
+        e.catLabel = (typeof _LIB_CAT_MAP !== 'undefined' && _LIB_CAT_MAP[f.catKey] && _LIB_CAT_MAP[f.catKey].label) || f.catKey;
+        e.desc = f.ex.desc || '';
+        e.mat = f.ex.mat || '';
+      }
+    });
+  });
+  return workout;
+}
+
+// ─── Génération via Titan (backend, JSON structuré) ────────────────
+async function builderGenerate() {
+  if (_builderGenerating) return;
+  var phrase = (document.getElementById('builderPhrase') || {}).value || '';
+  _builderIntent.phrase = phrase.trim();
+
+  if (!_builderIntent.objectif && !_builderIntent.phrase) {
+    if (typeof showToast === 'function') showToast('Choisis un objectif ou décris ta séance à Titan.', 'info');
     return;
   }
-  var html = '';
-  all.slice(0, 60).forEach(function(it){
-    var safeName = it.name.replace(/"/g, '&quot;').replace(/'/g, "\\'");
-    html += '<div onclick="builderAddExo(\'' + safeName + '\')" style="padding:10px;border-bottom:1px solid #1F305F;cursor:pointer;color:#fff;font-size:13px"><strong>' + it.name + '</strong><div style="font-size:10px;color:#8a93a8;margin-top:2px">' + it.cat + '</div></div>';
-  });
-  list.innerHTML = html;
-}
+  if (!window.fbUser) {
+    if (typeof showToast === 'function') showToast('Connecte-toi pour générer une séance avec Titan.', 'info');
+    return;
+  }
 
-function builderAddExo(name) {
-  builderState.exos.push({ name: name, sets: 3, reps: '10', rest: '60s' });
-  _builderPersist();
-  builderCloseAdd();
-  _builderRenderList();
-}
+  _builderGenerating = true;
+  _builderShow('loading');
 
-function builderStart() {
-  if (!builderState.exos.length) return;
-  // Launch via the existing liveSession entry point
-  var exos = builderState.exos.map(function(e){
-    return {
-      n: e.name,
-      s: e.sets || 3,
-      r: e.reps || '10',
-      rest: e.rest || '60s',
-      detail: e.sets + '×' + e.reps + (e.rest ? ' (repos ' + e.rest + ')' : ''),
-      name: e.name
-    };
-  });
-  try {
-    if (typeof launchSession === 'function') {
-      launchSession(exos, 'Ma séance custom', 'WORKOUT BUILDER', '', '');
-    } else if (typeof startLive === 'function') {
-      window._customSessionExos = exos;
-      startLive();
-    } else {
-      alert('Lancement de séance non disponible. Va dans Programmes pour lancer.');
+  var payload = {
+    mode: 'builder',
+    ctx: _builderCtx(),
+    library: _builderLibraryPayload(),
+    intent: {
+      objectif: _builderIntent.objectif,
+      duree: (_builderIntent.duree || '').replace(' min', ''),
+      materiel: _builderIntent.materiel.join(', '),
+      etat: _builderIntent.etat,
+      phrase: _builderIntent.phrase
     }
-  } catch(e) {
-    console.warn('builderStart:', e);
-    alert('Erreur au lancement de la séance.');
+  };
+
+  try {
+    var idToken = await window.fbUser.getIdToken();
+    var resp = await fetch('/.netlify/functions/titan', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + idToken },
+      body: JSON.stringify(payload)
+    });
+    var data = await resp.json();
+    if (resp.status === 429) { throw new Error(data.error || 'Limite journalière atteinte. Reviens demain.'); }
+    if (!data.workout) { throw new Error(data.error || 'Titan n\'a pas pu générer la séance.'); }
+    _builderWorkout = _builderReconcile(data.workout);
+    builderRenderResult(_builderWorkout);
+    _builderShow('result');
+  } catch (err) {
+    if (typeof showToast === 'function') showToast(err.message || 'Erreur de génération. Réessaie.', 'err');
+    _builderShow('form');
+  } finally {
+    _builderGenerating = false;
   }
 }
+window.builderGenerate = builderGenerate;
+
+// ─── Rendu de la séance générée ────────────────────────────────────
+function builderRenderResult(w) {
+  var el = document.getElementById('builderResult');
+  if (!el || !w) return;
+  var esc = function(s){ return String(s == null ? '' : s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); };
+
+  var html = '';
+  // En-tête
+  html += '<div style="background:linear-gradient(135deg,var(--navy),var(--navy2));border-radius:16px;padding:16px 18px;color:#fff">'
+    + '<div style="font-size:11px;letter-spacing:1px;color:var(--gold);font-weight:800">SÉANCE GÉNÉRÉE PAR TITAN</div>'
+    + '<div style="font-family:\'Bebas Neue\',sans-serif;font-size:24px;letter-spacing:1px;margin-top:2px">' + esc(w.objectif || 'Ta séance') + '</div>'
+    + '<div style="display:flex;gap:14px;margin-top:8px;font-size:12px;color:rgba(255,255,255,.85)">'
+    +   '<span>⏱ ~' + esc(w.dureeEstimee || '?') + ' min</span>'
+    +   '<span>🔥 Intensité : ' + esc(w.intensite || '—') + '</span>'
+    + '</div>'
+    + '</div>';
+
+  // Note d'adaptation de Titan
+  if (w.note && String(w.note).trim()) {
+    html += '<div style="display:flex;gap:10px;background:var(--surface2);border:1px solid var(--border);border-left:3px solid var(--gold);border-radius:10px;padding:11px 13px;margin-top:12px">'
+      + '<div style="font-size:16px">💬</div>'
+      + '<div style="font-size:12.5px;color:var(--text2);line-height:1.45">' + esc(w.note) + '</div>'
+      + '</div>';
+  }
+
+  // Blocs
+  (w.blocs || []).forEach(function(bloc){
+    html += '<div style="margin-top:18px">';
+    html += '<div style="font-family:\'Bebas Neue\',sans-serif;font-size:16px;letter-spacing:1px;color:var(--text);text-transform:uppercase">' + esc(bloc.titre || 'Bloc') + '</div>';
+    html += '<div style="display:flex;flex-direction:column;gap:8px;margin-top:8px">';
+    (bloc.exos || []).forEach(function(e){
+      var prescr = '';
+      if (e.sets) prescr += e.sets + ' série' + (e.sets > 1 ? 's' : '');
+      if (e.reps) prescr += (prescr ? ' × ' : '') + e.reps;
+      var meta = [];
+      if (e.rest && e.rest !== '-') meta.push('repos ' + e.rest);
+      if (e.catLabel) meta.push(e.catLabel);
+      html += '<div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:11px 13px">';
+      html += '<div style="display:flex;align-items:center;gap:10px">';
+      html += '<div style="flex:1;min-width:0"><div style="font-size:13.5px;font-weight:800;color:var(--text)">' + esc(e.n) + '</div>';
+      html += '<div style="font-size:12px;color:var(--gold);font-weight:700;margin-top:2px">' + esc(prescr || '—') + '</div></div>';
+      if (e.video) {
+        html += '<button onclick="builderOpenVideo(\'' + esc(e.video) + '\',\'' + esc(e.n).replace(/'/g,'') + '\')" style="flex-shrink:0;padding:7px 11px;border-radius:8px;border:1px solid var(--border);background:var(--surface2);color:var(--gold);font-size:11px;font-weight:700;cursor:pointer">▶ Vidéo</button>';
+      }
+      html += '</div>';
+      if (meta.length) html += '<div style="font-size:11px;color:var(--muted);margin-top:5px">' + esc(meta.join(' · ')) + '</div>';
+      if (e.note && String(e.note).trim()) html += '<div style="font-size:11px;color:var(--text2);margin-top:4px;font-style:italic">' + esc(e.note) + '</div>';
+      html += '</div>';
+    });
+    html += '</div></div>';
+  });
+
+  // Actions
+  html += '<div style="padding:22px 0 4px;display:flex;flex-direction:column;gap:10px">';
+  html += '<button onclick="builderStartGenerated()" style="width:100%;padding:15px;background:linear-gradient(135deg,var(--gold),var(--gold2));border:0;border-radius:12px;color:var(--navy);font-family:\'Bebas Neue\',sans-serif;font-size:18px;letter-spacing:2px;cursor:pointer">▶ DÉMARRER MA SÉANCE</button>';
+  html += '<div style="display:flex;gap:8px">';
+  html += '<button onclick="builderGenerate()" style="flex:1;padding:11px;background:var(--surface);border:1px solid var(--border);border-radius:10px;color:var(--text2);font-size:12px;font-weight:700;cursor:pointer">🔄 Régénérer</button>';
+  html += '<button onclick="_builderShowForm()" style="flex:1;padding:11px;background:var(--surface);border:1px solid var(--border);border-radius:10px;color:var(--text2);font-size:12px;font-weight:700;cursor:pointer">✏️ Modifier ma demande</button>';
+  html += '</div></div>';
+
+  el.innerHTML = html;
+  el.scrollTop = 0;
+}
+window.builderRenderResult = builderRenderResult;
+
+// ─── Lecteur vidéo (overlay autonome) ──────────────────────────────
+function builderOpenVideo(ytId, name) {
+  if (!ytId) return;
+  var m = document.getElementById('builderVideoModal');
+  if (!m) {
+    m = document.createElement('div');
+    m.id = 'builderVideoModal';
+    m.style.cssText = 'position:fixed;inset:0;background:rgba(6,12,24,.94);z-index:9600;display:flex;align-items:center;justify-content:center;padding:18px';
+    m.onclick = function(ev){ if (ev.target === m) builderCloseVideo(); };
+    document.body.appendChild(m);
+  }
+  m.innerHTML = '<div style="width:100%;max-width:520px">'
+    + '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">'
+    +   '<div style="color:#fff;font-weight:700;font-size:14px">' + String(name || '').replace(/</g,'') + '</div>'
+    +   '<button onclick="builderCloseVideo()" style="background:transparent;border:0;color:#fff;font-size:24px;cursor:pointer">×</button>'
+    + '</div>'
+    + '<div style="position:relative;padding-bottom:56.25%;height:0;border-radius:12px;overflow:hidden">'
+    +   '<iframe src="https://www.youtube.com/embed/' + ytId + '?autoplay=1&rel=0&modestbranding=1" style="position:absolute;inset:0;width:100%;height:100%;border:0" allow="autoplay;encrypted-media" allowfullscreen></iframe>'
+    + '</div></div>';
+  m.style.display = 'flex';
+}
+window.builderOpenVideo = builderOpenVideo;
+
+function builderCloseVideo() {
+  var m = document.getElementById('builderVideoModal');
+  if (m) { m.innerHTML = ''; m.style.display = 'none'; }
+}
+window.builderCloseVideo = builderCloseVideo;
+
+// ─── Démarrage de la séance (réutilise la live session existante) ──
+function builderStartGenerated() {
+  if (!_builderWorkout || !Array.isArray(_builderWorkout.blocs)) return;
+  var exos = [];
+  _builderWorkout.blocs.forEach(function(bloc){
+    (bloc.exos || []).forEach(function(e){
+      exos.push({
+        n: e.n,
+        name: e.n,
+        s: e.sets || 1,
+        r: e.reps || '-',
+        rest: e.rest || '-',
+        note: (bloc.titre ? bloc.titre + (e.note ? ' — ' + e.note : '') : (e.note || '')),
+        video: e.video || null
+      });
+    });
+  });
+  if (!exos.length) { if (typeof showToast === 'function') showToast('Séance vide.', 'info'); return; }
+  try {
+    if (typeof launchSession === 'function') {
+      launchSession(exos, _builderWorkout.objectif || 'Ma séance Titan', 'WORKOUT BUILDER', '', '');
+      // Marque la session comme issue du Builder → sauvegarde cloud + feedback en fin.
+      if (window._LS) window._LS.builderMeta = { workout: _builderWorkout, intent: _builderIntent };
+    } else {
+      if (typeof showToast === 'function') showToast('Lancement indisponible.', 'err');
+    }
+  } catch(e) {
+    console.warn('builderStartGenerated:', e);
+    if (typeof showToast === 'function') showToast('Erreur au lancement de la séance.', 'err');
+  }
+}
+window.builderStartGenerated = builderStartGenerated;
+
+// ─── Sauvegarde cloud (Firestore) de la séance terminée ────────────
+// Décision produit : l'historique Builder vit dans le cloud (users/{uid}/builderSessions),
+// pas seulement en localStorage. Nécessite une session connectée (Builder l'impose).
+function _builderSaveSession(builderMeta) {
+  if (!builderMeta || !window.fbUser || !window.fb || !window.fb.addDoc || !window.fb.collection) return Promise.resolve(null);
+  try {
+    var w = builderMeta.workout || {};
+    var doc = {
+      objectif: w.objectif || '',
+      dureeEstimee: w.dureeEstimee || null,
+      intensite: w.intensite || '',
+      note: w.note || '',
+      blocs: w.blocs || [],
+      intent: builderMeta.intent || {},
+      completed: true,
+      source: 'builder',
+      completedAt: window.fb.serverTimestamp()
+    };
+    var col = window.fb.collection(window.fb.db, 'users', window.fbUser.uid, 'builderSessions');
+    return window.fb.addDoc(col, doc);
+  } catch(e) { console.warn('[builder] save failed:', e); return Promise.resolve(null); }
+}
+
+// Injecte un panneau de feedback dans l'écran de fin de séance live (Builder only).
+function _builderInjectFeedback() {
+  var complete = document.getElementById('lsComplete');
+  if (!complete) return;
+  if (document.getElementById('builderFeedback')) return; // déjà injecté
+  var meta = (window._LS && window._LS.builderMeta) || null;
+
+  // Sauvegarde immédiate (sans feedback) → l'historique n'est jamais perdu.
+  window._builderLastSessionRef = null;
+  try {
+    var p = _builderSaveSession(meta);
+    if (p && p.then) p.then(function(ref){ window._builderLastSessionRef = ref || null; });
+  } catch(e) {}
+
+  var panel = document.createElement('div');
+  panel.id = 'builderFeedback';
+  panel.style.cssText = 'width:100%;max-width:340px;margin:14px auto 0;text-align:left';
+  panel.innerHTML =
+      '<div style="font-size:12px;font-weight:800;color:#fff;text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px">Ton ressenti</div>'
+    + '<div style="font-size:11px;color:rgba(255,255,255,.7);margin-bottom:6px">Difficulté</div>'
+    + '<div id="bfDiff" style="display:flex;gap:6px;margin-bottom:12px"></div>'
+    + '<label style="display:flex;align-items:center;gap:8px;font-size:13px;color:#fff;margin-bottom:12px;cursor:pointer"><input type="checkbox" id="bfPain" style="width:16px;height:16px"> Douleur ou gêne ressentie</label>'
+    + '<textarea id="bfComment" rows="2" placeholder="Commentaire libre (optionnel)" style="width:100%;padding:10px;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.2);border-radius:10px;color:#fff;font-size:13px;outline:none;box-sizing:border-box;resize:vertical;font-family:inherit;margin-bottom:12px"></textarea>'
+    + '<button id="bfSaveBtn" onclick="_builderSaveFeedback()" style="width:100%;padding:12px;background:var(--gold);border:0;border-radius:10px;color:var(--navy);font-weight:800;font-size:13px;cursor:pointer">Enregistrer mon ressenti</button>';
+  // Insère avant le bouton "Retour"
+  var btn = complete.querySelector('button');
+  if (btn) complete.insertBefore(panel, btn); else complete.appendChild(panel);
+
+  // Chips difficulté
+  var diffWrap = document.getElementById('bfDiff');
+  ['Facile','Correcte','Dure','Très dure'].forEach(function(lvl){
+    var b = document.createElement('button');
+    b.textContent = lvl;
+    b.setAttribute('data-lvl', lvl);
+    b.style.cssText = 'flex:1;padding:8px 4px;border-radius:8px;border:1px solid rgba(255,255,255,.25);background:rgba(255,255,255,.06);color:#fff;font-size:11px;font-weight:700;cursor:pointer';
+    b.onclick = function(){
+      window._bfDifficulte = lvl;
+      Array.prototype.forEach.call(diffWrap.children, function(c){
+        var on = c.getAttribute('data-lvl') === lvl;
+        c.style.background = on ? 'var(--gold)' : 'rgba(255,255,255,.06)';
+        c.style.color = on ? 'var(--navy)' : '#fff';
+      });
+    };
+    diffWrap.appendChild(b);
+  });
+}
+
+function _builderSaveFeedback() {
+  var diff = window._bfDifficulte || '';
+  var pain = !!(document.getElementById('bfPain') || {}).checked;
+  var comment = (document.getElementById('bfComment') || {}).value || '';
+  var btn = document.getElementById('bfSaveBtn');
+  var feedback = { difficulte: diff, douleur: pain, commentaire: comment.trim() };
+
+  function done(ok) {
+    if (typeof showToast === 'function') showToast(ok ? 'Ressenti enregistré 💪' : 'Séance enregistrée (ressenti hors-ligne).', ok ? 'ok' : 'info');
+    if (btn) { btn.textContent = '✓ Enregistré'; btn.disabled = true; btn.style.opacity = '.7'; }
+  }
+  try {
+    var ref = window._builderLastSessionRef;
+    if (ref && window.fb && window.fb.setDoc) {
+      window.fb.setDoc(ref, { feedback: feedback }, { merge: true }).then(function(){ done(true); }).catch(function(){ done(false); });
+    } else {
+      done(false);
+    }
+  } catch(e) { done(false); }
+}
+window._builderSaveFeedback = _builderSaveFeedback;
 
 // Hook : refresh builder when pgBuilder tab is shown
 (function(){
@@ -22178,6 +22474,7 @@ function _lsPersist() {
       exos: _LS.exos, idx: _LS.idx, setNum: _LS.setNum || 1,
       progKey: _LS.progKey || '', sessKey: _LS.sessKey || '',
       progName: _LS.progName, sessName: _LS.sessName,
+      builderMeta: _LS.builderMeta || null,
       ts: Date.now()
     }));
   } catch(e) {}
@@ -22206,6 +22503,7 @@ window.resumeLiveSession = function() {
   _LS.sessKey = d.sessKey || '';
   _LS.progName = d.progName || '';
   _LS.sessName = d.sessName || '';
+  _LS.builderMeta = d.builderMeta || null;
   _LS.restActive = false;
   clearInterval(_LS.restInterval);
   _lsRenderEx();
@@ -22743,6 +23041,12 @@ function _lsShowComplete() {
     }
   } catch(e) { console.warn('session tracking error', e); }
 
+  // Séance issue du Workout Builder → sauvegarde cloud + collecte du ressenti.
+  if (_LS.builderMeta) {
+    document.getElementById('lsCompleteMsg').innerHTML = 'Séance Builder terminée.<br>Dis-moi comment ça s\'est passé — c\'est enregistré dans ton historique.';
+    try { _builderInjectFeedback(); } catch(e) { console.warn('builder feedback inject', e); }
+  }
+
   _lsClearPersist();
   try { renderResumeSessionBanner(); } catch(e) {}
 }
@@ -22762,6 +23066,14 @@ function _lsClose() {
     document.getElementById('lsComplete').style.display = 'none';
     document.getElementById('lsRestOverlay').classList.remove('ls-rest-active');
   }
+  // Nettoyage du panneau de feedback Builder injecté + marqueurs.
+  var bf = document.getElementById('builderFeedback');
+  if (bf && bf.parentNode) bf.parentNode.removeChild(bf);
+  if (_LS) _LS.builderMeta = null;
+  window._builderLastSessionRef = null;
+  window._bfDifficulte = null;
+  // Si la séance venait du Builder, on revient sur le formulaire propre.
+  try { if (typeof renderBuilder === 'function' && document.getElementById('builderUnlocked')) _builderShowForm(); } catch(e) {}
 }
 
 function _lsOpenVideo() {
