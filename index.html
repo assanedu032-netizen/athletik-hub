@@ -17812,6 +17812,141 @@ window._trkVoiceMultiRel = function(btn, parentSel, fieldsCfg, exoId, exoName, c
 //   5) Intercept basique de l'historique : pousse un state à l'install,
 //      popstate déclenche switchTab plutôt que de fermer l'app
 // ═══════════════════════════════════════
+// ═══════════════════════════════════════
+// SWIPE-BACK — geste depuis le bord gauche pour revenir en arrière
+// ───────────────────────────────────────
+// Brief user : "Je n'ai pas encore la possibilité de pouvoir sur
+// l'application swiper, pour revenir en arrière je suis obligé de
+// cliquer sur un bouton."
+// Détecte un swipe-from-left-edge (start x < 28px, dx > 60px à droite)
+// puis essaie de fermer la modale/overlay la plus haute, ou retombe
+// sur history.back().
+// ═══════════════════════════════════════
+(function initEdgeBackSwipe(){
+  var START_EDGE = 28;
+  var H_THRESHOLD = 60;
+  var ANGLE_RATIO = 1.5;
+  var MAX_DURATION = 700;
+  var ex = 0, ey = 0, eT = 0, tracking = false;
+
+  function isVisible(el){
+    if (!el) return false;
+    var st = getComputedStyle(el);
+    return st.display !== 'none' && st.visibility !== 'hidden';
+  }
+
+  // Tente de fermer la modale/overlay la plus haute. True si quelque chose
+  // a été fermé. Ordre = du plus récent au plus ancien dans la pile.
+  function tryGoBack(){
+    var el;
+    // 1) Modale fallback Builder
+    el = document.getElementById('builderExoFallback');
+    if (el) { el.remove(); return true; }
+    // 2) Vidéo modal (lib / builder / live)
+    el = document.getElementById('videoModal');
+    if (el && isVisible(el)) {
+      try { window.closeVideoModal ? window.closeVideoModal() : (el.style.display='none'); } catch(_){ el.style.display='none'; }
+      return true;
+    }
+    // 3) Modal réglage durée timer
+    el = document.getElementById('timMinutSetModal');
+    if (el && isVisible(el)) {
+      try { window.tim_minutCloseSet && window.tim_minutCloseSet(); } catch(_){}
+      el.style.display = 'none';
+      return true;
+    }
+    // 4) Restrictions nutri
+    el = document.getElementById('nutriPrefsModal');
+    if (el && el.classList.contains('on')) {
+      try { window.closeNutriPrefs && window.closeNutriPrefs(); } catch(_){ el.classList.remove('on'); }
+      return true;
+    }
+    // 5) Recipe modal (full screen)
+    el = document.getElementById('recipeModal');
+    if (el && el.classList.contains('open')) {
+      try { window.closeRecipeModal && window.closeRecipeModal(); } catch(_){ el.classList.remove('open'); }
+      return true;
+    }
+    // 6) Meal plan settings
+    el = document.getElementById('mealPlanSettings');
+    if (el && el.classList.contains('on')) {
+      try { window.closeMealPlanSettings && window.closeMealPlanSettings(); } catch(_){ el.classList.remove('on'); }
+      return true;
+    }
+    // 7) Meal plan overlay
+    el = document.getElementById('mealPlan');
+    if (el && el.classList.contains('on')) {
+      try { window.closeMealPlan && window.closeMealPlan(); } catch(_){ el.classList.remove('on'); }
+      return true;
+    }
+    // 8) Body fat
+    el = document.getElementById('bodyfat');
+    if (el && isVisible(el)) {
+      try { window.closeBodyfat && window.closeBodyfat(); } catch(_){ el.style.display='none'; }
+      return true;
+    }
+    // 9) Feedback fin séance (wizard)
+    el = document.getElementById('seFeedback');
+    if (el && isVisible(el)) {
+      // Si on est au-delà de l'étape 1, on retourne à l'étape précédente
+      try {
+        if (typeof window._seFbStep === 'function') {
+          var step = parseInt((document.getElementById('seFbStepNum')||{}).textContent||'1',10);
+          if (step > 1) { window._seFbStep(-1); return true; }
+        }
+      } catch(_){}
+      // Sinon on ne ferme pas (l'user doit valider sa séance — règle métier)
+      return false;
+    }
+    // 10) Live session — on ne ferme PAS par swipe (training en cours), c'est trop
+    //     risqué. L'user doit cliquer "← Quitter" explicitement.
+    el = document.getElementById('liveSession');
+    if (el && el.classList.contains('ls-open')) return false;
+    // 11) SAT step > 0 → previous step
+    try {
+      if (typeof window.prevSATStep === 'function' && document.querySelector('#vTracks.view.on') && document.querySelector('#satForm .ah-progress')) {
+        var stepTxt = (document.querySelector('#satForm') && document.querySelector('#satForm').textContent) || '';
+        // best-effort, on délègue à prevSATStep (qui no-op si on est à l'étape 0)
+        window.prevSATStep();
+        return true;
+      }
+    } catch(_){}
+    // 12) Builder sous-page → retour aux Programmes
+    try {
+      var pgB = document.getElementById('pgBuilder');
+      if (pgB && pgB.classList.contains('on')) {
+        if (typeof window.showPg === 'function') { window.showPg('prog'); return true; }
+      }
+    } catch(_){}
+    // 13) Fallback : popstate (notre handler renvoie sur Home si on n'y est pas)
+    try { history.back(); return true; } catch(_){}
+    return false;
+  }
+  window._tryGoBack = tryGoBack;
+
+  document.addEventListener('touchstart', function(e){
+    if (!e.touches || e.touches.length !== 1) { tracking = false; return; }
+    var t = e.touches[0];
+    if (t.clientX > START_EDGE) { tracking = false; return; }
+    tracking = true;
+    ex = t.clientX; ey = t.clientY; eT = Date.now();
+  }, { passive: true });
+
+  document.addEventListener('touchend', function(e){
+    if (!tracking) return;
+    tracking = false;
+    var t = e.changedTouches && e.changedTouches[0];
+    if (!t) return;
+    var dx = t.clientX - ex;
+    var dy = t.clientY - ey;
+    var dt = Date.now() - eT;
+    if (dx < H_THRESHOLD) return;                       // pas vers la droite assez
+    if (dx < Math.abs(dy) * ANGLE_RATIO) return;        // trop vertical
+    if (dt > MAX_DURATION) return;                       // trop lent
+    tryGoBack();
+  }, { passive: true });
+})();
+
 (function initSwipeNav(){
   var MAIN_ORDER = ['home', 'tracks', 'chat', 'train', 'nutrition'];
   var SUIVI_ORDER = ['sat', 'set', 'track'];
