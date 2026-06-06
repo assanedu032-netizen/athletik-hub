@@ -3541,6 +3541,141 @@ html body #result, html body #nutriResult{
 .np-chip:hover{border-color:var(--ah-gold)}
 .np-chip.on{background:var(--ah-navy);color:#fff;border-color:var(--ah-gold)}
 #nutriPrefsModal.on{display:flex !important}
+
+/* ═══ TIMER — Style natif téléphone (Minuteur, 2026-06-07) ═══
+   User : inspiré du timer stock Android (cercle noir géant + presets ronds
+   + gros bouton play). On override le style du Minuteur uniquement —
+   moteur JS et IDs préservés. */
+#timScreenMinut{
+  background: #0B1224 !important;
+  color: #fff !important;
+  border-radius: 18px !important;
+  padding: 28px 22px 24px !important;
+  margin: -4px 0 0 !important;
+}
+#timScreenMinut .tim-sec,
+#timScreenMinut details.tim-snd-details summary{
+  color: rgba(255,255,255,.55) !important;
+  border-bottom-color: rgba(255,255,255,.08) !important;
+}
+
+/* Gros cercle countdown — affiché quand le minuteur tourne (timMinutRunning).
+   L'inline style="display:none" du HTML cache au démarrage ; le JS le passe
+   à display='' au start → notre flex layout s'applique. */
+#timMinutRunning{
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 28px;
+}
+#timMinutRunning .tim-chrono-display{
+  width: 260px; height: 260px;
+  border-radius: 50% !important;
+  background: radial-gradient(circle at center, #1a2540 0%, #0F1A30 100%) !important;
+  border: 1px solid rgba(255,255,255,.07) !important;
+  box-shadow: inset 0 0 60px rgba(0,0,0,.5), 0 0 40px rgba(20,30,60,.5) !important;
+  display: flex !important; align-items: center !important; justify-content: center !important;
+  margin: 14px auto 8px !important;
+  color: #fff !important;
+  font-size: 54px !important;
+  letter-spacing: 1px !important;
+  font-family: 'Outfit', sans-serif !important;
+  font-weight: 300 !important;
+  font-variant-numeric: tabular-nums !important;
+}
+
+/* Form de configuration (avant lancement) */
+#timMinutForm .tim-field{
+  background: rgba(255,255,255,.04) !important;
+  border: 1px solid rgba(255,255,255,.08) !important;
+  border-radius: 14px !important;
+  text-align: center;
+}
+#timMinutForm .tim-field label{ color: rgba(255,255,255,.45) !important; font-size: 9px !important; }
+#timMinutForm .tim-field input[type=number]{
+  color: #4D90FE !important;
+  font-size: 32px !important;
+  font-weight: 300 !important;
+  font-family: 'Outfit', sans-serif !important;
+  text-align: center !important;
+  font-variant-numeric: tabular-nums !important;
+}
+
+/* Presets ronds (style native) */
+#timMinutForm .tim-minut-presets{
+  display: flex !important;
+  justify-content: center !important;
+  gap: 18px !important;
+  margin: 22px 0 26px !important;
+}
+#timMinutForm .tim-minut-presets button{
+  width: 72px; height: 72px;
+  border-radius: 50% !important;
+  background: rgba(255,255,255,.04) !important;
+  border: 1px solid rgba(255,255,255,.10) !important;
+  color: rgba(255,255,255,.85) !important;
+  font-family: 'Outfit', sans-serif !important;
+  font-size: 17px !important;
+  font-weight: 300 !important;
+  letter-spacing: 0 !important;
+  padding: 0 !important;
+  font-variant-numeric: tabular-nums !important;
+  transition: transform .15s, background .15s !important;
+}
+#timMinutForm .tim-minut-presets button:active{
+  background: #4D90FE !important;
+  color: #fff !important;
+  border-color: #4D90FE !important;
+  transform: scale(.94) !important;
+}
+
+/* Gros bouton Démarrer rond bleu, centré */
+#timMinutForm .tim-launch{
+  width: 80px !important;
+  height: 80px !important;
+  border-radius: 50% !important;
+  margin: 10px auto 6px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  background: linear-gradient(135deg, #5B9CFF, #2E5DCC) !important;
+  color: #fff !important;
+  font-size: 0 !important; /* on cache le texte ⚡ Démarrer pour mettre l'icône ▶ */
+  box-shadow: 0 8px 24px rgba(46,93,204,.45), 0 0 0 4px rgba(91,156,255,.10) !important;
+  position: relative;
+}
+#timMinutForm .tim-launch::after{
+  content: '▶';
+  font-size: 28px;
+  color: #fff;
+  line-height: 1;
+  margin-left: 4px;
+}
+#timMinutForm .tim-launch:active{ transform: scale(.94) !important; }
+
+/* Contrôles pendant la course : annuler (gauche) / pause-play (centre) / +30s (droite) */
+#timMinutRunning .tim-chrono-controls{
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 32px !important;
+}
+#timMinutRunning .tim-chrono-controls .tim-chrono-btn{
+  background: rgba(255,255,255,.06) !important;
+  border: 1px solid rgba(255,255,255,.12) !important;
+  color: #fff !important;
+  width: 56px !important; height: 56px !important;
+  border-radius: 50% !important;
+  font-size: 17px !important;
+  padding: 0 !important;
+}
+#timMinutRunning .tim-chrono-controls .tim-chrono-btn.primary{
+  background: linear-gradient(135deg, #5B9CFF, #2E5DCC) !important;
+  border: none !important;
+  width: 72px !important; height: 72px !important;
+  font-size: 22px !important;
+  box-shadow: 0 6px 18px rgba(46,93,204,.45) !important;
+}
 </style>
 
 <template id="__bundler_thumbnail" data-bg-color="#1F305F">
