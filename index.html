@@ -3690,6 +3690,18 @@ html body #result, html body #nutriResult{
 .tim-set-actions{display:flex;gap:10px;margin-top:4px}
 .tim-set-cancel{flex:1;padding:13px;background:var(--ah-surface2);border:1px solid var(--ah-border2);border-radius:12px;color:var(--ah-text2);font-family:'Outfit',sans-serif;font-weight:600;font-size:14px;cursor:pointer}
 .tim-set-ok{flex:2;padding:13px;background:linear-gradient(135deg,var(--ah-gold),#A0853A);border:none;border-radius:12px;color:var(--ah-navy);font-family:'Bebas Neue',sans-serif;font-weight:700;font-size:15px;letter-spacing:.1em;cursor:pointer;box-shadow:0 6px 18px rgba(197,164,78,.30)}
+
+/* Banner d'installation PWA */
+.install-prompt{position:fixed;left:50%;bottom:16px;transform:translateX(-50%);width:calc(100% - 24px);max-width:420px;z-index:9500;animation:fadeUp .3s ease}
+.install-prompt-inner{position:relative;background:#1B2D5C;color:#fff;border-radius:14px;padding:14px 44px 14px 16px;display:flex;align-items:center;gap:12px;box-shadow:0 8px 28px rgba(20,30,60,.30);border:1px solid rgba(197,164,78,.20)}
+.install-prompt-ic{font-size:26px;flex-shrink:0;line-height:1}
+.install-prompt-txt{flex:1;min-width:0}
+.install-prompt-title{font-family:'Bebas Neue',sans-serif;font-size:15px;letter-spacing:.06em;line-height:1}
+.install-prompt-sub{font-family:'Outfit',sans-serif;font-size:11px;color:rgba(255,255,255,.7);margin-top:3px;line-height:1.4}
+.install-prompt-cta{background:#C5A44E;color:#1B2D5C;border:none;border-radius:10px;padding:9px 14px;font-family:'Bebas Neue',sans-serif;font-size:13px;letter-spacing:.06em;cursor:pointer;flex-shrink:0;box-shadow:0 4px 10px rgba(197,164,78,.30)}
+.install-prompt-cta:active{transform:scale(.96)}
+.install-prompt-close{position:absolute;top:6px;right:8px;background:none;border:none;color:rgba(255,255,255,.5);font-size:20px;cursor:pointer;line-height:1;padding:4px 8px}
+.install-prompt-close:hover{color:#fff}
 </style>
 
 <template id="__bundler_thumbnail" data-bg-color="#1F305F">
@@ -3711,6 +3723,22 @@ html body #result, html body #nutriResult{
 <!-- ═══ SPLASH ═══ -->
 <!-- Container des toasts (notifications in-app) -->
 <div id="toastContainer"></div>
+
+<!-- ═══ INSTALL PROMPT PWA — invite à installer Athletik Hub ═══
+     Affiché en bas d'écran sur les navigateurs où la PWA n'est pas
+     encore installée. Capture beforeinstallprompt (Android Chrome) ou
+     affiche les instructions Safari (iOS). Masqué si déjà installé. -->
+<div id="installPrompt" class="install-prompt" style="display:none">
+  <div class="install-prompt-inner">
+    <div class="install-prompt-ic">📲</div>
+    <div class="install-prompt-txt">
+      <div class="install-prompt-title">Installer Athletik Hub</div>
+      <div class="install-prompt-sub" id="installPromptSub">Ajoute l'app à ton écran d'accueil pour un accès rapide.</div>
+    </div>
+    <button class="install-prompt-cta" id="installPromptBtn" onclick="window._installPromptGo()">Installer</button>
+    <button class="install-prompt-close" onclick="window._installPromptDismiss()" aria-label="Fermer">×</button>
+  </div>
+</div>
 
 <!-- ═══ SPLASH — version refonte 2026-06-05
      Mission user : "Logo trop petit dans le carré blanc, pas assez premium."
@@ -25370,5 +25398,115 @@ async function fbSaveProfile() {
       if (reg) { try { reg.update(); } catch(e) {} }
     });
   });
+})();
+
+// ═══════════════════════════════════════
+// PWA INSTALL PROMPT — invite à installer sur l'écran d'accueil
+// ───────────────────────────────────────
+// Comportement :
+//   - Android Chrome / Edge : capture beforeinstallprompt, montre notre
+//     bannière custom, sur click déclenche le prompt natif via .prompt()
+//   - iOS Safari : pas de beforeinstallprompt → on détecte iOS et on
+//     affiche une instruction "Tap Partager → Sur l'écran d'accueil"
+//   - Si déjà installé (display-mode standalone OU navigator.standalone)
+//     → on n'affiche jamais
+//   - Si l'user a fermé la bannière (×) → on respecte 14 jours avant
+//     de la remontrer (localStorage ah_install_dismissed_at)
+// ═══════════════════════════════════════
+(function initInstallPrompt(){
+  var DISMISS_KEY = 'ah_install_dismissed_at';
+  var DISMISS_MS  = 14 * 24 * 60 * 60 * 1000; // 14 jours
+  var deferred = null;
+
+  function isStandalone(){
+    try {
+      if (window.matchMedia && window.matchMedia('(display-mode: standalone)').matches) return true;
+      if (typeof navigator !== 'undefined' && navigator.standalone === true) return true;
+    } catch(e){}
+    return false;
+  }
+  function wasRecentlyDismissed(){
+    try {
+      var t = parseInt(localStorage.getItem(DISMISS_KEY) || '0', 10);
+      return t && (Date.now() - t) < DISMISS_MS;
+    } catch(e){ return false; }
+  }
+  function isIOS(){
+    var ua = navigator.userAgent || '';
+    return /iphone|ipad|ipod/i.test(ua) && !/MSStream/.test(ua);
+  }
+  function showBanner(label, subLabel){
+    var el = document.getElementById('installPrompt');
+    if (!el) return;
+    var btn = document.getElementById('installPromptBtn');
+    var sub = document.getElementById('installPromptSub');
+    if (btn) btn.style.display = label ? '' : 'none';
+    if (btn && label) btn.textContent = label;
+    if (sub && subLabel) sub.textContent = subLabel;
+    el.style.display = 'block';
+  }
+  function hideBanner(){
+    var el = document.getElementById('installPrompt');
+    if (el) el.style.display = 'none';
+  }
+
+  window._installPromptDismiss = function(){
+    try { localStorage.setItem(DISMISS_KEY, String(Date.now())); } catch(e){}
+    hideBanner();
+  };
+  window._installPromptGo = function(){
+    if (deferred) {
+      // Android Chrome / Edge — déclenche le prompt natif
+      try {
+        deferred.prompt();
+        deferred.userChoice.then(function(choice){
+          if (choice && choice.outcome === 'accepted') {
+            try { showToast && showToast('✓ Installation en cours…', 'ok'); } catch(_){}
+          }
+          deferred = null;
+          hideBanner();
+        }).catch(function(){ hideBanner(); });
+      } catch(e){ hideBanner(); }
+      return;
+    }
+    if (isIOS()) {
+      // iOS Safari — pas d'API d'install, on affiche l'instruction
+      try {
+        showToast && showToast('Touche le bouton Partager 📤 puis "Sur l\'écran d\'accueil".', 'info', 8000);
+      } catch(_){
+        alert('Sur iPhone : touche le bouton Partager (carré avec flèche) puis "Sur l\'écran d\'accueil".');
+      }
+    }
+  };
+
+  // Décide si on affiche au démarrage
+  function maybeShow(){
+    if (isStandalone()) return;        // déjà installé → jamais
+    if (wasRecentlyDismissed()) return; // user a dismissé récemment
+    if (isIOS()) {
+      showBanner('Installer', 'iPhone : Partager 📤 → "Sur l\'écran d\'accueil".');
+    }
+    // Sur Android, on attend beforeinstallprompt avant d'afficher (sinon
+    // le bouton "Installer" ne ferait rien).
+  }
+
+  window.addEventListener('beforeinstallprompt', function(e){
+    e.preventDefault();
+    deferred = e;
+    if (isStandalone() || wasRecentlyDismissed()) return;
+    showBanner('Installer', "Ajoute l'app à ton écran d'accueil pour un accès rapide.");
+  });
+
+  window.addEventListener('appinstalled', function(){
+    deferred = null;
+    hideBanner();
+    try { localStorage.setItem(DISMISS_KEY, '0'); } catch(_){}
+  });
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', maybeShow);
+  } else {
+    setTimeout(maybeShow, 200);
+  }
 })();
 </script>
