@@ -12892,7 +12892,7 @@ function _bfDrawChart(data) {
     if (secs <= 0 && _tim_minut.remMs > 0) {
       secs = Math.ceil(_tim_minut.remMs / 1000);
     }
-    if (secs <= 0) { tim_toast('Tape +30s pour ajouter du temps'); return; }
+    if (secs <= 0) { tim_minutOpenSet(); return; }
     _tim_minut.totalMs = secs * 1000;
     _tim_minut.remMs = _tim_minut.totalMs;
     _tim_minut.startMs = Date.now();
@@ -12935,9 +12935,10 @@ function _bfDrawChart(data) {
       _tim_minutPersist();
       tim_minutCancelNotif();
     } else {
-      // Resume ou démarrage initial (si remMs > 0 via +30s mais jamais lancé)
+      // Resume ou démarrage initial (si remMs > 0 mais jamais lancé)
       if (_tim_minut.remMs <= 0) {
-        tim_toast('Tape +30s pour ajouter du temps');
+        // Pas de durée → ouvre directement la modal RÉGLER
+        tim_minutOpenSet();
         return;
       }
       if (!_tim_minut.totalMs) _tim_minut.totalMs = _tim_minut.remMs;
@@ -13548,6 +13549,11 @@ function _bfDrawChart(data) {
   window.tim_minutToggle = tim_minutToggle;
   window.tim_minutReset = tim_minutReset;
   window.tim_minutAdd30 = tim_minutAdd30;
+  window.tim_minutOpenSet = tim_minutOpenSet;
+  window.tim_minutCloseSet = tim_minutCloseSet;
+  window.tim_minutConfirmSet = tim_minutConfirmSet;
+  window.tim_minutVoiceSet = tim_minutVoiceSet;
+  window.tim_parseDuration = tim_parseDuration;
 
   window.tim_open = tim_open;
   window.tim_close = tim_close;
