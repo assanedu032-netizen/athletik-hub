@@ -7563,7 +7563,7 @@ function renderHomeMealPlan() {
   var html = '<div style="background:linear-gradient(135deg,var(--surface),var(--surface2));border:1px solid var(--border);border-radius:14px;overflow:hidden;box-shadow:var(--card-shadow)">'
     + '<div style="display:flex;justify-content:space-between;align-items:center;padding:10px 14px;background:var(--navy);color:#fff">'
     +   '<div style="font-family:\'Bebas Neue\',sans-serif;font-size:14px;letter-spacing:2px;color:var(--gold)">' + d.name + '</div>'
-    +   '<div style="font-size:12px;font-weight:700;color:#fff">' + d.total + ' kcal</div>'
+    +   '<div style="font-size:12px;font-weight:700;color:#fff">' + _mpDayTotalCals(d) + ' kcal</div>'
     + '</div>';
   slots.forEach(function(s){
     if (!s.r) return;
@@ -7595,6 +7595,28 @@ var MP_SLOTS = [
   { lbl: '🥤 COLLATION', k: 'snack' },
   { lbl: '🌙 SOIR',      k: 'dinner' }
 ];
+
+// Source de vérité unique : recalcule TOUJOURS le total d'un jour à partir
+// des plannedCals des 4 repas. Si d.total stocké diverge (vieux plans, bug
+// génération, plan partiel), c'est cette fonction qui fait foi pour le rendu.
+// Brief user : "Le total du jour affiché doit toujours être égal à la somme
+// des calories des repas affichés."
+function _mpDayTotalCals(d) {
+  if (!d) return 0;
+  var s = 0;
+  ['breakfast','lunch','snack','dinner'].forEach(function(slot){
+    var r = d[slot];
+    if (!r) return;
+    s += (r.plannedCals != null) ? r.plannedCals : (r.cals || 0);
+  });
+  return s;
+}
+function _mpWeekTotalCals(plan) {
+  if (!plan || !plan.days) return 0;
+  return plan.days.reduce(function(a,d){ return a + _mpDayTotalCals(d); }, 0);
+}
+window._mpDayTotalCals = _mpDayTotalCals;
+window._mpWeekTotalCals = _mpWeekTotalCals;
 var MP_OBJ_BADGES = { 'priseMuscle':'💪', 'pertePoids':'🔥', 'optimisation':'⚡' };
 var MP_OBJ_LABELS = { 'priseMuscle':'Prise de muscle', 'pertePoids':'Perte de poids', 'optimisation':'Optimisation' };
 
@@ -7750,7 +7772,7 @@ function _mpRenderHeader(plan) {
   var sub = document.getElementById('mpSubtitle');
   if (sub) sub.textContent = '7 jours · ' + (MP_OBJ_LABELS[obj] || 'Personnalisé');
   var target = document.getElementById('mpTargetCal'); if (target) target.textContent = plan.targetCal || '—';
-  var weekTotal = plan.days.reduce(function(a,d){ return a + (d.total||0); }, 0);
+  var weekTotal = _mpWeekTotalCals(plan);
   var wt = document.getElementById('mpWeekTotal'); if (wt) wt.textContent = weekTotal.toLocaleString('fr-FR');
   var mealsCount = plan.days.length * 4;
   var mc = document.getElementById('mpMealsCount'); if (mc) mc.textContent = mealsCount;
@@ -7766,7 +7788,7 @@ function _mpRenderDayStrip(plan, activeIdx) {
     h += '<div class="' + cls + '" onclick="mpSelectDay(' + i + ')">'
       + '<div class="mp-day-chip-today-pill">Aujourd\'hui</div>'
       + '<div class="mp-day-chip-name">' + (MP_DAY_LABELS[i] || d.name) + '</div>'
-      + '<div class="mp-day-chip-cal">' + (d.total || 0) + ' kcal</div>'
+      + '<div class="mp-day-chip-cal">' + _mpDayTotalCals(d) + ' kcal</div>'
       + '</div>';
   }
   strip.innerHTML = h;
@@ -7806,12 +7828,15 @@ function _mpRenderDayContent(plan, idx) {
       +   '</div>'
       + '</div>';
   });
-  // Total + bouton log
-  var diff = d.total - (plan.targetCal || 0);
-  var diffTxt = diff > 0 ? '+' + diff : diff;
+  // Total + bouton log — source de vérité = somme réelle des repas affichés.
+  // Brief : afficher explicitement cible / aujourd'hui / écart.
+  var dayActual = _mpDayTotalCals(d);
+  var dayTarget = plan.targetCal || 0;
+  var diff = dayActual - dayTarget;
+  var diffTxt = (diff > 0 ? '+' : '') + diff;
   h += '<div class="mp-day-total">'
-    + '<div><div class="mp-day-total-l">Total ' + (MP_DAY_LABELS[idx]||d.name) + '</div></div>'
-    + '<div class="mp-day-total-r"><div class="mp-day-total-v">' + (d.total||0) + ' kcal</div><div class="mp-day-total-diff">' + diffTxt + ' vs cible</div></div>'
+    + '<div><div class="mp-day-total-l">Cible jour</div><div style="font-family:Outfit,sans-serif;font-size:13px;color:var(--ah-text2);margin-top:2px">' + dayTarget + ' kcal</div></div>'
+    + '<div class="mp-day-total-r"><div class="mp-day-total-v">' + dayActual + ' kcal</div><div class="mp-day-total-diff">Écart ' + diffTxt + ' kcal</div></div>'
     + '</div>';
   h += '<button class="mp-day-log-btn" onclick="logMealPlanDay(' + idx + ')">✓ J\'ai mangé cette journée — logger au journal</button>';
   content.innerHTML = h;
@@ -7838,7 +7863,7 @@ function exportMealPlanDocx() {
     var obj = MP_OBJ_LABELS[plan.objectif] || 'Personnalisé';
     p.push('<w:p><w:pPr><w:jc w:val="center"/><w:spacing w:after="360"/></w:pPr><w:r><w:rPr><w:b/><w:color w:val="C5A44E"/><w:sz w:val="22"/></w:rPr><w:t>Objectif : ' + _xmlEsc(obj) + ' · ' + plan.targetCal + ' kcal/jour</w:t></w:r></w:p>');
     plan.days.forEach(function(d, i){
-      p.push('<w:p><w:pPr><w:spacing w:before="320" w:after="80"/></w:pPr><w:r><w:rPr><w:b/><w:sz w:val="30"/><w:color w:val="1B2A4A"/></w:rPr><w:t>' + _xmlEsc(d.name) + '</w:t><w:tab/><w:t xml:space="preserve">  ' + (d.total||0) + ' kcal</w:t></w:r></w:p>');
+      p.push('<w:p><w:pPr><w:spacing w:before="320" w:after="80"/></w:pPr><w:r><w:rPr><w:b/><w:sz w:val="30"/><w:color w:val="1B2A4A"/></w:rPr><w:t>' + _xmlEsc(d.name) + '</w:t><w:tab/><w:t xml:space="preserve">  ' + _mpDayTotalCals(d) + ' kcal</w:t></w:r></w:p>');
       MP_SLOTS.forEach(function(s){
         var r = d[s.k]; if (!r) return;
         p.push('<w:p><w:pPr><w:spacing w:after="60"/></w:pPr>'
