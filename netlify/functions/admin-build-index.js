@@ -11,7 +11,7 @@ function loadBlobs() {
   }
 }
 
-const EMBED_MODEL = 'text-embedding-3-small';
+const EMBED_MODEL = 'text-embedding-3-large';
 
 async function embedBatch(texts, key) {
   const r = await fetch('https://api.openai.com/v1/embeddings', {
