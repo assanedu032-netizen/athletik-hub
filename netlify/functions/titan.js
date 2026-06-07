@@ -16,6 +16,7 @@ function getBlobStore(name) {
 const RATE_LIMIT = 20; // messages / jour / uid
 const MODEL = 'claude-sonnet-4-6';
 const MAX_TOKENS = 400;
+const BUILDER_MAX_TOKENS = 1800; // génération de séance Workout Builder (JSON structuré)
 const EMBED_MODEL = 'text-embedding-3-large';
 const RAG_TOP_K = 5;
 const RAG_MIN_SIMILARITY = 0.25;
@@ -329,6 +330,120 @@ RÈGLE FINALE
 ═══════════════════════════════
 Tes réponses sont courtes. Tu ne fais pas de discours. Tu pousses, tu corriges, tu cadres. Tu cites Alassane et son livre quand c'est pertinent. Tu ne réponds qu'à ce qui sert la performance de l'athlète qui te parle.`;
 
+// ═══════════════════════════════════════════════════════════════════
+// WORKOUT BUILDER — system prompt dédié (programmation d'UNE séance)
+// Titan reçoit l'intention de l'athlète + le sous-ensemble de la librairie
+// Athletik Hub et renvoie une séance STRUCTURÉE en JSON strict, programmée
+// selon la méthode Alassane Ndiaye / Athletic Hub.
+// ═══════════════════════════════════════════════════════════════════
+const BUILDER_SYSTEM = `Tu es TITAN, le coach de programmation d'Athletik Hub, créé par le coach Alassane Ndiaye.
+Ta mission ici : transformer l'envie d'un athlète en UNE séance d'entraînement intelligente, sûre et cohérente, programmée selon la méthode Athletic Hub.
+
+═══════════════════════════════
+RÈGLE DE SORTIE (ABSOLUE)
+═══════════════════════════════
+Tu réponds UNIQUEMENT par un objet JSON valide, sans aucun texte avant ou après, sans bloc de code markdown.
+Schéma EXACT :
+{
+  "objectif": "string — l'objectif retenu pour la séance",
+  "dureeEstimee": number (minutes, cohérent avec la durée demandée),
+  "intensite": "string — ex: Faible, Moyenne, Moyenne à élevée, Élevée",
+  "note": "string — explication COURTE (1-2 phrases, tutoiement) des adaptations faites (fatigue, niveau, exo remplacé). Vide si rien à signaler.",
+  "blocs": [
+    {
+      "titre": "Échauffement" | "Bloc principal" | "Bloc secondaire" | "Finisher" | "Retour au calme",
+      "exos": [
+        { "n": "NOM EXACT d'un exercice de la LIBRAIRIE fournie", "sets": number, "reps": "string (ex: 5, 30s, 10m, 2 min)", "rest": "string (ex: 30s, 90s, 2min, -)", "note": "string courte ou vide" }
+      ]
+    }
+  ]
+}
+
+═══════════════════════════════
+CONTRAINTE LIBRAIRIE (ABSOLUE)
+═══════════════════════════════
+- Tu ne choisis QUE des exercices présents dans la LIBRAIRIE fournie (champ "n" = valeur exacte du champ "nom" fourni, copie-la à l'identique).
+- Si l'athlète demande un exercice absent ou inadapté à son niveau/état → choisis l'alternative la plus proche DANS la librairie et explique-le brièvement dans "note".
+- N'invente jamais un exercice qui n'est pas dans la liste.
+
+═══════════════════════════════
+MÉTHODE ATHLETIC HUB — PRINCIPES DE PROGRAMMATION
+═══════════════════════════════
+STRUCTURE :
+- Échauffement TOUJOURS présent et en premier (non négociable : mal échauffé = 70% de perf + risque de blessure). Utilise les exos de catégorie "echauf"/"mobi".
+- Ordre des blocs selon la fraîcheur du système nerveux : le plus neural/explosif en premier (pliométrie, sprint, puissance, saut), QUAND l'athlète est frais → puis force → puis accessoire/gainage/core → finisher optionnel → retour au calme (mobilité/"recup").
+- Termine toujours par un retour au calme court (mobilité, étirements, respiration).
+
+SÉRIES / RÉPÉTITIONS / REPOS selon l'objectif (changer les reps = changer l'objectif) :
+- Force max : 3 à 5 reps lourdes, repos LONG 2-3 min.
+- Puissance / explosivité / détente : 3 à 5 reps de QUALITÉ maximale, repos COMPLETS 2-3 min (jamais à court de repos sur le travail explosif).
+- Hypertrophie : 8 à 12 reps, repos 60-90s.
+- Gainage / core / endurance : au temps (20-45s), repos courts.
+- Mobilité / échauffement : 1-2 séries légères.
+
+VOLUME & INTENSITÉ :
+- Ne JAMAIS augmenter volume + intensité + fréquence en même temps. Qualité avant quantité.
+- Pliométrie : maximum ~150 contacts au sol par séance. Pas de pliométrie intense sans base de force.
+- Cale le volume total dans la DURÉE demandée (estime : séries × (temps d'effort + repos)). Mieux vaut une séance courte et propre que longue et bâclée.
+
+ADAPTATION À L'ÉTAT DU JOUR :
+- "en forme" : volume normal, tu peux pousser.
+- "fatigue normale" / courbatures : on continue, volume normal à légèrement réduit.
+- "fatigué" : GARDE l'objectif mais RÉDUIS le volume (moins de séries) et l'intensité. Explique-le dans "note". Ne propose jamais une séance épuisante à un athlète fatigué.
+- "douleur ou gêne" : ÉVITE les exercices sollicitant la zone douloureuse, baisse l'intensité, privilégie mobilité/récup, et rappelle dans "note" de consulter si la douleur est vive (>7/10). Sécurité avant performance.
+
+ADAPTATION AU NIVEAU :
+- Débutant / score bas : variantes simples (poids du corps, "diff":"easy"/"med"), moins de volume, focus exécution.
+- Avancé / score élevé : variantes plus exigeantes possibles.
+- Respecte le matériel disponible : ne propose jamais un exo dont le matériel n'est pas dispo.
+
+TECHNIQUES D'INTENSIFICATION :
+- Au maximum UNE, et seulement si l'athlète est "en forme" ET de niveau suffisant. Jamais si fatigué, douleur, ou débutant.
+
+SÉCURITÉ (priorités, dans l'ordre) : 1) qualité d'exécution, 2) prévention blessure, 3) gestion de la fatigue, 4) progression. Jamais de séance dangereuse, incohérente ou trop intense.
+- Cohérence : si l'athlète suit déjà un programme, reste cohérent avec son objectif global.
+
+Sois concis dans les "note". Tu es un coach, pas un bavard. Réponds en français. JSON uniquement.`;
+
+function buildBuilderUserMessage(intent, library) {
+  intent = intent || {};
+  const libLines = (Array.isArray(library) ? library : [])
+    .map(e => `- ${e.n} [cat:${e.c || '?'} | niveau:${e.d || '?'} | matériel:${e.m || 'Aucun'}]`)
+    .join('\n');
+  const parts = [];
+  parts.push('DEMANDE DE L\'ATHLÈTE');
+  parts.push('Objectif souhaité : ' + (intent.objectif || 'non précisé'));
+  parts.push('Exercices souhaités : ' + (intent.exos || 'aucun en particulier (à toi de choisir)'));
+  parts.push('Durée disponible : ' + (intent.duree ? intent.duree + ' minutes' : 'non précisée (vise ~30 min)'));
+  parts.push('Matériel disponible : ' + (intent.materiel || 'non précisé'));
+  parts.push('État du jour : ' + (intent.etat || 'non précisé'));
+  if (intent.phrase) parts.push('Message libre de l\'athlète : "' + intent.phrase + '"');
+  parts.push('');
+  parts.push('LIBRAIRIE ATHLETIK HUB (choisis UNIQUEMENT parmi ces exercices, recopie le nom exact dans "n") :');
+  parts.push(libLines || '(librairie vide)');
+  parts.push('');
+  parts.push('Génère maintenant la séance en JSON strict selon le schéma et la méthode Athletic Hub.');
+  return parts.join('\n');
+}
+
+function parseWorkoutJson(text) {
+  if (!text) return null;
+  let s = String(text).trim();
+  // Retire d'éventuels fences markdown
+  s = s.replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/i, '').trim();
+  // Isole le premier objet JSON si du texte parasite entoure
+  const first = s.indexOf('{');
+  const last = s.lastIndexOf('}');
+  if (first > -1 && last > first) s = s.slice(first, last + 1);
+  try {
+    const obj = JSON.parse(s);
+    if (!obj || !Array.isArray(obj.blocs)) return null;
+    return obj;
+  } catch (e) {
+    return null;
+  }
+}
+
 function buildAthleteContext(ctx) {
   ctx = ctx || {};
   return `PROFIL ATHLÈTE
@@ -469,8 +584,12 @@ exports.handler = async function(event) {
     return { statusCode: 400, headers, body: JSON.stringify({ error: 'Invalid JSON' }) };
   }
   const { messages, ctx } = body;
-  if (!Array.isArray(messages) || messages.length === 0) {
+  const isBuilder = body.mode === 'builder';
+  if (!isBuilder && (!Array.isArray(messages) || messages.length === 0)) {
     return { statusCode: 400, headers, body: JSON.stringify({ error: 'messages array required' }) };
+  }
+  if (isBuilder && (!body.intent || typeof body.intent !== 'object')) {
+    return { statusCode: 400, headers, body: JSON.stringify({ error: 'intent required' }) };
   }
 
   // Rate limit (Firestore, atomique)
@@ -485,9 +604,16 @@ exports.handler = async function(event) {
     return { statusCode: 429, headers, body: JSON.stringify({ error: 'Limite journalière atteinte (20 messages/jour). Reviens demain.' }) };
   }
 
-  // Couche 2a : filtre regex sur le dernier message utilisateur
-  const lastUserMsg = [...messages].reverse().find(m => m.role === 'user');
-  const lastText = lastUserMsg ? String(lastUserMsg.content || '') : '';
+  // Couche 2a : filtre regex sur le dernier message utilisateur.
+  // En mode builder, on modère le texte libre de l'intention (objectif + exos + phrase).
+  let lastText;
+  if (isBuilder) {
+    const it = body.intent || {};
+    lastText = [it.objectif, it.exos, it.phrase].filter(Boolean).join(' ');
+  } else {
+    const lastUserMsg = [...messages].reverse().find(m => m.role === 'user');
+    lastText = lastUserMsg ? String(lastUserMsg.content || '') : '';
+  }
   const injection = detectInjection(lastText);
   if (injection) {
     await logSecurityEvent(uid, 'injection_regex', lastText, { pattern: injection });
@@ -504,6 +630,48 @@ exports.handler = async function(event) {
       return { statusCode: 200, headers, body: JSON.stringify({ reply: CARE_RESPONSE }) };
     }
     return { statusCode: 200, headers, body: JSON.stringify({ reply: REFUSE_RESPONSE }) };
+  }
+
+  // ─── MODE WORKOUT BUILDER : génération de séance structurée (JSON) ───
+  if (body.mode === 'builder') {
+    const intent = body.intent || {};
+    const library = Array.isArray(body.library) ? body.library : [];
+    const builderSystem = [
+      { type: 'text', text: BUILDER_SYSTEM, cache_control: { type: 'ephemeral' } },
+      { type: 'text', text: buildAthleteContext(ctx) },
+    ];
+    const userMsg = buildBuilderUserMessage(intent, library);
+    try {
+      const resp = await fetch('https://api.anthropic.com/v1/messages', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-api-key': process.env.ANTHROPIC_API_KEY,
+          'anthropic-version': '2023-06-01',
+        },
+        body: JSON.stringify({
+          model: MODEL,
+          max_tokens: BUILDER_MAX_TOKENS,
+          system: builderSystem,
+          messages: [{ role: 'user', content: userMsg }],
+        }),
+      });
+      const data = await resp.json();
+      if (!resp.ok) {
+        console.error('[titan] builder anthropic error', resp.status, data);
+        return { statusCode: 502, headers, body: JSON.stringify({ error: 'Titan n\'a pas pu générer la séance. Réessaie.' }) };
+      }
+      const raw = data.content && data.content[0] && data.content[0].text;
+      const workout = parseWorkoutJson(raw);
+      if (!workout) {
+        console.error('[titan] builder parse failed', raw && raw.slice(0, 300));
+        return { statusCode: 502, headers, body: JSON.stringify({ error: 'Séance illisible, réessaie en reformulant.' }) };
+      }
+      return { statusCode: 200, headers, body: JSON.stringify({ workout }) };
+    } catch (err) {
+      console.error('[titan] builder fetch error:', err.message);
+      return { statusCode: 502, headers, body: JSON.stringify({ error: 'Erreur de connexion au serveur Titan.' }) };
+    }
   }
 
   // RAG : récupérer 0 à 3 passages pertinents du livre
