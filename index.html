@@ -4110,15 +4110,18 @@ html body #result, html body #nutriResult{
 <div id="splash" class="scr on" style="background:radial-gradient(ellipse at 50% 35%, #243B6B 0%, #1B2A4A 45%, #0F1A30 100%);justify-content:center;align-items:center;padding:32px 24px;position:relative;overflow:hidden">
   <!-- Halo gold subtle derrière le logo pour la profondeur premium -->
   <div aria-hidden="true" style="position:absolute;top:28%;left:50%;transform:translate(-50%,-50%);width:420px;height:420px;max-width:90vw;max-height:60vh;border-radius:50%;background:radial-gradient(circle at center, rgba(197,164,78,.22) 0%, rgba(197,164,78,.06) 35%, rgba(197,164,78,0) 65%);pointer-events:none;animation:popIn .8s ease both"></div>
-  <div style="display:flex;flex-direction:column;align-items:center;gap:24px;max-width:380px;width:100%;position:relative;z-index:1">
-    <img class="sp-logo" src="/images/logo.png" alt="Athletik Hub" style="width:200px;height:200px;object-fit:contain;background:transparent;border:none;filter:drop-shadow(0 12px 32px rgba(0,0,0,.35));animation:popIn .6s ease both" onerror="this.outerHTML='<div class=&quot;sp-logo&quot; style=&quot;width:200px;height:200px;display:flex;align-items:center;justify-content:center;background:#fff;border-radius:24px;color:#1B2A4A;font-family:Bebas Neue,sans-serif;font-size:80px&quot;>AH</div>'">
-    <div class="sp-name" style="font-family:'Bebas Neue',sans-serif;font-size:48px;line-height:.95;color:#FFFFFF;letter-spacing:.08em;text-align:center;text-shadow:0 2px 18px rgba(0,0,0,.40)">ATHLETIK HUB</div>
-    <div style="width:48px;height:2px;background:#C5A44E;border-radius:2px;box-shadow:0 0 12px rgba(197,164,78,.50)"></div>
-    <div class="sp-sub" style="font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:.22em;color:#C5A44E;text-transform:uppercase;text-align:center;line-height:1.6;font-weight:500">Les secrets de la<br>détente verticale</div>
-    <div class="sp-bar" style="width:140px;height:2px;background:rgba(255,255,255,.10);border-radius:2px;overflow:hidden;margin-top:10px"><div class="sp-bar-in" id="splashBar" style="height:100%;background:linear-gradient(90deg,#C5A44E,#D4B86A);width:0;transition:width .25s;box-shadow:0 0 8px rgba(197,164,78,.60)"></div></div>
+  <div style="display:flex;flex-direction:column;align-items:center;gap:18px;max-width:380px;width:100%;position:relative;z-index:1">
+    <!-- Carte logo : padding plus compact + bordure gold subtle + ombre douce -->
+    <div style="padding:14px;background:#fff;border-radius:28px;border:1px solid rgba(197,164,78,.30);box-shadow:0 16px 40px rgba(0,0,0,.30), 0 0 0 1px rgba(255,255,255,.04) inset, 0 0 30px rgba(197,164,78,.10);animation:popIn .6s ease both">
+      <img class="sp-logo" src="/images/logo.png" alt="Athletik Hub" style="width:170px;height:170px;object-fit:contain;display:block" onerror="this.outerHTML='<div class=&quot;sp-logo&quot; style=&quot;width:170px;height:170px;display:flex;align-items:center;justify-content:center;color:#1B2A4A;font-family:Bebas Neue,sans-serif;font-size:72px&quot;>AH</div>'">
+    </div>
+    <div class="sp-name" style="font-family:'Bebas Neue',sans-serif;font-size:46px;line-height:.95;color:#FFFFFF;letter-spacing:.04em;text-align:center;text-shadow:0 2px 18px rgba(0,0,0,.40);margin-top:6px">ATHLETIK HUB</div>
+    <div style="width:48px;height:2px;background:#C5A44E;border-radius:2px;box-shadow:0 0 12px rgba(197,164,78,.50);margin:2px 0"></div>
+    <div class="sp-sub" style="font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:.20em;color:#E8D9A8;text-transform:uppercase;text-align:center;line-height:1.6;font-weight:600;text-shadow:0 1px 6px rgba(0,0,0,.20)">Les secrets de la<br>détente verticale</div>
+    <div class="sp-bar" style="width:140px;height:2px;background:rgba(255,255,255,.10);border-radius:2px;overflow:hidden;margin-top:4px"><div class="sp-bar-in" id="splashBar" style="height:100%;background:linear-gradient(90deg,#C5A44E,#D4B86A);width:0;transition:width .25s;box-shadow:0 0 8px rgba(197,164,78,.60)"></div></div>
   </div>
   <div style="position:absolute;bottom:calc(28px + env(safe-area-inset-bottom,0px));left:0;right:0;text-align:center;z-index:1">
-    <button onclick="localStorage.clear();location.reload()" style="background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.12);color:rgba(255,255,255,.65);font-size:11px;cursor:pointer;font-family:'Outfit',sans-serif;font-weight:600;letter-spacing:.04em;padding:10px 22px;border-radius:999px;backdrop-filter:blur(8px)">Réinitialiser</button>
+    <button onclick="localStorage.clear();location.reload()" style="background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.18);color:rgba(255,255,255,.85);font-size:11px;cursor:pointer;font-family:'Outfit',sans-serif;font-weight:600;letter-spacing:.06em;padding:10px 22px;border-radius:999px;backdrop-filter:blur(8px)">Réinitialiser</button>
   </div>
 </div>
 
