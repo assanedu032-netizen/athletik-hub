@@ -3535,6 +3535,44 @@ html body #result, html body #nutriResult{
 .se-fb-validate{width:100%;padding:16px;background:linear-gradient(135deg,#C5A44E,#D4B86A);color:#1B2D5C;border:none;border-radius:12px;font-family:'Outfit',sans-serif;font-size:15px;font-weight:800;letter-spacing:.04em;cursor:pointer;box-shadow:0 6px 18px rgba(197,164,78,.28)}
 .se-fb-validate:active{transform:scale(.98)}
 
+/* ── Wizard 3 étapes : indicateur + progress + steps + nav ── */
+.se-fb-inner{padding-bottom:calc(110px + env(safe-area-inset-bottom,0px)) !important}
+.se-fb-step-line{display:flex;align-items:center;gap:6px;font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:.18em;color:rgba(20,30,60,.55);text-transform:uppercase;font-weight:700;margin-bottom:8px}
+.se-fb-step-num{color:var(--ah-gold);font-weight:800}
+.se-fb-step-dot{opacity:.5}
+.se-fb-step-name{color:var(--ah-text)}
+.se-fb-progbar{height:3px;background:rgba(20,30,60,.08);border-radius:2px;overflow:hidden;margin-bottom:14px}
+.se-fb-progbar-fill{height:100%;width:33.33%;background:linear-gradient(90deg,var(--ah-gold),#D4B86A);border-radius:2px;transition:width .35s cubic-bezier(.4,0,.2,1);box-shadow:0 0 8px rgba(197,164,78,.40)}
+.se-fb-step{display:none;animation:seFbFade .25s ease both;flex-direction:column;gap:14px}
+.se-fb-step.on{display:flex}
+@keyframes seFbFade{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+.se-fb-q-micro{font-size:11px;color:var(--ah-text2);line-height:1.4;margin-bottom:10px;font-style:italic}
+
+/* ── Sliders premium ── */
+.se-fb-slider{-webkit-appearance:none;appearance:none;width:100%;height:6px;background:rgba(20,30,60,.08);border-radius:3px;outline:none;cursor:pointer}
+.se-fb-slider::-webkit-slider-runnable-track{background:rgba(20,30,60,.08);height:6px;border-radius:3px}
+.se-fb-slider::-webkit-slider-thumb{-webkit-appearance:none;appearance:none;width:24px;height:24px;border-radius:50%;background:linear-gradient(135deg,#D4B86A,#C5A44E);border:2px solid var(--ah-navy);cursor:pointer;box-shadow:0 4px 10px rgba(20,30,60,.18);margin-top:-9px}
+.se-fb-slider::-moz-range-track{background:rgba(20,30,60,.08);height:6px;border-radius:3px}
+.se-fb-slider::-moz-range-thumb{width:24px;height:24px;border-radius:50%;background:linear-gradient(135deg,#D4B86A,#C5A44E);border:2px solid var(--ah-navy);cursor:pointer;box-shadow:0 4px 10px rgba(20,30,60,.18)}
+
+/* ── Summary card ── */
+.se-fb-summary{background:#fff;border:1px solid var(--ah-border);border-radius:14px;padding:14px 16px;display:flex;flex-direction:column;gap:10px;box-shadow:0 2px 8px rgba(20,30,60,.04)}
+.se-fb-sum-row{display:flex;justify-content:space-between;align-items:center;font-family:'Outfit',sans-serif;font-size:13px;color:var(--ah-text2)}
+.se-fb-sum-row b{font-family:'Bebas Neue',sans-serif;font-size:18px;color:var(--ah-navy);letter-spacing:.04em;line-height:1;font-weight:400}
+.se-fb-sum-row.sum-difficulties b{font-family:'Outfit',sans-serif;font-size:12px;font-weight:700;color:var(--ah-gold);text-align:right;max-width:60%;line-height:1.4}
+
+/* ── Bulle Titan ── */
+.se-fb-titan-msg{display:flex;align-items:flex-start;gap:10px;padding:12px 14px;background:linear-gradient(135deg,rgba(27,42,74,.04),rgba(197,164,78,.06));border:1px solid rgba(197,164,78,.20);border-radius:14px}
+.se-fb-titan-av{width:32px;height:32px;border-radius:50%;background:linear-gradient(135deg,var(--ah-navy),#0F1A30);color:var(--ah-gold);display:flex;align-items:center;justify-content:center;font-family:'Bebas Neue',sans-serif;font-size:14px;letter-spacing:.04em;flex-shrink:0;box-shadow:0 4px 10px rgba(20,30,60,.18)}
+.se-fb-titan-bub{flex:1;font-family:'Outfit',sans-serif;font-size:13px;line-height:1.45;color:var(--ah-text);font-style:italic}
+
+/* ── Footer navigation : Retour / Continuer / Valider ── */
+.se-fb-foot{position:fixed;left:0;right:0;bottom:0;width:100%;max-width:430px;margin:0 auto;padding:14px 20px calc(14px + env(safe-area-inset-bottom,0px));background:rgba(255,255,255,.92);backdrop-filter:blur(12px) saturate(1.4);border-top:1px solid rgba(20,30,60,.06);display:flex;gap:10px;z-index:10}
+.se-fb-back{flex:0 0 auto;padding:14px 18px;background:#fff;color:var(--ah-text2);border:1.5px solid var(--ah-border);border-radius:12px;font-family:'Outfit',sans-serif;font-size:13px;font-weight:700;letter-spacing:.04em;cursor:pointer}
+.se-fb-back:active{transform:scale(.96);background:var(--ah-surface2)}
+.se-fb-next{flex:1;padding:14px;background:linear-gradient(135deg,var(--ah-navy),#0F1A30);color:var(--ah-gold);border:none;border-radius:12px;font-family:'Outfit',sans-serif;font-size:14px;font-weight:700;letter-spacing:.04em;cursor:pointer;box-shadow:0 6px 18px rgba(27,42,74,.20)}
+.se-fb-next:active{transform:scale(.98)}
+
 /* ── Modal restrictions alimentaires : chips ── */
 .np-chips{display:flex;flex-wrap:wrap;gap:6px}
 .np-chip{padding:9px 13px;border-radius:999px;background:var(--ah-surface);border:1.5px solid var(--ah-border2);color:var(--ah-text2);font-family:'Outfit',sans-serif;font-size:12px;font-weight:600;cursor:pointer;transition:all .15s;-webkit-tap-highlight-color:transparent}
@@ -7057,66 +7095,94 @@ window.tiResetOnEnter = function(){ window.tiShowStep(1); };
      validée définitivement sans passer par cette modal. -->
 <div id="seFeedback" class="se-feedback" style="display:none">
   <div class="se-fb-inner">
+    <!-- Header compact + indicateur d'étape + progress bar -->
     <div class="se-fb-head">
+      <div class="se-fb-step-line">
+        <span class="se-fb-step-num">Étape <span id="seFbStepN">1</span>/3</span>
+        <span class="se-fb-step-dot">·</span>
+        <span class="se-fb-step-name" id="seFbStepName">Ressenti</span>
+      </div>
+      <div class="se-fb-progbar"><div class="se-fb-progbar-fill" id="seFbProgFill"></div></div>
       <div class="se-fb-title">FEEDBACK DE FIN DE SÉANCE</div>
       <div class="se-fb-sub">30 secondes. Dis à Titan comment ça s'est vraiment passé.</div>
-      <div class="se-fb-micro">Ces réponses aident Titan à comprendre ton niveau réel, pas ton niveau imaginé.</div>
     </div>
     <div class="se-fb-body">
-      <!-- Q1 — Productivité -->
-      <div class="se-fb-q">
-        <div class="se-fb-q-head">
-          <div class="se-fb-q-label">Productivité</div>
-          <div class="se-fb-q-val" id="seFbProdVal">80%</div>
+
+      <!-- ÉTAPE 1 — Ressenti : Productivité / Intensité / Focus -->
+      <div class="se-fb-step on" data-step="1">
+        <div class="se-fb-q">
+          <div class="se-fb-q-head">
+            <div class="se-fb-q-label">Productivité</div>
+            <div class="se-fb-q-val" id="seFbProdVal">80%</div>
+          </div>
+          <input type="range" min="0" max="110" step="1" value="80" id="seFbProd" class="se-fb-slider" oninput="window._seFbOnSlider('prod', this.value)">
+          <div class="se-fb-q-hint" id="seFbProdHint">Bonne séance</div>
         </div>
-        <input type="range" min="0" max="110" step="1" value="80" id="seFbProd" class="se-fb-slider" oninput="window._seFbOnSlider('prod', this.value)">
-        <div class="se-fb-q-hint" id="seFbProdHint">Solide</div>
-      </div>
-      <!-- Q2 — Intensité -->
-      <div class="se-fb-q">
-        <div class="se-fb-q-head">
-          <div class="se-fb-q-label">Intensité</div>
-          <div class="se-fb-q-val" id="seFbIntVal">80%</div>
+        <div class="se-fb-q">
+          <div class="se-fb-q-head">
+            <div class="se-fb-q-label">Intensité</div>
+            <div class="se-fb-q-val" id="seFbIntVal">80%</div>
+          </div>
+          <input type="range" min="0" max="110" step="1" value="80" id="seFbInt" class="se-fb-slider" oninput="window._seFbOnSlider('int', this.value)">
+          <div class="se-fb-q-hint" id="seFbIntHint">Intense</div>
         </div>
-        <input type="range" min="0" max="110" step="1" value="80" id="seFbInt" class="se-fb-slider" oninput="window._seFbOnSlider('int', this.value)">
-        <div class="se-fb-q-hint" id="seFbIntHint">Bonne intensité</div>
-      </div>
-      <!-- Q3 — Focus -->
-      <div class="se-fb-q">
-        <div class="se-fb-q-head">
-          <div class="se-fb-q-label">Focus</div>
-          <div class="se-fb-q-val" id="seFbFocusVal">80%</div>
-        </div>
-        <input type="range" min="0" max="110" step="1" value="80" id="seFbFocus" class="se-fb-slider" oninput="window._seFbOnSlider('focus', this.value)">
-        <div class="se-fb-q-hint" id="seFbFocusHint">Bien focus</div>
-      </div>
-      <!-- Q4 — Difficultés (chips multi-sélection) -->
-      <div class="se-fb-q">
-        <div class="se-fb-q-label" style="margin-bottom:8px">Difficultés du jour</div>
-        <div class="se-fb-chips" id="seFbDifficulties">
-          <button type="button" class="se-fb-chip" data-val="none" onclick="window._seFbToggleChip(this,true)">Aucun problème</button>
-          <button type="button" class="se-fb-chip" data-val="energy" onclick="window._seFbToggleChip(this,false)">Énergie basse</button>
-          <button type="button" class="se-fb-chip" data-val="hard" onclick="window._seFbToggleChip(this,false)">Trop difficile</button>
-          <button type="button" class="se-fb-chip" data-val="tech" onclick="window._seFbToggleChip(this,false)">Problème de technique</button>
-          <button type="button" class="se-fb-chip" data-val="pain" onclick="window._seFbToggleChip(this,false)">Douleur ou gêne</button>
-          <button type="button" class="se-fb-chip" data-val="time" onclick="window._seFbToggleChip(this,false)">Manque de temps</button>
-          <button type="button" class="se-fb-chip" data-val="gear" onclick="window._seFbToggleChip(this,false)">Manque de matériel</button>
-          <button type="button" class="se-fb-chip" data-val="motiv" onclick="window._seFbToggleChip(this,false)">Motivation basse</button>
+        <div class="se-fb-q">
+          <div class="se-fb-q-head">
+            <div class="se-fb-q-label">Focus</div>
+            <div class="se-fb-q-val" id="seFbFocusVal">80%</div>
+          </div>
+          <input type="range" min="0" max="110" step="1" value="80" id="seFbFocus" class="se-fb-slider" oninput="window._seFbOnSlider('focus', this.value)">
+          <div class="se-fb-q-hint" id="seFbFocusHint">Concentré</div>
         </div>
       </div>
-      <!-- Q5 — Exercice compliqué (rempli dynamiquement depuis _LS.exos) -->
-      <div class="se-fb-q">
-        <div class="se-fb-q-label" style="margin-bottom:8px">Exercice où tu as galéré ?</div>
-        <div class="se-fb-chips" id="seFbExos"></div>
+
+      <!-- ÉTAPE 2 — Difficultés du jour + exercice galéré -->
+      <div class="se-fb-step" data-step="2">
+        <div class="se-fb-q">
+          <div class="se-fb-q-label" style="margin-bottom:4px">Difficultés du jour</div>
+          <div class="se-fb-q-micro">Sélectionne ce qui a limité ta séance aujourd'hui.</div>
+          <div class="se-fb-chips" id="seFbDifficulties">
+            <button type="button" class="se-fb-chip" data-val="none" onclick="window._seFbToggleChip(this,true)">Aucun problème</button>
+            <button type="button" class="se-fb-chip" data-val="energy" onclick="window._seFbToggleChip(this,false)">Énergie basse</button>
+            <button type="button" class="se-fb-chip" data-val="hard" onclick="window._seFbToggleChip(this,false)">Trop difficile</button>
+            <button type="button" class="se-fb-chip" data-val="tech" onclick="window._seFbToggleChip(this,false)">Problème de technique</button>
+            <button type="button" class="se-fb-chip" data-val="pain" onclick="window._seFbToggleChip(this,false)">Douleur ou gêne</button>
+            <button type="button" class="se-fb-chip" data-val="time" onclick="window._seFbToggleChip(this,false)">Manque de temps</button>
+            <button type="button" class="se-fb-chip" data-val="gear" onclick="window._seFbToggleChip(this,false)">Manque de matériel</button>
+            <button type="button" class="se-fb-chip" data-val="motiv" onclick="window._seFbToggleChip(this,false)">Motivation basse</button>
+          </div>
+        </div>
+        <div class="se-fb-q">
+          <div class="se-fb-q-label" style="margin-bottom:4px">Exercice où tu as galéré ?</div>
+          <div class="se-fb-q-micro">Optionnel — un seul ou plusieurs.</div>
+          <div class="se-fb-chips" id="seFbExos"></div>
+        </div>
       </div>
-      <!-- Q6 — Note libre -->
-      <div class="se-fb-q">
-        <div class="se-fb-q-label" style="margin-bottom:6px">Ajouter quelque chose pour Titan ?</div>
-        <textarea id="seFbNote" class="se-fb-note" rows="2" placeholder="Ex : j'étais fatigué, j'ai senti mes genoux, j'ai manqué d'explosivité, j'ai eu du mal sur les sauts…"></textarea>
+
+      <!-- ÉTAPE 3 — Résumé + note libre + validation -->
+      <div class="se-fb-step" data-step="3">
+        <div class="se-fb-summary">
+          <div class="se-fb-sum-row"><span>Productivité</span><b id="seFbSumProd">80%</b></div>
+          <div class="se-fb-sum-row"><span>Intensité</span><b id="seFbSumInt">80%</b></div>
+          <div class="se-fb-sum-row"><span>Focus</span><b id="seFbSumFocus">80%</b></div>
+          <div class="se-fb-sum-row sum-difficulties"><span>Difficultés</span><b id="seFbSumDiff">—</b></div>
+        </div>
+        <div class="se-fb-titan-msg">
+          <div class="se-fb-titan-av">T</div>
+          <div class="se-fb-titan-bub" id="seFbTitanMsg">Bien reçu. Titan va utiliser ça pour ajuster la suite.</div>
+        </div>
+        <div class="se-fb-q">
+          <div class="se-fb-q-label" style="margin-bottom:6px">Ajouter quelque chose ?</div>
+          <textarea id="seFbNote" class="se-fb-note" rows="2" placeholder="Optionnel — un mot, une sensation, une douleur…"></textarea>
+        </div>
       </div>
+
     </div>
+    <!-- Footer navigation : Retour / Continuer / Valider -->
     <div class="se-fb-foot">
-      <button class="se-fb-validate" onclick="window._seFbValidate()">Valider ma séance</button>
+      <button class="se-fb-back" id="seFbBackBtn" onclick="window._seFbStep(-1)" style="display:none">← Retour</button>
+      <button class="se-fb-next" id="seFbNextBtn" onclick="window._seFbStep(1)">Continuer →</button>
+      <button class="se-fb-validate" id="seFbValidateBtn" onclick="window._seFbValidate()" style="display:none">Valider ma séance</button>
     </div>
   </div>
 </div>
@@ -18361,10 +18427,10 @@ window._trkVoiceMultiRel = function(btn, parentSel, fieldsCfg, exoId, exoName, c
 // sur history.back().
 // ═══════════════════════════════════════
 (function initEdgeBackSwipe(){
-  var START_EDGE = 28;
-  var H_THRESHOLD = 60;
-  var ANGLE_RATIO = 1.5;
-  var MAX_DURATION = 700;
+  var START_EDGE = 45;        // tolérant : Android consomme parfois les 20-25px du bord
+  var H_THRESHOLD = 50;       // moins d'engagement requis
+  var ANGLE_RATIO = 1.2;      // plus permissif sur l'angle (geste plus naturel)
+  var MAX_DURATION = 1000;    // 1s plein pour le geste
   var ex = 0, ey = 0, eT = 0, tracking = false;
 
   function isVisible(el){
@@ -18462,15 +18528,17 @@ window._trkVoiceMultiRel = function(btn, parentSel, fieldsCfg, exoId, exoName, c
   }
   window._tryGoBack = tryGoBack;
 
-  document.addEventListener('touchstart', function(e){
+  // Détection du swipe : on capture sur fenêtre (capture phase) pour passer
+  // AVANT les autres handlers passifs et garantir qu'on reçoit le geste même
+  // quand l'utilisateur swipe sur un élément qui aurait son propre listener.
+  function onStart(e){
     if (!e.touches || e.touches.length !== 1) { tracking = false; return; }
     var t = e.touches[0];
     if (t.clientX > START_EDGE) { tracking = false; return; }
     tracking = true;
     ex = t.clientX; ey = t.clientY; eT = Date.now();
-  }, { passive: true });
-
-  document.addEventListener('touchend', function(e){
+  }
+  function onEnd(e){
     if (!tracking) return;
     tracking = false;
     var t = e.changedTouches && e.changedTouches[0];
@@ -18478,11 +18546,31 @@ window._trkVoiceMultiRel = function(btn, parentSel, fieldsCfg, exoId, exoName, c
     var dx = t.clientX - ex;
     var dy = t.clientY - ey;
     var dt = Date.now() - eT;
-    if (dx < H_THRESHOLD) return;                       // pas vers la droite assez
-    if (dx < Math.abs(dy) * ANGLE_RATIO) return;        // trop vertical
-    if (dt > MAX_DURATION) return;                       // trop lent
+    if (dx < H_THRESHOLD) return;
+    if (dx < Math.abs(dy) * ANGLE_RATIO) return;
+    if (dt > MAX_DURATION) return;
     tryGoBack();
-  }, { passive: true });
+  }
+  // Capture phase + window pour passer avant les listeners délégués
+  window.addEventListener('touchstart', onStart, { passive: true, capture: true });
+  window.addEventListener('touchend',   onEnd,   { passive: true, capture: true });
+  // Fallback : pointerevents (Chrome PWA peut router en pointer plutôt que touch)
+  var ps = { down:false, x:0, y:0, t:0 };
+  window.addEventListener('pointerdown', function(e){
+    if (e.pointerType !== 'touch') return;
+    if (e.clientX > START_EDGE) { ps.down = false; return; }
+    ps.down = true; ps.x = e.clientX; ps.y = e.clientY; ps.t = Date.now();
+  }, { passive: true, capture: true });
+  window.addEventListener('pointerup', function(e){
+    if (!ps.down) return;
+    ps.down = false;
+    if (e.pointerType !== 'touch') return;
+    var dx = e.clientX - ps.x, dy = e.clientY - ps.y, dt = Date.now() - ps.t;
+    if (dx < H_THRESHOLD) return;
+    if (dx < Math.abs(dy) * ANGLE_RATIO) return;
+    if (dt > MAX_DURATION) return;
+    tryGoBack();
+  }, { passive: true, capture: true });
 })();
 
 (function initSwipeNav(){
@@ -26369,8 +26457,68 @@ function _seFbTitanMsg(fb) {
 function _seFbOpen() {
   _seFbReset();
   _seFbBuildExoChips();
+  window._seFbGoto(1);
   var modal = document.getElementById('seFeedback');
   if (modal) { modal.style.display = 'flex'; modal.scrollTop = 0; }
+}
+
+// Navigation wizard : 1=Ressenti / 2=Difficultés / 3=Résumé.
+// Met à jour : step affiché, indicateur 1/3, label, progress bar, boutons.
+window._seFbGoto = function(n) {
+  n = Math.max(1, Math.min(3, n));
+  var steps = document.querySelectorAll('#seFeedback .se-fb-step');
+  steps.forEach(function(s){
+    var ds = parseInt(s.getAttribute('data-step'), 10);
+    s.classList.toggle('on', ds === n);
+  });
+  var nLabel = ['', 'Ressenti', 'Difficultés', 'Validation'][n];
+  var sn = document.getElementById('seFbStepN'); if (sn) sn.textContent = n;
+  var snm = document.getElementById('seFbStepName'); if (snm) snm.textContent = nLabel;
+  var fill = document.getElementById('seFbProgFill');
+  if (fill) fill.style.width = (n * 33.33) + '%';
+  // Boutons footer
+  var back = document.getElementById('seFbBackBtn');
+  var next = document.getElementById('seFbNextBtn');
+  var val  = document.getElementById('seFbValidateBtn');
+  if (back) back.style.display = (n > 1) ? '' : 'none';
+  if (next) next.style.display = (n < 3) ? '' : 'none';
+  if (val)  val.style.display  = (n === 3) ? '' : 'none';
+  // À l'arrivée sur l'étape 3 → renseigne le résumé live
+  if (n === 3) _seFbRenderSummary();
+  // Scroll en haut de la modal
+  var modal = document.getElementById('seFeedback');
+  if (modal) modal.scrollTop = 0;
+  var inner = modal && modal.querySelector('.se-fb-inner');
+  if (inner) inner.scrollTop = 0;
+};
+window._seFbStep = function(dir){
+  var cur = parseInt((document.getElementById('seFbStepN')||{}).textContent || '1', 10);
+  window._seFbGoto(cur + dir);
+};
+function _seFbRenderSummary(){
+  var prod  = parseInt((document.getElementById('seFbProd')  || {}).value, 10) || 0;
+  var inten = parseInt((document.getElementById('seFbInt')   || {}).value, 10) || 0;
+  var focus = parseInt((document.getElementById('seFbFocus') || {}).value, 10) || 0;
+  var p = document.getElementById('seFbSumProd'); if (p) p.textContent = prod + '%';
+  var i = document.getElementById('seFbSumInt');  if (i) i.textContent = inten + '%';
+  var f = document.getElementById('seFbSumFocus');if (f) f.textContent = focus + '%';
+  // Difficultés : label des chips sélectionnées
+  var labels = [];
+  document.querySelectorAll('#seFbDifficulties .se-fb-chip.on').forEach(function(c){
+    var v = c.getAttribute('data-val');
+    if (v === 'none') { labels = ['Aucun problème']; return; }
+    labels.push(c.textContent.trim());
+  });
+  var d = document.getElementById('seFbSumDiff');
+  if (d) d.textContent = labels.length ? labels.join(', ') : '—';
+  // Message Titan adapté au score
+  var score = Math.round((prod + inten + focus) / 3);
+  var msg;
+  if (score >= 90)      msg = 'Grosse séance. Productivité, intensité et focus alignés. C\'est comme ça qu\'on construit un athlète.';
+  else if (score >= 75) msg = 'Bonne séance. Bien reçu. Titan va ajuster la suite avec ça.';
+  else if (score >= 55) msg = 'Séance correcte. Pas parfait mais le travail est fait. On vise mieux la prochaine.';
+  else                  msg = 'Bien reçu. Titan note ce ressenti et adaptera pour t\'aider à remonter.';
+  var t = document.getElementById('seFbTitanMsg'); if (t) t.textContent = msg;
 }
 function _seFbClose() {
   var modal = document.getElementById('seFeedback');
