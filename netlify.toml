@@ -3,10 +3,9 @@
   publish = "."
   functions = "netlify/functions"
 
-# Embarque les fichiers du dossier data/ avec les Functions (sinon admin-build-index
-# ne trouve pas data/livre.md à l'exécution).
-[functions]
-  included_files = ["data/**"]
+# Embarque le livre dans le bundle de la fonction qui en a besoin.
+[functions."admin-build-index"]
+  included_files = ["data/livre.md"]
 
 # Fonction planifiée : rappel push ~30 min avant chaque séance.
 [functions."session-reminders"]

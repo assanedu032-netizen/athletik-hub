@@ -50,12 +50,35 @@ exports.handler = async function(event) {
     return { statusCode: 503, headers, body: JSON.stringify({ error: 'OPENAI_API_KEY non configurée.' }) };
   }
 
-  let bookText;
-  try {
-    const bookPath = path.join(__dirname, '..', '..', 'data', 'livre.md');
-    bookText = fs.readFileSync(bookPath, 'utf8');
-  } catch (e) {
-    return { statusCode: 500, headers, body: JSON.stringify({ error: 'Livre introuvable: ' + e.message }) };
+  const candidates = [
+    path.join(__dirname, '..', '..', 'data', 'livre.md'),
+    path.join(process.cwd(), 'data', 'livre.md'),
+    path.join('/var/task', 'data', 'livre.md'),
+    path.join(__dirname, 'data', 'livre.md'),
+    path.join(__dirname, '..', 'data', 'livre.md'),
+  ];
+  let bookText = null;
+  let usedPath = null;
+  for (const p of candidates) {
+    try {
+      if (fs.existsSync(p)) {
+        bookText = fs.readFileSync(p, 'utf8');
+        usedPath = p;
+        break;
+      }
+    } catch (e) { /* try next */ }
+  }
+  if (!bookText) {
+    return {
+      statusCode: 500,
+      headers,
+      body: JSON.stringify({
+        error: 'Livre introuvable',
+        cherché: candidates,
+        __dirname,
+        cwd: process.cwd(),
+      }),
+    };
   }
 
   const chunks = chunkBook(bookText);
