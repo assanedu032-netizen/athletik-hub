@@ -384,7 +384,7 @@ button:active{transform:scale(0.97)}
 @keyframes spin{to{transform:rotate(360deg)}}
 
 /* ════════ SPLASH ════════ */
-#splash{align-items:center;justify-content:center;background:var(--ah-bg)}
+#splash{align-items:center;justify-content:center;background:radial-gradient(ellipse at 50% 35%, #243B6B 0%, #1B2A4A 45%, #0F1A30 100%)}
 .sp-logo{width:100px;height:100px;border-radius:24px;object-fit:contain;animation:popIn .6s ease both}
 .sp-name{font-family:'Bebas Neue',sans-serif;font-size:36px;color:#fff;letter-spacing:6px;margin-top:16px;animation:fadeUp .6s .3s ease both}
 .sp-sub{font-size:11px;font-weight:600;letter-spacing:3px;color:var(--gold);text-transform:uppercase;margin-top:6px;animation:fadeUp .6s .5s ease both}
@@ -1993,7 +1993,7 @@ body:has(.scr.on) .tim-fab{display:none}
 
 /* Light mode screens */
 [data-theme="light"] .scr { background: #F5F6FA !important; }
-[data-theme="light"] #splash { background: var(--ah-bg) !important; }
+[data-theme="light"] #splash { background: radial-gradient(ellipse at 50% 35%, #243B6B 0%, #1B2A4A 45%, #0F1A30 100%) !important; }
 [data-theme="light"] #titanIntro { background: #F5F6FA !important; background-image: radial-gradient(ellipse 80% 50% at 50% 30%, rgba(197,164,78,.08) 0%, transparent 60%) !important; }
 [data-theme="light"] #titanIntro .t-bubble { background: #fff !important; border: 1px solid #E2E5F0 !important; color: #0D1117 !important; }
 [data-theme="light"] #titanIntro .t-name { background: linear-gradient(135deg, #1F305F, #283A6A); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
@@ -4107,16 +4107,18 @@ html body #result, html body #nutriResult{
      Mission user : "Logo trop petit dans le carré blanc, pas assez premium."
      Fix : logo agrandi 220px (vs 130), pas de container badge, drop-shadow
      navy subtile pour profondeur. Cohérent avec l'icône installée 88%. ═══ -->
-<div id="splash" class="scr on" style="background:var(--ah-bg);justify-content:center;align-items:center;padding:32px 24px">
-  <div style="display:flex;flex-direction:column;align-items:center;gap:28px;max-width:380px;width:100%">
-    <img class="sp-logo" src="/images/logo.png" alt="Athletik Hub" style="width:220px;height:220px;object-fit:contain;background:transparent;border:none;box-shadow:none;filter:drop-shadow(0 8px 24px rgba(27,42,74,.10));animation:popIn .6s ease both" onerror="this.outerHTML='<div class=&quot;sp-logo&quot; style=&quot;width:220px;height:220px&quot;>AH</div>'">
-    <div class="sp-name" style="font-family:'Bebas Neue',sans-serif;font-size:48px;line-height:.95;color:var(--ah-text);letter-spacing:.06em;text-align:center">ATHLETIK HUB</div>
-    <div style="width:56px;height:2px;background:var(--ah-gold);border-radius:2px"></div>
-    <div class="sp-sub" style="font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:.22em;color:var(--ah-text2);text-transform:uppercase;text-align:center;line-height:1.5">Les secrets de la<br>détente verticale</div>
-    <div class="sp-bar" style="width:160px;height:2px;background:var(--ah-border);border-radius:2px;overflow:hidden;margin-top:12px"><div class="sp-bar-in" id="splashBar" style="height:100%;background:var(--ah-gold);width:0;transition:width .25s"></div></div>
+<div id="splash" class="scr on" style="background:radial-gradient(ellipse at 50% 35%, #243B6B 0%, #1B2A4A 45%, #0F1A30 100%);justify-content:center;align-items:center;padding:32px 24px;position:relative;overflow:hidden">
+  <!-- Halo gold subtle derrière le logo pour la profondeur premium -->
+  <div aria-hidden="true" style="position:absolute;top:28%;left:50%;transform:translate(-50%,-50%);width:420px;height:420px;max-width:90vw;max-height:60vh;border-radius:50%;background:radial-gradient(circle at center, rgba(197,164,78,.22) 0%, rgba(197,164,78,.06) 35%, rgba(197,164,78,0) 65%);pointer-events:none;animation:popIn .8s ease both"></div>
+  <div style="display:flex;flex-direction:column;align-items:center;gap:24px;max-width:380px;width:100%;position:relative;z-index:1">
+    <img class="sp-logo" src="/images/logo.png" alt="Athletik Hub" style="width:200px;height:200px;object-fit:contain;background:transparent;border:none;filter:drop-shadow(0 12px 32px rgba(0,0,0,.35));animation:popIn .6s ease both" onerror="this.outerHTML='<div class=&quot;sp-logo&quot; style=&quot;width:200px;height:200px;display:flex;align-items:center;justify-content:center;background:#fff;border-radius:24px;color:#1B2A4A;font-family:Bebas Neue,sans-serif;font-size:80px&quot;>AH</div>'">
+    <div class="sp-name" style="font-family:'Bebas Neue',sans-serif;font-size:48px;line-height:.95;color:#FFFFFF;letter-spacing:.08em;text-align:center;text-shadow:0 2px 18px rgba(0,0,0,.40)">ATHLETIK HUB</div>
+    <div style="width:48px;height:2px;background:#C5A44E;border-radius:2px;box-shadow:0 0 12px rgba(197,164,78,.50)"></div>
+    <div class="sp-sub" style="font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:.22em;color:#C5A44E;text-transform:uppercase;text-align:center;line-height:1.6;font-weight:500">Les secrets de la<br>détente verticale</div>
+    <div class="sp-bar" style="width:140px;height:2px;background:rgba(255,255,255,.10);border-radius:2px;overflow:hidden;margin-top:10px"><div class="sp-bar-in" id="splashBar" style="height:100%;background:linear-gradient(90deg,#C5A44E,#D4B86A);width:0;transition:width .25s;box-shadow:0 0 8px rgba(197,164,78,.60)"></div></div>
   </div>
-  <div style="position:absolute;bottom:32px;left:0;right:0;text-align:center">
-    <button onclick="localStorage.clear();location.reload()" style="background:none;border:none;color:var(--ah-muted);font-size:11px;cursor:pointer;font-family:Outfit,sans-serif;padding:8px 16px;opacity:.5">Réinitialiser</button>
+  <div style="position:absolute;bottom:calc(28px + env(safe-area-inset-bottom,0px));left:0;right:0;text-align:center;z-index:1">
+    <button onclick="localStorage.clear();location.reload()" style="background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.12);color:rgba(255,255,255,.65);font-size:11px;cursor:pointer;font-family:'Outfit',sans-serif;font-weight:600;letter-spacing:.04em;padding:10px 22px;border-radius:999px;backdrop-filter:blur(8px)">Réinitialiser</button>
   </div>
 </div>
 
@@ -13313,8 +13315,74 @@ function _bfDrawChart(data) {
   //   2) Message TIMER_SCHEDULE au SW → setTimeout dans le SW + showNotification
   //   3) setTimeout dans la page (fallback foreground si tout le reste échoue)
   // Plus Wake Lock pour empêcher l'OS de tuer trop vite la PWA.
+  // Plus AUDIO BACKGROUND : on lance le timer-beep.mp3 en loop volume 0.001
+  // au start (sous user gesture) → Android garde l'audio session active →
+  // au moment du bip final on monte le volume à 1.0 et on seek à la fin →
+  // l'user entend le bip dans ses écouteurs MÊME app fermée sur YouTube.
   var _tim_pageTimeout = null;
   var _tim_wakeLock = null;
+  var _tim_bgAudio = null;
+  var _tim_bgBeepTimeout = null;
+
+  function tim_minutStartBgAudio(endsAt){
+    try {
+      if (!_tim_bgAudio) {
+        _tim_bgAudio = new Audio('assets/sounds/timer-beep.mp3');
+        _tim_bgAudio.preload = 'auto';
+        _tim_bgAudio.loop = true;
+      }
+      _tim_bgAudio.muted = false;
+      _tim_bgAudio.volume = 0.001; // quasi-silence mais audio session active
+      _tim_bgAudio.currentTime = 0;
+      var p = _tim_bgAudio.play();
+      if (p && p.catch) p.catch(function(e){ console.warn('[bgaudio] play fail:', e); });
+      // MediaSession : Android nous voit comme un media player → maintient l'audio
+      if ('mediaSession' in navigator) {
+        try {
+          if (typeof MediaMetadata === 'function') {
+            navigator.mediaSession.metadata = new MediaMetadata({
+              title: '⏱ Timer en cours',
+              artist: 'Athletik Hub'
+            });
+          }
+          navigator.mediaSession.playbackState = 'playing';
+        } catch(e){}
+      }
+      // Programme le bip final : remonte le volume + seek vers la fin du MP3
+      var delay = Math.max(0, endsAt - Date.now() - 1500);
+      if (_tim_bgBeepTimeout) clearTimeout(_tim_bgBeepTimeout);
+      _tim_bgBeepTimeout = setTimeout(function(){
+        try {
+          if (!_tim_bgAudio) return;
+          _tim_bgAudio.loop = false;
+          _tim_bgAudio.volume = 1.0;
+          var dur = _tim_bgAudio.duration;
+          if (isFinite(dur) && dur > 0) _tim_bgAudio.currentTime = Math.max(0, dur - 1.5);
+          else _tim_bgAudio.currentTime = 0;
+          if (_tim_bgAudio.paused) {
+            var p2 = _tim_bgAudio.play();
+            if (p2 && p2.catch) p2.catch(function(e){ console.warn('[bgaudio] final play fail:', e); });
+          }
+          console.log('[bgaudio] BIP final déclenché');
+        } catch(e){ console.warn('[bgaudio] final fail:', e); }
+      }, delay);
+      console.log('[bgaudio] loop silencieuse lancée, bip dans', Math.round(delay/1000), 's');
+    } catch(e){ console.warn('[bgaudio] start fail:', e); }
+  }
+  function tim_minutStopBgAudio(){
+    try {
+      if (_tim_bgBeepTimeout) { clearTimeout(_tim_bgBeepTimeout); _tim_bgBeepTimeout = null; }
+      if (_tim_bgAudio) {
+        _tim_bgAudio.pause();
+        _tim_bgAudio.loop = false;
+        _tim_bgAudio.volume = 1.0;
+        _tim_bgAudio.currentTime = 0;
+      }
+      if ('mediaSession' in navigator) {
+        try { navigator.mediaSession.playbackState = 'none'; } catch(e){}
+      }
+    } catch(e){}
+  }
   function tim_minutScheduleNotif(endsAt){
     if (typeof Notification === 'undefined') {
       console.warn('[timer] Notification API indisponible');
@@ -13357,6 +13425,10 @@ function _bfDrawChart(data) {
       silent: false,
       renotify: true
     };
+
+    // Couche 0 : audio background — loop silencieux puis bip final
+    // (le seul moyen d'avoir un VRAI son dans les écouteurs en background)
+    tim_minutStartBgAudio(endsAt);
 
     // Couche 1 : TimestampTrigger côté page (peut être absent)
     if (navigator.serviceWorker && navigator.serviceWorker.ready) {
@@ -13403,6 +13475,8 @@ function _bfDrawChart(data) {
   // Annule la notif planifiée (à la pause / reset).
   function tim_minutCancelNotif(){
     if (_tim_pageTimeout) { clearTimeout(_tim_pageTimeout); _tim_pageTimeout = null; }
+    // Stoppe l'audio background (loop silencieuse + bip programmé)
+    tim_minutStopBgAudio();
     // Libère le wake lock
     try {
       if (_tim_wakeLock) { _tim_wakeLock.release(); _tim_wakeLock = null; }
