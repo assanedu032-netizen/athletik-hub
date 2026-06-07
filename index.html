@@ -4103,6 +4103,109 @@ html body #result, html body #nutriResult{
   text-transform:uppercase !important;
 }
 #tim-overlay .tim-test-snd:active{ background:#FFFCEF !important; transform:scale(.98); }
+
+/* ═══ Workout Builder result : feedback card + action buttons ═══ */
+.bld-fb-card{
+  background:#fff;
+  border:1px solid rgba(20,30,60,.06);
+  border-radius:16px;
+  padding:16px;
+  margin-top:18px;
+  box-shadow:0 4px 14px rgba(20,30,60,.04);
+}
+.bld-fb-title{
+  font-family:'Bebas Neue',sans-serif;
+  font-size:14px;
+  letter-spacing:.10em;
+  color:#1B2A4A;
+  margin-bottom:12px;
+  text-transform:uppercase;
+}
+.bld-fb-row{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:8px;
+}
+.bld-fb-btn{
+  padding:13px;
+  border-radius:12px;
+  font-family:'Outfit',sans-serif;
+  font-size:13px;
+  font-weight:700;
+  letter-spacing:.02em;
+  cursor:pointer;
+  border:1.5px solid;
+  transition:transform .12s,background .15s;
+}
+.bld-fb-btn:active{ transform:scale(.96); }
+.bld-fb-btn.ok{
+  background:#fff;
+  border-color:rgba(34,197,94,.40);
+  color:#16A34A;
+}
+.bld-fb-btn.ok:hover{ background:rgba(34,197,94,.06); }
+.bld-fb-btn.mod{
+  background:#fff;
+  border-color:rgba(197,164,78,.45);
+  color:#C5A44E;
+}
+.bld-fb-btn.mod:hover{ background:#FFFCEF; }
+.bld-fb-mod-zone{
+  margin-top:12px;
+  display:flex;
+  flex-direction:column;
+  gap:10px;
+  animation:popIn .25s ease;
+}
+.bld-fb-mod-zone textarea{
+  width:100%;
+  box-sizing:border-box;
+  background:#FAFBFC;
+  border:1.5px solid rgba(20,30,60,.10);
+  border-radius:12px;
+  padding:11px 13px;
+  font-family:'Outfit',sans-serif;
+  font-size:13px;
+  color:#1B2A4A;
+  resize:none;
+  outline:none;
+  line-height:1.4;
+}
+.bld-fb-mod-zone textarea:focus{ border-color:rgba(197,164,78,.55); background:#fff; }
+.bld-fb-mod-send{
+  padding:11px 14px;
+  background:linear-gradient(135deg,#1B2A4A,#0F1A30);
+  color:#C5A44E;
+  border:0;
+  border-radius:12px;
+  font-family:'Outfit',sans-serif;
+  font-size:13px;
+  font-weight:700;
+  letter-spacing:.04em;
+  cursor:pointer;
+  box-shadow:0 4px 12px rgba(20,30,60,.18);
+}
+.bld-fb-mod-send:active{ transform:scale(.97); }
+
+.bld-act-btn{
+  padding:11px;
+  background:#fff;
+  border:1px solid rgba(20,30,60,.08);
+  border-radius:10px;
+  color:#1B2A4A;
+  font-family:'Outfit',sans-serif;
+  font-size:12px;
+  font-weight:700;
+  letter-spacing:.02em;
+  cursor:pointer;
+  transition:transform .12s, background .15s;
+}
+.bld-act-btn:active{ transform:scale(.96); background:#FAFBFC; }
+.bld-act-btn.is-fav{
+  background:linear-gradient(135deg,#FFF8E1,#FFFCEF);
+  border-color:rgba(197,164,78,.45);
+  color:#C5A44E;
+}
 </style>
 
 <template id="__bundler_thumbnail" data-bg-color="#1F305F">
@@ -19809,9 +19912,28 @@ function builderRenderResult(w) {
     html += '</div></div>';
   });
 
+  // Feedback rapide sur la séance générée (satisfait / modifier)
+  html += '<div class="bld-fb-card">';
+  html +=   '<div class="bld-fb-title">Ce qu\'en pense Titan ?</div>';
+  html +=   '<div class="bld-fb-row">';
+  html +=     '<button class="bld-fb-btn ok" onclick="window._builderFbSatisfait()">👍 Je suis satisfait</button>';
+  html +=     '<button class="bld-fb-btn mod" onclick="window._builderFbModifier()">✏️ Modifier</button>';
+  html +=   '</div>';
+  html +=   '<div class="bld-fb-mod-zone" id="builderFbModZone" style="display:none">';
+  html +=     '<textarea id="builderFbModInput" placeholder="Décris ce que tu veux changer (ex : plus de pliométrie, retire les sauts, ajoute 10 min de mobilité…)" rows="2"></textarea>';
+  html +=     '<button class="bld-fb-mod-send" onclick="window._builderFbSendMod()">Envoyer à Titan</button>';
+  html +=   '</div>';
+  html += '</div>';
+
   // Actions
-  html += '<div style="padding:22px 0 4px;display:flex;flex-direction:column;gap:10px">';
+  html += '<div style="padding:14px 0 4px;display:flex;flex-direction:column;gap:10px">';
   html += '<button onclick="builderStartGenerated()" style="width:100%;padding:15px;background:linear-gradient(135deg,var(--gold),var(--gold2));border:0;border-radius:12px;color:var(--navy);font-family:\'Bebas Neue\',sans-serif;font-size:18px;letter-spacing:2px;cursor:pointer">▶ DÉMARRER MA SÉANCE</button>';
+  // Ligne 2 : favoris + partage
+  html += '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">';
+  html += '<button id="builderFavBtn" onclick="window._builderToggleFav()" class="bld-act-btn">⭐ Mettre en favori</button>';
+  html += '<button onclick="window._builderShare()" class="bld-act-btn">📤 Partager</button>';
+  html += '</div>';
+  // Ligne 3 : régénérer + nouvelle séance
   html += '<div style="display:flex;gap:8px">';
   html += '<button onclick="_bGenerate()" style="flex:1;padding:11px;background:var(--surface);border:1px solid var(--border);border-radius:10px;color:var(--text2);font-size:12px;font-weight:700;cursor:pointer">🔄 Régénérer</button>';
   html += '<button onclick="_builderStartConvo()" style="flex:1;padding:11px;background:var(--surface);border:1px solid var(--border);border-radius:10px;color:var(--text2);font-size:12px;font-weight:700;cursor:pointer">💬 Nouvelle séance</button>';
@@ -19819,8 +19941,155 @@ function builderRenderResult(w) {
 
   el.innerHTML = html;
   el.scrollTop = 0;
+  // Sync l'état du bouton favori si la séance est déjà sauvegardée
+  try { if (typeof window._builderRefreshFavBtn === 'function') window._builderRefreshFavBtn(); } catch(e){}
 }
 window.builderRenderResult = builderRenderResult;
+
+// ═══════════════════════════════════════
+// FEEDBACK + FAVORIS + PARTAGE Workout Builder (2026-06-07)
+// ═══════════════════════════════════════
+window._builderFbSatisfait = function(){
+  try { if (typeof showToast === 'function') showToast('💪 Bien noté — Titan a enregistré ton retour positif', 'ok'); } catch(_){}
+  // Tag la séance courante avec satisfaction (pour future analytique)
+  try {
+    if (window._builderWorkout) {
+      window._builderWorkout.userFeedback = { satisfied: true, at: new Date().toISOString() };
+    }
+  } catch(_){}
+};
+window._builderFbModifier = function(){
+  var z = document.getElementById('builderFbModZone');
+  if (!z) return;
+  var visible = z.style.display !== 'none';
+  z.style.display = visible ? 'none' : 'block';
+  if (!visible) {
+    var ta = document.getElementById('builderFbModInput');
+    if (ta) setTimeout(function(){ ta.focus(); }, 100);
+  }
+};
+window._builderFbSendMod = function(){
+  var ta = document.getElementById('builderFbModInput');
+  var txt = ta ? ta.value.trim() : '';
+  if (!txt) { try { showToast('Décris ce que tu veux modifier', 'info'); } catch(_){} return; }
+  // Stocke le feedback et relance la génération en injectant la demande
+  try {
+    if (window._builderWorkout) {
+      window._builderWorkout.userFeedback = { satisfied: false, modificationRequest: txt, at: new Date().toISOString() };
+    }
+  } catch(_){}
+  // Réinjecte la demande dans le prompt en cours et relance la génération
+  try {
+    if (typeof window._builderIntent !== 'undefined' && window._builderIntent) {
+      window._builderIntent.refineRequest = txt;
+    }
+    if (typeof window._bGenerate === 'function') {
+      try { showToast('🔄 Titan reprend ta séance avec tes ajustements…', 'info'); } catch(_){}
+      window._bGenerate();
+    }
+  } catch(e) { console.warn('builder fb mod:', e); }
+};
+
+// ─── Favoris / sauvegardés ───
+function _builderFavList(){
+  try { return JSON.parse(localStorage.getItem('ah_builder_favorites') || '[]'); } catch(e) { return []; }
+}
+function _builderFavSave(list){
+  try { localStorage.setItem('ah_builder_favorites', JSON.stringify(list)); } catch(e){}
+  try { if (typeof fbSaveProfile === 'function') fbSaveProfile(); } catch(e){}
+}
+function _builderWorkoutSignature(w){
+  if (!w) return '';
+  // ID stable = nom objectif + 1er exo du bloc principal + total exos
+  var name = (w.objectif || 'seance') + '';
+  var totalExos = 0;
+  (w.blocs || []).forEach(function(b){ totalExos += (b.exos || []).length; });
+  return name + '_' + totalExos + '_' + (w.dureeEstimee || '?');
+}
+window._builderToggleFav = function(){
+  var w = window._builderWorkout;
+  if (!w) { try { showToast('Génère une séance d\'abord', 'info'); } catch(_){} return; }
+  var sig = _builderWorkoutSignature(w);
+  var list = _builderFavList();
+  var idx = list.findIndex(function(it){ return it.sig === sig; });
+  if (idx >= 0) {
+    list.splice(idx, 1);
+    _builderFavSave(list);
+    try { showToast('Retiré des favoris', 'info'); } catch(_){}
+  } else {
+    list.unshift({
+      sig: sig,
+      savedAt: new Date().toISOString(),
+      workout: w
+    });
+    if (list.length > 30) list.length = 30; // cap à 30 favoris
+    _builderFavSave(list);
+    try { showToast('⭐ Séance sauvegardée dans tes favoris', 'ok'); } catch(_){}
+  }
+  window._builderRefreshFavBtn();
+};
+window._builderRefreshFavBtn = function(){
+  var btn = document.getElementById('builderFavBtn'); if (!btn) return;
+  var w = window._builderWorkout; if (!w) return;
+  var sig = _builderWorkoutSignature(w);
+  var list = _builderFavList();
+  var isFav = list.some(function(it){ return it.sig === sig; });
+  btn.textContent = isFav ? '★ Favori enregistré' : '⭐ Mettre en favori';
+  btn.classList.toggle('is-fav', isFav);
+};
+
+window._builderShare = function(){
+  var w = window._builderWorkout;
+  if (!w) { try { showToast('Génère une séance d\'abord', 'info'); } catch(_){} return; }
+  // Construit un texte partageable simple
+  var lines = ['💪 SÉANCE ATHLETIK HUB — ' + (w.objectif || 'Custom')];
+  if (w.dureeEstimee) lines.push('⏱ ~' + w.dureeEstimee + ' min');
+  if (w.intensite) lines.push('🔥 Intensité : ' + w.intensite);
+  lines.push('');
+  (w.blocs || []).forEach(function(b){
+    lines.push('— ' + (b.titre || 'Bloc').toUpperCase() + ' —');
+    (b.exos || []).forEach(function(e){
+      var presc = '';
+      if (e.sets) presc += e.sets + 'x';
+      if (e.reps) presc += (presc ? ' ' : '') + e.reps;
+      var rest = (e.rest && e.rest !== '-') ? ' · repos ' + e.rest : '';
+      lines.push('• ' + e.n + (presc ? ' — ' + presc : '') + rest);
+    });
+    lines.push('');
+  });
+  lines.push('Généré avec Athletik Hub');
+  var txt = lines.join('\n');
+  // Web Share API si dispo
+  if (navigator.share) {
+    navigator.share({
+      title: 'Séance Athletik Hub',
+      text: txt
+    }).catch(function(){});
+    return;
+  }
+  // Fallback : copie dans le clipboard
+  try {
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(txt).then(function(){
+        try { showToast('📋 Séance copiée — colle-la où tu veux', 'ok'); } catch(_){}
+      }).catch(function(){ _builderShareFallback(txt); });
+    } else { _builderShareFallback(txt); }
+  } catch(e){ _builderShareFallback(txt); }
+};
+function _builderShareFallback(txt){
+  // Modal simple avec le texte sélectionnable
+  var prev = document.getElementById('builderShareModal'); if (prev) prev.remove();
+  var modal = document.createElement('div');
+  modal.id = 'builderShareModal';
+  modal.style.cssText = 'position:fixed;inset:0;z-index:9900;background:rgba(11,18,40,.65);display:flex;align-items:center;justify-content:center;padding:18px;backdrop-filter:blur(4px)';
+  modal.innerHTML = '<div style="width:100%;max-width:420px;background:#fff;border-radius:18px;padding:20px;display:flex;flex-direction:column;gap:12px">'
+    + '<div style="font-family:Bebas Neue,sans-serif;font-size:18px;color:#1B2A4A;letter-spacing:.04em">PARTAGER LA SÉANCE</div>'
+    + '<textarea readonly style="width:100%;height:200px;padding:12px;border:1px solid #DDD;border-radius:10px;font-family:Outfit,sans-serif;font-size:12px;line-height:1.4;color:#1B2A4A;resize:none">' + txt.replace(/</g,'&lt;') + '</textarea>'
+    + '<button onclick="document.getElementById(\'builderShareModal\').remove()" style="padding:12px;background:linear-gradient(135deg,#C5A44E,#D4B86A);border:0;border-radius:12px;color:#1B2A4A;font-family:Bebas Neue,sans-serif;font-size:14px;letter-spacing:.1em;cursor:pointer">Fermer</button>'
+    + '</div>';
+  modal.addEventListener('click', function(e){ if (e.target === modal) modal.remove(); });
+  document.body.appendChild(modal);
+}
 
 // ─── Long-press sur Titan pendant le loading → vibration continue ──
 // Brief user : "Je peux mettre mon doigt et ça fait vibrer le téléphone
