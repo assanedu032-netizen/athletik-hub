@@ -4497,62 +4497,79 @@ window.tiResetOnEnter = function(){ window.tiShowStep(1); };
 
     <div class="ob-opts" style="display:flex;flex-direction:column;gap:10px">
 
-      <!-- DÉTENTE VERTICALE (dunker + vertical) -->
+      <!-- A — APPRENDRE À DUNKER (Tally Q4 A) -->
       <button class="ob-opt ah-opt-card" onclick="obPickObj(this,'dunker')">
-        <div class="ah-opt-ico"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19V5"/><path d="M5 12l7-7 7 7"/></svg></div>
+        <div class="ah-opt-ico"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M3 12h18"/><path d="M12 3a14 14 0 0 1 0 18"/><path d="M12 3a14 14 0 0 0 0 18"/></svg></div>
         <div class="ah-opt-body">
-          <div class="ah-opt-title">DÉTENTE VERTICALE</div>
-          <div class="ah-opt-sub">Sauter plus haut. Dunker, claquer le rebond.</div>
+          <div class="ah-opt-title">APPRENDRE À DUNKER</div>
+          <div class="ah-opt-sub">Au basket. Toucher le cercle, claquer.</div>
         </div>
         <div class="ah-opt-arrow">→</div>
       </button>
 
-      <!-- EXPLOSIVITÉ GLOBALE -->
+      <!-- B — SAUTER PLUS HAUT (Tally Q4 B) -->
+      <button class="ob-opt ah-opt-card" onclick="obPickObj(this,'vertical')">
+        <div class="ah-opt-ico"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19V5"/><path d="M5 12l7-7 7 7"/></svg></div>
+        <div class="ah-opt-body">
+          <div class="ah-opt-title">SAUTER PLUS HAUT</div>
+          <div class="ah-opt-sub">Détente verticale pure. Gagner des centimètres.</div>
+        </div>
+        <div class="ah-opt-arrow">→</div>
+      </button>
+
+      <!-- C — EXPLOSIF & COMPLET (Tally Q4 C) -->
       <button class="ob-opt ah-opt-card" onclick="obPickObj(this,'explosif')">
         <div class="ah-opt-ico"><svg viewBox="0 0 24 24" width="22" height="22" fill="currentColor"><path d="M13 2L3 14h7l-1 8 11-14h-7z"/></svg></div>
         <div class="ah-opt-body">
-          <div class="ah-opt-title">EXPLOSIVITÉ GLOBALE</div>
-          <div class="ah-opt-sub">Puissance complète — saut, sprint, change of direction.</div>
+          <div class="ah-opt-title">EXPLOSIF &amp; COMPLET</div>
+          <div class="ah-opt-sub">Vitesse + détente + agilité + physique.</div>
         </div>
         <div class="ah-opt-arrow">→</div>
       </button>
 
-      <!-- VITESSE + PERTE DE GRAS -->
-      <button class="ob-opt ah-opt-card" onclick="obPickObj(this,'poids')">
-        <div class="ah-opt-ico"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 17l6-6 4 4 8-8"/><path d="M14 7h7v7"/></svg></div>
-        <div class="ah-opt-body">
-          <div class="ah-opt-title">VITESSE + PERTE DE GRAS</div>
-          <div class="ah-opt-sub">Plus sec, plus rapide. Relative strength.</div>
-        </div>
-        <div class="ah-opt-arrow">→</div>
-      </button>
-
-      <!-- FORCE SANS SALLE -->
+      <!-- D — FORCE SANS SALLE (Tally Q4 D) -->
       <button class="ob-opt ah-opt-card" onclick="obPickObj(this,'force')">
         <div class="ah-opt-ico"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12h16"/><path d="M7 8l-4 4 4 4"/><path d="M17 8l4 4-4 4"/></svg></div>
         <div class="ah-opt-body">
           <div class="ah-opt-title">FORCE SANS SALLE</div>
-          <div class="ah-opt-sub">Triphasique poids du corps + matériel léger.</div>
+          <div class="ah-opt-sub">Développer ma force sans accès à une salle.</div>
         </div>
         <div class="ah-opt-arrow">→</div>
       </button>
 
-      <!-- DISCIPLINE & HABITUDES -->
+      <!-- E — PERTE DE POIDS + EXPLOSIVITÉ (Tally Q4 E) -->
+      <button class="ob-opt ah-opt-card" onclick="obPickObj(this,'poids')">
+        <div class="ah-opt-ico"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 17l6-6 4 4 8-8"/><path d="M14 7h7v7"/></svg></div>
+        <div class="ah-opt-body">
+          <div class="ah-opt-title">PERTE DE POIDS + EXPLOSIVITÉ</div>
+          <div class="ah-opt-sub">Perdre du poids tout en devenant explosif.</div>
+        </div>
+        <div class="ah-opt-arrow">→</div>
+      </button>
+
+      <!-- F — DISCIPLINE & RÉGULARITÉ (Tally Q4 F) -->
       <button class="ob-opt ah-opt-card" onclick="obPickObj(this,'discipline')">
         <div class="ah-opt-ico"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg></div>
         <div class="ah-opt-body">
-          <div class="ah-opt-title">DISCIPLINE &amp; HABITUDES</div>
-          <div class="ah-opt-sub">Micro-séances quotidiennes pour t'installer.</div>
+          <div class="ah-opt-title">DISCIPLINE &amp; RÉGULARITÉ</div>
+          <div class="ah-opt-sub">Créer une discipline et une régularité solides.</div>
         </div>
         <div class="ah-opt-arrow">→</div>
       </button>
 
-      <!-- Options avancées (gardées invisibles pour compat JS — vertical/tout) -->
+      <!-- G — OPTIMISER TOUT (Tally Q4 G) -->
+      <button class="ob-opt ah-opt-card" onclick="obPickObj(this,'tout')">
+        <div class="ah-opt-ico"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><circle cx="12" cy="12" r="9"/><path d="M12 3v2M12 19v2M3 12h2M19 12h2"/></svg></div>
+        <div class="ah-opt-body">
+          <div class="ah-opt-title">OPTIMISER TOUT</div>
+          <div class="ah-opt-sub">Mental, nutrition, entraînement, récupération.</div>
+        </div>
+        <div class="ah-opt-arrow">→</div>
+      </button>
+
+      <!-- Compat JS legacy : conserve le bouton "autre" caché si du code l'attend -->
       <button id="q1AutreBtn" onclick="q1ToggleAutre()" style="display:none"></button>
-      <div id="q1AutreOpts" style="display:none">
-        <button class="ob-opt ah-opt-card" onclick="obPickObj(this,'vertical')" style="display:none"><div class="ah-opt-title">VERTICAL</div></button>
-        <button class="ob-opt ah-opt-card" onclick="obPickObj(this,'tout')" style="display:none"><div class="ah-opt-title">TOUT</div></button>
-      </div>
+      <div id="q1AutreOpts" style="display:none"></div>
 
     </div>
 
