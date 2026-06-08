@@ -1525,6 +1525,11 @@ body:has(.scr.on) .tim-fab{display:none}
 .tim-chrono-display{font-family:'Bebas Neue',sans-serif;font-size:clamp(72px,20vw,108px);text-align:center;color:var(--navy);letter-spacing:-2px;line-height:1;margin:30px 0 24px;font-variant-numeric:tabular-nums}
 .tim-chrono-display small{font-size:.45em;color:var(--gold);margin-left:4px;letter-spacing:0;font-weight:400}
 .tim-chrono-controls{display:flex;gap:12px;justify-content:center;align-items:center;margin-bottom:22px}
+.tim-presets{display:flex;gap:8px;justify-content:center;align-items:center;margin:14px 0 18px;flex-wrap:wrap}
+.tim-preset{font-family:'Outfit',sans-serif;font-weight:800;font-size:13px;padding:9px 16px;background:var(--surface);color:var(--text);border:1.5px solid var(--border);border-radius:999px;cursor:pointer;letter-spacing:.5px;-webkit-tap-highlight-color:transparent;transition:all .15s}
+.tim-preset:active{transform:scale(.94);background:rgba(197,164,78,.10);border-color:var(--gold);color:var(--gold)}
+.tim-preset:hover{border-color:rgba(197,164,78,.45)}
+#timMinutRunning .tim-presets:has(+ .tim-chrono-controls){margin-top:6px}
 .tim-chrono-btn{font-family:'Outfit',sans-serif;font-weight:700;letter-spacing:1px;cursor:pointer;border:none;text-transform:uppercase;-webkit-tap-highlight-color:transparent;transition:transform .12s}
 .tim-chrono-btn.primary{width:88px;height:88px;border-radius:50%;background:linear-gradient(135deg,var(--gold),#A0853A);color:var(--navy);font-size:32px;box-shadow:0 6px 20px rgba(197,164,78,.35);font-family:'Bebas Neue',sans-serif}
 .tim-chrono-btn.primary:active{transform:scale(.93)}
@@ -7843,6 +7848,19 @@ window.tiResetOnEnter = function(){ window.tiShowStep(1); };
            puis ▶ pour lancer. Pendant la course : ↺ annule, ⏸ pause, +30s ajoute. -->
       <div id="timMinutRunning" style="">
         <div class="tim-chrono-display" id="timMinutDisplay">00:00</div>
+
+        <!-- Presets rapides — saisie en un tap pour 1 min / 3 min / 5 min /
+             15 min (durées les plus courantes pour repos / mobilité / EMOM).
+             Demandé par l'utilisateur : "laisser une option pré-remplie pour
+             permettre une saisie rapide". Cache pendant que le timer tourne
+             pour éviter de réinitialiser par erreur. -->
+        <div id="timMinutPresets" class="tim-presets">
+          <button class="tim-preset" onclick="tim_minutPreset(60)">1:00</button>
+          <button class="tim-preset" onclick="tim_minutPreset(180)">3:00</button>
+          <button class="tim-preset" onclick="tim_minutPreset(300)">5:00</button>
+          <button class="tim-preset" onclick="tim_minutPreset(900)">15:00</button>
+        </div>
+
         <div class="tim-chrono-controls">
           <button class="tim-chrono-btn secondary" onclick="tim_minutReset()">↺ Annuler</button>
           <button class="tim-chrono-btn primary" id="timMinutBtn" onclick="tim_minutToggle()">▶</button>
@@ -14571,6 +14589,20 @@ function _bfDrawChart(data) {
     var input = document.getElementById('timSetInput');
     if (input) { input.value = ''; setTimeout(function(){ input.focus(); }, 50); }
   }
+
+  // Preset rapide : pose la durée et démarre direct (gain de temps demandé
+  // par l'utilisateur). Ignore si le timer est déjà en cours pour éviter
+  // un reset accidentel — l'user devra appuyer sur ↺ Annuler d'abord.
+  function tim_minutPreset(seconds){
+    if (_tim_minut.running) return;
+    tim_minutSetSeconds(seconds);
+    _tim_minut.remMs = seconds * 1000;
+    _tim_minut.totalMs = seconds * 1000;
+    _tim_minutRender();
+    // Démarre direct — le user a explicitement choisi cette durée.
+    tim_minutStart();
+  }
+  window.tim_minutPreset = tim_minutPreset;
   function tim_minutCloseSet(){
     var ov = document.getElementById('timMinutSetModal');
     if (ov) ov.style.display = 'none';
@@ -15604,27 +15636,62 @@ window._trkSearch = _trkSearch;
 function _trkRenderResults(items, nq) {
   var wrap = document.getElementById('trkResults');
   if (!wrap) return;
-  if (!items.length) {
-    wrap.innerHTML = '<div class="trk-result-empty">Aucun résultat.</div>';
-    return;
-  }
   var h = '';
-  for (var i = 0; i < items.length; i++) {
-    var it = items[i];
-    var display = _trkEsc(it.name);
-    if (nq) {
-      var idx = it.norm.indexOf(nq);
-      if (idx >= 0) {
-        display = _trkEsc(it.name.substr(0, idx)) + '<mark>' + _trkEsc(it.name.substr(idx, nq.length)) + '</mark>' + _trkEsc(it.name.substr(idx + nq.length));
+  if (!items.length) {
+    h += '<div class="trk-result-empty">Aucun résultat dans la librairie.</div>';
+  } else {
+    for (var i = 0; i < items.length; i++) {
+      var it = items[i];
+      var display = _trkEsc(it.name);
+      if (nq) {
+        var idx = it.norm.indexOf(nq);
+        if (idx >= 0) {
+          display = _trkEsc(it.name.substr(0, idx)) + '<mark>' + _trkEsc(it.name.substr(idx, nq.length)) + '</mark>' + _trkEsc(it.name.substr(idx + nq.length));
+        }
       }
+      h += '<div class="trk-result" onclick="_trkPickExo(this.getAttribute(\'data-name\'))" data-name="' + _trkEsc(it.name) + '">'
+        +    '<div class="trk-result-name">' + display + '</div>'
+        +    '<div class="trk-result-cat">' + _trkEsc(it.catLabel) + '</div>'
+        +  '</div>';
     }
-    h += '<div class="trk-result" onclick="_trkPickExo(this.getAttribute(\'data-name\'))" data-name="' + _trkEsc(it.name) + '">'
-      +    '<div class="trk-result-name">' + display + '</div>'
-      +    '<div class="trk-result-cat">' + _trkEsc(it.catLabel) + '</div>'
-      +  '</div>';
   }
+  // Option "+ Autre" — toujours visible en bas, permet à l'user de tracker
+  // un exercice qui n'est pas dans la librairie en lui donnant son propre nom.
+  // Le nom typé dans la barre de recherche devient suggestion par défaut.
+  var customSuggest = (nq && items.length === 0) ? (' "' + _trkEsc(items.length ? '' : (typeof q !== 'undefined' && q ? q : ''))  + '"') : '';
+  var rawTyped = '';
+  try { rawTyped = (document.getElementById('trkSearchInput')||{}).value || ''; } catch(e){}
+  var suggest = rawTyped.trim();
+  h += '<div class="trk-result trk-result-custom" onclick="_trkPickCustom()" style="border-top:1px dashed var(--border2);background:rgba(197,164,78,.06)">'
+    +    '<div class="trk-result-name" style="color:var(--gold);font-weight:700">+ Ajouter un exercice perso' + (suggest ? ' : "' + _trkEsc(suggest) + '"' : '') + '</div>'
+    +    '<div class="trk-result-cat" style="color:var(--gold)">Custom · pas dans la librairie</div>'
+    +  '</div>';
   wrap.innerHTML = h;
 }
+
+// Tracker un exo perso non-listé. On lit le texte de la search bar comme
+// nom par défaut ; si vide, on demande via prompt.
+function _trkPickCustom() {
+  var inp = document.getElementById('trkSearchInput');
+  var suggest = inp ? (inp.value || '').trim() : '';
+  var name = suggest;
+  if (!name) {
+    try { name = (prompt('Nom de ton exercice :') || '').trim(); } catch(_) {}
+  } else {
+    // Demande une confirmation pour éviter les fautes de frappe accidentelles.
+    try {
+      var ok = confirm('Tracker "' + name + '" comme exercice perso ?');
+      if (!ok) {
+        var renamed = prompt('Renomme ton exercice :', name);
+        if (renamed != null) name = renamed.trim();
+        else return;
+      }
+    } catch(_) {}
+  }
+  if (!name) return;
+  _trkPickExo(name);
+}
+window._trkPickCustom = _trkPickCustom;
 
 function _trkPickExo(name) {
   if (!name) return;
@@ -26267,21 +26334,64 @@ window.renderTestsLanding = renderTestsLanding;
 function renderSessionsList() {
   var c = document.getElementById('sessionsBody'); if (!c) return;
   var sessions = _suiviSessions().slice().reverse(); // plus récente en premier
+
+  // Exos trackés individuellement (Suivi > Exercices > Tracker un exercice).
+  // Persisté dans window.trackHistory via saveData → blob ah_v8. L'utilisateur
+  // a remonté qu'il ne les retrouvait pas dans l'historique → on les fusionne
+  // ici avec les séances pour donner une vraie vue chronologique unifiée.
+  var trackEntries = [];
+  try {
+    if (Array.isArray(window.trackHistory)) {
+      trackEntries = window.trackHistory.slice().map(function(t){
+        return Object.assign({}, t, { _isTrack: true });
+      });
+    }
+  } catch(_) {}
+
+  // Fusion + tri par date desc
+  var combined = sessions.map(function(s){ return Object.assign({}, s, { _isTrack: false }); })
+    .concat(trackEntries)
+    .sort(function(a, b){ return new Date(b.date).getTime() - new Date(a.date).getTime(); });
+
   var html = '';
 
-  html += '<div style="font-family:\'Bebas Neue\',sans-serif;font-size:18px;letter-spacing:.08em;color:var(--text);margin-bottom:6px">HISTORIQUE DES SÉANCES</div>';
-  html += '<div style="font-size:12px;color:var(--text2);margin-bottom:14px">Toutes tes séances terminées avec leur ressenti.</div>';
+  html += '<div style="font-family:\'Bebas Neue\',sans-serif;font-size:18px;letter-spacing:.08em;color:var(--text);margin-bottom:6px">HISTORIQUE</div>';
+  html += '<div style="font-size:12px;color:var(--text2);margin-bottom:14px">Séances terminées + exercices trackés individuellement.</div>';
 
-  if (!sessions.length) {
+  if (!combined.length) {
     html += '<div style="background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:18px;text-align:center">';
     html += '<div style="font-size:32px;margin-bottom:8px;opacity:.5">🏋️</div>';
-    html += '<div style="font-family:\'Outfit\',sans-serif;font-size:13px;color:var(--text2);line-height:1.5">Pas encore de séance terminée. Lance ta première depuis l\'onglet Train.</div>';
+    html += '<div style="font-family:\'Outfit\',sans-serif;font-size:13px;color:var(--text2);line-height:1.5">Pas encore d\'activité. Lance une séance depuis Train ou track un exo dans Suivi &gt; Exercices.</div>';
     html += '</div>';
     c.innerHTML = html;
     return;
   }
 
-  sessions.forEach(function(s, idx){
+  // Indexation des séances pour _suiviOpenSession (compat ancien handler)
+  var sessIdxMap = sessions.reduce(function(m, s, i){ m[s.date] = i; return m; }, {});
+
+  combined.forEach(function(s){
+    if (s._isTrack) {
+      // ── Carte exo tracké ──
+      var bestStr = '';
+      try {
+        if (s.best) bestStr = s.best;
+        else if (s.essais && s.essais.length) {
+          bestStr = s.essais.map(function(e){ return e.reps ? (e.reps + (e.kg ? ' × ' + e.kg + ' kg' : (e.time ? ' × ' + e.time + 's' : ''))) : ''; }).filter(Boolean).join(' · ');
+        }
+      } catch(_) {}
+      html += '<div style="background:var(--surface);border:1px solid var(--border);border-left:3px solid var(--gold);border-radius:14px;padding:14px;margin-bottom:10px">';
+      html += '<div style="display:flex;justify-content:space-between;align-items:flex-start;gap:10px;margin-bottom:6px">';
+      html += '<div style="flex:1;min-width:0"><div style="font-family:\'Outfit\',sans-serif;font-size:14px;font-weight:700;color:var(--text);line-height:1.3">' + _trkEsc(s.exo || 'Exercice') + '</div>';
+      html += '<div style="font-size:11px;color:var(--gold);margin-top:2px;font-weight:700;letter-spacing:.5px">EXO TRACKÉ</div></div>';
+      html += '<div style="font-size:11px;color:var(--muted);white-space:nowrap">' + _suiviRelDate(s.date) + '</div>';
+      html += '</div>';
+      if (bestStr) html += '<div style="font-size:12px;color:var(--text2);margin-top:6px">' + _trkEsc(bestStr) + '</div>';
+      if (s.rpe) html += '<div style="margin-top:6px"><span style="font-size:10px;font-weight:700;padding:3px 8px;border-radius:999px;background:rgba(197,164,78,.10);color:var(--gold)">RPE ' + s.rpe + '/10</span></div>';
+      html += '</div>';
+      return;
+    }
+    // ── Carte séance (inchangé) ──
     var fb = s.sessionEndFeedback || {};
     var quality = fb.sessionQualityScore;
     var intensity = fb.intensite || fb.intensity;
@@ -26292,7 +26402,8 @@ function renderSessionsList() {
       if (quality < 50) qcolor = '#EF4444';
       else if (quality < 75) qcolor = '#F59E0B';
     }
-    html += '<div onclick="_suiviOpenSession(' + idx + ')" style="background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:14px;margin-bottom:10px;cursor:pointer">';
+    var origIdx = sessIdxMap[s.date];
+    html += '<div onclick="_suiviOpenSession(' + origIdx + ')" style="background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:14px;margin-bottom:10px;cursor:pointer">';
     html += '<div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:6px;gap:10px">';
     html += '<div style="flex:1;min-width:0"><div style="font-family:\'Outfit\',sans-serif;font-size:14px;font-weight:700;color:var(--text);line-height:1.3">' + (s.sessName || 'Séance') + '</div>';
     if (s.progName) html += '<div style="font-size:11px;color:var(--muted);margin-top:2px">' + s.progName + '</div>';
