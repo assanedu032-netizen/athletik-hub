@@ -17,10 +17,10 @@ const RATE_LIMIT = 20; // messages / jour / uid
 const MODEL = 'claude-sonnet-4-6';
 const MAX_TOKENS = 400;
 const BUILDER_MAX_TOKENS = 1800; // génération de séance Workout Builder (JSON structuré)
-const EMBED_MODEL = 'text-embedding-3-small';
-const RAG_TOP_K = 3;
-const RAG_MIN_SIMILARITY = 0.35;
-const RAG_MIN_QUERY_LEN = 12;
+const EMBED_MODEL = 'text-embedding-3-large';
+const RAG_TOP_K = 5;
+const RAG_MIN_SIMILARITY = 0.25;
+const RAG_MIN_QUERY_LEN = 10;
 
 // ---------- Firebase Admin (init paresseuse, partagée entre invocations chaudes) ----------
 let firebaseReady = false;
@@ -177,15 +177,26 @@ PHRASES D'ANCRAGE (extraites du livre d'Alassane)
 - "Chaque séance compte."
 
 ═══════════════════════════════
-QUAND TU CITES LE LIVRE
+QUAND TU CITES LE LIVRE — RÈGLES STRICTES
 ═══════════════════════════════
-Toujours attribuer à Alassane :
-- "Le coach Alassane explique ça dans son livre…"
-- "Alassane dit page X…"
-- "C'est ce qu'Alassane appelle…"
-Donne UNE phrase clé, pas tout le passage. Cite la page précise. Renvoie au livre pour le reste.
-Ne récite jamais le livre en entier.
-Titan donne l'appétit. Le livre donne le repas.
+Un bloc "PASSAGES DU LIVRE" peut t'être fourni dans le contexte. Quand tu l'utilises :
+
+1. OBLIGATION : cite TOUJOURS le numéro de page exact tel qu'indiqué dans le bloc.
+   Format : "page 261", "page 198", etc. Jamais "voir le livre" sans page, jamais "quelque part dans le livre".
+
+2. OBLIGATION : attribue à Alassane :
+   - "Le coach Alassane explique ça page 261…"
+   - "Alassane dit page 198…"
+   - "C'est ce qu'Alassane appelle [terme] page X…"
+
+3. Donne UNE phrase clé extraite du passage, pas tout le passage. Renvoie au livre pour le détail.
+   Titan donne l'appétit. Le livre donne le repas.
+
+4. Tu peux mentionner la section/cours quand c'est indiqué entre crochets dans le bloc
+   (ex : "Cours 7 sur la pliométrie, page 101").
+
+5. Si AUCUN passage du livre ne correspond à la question, tu ne fabriques PAS de page.
+   Tu réponds sur ta base (ton + Gambetta + FAQ + règles RPE) sans inventer de référence.
 
 Exemple correct :
 "Le coach Alassane explique ça page 261. Il dit que la motivation c'est comme la météo — des conneries. Va lire ça."
@@ -502,7 +513,9 @@ async function retrieveBookPassages(query) {
   const qVec = await embedQuery(query);
   if (!qVec) return [];
 
-  const scored = index.chunks.map(c => ({ id: c.id, page: c.page, text: c.text, score: cosine(qVec, c.e) }));
+  const scored = index.chunks.map(c => ({
+    id: c.id, page: c.page, section: c.section || '', text: c.text, score: cosine(qVec, c.e),
+  }));
   scored.sort((a, b) => b.score - a.score);
   const top = scored.slice(0, RAG_TOP_K).filter(c => c.score >= RAG_MIN_SIMILARITY);
   return top;
@@ -510,9 +523,16 @@ async function retrieveBookPassages(query) {
 
 function buildRagBlock(passages) {
   if (!passages || passages.length === 0) return null;
-  const lines = passages.map(p => `[Page ${p.page}]\n${p.text}`);
+  const lines = passages.map(p => {
+    const header = p.section ? `[Page ${p.page} — ${p.section}]` : `[Page ${p.page}]`;
+    return `${header}\n${p.text}`;
+  });
   return [
-    "PASSAGES PERTINENTS DU LIVRE D'ALASSANE (à mobiliser si utile, à citer en attribuant à Alassane + numéro de page exact) :",
+    "PASSAGES DU LIVRE D'ALASSANE NDIAYE — RÈGLE ABSOLUE :",
+    "- Si tu utilises un de ces passages dans ta réponse, tu DOIS citer le numéro de page exact (ex : \"page 261\").",
+    "- Attribue toujours à Alassane (\"Le coach Alassane explique ça page X…\").",
+    "- Donne une phrase clé, pas le passage entier. Renvoie au livre pour la suite.",
+    "- Si aucun passage n'est pertinent pour la question, ignore ce bloc et ne fabrique pas de page.",
     '',
     lines.join('\n\n---\n\n'),
   ].join('\n');
