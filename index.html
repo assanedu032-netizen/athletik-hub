@@ -11479,13 +11479,18 @@ function satCalc1RM(exoId) {
   satValues[exoId + '_max'] = max;
 }
 
-// Mapping ids p3 → ids legacy satExercices (pour aligner le filtre PROGRAM_TESTS)
+// Mapping ids p3 → ids legacy satExercices (pour aligner le filtre PROGRAM_TESTS).
+// Important : le SAT du livre ne contient QUE force + détente. Sprint et
+// agilité appartiennent au SET (testé via SET_TESTS, pas via cette liste
+// legacy). On ne mappe donc plus sprint30/sprint60/ttest/fms vers
+// satExercices — sinon le step-by-step SAT ré-affichait Sprint 30m alors
+// que le livre ne le veut pas (cf. bug remonté par l'utilisateur).
 var SAT_LEGACY_ID_MAP = {
-  jump: 'jump', squat: 'squat', sdt: 'dl', ht: 'ht', dc: 'dc',
-  sprint30: 'sprint', sprint60: 'sprint',
-  ttest: 'ttest', fms: 'fms'
-  // pdcSquatBulgare / pdcPompes / pdcWallSit / pdcFentesSautees / feet94 / laneAgility :
-  // pas d'équivalent legacy → ignorés (l'utilisateur fait ces tests via le flow p3 onboarding)
+  jump: 'jump', squat: 'squat', sdt: 'dl', ht: 'ht', dc: 'dc'
+  // sprint30/sprint60 → testés via SET (sprint60 dans SET_TESTS).
+  // ttest → retiré du livre.
+  // fms → retiré du livre.
+  // feet94 / physio / pdc* → pas d'équivalent legacy.
 };
 
 // Sous-ensemble de satExercices applicable au programme de l'utilisateur.
