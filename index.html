@@ -5406,6 +5406,10 @@ window.tiResetOnEnter = function(){ window.tiShowStep(1); };
     <!-- Bannière reprendre tests — affichée si ah_sat_inprogress existe -->
     <div id="resumeTestsBanner" style="display:none"></div>
 
+    <!-- ═══ TITAN SMART : Engagement du jour + Lecture recommandée ═══
+         Rempli par renderTitanSmartCards() en fonction du programme + phase. -->
+    <div id="titanSmartCards"></div>
+
     <!-- ═══ SCOREBOARD navy-deep DS v1.0 ═══ -->
     <div class="ah-scoreboard" id="homeScoreboard" style="margin:6px 20px 0;background:var(--ah-navy-deep);padding:14px 18px;border-radius:14px">
       <div class="grp"><span class="lbl">SET</span><span class="val empty" id="sbSet">—</span></div>
@@ -8402,6 +8406,264 @@ function renderHomeMealPlan() {
   content.innerHTML = html;
 }
 window.renderHomeMealPlan = renderHomeMealPlan;
+
+// ═══════════════════════════════════════════════════════════════════════════
+// TITAN SMART MESSAGES — MVP coach intelligent (2026-06-08)
+// ───────────────────────────────────────────────────────────────────────────
+// Source de vérité : livre "Les Secrets de la Détente Verticale" (Alassane
+// Ndiaye, 2026). Table des matières scannée pour les références chapitre/page.
+// Pas d'invention de référence — uniquement ce qui figure dans le livre.
+// ═══════════════════════════════════════════════════════════════════════════
+
+// Chapitres / cours / pages exacts du livre — source de vérité pour les refs.
+var BOOK_CHAPTERS = {
+  // Partie 1 — La Science du Saut
+  intro_8_lois:  { titre:'Les 8 Lois de la Détente Verticale', partie:1, page:35 },
+  cours_perio:   { titre:'Cours 1 — La Périodisation',         partie:1, page:45 },
+  cours_anat:    { titre:'Cours 2 — Anatomie et Physiologie',  partie:1, page:50 },
+  cours_biom:    { titre:'Cours 3 — Biomécanique',             partie:1, page:63 },
+  cours_force:   { titre:'Cours 4 — La Force',                 partie:1, page:80 },
+  cours_triple:  { titre:'Cours 5 — La Triple Extension',      partie:1, page:86 },
+  cours_puis:    { titre:'Cours 6 — Puissance',                partie:1, page:91 },
+  cours_plio:    { titre:'Cours 7 — Pliométrie',               partie:1, page:101 },
+  cours_mobi:    { titre:'Cours 8 — Mobilité et Stabilité',    partie:1, page:112 },
+  cours_fond:    { titre:'Cours 9 — Les Fondations que Personne ne Voit', partie:1, page:125 },
+  cours_intens:  { titre:'Cours 10 — Les Techniques d\'Intensification', partie:1, page:144 },
+  cours_prev:    { titre:'Cours 11 — Prévention et Blessures', partie:1, page:153 },
+  cours_nutri:   { titre:'Cours 12 — Nutrition et Récupération', partie:1, page:162 },
+  // Partie 2 — Méthodes d'Entraînement
+  ch_mental:     { titre:'Chapitre 1 — Le Mental',             partie:2, page:201 },
+  ch_mener:      { titre:'Chapitre 2 — La Méthode MENER',      partie:2, page:207 },
+  ch_perio_av:   { titre:'Chapitre 3 — Les Méthodes de Périodisation', partie:2, page:221 },
+  ch_npi:        { titre:'Chapitre 4 — Comment calculer son NPI ?', partie:2, page:236 },
+  ch_creer_prog: { titre:'Chapitre 5 — Comment créer un programme qui marche', partie:2, page:244 },
+  ch_tests:      { titre:'Chapitre 6 — Tests et Profils Athlétiques', partie:2, page:253 },
+  // Partie 3 — Programmes (chacun est un chapitre dédié)
+  prog_ea:       { titre:'Programme Elite Athlete',  partie:3, page:295 },
+  prog_vd:       { titre:'Programme Vertical Dunk',  partie:3, page:301 },
+  prog_tri:      { titre:'Programme Triphasique',    partie:3, page:307 },
+  prog_se:       { titre:'Programme SHRED Explose',  partie:3, page:312 },
+  prog_mt:       { titre:'Programme Microtraining',  partie:3, page:318 },
+  prog_ep:       { titre:'Programme EXPLOSE+',       partie:3, page:324 }
+};
+
+// Mapping programme → cours/chapitres prioritaires + ref du programme lui-même.
+var BOOK_PROGRAM_REFS = {
+  vd:  { chap:'prog_vd',  focus:['cours_plio','cours_triple','cours_force'] },
+  ea:  { chap:'prog_ea',  focus:['cours_force','cours_plio','cours_intens','cours_puis'] },
+  se:  { chap:'prog_se',  focus:['cours_plio','cours_puis','cours_nutri'] },
+  tri: { chap:'prog_tri', focus:['cours_force','cours_perio','cours_intens'] },
+  mt:  { chap:'prog_mt',  focus:['cours_fond','cours_mobi','cours_perio'] },
+  ep:  { chap:'prog_ep',  focus:['cours_plio','cours_force','cours_nutri','cours_prev'] }
+};
+
+// Banque de messages Titan — ton coach direct, court, orienté action.
+// Chaque clé = un type de message déclenchable selon le contexte.
+// `bookRef` = clé dans BOOK_CHAPTERS (jamais une référence inventée).
+var TITAN_SMART_RULES = {
+  // ── ENGAGEMENT DU JOUR — mission courte pour la journée ──
+  engagement: [
+    { msg: 'Ton engagement du jour : pas de répétition molle. Tu exécutes proprement, avec intensité et contrôle.', ref:'ch_mener' },
+    { msg: 'Mission du jour : chaque rep doit avoir un objectif clair. Pas de geste vide.',                         ref:'ch_mental' },
+    { msg: 'Aujourd\'hui tu te concentres sur la qualité d\'exécution, pas sur la quantité.',                       ref:'cours_triple' },
+    { msg: 'Engagement : tu fais ta séance même si tu n\'as pas envie. C\'est exactement les jours comme ça qui construisent un athlète.', ref:'ch_mental' },
+    { msg: 'Ta mission : intensité propre, pas ego. Tu sors de séance fier de ton exécution.',                       ref:'ch_mener' },
+    { msg: 'Note ton ressenti avant et après la séance. La progression se mesure aussi à ta lucidité.',              ref:'ch_npi' }
+  ],
+  // ── LECTURE RECOMMANDÉE — adaptée au programme + type de séance ──
+  lecture_force:   [{ msg: 'Avant ta séance de force, relis le cours sur la Force pour comprendre ce que tu construis.', ref:'cours_force' }],
+  lecture_plio:    [{ msg: 'Lis le cours Pliométrie cette semaine. Tu comprendras pourquoi on travaille cette qualité.', ref:'cours_plio' }],
+  lecture_triple:  [{ msg: 'La Triple Extension est la mécanique du saut. Lis ce cours, applique-le sur ta prochaine séance.', ref:'cours_triple' }],
+  lecture_mobi:    [{ msg: 'Sans mobilité, pas d\'amplitude. Lis le cours Mobilité et Stabilité.', ref:'cours_mobi' }],
+  lecture_fond:    [{ msg: 'Lecture du jour : Les Fondations que Personne ne Voit. Ce sont elles qui font la différence.', ref:'cours_fond' }],
+  lecture_nutri:   [{ msg: 'Nutrition et récupération font partie de la performance. Lis ce cours et applique au moins un point.', ref:'cours_nutri' }],
+  lecture_mental:  [{ msg: 'Le Mental est le premier muscle. Relis ce chapitre quand tu doutes.', ref:'ch_mental' }],
+  lecture_perio:   [{ msg: 'Pourquoi maintenant cette phase ? Lis le cours sur la Périodisation pour comprendre le pourquoi.', ref:'cours_perio' }],
+  lecture_prog:    [{ msg: 'Avant d\'attaquer le programme, relis le chapitre dédié à ton programme pour saisir la logique.', ref:null /* dynamique selon programKey */ }],
+  // ── AVANT SÉANCE — préparation mentale/technique ──
+  before: [
+    { msg: 'Avant ta séance : 30 secondes les yeux fermés. Visualise les 3 premières reps comme tu veux les exécuter.', ref:'ch_mental' },
+    { msg: 'Avant de lancer : la qualité d\'échauffement détermine la qualité de la séance. Ne saute pas cette étape.', ref:'cours_mobi' },
+    { msg: 'Cette séance n\'est pas juste un check. Tu viens chercher quelque chose de précis aujourd\'hui.',           ref:'ch_mener' },
+    { msg: 'Avant la séance : note en une phrase ce que tu veux progresser aujourd\'hui. Reviens-y après.',             ref:'ch_npi' }
+  ],
+  // ── APRÈS SÉANCE — feedback / récup ──
+  after: [
+    { msg: 'Séance terminée. Note ton ressenti, ton intensité et ta récupération.',                          ref:'ch_npi' },
+    { msg: 'La progression ne vient pas seulement de ce que tu fais, mais de ce que tu mesures.',            ref:'ch_npi' },
+    { msg: 'Hydrate-toi maintenant, mange dans l\'heure. La récup commence dans les 60 minutes qui suivent.', ref:'cours_nutri' },
+    { msg: 'Tu as fait ta séance. Maintenant rends-la utile : revois ce que tu pourrais améliorer demain.',   ref:'cours_intens' }
+  ],
+  // ── RÉCUPÉRATION / NUTRITION ──
+  recup: [
+    { msg: 'Dormir = progresser. Pas de bonne récup sans 7-8h de sommeil cette nuit.', ref:'cours_nutri' },
+    { msg: 'Mobilité 10 min ce soir. Pas pour la photo, pour ta prochaine séance.',     ref:'cours_mobi' },
+    { msg: 'Pas d\'écran 30 min avant de dormir. C\'est de l\'investissement direct sur ta récup.', ref:'cours_nutri' }
+  ]
+};
+
+// Détermine le programme courant (lecture profil → fallback user).
+function _titanGetProgramKey(){
+  try {
+    var prof = JSON.parse(localStorage.getItem('ah_profile') || '{}');
+    if (prof.programKey) return prof.programKey;
+  } catch(e){}
+  try { if (window.user && window.user.programKey) return window.user.programKey; } catch(e){}
+  return null;
+}
+
+// Récupère le prénom propre (capitalisé première lettre).
+function _titanGetFirstName(){
+  try {
+    var prof = JSON.parse(localStorage.getItem('ah_profile') || '{}');
+    var n = (prof.prenom || (window.user && window.user.name) || '').toString().trim();
+    if (!n) return '';
+    var first = n.split(/\s+/)[0];
+    return first.charAt(0).toUpperCase() + first.slice(1).toLowerCase();
+  } catch(e){ return ''; }
+}
+
+// Historique des messages déjà affichés (cache local + miroir Firestore via
+// fbSaveProfile sur ah_titan_shown). Source de vérité = profil cloud.
+function _titanGetShown(){
+  try {
+    var prof = JSON.parse(localStorage.getItem('ah_profile') || '{}');
+    return Array.isArray(prof.titanMessagesShown) ? prof.titanMessagesShown : [];
+  } catch(e){ return []; }
+}
+function _titanMarkShown(key){
+  try {
+    var prof = JSON.parse(localStorage.getItem('ah_profile') || '{}');
+    if (!Array.isArray(prof.titanMessagesShown)) prof.titanMessagesShown = [];
+    if (prof.titanMessagesShown.indexOf(key) === -1) {
+      prof.titanMessagesShown.unshift(key);
+      // cap à 30 derniers → on autorise les rotations long terme
+      if (prof.titanMessagesShown.length > 30) prof.titanMessagesShown.length = 30;
+      localStorage.setItem('ah_profile', JSON.stringify(prof));
+      try { if (typeof fbSaveProfile === 'function') fbSaveProfile(); } catch(e){}
+    }
+  } catch(e){}
+}
+
+// Choisit un message non encore affiché (ou le moins récent) parmi une liste.
+function _titanPick(bank, prefix){
+  if (!bank || !bank.length) return null;
+  var shown = _titanGetShown();
+  var fresh = bank.filter(function(_, i){ return shown.indexOf(prefix + '_' + i) === -1; });
+  var pool = fresh.length ? fresh : bank;
+  var idx = Math.floor(Math.random() * pool.length);
+  var picked = pool[idx];
+  var globalIdx = bank.indexOf(picked);
+  _titanMarkShown(prefix + '_' + globalIdx);
+  return picked;
+}
+
+// API publique : récupère { title, message, bookRef } pour un type donné.
+function titanGetSmartMessage(type){
+  var bank;
+  var prefix = type;
+  // Cas spécial : lecture programme = ref dynamique selon programKey
+  if (type === 'lecture_prog') {
+    var pk = _titanGetProgramKey();
+    var progRef = pk && BOOK_PROGRAM_REFS[pk] && BOOK_PROGRAM_REFS[pk].chap;
+    if (!progRef) return null;
+    return {
+      title: 'Lecture recommandée',
+      message: 'Avant d\'attaquer ta semaine, relis le chapitre dédié à ton programme. C\'est la logique derrière chaque séance.',
+      bookRef: BOOK_CHAPTERS[progRef]
+    };
+  }
+  // Cas standard : pioche dans la banque
+  bank = TITAN_SMART_RULES[type];
+  if (!bank || !bank.length) return null;
+  var picked = _titanPick(bank, prefix);
+  if (!picked) return null;
+  return {
+    title: type === 'engagement' ? 'Engagement du jour'
+         : type === 'lecture_force' ? 'Lecture — Force'
+         : type === 'lecture_plio' ? 'Lecture — Pliométrie'
+         : type === 'lecture_triple' ? 'Lecture — Triple Extension'
+         : type === 'lecture_mobi' ? 'Lecture — Mobilité'
+         : type === 'lecture_fond' ? 'Lecture — Fondations'
+         : type === 'lecture_nutri' ? 'Lecture — Nutrition'
+         : type === 'lecture_mental' ? 'Lecture — Mental'
+         : type === 'lecture_perio' ? 'Lecture — Périodisation'
+         : type === 'before' ? 'Avant ta séance'
+         : type === 'after' ? 'Après ta séance'
+         : type === 'recup' ? 'Récupération'
+         : 'Titan',
+    message: picked.msg,
+    bookRef: picked.ref ? BOOK_CHAPTERS[picked.ref] : null
+  };
+}
+window.titanGetSmartMessage = titanGetSmartMessage;
+
+// Choisit une lecture pertinente selon le programme courant (rotation des focus).
+function titanGetSmartLecture(){
+  var pk = _titanGetProgramKey();
+  if (!pk || !BOOK_PROGRAM_REFS[pk]) return titanGetSmartMessage('lecture_prog');
+  var focus = BOOK_PROGRAM_REFS[pk].focus || [];
+  var typeMap = {
+    cours_force:  'lecture_force',
+    cours_plio:   'lecture_plio',
+    cours_triple: 'lecture_triple',
+    cours_mobi:   'lecture_mobi',
+    cours_fond:   'lecture_fond',
+    cours_nutri:  'lecture_nutri',
+    cours_perio:  'lecture_perio',
+    cours_intens: 'lecture_force', // pas de banque dédiée, on retombe sur force
+    cours_puis:   'lecture_force',
+    cours_prev:   'lecture_mobi'
+  };
+  // Pioche un focus pas encore vu (rotation)
+  var shown = _titanGetShown();
+  var unseen = focus.filter(function(f){ return !shown.some(function(s){ return s.indexOf(typeMap[f] || '') === 0; }); });
+  var pickFocus = (unseen[0] || focus[Math.floor(Math.random() * focus.length)]);
+  return titanGetSmartMessage(typeMap[pickFocus] || 'lecture_prog');
+}
+window.titanGetSmartLecture = titanGetSmartLecture;
+
+// Rendu des 2 cards Home : Engagement + Lecture.
+function renderTitanSmartCards(){
+  var wrap = document.getElementById('titanSmartCards');
+  if (!wrap) return;
+  // Cache si pas de programme attribué (l'user n'a pas encore fait l'onboarding)
+  if (!_titanGetProgramKey()) { wrap.innerHTML = ''; return; }
+  var firstName = _titanGetFirstName();
+  var greeting = firstName ? firstName + ', ' : '';
+  var eng = titanGetSmartMessage('engagement');
+  var lec = titanGetSmartLecture();
+  var html = '';
+  if (eng) {
+    html += '<div style="margin:14px 16px 0;padding:14px 16px;background:#fff;border:1px solid var(--ah-border);border-left:3px solid var(--ah-gold);border-radius:14px;box-shadow:0 2px 8px rgba(20,30,60,.04)">'
+         +   '<div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">'
+         +     '<div style="width:24px;height:24px;border-radius:50%;background:linear-gradient(135deg,var(--ah-navy),#0F1A30);color:var(--ah-gold);display:flex;align-items:center;justify-content:center;font-family:\'Bebas Neue\',sans-serif;font-size:11px;letter-spacing:.04em">T</div>'
+         +     '<div style="font-family:\'JetBrains Mono\',monospace;font-size:10px;letter-spacing:.18em;font-weight:700;color:var(--ah-gold);text-transform:uppercase">' + eng.title + '</div>'
+         +   '</div>'
+         +   '<div style="font-family:\'Outfit\',sans-serif;font-size:13px;line-height:1.5;color:var(--ah-text)">' + greeting + (greeting ? eng.message.charAt(0).toLowerCase() + eng.message.slice(1) : eng.message) + '</div>'
+         +   (eng.bookRef ? '<div style="margin-top:8px;font-size:11px;color:var(--ah-text2);font-style:italic">📖 ' + eng.bookRef.titre + ' — p.' + eng.bookRef.page + '</div>' : '')
+         + '</div>';
+  }
+  if (lec) {
+    html += '<div style="margin:10px 16px 0;padding:14px 16px;background:linear-gradient(135deg,rgba(197,164,78,.06),rgba(197,164,78,.02));border:1px solid rgba(197,164,78,.30);border-radius:14px">'
+         +   '<div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">'
+         +     '<div style="font-size:14px">📖</div>'
+         +     '<div style="font-family:\'JetBrains Mono\',monospace;font-size:10px;letter-spacing:.18em;font-weight:700;color:var(--ah-gold);text-transform:uppercase">' + lec.title + '</div>'
+         +   '</div>'
+         +   '<div style="font-family:\'Outfit\',sans-serif;font-size:13px;line-height:1.5;color:var(--ah-text)">' + lec.message + '</div>'
+         +   (lec.bookRef ? '<div style="margin-top:8px;font-size:11px;color:var(--ah-gold);font-weight:600">' + lec.bookRef.titre + ' — p.' + lec.bookRef.page + '</div>' : '')
+         + '</div>';
+  }
+  wrap.innerHTML = html;
+}
+window.renderTitanSmartCards = renderTitanSmartCards;
+
+// Auto-rendu au chargement de la home (ne casse rien si pas appelé)
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', function(){ try { renderTitanSmartCards(); } catch(e){} });
+} else {
+  setTimeout(function(){ try { renderTitanSmartCards(); } catch(e){} }, 800);
+}
 
 // ═══ PLAN REPAS — Overlay plein écran ═══
 // Affiche la semaine complète d'un coup avec navigation par jour,
