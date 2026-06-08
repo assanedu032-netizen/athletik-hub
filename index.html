@@ -29005,28 +29005,52 @@ async function fbSaveProfile() {
     }
   };
 
-  // Décide si on affiche au démarrage. Brief user : "Quand on a pas encore
-  // téléchargé l'app il doit avoir une bannière qui apparaît quelques sec
-  // après. Les gens vont scanner un QR code — si on ne leur dit pas, ils
-  // ne téléchargent pas."
-  function maybeShow(){
-    if (isStandalone()) return;        // déjà installé → jamais
-    if (wasRecentlyDismissed()) return; // user a dismissé récemment <14j
+  // Stratégie d'affichage du banner — corrige le bug remonté par l'user :
+  // "j'appuie, donc demande si je veux installer, ensuite j'installe".
+  //
+  // Comportement précédent : on affichait la bannière 4s après le load,
+  // même si Chrome n'avait pas encore fait fire beforeinstallprompt
+  // (heuristique Chrome = >30s d'engagement avant que l'API d'install
+  // ne soit dispo). Conséquence : l'utilisateur cliquait "INSTALLER" et
+  // tombait sur un toast disant "va dans le menu du navigateur" → UX
+  // dégradée par rapport au prompt natif attendu.
+  //
+  // Nouveau comportement :
+  //   - iOS Safari → banner après 4s avec instructions Partager → Écran
+  //     d'accueil (iOS n'a pas d'API d'install, donc c'est le seul flow).
+  //   - Android / desktop Chrome → banner UNIQUEMENT quand
+  //     beforeinstallprompt s'est déclenché → le clic ouvre TOUJOURS le
+  //     prompt natif. Si Chrome ne déclenche jamais (utilisateur encore
+  //     en pleine évaluation), pas de banner du tout — plus propre que
+  //     d'afficher un faux bouton qui ne fait rien d'utile.
+  //   - Fallback : si après 60s rien n'est arrivé sur Android, on montre
+  //     un banner discret "ajouter via le menu ⋮" (vrai instructionnel,
+  //     pas un faux bouton d'install).
+  function showWithNativePrompt() {
+    if (isStandalone() || wasRecentlyDismissed()) return;
+    showBanner('Installer', "Ajoute l'app à ton écran d'accueil pour un accès rapide.");
+  }
+  function showIosOrFallback(){
+    if (isStandalone()) return;
+    if (wasRecentlyDismissed()) return;
     if (isIOS()) {
       showBanner('Installer', 'iPhone : Partager 📤 → "Sur l\'écran d\'accueil".');
       return;
     }
-    // Android / desktop : on AFFICHE TOUJOURS la bannière 4s après le load
-    // même si beforeinstallprompt n'a pas (encore) été reçu. Le click route
-    // vers deferred.prompt() s'il est dispo, sinon vers les instructions menu.
-    showBanner('Installer', "Ajoute l'app à ton écran d'accueil pour un accès rapide.");
+    // Android sans beforeinstallprompt après 60s : on propose le chemin
+    // manuel (menu ⋮ → Installer) avec un libellé honnête au lieu d'un
+    // bouton "INSTALLER" qui ne fera pas apparaître le prompt natif.
+    if (!deferred) {
+      showBanner('Voir comment installer', "Menu ⋮ du navigateur → Installer l'application.");
+    }
   }
 
   window.addEventListener('beforeinstallprompt', function(e){
     e.preventDefault();
     deferred = e;
-    if (isStandalone() || wasRecentlyDismissed()) return;
-    showBanner('Installer', "Ajoute l'app à ton écran d'accueil pour un accès rapide.");
+    // Chrome est prêt à proposer l'install natif — on peut afficher le
+    // banner avec un bouton qui marche vraiment.
+    showWithNativePrompt();
   });
 
   window.addEventListener('appinstalled', function(){
@@ -29035,13 +29059,15 @@ async function fbSaveProfile() {
     try { localStorage.setItem(DISMISS_KEY, '0'); } catch(_){}
   });
 
-  // Affiche la bannière 4 secondes après le load pour laisser le temps à
-  // l'utilisateur de comprendre l'app avant l'invite.
-  function scheduleShow(){ setTimeout(maybeShow, 4000); }
+  // iOS / fallback Android : on attend plus longtemps que les 4s
+  // d'origine — laisse à Chrome le temps de déclencher beforeinstallprompt
+  // si l'utilisateur reste sur la page.
   if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', scheduleShow);
+    document.addEventListener('DOMContentLoaded', function(){
+      setTimeout(showIosOrFallback, isIOS() ? 4000 : 60000);
+    });
   } else {
-    scheduleShow();
+    setTimeout(showIosOrFallback, isIOS() ? 4000 : 60000);
   }
 })();
 </script>
