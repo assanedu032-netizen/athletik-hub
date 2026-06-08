@@ -5994,9 +5994,22 @@ window.tiResetOnEnter = function(){ window.tiShowStep(1); };
         <div style="font-size:12px;color:var(--muted);margin-top:6px">1RM estimé = 5RM × 1.15</div>
       </div>
 
+      <!-- Séparateur : le SAT du livre s'arrête ici (Détente + Force pure).
+           Les 3 tests suivants ne sont PAS dans le SAT du livre — ils
+           servent à enrichir ton Athletik Score (mesures complémentaires).
+           Les laisser visibles permet de calculer un score complet sans
+           tromper l'utilisateur sur ce qu'est vraiment le SAT. -->
+      <div style="margin:18px 0 10px;padding:12px 14px;background:linear-gradient(135deg,rgba(197,164,78,.08),rgba(197,164,78,.02));border:1px dashed rgba(197,164,78,.35);border-radius:10px">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px">
+          <span style="font-size:14px">📖</span>
+          <div style="font-family:'Outfit',sans-serif;font-size:12px;font-weight:800;color:var(--gold);letter-spacing:.04em">SAT DU LIVRE TERMINÉ</div>
+        </div>
+        <div style="font-size:11.5px;color:var(--text2);line-height:1.5">Les 3 tests qui suivent sont des <strong>mesures complémentaires</strong> pour affiner ton Athletik Score. Ils ne font pas partie du SAT officiel — tu peux les sauter.</div>
+      </div>
+
       <!-- Test 3: Sprint (multi-essais + distance libre) -->
       <div class="card">
-        <div class="card-title"><span>⚡</span> Test 3 — Sprint</div>
+        <div class="card-title"><span>⚡</span> Test 3 — Sprint <span style="font-size:10px;font-weight:700;color:var(--muted);margin-left:6px">complément</span></div>
         <div id="satVid_sprint" class="test-video-wrap"></div>
 
         <div class="fi-row">
@@ -6028,9 +6041,9 @@ window.tiResetOnEnter = function(){ window.tiShowStep(1); };
         <div id="satSprintBest" style="font-size:12px;font-weight:700;color:var(--green);margin-top:8px;min-height:18px"></div>
       </div>
 
-      <!-- Test 4: Agilité T-Test (multi-essais) -->
+      <!-- Test 4: Agilité T-Test (multi-essais) — complément hors livre -->
       <div class="card">
-        <div class="card-title"><span>🔄</span> Test 4 — Agilité T-Test</div>
+        <div class="card-title"><span>🔄</span> Test 4 — Agilité T-Test <span style="font-size:10px;font-weight:700;color:var(--muted);margin-left:6px">complément</span></div>
         <div id="satVid_ttest" class="test-video-wrap"></div>
 
         <div style="font-size:10px;font-weight:700;color:var(--muted);letter-spacing:1.5px;text-transform:uppercase;margin:0 0 8px">Essais (jusqu'à 5) — meilleur temps retenu</div>
@@ -6044,9 +6057,9 @@ window.tiResetOnEnter = function(){ window.tiShowStep(1); };
         <div id="satTTestBest" style="font-size:12px;font-weight:700;color:var(--green);margin-top:8px;min-height:18px"></div>
       </div>
 
-      <!-- Test 5: Mobilité -->
+      <!-- Test 5: Mobilité — complément hors livre -->
       <div class="card">
-        <div class="card-title"><span>🧘</span> Test 5 — Mobilité</div>
+        <div class="card-title"><span>🧘</span> Test 5 — Mobilité <span style="font-size:10px;font-weight:700;color:var(--muted);margin-left:6px">complément</span></div>
         <div id="satVid_fms" class="test-video-wrap"></div>
         <div class="fi-row">
           <div class="fg"><label class="fl">Score FMS</label><input class="fi" type="number" id="satFMS" placeholder="14" step="1" min="0" max="21"></div>
@@ -7255,6 +7268,29 @@ window.tiResetOnEnter = function(){ window.tiShowStep(1); };
       </div>
     </div>
 
+  </div>
+</div>
+
+<!-- ═══ MODAL "Mot de passe oublié" — sheet propre + toast confirmation
+     Avant : le succès envoyait un long pavé vert dans #authMsg qui squattait
+     le formulaire. Pattern remplacé par un modal compact + un toast
+     non-bloquant à la confirmation. ═══ -->
+<div id="fbResetModal" style="display:none;position:fixed;inset:0;background:rgba(6,12,24,.78);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);z-index:9600;align-items:center;justify-content:center;padding:24px">
+  <div style="max-width:380px;width:100%;background:var(--ah-surface);border:1px solid var(--ah-border);border-radius:18px;padding:22px 22px 18px;box-shadow:0 24px 60px rgba(0,0,0,.35)">
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:6px">
+      <div style="width:36px;height:36px;border-radius:50%;background:rgba(197,164,78,.12);border:1px solid rgba(197,164,78,.35);display:flex;align-items:center;justify-content:center">
+        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="#C5A44E" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4"/></svg>
+      </div>
+      <div style="font-family:'Bebas Neue',sans-serif;font-size:22px;letter-spacing:.04em;color:var(--ah-text);line-height:1">Mot de passe oublié</div>
+    </div>
+    <div style="font-family:'Outfit',sans-serif;font-size:12.5px;color:var(--ah-text2);line-height:1.5;margin-bottom:16px">On t'envoie un lien par email pour en choisir un nouveau.</div>
+
+    <label style="display:block;font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:.18em;color:var(--ah-muted);text-transform:uppercase;margin-bottom:6px">Ton email</label>
+    <input id="fbResetEmail" type="email" placeholder="ton@email.com" autocomplete="email" style="width:100%;padding:12px 14px;background:var(--ah-surface2);border:1.5px solid var(--ah-border2);border-radius:10px;font-family:'Outfit',sans-serif;font-size:14px;color:var(--ah-text);outline:none;box-sizing:border-box;margin-bottom:6px">
+    <div id="fbResetHint" style="font-family:'Outfit',sans-serif;font-size:11px;color:var(--ah-muted);line-height:1.4;margin-bottom:14px;min-height:14px"></div>
+
+    <button id="fbResetSubmitBtn" onclick="fbResetSubmit()" style="width:100%;padding:13px;background:linear-gradient(135deg,#D4B45E,#C5A44E 55%,#B89238);border:none;border-radius:12px;font-family:'Bebas Neue',sans-serif;font-size:14px;letter-spacing:.12em;color:#1F305F;cursor:pointer;box-shadow:0 8px 20px rgba(197,164,78,.30)">ENVOYER LE LIEN</button>
+    <button onclick="closeFbReset()" style="width:100%;margin-top:8px;padding:10px;background:transparent;border:none;color:var(--ah-muted);font-family:'Outfit',sans-serif;font-size:12.5px;cursor:pointer">Annuler</button>
   </div>
 </div>
 
@@ -23932,49 +23968,72 @@ async function fbLoadFirestoreToLocal(user) {
   }
 }
 
-async function fbForgotPassword() {
-  // 1. Récupère l'email (champ de la page, sinon prompt)
-  var emailInput = document.getElementById('aEmail');
-  var email = ((emailInput && emailInput.value) || '').trim();
-  if (!email) {
-    try { email = (prompt('Saisis ton email pour recevoir le lien de réinitialisation :') || '').trim(); } catch(_) {}
-    if (!email) { fbShowMsg('Renseigne ton email d\'abord.', 'err'); return; }
-    if (emailInput) emailInput.value = email;
-  }
+// Ouvre le modal "Mot de passe oublié" avec email pré-rempli si dispo.
+// Remplace l'ancien pavé vert verbose qui squattait le formulaire auth.
+function fbForgotPassword() {
+  var modal = document.getElementById('fbResetModal');
+  if (!modal) return;
+  var prefill = ((document.getElementById('aEmail') || {}).value || '').trim();
+  var input = document.getElementById('fbResetEmail');
+  if (input) { input.value = prefill; input.disabled = false; }
+  var hint = document.getElementById('fbResetHint');
+  if (hint) hint.textContent = '';
+  var btn = document.getElementById('fbResetSubmitBtn');
+  if (btn) { btn.disabled = false; btn.textContent = 'ENVOYER LE LIEN'; }
+  modal.style.display = 'flex';
+  document.body.style.overflow = 'hidden';
+  setTimeout(function(){ if (input) input.focus(); }, 80);
+}
+window.fbForgotPassword = fbForgotPassword;
 
-  // 2. Validation format minimale
-  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-    fbShowMsg('Format d\'email invalide.', 'err'); return;
-  }
+function closeFbReset() {
+  var modal = document.getElementById('fbResetModal');
+  if (modal) modal.style.display = 'none';
+  document.body.style.overflow = '';
+}
+window.closeFbReset = closeFbReset;
 
-  // 3. Détection compte Google-only : Firebase renvoie un succès silencieux pour
-  // sendPasswordResetEmail si le compte n'a pas de mot de passe — l'utilisateur
-  // ne reçoit alors RIEN et croit que le système est cassé. On vérifie d'abord
-  // les méthodes d'auth disponibles pour donner un vrai feedback.
-  // NB : si l'option "Email enumeration protection" est ON côté Firebase Auth,
-  // fetchSignInMethodsForEmail retourne [] → on retombe sur le flux normal.
+// Submit du modal : validation + détection Google-only + envoi.
+// Succès → toast court non-bloquant + ferme le modal.
+async function fbResetSubmit() {
+  var input = document.getElementById('fbResetEmail');
+  var hint  = document.getElementById('fbResetHint');
+  var btn   = document.getElementById('fbResetSubmitBtn');
+  var email = ((input && input.value) || '').trim();
+  function showHint(text, isErr) {
+    if (!hint) return;
+    hint.textContent = text;
+    hint.style.color = isErr ? '#EF4444' : 'var(--ah-muted)';
+  }
+  if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+    showHint('Format d\'email invalide.', true); return;
+  }
+  if (!window.fb) {
+    showHint('Service indisponible. Réessaie dans un instant.', true); return;
+  }
+  if (btn) { btn.disabled = true; btn.textContent = 'ENVOI…'; }
+  // Détection Google-only — toast clair, modal reste ouvert pour relancer.
   try {
-    if (window.fb && typeof window.fb.fetchSignInMethodsForEmail === 'function') {
+    if (typeof window.fb.fetchSignInMethodsForEmail === 'function') {
       var methods = await window.fb.fetchSignInMethodsForEmail(window.fb.auth, email);
-      if (methods && methods.length > 0) {
-        var hasPwd = methods.indexOf('password') !== -1;
-        var hasGoogle = methods.indexOf('google.com') !== -1;
-        if (!hasPwd && hasGoogle) {
-          fbShowMsg('Cet email est lié à un compte Google. Utilise « Continuer avec Google » — pas besoin de mot de passe.', 'err');
-          return;
-        }
+      if (methods && methods.length > 0 && methods.indexOf('password') === -1 && methods.indexOf('google.com') !== -1) {
+        if (btn) { btn.disabled = false; btn.textContent = 'ENVOYER LE LIEN'; }
+        showHint('Cet email utilise Google. Reviens à l\'écran de connexion et clique « Continuer avec Google ».', true);
+        return;
       }
     }
-  } catch(e) { /* silencieux : on tente quand même l'envoi */ }
-
-  // 4. Envoi
+  } catch(_) {}
   try {
     await window.fb.sendPasswordResetEmail(window.fb.auth, email);
-    fbShowMsg('Email envoyé à ' + email + '. Vérifie aussi tes spams (peut prendre 1-2 min). Pas reçu ? Tu t\'es peut-être inscrit avec Google → utilise le bouton Google.', 'ok');
+    closeFbReset();
+    try { showToast('Lien envoyé à ' + email, 'ok'); }
+    catch(_) { alert('Lien envoyé à ' + email); }
   } catch(e) {
-    fbShowMsg(fbFormatError(e), 'err');
+    if (btn) { btn.disabled = false; btn.textContent = 'ENVOYER LE LIEN'; }
+    showHint(typeof fbFormatError === 'function' ? fbFormatError(e) : (e.message || 'Erreur.'), true);
   }
 }
+window.fbResetSubmit = fbResetSubmit;
 
 async function fbSignOut() {
   // Pas de confirm() natif (bloqué sur certaines PWA mobiles)
@@ -24404,17 +24463,22 @@ var ALL_TESTS = {
 // SET = jump + sprint60 + feet94 + laneAgility
 // Alternatifs PDC = jump + 4 exos poids du corps
 var PROGRAM_TESTS = {
+  // Sources : livre p.269 (table programme → tests associés) + pages SAT
+  // et SET illustrées. Les tests qui n'apparaissent PAS dans le livre
+  // (laneAgility, sprint30, ttest, fms) ont été retirés pour ne mesurer
+  // que ce que l'auteur prescrit réellement.
   'microtraining': ['jump', 'pdcSquatBulgare', 'pdcPompes', 'pdcWallSit', 'pdcFentesSautees'],
   'triphasique':   ['jump', 'pdcSquatBulgare', 'pdcPompes', 'pdcWallSit', 'pdcFentesSautees'],
-  // Vertical Dunk : page 269 dit "Test de détente + Rep Max squat et soulevé de
-  // terre" seulement. ht (Hip Thrust) était en trop dans le code précédent.
+  // Vertical Dunk : livre = détente + 1RM squat + 1RM soulevé de terre.
   'verticalDunk':  ['jump', 'squat', 'sdt'],
-  // Elite Athlete : SAT + SET. SET = sprint60 + feet94 + laneAgility en plus.
-  'eliteAthlete':  ['jump', 'squat', 'sdt', 'ht', 'dc', 'sprint30', 'ttest', 'fms', 'sprint60', 'feet94', 'laneAgility'],
-  // SHRED Explose : SET uniquement.
-  'shredExplose':  ['jump', 'sprint60', 'feet94', 'laneAgility'],
+  // Elite Athlete : SAT (squat + sdt + détente + ht + dc) + SET (94feet +
+  // sprint60 + détente + physio + force pure). Détente partagée → l'id
+  // 'jump' apparaît une fois.
+  'eliteAthlete':  ['jump', 'squat', 'sdt', 'ht', 'dc', 'sprint60', 'feet94', 'physio'],
+  // SHRED Explose : SET uniquement (livre p.269).
+  'shredExplose':  ['jump', 'sprint60', 'feet94', 'physio', 'squat', 'sdt', 'ht', 'dc'],
   // EXPLOSE+ : SAT + SET (identique à Elite Athlete pour les tests).
-  'explose':       ['jump', 'squat', 'sdt', 'ht', 'dc', 'sprint30', 'ttest', 'fms', 'sprint60', 'feet94', 'laneAgility']
+  'explose':       ['jump', 'squat', 'sdt', 'ht', 'dc', 'sprint60', 'feet94', 'physio']
 };
 
 // Alias programme key → mapping key
@@ -24933,14 +24997,16 @@ var SET_TESTS = [
     hasStopwatch: true
   },
   {
-    id: 'laneAgility',
-    name: 'Lane Agility',
-    emoji: '🔁',
-    libraryName: 'Navette 5-10-5',
-    desc: 'Test NBA Draft Combine. Sprint avant + shuffle latéral (sans croiser) + backpedal + shuffle, deux fois. Cone renversé ou pieds croisés = essai invalide.',
-    hint: 'Agilité multidirectionnelle. Standard universitaire D1 : 11-11.8s.',
-    fields: [{id:'set_laneAg', label:'Meilleur temps', unit:'sec', placeholder:'12.50'}],
-    hasStopwatch: true
+    // SET du livre p.288-289 : "Test physiologique" = poids + photo de
+    // référence (pèse-toi à jeun, et prends une photo torse face / profil /
+    // dos pour comparer dans 4-6 semaines). Pas de note chiffrée sur la
+    // photo — c'est un repère visuel.
+    id: 'physio',
+    name: 'Test physiologique',
+    emoji: '⚖️',
+    desc: 'Pèse-toi à jeun le matin. Optionnel : prends une photo de réference (face / profil / dos). Tu comparas dans 4-6 semaines pour mesurer l\'évolution de ta composition.',
+    hint: 'Le saut explosif dépend du rapport force / poids — connais ton poids.',
+    fields: [{id:'set_physioPoids', label:'Poids du jour', unit:'kg', placeholder:'75'}]
   },
   {
     id: 'squat',
