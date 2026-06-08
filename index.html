@@ -5939,9 +5939,20 @@ window.tiResetOnEnter = function(){ window.tiShowStep(1); };
   <!-- ══════════════════════════════════════════ -->
   <div id="secSat" class="sec">
 
-    <!-- Retour vers le landing Tests (depuis qu'on a 4 sub-tabs au lieu de
-         laisser SAT/SET dans la barre, l'utilisateur doit pouvoir remonter). -->
-    <div onclick="showSec('tests')" style="display:inline-flex;align-items:center;gap:6px;font-family:'Outfit',sans-serif;font-size:12px;color:var(--gold);cursor:pointer;padding:8px 0;margin-bottom:4px">← Retour aux tests</div>
+    <!-- Retour vers le landing Tests. -->
+    <div onclick="showSec('tests')" style="display:inline-flex;align-items:center;gap:6px;font-family:'Outfit',sans-serif;font-size:12px;color:var(--gold);cursor:pointer;padding:8px 0;margin-bottom:6px">← Retour aux tests</div>
+
+    <!-- Hero header SAT — repère visuel fort pour que l'utilisateur sache
+         immédiatement sur quelle page de test il se trouve. Navy + gold,
+         calé sur l'identité Athletik Hub. -->
+    <div style="background:linear-gradient(135deg,var(--ah-navy) 0%,#0F1B33 100%);border-radius:16px;padding:18px 18px 16px;margin-bottom:14px;color:#fff;position:relative;overflow:hidden;box-shadow:0 8px 22px rgba(20,30,60,.18)">
+      <div aria-hidden="true" style="position:absolute;top:-40%;right:-15%;width:200px;height:200px;background:radial-gradient(circle,rgba(197,164,78,.20),transparent 60%);pointer-events:none"></div>
+      <div style="position:relative;z-index:1">
+        <div style="display:inline-block;padding:4px 10px;background:rgba(197,164,78,.18);border:1px solid rgba(197,164,78,.55);border-radius:999px;font-family:'JetBrains Mono',monospace;font-size:9px;letter-spacing:.22em;color:var(--ah-gold);text-transform:uppercase;font-weight:800;margin-bottom:8px">SAT · Bilan force</div>
+        <div style="font-family:'Bebas Neue',sans-serif;font-size:28px;letter-spacing:.04em;line-height:1;color:#fff">SUPER ATHLÉTIQUE TEST</div>
+        <div style="font-family:'Outfit',sans-serif;font-size:12.5px;color:rgba(255,255,255,.78);margin-top:6px;line-height:1.5">5 tests · 45-60 min · détente verticale + force pure (squat, soulevé, hip thrust, développé couché).</div>
+      </div>
+    </div>
 
     <!-- Phase selector -->
     <div style="display:flex;gap:8px;margin-bottom:16px">
@@ -6047,7 +6058,17 @@ window.tiResetOnEnter = function(){ window.tiShowStep(1); };
   <div id="secSet" class="sec">
 
     <!-- Retour vers le landing Tests. -->
-    <div onclick="showSec('tests')" style="display:inline-flex;align-items:center;gap:6px;font-family:'Outfit',sans-serif;font-size:12px;color:var(--gold);cursor:pointer;padding:8px 0;margin-bottom:4px">← Retour aux tests</div>
+    <div onclick="showSec('tests')" style="display:inline-flex;align-items:center;gap:6px;font-family:'Outfit',sans-serif;font-size:12px;color:var(--gold);cursor:pointer;padding:8px 0;margin-bottom:6px">← Retour aux tests</div>
+
+    <!-- Hero header SET — même esprit que SAT, pour repère visuel immédiat. -->
+    <div style="background:linear-gradient(135deg,var(--ah-navy) 0%,#0F1B33 100%);border-radius:16px;padding:18px 18px 16px;margin-bottom:14px;color:#fff;position:relative;overflow:hidden;box-shadow:0 8px 22px rgba(20,30,60,.18)">
+      <div aria-hidden="true" style="position:absolute;top:-40%;right:-15%;width:200px;height:200px;background:radial-gradient(circle,rgba(197,164,78,.20),transparent 60%);pointer-events:none"></div>
+      <div style="position:relative;z-index:1">
+        <div style="display:inline-block;padding:4px 10px;background:rgba(197,164,78,.18);border:1px solid rgba(197,164,78,.55);border-radius:999px;font-family:'JetBrains Mono',monospace;font-size:9px;letter-spacing:.22em;color:var(--ah-gold);text-transform:uppercase;font-weight:800;margin-bottom:8px">SET · Bilan explosif</div>
+        <div style="font-family:'Bebas Neue',sans-serif;font-size:28px;letter-spacing:.04em;line-height:1;color:#fff">SUPER EXPLOSIF TEST</div>
+        <div style="font-family:'Outfit',sans-serif;font-size:12.5px;color:rgba(255,255,255,.78);margin-top:6px;line-height:1.5">5 catégories · 60-75 min · 94 feet, sprint 60m, détente, physiologique, force pure.</div>
+      </div>
+    </div>
 
     <!-- Container step-by-step (rendu dynamique) -->
     <div id="setStepContainer"></div>
@@ -25046,14 +25067,16 @@ var SET_TESTS = [
   },
   {
     // SET du livre p.288-289 : "Test physiologique" = poids + photo de
-    // référence (pèse-toi à jeun, et prends une photo torse face / profil /
-    // dos pour comparer dans 4-6 semaines). Pas de note chiffrée sur la
-    // photo — c'est un repère visuel.
+    // référence (face / profil / dos pour comparer dans 4-6 semaines).
+    // Cas spécial : hasPhysio:true → renderSETStep injecte l'UI photos en
+    // plus du champ poids. Stocké base64 compressé dans
+    // ah_profile.physioPhotos.{face,profil,dos}.
     id: 'physio',
     name: 'Test physiologique',
     emoji: '⚖️',
-    desc: 'Pèse-toi à jeun le matin. Optionnel : prends une photo de réference (face / profil / dos). Tu comparas dans 4-6 semaines pour mesurer l\'évolution de ta composition.',
-    hint: 'Le saut explosif dépend du rapport force / poids — connais ton poids.',
+    desc: 'Pèse-toi à jeun le matin. Prends 3 photos de référence (face, profil, dos) pour comparer dans 4-6 semaines. Les photos restent sur ton appareil — personne n\'y a accès.',
+    hint: 'Le saut explosif dépend du rapport force / poids.',
+    hasPhysio: true,
     fields: [{id:'set_physioPoids', label:'Poids du jour', unit:'kg', placeholder:'75'}]
   },
   {
@@ -25240,6 +25263,44 @@ function renderSETStep() {
     });
     if (ex.id === 'jump') {
       html += '<div style="display:flex;justify-content:space-between;align-items:center;background:var(--surface2);border-radius:10px;padding:10px 14px;margin-top:4px"><span style="font-size:12px;color:var(--muted);font-weight:600">Détente réelle</span><span style="font-family:\'Bebas Neue\',sans-serif;font-size:20px;color:var(--gold)" id="setDetenteVal">— cm</span></div>';
+    }
+    // Test physiologique : 3 inputs photo en plus du poids (face/profil/dos).
+    // Stockage localStorage uniquement (sécurité + simplicité). Compression
+    // à 600px max pour rester sous la limite localStorage.
+    if (ex.hasPhysio) {
+      var _photos = {};
+      try {
+        var _p = JSON.parse(localStorage.getItem('ah_profile') || '{}');
+        _photos = _p.physioPhotos || {};
+      } catch(e) {}
+      var _physioSlot = function(slot, label) {
+        var hasPhoto = !!_photos[slot];
+        var ph = hasPhoto ? _photos[slot] : '';
+        var prevStyle = hasPhoto
+          ? 'background-image:url(\'' + ph + '\');background-size:cover;background-position:center'
+          : 'background:var(--surface2)';
+        var iconHtml = hasPhoto
+          ? '<div style="position:absolute;bottom:6px;right:6px;background:rgba(34,197,94,.95);border-radius:50%;width:22px;height:22px;display:flex;align-items:center;justify-content:center;color:#fff;font-size:12px;font-weight:800;border:2px solid #fff">✓</div>'
+          : '<div style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;color:var(--muted)"><div style="font-size:24px">📷</div><div style="font-size:10px;font-weight:700;letter-spacing:1px;margin-top:2px">' + label + '</div></div>';
+        return ''
+          + '<div style="position:relative;flex:1;aspect-ratio:3/4;border:1.5px ' + (hasPhoto ? 'solid var(--gold)' : 'dashed var(--border2)') + ';border-radius:12px;overflow:hidden;cursor:pointer;' + prevStyle + '" onclick="document.getElementById(\'physioPhotoIn_' + slot + '\').click()">'
+          + (hasPhoto ? '' : iconHtml)
+          + (hasPhoto ? iconHtml : '')
+          + '</div>'
+          + '<input id="physioPhotoIn_' + slot + '" type="file" accept="image/*" capture="environment" style="display:none" onchange="physioPickPhoto(\'' + slot + '\', event)">';
+      };
+      html += '<div style="margin-top:18px">';
+      html += '<div style="font-size:10px;font-weight:700;color:var(--muted);letter-spacing:1.5px;text-transform:uppercase;margin-bottom:8px">Photos de référence — 3 angles</div>';
+      html += '<div style="display:flex;gap:8px;margin-bottom:8px">';
+      html += _physioSlot('face',   'FACE');
+      html += _physioSlot('profil', 'PROFIL');
+      html += _physioSlot('dos',    'DOS');
+      html += '</div>';
+      html += '<div style="font-size:11px;color:var(--muted);line-height:1.5">Les photos restent sur ton appareil. Elles sont compressées et stockées localement — personne n\'y a accès.</div>';
+      if (Object.keys(_photos).length > 0) {
+        html += '<button onclick="physioClearPhotos()" style="margin-top:8px;background:none;border:none;color:var(--muted);font-size:11px;text-decoration:underline;cursor:pointer;font-family:Outfit,sans-serif">Effacer les photos</button>';
+      }
+      html += '</div>';
     }
   }
 
@@ -25457,6 +25518,63 @@ function setNextStep() {
 function setPrevStep() {
   if (setCurrentStep > 0) { setCurrentStep--; renderSETStep(); }
 }
+
+// Test physiologique — capture photo de référence (face/profil/dos).
+// Compression à 600px de large + JPEG q=0.78 → ~30-60ko par photo,
+// permet de stocker les 3 photos dans ah_profile localStorage sans
+// faire péter la limite de stockage (typique 5-10 MB).
+function physioPickPhoto(slot, ev) {
+  var file = ev && ev.target && ev.target.files && ev.target.files[0];
+  if (!file) return;
+  var reader = new FileReader();
+  reader.onload = function(e) {
+    var img = new Image();
+    img.onload = function() {
+      var MAX = 600;
+      var w = img.width, h = img.height;
+      if (w > h) { if (w > MAX) { h = Math.round(h * MAX / w); w = MAX; } }
+      else       { if (h > MAX) { w = Math.round(w * MAX / h); h = MAX; } }
+      var cv = document.createElement('canvas');
+      cv.width = w; cv.height = h;
+      cv.getContext('2d').drawImage(img, 0, 0, w, h);
+      var dataUrl = cv.toDataURL('image/jpeg', 0.78);
+      try {
+        var p = JSON.parse(localStorage.getItem('ah_profile') || '{}');
+        p.physioPhotos = p.physioPhotos || {};
+        p.physioPhotos[slot] = dataUrl;
+        p.physioPhotosUpdatedAt = new Date().toISOString();
+        localStorage.setItem('ah_profile', JSON.stringify(p));
+        if (typeof fbSaveProfile === 'function' && window.fbUser) {
+          try { fbSaveProfile(); } catch(_) {}
+        }
+        if (typeof showToast === 'function') showToast('Photo ' + slot + ' enregistrée ✓', 'success');
+        // Re-render l'étape pour afficher la preview
+        if (typeof renderSETStep === 'function') renderSETStep();
+      } catch(e) {
+        if (typeof showToast === 'function') showToast('Photo trop lourde — réessaie avec une image plus petite.', 'err');
+      }
+    };
+    img.src = e.target.result;
+  };
+  reader.readAsDataURL(file);
+}
+window.physioPickPhoto = physioPickPhoto;
+
+function physioClearPhotos() {
+  if (typeof confirm === 'function' && !confirm('Supprimer les 3 photos de référence ?')) return;
+  try {
+    var p = JSON.parse(localStorage.getItem('ah_profile') || '{}');
+    delete p.physioPhotos;
+    delete p.physioPhotosUpdatedAt;
+    localStorage.setItem('ah_profile', JSON.stringify(p));
+    if (typeof fbSaveProfile === 'function' && window.fbUser) {
+      try { fbSaveProfile(); } catch(_) {}
+    }
+    if (typeof showToast === 'function') showToast('Photos supprimées', 'info');
+    if (typeof renderSETStep === 'function') renderSETStep();
+  } catch(_) {}
+}
+window.physioClearPhotos = physioClearPhotos;
 
 function setStartStopwatch(exoId) {
   window['setSW_' + exoId] = { start: Date.now(), running: true };
