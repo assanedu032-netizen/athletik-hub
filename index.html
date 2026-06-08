@@ -11737,7 +11737,12 @@ document.addEventListener('DOMContentLoaded', function() {
   try { profileAtBoot = JSON.parse(localStorage.getItem('ah_profile') || '{}'); } catch(e) {}
   _syncOnboardingDoneFlag(profileAtBoot);
 
-  if (_isOnboardingComplete(profileAtBoot)) {
+  // Si on revient d'une déconnexion (?logout=…), on NE doit PAS auto-router
+  // vers Home : ah_profile a été préservé pour accélérer la reconnexion,
+  // mais l'utilisateur veut voir l'écran d'auth, pas sa Home.
+  var justLoggedOut = /[?&]logout=/.test(location.search);
+
+  if (!justLoggedOut && _isOnboardingComplete(profileAtBoot)) {
     setTimeout(function() {
       try {
         document.querySelectorAll('.scr').forEach(function(e){
@@ -11766,8 +11771,6 @@ document.addEventListener('DOMContentLoaded', function() {
 
   // Si on revient juste d'une déconnexion : aller directement à l'auth en mode "signin"
   // (le user a déjà un compte, pas besoin de repasser par Welcome + Q1)
-  var justLoggedOut = /[?&]logout=/.test(location.search);
-
   setTimeout(function(){
     if (justLoggedOut && typeof welcomeLogin === 'function') {
       welcomeLogin();
