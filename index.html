@@ -278,6 +278,9 @@
    les display:flex hérités. */
 .ah-no-fab .ah-fab,
 .ah-no-fab .tim-fab{ display:none !important; }
+/* Sur le landing Suivi > Tests, la FAB chronomètre n'a pas sa place tant
+   qu'aucun test n'est en cours (sinon elle pollue le dashboard). */
+body.ah-tests-no-fab .tim-fab{ display:none !important; }
 
 /* 14. ANIMATIONS */
 @keyframes ah-pulse{ 0%,100%{ transform:scale(1); opacity:1; } 50%{ transform:scale(1.35); opacity:.7; } }
@@ -528,7 +531,21 @@ button:active{transform:scale(0.97)}
 .scan-food-cal-num { font-family:'Bebas Neue',sans-serif; color:var(--gold-light,#D4B86A); font-size:16px; letter-spacing:.5px; }
 .scan-food-remove { background:none; border:none; cursor:pointer; color:rgba(255,255,255,.25); font-size:18px; padding:0 4px; line-height:1; }
 
---surface:#131C30;--surface2:#1A2540;--border:#1E2D4A;--border2:#283A6A;--text:#EDF0F7;--text2:#A8B4CC;--muted:#5C6E8A;--card-shadow:0 2px 16px rgba(0,0,0,.3)}
+/* ═══ DARK MODE — override de tous les tokens design (audit B-fix dark)
+       Avant ce bloc, seul --bg n'était pas redéfini et trois lignes orphelines
+       de variables traînaient sans sélecteur, donc le toggle ne changeait
+       que la couleur de fond du body — tout le reste restait blanc/light.
+   ═══ */
+[data-theme="dark"]:root {
+  --bg:#0E1729;
+  --surface:#131C30; --surface2:#1A2540;
+  --border:#1E2D4A; --border2:#283A6A;
+  --text:#EDF0F7; --text2:#A8B4CC; --muted:#5C6E8A;
+  --card-shadow:0 2px 16px rgba(0,0,0,.3);
+  --ah-bg:#0E1729; --ah-surface:#131C30; --ah-surface2:#1A2540;
+  --ah-border:#1E2D4A; --ah-border2:#283A6A;
+  --ah-text:#EDF0F7; --ah-text2:#A8B4CC; --ah-muted:#5C6E8A;
+}
 body{background:var(--bg);color:var(--text);font-family:'Outfit',sans-serif;display:flex;justify-content:center;align-items:center;transition:background .3s,color .3s}
 #app{width:100%;max-width:430px;height:100vh;height:100dvh;background:var(--bg);position:relative;overflow:hidden;display:flex;flex-direction:column}
 .view{display:none;flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding-bottom:90px}
@@ -11985,6 +12002,10 @@ function switchTab(tab){
     // qui est la section par défaut. Les autres renderers s'exécutent à la
     // demande quand l'utilisateur change de sub-tab.
     try { renderSuiviOverview(); } catch(e) { console.warn('renderSuiviOverview', e); }
+  } else {
+    // Quitter Tracks : on lève la classe qui peut masquer la FAB chronomètre
+    // pour éviter qu'elle reste cachée sur les autres onglets.
+    try { document.body.classList.remove('ah-tests-no-fab'); } catch(e) {}
   }
   // Quand on entre dans Train : rafraîchir le verrouillage des cartes + init lib
   if (tab === 'train') {
@@ -14945,6 +14966,9 @@ function showSec(id,_el) {
   if(id==='overview') { try { renderSuiviOverview(); } catch(e) { console.warn('overview', e); } }
   if(id==='tests')    { try { renderTestsLanding();   } catch(e) { console.warn('tests landing', e); } }
   if(id==='sessions') { try { renderSessionsList();   } catch(e) { console.warn('sessions', e); } }
+  // Quand on quitte le landing Tests : on retire la classe qui masque la FAB
+  // chronomètre, sinon elle reste cachée partout après une visite des Tests.
+  if (id !== 'tests') { try { document.body.classList.remove('ah-tests-no-fab'); } catch(e) {} }
 }
 
 // ══════════════════════════════════
@@ -23868,10 +23892,16 @@ function fbRefreshAccountSection(fbUser) {
                      '<span style="font-size:10px;color:var(--muted);margin-top:4px;display:inline-block">Connecté via ' + providers + '</span>';
     if (banner) banner.style.display = fbUser.emailVerified ? 'none' : 'block';
     if (signOutBtn) signOutBtn.style.display = 'block';
-    // Bouton "Changer mon mot de passe" : visible uniquement pour les
-    // comptes email/password. Les comptes Google-only n'ont pas de
-    // mot de passe à changer (auth déléguée à Google).
-    if (changePwdBtn) changePwdBtn.style.display = providerIds.indexOf('password') !== -1 ? 'block' : 'none';
+    // Bouton "Changer mon mot de passe" : affiché pour tous les comptes
+    // connectés. Pour un compte Google-only, l'email de réinit Firebase
+    // crée également un mot de passe — c'est donc aussi un "définir mon
+    // mot de passe" pour ces comptes (utile si l'user veut une 2e
+    // méthode d'auth pour ne pas dépendre de Google).
+    if (changePwdBtn) {
+      changePwdBtn.style.display = 'block';
+      var hasPwd = providerIds.indexOf('password') !== -1;
+      changePwdBtn.textContent = hasPwd ? '🔑 Changer mon mot de passe' : '🔑 Définir un mot de passe';
+    }
   } else {
     info.innerHTML = '<span style="color:var(--muted)">Aucun compte connecté. Tes données sont stockées localement sur cet appareil uniquement.</span>';
     if (banner) banner.style.display = 'none';
@@ -25515,54 +25545,137 @@ function renderSuiviOverview() {
 }
 window.renderSuiviOverview = renderSuiviOverview;
 
-// ─────────── SECTION : TESTS — landing ───────────
+// ─────────── SECTION : TESTS — landing (V2 minimaliste premium) ───────────
+// Détection des 3 états par test :
+//   - none  : aucun résultat connu → "Pas encore testé" + bouton Commencer
+//   - done  : score calculé, on affiche delta + Refaire / Résultats
+//   - inProgress : test commencé non terminé → bouton Continuer
+function _testsLandingState(testType) {
+  // SAT : flag de reprise localStorage si présent.
+  if (testType === 'SAT') {
+    var raw = null;
+    try { raw = localStorage.getItem('ah_sat_inprogress'); } catch(e) {}
+    if (raw) return 'inProgress';
+  }
+  // SET : reprise détectée si setCurrentStep > 0 en mémoire OU si historique
+  //       a un set_*_a1 sans avoir été marqué satDone récemment.
+  if (testType === 'SET') {
+    if (typeof setCurrentStep === 'number' && setCurrentStep > 0) return 'inProgress';
+  }
+  var tests = _suiviTests();
+  return tests.length > 0 ? 'done' : 'none';
+}
+
+// Delta du score entre les 2 derniers tests, en points.
+function _testsScoreDelta() {
+  var tests = _suiviTests();
+  if (tests.length < 2) return null;
+  var profile = {}; try { profile = JSON.parse(localStorage.getItem('ah_profile') || '{}'); } catch(e) {}
+  var sexe = (profile.sexe === 'femme') ? 'femme' : 'homme';
+  // Approximation : on n'a qu'un seul snapshot de métriques, donc on compare
+  // jump et sprint60 directement entre dernier et avant-dernier.
+  var d = _trProgressionDelta(); if (!d) return null;
+  // Pondère grossièrement : jump=40%, sprint=20%, autres=40% (ignoré ici).
+  var pts = 0, n = 0;
+  if (d.jump != null && d.reach != null) { pts += (d.jump - d.reach) * 0.5; n++; }
+  if (d.sprint != null) { pts += (-d.sprint) * 8; n++; } // -0.1s ≈ +0.8pts
+  return n ? Math.round(pts) : null;
+}
+
 function renderTestsLanding() {
   var c = document.getElementById('testsLandingBody'); if (!c) return;
   var profile = {}; try { profile = JSON.parse(localStorage.getItem('ah_profile') || '{}'); } catch(e) {}
   var sexe = (profile.sexe === 'femme') ? 'femme' : 'homme';
   var metrics = (typeof ascGetUserMetrics === 'function') ? ascGetUserMetrics() : {};
   var score   = (typeof ascCalcGlobalScore === 'function') ? ascCalcGlobalScore(metrics, sexe) : null;
-  var tests = _suiviTests();
-  var lastTest = tests[tests.length - 1];
-  var lastDate = lastTest ? _suiviFmtDate(lastTest.date) : 'Jamais';
+  var tests   = _suiviTests();
+  var lastDate = tests.length ? _suiviFmtDate(tests[tests.length-1].date) : null;
+  var delta = _testsScoreDelta();
 
-  function _testCard(kicker, name, desc, scoreVal, dateTxt, onclickStart) {
-    var h = '<div style="background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:16px;margin-bottom:12px">';
-    h += '<div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px">';
-    h += '<div><div style="font-family:\'JetBrains Mono\',monospace;font-size:9px;letter-spacing:.20em;color:var(--gold);text-transform:uppercase;margin-bottom:4px">' + kicker + '</div>';
-    h += '<div style="font-family:\'Bebas Neue\',sans-serif;font-size:24px;letter-spacing:.04em;color:var(--text);line-height:1">' + name + '</div></div>';
-    h += '<div style="text-align:right"><div style="font-family:\'Bebas Neue\',sans-serif;font-size:28px;line-height:1;color:var(--gold)">' + (scoreVal != null ? scoreVal : '—') + '<span style="font-size:14px;color:var(--muted)"> / 100</span></div></div>';
+  // Construit une carte selon l'état (none / done / inProgress).
+  function _testCardV2(opts) {
+    var state = opts.state;
+    var name  = opts.name;
+    var badge = opts.badge;
+    var desc  = opts.desc;
+    var type  = opts.type; // 'SAT' ou 'SET'
+
+    var h  = '<div style="background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:18px;margin-bottom:14px;box-shadow:0 1px 2px rgba(20,30,60,.04)">';
+
+    // ── Header : badge gauche + statut/score droite ──
+    h += '<div style="display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:10px">';
+    h += '<div style="font-family:\'JetBrains Mono\',monospace;font-size:9px;letter-spacing:.20em;color:rgba(197,164,78,.85);text-transform:uppercase;font-weight:700">' + badge + '</div>';
+    if (state === 'inProgress') {
+      h += '<div style="font-family:\'JetBrains Mono\',monospace;font-size:9px;letter-spacing:.16em;color:#F59E0B;text-transform:uppercase;font-weight:700;padding:3px 8px;background:rgba(245,158,11,.10);border-radius:999px">En cours</div>';
+    } else if (state === 'done' && score != null) {
+      h += '<div style="text-align:right">';
+      h += '<div style="font-family:\'Bebas Neue\',sans-serif;font-size:24px;line-height:1;color:var(--navy)">' + score + '<span style="font-size:13px;color:var(--muted)"> / 100</span></div>';
+      if (delta != null && delta !== 0) {
+        var c = delta > 0 ? 'var(--gold)' : '#EF4444';
+        var sign = delta > 0 ? '+' : '';
+        h += '<div style="font-family:\'Outfit\',sans-serif;font-size:11px;font-weight:700;color:' + c + ';margin-top:2px">' + sign + delta + ' pts</div>';
+      }
+      h += '</div>';
+    } else {
+      h += '<div style="font-family:\'Outfit\',sans-serif;font-size:11px;color:var(--muted)">Pas encore testé</div>';
+    }
     h += '</div>';
-    h += '<div style="font-size:12px;color:var(--text2);line-height:1.5;margin-bottom:10px">' + desc + '</div>';
-    h += '<div style="font-size:11px;color:var(--muted);margin-bottom:12px">Dernier test : ' + dateTxt + '</div>';
+
+    // ── Titre + description courte ──
+    h += '<div style="font-family:\'Bebas Neue\',sans-serif;font-size:26px;letter-spacing:.04em;color:var(--navy);line-height:1;margin-bottom:6px">' + name + '</div>';
+    h += '<div style="font-family:\'Outfit\',sans-serif;font-size:12.5px;color:var(--text2);line-height:1.5;margin-bottom:' + (state === 'done' ? '6' : '14') + 'px">' + desc + '</div>';
+    if (state === 'done' && lastDate) {
+      h += '<div style="font-family:\'Outfit\',sans-serif;font-size:11px;color:var(--muted);margin-bottom:14px">Dernier test : ' + lastDate + '</div>';
+    } else if (state === 'inProgress') {
+      h += '<div style="font-family:\'Outfit\',sans-serif;font-size:11.5px;color:var(--text2);margin-bottom:14px">Test commencé — reprends là où tu en étais.</div>';
+    }
+
+    // ── Boutons selon état ──
+    var btnPrimary = 'background:linear-gradient(135deg,#D4B45E,#C5A44E 55%,#B89238);border:none;color:var(--navy);font-family:\'Bebas Neue\',sans-serif;letter-spacing:.12em;font-size:13px;border-radius:10px;padding:13px;cursor:pointer;box-shadow:0 4px 12px rgba(197,164,78,.22)';
+    var btnSecond  = 'background:#fff;border:1.5px solid var(--border2);color:var(--navy);font-family:\'Outfit\',sans-serif;font-weight:700;font-size:12.5px;border-radius:10px;padding:13px;cursor:pointer';
+    var goLabel = type === 'SAT' ? 'sat' : 'set';
+
     h += '<div style="display:flex;gap:8px">';
-    h += '<button onclick="' + onclickStart + '" style="flex:1;padding:12px;background:linear-gradient(135deg,#D4B45E,#C5A44E 55%,#B89238);border:none;border-radius:10px;font-family:\'Bebas Neue\',sans-serif;font-size:13px;letter-spacing:.14em;color:var(--navy);cursor:pointer">FAIRE LE TEST</button>';
-    h += '<button onclick="openTestResult(\'SET\')" style="padding:12px 14px;background:transparent;border:1.5px solid var(--border2);border-radius:10px;font-family:\'Outfit\',sans-serif;font-size:12px;color:var(--text2);cursor:pointer">Voir résultats</button>';
-    h += '</div></div>';
+    if (state === 'inProgress') {
+      h += '<button onclick="showSec(\'' + goLabel + '\')" style="flex:1;' + btnPrimary + '">CONTINUER</button>';
+    } else if (state === 'done') {
+      h += '<button onclick="showSec(\'' + goLabel + '\')" style="flex:1;' + btnPrimary + '">REFAIRE</button>';
+      h += '<button onclick="openTestResult(\'' + type + '\')" style="flex:0 0 auto;padding-left:16px;padding-right:16px;' + btnSecond + '">Résultats</button>';
+    } else {
+      h += '<button onclick="showSec(\'' + goLabel + '\')" style="flex:1;' + btnPrimary + '">COMMENCER</button>';
+    }
+    h += '</div>';
+    h += '</div>';
     return h;
   }
 
   var html = '';
-  html += '<div style="font-family:\'Outfit\',sans-serif;font-size:13px;color:var(--text2);line-height:1.5;margin-bottom:14px">Les tests sont des bilans physiques. Ils mesurent ton niveau global et ta priorité de progression — séparés de tes séances d\'entraînement.</div>';
+  html += '<div style="font-family:\'Outfit\',sans-serif;font-size:13px;color:var(--text2);line-height:1.55;margin-bottom:14px">Tes bilans mesurent ton niveau physique et ta progression.</div>';
 
-  html += _testCard(
-    'Bilan complet · 30 min',
-    'SAT',
-    'Détente, force, sprint, agilité, mobilité. Le bilan athlétique de référence.',
-    score,
-    lastDate,
-    'showSec(\'sat\')'
-  );
-  html += _testCard(
-    'Bilan SET · 20-30 min',
-    'SET',
-    'Super Explosif Test — détente, sprint 60m, lane agility, 1RM force.',
-    score,
-    lastDate,
-    'showSec(\'set\')'
-  );
+  html += _testCardV2({
+    type: 'SAT',
+    badge: 'BILAN COMPLET · 30 MIN',
+    name: 'SAT',
+    desc: 'Détente, force, sprint, agilité, mobilité.',
+    state: _testsLandingState('SAT')
+  });
+
+  html += _testCardV2({
+    type: 'SET',
+    badge: 'BILAN RAPIDE · 20–30 MIN',
+    name: 'SET',
+    desc: 'Détente, sprint 60m, agilité, force.',
+    state: _testsLandingState('SET')
+  });
 
   c.innerHTML = html;
+
+  // Bouton flottant chronomètre : visible uniquement si un test est en cours
+  // pendant qu'on est sur le landing Tests. Sinon caché pour ne pas polluer.
+  try {
+    var anyInProgress = _testsLandingState('SAT') === 'inProgress' || _testsLandingState('SET') === 'inProgress';
+    document.body.classList.toggle('ah-tests-no-fab', !anyInProgress);
+  } catch(e) {}
 }
 window.renderTestsLanding = renderTestsLanding;
 
