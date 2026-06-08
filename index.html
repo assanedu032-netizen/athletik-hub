@@ -2016,6 +2016,120 @@ body:has(.scr.on) .tim-fab{display:none}
 [data-theme="dark"] body { background: var(--bg) !important; }
 [data-theme="dark"] #app { background: var(--bg) !important; }
 
+/* ═══════════════════════════════════════════════════════════════════
+   DARK MODE — refonte premium ciblée (user brief : harmoniser, lisibilité,
+   nav du bas qui contraste trop, cards verrouillées trop vides, textes
+   illisibles dans certaines cards à fond blanc hardcodé).
+
+   Palette appliquée :
+     bg principal    = #0E1729   (--bg, déjà défini ci-dessus)
+     card primaire   = #131C30   (--surface)
+     card élevée     = #1A2540   (--surface2)
+     borders subtle  = #1E2D4A   (--border) / #283A6A (--border2)
+     navy actif      = #2A4575   (variant clair pour les éléments interactifs)
+     gold accent     = #D4B86A   (légèrement plus brillant en dark)
+     texte principal = #EDF0F7
+     texte secondaire= #A8B4CC
+   ═══════════════════════════════════════════════════════════════════ */
+
+[data-theme="dark"] {
+  /* Petite touche : gold légèrement plus chaud/brillant en dark pour
+     mieux ressortir sur le navy profond. */
+  --ah-gold:#D4B86A;
+  --gold:#D4B86A;
+}
+
+/* Bottom nav : passe en sombre en dark mode (le hardcoded background:#fff
+   du sélecteur ah-bottomnav est aussi remplacé par var(--ah-surface) plus
+   bas dans la feuille, mais ici on renforce l'effet avec un blur + ombre
+   subtile pour le coté premium). */
+[data-theme="dark"] .ah-bottomnav {
+  background: rgba(19, 28, 48, .92) !important;
+  border-top: 1px solid rgba(255,255,255,.06) !important;
+  box-shadow: 0 -2px 12px rgba(0,0,0,.30) !important;
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+}
+[data-theme="dark"] .ah-bottomnav .ni,
+[data-theme="dark"] .ah-bottomnav .nav-item { color: rgba(255,255,255,.55) !important; }
+[data-theme="dark"] .ah-bottomnav .ni.on,
+[data-theme="dark"] .ah-bottomnav .nav-item.on { color: var(--ah-gold) !important; }
+
+/* Forcer les cards à fond blanc hardcodé (inline style="background:#fff")
+   à utiliser le surface sombre. La spécificité matche n'importe quel élément
+   avec un style inline contenant "background:#fff". On force aussi le texte. */
+[data-theme="dark"] [style*="background:#fff"],
+[data-theme="dark"] [style*="background: #fff"],
+[data-theme="dark"] [style*="background:#FFFFFF"],
+[data-theme="dark"] [style*="background: #FFFFFF"] {
+  background: var(--ah-surface) !important;
+  color: var(--ah-text) !important;
+}
+
+/* Programme cards verrouillées (Train > Programmes) : on remplace le voile
+   "blackout" qui rendait l'image et le titre quasi noirs par un voile
+   coloré navy + bordure gold subtile + pill "PROGRAMME REQUIS" lisible. */
+[data-theme="dark"] .pg-card.locked,
+[data-theme="dark"] .programme-card.locked,
+[data-theme="dark"] [data-locked="1"] {
+  background: linear-gradient(180deg, rgba(36,59,107,.6), rgba(14,23,41,.85)) !important;
+  border: 1px solid rgba(212,184,106,.18) !important;
+  box-shadow: 0 4px 14px rgba(0,0,0,.25) !important;
+}
+[data-theme="dark"] .pg-card.locked img,
+[data-theme="dark"] .programme-card.locked img,
+[data-theme="dark"] [data-locked="1"] img {
+  filter: grayscale(.4) brightness(.65) !important;
+  opacity: .55;
+}
+[data-theme="dark"] .pg-lock-pill,
+[data-theme="dark"] [class*="locked"] [class*="pill"],
+[data-theme="dark"] [class*="locked"] [class*="badge"] {
+  background: rgba(212,184,106,.12) !important;
+  border: 1px solid rgba(212,184,106,.35) !important;
+  color: var(--ah-gold) !important;
+}
+
+/* Cards (engagement / lecture / today / scoreboard) — légère teinte
+   gradient pour ne pas tomber dans un "tout noir plat". */
+[data-theme="dark"] .ah-card,
+[data-theme="dark"] .card,
+[data-theme="dark"] .pgcard-program,
+[data-theme="dark"] .today-card,
+[data-theme="dark"] .home-hero,
+[data-theme="dark"] .ah-scoreboard {
+  background: linear-gradient(180deg, var(--ah-surface) 0%, var(--ah-surface2) 100%) !important;
+  border: 1px solid var(--ah-border2) !important;
+  box-shadow: 0 4px 14px rgba(0,0,0,.25) !important;
+}
+
+/* Sub-tabs (Programmes / Librairie / Builder, et celles de Suivi) :
+   inactifs plus discrets, actif en navy clair + texte blanc cassé. */
+[data-theme="dark"] .sub-tab {
+  background: var(--ah-surface) !important;
+  border: 1px solid var(--ah-border2) !important;
+  color: var(--ah-text2) !important;
+}
+[data-theme="dark"] .sub-tab.on {
+  background: #2A4575 !important;
+  border-color: #2A4575 !important;
+  color: #fff !important;
+  box-shadow: 0 4px 12px rgba(42,69,117,.4) !important;
+}
+
+/* Hardcodés "rgba(255,255,255,.04)" et bordures hardcodés trop fines :
+   éclaircit pour respect du contraste. */
+[data-theme="dark"] [style*="rgba(255,255,255,.04)"] { background: rgba(255,255,255,.06) !important; }
+[data-theme="dark"] [style*="rgba(255,255,255,.06)"] { background: rgba(255,255,255,.08) !important; }
+
+/* Texte gold petit (.18em+ letter-spacing) — on garde la couleur mais on
+   bump le weight pour la lisibilité. */
+[data-theme="dark"] [style*="color:var(--ah-gold)"][style*="font-size:10px"],
+[data-theme="dark"] [style*="color: var(--ah-gold)"][style*="font-size: 10px"],
+[data-theme="dark"] [style*="color:var(--ah-gold)"][style*="font-size:11px"] {
+  font-weight: 800 !important;
+}
+
 /* Light mode screens */
 [data-theme="light"] .scr { background: #F5F6FA !important; }
 [data-theme="light"] #splash { background: radial-gradient(ellipse at 50% 35%, #243B6B 0%, #243B6B 45%, #0F1A30 100%) !important; }
@@ -3405,7 +3519,9 @@ html body #result, html body #nutriResult{
   max-width: 430px !important;
 }
 
-/* 2) Barre nav — fond blanc, bordure haute fine, ombre très douce */
+/* 2) Barre nav — utilise --ah-surface (#FFFFFF en light, #131C30 en dark)
+      pour s'harmoniser avec le mode actif. Avant : background:#fff !important
+      hardcodé → nav blanche flashy en dark mode = contraste cassant. */
 .ah-bottomnav{
   display: grid !important;
   grid-template-columns: repeat(5, 1fr) !important;
@@ -3416,7 +3532,7 @@ html body #result, html body #nutriResult{
   border: none !important;
   border-top: 1px solid var(--ah-border) !important;
   box-shadow: 0 -2px 12px rgba(20,30,60,.04) !important;
-  background: #fff !important;
+  background: var(--ah-surface) !important;
   box-sizing: border-box !important;
 }
 
@@ -4405,16 +4521,16 @@ html body #result, html body #nutriResult{
 
     <!-- Contenu bas — kicker + headline + texte + CTAs -->
     <div style="padding:0 22px 28px;position:relative;z-index:1">
-      <div style="font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:.22em;color:var(--ah-gold);text-transform:uppercase;margin-bottom:14px">Maintenant · Ou jamais</div>
+      <div style="font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:.22em;color:var(--ah-gold);text-transform:uppercase;margin-bottom:14px">Performance · Discipline · Progression</div>
       <h1 style="font-family:'Bebas Neue',sans-serif;font-size:56px;line-height:.95;color:#fff;letter-spacing:.02em;margin:0 0 16px">
-        ARRACHE<br>
-        <span style="color:var(--ah-gold)">TON SAUT.</span>
+        EXPLOSE TA<br>
+        <span style="color:var(--ah-gold)">DÉTENTE.</span>
       </h1>
       <p style="font-family:'Outfit',sans-serif;font-size:14.5px;line-height:1.55;color:rgba(255,255,255,.78);margin:0 0 28px;max-width:340px">
-        T'as essayé. T'as scrollé. T'as abandonné. <strong style="color:#fff;font-weight:700">Cette fois, c'est mesuré.</strong> Programme du livre, coaché par Titan. Zéro bullshit.
+        Ton livre t'a donné la méthode. Titan te donne la mission du jour : t'entraîner, mesurer, progresser. <strong style="color:#fff;font-weight:700">Pas de blabla.</strong> Juste du travail qui se voit.
       </p>
 
-      <button onclick="welcomeStart()" style="width:100%;padding:17px 20px;background:var(--ah-gold);color:var(--ah-navy);border:none;border-radius:12px;font-family:'Bebas Neue',sans-serif;font-size:16px;letter-spacing:.12em;cursor:pointer;box-shadow:0 8px 24px rgba(197,164,78,.32);margin-bottom:14px">COMMENCER MON PARCOURS</button>
+      <button onclick="welcomeStart()" style="width:100%;padding:17px 20px;background:var(--ah-gold);color:var(--ah-navy);border:none;border-radius:12px;font-family:'Bebas Neue',sans-serif;font-size:16px;letter-spacing:.12em;cursor:pointer;box-shadow:0 8px 24px rgba(197,164,78,.32);margin-bottom:14px">COMMENCER MON ASCENSION</button>
 
       <div style="display:flex;justify-content:center;gap:8px;align-items:center">
         <button onclick="welcomeLogin()" style="background:none;border:none;color:rgba(255,255,255,.7);font-family:'Outfit',sans-serif;font-size:13px;text-decoration:underline;text-underline-offset:3px;cursor:pointer;padding:6px 8px">J'ai déjà un compte</button>
@@ -8769,7 +8885,7 @@ function renderTitanSmartCards(){
   var lec = titanGetSmartLecture();
   var html = '';
   if (eng) {
-    html += '<div style="margin:14px 16px 0;padding:14px 16px;background:#fff;border:1px solid var(--ah-border);border-left:3px solid var(--ah-gold);border-radius:14px;box-shadow:0 2px 8px rgba(20,30,60,.04)">'
+    html += '<div style="margin:14px 16px 0;padding:14px 16px;background:var(--ah-surface);border:1px solid var(--ah-border);border-left:3px solid var(--ah-gold);border-radius:14px;box-shadow:0 2px 8px rgba(20,30,60,.04)">'
          +   '<div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">'
          +     '<div style="width:24px;height:24px;border-radius:50%;background:linear-gradient(135deg,var(--ah-navy),#0F1A30);color:var(--ah-gold);display:flex;align-items:center;justify-content:center;font-family:\'Bebas Neue\',sans-serif;font-size:11px;letter-spacing:.04em">T</div>'
          +     '<div style="font-family:\'JetBrains Mono\',monospace;font-size:10px;letter-spacing:.18em;font-weight:700;color:var(--ah-gold);text-transform:uppercase">' + eng.title + '</div>'
