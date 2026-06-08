@@ -25431,13 +25431,18 @@ function renderSETStep() {
           : 'background:var(--surface2)';
         var iconHtml = hasPhoto
           ? '<div style="position:absolute;bottom:6px;right:6px;background:rgba(34,197,94,.95);border-radius:50%;width:22px;height:22px;display:flex;align-items:center;justify-content:center;color:#fff;font-size:12px;font-weight:800;border:2px solid #fff">✓</div>'
-          : '<div style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;color:var(--muted)"><div style="font-size:24px">📷</div><div style="font-size:10px;font-weight:700;letter-spacing:1px;margin-top:2px">' + label + '</div></div>';
+          : '<div style="display:flex;flex-direction:column;align-items:center;justify-content:center;width:100%;height:100%;color:var(--muted)"><div style="font-size:24px">📷</div><div style="font-size:10px;font-weight:700;letter-spacing:1px;margin-top:2px">' + label + '</div></div>';
+        // <label> au lieu d'un <div onclick> + input caché : sur mobile
+        // (Safari iOS, Samsung Internet, certains Android Chrome), cliquer
+        // un input en display:none ne déclenche PAS le file picker.
+        // Pattern <label for="id"> est natif et marche partout.
+        // L'input est rendu visuellement invisible mais reste "cliquable"
+        // pour respecter les a11y et garantir le déclenchement du picker.
         return ''
-          + '<div style="position:relative;flex:1;aspect-ratio:3/4;border:1.5px ' + (hasPhoto ? 'solid var(--gold)' : 'dashed var(--border2)') + ';border-radius:12px;overflow:hidden;cursor:pointer;' + prevStyle + '" onclick="document.getElementById(\'physioPhotoIn_' + slot + '\').click()">'
-          + (hasPhoto ? '' : iconHtml)
-          + (hasPhoto ? iconHtml : '')
-          + '</div>'
-          + '<input id="physioPhotoIn_' + slot + '" type="file" accept="image/*" capture="environment" style="display:none" onchange="physioPickPhoto(\'' + slot + '\', event)">';
+          + '<label for="physioPhotoIn_' + slot + '" style="position:relative;flex:1;aspect-ratio:3/4;border:1.5px ' + (hasPhoto ? 'solid var(--gold)' : 'dashed var(--border2)') + ';border-radius:12px;overflow:hidden;cursor:pointer;display:block;' + prevStyle + '">'
+          +    iconHtml
+          + '</label>'
+          + '<input id="physioPhotoIn_' + slot + '" type="file" accept="image/*" capture="environment" style="position:absolute;width:1px;height:1px;opacity:0;overflow:hidden;clip:rect(0 0 0 0);pointer-events:none" onchange="physioPickPhoto(\'' + slot + '\', event)">';
       };
       html += '<div style="margin-top:18px">';
       html += '<div style="font-size:10px;font-weight:700;color:var(--muted);letter-spacing:1.5px;text-transform:uppercase;margin-bottom:8px">Photos de référence — 3 angles</div>';
