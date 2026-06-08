@@ -6670,7 +6670,9 @@ window.tiResetOnEnter = function(){ window.tiShowStep(1); };
           <div style="font-family:'Bebas Neue',sans-serif;font-size:28px;color:#fff;letter-spacing:3px">NUTRITION</div>
           <div style="font-size:11px;color:rgba(255,255,255,.4);letter-spacing:2px;text-transform:uppercase">Mange comme tu t'entraînes</div>
         </div>
-        <div onclick="openNPI()" class="ah-npi-pill" style="cursor:pointer">
+        <!-- Pill "MON NPI" masqué : c'est Titan qui pilote l'analyse NPI en
+             arrière-plan, le client n'a pas besoin d'un bouton dédié ici. -->
+        <div onclick="openNPI()" class="ah-npi-pill" style="cursor:pointer;display:none">
           <span class="dot"></span>
           <span>MON NPI</span>
         </div>
@@ -7398,6 +7400,15 @@ window.tiResetOnEnter = function(){ window.tiShowStep(1); };
       <button class="se-fb-validate" id="seFbValidateBtn" onclick="window._seFbValidate()" style="display:none">Valider ma séance</button>
     </div>
   </div>
+</div>
+
+<!-- ═══ ÉCRAN DE RÉSULTAT POST-TEST (SAT / SET) — overlay plein écran ═══
+     Affiché à la fin d'un test pour : score + niveau + point fort/faible +
+     priorité Titan + progression vs précédent + détail + analyse + CTA.
+     Ouvert par openTestResult(testType, results). Fermé par closeTestResult().
+     Le contenu est injecté par renderTestResult() à l'ouverture. -->
+<div id="testResult" style="display:none;position:fixed;inset:0;z-index:1500;background:var(--bg);overflow-y:auto;-webkit-overflow-scrolling:touch">
+  <div id="testResultBody" style="max-width:520px;margin:0 auto;padding:18px 18px 32px"></div>
 </div>
 
 <!-- ═══ BODY FAT 7-SITES (overlay plein écran, ouvert depuis Tracks) ═══ -->
@@ -12350,8 +12361,15 @@ function renderUserData() {
   var lockedPill = document.getElementById('lockedSessionPill');
 
   if (programAttributed) {
-    // Mode complet : séance du jour
-    if (pcDur)  pcDur.textContent = 'AUJOURD\'HUI · SEMAINE ' + (user.weekNum || 1) + '/' + (user.totalWeeks || 12);
+    // Mode complet : séance du jour. La semaine courante n'est PAS stockée
+    // dans user.weekNum (qui restait figé à 2 d'origine). On la calcule
+    // dynamiquement à partir de l'historique des séances :
+    // 1 semaine = ~3 séances. Première semaine = 1 par défaut.
+    var _sess = 0;
+    try { _sess = (JSON.parse(localStorage.getItem('ah_set_history') || '[]') || []).length; } catch(e) {}
+    var _wk = Math.max(1, Math.min((user.totalWeeks || 12), Math.floor(_sess / 3) + 1));
+    user.weekNum = _wk;
+    if (pcDur)  pcDur.textContent = 'AUJOURD\'HUI · SEMAINE ' + _wk + '/' + (user.totalWeeks || 12);
     if (pcName) pcName.textContent = user.program;
     if (pcObj)  pcObj.textContent  = user.programObj;
     if (pill)   pill.style.display = 'none';
@@ -14978,6 +14996,10 @@ function calculateSAT() {
 
   document.getElementById('satForm').classList.add('hidden');
   document.getElementById('satResult').classList.remove('hidden');
+
+  // Ouvre l'écran de résultat unifié post-test (score + niveau + priorité + analyse).
+  // Surveille la fonction au cas où le bloc est chargé après cet appel (race).
+  setTimeout(function(){ try { if (typeof openTestResult === 'function') openTestResult('SAT'); } catch(e) {} }, 300);
 
   // Test terminé : effacer l'état "en cours" (mais conserver les valeurs comme dernier score)
   try {
@@ -25074,13 +25096,244 @@ function setFinish() {
   window.setAttemptCount = {};
 
   // 4. Feedback + navigation. Toast non-bloquant, puis bascule vers Moi
-  //    pour voir l'Athletik Score et les badges débloqués.
-  try { showToast('✓ SET enregistrée. Programme débloqué.', 'success'); }
-  catch(e) { alert('✓ SET enregistrée. Programme débloqué.'); }
+  //    pour voir l'Athletik Score, le point fort/faible, la priorité Titan.
   setTimeout(function(){
-    try { if (typeof switchTab === 'function') switchTab('moi'); } catch(e) {}
-  }, 600);
+    try { openTestResult('SET'); } catch(e) {
+      try { if (typeof switchTab === 'function') switchTab('moi'); } catch(_) {}
+    }
+  }, 250);
 }
+
+// ═══════════════════════════════════════════════
+// ÉCRAN DE RÉSULTAT POST-TEST (SAT / SET)
+// ───────────────────────────────────────────────
+// API publique : openTestResult(testType) — testType = 'SET' ou 'SAT'.
+// Lit le profil + l'historique pour calculer score, niveau, point fort,
+// point faible, priorité, progression vs précédent, et rend le tout.
+// ═══════════════════════════════════════════════
+var TR_LEVELS = [
+  { max:39,  name:'Débutant',       color:'#A8754A' },
+  { max:59,  name:'En construction',color:'#B8B8B8' },
+  { max:74,  name:'Athlétique',     color:'#C5A44E' },
+  { max:89,  name:'Explosif',       color:'#E0C77B' },
+  { max:100, name:'Élite',          color:'#FFD700' }
+];
+function _trLevel(score) {
+  if (score == null) return TR_LEVELS[0];
+  for (var i = 0; i < TR_LEVELS.length; i++) if (score <= TR_LEVELS[i].max) return TR_LEVELS[i];
+  return TR_LEVELS[TR_LEVELS.length-1];
+}
+function _trPhrase(score) {
+  if (score == null) return 'Premier test enregistré. On part de là.';
+  if (score < 40)  return 'Une vraie base à poser. Concentration sur les fondations.';
+  if (score < 60)  return 'Les fondations sont là. On construit dessus.';
+  if (score < 75)  return 'Bonne base. Maintenant, on corrige ce qui te limite.';
+  if (score < 90)  return 'Niveau solide. Reste à transformer la force en explosivité.';
+  return 'Niveau d\'exception. On peaufine et on cherche la régularité.';
+}
+function _trMetricLabel(key) {
+  return ({
+    detente:'Détente verticale', squat:'Squat', hipthrust:'Hip Thrust',
+    sdt:'Soulevé de terre', dc:'Développé couché', sprint30:'Sprint',
+    fms:'Mobilité (FMS)'
+  })[key] || key;
+}
+function _trTitanAnalysis(score, weakLabel) {
+  // Texte court rule-based — pas d'appel API pour le MVP.
+  var base = score == null
+    ? 'Premier bilan posé. '
+    : (score < 50 ? 'Tu démarres. ' :
+       score < 70 ? 'Tu as une base correcte. ' :
+       score < 85 ? 'Tu as une bonne base athlétique. ' :
+                    'Niveau d\'élite. ');
+  if (weakLabel) return base + 'Ta priorité est claire : améliorer ta ' + weakLabel.toLowerCase() + '. Le prochain bloc doit cibler ce point précis sans négliger ton point fort.';
+  return base + 'Continue à mesurer pour faire ressortir un vrai point d\'appui.';
+}
+
+// Lit l'historique SET et compare la dernière entrée à l'avant-dernière.
+function _trProgressionDelta() {
+  var h = [];
+  try { h = JSON.parse(localStorage.getItem('ah_set_history') || '[]'); } catch(e) {}
+  if (h.length < 2) return null;
+  var cur = h[h.length-1].values || {};
+  var prev = h[h.length-2].values || {};
+  function d(k){
+    var a = parseFloat(cur[k]); var b = parseFloat(prev[k]);
+    if (!isFinite(a) || !isFinite(b)) return null;
+    return +(a - b).toFixed(2);
+  }
+  return {
+    jump:    d('set_jump'),
+    reach:   d('set_reach'),
+    sprint:  d('set_sprint60'),
+    laneAg:  d('set_laneAg'),
+    feet94:  d('set_feet94'),
+    squat1RM:d('squat_1rm'),
+    sdt1RM:  d('sdt_1rm'),
+    ht1RM:   d('ht_1rm'),
+    dc1RM:   d('dc_1rm')
+  };
+}
+
+function _trFmt(delta, unit, inverse) {
+  // inverse=true → baisse = positif (sprint).
+  if (delta == null) return null;
+  var positive = inverse ? delta < 0 : delta > 0;
+  var neutral  = delta === 0;
+  var sign = delta > 0 ? '+' : '';
+  var color = neutral ? 'var(--muted)' : (positive ? '#22C55E' : '#EF4444');
+  return { txt: sign + delta + ' ' + unit, color: color };
+}
+
+function openTestResult(testType) {
+  var el = document.getElementById('testResult'); if (!el) return;
+  renderTestResult(testType);
+  el.style.display = 'block';
+  el.scrollTop = 0;
+  try { document.body.style.overflow = 'hidden'; } catch(e) {}
+}
+function closeTestResult(target) {
+  var el = document.getElementById('testResult'); if (!el) return;
+  el.style.display = 'none';
+  try { document.body.style.overflow = ''; } catch(e) {}
+  if (target === 'program') { try { switchTab('home'); } catch(e) {} }
+  else if (target === 'suivi') { try { switchTab('moi'); } catch(e) {} }
+  else { try { switchTab('home'); } catch(e) {} }
+}
+window.openTestResult = openTestResult;
+window.closeTestResult = closeTestResult;
+
+function renderTestResult(testType) {
+  var body = document.getElementById('testResultBody'); if (!body) return;
+  var label = testType === 'SAT' ? 'SAT' : 'SET';
+  var profile = {}; try { profile = JSON.parse(localStorage.getItem('ah_profile') || '{}'); } catch(e) {}
+  var sexe = (profile.sexe === 'femme') ? 'femme' : 'homme';
+  var metrics = (typeof ascGetUserMetrics === 'function') ? ascGetUserMetrics() : {};
+  var score = (typeof ascCalcGlobalScore === 'function') ? ascCalcGlobalScore(metrics, sexe) : null;
+  var lvl = _trLevel(score);
+
+  // Point fort / faible : meilleur et pire en % de niveau
+  var ranked = Object.keys(metrics).map(function(k){
+    var pct = (typeof ascValueToPercent === 'function') ? ascValueToPercent(k, metrics[k], sexe) : 0;
+    return { key:k, pct:pct };
+  }).sort(function(a,b){ return b.pct - a.pct; });
+  var strong = ranked[0] || null;
+  var weak   = ranked.length > 1 ? ranked[ranked.length-1] : null;
+  var priorityKey = weak ? weak.key : null;
+
+  var hist = [];
+  try { hist = JSON.parse(localStorage.getItem('ah_set_history') || '[]'); } catch(e) {}
+  var isFirstTest = hist.length <= 1;
+  var deltas = _trProgressionDelta();
+
+  var html = '';
+
+  // Bouton fermer + titre
+  html += '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">';
+  html += '<button onclick="closeTestResult()" aria-label="Fermer" style="background:rgba(0,0,0,.04);border:none;border-radius:50%;width:36px;height:36px;font-size:18px;color:var(--text2);cursor:pointer">×</button>';
+  html += '<div style="font-family:\'JetBrains Mono\',monospace;font-size:10px;letter-spacing:.22em;color:var(--gold);text-transform:uppercase">Bilan ' + label + '</div>';
+  html += '<div style="width:36px"></div>';
+  html += '</div>';
+
+  html += '<div style="font-family:\'Bebas Neue\',sans-serif;font-size:30px;letter-spacing:.04em;color:var(--text);line-height:1">' + label + ' TERMINÉ.</div>';
+  html += '<div style="font-family:\'Outfit\',sans-serif;font-size:13.5px;color:var(--text2);margin-top:6px;line-height:1.5">Voici ton niveau actuel et ta priorité de progression.</div>';
+
+  // 1. HERO — Score + niveau + phrase
+  html += '<div style="margin-top:18px;background:linear-gradient(135deg,var(--navy) 0%,#0F1B33 100%);border-radius:18px;padding:24px 22px;color:#fff;position:relative;overflow:hidden;box-shadow:0 12px 30px rgba(20,30,60,.18)">';
+  html += '<div aria-hidden="true" style="position:absolute;top:-40%;left:50%;transform:translateX(-50%);width:280px;height:280px;background:radial-gradient(circle,rgba(197,164,78,.18),transparent 60%);pointer-events:none"></div>';
+  html += '<div style="position:relative;z-index:1;text-align:center">';
+  html += '<div style="font-family:\'JetBrains Mono\',monospace;font-size:10px;letter-spacing:.24em;color:var(--gold);text-transform:uppercase;margin-bottom:6px">Athletic Score</div>';
+  var scoreTxt = score != null ? score : '—';
+  html += '<div style="font-family:\'Bebas Neue\',sans-serif;font-size:76px;line-height:1;color:#fff;letter-spacing:.02em">' + scoreTxt + '<span style="font-size:32px;color:rgba(255,255,255,.4)"> / 100</span></div>';
+  html += '<div style="display:inline-block;margin-top:12px;padding:6px 14px;background:rgba(197,164,78,.18);border:1px solid rgba(197,164,78,.55);border-radius:999px;font-family:\'Bebas Neue\',sans-serif;font-size:14px;letter-spacing:.16em;color:' + lvl.color + '">' + lvl.name.toUpperCase() + '</div>';
+  html += '<div style="font-family:\'Outfit\',sans-serif;font-size:13px;color:rgba(255,255,255,.78);margin-top:14px;line-height:1.5;max-width:300px;margin-left:auto;margin-right:auto">' + _trPhrase(score) + '</div>';
+  html += '</div></div>';
+
+  // 2. 3 cartes : Point fort / Point faible / Priorité Titan
+  function _trMiniCard(kicker, value, accent) {
+    return '<div style="background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:12px 12px 14px;text-align:center">'
+      + '<div style="font-family:\'JetBrains Mono\',monospace;font-size:9px;letter-spacing:.18em;color:var(--muted);text-transform:uppercase;margin-bottom:6px">' + kicker + '</div>'
+      + '<div style="font-family:\'Bebas Neue\',sans-serif;font-size:18px;letter-spacing:.04em;color:' + (accent || 'var(--text)') + ';line-height:1.1">' + (value || '—') + '</div>'
+      + '</div>';
+  }
+  html += '<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-top:14px">';
+  html += _trMiniCard('Point fort',  strong ? _trMetricLabel(strong.key) : '—', '#22C55E');
+  html += _trMiniCard('Point faible',weak   ? _trMetricLabel(weak.key)   : '—', '#EF4444');
+  html += _trMiniCard('Priorité Titan', priorityKey ? _trMetricLabel(priorityKey) : 'Mesurer plus', 'var(--gold)');
+  html += '</div>';
+
+  // 3. Progression
+  html += '<div style="margin-top:22px"><div style="font-family:\'Bebas Neue\',sans-serif;font-size:18px;letter-spacing:.08em;color:var(--text);margin-bottom:10px">PROGRESSION</div>';
+  if (isFirstTest || !deltas) {
+    html += '<div style="background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:14px;font-family:\'Outfit\',sans-serif;font-size:13px;color:var(--text2);line-height:1.5">Premier test enregistré. Refais ce test dans 4 semaines pour voir ton évolution.</div>';
+  } else {
+    var rows = [];
+    var jumpDelta = (deltas.jump != null && deltas.reach != null) ? +(deltas.jump - deltas.reach).toFixed(1) : deltas.jump;
+    rows.push({ label:'Détente verticale', d:_trFmt(jumpDelta, 'cm') });
+    rows.push({ label:'Sprint 60m',         d:_trFmt(deltas.sprint, 'sec', true) });
+    rows.push({ label:'94 Feet Drill',      d:_trFmt(deltas.feet94, 'AR') });
+    rows.push({ label:'Lane Agility',       d:_trFmt(deltas.laneAg, 'sec', true) });
+    rows.push({ label:'Squat 1RM',          d:_trFmt(deltas.squat1RM, 'kg') });
+    rows.push({ label:'Hip Thrust 1RM',     d:_trFmt(deltas.ht1RM,    'kg') });
+    rows.push({ label:'SDT 1RM',            d:_trFmt(deltas.sdt1RM,   'kg') });
+    rows.push({ label:'DC 1RM',             d:_trFmt(deltas.dc1RM,    'kg') });
+    var rendered = rows.filter(function(r){ return r.d; });
+    if (!rendered.length) {
+      html += '<div style="background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:14px;font-family:\'Outfit\',sans-serif;font-size:13px;color:var(--text2)">Pas de comparaison possible — refais ce test pour mesurer l\'évolution.</div>';
+    } else {
+      html += '<div style="display:flex;flex-direction:column;gap:8px">';
+      rendered.forEach(function(r){
+        html += '<div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:10px 14px;display:flex;justify-content:space-between;align-items:center">'
+          + '<span style="font-family:\'Outfit\',sans-serif;font-size:13px;color:var(--text)">' + r.label + '</span>'
+          + '<span style="font-family:\'Bebas Neue\',sans-serif;font-size:16px;letter-spacing:.04em;color:' + r.d.color + '">' + r.d.txt + '</span>'
+          + '</div>';
+      });
+      html += '</div>';
+    }
+  }
+  html += '</div>';
+
+  // 4. Détail des performances
+  html += '<div style="margin-top:22px"><div style="font-family:\'Bebas Neue\',sans-serif;font-size:18px;letter-spacing:.08em;color:var(--text);margin-bottom:10px">DÉTAIL DES PERFORMANCES</div>';
+  function _trPerfCard(name, value, unit, comment) {
+    if (value == null) return '';
+    return '<div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:12px 14px;display:flex;justify-content:space-between;align-items:center;gap:10px">'
+      + '<div style="flex:1;min-width:0"><div style="font-family:\'Outfit\',sans-serif;font-size:13px;color:var(--text);font-weight:600">' + name + '</div>'
+      + (comment ? '<div style="font-size:11px;color:var(--muted);margin-top:2px">' + comment + '</div>' : '')
+      + '</div>'
+      + '<div style="font-family:\'Bebas Neue\',sans-serif;font-size:20px;letter-spacing:.04em;color:var(--gold);white-space:nowrap">' + value + (unit ? ' <span style="font-size:13px;color:var(--muted)">' + unit + '</span>' : '') + '</div>'
+      + '</div>';
+  }
+  function _trComment(key, val) {
+    var lv = (typeof ascGetLevel === 'function') ? ascGetLevel(key, val, sexe) : null;
+    if (!lv) return '';
+    return lv.name;
+  }
+  html += '<div style="display:flex;flex-direction:column;gap:8px">';
+  if (metrics.detente != null) html += _trPerfCard('Détente verticale', Math.round(metrics.detente), 'cm', _trComment('detente', metrics.detente));
+  if (metrics.sprint30 != null) html += _trPerfCard('Sprint (30m norm.)', metrics.sprint30.toFixed(2), 'sec', _trComment('sprint30', metrics.sprint30));
+  if (metrics.squat != null)    html += _trPerfCard('Squat',     metrics.squat.toFixed(2), '× BW', _trComment('squat', metrics.squat));
+  if (metrics.hipthrust != null) html += _trPerfCard('Hip Thrust', metrics.hipthrust.toFixed(2), '× BW', _trComment('hipthrust', metrics.hipthrust));
+  if (metrics.sdt != null)      html += _trPerfCard('Soulevé de terre', metrics.sdt.toFixed(2), '× BW', _trComment('sdt', metrics.sdt));
+  if (metrics.dc != null)       html += _trPerfCard('Développé couché', metrics.dc.toFixed(2), '× BW', _trComment('dc', metrics.dc));
+  if (metrics.fms != null)      html += _trPerfCard('Mobilité FMS', metrics.fms, '/ 21', _trComment('fms', metrics.fms));
+  html += '</div></div>';
+
+  // 5. Analyse Titan
+  html += '<div style="margin-top:22px;background:var(--navy);border-left:3px solid var(--gold);border-radius:14px 14px 14px 4px;padding:14px 16px;color:#fff">';
+  html += '<div style="font-family:\'JetBrains Mono\',monospace;font-size:10px;letter-spacing:.22em;color:var(--gold);text-transform:uppercase;margin-bottom:6px">TITAN — Analyse</div>';
+  html += '<div style="font-family:\'Outfit\',sans-serif;font-size:13px;line-height:1.55;color:#fff">' + _trTitanAnalysis(score, weak ? _trMetricLabel(weak.key) : null) + '</div>';
+  html += '</div>';
+
+  // 6. CTA
+  html += '<div style="margin-top:24px;display:flex;flex-direction:column;gap:10px">';
+  html += '<button onclick="closeTestResult(\'program\')" style="width:100%;padding:16px;background:linear-gradient(135deg,#D4B45E,#C5A44E 55%,#B89238);border:none;border-radius:14px;font-family:\'Bebas Neue\',sans-serif;font-size:15px;letter-spacing:.14em;color:var(--navy);cursor:pointer;box-shadow:0 10px 24px rgba(197,164,78,.32)">VOIR MON PROGRAMME</button>';
+  html += '<button onclick="closeTestResult(\'suivi\')" style="width:100%;padding:13px;background:transparent;border:1.5px solid var(--border2);border-radius:12px;font-family:\'Outfit\',sans-serif;font-size:13px;color:var(--text2);cursor:pointer">Voir le détail dans Suivi</button>';
+  html += '</div>';
+
+  body.innerHTML = html;
+}
+window.renderTestResult = renderTestResult;
 
 // ═══════════════════════════════════════════════
 // ATHLETIK SCORE — Engine basé sur standards du livre
