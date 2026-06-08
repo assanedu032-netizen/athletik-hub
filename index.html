@@ -91,9 +91,14 @@
   --ah-surface2:#F4F5F8;
   --ah-border:#E8EAF0;
   --ah-border2:#D5D9E3;
-  --ah-navy-deep:#1B2D5C;
+  /* Navy unifié pour les composants pilotés par les tokens (cards,
+     today-card, scoreboard, etc.). 3 alias gardés pour compat avec les
+     règles existantes, mais ils pointent tous vers le même navy clair
+     #1F305F demandé par le client. Les inline hex restent intacts pour
+     préserver les gradients de profondeur et le dark mode. */
+  --ah-navy-deep:#1F305F;
   --ah-navy:#1F305F;
-  --ah-navy2:#283A6A;
+  --ah-navy2:#1F305F;
   --ah-gold:#C5A44E;
   --ah-gold2:#D4B86A;
   --ah-text:#1A1F2E;
@@ -303,7 +308,7 @@ body.ah-tests-no-fab .tim-fab{ display:none !important; }
   --bg:#FAFAFA;--surface:#FFFFFF;--surface2:#F4F5F8;
   --border:#E8EAF0;--border2:#D5D9E3;
   --gold:#C5A44E;--gold2:#D4B86A;--gold-dim:rgba(197,164,78,0.08);--gold-glow:rgba(197,164,78,0.20);
-  --navy:#1F305F;--navy2:#283A6A;
+  --navy:#1F305F;--navy2:#1F305F;
   --text:#1A1F2E;--text2:#4B5563;--muted:#9CA3AF;
   --red:#EF4444;--green:#10B981;--blue:#3B82F6;--orange:#F59E0B;
   --card-shadow:0 1px 3px rgba(15,23,42,0.04), 0 4px 16px rgba(15,23,42,0.04);
