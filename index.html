@@ -4693,13 +4693,16 @@ window.tiResetOnEnter = function(){ window.tiShowStep(1); };
       <div class="fw"><label class="fl">Email <span style="color:var(--muted);font-weight:400;text-transform:none;letter-spacing:normal;font-size:11px">(Gmail, Yahoo, Hotmail, Outlook, ProtonMail…)</span></label><input class="fi" type="email" id="aEmail" placeholder="ton@email.com" autocomplete="email"></div>
       <div class="fw"><label class="fl">Mot de passe</label><input class="fi" type="password" id="aPass" placeholder="Minimum 6 caractères" autocomplete="current-password"></div>
       <button class="bc" id="authMainBtn" onclick="fbHandleEmailAuth()">Créer mon compte</button>
-      <div style="text-align:center;margin-top:10px;font-size:12px;color:var(--muted)">
-        <a href="#" onclick="fbToggleAuthMode();return false;" id="toggleAuthMode" style="color:var(--gold);text-decoration:none;font-weight:600">Déjà un compte ? Se connecter</a>
+      <!-- Lien unique de bascule signup/login : géré par fbToggleAuthMode -->
+      <div style="text-align:center;margin-top:12px;font-size:13px;color:var(--muted);position:relative;z-index:5">
+        <a href="javascript:void(0)" role="button" onclick="fbToggleAuthMode();return false;" ontouchend="fbToggleAuthMode();return false;" id="toggleAuthMode" style="color:var(--gold);text-decoration:none;font-weight:600;display:inline-block;padding:8px 12px;cursor:pointer;-webkit-tap-highlight-color:rgba(197,164,78,.18)">Déjà un compte ? Se connecter</a>
       </div>
-      <button onclick="openAccessCode()" style="width:100%;padding:12px;margin-top:12px;background:rgba(197,164,78,.08);border:1.5px solid rgba(197,164,78,.35);border-radius:12px;font-family:'Outfit',sans-serif;font-size:12px;font-weight:700;color:var(--gold);cursor:pointer;letter-spacing:.3px">📕 J'ai le livre — Saisir mon code</button>
+      <!-- Mot de passe oublié : visible UNIQUEMENT en mode login (toggle via fbToggleAuthMode) -->
+      <div id="forgotPwdWrap" style="display:none;text-align:center;margin-top:4px;font-size:12px;position:relative;z-index:5">
+        <a href="javascript:void(0)" role="button" onclick="fbForgotPassword();return false;" ontouchend="fbForgotPassword();return false;" style="color:var(--muted);text-decoration:underline;text-underline-offset:3px;display:inline-block;padding:6px 10px;cursor:pointer">Mot de passe oublié ?</a>
+      </div>
+      <button onclick="openAccessCode()" style="width:100%;padding:12px;margin-top:14px;background:rgba(197,164,78,.08);border:1.5px solid rgba(197,164,78,.35);border-radius:12px;font-family:'Outfit',sans-serif;font-size:12px;font-weight:700;color:var(--gold);cursor:pointer;letter-spacing:.3px">📕 J'ai le livre — Saisir mon code</button>
     </div>
-    <div class="af">Déjà un compte ? <a href="#" onclick="fbSignIn();return false">Se connecter</a></div>
-    <div class="af"><a href="#" onclick="fbForgotPassword();return false;" style="color:var(--muted)">Mot de passe oublié ?</a></div>
   </div>
 </div>
 
@@ -12088,6 +12091,13 @@ function go(id) {
   // Reset multi-step TitanIntro à 1 quand on y entre
   if (id === 'titanIntro' && typeof window.tiShowStep === 'function') {
     window.tiShowStep(1);
+  }
+
+  // Écran auth : applique le mode courant (par défaut signup). Évite que le
+  // titre/CTA/lien "mot de passe oublié" restent désynchronisés après un
+  // toggle précédent. welcomeLogin force le mode signin après son go('auth').
+  if (id === 'auth' && typeof window._fbApplyAuthMode === 'function') {
+    window._fbApplyAuthMode(window.authMode || 'signup');
   }
 
   // Trigger thinking → result
@@ -22811,21 +22821,8 @@ function welcomeStart() {
 
 function welcomeLogin() {
   // Visiteur de retour : on l'envoie directement à l'écran Auth en mode "Sign in"
-  window.authMode = 'signin';
   go('auth');
-  setTimeout(function() {
-    // Forcer mode connexion
-    var btn = document.getElementById('authMainBtn');
-    var toggle = document.getElementById('toggleAuthMode');
-    var label = document.getElementById('authModeLabel');
-    var title = document.querySelector('.ac-t');
-    var sub = document.querySelector('.ac-s');
-    if (btn) btn.textContent = 'Me connecter';
-    if (toggle) toggle.textContent = 'Pas encore de compte ? Créer un compte';
-    if (label) label.textContent = 'OU CONNECTE-TOI';
-    if (title) title.textContent = 'Re-bienvenue';
-    if (sub) sub.textContent = 'Connecte-toi à ton compte Athletik Hub.';
-  }, 200);
+  setTimeout(function(){ if (typeof _fbApplyAuthMode === 'function') _fbApplyAuthMode('signin'); }, 150);
 }
 
 // ═══════════════════════════════════════════════
@@ -23206,28 +23203,42 @@ window.authMode = 'signup'; // 'signup' ou 'signin'
 
 function fbToggleAuthMode() {
   window.authMode = window.authMode === 'signup' ? 'signin' : 'signup';
+  _fbApplyAuthMode(window.authMode);
+}
+
+// Synchronise tout l'UI de l'écran auth avec un mode donné. Source unique :
+// appelé par fbToggleAuthMode, welcomeLogin et l'ouverture initiale de l'écran.
+function _fbApplyAuthMode(mode) {
+  window.authMode = mode === 'signin' ? 'signin' : 'signup';
   var btn = document.getElementById('authMainBtn');
   var toggle = document.getElementById('toggleAuthMode');
   var label = document.getElementById('authModeLabel');
-  var sub = document.querySelector('.ac-s');
-  var title = document.querySelector('.ac-t');
+  var sub = document.querySelector('#auth .ac-s');
+  var title = document.querySelector('#auth .ac-t');
+  var forgot = document.getElementById('forgotPwdWrap');
+  var passInput = document.getElementById('aPass');
   if (window.authMode === 'signin') {
-    if (btn) btn.textContent = 'Me connecter';
+    if (btn) btn.textContent = 'Se connecter';
     if (toggle) toggle.textContent = 'Pas encore de compte ? Créer un compte';
-    if (label) label.textContent = 'OU CONNECTE-TOI';
-    if (title) title.textContent = 'Re-bienvenue';
-    if (sub) sub.textContent = 'Connecte-toi à ton compte Athletik Hub.';
+    if (label) label.textContent = 'OU AVEC TON EMAIL';
+    if (title) title.textContent = 'BON RETOUR';
+    if (sub) sub.textContent = 'Connecte-toi pour retrouver ton programme.';
+    if (forgot) forgot.style.display = 'block';
+    if (passInput) passInput.setAttribute('autocomplete', 'current-password');
   } else {
     if (btn) btn.textContent = 'Créer mon compte';
     if (toggle) toggle.textContent = 'Déjà un compte ? Se connecter';
-    if (label) label.textContent = 'OU';
-    if (title) title.textContent = 'Rejoins la meute';
-    if (sub) sub.textContent = 'Crée ton compte pour accéder à ton programme.';
+    if (label) label.textContent = 'OU AVEC TON EMAIL';
+    if (title) title.textContent = 'REJOINS LA MEUTE';
+    if (sub) sub.textContent = 'Crée ton compte pour accéder à ton programme personnalisé.';
+    if (forgot) forgot.style.display = 'none';
+    if (passInput) passInput.setAttribute('autocomplete', 'new-password');
   }
-  // Clear msg
+  // Reset le message d'état (succès/erreur précédent)
   var m = document.getElementById('authMsg');
   if (m) { m.className = 'msg'; m.textContent = ''; }
 }
+window._fbApplyAuthMode = _fbApplyAuthMode;
 
 // ════════════════════════════════════════════════════════════════════════════
 // ONBOARDING STATE — Source de vérité unique (roadmap v4)
