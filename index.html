@@ -5732,17 +5732,45 @@ window.tiResetOnEnter = function(){ window.tiShowStep(1); };
     <div style="color:var(--gold);font-size:20px;flex-shrink:0">→</div>
   </div>
 
-  <!-- Sub-tabs -->
+  <!-- Sub-tabs (refonte Suivi) — 4 sections : vue d'ensemble, tests, séances, exercices.
+       SAT et SET ne sont plus directement dans les sub-tabs : on y accède via
+       le landing "Tests" pour éviter de mélanger formulaires et bilans. -->
   <div class="sub-tabs">
-    <div class="sub-tab on" onclick="showSec('sat',this)">SAT</div>
-    <div class="sub-tab" onclick="showSec('set',this)">SET</div>
+    <div class="sub-tab on" onclick="showSec('overview',this)">Vue d'ensemble</div>
+    <div class="sub-tab" onclick="showSec('tests',this)">Tests</div>
+    <div class="sub-tab" onclick="showSec('sessions',this)">Séances</div>
     <div class="sub-tab" onclick="showSec('track',this)">Exercices</div>
+  </div>
+
+  <!-- ══════════════════════════════════════════ -->
+  <!-- SECTION : VUE D'ENSEMBLE — dashboard rapide -->
+  <!-- ══════════════════════════════════════════ -->
+  <div id="secOverview" class="sec on">
+    <div id="overviewBody"></div>
+  </div>
+
+  <!-- ══════════════════════════════════════════ -->
+  <!-- SECTION : TESTS — landing avec cartes SAT/SET -->
+  <!-- ══════════════════════════════════════════ -->
+  <div id="secTests" class="sec">
+    <div id="testsLandingBody"></div>
+  </div>
+
+  <!-- ══════════════════════════════════════════ -->
+  <!-- SECTION : SÉANCES — historique des séances -->
+  <!-- ══════════════════════════════════════════ -->
+  <div id="secSessions" class="sec">
+    <div id="sessionsBody"></div>
   </div>
 
   <!-- ══════════════════════════════════════════ -->
   <!-- SECTION 1: SAT — Super Athletic Test      -->
   <!-- ══════════════════════════════════════════ -->
-  <div id="secSat" class="sec on">
+  <div id="secSat" class="sec">
+
+    <!-- Retour vers le landing Tests (depuis qu'on a 4 sub-tabs au lieu de
+         laisser SAT/SET dans la barre, l'utilisateur doit pouvoir remonter). -->
+    <div onclick="showSec('tests')" style="display:inline-flex;align-items:center;gap:6px;font-family:'Outfit',sans-serif;font-size:12px;color:var(--gold);cursor:pointer;padding:8px 0;margin-bottom:4px">← Retour aux tests</div>
 
     <!-- Phase selector -->
     <div style="display:flex;gap:8px;margin-bottom:16px">
@@ -5885,6 +5913,9 @@ window.tiResetOnEnter = function(){ window.tiShowStep(1); };
   <!-- SECTION SET — SESSION D'ÉVALUATION TERRAIN -->
   <!-- ══════════════════════════════════════════ -->
   <div id="secSet" class="sec">
+
+    <!-- Retour vers le landing Tests. -->
+    <div onclick="showSec('tests')" style="display:inline-flex;align-items:center;gap:6px;font-family:'Outfit',sans-serif;font-size:12px;color:var(--gold);cursor:pointer;padding:8px 0;margin-bottom:4px">← Retour aux tests</div>
 
     <!-- Container step-by-step (rendu dynamique) -->
     <div id="setStepContainer"></div>
@@ -11942,6 +11973,10 @@ function switchTab(tab){
     try { initSATv7(); } catch(e) { console.warn('initSATv7 error:', e); }
     try { initTracksSAT(); } catch(e) { console.warn('initTracksSAT error:', e); }
     try { _trkInit(); } catch(e) { console.warn('_trkInit error:', e); }
+    // Suivi refactor : à l'entrée de l'onglet, on rafraîchit la Vue d'ensemble
+    // qui est la section par défaut. Les autres renderers s'exécutent à la
+    // demande quand l'utilisateur change de sub-tab.
+    try { renderSuiviOverview(); } catch(e) { console.warn('renderSuiviOverview', e); }
   }
   // Quand on entre dans Train : rafraîchir le verrouillage des cartes + init lib
   if (tab === 'train') {
@@ -14877,8 +14912,20 @@ function showSec(id,_el) {
   var secId = 'sec' + id.charAt(0).toUpperCase() + id.slice(1);
   var sec = document.getElementById(secId);
   if(sec) sec.classList.add('on');
+  // Highlight de la sub-tab : sat/set ne sont plus dans la barre → on
+  // surligne "Tests" pour garder une cohérence visuelle pendant la prise
+  // d'un test.
+  var highlightId = (id === 'sat' || id === 'set') ? 'tests' : id;
   if(_el) _el.classList.add('on');
-  else if(event&&event.currentTarget) event.currentTarget.classList.add('on');
+  else {
+    var navTabs = document.querySelectorAll('#vTracks .sub-tab');
+    navTabs.forEach(function(t){
+      if (t.getAttribute('onclick') && t.getAttribute('onclick').indexOf("'" + highlightId + "'") !== -1) {
+        t.classList.add('on');
+      }
+    });
+    if (event && event.currentTarget) event.currentTarget.classList.add('on');
+  }
   var vt=document.getElementById('vTracks');if(vt)vt.scrollTop=0;
   // Init SET step-by-step quand on entre dans l'onglet SET
   if(id==='set') { try { initSET(); } catch(e) { console.warn('initSET error:', e); } }
@@ -14886,6 +14933,10 @@ function showSec(id,_el) {
   if(id==='sat') { try { initTracksSAT(); } catch(e) { console.warn('initTracksSAT error:', e); } }
   // Tracks > Exercices : rafraîchit les cartes de progression à l'ouverture
   if(id==='track') { try { _trkRenderProgression(); } catch(e) {} }
+  // Nouvelles sections du Suivi
+  if(id==='overview') { try { renderSuiviOverview(); } catch(e) { console.warn('overview', e); } }
+  if(id==='tests')    { try { renderTestsLanding();   } catch(e) { console.warn('tests landing', e); } }
+  if(id==='sessions') { try { renderSessionsList();   } catch(e) { console.warn('sessions', e); } }
 }
 
 // ══════════════════════════════════
@@ -25350,6 +25401,232 @@ function renderTestResult(testType) {
   body.innerHTML = html;
 }
 window.renderTestResult = renderTestResult;
+
+// ═══════════════════════════════════════════════
+// SUIVI — Vue d'ensemble / Tests / Séances
+// Helpers communs : lit ah_set_history et le scinde en (tests, séances).
+// ═══════════════════════════════════════════════
+function _suiviHistory() {
+  try { return JSON.parse(localStorage.getItem('ah_set_history') || '[]') || []; } catch(e) { return []; }
+}
+function _suiviTests()    { return _suiviHistory().filter(function(e){ return e && e.type !== 'session'; }); }
+function _suiviSessions() { return _suiviHistory().filter(function(e){ return e && e.type === 'session'; }); }
+function _suiviFmtDate(iso) {
+  try {
+    var d = new Date(iso);
+    if (isNaN(d.getTime())) return '—';
+    var mois = ['janv.','févr.','mars','avr.','mai','juin','juil.','août','sept.','oct.','nov.','déc.'];
+    return d.getDate() + ' ' + mois[d.getMonth()];
+  } catch(e) { return '—'; }
+}
+function _suiviRelDate(iso) {
+  try {
+    var d = new Date(iso); if (isNaN(d.getTime())) return '—';
+    var now = new Date();
+    var diff = Math.floor((now - d) / 86400000);
+    if (diff === 0) return 'aujourd\'hui';
+    if (diff === 1) return 'hier';
+    if (diff < 7)  return 'il y a ' + diff + ' j';
+    return _suiviFmtDate(iso);
+  } catch(e) { return '—'; }
+}
+
+// ─────────── SECTION : VUE D'ENSEMBLE ───────────
+function renderSuiviOverview() {
+  var c = document.getElementById('overviewBody'); if (!c) return;
+  var profile = {}; try { profile = JSON.parse(localStorage.getItem('ah_profile') || '{}'); } catch(e) {}
+  var sexe = (profile.sexe === 'femme') ? 'femme' : 'homme';
+  var metrics = (typeof ascGetUserMetrics === 'function') ? ascGetUserMetrics() : {};
+  var score   = (typeof ascCalcGlobalScore === 'function') ? ascCalcGlobalScore(metrics, sexe) : null;
+  var lvl     = _trLevel(score);
+  var weak    = (typeof ascFindWeakLink === 'function') ? ascFindWeakLink(metrics, sexe) : null;
+  var tests   = _suiviTests();
+  var sessions= _suiviSessions();
+  var lastTest    = tests[tests.length - 1];
+  var lastSession = sessions[sessions.length - 1];
+  var deltas      = _trProgressionDelta();
+
+  var html = '';
+
+  // Score hero compact
+  html += '<div style="background:linear-gradient(135deg,var(--navy),#0F1B33);border-radius:16px;padding:18px 20px;color:#fff;margin-bottom:12px;position:relative;overflow:hidden">';
+  html += '<div aria-hidden="true" style="position:absolute;top:-30%;right:-10%;width:220px;height:220px;background:radial-gradient(circle,rgba(197,164,78,.18),transparent 60%);pointer-events:none"></div>';
+  html += '<div style="position:relative;z-index:1;display:flex;align-items:flex-end;justify-content:space-between;gap:14px">';
+  html += '<div><div style="font-family:\'JetBrains Mono\',monospace;font-size:10px;letter-spacing:.24em;color:var(--gold);text-transform:uppercase">Athletic Score</div>';
+  html += '<div style="font-family:\'Bebas Neue\',sans-serif;font-size:54px;line-height:1;color:#fff;letter-spacing:.02em;margin-top:2px">' + (score != null ? score : '—') + '<span style="font-size:22px;color:rgba(255,255,255,.4)"> / 100</span></div></div>';
+  html += '<div style="padding:6px 12px;background:rgba(197,164,78,.18);border:1px solid rgba(197,164,78,.55);border-radius:999px;font-family:\'Bebas Neue\',sans-serif;font-size:12px;letter-spacing:.16em;color:' + lvl.color + ';white-space:nowrap">' + lvl.name.toUpperCase() + '</div>';
+  html += '</div></div>';
+
+  // Dernier test + Dernière séance (2 cartes côte-à-côte)
+  function _ovCard(kicker, title, sub, accent) {
+    return '<div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:12px;flex:1;min-width:0">'
+      + '<div style="font-family:\'JetBrains Mono\',monospace;font-size:9px;letter-spacing:.18em;color:var(--muted);text-transform:uppercase;margin-bottom:4px">' + kicker + '</div>'
+      + '<div style="font-family:\'Outfit\',sans-serif;font-size:13px;font-weight:700;color:' + (accent || 'var(--text)') + ';line-height:1.3">' + (title || '—') + '</div>'
+      + (sub ? '<div style="font-size:11px;color:var(--muted);margin-top:2px">' + sub + '</div>' : '')
+      + '</div>';
+  }
+  html += '<div style="display:flex;gap:10px;margin-bottom:12px">';
+  html += _ovCard('Dernier test', lastTest ? ('SET · ' + _suiviFmtDate(lastTest.date)) : 'Aucun', null, 'var(--text)');
+  html += _ovCard('Dernière séance', lastSession ? (lastSession.sessName || 'Séance') : 'Aucune', lastSession ? _suiviRelDate(lastSession.date) : null, 'var(--text)');
+  html += '</div>';
+
+  // Progression récente
+  html += '<div style="font-family:\'Bebas Neue\',sans-serif;font-size:16px;letter-spacing:.08em;color:var(--text);margin:8px 0 8px">PROGRESSION RÉCENTE</div>';
+  if (!deltas || tests.length < 2) {
+    html += '<div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:14px;font-size:13px;color:var(--text2);line-height:1.5;margin-bottom:12px">Refais un test pour voir tes progrès.</div>';
+  } else {
+    var rendered = [];
+    var jumpD = (deltas.jump != null && deltas.reach != null) ? +(deltas.jump - deltas.reach).toFixed(1) : deltas.jump;
+    [
+      { label:'Détente', d:_trFmt(jumpD, 'cm') },
+      { label:'Sprint 60m', d:_trFmt(deltas.sprint, 'sec', true) },
+      { label:'Athletic Score', d: score != null ? _trFmt(0, 'pts') : null } // placeholder
+    ].forEach(function(r){ if (r.d) rendered.push(r); });
+    if (!rendered.length) {
+      html += '<div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:14px;font-size:13px;color:var(--text2)">Pas encore de comparaison disponible.</div>';
+    } else {
+      html += '<div style="display:flex;flex-direction:column;gap:6px;margin-bottom:12px">';
+      rendered.forEach(function(r){
+        html += '<div style="background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:10px 14px;display:flex;justify-content:space-between;align-items:center">'
+          + '<span style="font-family:\'Outfit\',sans-serif;font-size:13px;color:var(--text)">' + r.label + '</span>'
+          + '<span style="font-family:\'Bebas Neue\',sans-serif;font-size:15px;letter-spacing:.04em;color:' + r.d.color + '">' + r.d.txt + '</span>'
+          + '</div>';
+      });
+      html += '</div>';
+    }
+  }
+
+  // Priorité actuelle
+  var priorityLabel = weak ? _trMetricLabel(weak.key) : 'À déterminer';
+  html += '<div style="background:linear-gradient(135deg,rgba(197,164,78,.10),transparent);border:1px solid rgba(197,164,78,.35);border-radius:14px;padding:14px 16px">';
+  html += '<div style="font-family:\'JetBrains Mono\',monospace;font-size:9px;letter-spacing:.20em;color:var(--gold);text-transform:uppercase;margin-bottom:4px">Priorité actuelle</div>';
+  html += '<div style="font-family:\'Bebas Neue\',sans-serif;font-size:22px;letter-spacing:.04em;color:var(--text)">' + priorityLabel + '</div>';
+  html += '</div>';
+
+  c.innerHTML = html;
+}
+window.renderSuiviOverview = renderSuiviOverview;
+
+// ─────────── SECTION : TESTS — landing ───────────
+function renderTestsLanding() {
+  var c = document.getElementById('testsLandingBody'); if (!c) return;
+  var profile = {}; try { profile = JSON.parse(localStorage.getItem('ah_profile') || '{}'); } catch(e) {}
+  var sexe = (profile.sexe === 'femme') ? 'femme' : 'homme';
+  var metrics = (typeof ascGetUserMetrics === 'function') ? ascGetUserMetrics() : {};
+  var score   = (typeof ascCalcGlobalScore === 'function') ? ascCalcGlobalScore(metrics, sexe) : null;
+  var tests = _suiviTests();
+  var lastTest = tests[tests.length - 1];
+  var lastDate = lastTest ? _suiviFmtDate(lastTest.date) : 'Jamais';
+
+  function _testCard(kicker, name, desc, scoreVal, dateTxt, onclickStart) {
+    var h = '<div style="background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:16px;margin-bottom:12px">';
+    h += '<div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px">';
+    h += '<div><div style="font-family:\'JetBrains Mono\',monospace;font-size:9px;letter-spacing:.20em;color:var(--gold);text-transform:uppercase;margin-bottom:4px">' + kicker + '</div>';
+    h += '<div style="font-family:\'Bebas Neue\',sans-serif;font-size:24px;letter-spacing:.04em;color:var(--text);line-height:1">' + name + '</div></div>';
+    h += '<div style="text-align:right"><div style="font-family:\'Bebas Neue\',sans-serif;font-size:28px;line-height:1;color:var(--gold)">' + (scoreVal != null ? scoreVal : '—') + '<span style="font-size:14px;color:var(--muted)"> / 100</span></div></div>';
+    h += '</div>';
+    h += '<div style="font-size:12px;color:var(--text2);line-height:1.5;margin-bottom:10px">' + desc + '</div>';
+    h += '<div style="font-size:11px;color:var(--muted);margin-bottom:12px">Dernier test : ' + dateTxt + '</div>';
+    h += '<div style="display:flex;gap:8px">';
+    h += '<button onclick="' + onclickStart + '" style="flex:1;padding:12px;background:linear-gradient(135deg,#D4B45E,#C5A44E 55%,#B89238);border:none;border-radius:10px;font-family:\'Bebas Neue\',sans-serif;font-size:13px;letter-spacing:.14em;color:var(--navy);cursor:pointer">FAIRE LE TEST</button>';
+    h += '<button onclick="openTestResult(\'SET\')" style="padding:12px 14px;background:transparent;border:1.5px solid var(--border2);border-radius:10px;font-family:\'Outfit\',sans-serif;font-size:12px;color:var(--text2);cursor:pointer">Voir résultats</button>';
+    h += '</div></div>';
+    return h;
+  }
+
+  var html = '';
+  html += '<div style="font-family:\'Outfit\',sans-serif;font-size:13px;color:var(--text2);line-height:1.5;margin-bottom:14px">Les tests sont des bilans physiques. Ils mesurent ton niveau global et ta priorité de progression — séparés de tes séances d\'entraînement.</div>';
+
+  html += _testCard(
+    'Bilan complet · 30 min',
+    'SAT',
+    'Détente, force, sprint, agilité, mobilité. Le bilan athlétique de référence.',
+    score,
+    lastDate,
+    'showSec(\'sat\')'
+  );
+  html += _testCard(
+    'Bilan SET · 20-30 min',
+    'SET',
+    'Super Explosif Test — détente, sprint 60m, lane agility, 1RM force.',
+    score,
+    lastDate,
+    'showSec(\'set\')'
+  );
+
+  c.innerHTML = html;
+}
+window.renderTestsLanding = renderTestsLanding;
+
+// ─────────── SECTION : SÉANCES ───────────
+function renderSessionsList() {
+  var c = document.getElementById('sessionsBody'); if (!c) return;
+  var sessions = _suiviSessions().slice().reverse(); // plus récente en premier
+  var html = '';
+
+  html += '<div style="font-family:\'Bebas Neue\',sans-serif;font-size:18px;letter-spacing:.08em;color:var(--text);margin-bottom:6px">HISTORIQUE DES SÉANCES</div>';
+  html += '<div style="font-size:12px;color:var(--text2);margin-bottom:14px">Toutes tes séances terminées avec leur ressenti.</div>';
+
+  if (!sessions.length) {
+    html += '<div style="background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:18px;text-align:center">';
+    html += '<div style="font-size:32px;margin-bottom:8px;opacity:.5">🏋️</div>';
+    html += '<div style="font-family:\'Outfit\',sans-serif;font-size:13px;color:var(--text2);line-height:1.5">Pas encore de séance terminée. Lance ta première depuis l\'onglet Train.</div>';
+    html += '</div>';
+    c.innerHTML = html;
+    return;
+  }
+
+  sessions.forEach(function(s, idx){
+    var fb = s.sessionEndFeedback || {};
+    var quality = fb.sessionQualityScore;
+    var intensity = fb.intensite || fb.intensity;
+    var fatigue   = fb.fatigue;
+    var status    = fb.titanStatus || '';
+    var qcolor = '#22C55E';
+    if (quality != null) {
+      if (quality < 50) qcolor = '#EF4444';
+      else if (quality < 75) qcolor = '#F59E0B';
+    }
+    html += '<div onclick="_suiviOpenSession(' + idx + ')" style="background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:14px;margin-bottom:10px;cursor:pointer">';
+    html += '<div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:6px;gap:10px">';
+    html += '<div style="flex:1;min-width:0"><div style="font-family:\'Outfit\',sans-serif;font-size:14px;font-weight:700;color:var(--text);line-height:1.3">' + (s.sessName || 'Séance') + '</div>';
+    if (s.progName) html += '<div style="font-size:11px;color:var(--muted);margin-top:2px">' + s.progName + '</div>';
+    html += '</div>';
+    html += '<div style="font-size:11px;color:var(--muted);white-space:nowrap">' + _suiviRelDate(s.date) + '</div>';
+    html += '</div>';
+    if (quality != null || intensity != null || fatigue != null) {
+      html += '<div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:8px">';
+      if (quality != null)   html += '<span style="font-size:10px;font-weight:700;padding:3px 8px;border-radius:999px;background:rgba(0,0,0,.04);color:' + qcolor + '">Score ' + quality + '%</span>';
+      if (intensity != null) html += '<span style="font-size:10px;font-weight:700;padding:3px 8px;border-radius:999px;background:rgba(0,0,0,.04);color:var(--text2)">Intensité ' + intensity + '/10</span>';
+      if (fatigue != null)   html += '<span style="font-size:10px;font-weight:700;padding:3px 8px;border-radius:999px;background:rgba(0,0,0,.04);color:var(--text2)">Fatigue ' + fatigue + '/10</span>';
+      if (status) html += '<span style="font-size:10px;font-weight:700;padding:3px 8px;border-radius:999px;background:rgba(197,164,78,.10);color:var(--gold)">' + status.toUpperCase() + '</span>';
+      html += '</div>';
+    }
+    html += '</div>';
+  });
+
+  c.innerHTML = html;
+}
+window.renderSessionsList = renderSessionsList;
+
+// Détail d'une séance — pour le MVP, on affiche un toast récap.
+// (le format complet "feedback + exos" serait un overlay dédié.)
+function _suiviOpenSession(idx) {
+  var sessions = _suiviSessions().slice().reverse();
+  var s = sessions[idx]; if (!s) return;
+  var fb = s.sessionEndFeedback || {};
+  var lines = [];
+  lines.push((s.sessName || 'Séance'));
+  if (s.progName) lines.push(s.progName);
+  lines.push(_suiviFmtDate(s.date));
+  if (fb.sessionQualityScore != null) lines.push('Score : ' + fb.sessionQualityScore + '%');
+  if (fb.intensite != null) lines.push('Intensité : ' + fb.intensite + '/10');
+  if (fb.fatigue != null)   lines.push('Fatigue : ' + fb.fatigue + '/10');
+  if (fb.titanStatus) lines.push('Statut : ' + fb.titanStatus);
+  if (fb.commentaire) lines.push('\nCommentaire : ' + fb.commentaire);
+  alert(lines.join('\n'));
+}
+window._suiviOpenSession = _suiviOpenSession;
 
 // ═══════════════════════════════════════════════
 // ATHLETIK SCORE — Engine basé sur standards du livre
