@@ -17,7 +17,7 @@
 <!-- ═══ FIREBASE SDK ═══ -->
 <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-app.js";
-  import { getAuth, setPersistence, browserLocalPersistence, createUserWithEmailAndPassword, signInWithEmailAndPassword, signInWithPopup, GoogleAuthProvider, sendEmailVerification, onAuthStateChanged, signOut, sendPasswordResetEmail, fetchSignInMethodsForEmail } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-auth.js";
+  import { getAuth, setPersistence, browserLocalPersistence, createUserWithEmailAndPassword, signInWithEmailAndPassword, signInWithPopup, GoogleAuthProvider, sendEmailVerification, onAuthStateChanged, signOut, sendPasswordResetEmail, fetchSignInMethodsForEmail, EmailAuthProvider, linkWithCredential, updatePassword } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-auth.js";
   import { getFirestore, doc, setDoc, getDoc, serverTimestamp, collection, addDoc, deleteDoc, query, orderBy, onSnapshot } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore.js";
   import { getMessaging, getToken, onMessage, isSupported } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-messaging.js";
 
@@ -65,6 +65,7 @@
     auth, db, googleProvider,
     createUserWithEmailAndPassword, signInWithEmailAndPassword, signInWithPopup,
     sendEmailVerification, onAuthStateChanged, signOut, sendPasswordResetEmail, fetchSignInMethodsForEmail,
+    EmailAuthProvider, linkWithCredential, updatePassword,
     doc, setDoc, getDoc, serverTimestamp,
     collection, addDoc, deleteDoc, query, orderBy, onSnapshot
   };
@@ -23952,21 +23953,62 @@ function fbRefreshAccountSection(fbUser) {
   }
 }
 
-// Envoie un email de réinitialisation à l'utilisateur connecté. Plus simple
-// et plus sûr qu'un flow re-auth + updatePassword (qui peut planter si la
-// session est expirée), et ça évite de demander l'ancien mot de passe.
+// Changement / définition de mot de passe.
+// Deux branches selon le type de compte :
+//   - Compte email/password existant → envoie un email de réinit (Firebase
+//     gère le lien et le formulaire de saisie du nouveau mot de passe).
+//   - Compte Google-only → sendPasswordResetEmail échoue silencieusement
+//     (pas d'email envoyé) car il n'y a pas de credential password à
+//     "reset". Dans ce cas on demande le nouveau mot de passe direct via
+//     prompt puis on lie un EmailAuthProvider credential au compte via
+//     linkWithCredential → l'user pourra ensuite se connecter aussi avec
+//     email + mot de passe (en plus de Google).
 async function fbChangePassword() {
   if (!window.fb || !window.fbUser || !window.fbUser.email) {
     alert('Tu dois être connecté pour changer ton mot de passe.');
     return;
   }
   var email = window.fbUser.email;
-  if (!confirm('Envoyer un email de réinitialisation à ' + email + ' ?\n\nTu cliqueras sur le lien reçu pour choisir un nouveau mot de passe.')) return;
+  var providerIds = (window.fbUser.providerData || []).map(function(p){ return p.providerId; });
+  var hasPwd = providerIds.indexOf('password') !== -1;
+
+  // ── Branche compte email/password : envoi du reset email ──
+  if (hasPwd) {
+    if (!confirm('Envoyer un email de réinitialisation à ' + email + ' ?\n\nTu cliqueras sur le lien reçu pour choisir un nouveau mot de passe.')) return;
+    try {
+      await window.fb.sendPasswordResetEmail(window.fb.auth, email);
+      alert('✓ Email envoyé à ' + email + '. Vérifie ta boîte (et tes spams).');
+    } catch(e) {
+      alert(typeof fbFormatError === 'function' ? fbFormatError(e) : (e.message || 'Erreur.'));
+    }
+    return;
+  }
+
+  // ── Branche compte Google-only : on définit un mot de passe via linkWithCredential ──
+  var msg = 'Choisis un mot de passe (6 caractères minimum).\n\n'
+          + 'Une fois défini, tu pourras te connecter avec ' + email + ' + ce mot de passe, en plus de Google.';
+  var pwd = null;
+  try { pwd = prompt(msg); } catch(_) {}
+  if (pwd == null) return; // annulé
+  pwd = String(pwd).trim();
+  if (pwd.length < 6) { alert('Mot de passe trop court (6 caractères minimum).'); return; }
+
   try {
-    await window.fb.sendPasswordResetEmail(window.fb.auth, email);
-    alert('✓ Email envoyé à ' + email + '. Vérifie ta boîte (et tes spams).');
+    var credential = window.fb.EmailAuthProvider.credential(email, pwd);
+    await window.fb.linkWithCredential(window.fbUser, credential);
+    alert('✓ Mot de passe défini. Tu peux maintenant te connecter avec ton email + ce mot de passe (la connexion Google reste active).');
+    try { fbRefreshAccountSection(window.fbUser); } catch(e) {}
   } catch(e) {
-    alert(typeof fbFormatError === 'function' ? fbFormatError(e) : (e.message || 'Erreur.'));
+    var code = (e && e.code) || '';
+    if (code === 'auth/email-already-in-use' || code === 'auth/credential-already-in-use') {
+      alert('Un autre compte utilise déjà cet email avec un mot de passe. Reconnecte-toi avec ce mot de passe pour fusionner les comptes.');
+    } else if (code === 'auth/requires-recent-login') {
+      alert('Pour ta sécurité, reconnecte-toi (déconnexion + Google) puis réessaie.');
+    } else if (code === 'auth/weak-password') {
+      alert('Mot de passe trop faible. Essaie avec au moins 6 caractères variés.');
+    } else {
+      alert(typeof fbFormatError === 'function' ? fbFormatError(e) : (e.message || 'Erreur.'));
+    }
   }
 }
 window.fbChangePassword = fbChangePassword;
