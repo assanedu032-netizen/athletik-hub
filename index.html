@@ -4798,14 +4798,22 @@ window.tiResetOnEnter = function(){ window.tiShowStep(1); };
 <!-- ═══ RESULT — Programme révélé + verdict Titan ═══ -->
 <div id="result" class="scr">
   <div style="flex:1;display:flex;flex-direction:column;align-items:center;padding:24px 22px 40px;text-align:center;overflow-y:auto">
-    <div style="font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:.22em;color:var(--ah-gold);text-transform:uppercase;margin-bottom:8px" id="rBadge">PROGRAMME RÉVÉLÉ</div>
-    <div style="height:2px;width:48px;background:var(--ah-gold);border-radius:2px;margin-bottom:18px"></div>
+    <div style="font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:.22em;color:var(--ah-gold);text-transform:uppercase;margin-bottom:6px" id="rBadge">FÉLICITATIONS</div>
+    <div style="font-family:'Outfit',sans-serif;font-size:13px;color:var(--ah-text2);margin-bottom:14px;text-align:center;line-height:1.5">Ton programme personnalisé est prêt.<br>Tu vas travailler le programme :</div>
+    <div style="height:2px;width:48px;background:var(--ah-gold);border-radius:2px;margin-bottom:18px;box-shadow:0 0 14px rgba(197,164,78,.55)"></div>
 
-    <div class="res-card" id="rCard" style="background:var(--ah-surface);border:1px solid var(--ah-border);border-radius:14px;padding:24px 18px;width:100%;max-width:340px;box-shadow:0 8px 24px rgba(20,30,60,.06);margin-bottom:20px">
-      <div class="res-emoji" id="rEmoji" style="font-size:46px;margin-bottom:8px;line-height:1">🏆</div>
-      <div class="res-name" id="rName" style="font-family:'Bebas Neue',sans-serif;font-size:30px;color:var(--ah-text);letter-spacing:.04em;line-height:1;margin-bottom:6px">ELITE ATHLETE</div>
-      <div class="res-obj" id="rObj" style="font-family:'Outfit',sans-serif;font-size:13px;color:var(--ah-text2);margin-bottom:14px">Explosivité globale</div>
-      <div class="res-meta" style="display:flex;gap:18px;justify-content:center;border-top:1px solid var(--ah-border);padding-top:14px"><div class="res-meta-i" id="rDur" style="font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--ah-text2);letter-spacing:.14em">16-20 SEM</div><div class="res-meta-i" id="rLvl" style="font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--ah-text2);letter-spacing:.14em">TOUS NIVEAUX</div></div>
+    <!-- Carte programme : couleurs inversées (navy + gold) pour faire récompense -->
+    <div class="res-card" id="rCard" style="background:linear-gradient(135deg,var(--ah-navy) 0%,#0F1B33 100%);border:1px solid rgba(197,164,78,.35);border-radius:18px;padding:28px 20px 22px;width:100%;max-width:360px;color:#fff;box-shadow:0 14px 36px rgba(20,30,60,.22),0 0 60px rgba(197,164,78,.10);margin-bottom:20px;position:relative;overflow:hidden">
+      <div aria-hidden="true" style="position:absolute;top:-40%;left:50%;transform:translateX(-50%);width:280px;height:280px;background:radial-gradient(circle,rgba(197,164,78,.22),transparent 60%);pointer-events:none"></div>
+      <div style="position:relative;z-index:1">
+        <div class="res-emoji" id="rEmoji" style="font-size:48px;margin-bottom:10px;line-height:1">🏆</div>
+        <div class="res-name" id="rName" style="font-family:'Bebas Neue',sans-serif;font-size:34px;color:#fff;letter-spacing:.04em;line-height:1;margin-bottom:6px">ELITE ATHLETE</div>
+        <div class="res-obj" id="rObj" style="font-family:'Outfit',sans-serif;font-size:13.5px;color:rgba(255,255,255,.8);margin-bottom:16px">Explosivité globale</div>
+        <div class="res-meta" style="display:flex;gap:18px;justify-content:center;border-top:1px solid rgba(255,255,255,.15);padding-top:14px">
+          <div class="res-meta-i" id="rDur" style="font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--ah-gold);letter-spacing:.14em">16-20 SEM</div>
+          <div class="res-meta-i" id="rLvl" style="font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--ah-gold);letter-spacing:.14em">TOUS NIVEAUX</div>
+        </div>
+      </div>
     </div>
 
     <!-- Bulle verdict Titan navy + filet or -->
@@ -4820,7 +4828,7 @@ window.tiResetOnEnter = function(){ window.tiShowStep(1); };
       </div>
     </div>
 
-    <button class="res-btn" onclick="go('profil4')" style="margin-top:4px;width:100%;max-width:340px">Continuer →</button>
+    <button class="res-btn" onclick="go('profil4')" style="margin-top:4px;width:100%;max-width:340px;background:linear-gradient(135deg,#D4B45E,#C5A44E 55%,#B89238);box-shadow:0 10px 28px rgba(197,164,78,.38)">C'EST PARTI →</button>
   </div>
 </div>
 
@@ -5738,7 +5746,7 @@ window.tiResetOnEnter = function(){ window.tiShowStep(1); };
   <div class="sub-tabs">
     <div class="sub-tab on" onclick="showSec('overview',this)">Vue d'ensemble</div>
     <div class="sub-tab" onclick="showSec('tests',this)">Tests</div>
-    <div class="sub-tab" onclick="showSec('sessions',this)">Séances</div>
+    <div class="sub-tab" onclick="showSec('sessions',this)">Historique</div>
     <div class="sub-tab" onclick="showSec('track',this)">Exercices</div>
   </div>
 
