@@ -24552,6 +24552,14 @@ var SET_TESTS = [
 var setCurrentStep = 0;
 var setValues = {};
 window.setSeriesCount = window.setSeriesCount || {};
+// Tests simples qui acceptent plusieurs essais (jusqu'à 5) : le meilleur
+// essai est conservé (max pour saut/distance, min pour temps).
+window.setAttemptCount = window.setAttemptCount || {};
+var SET_ATTEMPT_CFG = {
+  jump:        { fieldId: 'set_jump',     bestType: 'max', label: 'Hauteur max atteinte', unit: 'cm',  ph: '290'  },
+  sprint60:    { fieldId: 'set_sprint60', bestType: 'min', label: 'Temps',                unit: 'sec', ph: '7.80' },
+  laneAgility: { fieldId: 'set_laneAg',   bestType: 'min', label: 'Temps',                unit: 'sec', ph: '12.50'}
+};
 
 function initSET() {
   setCurrentStep = 0;
@@ -24638,19 +24646,51 @@ function renderSETStep() {
     html += '</div>';
   } else {
     var setSimpleExName = (ex.name || '').replace(/'/g, "\\'").replace(/"/g, '&quot;');
+    var attemptCfg = SET_ATTEMPT_CFG[ex.id]; // null si test simple sans multi-essais
     ex.fields.forEach(function(f) {
       var fUnit = (f.unit === 'cm' || f.unit === 'sec' || f.unit === 'kg' || f.unit === 'm' || f.unit === 'reps') ? f.unit : '';
-      html += '<div style="margin-bottom:12px">';
-      html += '<label style="font-size:11px;color:var(--text2);font-weight:700;letter-spacing:1px;text-transform:uppercase;display:block;margin-bottom:6px">' + f.label + '</label>';
-      html += '<div style="display:flex;align-items:center;gap:8px">';
-      html += '<input class="fi" type="number" id="' + f.id + '" placeholder="' + f.placeholder + '" step="0.01" style="flex:1;font-size:18px;font-weight:700;text-align:center" oninput="setValues[this.id]=parseFloat(this.value)||0;setUpdateValid()">';
-      html += '<div style="font-size:14px;color:var(--muted);font-weight:700;min-width:30px">' + f.unit + '</div>';
-      html += '<button type="button" class="trk-voice-btn" data-field="' + f.id + '" data-unit="' + fUnit + '" data-exoid="' + ex.id + '" data-exoname="' + setSimpleExName + '" onclick="window.trkVoice && window.trkVoice.start({fieldId:this.dataset.field, unit:this.dataset.unit, exerciseId:this.dataset.exoid, exerciseName:this.dataset.exoname, btn:this})" aria-label="Saisie vocale">🎙</button>';
-      html += '</div></div>';
+      // Si ce champ est multi-essais : rend N rangées + bouton "+ Ajouter un essai"
+      if (attemptCfg && f.id === attemptCfg.fieldId) {
+        if (!window.setAttemptCount[ex.id]) window.setAttemptCount[ex.id] = 1;
+        var ac = window.setAttemptCount[ex.id];
+        var bestUnit = attemptCfg.unit;
+        html += '<div style="margin-bottom:12px">';
+        html += '<label style="font-size:11px;color:var(--text2);font-weight:700;letter-spacing:1px;text-transform:uppercase;display:block;margin-bottom:6px">' + f.label + ' <span style="color:var(--muted);font-weight:500;text-transform:none;letter-spacing:normal;font-size:10px">— jusqu\'à 5 essais, garde le meilleur</span></label>';
+        html += '<div id="setAttempts_' + ex.id + '">';
+        for (var a = 1; a <= ac; a++) {
+          var aid = attemptCfg.fieldId + '_a' + a;
+          html += '<div style="display:grid;grid-template-columns:38px 1fr 30px 34px;gap:8px;margin-bottom:8px;align-items:center">';
+          html += '<div style="font-family:\'Bebas Neue\',sans-serif;font-size:16px;color:var(--gold);text-align:center">E' + a + '</div>';
+          html += '<input class="fi setAttemptInput" data-exoid="' + ex.id + '" type="number" id="' + aid + '" placeholder="' + f.placeholder + '" step="0.01" style="text-align:center;font-size:16px;font-weight:700;padding:10px 4px" oninput="setRecalcBest(\'' + ex.id + '\')">';
+          html += '<div style="font-size:12px;color:var(--muted);font-weight:700;text-align:center">' + bestUnit + '</div>';
+          html += '<button type="button" class="trk-voice-btn-sm" data-field="' + aid + '" data-unit="' + bestUnit + '" data-exoid="' + ex.id + '" data-exoname="' + setSimpleExName + '" onclick="window.trkVoice && window.trkVoice.start({fieldId:this.dataset.field, unit:this.dataset.unit, exerciseId:this.dataset.exoid, exerciseName:this.dataset.exoname, btn:this})" aria-label="Saisie vocale">🎙</button>';
+          html += '</div>';
+        }
+        html += '</div>';
+        if (ac < 5) {
+          html += '<button id="setAddAttBtn_' + ex.id + '" onclick="setAddAttempt(\'' + ex.id + '\')" style="width:100%;padding:11px;background:rgba(197,164,78,.08);border:1.5px dashed rgba(197,164,78,.35);border-radius:10px;color:var(--gold);font-size:13px;font-weight:700;cursor:pointer;margin-bottom:8px;font-family:Outfit,sans-serif">+ Ajouter un essai (' + ac + '/5)</button>';
+        } else {
+          html += '<div style="text-align:center;font-size:11px;color:var(--green);font-weight:700;margin-bottom:8px;padding:8px;background:rgba(34,197,94,.06);border-radius:8px">✓ 5 essais — maximum atteint</div>';
+        }
+        html += '<div style="background:var(--surface2);border-radius:10px;padding:10px 14px;display:flex;justify-content:space-between;align-items:center">';
+        html += '<span style="font-size:12px;color:var(--text2);font-weight:600">Meilleur essai</span>';
+        html += '<span style="font-family:\'Bebas Neue\',sans-serif;font-size:20px;color:var(--gold)" id="setBestVal_' + ex.id + '">— ' + bestUnit + '</span>';
+        html += '</div>';
+        // Champ caché qui contient la valeur retenue (mirroir du meilleur essai)
+        html += '<input type="hidden" id="' + f.id + '">';
+        html += '</div>';
+      } else {
+        html += '<div style="margin-bottom:12px">';
+        html += '<label style="font-size:11px;color:var(--text2);font-weight:700;letter-spacing:1px;text-transform:uppercase;display:block;margin-bottom:6px">' + f.label + '</label>';
+        html += '<div style="display:flex;align-items:center;gap:8px">';
+        html += '<input class="fi" type="number" id="' + f.id + '" placeholder="' + f.placeholder + '" step="0.01" style="flex:1;font-size:18px;font-weight:700;text-align:center" oninput="setValues[this.id]=parseFloat(this.value)||0;setUpdateValid()">';
+        html += '<div style="font-size:14px;color:var(--muted);font-weight:700;min-width:30px">' + f.unit + '</div>';
+        html += '<button type="button" class="trk-voice-btn" data-field="' + f.id + '" data-unit="' + fUnit + '" data-exoid="' + ex.id + '" data-exoname="' + setSimpleExName + '" onclick="window.trkVoice && window.trkVoice.start({fieldId:this.dataset.field, unit:this.dataset.unit, exerciseId:this.dataset.exoid, exerciseName:this.dataset.exoname, btn:this})" aria-label="Saisie vocale">🎙</button>';
+        html += '</div></div>';
+      }
     });
     if (ex.id === 'jump') {
       html += '<div style="display:flex;justify-content:space-between;align-items:center;background:var(--surface2);border-radius:10px;padding:10px 14px;margin-top:4px"><span style="font-size:12px;color:var(--muted);font-weight:600">Détente réelle</span><span style="font-family:\'Bebas Neue\',sans-serif;font-size:20px;color:var(--gold)" id="setDetenteVal">— cm</span></div>';
-      html += '<scr' + 'ipt>setTimeout(function(){[\'set_reach\',\'set_jump\'].forEach(function(id){var el=document.getElementById(id);if(el){var old=el.oninput;el.oninput=function(e){if(old)old.call(this,e);var r=parseFloat(document.getElementById(\'set_reach\').value)||0;var j=parseFloat(document.getElementById(\'set_jump\').value)||0;var v=document.getElementById(\'setDetenteVal\');if(v){if(j>r&&r>0){v.textContent=Math.round(j-r)+\' cm\';v.style.color=\'#22C55E\';}else{v.textContent=\'— cm\';v.style.color=\'var(--gold)\';}}}}});},100);</scr' + 'ipt>';
     }
   }
 
@@ -24681,6 +24721,11 @@ function renderSETStep() {
   html += '</div>';
 
   container.innerHTML = html;
+  // Branche set_reach → recalcul détente quand l'utilisateur change la taille bras levés
+  if (ex.id === 'jump') {
+    var r = document.getElementById('set_reach');
+    if (r) r.addEventListener('input', function(){ setRecalcBest('jump'); });
+  }
   setUpdateValid();
 }
 
@@ -24695,9 +24740,18 @@ function setUpdateValid() {
       if (kg && parseFloat(kg.value) > 0) { hasValue = true; break; }
     }
   } else {
+    var attemptCfg = SET_ATTEMPT_CFG[ex.id];
     ex.fields.forEach(function(f) {
       var el = document.getElementById(f.id);
       if (el && parseFloat(el.value) > 0) hasValue = true;
+      // Le champ canonique du multi-essais est caché : on regarde aussi les essais
+      if (attemptCfg && f.id === attemptCfg.fieldId) {
+        var ac = (window.setAttemptCount && window.setAttemptCount[ex.id]) || 1;
+        for (var k = 1; k <= ac; k++) {
+          var ael = document.getElementById(attemptCfg.fieldId + '_a' + k);
+          if (ael && parseFloat(ael.value) > 0) { hasValue = true; break; }
+        }
+      }
     });
   }
   var btn = document.getElementById('setNextBtn') || document.getElementById('setFinishBtn');
@@ -24743,6 +24797,74 @@ function setAddSerie(exoId, ph) {
   }
 }
 
+// Ajoute une rangée d'essai pour un test simple (jump / sprint60 / laneAgility).
+// Identique en esprit à setAddSerie() pour les tests à séries.
+function setAddAttempt(exoId) {
+  var cfg = SET_ATTEMPT_CFG[exoId]; if (!cfg) return;
+  if (!window.setAttemptCount[exoId]) window.setAttemptCount[exoId] = 1;
+  if (window.setAttemptCount[exoId] >= 5) return;
+  window.setAttemptCount[exoId]++;
+  var a = window.setAttemptCount[exoId];
+  var rows = document.getElementById('setAttempts_' + exoId);
+  if (rows) {
+    var aid = cfg.fieldId + '_a' + a;
+    var ex = SET_TESTS.find(function(e){ return e.id === exoId; }) || {};
+    var exNameSafe = (ex.name || '').replace(/'/g, "\\'").replace(/"/g, '&quot;');
+    var ph = cfg.ph;
+    var div = document.createElement('div');
+    div.style.cssText = 'display:grid;grid-template-columns:38px 1fr 30px 34px;gap:8px;margin-bottom:8px;align-items:center';
+    div.innerHTML = '<div style="font-family:\'Bebas Neue\',sans-serif;font-size:16px;color:var(--gold);text-align:center">E' + a + '</div>'
+      + '<input class="fi setAttemptInput" data-exoid="' + exoId + '" type="number" id="' + aid + '" placeholder="' + ph + '" step="0.01" style="text-align:center;font-size:16px;font-weight:700;padding:10px 4px" oninput="setRecalcBest(\'' + exoId + '\')">'
+      + '<div style="font-size:12px;color:var(--muted);font-weight:700;text-align:center">' + cfg.unit + '</div>'
+      + '<button type="button" class="trk-voice-btn-sm" data-field="' + aid + '" data-unit="' + cfg.unit + '" data-exoid="' + exoId + '" data-exoname="' + exNameSafe + '" onclick="window.trkVoice && window.trkVoice.start({fieldId:this.dataset.field, unit:this.dataset.unit, exerciseId:this.dataset.exoid, exerciseName:this.dataset.exoname, btn:this})" aria-label="Saisie vocale">🎙</button>';
+    rows.appendChild(div);
+    setTimeout(function(){ var el = document.getElementById(aid); if (el) el.focus(); }, 80);
+  }
+  var btn = document.getElementById('setAddAttBtn_' + exoId);
+  if (window.setAttemptCount[exoId] >= 5) {
+    if (btn) { btn.textContent = '✓ 5 essais — maximum atteint'; btn.onclick = null; }
+  } else if (btn) {
+    btn.textContent = '+ Ajouter un essai (' + window.setAttemptCount[exoId] + '/5)';
+  }
+}
+
+// Recalcule le meilleur essai et écrit la valeur dans le champ caché canonique.
+// Synchronise aussi le label "Meilleur essai" + déclenche setUpdateValid + détente.
+function setRecalcBest(exoId) {
+  var cfg = SET_ATTEMPT_CFG[exoId]; if (!cfg) return;
+  var ac = (window.setAttemptCount && window.setAttemptCount[exoId]) || 1;
+  var best = null;
+  for (var i = 1; i <= ac; i++) {
+    var el = document.getElementById(cfg.fieldId + '_a' + i);
+    if (!el) continue;
+    var v = parseFloat(el.value);
+    if (!isFinite(v) || v <= 0) continue;
+    if (best === null) best = v;
+    else if (cfg.bestType === 'max') best = Math.max(best, v);
+    else best = Math.min(best, v);
+  }
+  var hidden = document.getElementById(cfg.fieldId);
+  if (hidden) hidden.value = best != null ? best : '';
+  setValues[cfg.fieldId] = best != null ? best : 0;
+  var lbl = document.getElementById('setBestVal_' + exoId);
+  if (lbl) {
+    if (best != null) { lbl.textContent = best + ' ' + cfg.unit; lbl.style.color = '#22C55E'; }
+    else { lbl.textContent = '— ' + cfg.unit; lbl.style.color = 'var(--gold)'; }
+  }
+  // Détente réelle = hauteur max − taille bras levés
+  if (exoId === 'jump') {
+    var r = parseFloat((document.getElementById('set_reach')||{}).value) || 0;
+    var v = document.getElementById('setDetenteVal');
+    if (v) {
+      if (best != null && best > r && r > 0) { v.textContent = Math.round(best - r) + ' cm'; v.style.color = '#22C55E'; }
+      else { v.textContent = '— cm'; v.style.color = 'var(--gold)'; }
+    }
+  }
+  setUpdateValid();
+}
+window.setAddAttempt = setAddAttempt;
+window.setRecalcBest = setRecalcBest;
+
 function setCalc1RM(exoId) {
   var max = 0;
   var sc = (window.setSeriesCount && window.setSeriesCount[exoId]) || 1;
@@ -24770,6 +24892,8 @@ function setNextStep() {
     setValues[ex.id + '_max'] = max;
     setValues[ex.id + '_1rm'] = max > 0 ? Math.round(max * 1.15) : 0;
   } else {
+    // Multi-essais : recalcule le meilleur AVANT de lire le champ canonique
+    if (SET_ATTEMPT_CFG[ex.id] && typeof setRecalcBest === 'function') setRecalcBest(ex.id);
     ex.fields.forEach(function(f) {
       var el = document.getElementById(f.id);
       if (el) setValues[f.id] = parseFloat(el.value) || 0;
@@ -24802,6 +24926,24 @@ function setStopStopwatch(exoId) {
   var display = document.getElementById('setStopwatchDisplay_' + exoId);
   if (display) display.textContent = elapsed;
   var ex = SET_TESTS.find(function(e){ return e.id === exoId; });
+  // Si le test a un mode multi-essais : on remplit le PROCHAIN essai vide
+  // (et on en crée un nouveau au besoin jusqu'au plafond de 5).
+  var cfg = SET_ATTEMPT_CFG[exoId];
+  if (cfg) {
+    var ac = (window.setAttemptCount && window.setAttemptCount[exoId]) || 1;
+    var slot = 0;
+    for (var i = 1; i <= ac; i++) {
+      var el = document.getElementById(cfg.fieldId + '_a' + i);
+      if (el && (!el.value || parseFloat(el.value) <= 0)) { slot = i; break; }
+    }
+    if (!slot && ac < 5) { setAddAttempt(exoId); slot = window.setAttemptCount[exoId]; }
+    if (slot) {
+      var target = document.getElementById(cfg.fieldId + '_a' + slot);
+      if (target) { target.value = elapsed; setRecalcBest(exoId); }
+    }
+    return;
+  }
+  // Test simple sans multi-essais → ancien comportement
   if (ex && ex.fields[0]) {
     var inp = document.getElementById(ex.fields[0].id);
     if (inp) {
@@ -24834,22 +24976,71 @@ function setStartTimer(seconds, btn) {
 
 function setFinish() {
   var ex = SET_TESTS[setCurrentStep];
-  if (ex && ex.fields) {
-    ex.fields.forEach(function(f) {
-      var el = document.getElementById(f.id);
-      if (el) setValues[f.id] = parseFloat(el.value) || 0;
-    });
+  // Capture le dernier test (multi-essais inclus)
+  if (ex) {
+    if (ex.hasSeries) {
+      var sc = (window.setSeriesCount && window.setSeriesCount[ex.id]) || 1;
+      var max = 0;
+      for (var i = 1; i <= sc; i++) {
+        var kel = document.getElementById('set_kg_' + ex.id + '_' + i);
+        if (kel && parseFloat(kel.value) > max) max = parseFloat(kel.value);
+      }
+      setValues[ex.id + '_max'] = max;
+      setValues[ex.id + '_1rm'] = max > 0 ? Math.round(max * 1.15) : 0;
+    } else {
+      if (SET_ATTEMPT_CFG[ex.id] && typeof setRecalcBest === 'function') setRecalcBest(ex.id);
+      if (ex.fields) ex.fields.forEach(function(f) {
+        var el = document.getElementById(f.id);
+        if (el) setValues[f.id] = parseFloat(el.value) || 0;
+      });
+    }
   }
+
+  // 1. Persiste l'historique
   var history = [];
   try { history = JSON.parse(localStorage.getItem('ah_set_history') || '[]'); } catch(e) {}
   history.push({ date: new Date().toISOString(), values: setValues });
   try { localStorage.setItem('ah_set_history', JSON.stringify(history)); } catch(e) {}
-  alert('✓ Donnée enregistrée. SET complète sauvegardée.');
+
+  // 2. Met à jour le profil : satDone + meilleures valeurs canoniques pour
+  //    débloquer le programme et alimenter l'AthletikScore + la Home.
+  try {
+    var prof = JSON.parse(localStorage.getItem('ah_profile') || '{}');
+    prof.satDone = true;
+    prof.setCompletedAt = new Date().toISOString();
+    var reach = parseFloat((document.getElementById('set_reach')||{}).value) || setValues.set_reach || 0;
+    var jumpMax = setValues.set_jump || 0;
+    if (jumpMax > 0 && reach > 0) prof.vertJump = Math.round(jumpMax - reach);
+    if (setValues.set_sprint60 > 0) { prof.satSprintTime = setValues.set_sprint60; prof.satSprintDist = 60; }
+    if (setValues.set_laneAg > 0)   prof.satTTest = setValues.set_laneAg;
+    if (setValues.set_feet94 > 0)   prof.satFeet94 = setValues.set_feet94;
+    if (setValues['squat_1rm'] > 0) prof.satForce1RM = setValues['squat_1rm'];
+    if (setValues['sdt_1rm']   > 0) prof.satSDT1RM  = setValues['sdt_1rm'];
+    if (setValues['ht_1rm']    > 0) prof.satHT1RM   = setValues['ht_1rm'];
+    if (setValues['dc_1rm']    > 0) prof.satDC1RM   = setValues['dc_1rm'];
+    localStorage.setItem('ah_profile', JSON.stringify(prof));
+    if (typeof window.user !== 'undefined') { window.user.satDone = true; }
+    if (typeof fbSaveProfile === 'function') fbSaveProfile();
+    if (typeof _syncOnboardingDoneFlag === 'function') _syncOnboardingDoneFlag(prof);
+  } catch(e) { console.warn('setFinish profile save:', e); }
+
   try { renderAthletikScore(); } catch(e) {}
+  try { renderBadges(); } catch(e) {}
+  try { renderUserData(); } catch(e) {}
+
+  // 3. Reset l'état du wizard mais NE PAS re-render — on quitte l'écran.
   setCurrentStep = 0;
   setValues = {};
   window.setSeriesCount = {};
-  renderSETStep();
+  window.setAttemptCount = {};
+
+  // 4. Feedback + navigation. Toast non-bloquant, puis bascule vers Moi
+  //    pour voir l'Athletik Score et les badges débloqués.
+  try { showToast('✓ SET enregistrée. Programme débloqué.', 'success'); }
+  catch(e) { alert('✓ SET enregistrée. Programme débloqué.'); }
+  setTimeout(function(){
+    try { if (typeof switchTab === 'function') switchTab('moi'); } catch(e) {}
+  }, 600);
 }
 
 // ═══════════════════════════════════════════════
