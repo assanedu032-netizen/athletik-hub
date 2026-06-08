@@ -5452,10 +5452,15 @@ window.tiResetOnEnter = function(){ window.tiShowStep(1); };
             <span id="userName" style="color:var(--ah-gold)">ATHLÈTE.</span>
           </div>
         </div>
-        <div onclick="switchTab('moi')" style="width:44px;height:44px;border-radius:50%;background:var(--ah-navy-deep);border:2px solid var(--ah-gold);overflow:hidden;cursor:pointer;flex-shrink:0;display:flex;align-items:center;justify-content:center">
-          <img src="images/titan-mascot.png" alt="" style="width:100%;height:100%;object-fit:cover" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">
-          <span id="userInitial" style="display:none;font-family:'Bebas Neue',sans-serif;font-size:16px;color:var(--ah-gold);align-items:center;justify-content:center;width:100%;height:100%">A</span>
-        </div>
+        <!-- Bouton paramètres (icône engrenage) → onglet Moi. La tête de Titan
+             était redondante avec celle de la nav (sub-tab Titan) et confusait
+             les utilisateurs. Une vraie icône paramètres est plus claire. -->
+        <button onclick="switchTab('moi')" aria-label="Paramètres" style="width:44px;height:44px;border-radius:50%;background:var(--ah-surface);border:1.5px solid var(--ah-border2);cursor:pointer;flex-shrink:0;display:flex;align-items:center;justify-content:center;padding:0;color:var(--ah-text);-webkit-tap-highlight-color:rgba(197,164,78,.15);transition:border-color .15s,transform .1s" onmousedown="this.style.transform='scale(.96)'" onmouseup="this.style.transform=''" onmouseleave="this.style.transform=''">
+          <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <circle cx="12" cy="12" r="3"/>
+            <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09a1.65 1.65 0 0 0-1-1.51 1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09a1.65 1.65 0 0 0 1.51-1 1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33h0a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51h0a1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82v0a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+          </svg>
+        </button>
       </div>
     </div>
 
@@ -6619,7 +6624,7 @@ window.tiResetOnEnter = function(){ window.tiShowStep(1); };
     <div class="si-right">→</div>
   </div>
 
-  <div class="setting-item" onclick="alert('Laisser un avis Amazon — Merci !')">
+  <div class="setting-item" onclick="openAmazonBook()">
     <div class="si-left"><div class="si-icon">⭐</div><div><div class="si-text">Laisser un avis sur le livre</div><div class="si-sub">Aide d'autres athlètes à nous trouver</div></div></div>
     <div class="si-right">→</div>
   </div>
@@ -7238,6 +7243,15 @@ window.tiResetOnEnter = function(){ window.tiShowStep(1); };
 
     <button id="accessCodeSubmitBtn" onclick="submitAccessCode()" style="width:100%;padding:14px;background:linear-gradient(135deg,#D4AF37,#E0C25A);color:#1B2D5C;border:0;border-radius:12px;font-family:'Outfit',sans-serif;font-size:14px;font-weight:800;cursor:pointer;letter-spacing:1px">DÉBLOQUER MON ACCÈS</button>
     <button onclick="closeAccessCode()" style="width:100%;margin-top:8px;padding:10px;background:transparent;border:1px solid #1F305F;color:#8a93a8;border-radius:12px;font-family:'Outfit',sans-serif;font-size:12px;font-weight:700;cursor:pointer">Plus tard</button>
+
+    <!-- Pas encore acheté le livre — CTA Amazon. Séparation visuelle nette
+         pour que ça ressemble à une 2e voie, pas à un bouton de validation. -->
+    <div style="margin-top:18px;padding-top:14px;border-top:1px solid rgba(255,255,255,.08);text-align:center">
+      <div style="font-size:12px;color:#8a93a8;line-height:1.5;margin-bottom:10px">Tu n'as pas encore le livre ?</div>
+      <button onclick="openAmazonBook()" style="width:100%;padding:13px;background:transparent;border:1.5px solid rgba(212,175,55,.45);color:#D4AF37;border-radius:12px;font-family:'Outfit',sans-serif;font-size:13px;font-weight:800;cursor:pointer;letter-spacing:.5px;display:inline-flex;align-items:center;justify-content:center;gap:8px">
+        <span>📕</span><span>L'ACHETER SUR AMAZON</span><span style="opacity:.7">→</span>
+      </button>
+    </div>
   </div>
 </div>
 
@@ -20926,6 +20940,16 @@ var ACCESS_TIER_META = {
 var ACCESS_BOOK_QUESTION = 'Quel est le prénom de l\'ami qui a écrit la Préface du livre ?';
 var ACCESS_BOOK_ANSWERS = ['loic', 'loïc'];
 
+// Lien Amazon du livre — source unique pour tous les CTA d'achat / avis.
+// Utilisé par : modal d'accès (CTA "Acheter"), bannière essai (lien "L'acheter"),
+// paramètres ("Laisser un avis"). Centraliser ici permet de changer en un point.
+var AMAZON_BOOK_URL = 'https://amzn.eu/d/02ZPlUOp';
+window.AMAZON_BOOK_URL = AMAZON_BOOK_URL;
+function openAmazonBook() {
+  try { window.open(AMAZON_BOOK_URL, '_blank', 'noopener,noreferrer'); } catch(e) { location.href = AMAZON_BOOK_URL; }
+}
+window.openAmazonBook = openAmazonBook;
+
 function openAccessCode() {
   var modal = document.getElementById('accessCodeModal');
   if (modal) modal.style.display = 'flex';
@@ -21150,21 +21174,34 @@ function renderTrialBanner() {
   if (t.active) {
     var rem = window._formatTrialRemaining(t.remaining);
     el.innerHTML =
-      '<div style="background:linear-gradient(135deg,rgba(197,164,78,.10),rgba(197,164,78,.04));border:1px solid rgba(197,164,78,.35);border-radius:12px;padding:12px 14px;margin:12px 16px;display:flex;align-items:center;justify-content:space-between;gap:10px">' +
-        '<div style="flex:1;min-width:0">' +
-          '<div style="font-size:11px;letter-spacing:1.5px;font-weight:800;color:var(--gold);text-transform:uppercase">Essai gratuit</div>' +
-          '<div style="font-size:13px;color:var(--text);font-weight:600;margin-top:2px">Reste <strong>' + rem + '</strong> avant blocage</div>' +
+      '<div style="background:linear-gradient(135deg,rgba(197,164,78,.10),rgba(197,164,78,.04));border:1px solid rgba(197,164,78,.35);border-radius:12px;padding:12px 14px;margin:12px 16px">' +
+        '<div style="display:flex;align-items:center;justify-content:space-between;gap:10px">' +
+          '<div style="flex:1;min-width:0">' +
+            '<div style="font-size:11px;letter-spacing:1.5px;font-weight:800;color:var(--gold);text-transform:uppercase">Essai gratuit</div>' +
+            '<div style="font-size:13px;color:var(--text);font-weight:600;margin-top:2px">Reste <strong>' + rem + '</strong> avant blocage</div>' +
+          '</div>' +
+          '<button onclick="openAccessCode()" style="background:var(--gold);color:#1B2D5C;border:0;padding:8px 14px;border-radius:10px;font-family:\'Outfit\',sans-serif;font-size:12px;font-weight:800;cursor:pointer;white-space:nowrap;letter-spacing:.3px">📕 J\'ai le livre</button>' +
         '</div>' +
-        '<button onclick="openAccessCode()" style="background:var(--gold);color:#1B2D5C;border:0;padding:8px 14px;border-radius:10px;font-family:\'Outfit\',sans-serif;font-size:12px;font-weight:800;cursor:pointer;white-space:nowrap;letter-spacing:.3px">📕 J\'ai le livre</button>' +
+        // CTA secondaire pour ceux qui n'ont pas encore acheté le livre.
+        '<div style="margin-top:8px;padding-top:8px;border-top:1px dashed rgba(197,164,78,.25);font-size:11.5px;color:var(--text2);text-align:center">' +
+          'Pas encore le livre ? ' +
+          '<a href="javascript:void(0)" onclick="openAmazonBook()" style="color:var(--gold);font-weight:700;text-decoration:underline;text-underline-offset:3px">L\'acheter sur Amazon →</a>' +
+        '</div>' +
       '</div>';
   } else {
     el.innerHTML =
-      '<div style="background:linear-gradient(135deg,rgba(239,68,68,.12),rgba(239,68,68,.04));border:1px solid rgba(239,68,68,.4);border-radius:12px;padding:12px 14px;margin:12px 16px;display:flex;align-items:center;justify-content:space-between;gap:10px">' +
-        '<div style="flex:1;min-width:0">' +
-          '<div style="font-size:11px;letter-spacing:1.5px;font-weight:800;color:#EF4444;text-transform:uppercase">Essai expiré</div>' +
-          '<div style="font-size:13px;color:var(--text);font-weight:600;margin-top:2px">Accès bloqué. Saisis ton code livre.</div>' +
+      '<div style="background:linear-gradient(135deg,rgba(239,68,68,.12),rgba(239,68,68,.04));border:1px solid rgba(239,68,68,.4);border-radius:12px;padding:12px 14px;margin:12px 16px">' +
+        '<div style="display:flex;align-items:center;justify-content:space-between;gap:10px">' +
+          '<div style="flex:1;min-width:0">' +
+            '<div style="font-size:11px;letter-spacing:1.5px;font-weight:800;color:#EF4444;text-transform:uppercase">Essai expiré</div>' +
+            '<div style="font-size:13px;color:var(--text);font-weight:600;margin-top:2px">Accès bloqué. Saisis ton code livre.</div>' +
+          '</div>' +
+          '<button onclick="openAccessCode()" style="background:#EF4444;color:#fff;border:0;padding:8px 14px;border-radius:10px;font-family:\'Outfit\',sans-serif;font-size:12px;font-weight:800;cursor:pointer;white-space:nowrap;letter-spacing:.3px">📕 Débloquer</button>' +
         '</div>' +
-        '<button onclick="openAccessCode()" style="background:#EF4444;color:#fff;border:0;padding:8px 14px;border-radius:10px;font-family:\'Outfit\',sans-serif;font-size:12px;font-weight:800;cursor:pointer;white-space:nowrap;letter-spacing:.3px">📕 Débloquer</button>' +
+        '<div style="margin-top:8px;padding-top:8px;border-top:1px dashed rgba(239,68,68,.25);font-size:11.5px;color:var(--text2);text-align:center">' +
+          'Pas encore le livre ? ' +
+          '<a href="javascript:void(0)" onclick="openAmazonBook()" style="color:var(--gold);font-weight:700;text-decoration:underline;text-underline-offset:3px">L\'acheter sur Amazon →</a>' +
+        '</div>' +
       '</div>';
   }
 }
