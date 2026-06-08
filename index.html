@@ -27646,18 +27646,31 @@ async function fbSaveProfile() {
       } catch(_){
         alert('Sur iPhone : touche le bouton Partager (carré avec flèche) puis "Sur l\'écran d\'accueil".');
       }
+      return;
+    }
+    // Android sans beforeinstallprompt encore reçu : on guide vers le menu
+    try {
+      showToast && showToast('Touche le menu ⋮ du navigateur puis "Installer l\'application" ou "Ajouter à l\'écran d\'accueil".', 'info', 9000);
+    } catch(_){
+      alert('Touche le menu du navigateur (⋮) puis choisis "Installer l\'application" ou "Ajouter à l\'écran d\'accueil".');
     }
   };
 
-  // Décide si on affiche au démarrage
+  // Décide si on affiche au démarrage. Brief user : "Quand on a pas encore
+  // téléchargé l'app il doit avoir une bannière qui apparaît quelques sec
+  // après. Les gens vont scanner un QR code — si on ne leur dit pas, ils
+  // ne téléchargent pas."
   function maybeShow(){
     if (isStandalone()) return;        // déjà installé → jamais
-    if (wasRecentlyDismissed()) return; // user a dismissé récemment
+    if (wasRecentlyDismissed()) return; // user a dismissé récemment <14j
     if (isIOS()) {
       showBanner('Installer', 'iPhone : Partager 📤 → "Sur l\'écran d\'accueil".');
+      return;
     }
-    // Sur Android, on attend beforeinstallprompt avant d'afficher (sinon
-    // le bouton "Installer" ne ferait rien).
+    // Android / desktop : on AFFICHE TOUJOURS la bannière 4s après le load
+    // même si beforeinstallprompt n'a pas (encore) été reçu. Le click route
+    // vers deferred.prompt() s'il est dispo, sinon vers les instructions menu.
+    showBanner('Installer', "Ajoute l'app à ton écran d'accueil pour un accès rapide.");
   }
 
   window.addEventListener('beforeinstallprompt', function(e){
@@ -27673,10 +27686,13 @@ async function fbSaveProfile() {
     try { localStorage.setItem(DISMISS_KEY, '0'); } catch(_){}
   });
 
+  // Affiche la bannière 4 secondes après le load pour laisser le temps à
+  // l'utilisateur de comprendre l'app avant l'invite.
+  function scheduleShow(){ setTimeout(maybeShow, 4000); }
   if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', maybeShow);
+    document.addEventListener('DOMContentLoaded', scheduleShow);
   } else {
-    setTimeout(maybeShow, 200);
+    scheduleShow();
   }
 })();
 </script>
