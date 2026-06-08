@@ -4718,7 +4718,7 @@ window.tiResetOnEnter = function(){ window.tiShowStep(1); };
     </div>
 
     <!-- CTA continuer + bulle Titan en bas -->
-    <button class="ah-q1-cta" onclick="go('auth')" style="margin-top:18px;width:100%;padding:15px;background:var(--ah-surface2);color:var(--ah-muted);border:1px solid var(--ah-border);border-radius:12px;font-family:'Bebas Neue',sans-serif;font-size:14px;letter-spacing:.12em;cursor:pointer">CHOISIS POUR CONTINUER</button>
+    <button class="ah-q1-cta" onclick="window.TEST_MODE ? go('profil1') : go('auth')" style="margin-top:18px;width:100%;padding:15px;background:var(--ah-surface2);color:var(--ah-muted);border:1px solid var(--ah-border);border-radius:12px;font-family:'Bebas Neue',sans-serif;font-size:14px;letter-spacing:.12em;cursor:pointer">CHOISIS POUR CONTINUER</button>
 
     <div style="display:flex;align-items:flex-start;gap:10px;margin-top:14px;padding:0 2px">
       <div style="width:32px;height:32px;border-radius:50%;border:1.5px solid var(--ah-gold);overflow:hidden;flex-shrink:0;background:var(--ah-navy-deep);display:flex;align-items:center;justify-content:center">
@@ -11992,6 +11992,24 @@ document.addEventListener('DOMContentLoaded', function() {
   // vers Home : ah_profile a été préservé pour accélérer la reconnexion,
   // mais l'utilisateur veut voir l'écran d'auth, pas sa Home.
   var justLoggedOut = /[?&]logout=/.test(location.search);
+
+  // ── Mode test onboarding : ?testflow=1 (ou ?test=fresh)
+  // Wipe COMPLET du localStorage (sauf le thème) + active TEST_MODE pour
+  // bypasser les exigences d'auth Firebase pendant le parcours. L'user peut
+  // dérouler welcome → titanIntro → obQ1 → profil1 → profil4 → profil3 →
+  // home sans créer de compte. La barre #testSkipBar (déjà existante)
+  // s'affiche grâce à window.TEST_MODE = true et permet de skip chaque
+  // étape. À utiliser uniquement pour QA. ──
+  if (/[?&](testflow=1|test=fresh)/.test(location.search)) {
+    try {
+      var _keepTheme = localStorage.getItem('ah_theme');
+      localStorage.clear();
+      if (_keepTheme) localStorage.setItem('ah_theme', _keepTheme);
+    } catch(e) {}
+    window.TEST_MODE = true;
+    try { if (typeof enterTestMode === 'function') enterTestMode(); } catch(e) {}
+    profileAtBoot = {}; // force re-derivation des flags onboarding
+  }
 
   if (!justLoggedOut && _isOnboardingComplete(profileAtBoot)) {
     setTimeout(function() {
@@ -20148,12 +20166,24 @@ function enterTestMode() {
   window.TEST_MODE = true;
   try { localStorage.setItem('_athletik_test_mode', '1'); } catch (e) {}
   document.body.classList.add('test-mode');
+  // Bandeau "TEST MODE" persistent en haut pour rappeler à l'user qu'il
+  // est dans un parcours QA. Bouton EXIT pour quitter à tout moment.
+  if (!document.getElementById('testModeBanner')) {
+    var b = document.createElement('div');
+    b.id = 'testModeBanner';
+    b.style.cssText = 'position:fixed;top:0;left:0;right:0;z-index:9700;background:linear-gradient(90deg,#F59E0B,#D97706);color:#fff;font-family:Outfit,sans-serif;font-size:11px;font-weight:800;letter-spacing:.12em;text-transform:uppercase;text-align:center;padding:6px 12px;box-shadow:0 2px 8px rgba(0,0,0,.18);display:flex;align-items:center;justify-content:center;gap:10px';
+    b.innerHTML = '<span>🧪 TEST MODE — parcours QA</span>'
+      + '<button onclick="exitTestMode();location.replace(location.origin+location.pathname)" style="background:rgba(255,255,255,.18);border:1px solid rgba(255,255,255,.35);color:#fff;font:inherit;padding:3px 10px;border-radius:8px;cursor:pointer">EXIT</button>';
+    document.body.appendChild(b);
+  }
   if (typeof _testRefreshSkip === 'function') _testRefreshSkip();
 }
 function exitTestMode() {
   window.TEST_MODE = false;
   try { localStorage.removeItem('_athletik_test_mode'); } catch (e) {}
   document.body.classList.remove('test-mode');
+  var b = document.getElementById('testModeBanner');
+  if (b && b.parentNode) b.parentNode.removeChild(b);
 }
 
 // ══════════════════════════════════
