@@ -14467,16 +14467,41 @@ function _bfDrawChart(data) {
       secs = Math.ceil(_tim_minut.remMs / 1000);
     }
     if (secs <= 0) { tim_minutOpenSet(); return; }
-    _tim_minut.totalMs = secs * 1000;
-    _tim_minut.remMs = _tim_minut.totalMs;
-    _tim_minut.startMs = Date.now();
-    if (tim_audioCtx && tim_audioCtx.state === 'suspended') tim_audioCtx.resume(); tim_beepUnlock();
-    _tim_minut.iv = setInterval(_tim_minutTick, 200);
-    _tim_minut.running = true;
-    var b = document.getElementById('timMinutBtn'); if (b) b.textContent = '⏸';
-    _tim_minutRender();
-    _tim_minutPersist();
-    tim_minutScheduleNotif(Date.now() + _tim_minut.totalMs);
+
+    // ── Garantir l'autorisation notif AVANT de lancer le timer ──
+    // Bug remonté : sur Android avec de la musique en background, la PWA
+    // se fait endormir et seule la notif système peut réveiller l'user.
+    // Si les notifs ne sont pas autorisées, on prévient explicitement
+    // pour ne pas tromper le user qui croit que le timer va sonner partout.
+    var _runStart = function() {
+      _tim_minut.totalMs = secs * 1000;
+      _tim_minut.remMs = _tim_minut.totalMs;
+      _tim_minut.startMs = Date.now();
+      if (tim_audioCtx && tim_audioCtx.state === 'suspended') tim_audioCtx.resume(); tim_beepUnlock();
+      _tim_minut.iv = setInterval(_tim_minutTick, 200);
+      _tim_minut.running = true;
+      var b = document.getElementById('timMinutBtn'); if (b) b.textContent = '⏸';
+      _tim_minutRender();
+      _tim_minutPersist();
+      tim_minutScheduleNotif(Date.now() + _tim_minut.totalMs);
+      // Warning persistant si pas de permission notif (le timer démarre quand
+      // même, mais l'user sait qu'il faut rester sur l'app).
+      try {
+        if (typeof Notification !== 'undefined' && Notification.permission !== 'granted') {
+          tim_toast('⚠️ Notifs OFF — reste sur l\'app pour entendre la sonnerie', 6000);
+        }
+      } catch(_) {}
+    };
+
+    // Si permission jamais demandée, on demande maintenant (le user vient
+    // d'interagir avec un bouton, donc le navigateur accepte la requête).
+    try {
+      if (typeof Notification !== 'undefined' && Notification.permission === 'default') {
+        Notification.requestPermission().then(function(){ _runStart(); }).catch(function(){ _runStart(); });
+        return;
+      }
+    } catch(_) {}
+    _runStart();
   }
   function _tim_minutTick(){
     _tim_minut.remMs = _tim_minut.totalMs - (Date.now() - _tim_minut.startMs);
@@ -14674,12 +14699,21 @@ function _bfDrawChart(data) {
         _tim_minutRender();
         try { tim_toast('⏱ Timer en cours…'); } catch(e){}
       } else {
-        // Expiré pendant l'absence → bip rétro + clear
+        // Expiré pendant l'absence → "réveil" insistant pour compenser le
+        // fait que la notif système a peut-être été ratée. 3 bips espacés
+        // + vibration + toast prolongé. L'user voit/entend clairement que
+        // le timer est fini, même s'il n'a rien reçu pendant qu'il était
+        // sur une autre app.
         _tim_minut.remMs = 0;
         _tim_minut.totalMs = 0;
         _tim_minutRender();
         try { if (typeof tim_sndFinish === 'function') tim_sndFinish(); } catch(e){}
-        try { tim_toast('⏰ Le timer a sonné pendant ton absence'); } catch(e){}
+        try {
+          setTimeout(function(){ if (typeof tim_sndFinish === 'function') tim_sndFinish(); }, 1200);
+          setTimeout(function(){ if (typeof tim_sndFinish === 'function') tim_sndFinish(); }, 2400);
+        } catch(e){}
+        try { if (navigator.vibrate) navigator.vibrate([400, 200, 400, 200, 400]); } catch(_) {}
+        try { tim_toast('⏰ TIMER TERMINÉ pendant ton absence — ' + Math.round((Date.now()-st.endsAt)/60000) + ' min en retard', 8000); } catch(e){}
         _tim_minutClearPersist();
       }
     } else {
