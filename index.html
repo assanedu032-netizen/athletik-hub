@@ -5994,78 +5994,26 @@ window.tiResetOnEnter = function(){ window.tiShowStep(1); };
         <div style="font-size:12px;color:var(--muted);margin-top:6px">1RM estimé = 5RM × 1.15</div>
       </div>
 
-      <!-- Séparateur : le SAT du livre s'arrête ici (Détente + Force pure).
-           Les 3 tests suivants ne sont PAS dans le SAT du livre — ils
-           servent à enrichir ton Athletik Score (mesures complémentaires).
-           Les laisser visibles permet de calculer un score complet sans
-           tromper l'utilisateur sur ce qu'est vraiment le SAT. -->
-      <div style="margin:18px 0 10px;padding:12px 14px;background:linear-gradient(135deg,rgba(197,164,78,.08),rgba(197,164,78,.02));border:1px dashed rgba(197,164,78,.35);border-radius:10px">
-        <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px">
-          <span style="font-size:14px">📖</span>
-          <div style="font-family:'Outfit',sans-serif;font-size:12px;font-weight:800;color:var(--gold);letter-spacing:.04em">SAT DU LIVRE TERMINÉ</div>
-        </div>
-        <div style="font-size:11.5px;color:var(--text2);line-height:1.5">Les 3 tests qui suivent sont des <strong>mesures complémentaires</strong> pour affiner ton Athletik Score. Ils ne font pas partie du SAT officiel — tu peux les sauter.</div>
-      </div>
-
-      <!-- Test 3: Sprint (multi-essais + distance libre) -->
-      <div class="card">
-        <div class="card-title"><span>⚡</span> Test 3 — Sprint <span style="font-size:10px;font-weight:700;color:var(--muted);margin-left:6px">complément</span></div>
-        <div id="satVid_sprint" class="test-video-wrap"></div>
-
-        <div class="fi-row">
-          <div class="fg">
-            <label class="fl">Distance</label>
-            <select class="fi-select" id="satSprintDist" onchange="onSprintDistChange()">
-              <option value="10">10 m</option>
-              <option value="20">20 m</option>
-              <option value="30" selected>30 m</option>
-              <option value="40">40 m</option>
-              <option value="50">50 m</option>
-              <option value="60">60 m</option>
-              <option value="80">80 m</option>
-              <option value="100">100 m</option>
-              <option value="150">150 m</option>
-              <option value="200">200 m</option>
-            </select>
-          </div>
-        </div>
-
-        <div style="font-size:10px;font-weight:700;color:var(--muted);letter-spacing:1.5px;text-transform:uppercase;margin:14px 0 8px">Essais (jusqu'à 5) — meilleur temps retenu</div>
-        <div id="satSprintAttempts">
-          <div class="fi-row"><div class="fg"><label class="fl">Essai 1</label><input class="fi" type="number" id="satSprint1" placeholder="4.20" step="0.01"></div><div class="fi-unit">sec</div></div>
-          <div class="fi-row"><div class="fg"><label class="fl">Essai 2</label><input class="fi" type="number" id="satSprint2" placeholder="—" step="0.01"></div><div class="fi-unit">sec</div></div>
-          <div class="fi-row"><div class="fg"><label class="fl">Essai 3</label><input class="fi" type="number" id="satSprint3" placeholder="—" step="0.01"></div><div class="fi-unit">sec</div></div>
-          <div class="fi-row"><div class="fg"><label class="fl">Essai 4</label><input class="fi" type="number" id="satSprint4" placeholder="—" step="0.01"></div><div class="fi-unit">sec</div></div>
-          <div class="fi-row"><div class="fg"><label class="fl">Essai 5</label><input class="fi" type="number" id="satSprint5" placeholder="—" step="0.01"></div><div class="fi-unit">sec</div></div>
-        </div>
-        <div id="satSprintBest" style="font-size:12px;font-weight:700;color:var(--green);margin-top:8px;min-height:18px"></div>
-      </div>
-
-      <!-- Test 4: Agilité T-Test (multi-essais) — complément hors livre -->
-      <div class="card">
-        <div class="card-title"><span>🔄</span> Test 4 — Agilité T-Test <span style="font-size:10px;font-weight:700;color:var(--muted);margin-left:6px">complément</span></div>
-        <div id="satVid_ttest" class="test-video-wrap"></div>
-
-        <div style="font-size:10px;font-weight:700;color:var(--muted);letter-spacing:1.5px;text-transform:uppercase;margin:0 0 8px">Essais (jusqu'à 5) — meilleur temps retenu</div>
-        <div id="satTTestAttempts">
-          <div class="fi-row"><div class="fg"><label class="fl">Essai 1</label><input class="fi" type="number" id="satTTest1" placeholder="9.5" step="0.01"></div><div class="fi-unit">sec</div></div>
-          <div class="fi-row"><div class="fg"><label class="fl">Essai 2</label><input class="fi" type="number" id="satTTest2" placeholder="—" step="0.01"></div><div class="fi-unit">sec</div></div>
-          <div class="fi-row"><div class="fg"><label class="fl">Essai 3</label><input class="fi" type="number" id="satTTest3" placeholder="—" step="0.01"></div><div class="fi-unit">sec</div></div>
-          <div class="fi-row"><div class="fg"><label class="fl">Essai 4</label><input class="fi" type="number" id="satTTest4" placeholder="—" step="0.01"></div><div class="fi-unit">sec</div></div>
-          <div class="fi-row"><div class="fg"><label class="fl">Essai 5</label><input class="fi" type="number" id="satTTest5" placeholder="—" step="0.01"></div><div class="fi-unit">sec</div></div>
-        </div>
-        <div id="satTTestBest" style="font-size:12px;font-weight:700;color:var(--green);margin-top:8px;min-height:18px"></div>
-      </div>
-
-      <!-- Test 5: Mobilité — complément hors livre -->
-      <div class="card">
-        <div class="card-title"><span>🧘</span> Test 5 — Mobilité <span style="font-size:10px;font-weight:700;color:var(--muted);margin-left:6px">complément</span></div>
-        <div id="satVid_fms" class="test-video-wrap"></div>
-        <div class="fi-row">
-          <div class="fg"><label class="fl">Score FMS</label><input class="fi" type="number" id="satFMS" placeholder="14" step="1" min="0" max="21"></div>
-          <div class="fi-unit">/21</div>
+      <!-- Note livre : le SAT s'arrête ici (Détente + Force pure 5RM).
+           Sprint / T-Test / FMS étaient des ajouts hors livre supprimés
+           à la demande du client le 8 juin 2026. Le sprint est mesuré via
+           le SET (Sprint 60m). La mobilité reste un complément optionnel
+           dans Suivi > Exercices si besoin. -->
+      <div style="margin:18px 0 14px;padding:12px 14px;background:linear-gradient(135deg,rgba(197,164,78,.08),rgba(197,164,78,.02));border:1px solid rgba(197,164,78,.30);border-radius:10px;display:flex;align-items:center;gap:10px">
+        <span style="font-size:16px">📖</span>
+        <div style="flex:1">
+          <div style="font-family:'Outfit',sans-serif;font-size:12.5px;font-weight:800;color:var(--gold);letter-spacing:.02em;line-height:1.3">SAT terminé — conforme au livre</div>
+          <div style="font-size:11px;color:var(--text2);margin-top:2px;line-height:1.5">Détente verticale + 4 mouvements de force pure. Le sprint et l'agilité se mesurent via le SET.</div>
         </div>
       </div>
+
+      <!-- Champs cachés conservés pour ne pas casser calculateSAT() qui
+           lisait satSprint1..5, satSprintDist, satTTest1..5 et satFMS. Si
+           les éléments n'existent plus, parseFloat(undefined) renvoie NaN
+           → les scores se retrouvent à 0 et le total est plafonné à 65/100
+           pour ceux qui n'ont fait que le SAT du livre. Voir SAT_SCORE_RECALC. -->
+      <input type="hidden" id="satSprintDist" value="30">
+      <input type="hidden" id="satFMS" value="">
 
       <button class="btn btn-gold" onclick="calculateSAT()" style="margin-top:8px">Calculer mon Athletik Score</button>
     </div>
@@ -15247,21 +15195,24 @@ function updateTTestBest() {
 function onSprintDistChange() { updateSprintBest(); persistSATInProgress(); }
 
 function calculateSAT() {
-  const reach = parseFloat(document.getElementById('satReach').value) || 0;
-  const jump = parseFloat(document.getElementById('satJump').value) || 0;
-  const squat5 = parseFloat(document.getElementById('satSquat').value) || 0;
-  const dl = parseFloat(document.getElementById('satDL').value) || 0;
-  const ht = parseFloat(document.getElementById('satHT').value) || 0;
-  const dc = parseFloat(document.getElementById('satDC').value) || 0;
-  var sprintTime = _bestSprintTime('satSprint', 5); // meilleur des 5 essais
-  // Fallback : le SAT pas-à-pas stocke le sprint dans le champ unique
-  // satSprintTime (et non satSprint1..5). Sans ce fallback, le sprint
-  // ressort à 0 et n'apparaît pas dans le score.
+  const reach = parseFloat((document.getElementById('satReach')||{}).value) || 0;
+  const jump = parseFloat((document.getElementById('satJump')||{}).value) || 0;
+  const squat5 = parseFloat((document.getElementById('satSquat')||{}).value) || 0;
+  const dl = parseFloat((document.getElementById('satDL')||{}).value) || 0;
+  const ht = parseFloat((document.getElementById('satHT')||{}).value) || 0;
+  const dc = parseFloat((document.getElementById('satDC')||{}).value) || 0;
+  // Sprint / T-Test / FMS retirés de la page SAT (hors livre). On lit quand
+  // même les valeurs si l'utilisateur les a saisies depuis le SET (sprint60
+  // exposé dans satSprintTime via cross-fill) — sinon 0 et le score s'auto-
+  // rebalance sur les 65 points "SAT pur".
+  var sprintTime = 0;
+  try { sprintTime = _bestSprintTime('satSprint', 5); } catch(_) {}
   if (sprintTime <= 0) {
     sprintTime = parseFloat((document.getElementById('satSprintTime') || {}).value) || 0;
   }
-  const tTest = _bestSprintTime('satTTest', 5);       // meilleur des 5 essais
-  const fms = parseFloat(document.getElementById('satFMS').value) || 0;
+  var tTest = 0;
+  try { tTest = _bestSprintTime('satTTest', 5); } catch(_) {}
+  const fms = parseFloat((document.getElementById('satFMS')||{}).value) || 0;
 
   if (!reach || !jump) { alert('Saisis au moins tes données de détente.'); return; }
 
