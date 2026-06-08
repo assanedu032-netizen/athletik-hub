@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
 <meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="theme-color" content="#1B2D5C" id="themeColor">
+<meta name="theme-color" content="#1B2A4A" id="themeColor">
 <title>ATHLETIK HUB</title>
 
 <link rel="manifest" href="/manifest.json">
@@ -4310,22 +4310,42 @@ html body #result, html body #nutriResult{
      Mission user : "Logo trop petit dans le carré blanc, pas assez premium."
      Fix : logo agrandi 220px (vs 130), pas de container badge, drop-shadow
      navy subtile pour profondeur. Cohérent avec l'icône installée 88%. ═══ -->
-<div id="splash" class="scr on" style="background:radial-gradient(ellipse at 50% 35%, #243B6B 0%, #1B2A4A 45%, #0F1A30 100%);justify-content:center;align-items:center;padding:32px 24px;position:relative;overflow:hidden">
-  <!-- Halo gold subtle derrière le logo pour la profondeur premium -->
-  <div aria-hidden="true" style="position:absolute;top:28%;left:50%;transform:translate(-50%,-50%);width:420px;height:420px;max-width:90vw;max-height:60vh;border-radius:50%;background:radial-gradient(circle at center, rgba(197,164,78,.22) 0%, rgba(197,164,78,.06) 35%, rgba(197,164,78,0) 65%);pointer-events:none;animation:popIn .8s ease both"></div>
-  <div style="display:flex;flex-direction:column;align-items:center;gap:18px;max-width:380px;width:100%;position:relative;z-index:1">
-    <!-- Carte logo : padding plus compact + bordure gold subtle + ombre douce -->
-    <div style="padding:14px;background:#fff;border-radius:28px;border:1px solid rgba(197,164,78,.30);box-shadow:0 16px 40px rgba(0,0,0,.30), 0 0 0 1px rgba(255,255,255,.04) inset, 0 0 30px rgba(197,164,78,.10);animation:popIn .6s ease both">
-      <img class="sp-logo" src="/images/logo.png" alt="Athletik Hub" style="width:170px;height:170px;object-fit:contain;display:block" onerror="this.outerHTML='<div class=&quot;sp-logo&quot; style=&quot;width:170px;height:170px;display:flex;align-items:center;justify-content:center;color:#1B2A4A;font-family:Bebas Neue,sans-serif;font-size:72px&quot;>AH</div>'">
+<div id="splash" class="scr on" style="background:radial-gradient(ellipse at 50% 28%, #243B6B 0%, #1B2A4A 45%, #0F1A30 100%);justify-content:center;align-items:center;padding:24px;position:relative;overflow:hidden">
+  <style>
+    @keyframes spLogoIn { 0% { opacity:0; transform:scale(.88) translateY(8px) } 100% { opacity:1; transform:scale(1) translateY(0) } }
+    @keyframes spFadeUp { 0% { opacity:0; transform:translateY(10px) } 100% { opacity:1; transform:translateY(0) } }
+    @keyframes spLineGrow { 0% { width:0; opacity:0 } 100% { width:56px; opacity:1 } }
+    @keyframes spHaloPulse { 0%,100% { opacity:.7 } 50% { opacity:1 } }
+    #splash .sp-logo-card { animation: spLogoIn .65s cubic-bezier(.2,.7,.25,1) both }
+    #splash .sp-name { animation: spFadeUp .55s ease both; animation-delay:.18s }
+    #splash .sp-line { animation: spLineGrow .55s ease both; animation-delay:.32s }
+    #splash .sp-sub { animation: spFadeUp .55s ease both; animation-delay:.42s }
+    #splash .sp-bar { animation: spFadeUp .55s ease both; animation-delay:.54s }
+    #splash .sp-halo { animation: spHaloPulse 3.2s ease-in-out infinite }
+  </style>
+  <!-- Halo gold subtle derrière le logo -->
+  <div class="sp-halo" aria-hidden="true" style="position:absolute;top:24%;left:50%;transform:translate(-50%,-50%);width:380px;height:380px;max-width:88vw;max-height:55vh;border-radius:50%;background:radial-gradient(circle at center, rgba(197,164,78,.20) 0%, rgba(197,164,78,.06) 38%, rgba(197,164,78,0) 68%);pointer-events:none"></div>
+  <div style="display:flex;flex-direction:column;align-items:center;gap:14px;max-width:360px;width:100%;position:relative;z-index:1;margin-top:-6vh">
+    <!-- Carte logo : plus fine, coins modernes, ombre plus subtile, fond légèrement teinté -->
+    <div class="sp-logo-card" style="padding:10px;background:#FAFBFD;border-radius:22px;border:1px solid rgba(197,164,78,.22);box-shadow:0 10px 28px rgba(0,0,0,.22), 0 0 24px rgba(197,164,78,.08)">
+      <img class="sp-logo" src="/images/logo.png" alt="Athletik Hub" style="width:148px;height:148px;object-fit:contain;display:block" onerror="this.outerHTML='<div class=&quot;sp-logo&quot; style=&quot;width:148px;height:148px;display:flex;align-items:center;justify-content:center;color:#1B2A4A;font-family:Bebas Neue,sans-serif;font-size:64px&quot;>AH</div>'">
     </div>
-    <div class="sp-name" style="font-family:'Bebas Neue',sans-serif;font-size:46px;line-height:.95;color:#FFFFFF;letter-spacing:.04em;text-align:center;text-shadow:0 2px 18px rgba(0,0,0,.40);margin-top:6px">ATHLETIK HUB</div>
-    <div style="width:48px;height:2px;background:#C5A44E;border-radius:2px;box-shadow:0 0 12px rgba(197,164,78,.50);margin:2px 0"></div>
-    <div class="sp-sub" style="font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:.20em;color:#E8D9A8;text-transform:uppercase;text-align:center;line-height:1.6;font-weight:600;text-shadow:0 1px 6px rgba(0,0,0,.20)">Les secrets de la<br>détente verticale</div>
-    <div class="sp-bar" style="width:140px;height:2px;background:rgba(255,255,255,.10);border-radius:2px;overflow:hidden;margin-top:4px"><div class="sp-bar-in" id="splashBar" style="height:100%;background:linear-gradient(90deg,#C5A44E,#D4B86A);width:0;transition:width .25s;box-shadow:0 0 8px rgba(197,164,78,.60)"></div></div>
+    <div class="sp-name" style="font-family:'Bebas Neue',sans-serif;font-size:46px;line-height:.95;color:#FFFFFF;letter-spacing:.02em;text-align:center;text-shadow:0 2px 18px rgba(0,0,0,.40);margin-top:8px">ATHLETIK HUB</div>
+    <div class="sp-line" style="width:56px;height:2px;background:linear-gradient(90deg,rgba(197,164,78,0),#C5A44E,rgba(197,164,78,0));border-radius:2px;box-shadow:0 0 14px rgba(197,164,78,.55);margin:2px 0"></div>
+    <div class="sp-sub" style="font-family:'JetBrains Mono',monospace;font-size:12px;letter-spacing:.18em;color:#F0E3B8;text-transform:uppercase;text-align:center;line-height:1.55;font-weight:600;text-shadow:0 1px 6px rgba(0,0,0,.25)">Les secrets de la<br>détente verticale</div>
+    <div class="sp-bar" style="width:140px;height:2px;background:rgba(255,255,255,.10);border-radius:2px;overflow:hidden;margin-top:6px"><div class="sp-bar-in" id="splashBar" style="height:100%;background:linear-gradient(90deg,#C5A44E,#D4B86A);width:0;transition:width .25s;box-shadow:0 0 8px rgba(197,164,78,.60)"></div></div>
   </div>
-  <div style="position:absolute;bottom:calc(28px + env(safe-area-inset-bottom,0px));left:0;right:0;text-align:center;z-index:1">
+  <!-- Bouton Réinitialiser : masqué en production, visible avec ?dev=1 dans l'URL (devs/QA) -->
+  <div id="splashResetWrap" style="display:none;position:absolute;bottom:calc(28px + env(safe-area-inset-bottom,0px));left:0;right:0;text-align:center;z-index:1">
     <button onclick="localStorage.clear();location.reload()" style="background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.18);color:rgba(255,255,255,.85);font-size:11px;cursor:pointer;font-family:'Outfit',sans-serif;font-weight:600;letter-spacing:.06em;padding:10px 22px;border-radius:999px;backdrop-filter:blur(8px)">Réinitialiser</button>
   </div>
+  <script>
+    // Le reset n'est visible qu'avec ?dev=1 dans l'URL (debug/QA).
+    if (/[?&]dev=1\b/.test(location.search)) {
+      var _rw = document.getElementById('splashResetWrap');
+      if (_rw) _rw.style.display = 'block';
+    }
+  </script>
 </div>
 
 <!-- ═══ WELCOME — Page d'accueil pour visiteurs ═══ -->
@@ -4394,9 +4414,8 @@ html body #result, html body #nutriResult{
         <img src="images/titan-mascot.png" alt="Titan" style="width:100%;height:100%;object-fit:cover" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">
         <span style="display:none;width:100%;height:100%;align-items:center;justify-content:center;font-family:'Bebas Neue',sans-serif;font-size:54px;color:var(--ah-gold)">T</span>
       </div>
-      <div style="font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:.22em;color:var(--ah-gold);text-transform:uppercase;margin-top:24px">Coach IA</div>
-      <div style="font-family:'Bebas Neue',sans-serif;font-size:42px;letter-spacing:.04em;color:var(--ah-text);margin-top:4px">JE SUIS TITAN.</div>
-      <p style="font-family:'Outfit',sans-serif;font-size:14px;line-height:1.55;color:var(--ah-text2);margin:14px auto 0;max-width:300px">Pas un assistant poli. Pas un ami. Un coach qui sait ce que tu peux donner — et qui te le demande.</p>
+      <div style="font-family:'Bebas Neue',sans-serif;font-size:42px;letter-spacing:.04em;color:var(--ah-text);margin-top:24px">JE SUIS TITAN.</div>
+      <p style="font-family:'Outfit',sans-serif;font-size:14.5px;line-height:1.55;color:var(--ah-text2);margin:14px auto 0;max-width:300px">Le coach Alassane m'a créé pour te faire progresser. Pas pour te flatter.</p>
     </div>
 
     <!-- STEP 2 — La promesse -->
@@ -4405,43 +4424,38 @@ html body #result, html body #nutriResult{
         <img src="images/titan-mascot.png" alt="Titan" style="width:100%;height:100%;object-fit:cover" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">
         <span style="display:none;width:100%;height:100%;align-items:center;justify-content:center;font-family:'Bebas Neue',sans-serif;font-size:42px;color:var(--ah-gold)">T</span>
       </div>
-      <div style="font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:.22em;color:var(--ah-gold);text-transform:uppercase;margin-top:24px">La méthode</div>
-      <div style="font-family:'Bebas Neue',sans-serif;font-size:38px;letter-spacing:.04em;color:var(--ah-text);margin-top:4px;line-height:1.05">DU TRAVAIL.<br>MESURÉ.</div>
-      <p style="font-family:'Outfit',sans-serif;font-size:14px;line-height:1.55;color:var(--ah-text2);margin:14px auto 0;max-width:300px">Chaque séance est notée. Chaque test est tracé. Tu vois ce que tu progresses — ou pas.</p>
+      <div style="font-family:'Bebas Neue',sans-serif;font-size:38px;letter-spacing:.04em;color:var(--ah-text);margin-top:24px;line-height:1.05">AVANCE.<br>POUR DE VRAI.</div>
+      <p style="font-family:'Outfit',sans-serif;font-size:14.5px;line-height:1.55;color:var(--ah-text2);margin:14px auto 0;max-width:300px">Chaque séance compte. Chaque test te situe. Tu vois tes vrais progrès — sans te raconter d'histoires.</p>
     </div>
 
     <!-- STEP 3 — Avant de commencer -->
-    <div class="ti-step" data-ti-step="3" style="display:none;flex:1;flex-direction:column;align-items:center;padding:24px 24px 12px;text-align:center">
-      <div class="ah-titan" style="width:90px;height:90px;border-radius:50%;border:3px solid var(--ah-gold);background:var(--ah-surface);overflow:hidden;box-shadow:0 10px 28px rgba(20,30,60,.15);display:flex;align-items:center;justify-content:center;margin-top:8px">
+    <div class="ti-step" data-ti-step="3" style="display:none;flex:1;flex-direction:column;align-items:center;padding:18px 24px 6px;text-align:center">
+      <div class="ah-titan" style="width:84px;height:84px;border-radius:50%;border:3px solid var(--ah-gold);background:var(--ah-surface);overflow:hidden;box-shadow:0 8px 22px rgba(20,30,60,.14);display:flex;align-items:center;justify-content:center;margin-top:4px">
         <img src="images/titan-mascot.png" alt="Titan" style="width:100%;height:100%;object-fit:cover" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">
-        <span style="display:none;width:100%;height:100%;align-items:center;justify-content:center;font-family:'Bebas Neue',sans-serif;font-size:36px;color:var(--ah-gold)">T</span>
+        <span style="display:none;width:100%;height:100%;align-items:center;justify-content:center;font-family:'Bebas Neue',sans-serif;font-size:34px;color:var(--ah-gold)">T</span>
       </div>
-      <div style="margin-top:22px;width:100%;max-width:340px;display:flex;flex-direction:column;gap:10px;text-align:center">
-        <div style="background:var(--ah-navy-deep);border-left:3px solid var(--ah-gold);border-radius:12px 12px 12px 4px;padding:14px 16px">
-          <div style="font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:.2em;color:var(--ah-gold);text-transform:uppercase;margin-bottom:6px">TITAN</div>
-          <div style="font-family:'Outfit',sans-serif;font-size:13.5px;line-height:1.5;color:#fff">Avant de commencer : je vais te poser quelques questions. Pas de bla-bla, juste ton objectif et tes mesures.</div>
-        </div>
-        <div style="background:var(--ah-navy-deep);border-left:3px solid var(--ah-gold);border-radius:12px 12px 12px 4px;padding:14px 16px">
-          <div style="font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:.2em;color:var(--ah-gold);text-transform:uppercase;margin-bottom:6px">TITAN</div>
-          <div style="font-family:'Outfit',sans-serif;font-size:13.5px;line-height:1.5;color:#fff">Si tu mens sur tes chiffres, tu te mens à toi. Pas à moi.</div>
-        </div>
+      <!-- Carte fusionnée premium : un seul header TITAN, deux messages séparés par un trait fin -->
+      <div style="margin-top:20px;width:100%;max-width:340px;background:var(--ah-navy-deep);border-left:3px solid var(--ah-gold);border-radius:14px 14px 14px 4px;padding:16px 18px 14px;text-align:left;box-shadow:0 10px 28px rgba(20,30,60,.18)">
+        <div style="font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:.22em;color:var(--ah-gold);text-transform:uppercase;margin-bottom:8px">TITAN</div>
+        <div style="font-family:'Outfit',sans-serif;font-size:14px;line-height:1.5;color:#fff">Avant de commencer : quelques questions. Pas de bla-bla, juste ton objectif et tes mesures.</div>
+        <div style="height:1px;background:rgba(197,164,78,.22);margin:12px 0"></div>
+        <div style="font-family:'Outfit',sans-serif;font-size:13px;line-height:1.45;color:rgba(255,255,255,.78);font-style:italic">Si tu mens sur tes chiffres, tu te mens à toi. Pas à moi.</div>
       </div>
-      <div style="width:100%;max-width:340px;height:1px;background:var(--ah-border);margin:22px 0 16px"></div>
-      <div style="font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:.14em;color:var(--ah-muted);text-transform:none">Ça prend 3 minutes. Sois honnête.</div>
+      <div style="font-family:'Outfit',sans-serif;font-size:13px;line-height:1.4;color:var(--ah-text2);margin-top:16px;letter-spacing:.01em">Ça prend 3 minutes. Sois honnête.</div>
       <!-- Bulle invisible pour compat JS typeText (référence #titanBubble) -->
       <div id="titanBubble" style="display:none"></div>
     </div>
 
     <!-- Pagination dots -->
-    <div style="display:flex;justify-content:center;gap:8px;padding:0 0 16px">
+    <div style="display:flex;justify-content:center;gap:8px;padding:6px 0 12px">
       <span class="ti-dot" data-ti-dot="1" style="width:8px;height:8px;border-radius:50%;background:var(--ah-gold);transition:background .15s"></span>
       <span class="ti-dot" data-ti-dot="2" style="width:8px;height:8px;border-radius:50%;background:var(--ah-border2);transition:background .15s"></span>
       <span class="ti-dot" data-ti-dot="3" style="width:8px;height:8px;border-radius:50%;background:var(--ah-border2);transition:background .15s"></span>
     </div>
 
     <!-- CTA bas -->
-    <div style="padding:0 24px 28px">
-      <button id="btnStart" onclick="tiNextOrStart()" style="width:100%;padding:17px 20px;background:var(--ah-gold);color:var(--ah-navy);border:none;border-radius:12px;font-family:'Bebas Neue',sans-serif;font-size:16px;letter-spacing:.12em;cursor:pointer;box-shadow:0 8px 24px rgba(197,164,78,.32)"><span id="tiCtaLabel">CONTINUER</span></button>
+    <div style="padding:0 24px calc(env(safe-area-inset-bottom, 0px) + 32px)">
+      <button id="btnStart" onclick="tiNextOrStart()" style="width:100%;padding:18px 20px;background:linear-gradient(135deg,#D4B45E,#C5A44E 55%,#B89238);color:var(--ah-navy);border:none;border-radius:14px;font-family:'Bebas Neue',sans-serif;font-size:17px;letter-spacing:.14em;cursor:pointer;box-shadow:0 10px 28px rgba(197,164,78,.38),0 2px 6px rgba(20,30,60,.18);transition:transform .15s,box-shadow .15s" onmousedown="this.style.transform='scale(.98)'" onmouseup="this.style.transform=''" onmouseleave="this.style.transform=''"><span id="tiCtaLabel">CONTINUER</span></button>
     </div>
   </div>
 </div>
