@@ -3284,7 +3284,10 @@ html body #result, html body #nutriResult{
   padding:24px 20px 20px !important;
 }
 .prof-av{
-  background:var(--ah-navy-deep) !important;
+  /* IMPORTANT : on cible background-COLOR (pas background) car `_profileApplyAvatar`
+     pose une background-image inline. Le shorthand `background:... !important`
+     remettait background-image à initial et écrasait la photo de profil. */
+  background-color:var(--ah-navy-deep) !important;
   border:2px solid var(--ah-gold) !important;
   font-family:var(--ah-font-display) !important;
   font-size:28px !important; color:var(--ah-gold) !important;
@@ -6493,20 +6496,6 @@ window.tiResetOnEnter = function(){ window.tiShowStep(1); };
     </div>
   </div>
 
-  <!-- Clé API Anthropic (pour Scanner repas) -->
-  <div class="engine-card" id="apiKeySection" style="margin-top:12px">
-    <div class="engine-title"><span>🔑</span> Clé API Anthropic</div>
-    <div class="engine-desc">Nécessaire pour activer le scanner repas IA. Ta clé reste sur ton appareil, jamais envoyée à un serveur tiers.</div>
-    <div style="display:flex;gap:8px;margin-top:10px">
-      <input type="password" id="apiKeyInput" placeholder="sk-ant-api03-..." style="flex:1;padding:11px 13px;background:var(--surface2);border:1.5px solid var(--border);border-radius:10px;font-family:'Outfit',sans-serif;font-size:12px;color:var(--text);outline:none">
-      <button onclick="apiKeySave()" style="padding:11px 18px;background:linear-gradient(135deg,var(--gold),var(--gold2));border:none;border-radius:10px;color:var(--navy);font-weight:800;font-size:12px;cursor:pointer;font-family:'Outfit',sans-serif">Enregistrer</button>
-    </div>
-    <div id="apiKeyStatus" style="margin-top:8px;font-size:11px;color:var(--muted)"></div>
-    <div style="margin-top:10px;padding:10px;background:rgba(197,164,78,.06);border-left:3px solid var(--gold);border-radius:0 8px 8px 0;font-size:11px;color:var(--text2);line-height:1.5">
-      Obtiens ta clé sur <strong>console.anthropic.com</strong> → API Keys → Create Key. Coût indicatif : ~0.01€ par scan.
-    </div>
-  </div>
-
   <!-- Compte Firebase -->
   <div class="engine-card" id="accountSection" style="margin-top:12px">
     <div class="engine-title"><span>👤</span> Mon compte</div>
@@ -6514,7 +6503,12 @@ window.tiResetOnEnter = function(){ window.tiShowStep(1); };
     <div id="emailVerifyBanner" style="display:none;margin-top:10px;padding:10px 12px;background:rgba(245,158,11,.08);border:1px solid rgba(245,158,11,.2);border-radius:8px;font-size:11px;color:#F59E0B;line-height:1.5">
       ⚠️ Email non vérifié. <a href="#" onclick="fbResendVerification();return false;" style="color:#F59E0B;font-weight:700;text-decoration:underline">Renvoyer le lien</a>
     </div>
-    <button id="signOutBtn" onclick="fbSignOut()" style="display:none;margin-top:12px;width:100%;padding:11px;background:rgba(224,82,82,.08);border:1px solid rgba(224,82,82,.25);border-radius:10px;color:#E05252;font-family:'Outfit',sans-serif;font-weight:700;font-size:12px;cursor:pointer">Me déconnecter</button>
+    <!-- Changement de mot de passe : visible UNIQUEMENT pour les comptes
+         email/password (méthode 'password' présente). Caché pour les
+         comptes Google-only. accountSection est rafraîchi à chaque ouverture
+         de l'onglet Moi via _accountRefreshActions(). -->
+    <button id="changePwdBtn" onclick="fbChangePassword()" style="display:none;margin-top:12px;width:100%;padding:11px;background:rgba(197,164,78,.10);border:1px solid rgba(197,164,78,.35);border-radius:10px;color:var(--gold);font-family:'Outfit',sans-serif;font-weight:700;font-size:12px;cursor:pointer">🔑 Changer mon mot de passe</button>
+    <button id="signOutBtn" onclick="fbSignOut()" style="display:none;margin-top:10px;width:100%;padding:11px;background:rgba(224,82,82,.08);border:1px solid rgba(224,82,82,.25);border-radius:10px;color:#E05252;font-family:'Outfit',sans-serif;font-weight:700;font-size:12px;cursor:pointer">Me déconnecter</button>
   </div>
 
   <!-- Session History -->
@@ -19200,11 +19194,13 @@ function setMode(el, mode) {
   console.log('Titan Engine mode:', mode);
 }
 
-function toggleDark() {
-  darkMode = !darkMode;
-  document.documentElement.setAttribute('data-theme', darkMode ? 'dark' : '');
-  document.getElementById('darkToggle').classList.toggle('on', darkMode);
-}
+// Note: une 2e définition de toggleDark vivait ici et écrasait celle de la
+// ligne 12032 (toggleDark → toggleTheme). Elle ne persistait pas le choix
+// (pas de localStorage.setItem), utilisait '' au lieu de 'light' pour
+// l'attribut data-theme, et ne mettait pas à jour la couleur de la barre
+// système. Conséquence : clic sur le toggle Mode sombre → rien ne se passe
+// visuellement, et l'état était perdu au reload. Supprimée pour laisser
+// toggleTheme() faire son travail.
 
 // Message affiché quand le push (FCM) n'est pas configuré ou échoue.
 // Volontairement simple et non alarmant : l'app fonctionne sans le push.
@@ -23742,26 +23738,52 @@ function fbRefreshAccountSection(fbUser) {
   var info = document.getElementById('accountInfo');
   var banner = document.getElementById('emailVerifyBanner');
   var signOutBtn = document.getElementById('signOutBtn');
+  var changePwdBtn = document.getElementById('changePwdBtn');
   if (!info) return;
 
   if (fbUser) {
     var name = fbUser.displayName || (fbUser.email ? fbUser.email.split('@')[0] : 'Athlète');
-    var providers = (fbUser.providerData || []).map(function(p){
-      if (p.providerId === 'google.com') return 'Google';
-      if (p.providerId === 'password') return 'Email';
-      return p.providerId;
+    var providerIds = (fbUser.providerData || []).map(function(p){ return p.providerId; });
+    var providers = providerIds.map(function(id){
+      if (id === 'google.com') return 'Google';
+      if (id === 'password') return 'Email';
+      return id;
     }).join(', ');
     info.innerHTML = '<strong style="color:var(--text)">' + name + '</strong><br>' +
                      '<span style="color:var(--muted)">' + fbUser.email + '</span><br>' +
                      '<span style="font-size:10px;color:var(--muted);margin-top:4px;display:inline-block">Connecté via ' + providers + '</span>';
     if (banner) banner.style.display = fbUser.emailVerified ? 'none' : 'block';
     if (signOutBtn) signOutBtn.style.display = 'block';
+    // Bouton "Changer mon mot de passe" : visible uniquement pour les
+    // comptes email/password. Les comptes Google-only n'ont pas de
+    // mot de passe à changer (auth déléguée à Google).
+    if (changePwdBtn) changePwdBtn.style.display = providerIds.indexOf('password') !== -1 ? 'block' : 'none';
   } else {
     info.innerHTML = '<span style="color:var(--muted)">Aucun compte connecté. Tes données sont stockées localement sur cet appareil uniquement.</span>';
     if (banner) banner.style.display = 'none';
     if (signOutBtn) signOutBtn.style.display = 'none';
+    if (changePwdBtn) changePwdBtn.style.display = 'none';
   }
 }
+
+// Envoie un email de réinitialisation à l'utilisateur connecté. Plus simple
+// et plus sûr qu'un flow re-auth + updatePassword (qui peut planter si la
+// session est expirée), et ça évite de demander l'ancien mot de passe.
+async function fbChangePassword() {
+  if (!window.fb || !window.fbUser || !window.fbUser.email) {
+    alert('Tu dois être connecté pour changer ton mot de passe.');
+    return;
+  }
+  var email = window.fbUser.email;
+  if (!confirm('Envoyer un email de réinitialisation à ' + email + ' ?\n\nTu cliqueras sur le lien reçu pour choisir un nouveau mot de passe.')) return;
+  try {
+    await window.fb.sendPasswordResetEmail(window.fb.auth, email);
+    alert('✓ Email envoyé à ' + email + '. Vérifie ta boîte (et tes spams).');
+  } catch(e) {
+    alert(typeof fbFormatError === 'function' ? fbFormatError(e) : (e.message || 'Erreur.'));
+  }
+}
+window.fbChangePassword = fbChangePassword;
 
 async function fbResendVerification() {
   if (!window.fbUser) return;
