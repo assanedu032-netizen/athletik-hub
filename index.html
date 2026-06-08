@@ -6548,8 +6548,8 @@ window.tiResetOnEnter = function(){ window.tiShowStep(1); };
     <div class="si-right">→</div>
   </div>
 
-  <div class="setting-item" onclick="alert('Jours d\'entraînement — Firebase à intégrer')">
-    <div class="si-left"><div class="si-icon">📅</div><div><div class="si-text">Jours d'entraînement</div><div class="si-sub">Lun, Mar, Jeu, Ven</div></div></div>
+  <div class="setting-item" onclick="openPlanModal()">
+    <div class="si-left"><div class="si-icon">📅</div><div><div class="si-text">Jours d'entraînement</div><div class="si-sub" id="settingTrainingDaysSub">Configure tes jours</div></div></div>
     <div class="si-right">→</div>
   </div>
 
@@ -12700,6 +12700,22 @@ function renderHomeAgenda() {
 
 // Moi — section "Mon planning" : sélecteur Semaine/Mois + agenda.
 function renderMoiPlanning() {
+  // Met à jour la ligne "Jours d'entraînement" des paramètres avec le
+  // résumé des jours configurés (Lun, Mer, Ven, …). Sans ça, le sous-titre
+  // restait sur le placeholder "Configure tes jours" même après config.
+  try {
+    var sub = document.getElementById('settingTrainingDaysSub');
+    if (sub) {
+      if (typeof trainingDays !== 'undefined' && trainingDays.size > 0) {
+        var abbr = ['Lun','Mar','Mer','Jeu','Ven','Sam','Dim'];
+        var picks = Array.from(trainingDays).sort(function(a,b){ return a-b; }).map(function(d){ return abbr[d]; });
+        sub.textContent = picks.join(', ');
+      } else {
+        sub.textContent = 'Configure tes jours';
+      }
+    }
+  } catch(e) {}
+
   var c = document.getElementById('moiPlanningView');
   if (!c) return;
   var btn = document.getElementById('moiPlanBtn');
