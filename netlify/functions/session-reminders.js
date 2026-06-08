@@ -244,6 +244,15 @@ exports.handler = async function () {
     else if (diff <= POST_HI  && diff > POST_LO)       kind = 'post';
     if (!kind) continue;
 
+    // Préférences par catégorie. Default ON pour prelecture/post/weekly,
+    // OFF pour prep (anti-spam). Master switch (notifToggle côté front)
+    // n'enlève PAS le fcmToken — on s'appuie sur la valeur explicite du
+    // toggle, donc on ne peut respecter que ce qui est dans notifPrefs.
+    const np = prof.notifPrefs || {};
+    const onByDefault = { prelecture:true, prep:false, post:true };
+    const isOn = (np[kind] === undefined) ? onByDefault[kind] : !!np[kind];
+    if (!isOn) continue;
+
     // Construit le payload selon la fenêtre.
     let title, body;
     const prenom = prof.prenom || '';

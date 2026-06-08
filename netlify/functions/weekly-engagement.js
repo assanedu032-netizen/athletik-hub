@@ -214,6 +214,11 @@ exports.handler = async function () {
     const token = prof.fcmToken;
     if (!token) continue;
 
+    // Respect du toggle "weekly" dans notifPrefs côté front. Default ON
+    // si la prop n'est pas définie.
+    const np = prof.notifPrefs || {};
+    if (np.weekly === false) continue;
+
     const tz = (u.planning && u.planning.tz) || 'Europe/Paris';
     // Sécurité : on n'envoie que si on est lundi entre 8h et 9h LOCAL.
     if (localWeekday(tz) !== 0) continue;

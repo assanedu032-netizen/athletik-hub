@@ -6701,8 +6701,31 @@ window.tiResetOnEnter = function(){ window.tiShowStep(1); };
   </div>
 
   <div class="setting-item" onclick="toggleNotif()">
-    <div class="si-left"><div class="si-icon">🔔</div><div><div class="si-text">Notifications</div><div class="si-sub">Rappels de Titan par WhatsApp-style</div></div></div>
+    <div class="si-left"><div class="si-icon">🔔</div><div><div class="si-text">Notifications</div><div class="si-sub">Master switch — Titan reste discret si OFF</div></div></div>
     <div class="toggle" id="notifToggle"><div class="toggle-knob"></div></div>
+  </div>
+
+  <!-- Sous-toggles par catégorie de push. Lus par session-reminders.js
+       et weekly-engagement.js côté serveur via notifPrefs sur le profil
+       Firestore. Master OFF (notifToggle) prime sur tous. Stockage local
+       ah_notif_prefs sync vers Firestore via FB_SYNC_KEYS (ah_profile). -->
+  <div id="notifPrefsWrap">
+    <div class="setting-item" onclick="toggleNotifPref('prelecture')" style="padding-left:36px">
+      <div class="si-left"><div class="si-icon" style="font-size:14px">📖</div><div><div class="si-text" style="font-size:13px">Lecture du jour</div><div class="si-sub">1h avant chaque séance</div></div></div>
+      <div class="toggle" id="notifPrefPrelecture"><div class="toggle-knob"></div></div>
+    </div>
+    <div class="setting-item" onclick="toggleNotifPref('prep')" style="padding-left:36px">
+      <div class="si-left"><div class="si-icon" style="font-size:14px">🏋️</div><div><div class="si-text" style="font-size:13px">Prépare-toi</div><div class="si-sub">30 min avant la séance</div></div></div>
+      <div class="toggle" id="notifPrefPrep"><div class="toggle-knob"></div></div>
+    </div>
+    <div class="setting-item" onclick="toggleNotifPref('post')" style="padding-left:36px">
+      <div class="si-left"><div class="si-icon" style="font-size:14px">💪</div><div><div class="si-text" style="font-size:13px">Ressenti post-séance</div><div class="si-sub">Note ton ressenti à chaud</div></div></div>
+      <div class="toggle" id="notifPrefPost"><div class="toggle-knob"></div></div>
+    </div>
+    <div class="setting-item" onclick="toggleNotifPref('weekly')" style="padding-left:36px">
+      <div class="si-left"><div class="si-icon" style="font-size:14px">🎯</div><div><div class="si-text" style="font-size:13px">Mission de la semaine</div><div class="si-sub">Lundi matin, 1 par semaine</div></div></div>
+      <div class="toggle" id="notifPrefWeekly"><div class="toggle-knob"></div></div>
+    </div>
   </div>
 
   <!-- Test push notif (n'apparaît qu'après activation notif + FCM token) -->
@@ -19548,6 +19571,45 @@ function setMode(el, mode) {
 // Message affiché quand le push (FCM) n'est pas configuré ou échoue.
 // Volontairement simple et non alarmant : l'app fonctionne sans le push.
 var FCM_UNAVAILABLE_MSG = 'Les rappels ne sont pas encore disponibles. Vérifie la configuration Firebase.';
+
+// ─── Préférences notif par catégorie ───
+// Stockage dans ah_profile.notifPrefs (sync Firestore via FB_SYNC_KEYS).
+// Lu par session-reminders.js / weekly-engagement.js pour respecter le choix.
+var NOTIF_PREFS_DEFAULT = { prelecture:true, prep:false, post:true, weekly:true };
+function _readNotifPrefs() {
+  try {
+    var p = JSON.parse(localStorage.getItem('ah_profile') || '{}');
+    return Object.assign({}, NOTIF_PREFS_DEFAULT, p.notifPrefs || {});
+  } catch(e) { return Object.assign({}, NOTIF_PREFS_DEFAULT); }
+}
+function _writeNotifPref(key, on) {
+  try {
+    var p = JSON.parse(localStorage.getItem('ah_profile') || '{}');
+    var cur = Object.assign({}, NOTIF_PREFS_DEFAULT, p.notifPrefs || {});
+    cur[key] = !!on;
+    p.notifPrefs = cur;
+    localStorage.setItem('ah_profile', JSON.stringify(p));
+    if (typeof fbSaveProfile === 'function') { try { fbSaveProfile(); } catch(_) {} }
+  } catch(e) { console.warn('notifPref save', e); }
+}
+function renderNotifPrefs() {
+  var prefs = _readNotifPrefs();
+  ['prelecture','prep','post','weekly'].forEach(function(k){
+    var el = document.getElementById('notifPref' + k.charAt(0).toUpperCase() + k.slice(1));
+    if (el) el.classList.toggle('on', !!prefs[k]);
+  });
+}
+function toggleNotifPref(key) {
+  var prefs = _readNotifPrefs();
+  var next = !prefs[key];
+  _writeNotifPref(key, next);
+  var el = document.getElementById('notifPref' + key.charAt(0).toUpperCase() + key.slice(1));
+  if (el) el.classList.toggle('on', next);
+}
+window.toggleNotifPref = toggleNotifPref;
+window.renderNotifPrefs = renderNotifPrefs;
+// Render au chargement de l'onglet Moi
+document.addEventListener('DOMContentLoaded', function(){ try { renderNotifPrefs(); } catch(e) {} });
 
 async function toggleNotif() {
   var toggleEl = document.getElementById('notifToggle');
