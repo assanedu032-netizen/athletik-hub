@@ -17,7 +17,7 @@
 <!-- ═══ FIREBASE SDK ═══ -->
 <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-app.js";
-  import { getAuth, setPersistence, browserLocalPersistence, createUserWithEmailAndPassword, signInWithEmailAndPassword, signInWithPopup, GoogleAuthProvider, sendEmailVerification, onAuthStateChanged, signOut, sendPasswordResetEmail } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-auth.js";
+  import { getAuth, setPersistence, browserLocalPersistence, createUserWithEmailAndPassword, signInWithEmailAndPassword, signInWithPopup, GoogleAuthProvider, sendEmailVerification, onAuthStateChanged, signOut, sendPasswordResetEmail, fetchSignInMethodsForEmail } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-auth.js";
   import { getFirestore, doc, setDoc, getDoc, serverTimestamp, collection, addDoc, deleteDoc, query, orderBy, onSnapshot } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore.js";
   import { getMessaging, getToken, onMessage, isSupported } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-messaging.js";
 
@@ -64,7 +64,7 @@
   window.fb = {
     auth, db, googleProvider,
     createUserWithEmailAndPassword, signInWithEmailAndPassword, signInWithPopup,
-    sendEmailVerification, onAuthStateChanged, signOut, sendPasswordResetEmail,
+    sendEmailVerification, onAuthStateChanged, signOut, sendPasswordResetEmail, fetchSignInMethodsForEmail,
     doc, setDoc, getDoc, serverTimestamp,
     collection, addDoc, deleteDoc, query, orderBy, onSnapshot
   };
@@ -23560,15 +23560,44 @@ async function fbLoadFirestoreToLocal(user) {
 }
 
 async function fbForgotPassword() {
-  var email = (document.getElementById('aEmail') || {}).value || '';
-  email = email.trim();
+  // 1. Récupère l'email (champ de la page, sinon prompt)
+  var emailInput = document.getElementById('aEmail');
+  var email = ((emailInput && emailInput.value) || '').trim();
   if (!email) {
-    fbShowMsg('Renseigne ton email d\'abord.', 'err');
-    return;
+    try { email = (prompt('Saisis ton email pour recevoir le lien de réinitialisation :') || '').trim(); } catch(_) {}
+    if (!email) { fbShowMsg('Renseigne ton email d\'abord.', 'err'); return; }
+    if (emailInput) emailInput.value = email;
   }
+
+  // 2. Validation format minimale
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+    fbShowMsg('Format d\'email invalide.', 'err'); return;
+  }
+
+  // 3. Détection compte Google-only : Firebase renvoie un succès silencieux pour
+  // sendPasswordResetEmail si le compte n'a pas de mot de passe — l'utilisateur
+  // ne reçoit alors RIEN et croit que le système est cassé. On vérifie d'abord
+  // les méthodes d'auth disponibles pour donner un vrai feedback.
+  // NB : si l'option "Email enumeration protection" est ON côté Firebase Auth,
+  // fetchSignInMethodsForEmail retourne [] → on retombe sur le flux normal.
+  try {
+    if (window.fb && typeof window.fb.fetchSignInMethodsForEmail === 'function') {
+      var methods = await window.fb.fetchSignInMethodsForEmail(window.fb.auth, email);
+      if (methods && methods.length > 0) {
+        var hasPwd = methods.indexOf('password') !== -1;
+        var hasGoogle = methods.indexOf('google.com') !== -1;
+        if (!hasPwd && hasGoogle) {
+          fbShowMsg('Cet email est lié à un compte Google. Utilise « Continuer avec Google » — pas besoin de mot de passe.', 'err');
+          return;
+        }
+      }
+    }
+  } catch(e) { /* silencieux : on tente quand même l'envoi */ }
+
+  // 4. Envoi
   try {
     await window.fb.sendPasswordResetEmail(window.fb.auth, email);
-    fbShowMsg('Email de réinitialisation envoyé. Vérifie ta boîte.', 'ok');
+    fbShowMsg('Email envoyé à ' + email + '. Vérifie aussi tes spams (peut prendre 1-2 min). Pas reçu ? Tu t\'es peut-être inscrit avec Google → utilise le bouton Google.', 'ok');
   } catch(e) {
     fbShowMsg(fbFormatError(e), 'err');
   }
