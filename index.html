@@ -4853,10 +4853,19 @@ window.tiResetOnEnter = function(){ window.tiShowStep(1); };
 <!-- ═══ PROFIL 1/3 — QUESTIONNAIRE ═══ -->
 <div id="profil1" class="scr">
   <div class="ob">
+    <!-- Barre Tinder-style : 3 segments représentant les 3 étapes globales.
+         Profil 1/3 → 1er segment gold, 2 autres en gris. Cohérent avec
+         profil4 (2 segments gold) et profil3 (3 segments gold). -->
+    <div style="display:flex;gap:6px;margin-bottom:8px">
+      <div style="flex:1;height:4px;border-radius:2px;background:var(--ah-gold)"></div>
+      <div style="flex:1;height:4px;border-radius:2px;background:var(--ah-border)"></div>
+      <div style="flex:1;height:4px;border-radius:2px;background:var(--ah-border)"></div>
+    </div>
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
       <div style="font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:.22em;color:var(--ah-gold);text-transform:uppercase">PROFIL 1 / 3 · PROGRAMME</div>
       <div style="font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:.22em;color:var(--ah-muted);text-transform:uppercase">3 min</div>
     </div>
+    <!-- Sous-progression interne au profil 1 (questions identité → sit/cont/mat). -->
     <div style="height:3px;background:var(--ah-border);border-radius:2px;overflow:hidden;margin-bottom:18px"><div id="p1bar" style="height:100%;background:var(--ah-gold);width:20%;transition:width .4s ease"></div></div>
     <div id="p1err" style="display:none;color:#E05252;font-size:12px;font-weight:700;margin-bottom:10px;padding:8px 12px;background:#FEF0F0;border-radius:8px"></div>
 
@@ -5321,13 +5330,21 @@ window.tiResetOnEnter = function(){ window.tiShowStep(1); };
 <div id="profil4" class="scr">
   <div class="scr-inner" style="padding:20px 22px 100px">
 
+    <!-- Barre Tinder-style : 3 segments. Profil 2/3 → 2 segments gold. -->
+    <div style="display:flex;gap:6px;margin-bottom:8px">
+      <div style="flex:1;height:4px;border-radius:2px;background:var(--gold)"></div>
+      <div style="flex:1;height:4px;border-radius:2px;background:var(--gold)"></div>
+      <div style="flex:1;height:4px;border-radius:2px;background:var(--border)"></div>
+    </div>
+
     <!-- Header (commun aux 3 pages) -->
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
       <div style="font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:.22em;color:var(--ah-gold);text-transform:uppercase">PROFIL 2 / 3 · NUTRITION</div>
       <div id="p4StepLabel" style="font-size:11px;color:var(--gold);font-weight:700">1 / 3</div>
     </div>
 
-    <!-- Progress bar dynamique -->
+    <!-- Sous-progression interne (objectif → mesures → suivi). Distincte
+         de la barre Tinder ci-dessus qui montre l'étape globale. -->
     <div style="height:4px;background:var(--border);border-radius:2px;overflow:hidden;margin-bottom:20px">
       <div id="p4ProgressBar" style="height:100%;background:linear-gradient(90deg,var(--gold),#D4B86A);border-radius:2px;width:33%;transition:width .35s ease"></div>
     </div>
