@@ -5203,6 +5203,12 @@ window.tiResetOnEnter = function(){ window.tiShowStep(1); };
     <!-- Bannière reprendre tests — affichée si ah_sat_inprogress existe -->
     <div id="resumeTestsBanner" style="display:none"></div>
 
+    <!-- ═══ MON PARCOURS — guide onboarding visible jusqu'à completion ═══
+         Affiche les 3 étapes restantes avec leur état (✓ done / ⏳ next / 🔒 lock)
+         + CTA "Continuer mon profil". Rempli par renderJourneyCard() en JS,
+         se cache automatiquement quand _isOnboardingComplete() === true. -->
+    <div id="journeyCardWrap"></div>
+
     <!-- ═══ SCOREBOARD navy-deep DS v1.0 ═══ -->
     <div class="ah-scoreboard" id="homeScoreboard" style="margin:6px 20px 0;background:var(--ah-navy-deep);padding:14px 18px;border-radius:14px">
       <div class="grp"><span class="lbl">SET</span><span class="val empty" id="sbSet">—</span></div>
@@ -11059,10 +11065,18 @@ function launchTodaySession() {
     window._showAccessRequired();
     return;
   }
-  // SAT obligatoire
-  if (typeof _userSatDone === 'function' && !_userSatDone()) {
-    if (typeof showToast === 'function') showToast('Fais d\'abord tes tests physiques dans Tracks.', 'info');
-    try { switchTab('tracks'); } catch(e) {}
+  // ── Gate onboarding complet : programme + nutrition + tests obligatoires ──
+  // Demandé par l'utilisateur : "Le programme ne doit pas être complètement
+  // lançable tant que l'utilisateur n'a pas terminé le questionnaire programme,
+  // les tests physiques et les objectifs nutritionnels." Avant ce check, on
+  // ne testait que SAT — la nutrition était oubliée.
+  if (typeof _isOnboardingComplete === 'function' && !_isOnboardingComplete()) {
+    var nextScreen = (typeof _nextOnboardingScreen === 'function') ? _nextOnboardingScreen() : 'profil1';
+    var label = ({
+      profil1:'programme', profil4:'objectifs nutrition', profil3:'tests physiques'
+    })[nextScreen] || 'profil';
+    if (typeof showToast === 'function') showToast('Termine d\'abord : ' + label, 'info');
+    if (typeof _routeToOnboardingStep === 'function') _routeToOnboardingStep();
     return;
   }
 
@@ -11212,6 +11226,7 @@ document.addEventListener('DOMContentLoaded', function() {
     try { renderTrialBanner(); } catch(e) {}
     try { renderResumeSessionBanner(); } catch(e) {}
     try { renderResumeTestsBanner(); } catch(e) {}
+    try { renderJourneyCard(); } catch(e) {}
   };
 
   // Splash bar animation
@@ -20190,6 +20205,105 @@ window._formatTrialRemaining = function(ms) {
   return mins + ' mn';
 };
 
+// ═══════════════════════════════════════════════════════════════
+// MON PARCOURS — carte de guidage sur la Home tant que l'onboarding
+// n'est pas complété. Affiche les 3 étapes (Programme / Tests / Nutrition)
+// avec leur état (✓ done / ⏳ next / 🔒 lock) + une seule action principale
+// claire ("Continuer mon profil" qui route via _routeToOnboardingStep).
+// Demandé par l'utilisateur : "L'utilisateur doit toujours comprendre où
+// il en est, ce qu'il doit faire maintenant, pourquoi, et ce que ça
+// débloque. Chaque écran doit avoir une seule action principale claire."
+// ═══════════════════════════════════════════════════════════════
+function renderJourneyCard() {
+  var wrap = document.getElementById('journeyCardWrap');
+  if (!wrap) return;
+  var p = {};
+  try { p = JSON.parse(localStorage.getItem('ah_profile') || '{}'); } catch(e) {}
+  // Onboarding complet → on cache la carte (pas utile post-déblocage).
+  if (_isOnboardingComplete(p)) { wrap.innerHTML = ''; return; }
+  // Pas d'objectif → l'utilisateur est encore avant obQ1, on cache aussi
+  // (la bannière discovery du onboarding initial prend le relais).
+  if (!p.objectif) { wrap.innerHTML = ''; return; }
+
+  // État de chaque étape — basé sur ah_profile (source de vérité).
+  var step1Done = !!(p.prenom && p.age && p.sexe && p.programKey);
+  var step2Done = !!(p.objNutri && p.poids && p.taille);
+  var step3Done = !!p.satDone;
+
+  // Index de la prochaine étape (les étapes 2 et 3 sont verrouillées tant
+  // que les précédentes ne sont pas faites — flow strict).
+  var nextStep = step1Done ? (step2Done ? (step3Done ? 0 : 3) : 2) : 1;
+
+  // Programme attribué : nom lisible pour le titre.
+  var progNames = {
+    eliteAthlete:'Elite Athlete', verticalDunk:'Vertical Dunk',
+    shredExplose:'SHRED Explose', microtraining:'Microtraining',
+    triphasique:'Triphasique',    explose:'Explose+',
+    ea:'Elite Athlete', vd:'Vertical Dunk', se:'SHRED Explose',
+    mt:'Microtraining', tri:'Triphasique', ep:'Explose+'
+  };
+  var progName = progNames[p.programKey] || p.program || 'Ton programme';
+
+  var doneCount = (step1Done?1:0) + (step2Done?1:0) + (step3Done?1:0);
+  var pct = Math.round((doneCount / 3) * 100);
+  var remaining = 3 - doneCount;
+  var subText = step1Done
+    ? 'Programme : ' + progName + ' · Il te reste ' + remaining + ' étape' + (remaining>1?'s':'') + ' avant le déblocage.'
+    : 'Termine ton profil pour découvrir ton programme.';
+
+  // Renderer d'une étape (numéro, label, sub, état).
+  function _step(n, label, sub, state) {
+    // state : 'done' | 'next' | 'lock'
+    var icon, color, bg;
+    if (state === 'done') { icon = '✓'; color = '#22C55E'; bg = 'rgba(34,197,94,.12)'; }
+    else if (state === 'next') { icon = String(n); color = 'var(--ah-gold)'; bg = 'rgba(197,164,78,.12)'; }
+    else { icon = '🔒'; color = 'var(--ah-muted)'; bg = 'rgba(0,0,0,.04)'; }
+    var labelColor = state === 'lock' ? 'var(--ah-muted)' : 'var(--ah-text)';
+    return '<div style="display:flex;align-items:center;gap:12px;padding:10px 12px;border-radius:10px;background:' + bg + ';margin-bottom:6px">'
+      + '<div style="width:28px;height:28px;border-radius:50%;background:#fff;border:1.5px solid ' + color + ';display:flex;align-items:center;justify-content:center;font-family:\'Bebas Neue\',sans-serif;font-size:14px;color:' + color + ';flex-shrink:0">' + icon + '</div>'
+      + '<div style="flex:1;min-width:0">'
+      +   '<div style="font-family:\'Outfit\',sans-serif;font-size:13px;font-weight:700;color:' + labelColor + ';line-height:1.2">' + label + '</div>'
+      +   '<div style="font-size:11px;color:var(--ah-muted);margin-top:1px;line-height:1.3">' + sub + '</div>'
+      + '</div></div>';
+  }
+
+  var cta = nextStep > 0
+    ? '<button onclick="_journeyContinue()" style="width:100%;margin-top:12px;padding:14px;background:linear-gradient(135deg,#D4B45E,#C5A44E 55%,#B89238);border:none;border-radius:12px;font-family:\'Bebas Neue\',sans-serif;font-size:14px;letter-spacing:.14em;color:var(--ah-navy);cursor:pointer;box-shadow:0 6px 16px rgba(197,164,78,.30)">CONTINUER MON PROFIL →</button>'
+    : '';
+
+  var html = '<div style="margin:14px 16px 0;background:var(--ah-surface);border:1px solid var(--ah-border);border-radius:16px;padding:16px;box-shadow:0 2px 10px rgba(20,30,60,.04)">'
+    + '<div style="display:flex;justify-content:space-between;align-items:flex-start;gap:10px;margin-bottom:6px">'
+    +   '<div><div style="font-family:\'JetBrains Mono\',monospace;font-size:9px;letter-spacing:.22em;color:var(--ah-gold);text-transform:uppercase;font-weight:800;margin-bottom:2px">Mon parcours · ' + doneCount + ' / 3</div>'
+    +   '<div style="font-family:\'Bebas Neue\',sans-serif;font-size:20px;letter-spacing:.04em;color:var(--ah-text);line-height:1">'
+    +     (step1Done ? 'Plus que ' + remaining + ' étape' + (remaining>1?'s':'') : 'Ton profil athlète')
+    +   '</div></div>'
+    +   '<div style="font-family:\'Bebas Neue\',sans-serif;font-size:24px;color:var(--ah-gold);line-height:1">' + pct + '%</div>'
+    + '</div>'
+    + '<div style="font-size:12px;color:var(--ah-text2);line-height:1.5;margin-bottom:12px">' + subText + '</div>'
+    + '<div style="height:4px;background:var(--ah-border);border-radius:2px;overflow:hidden;margin-bottom:14px">'
+    +   '<div style="height:100%;background:linear-gradient(90deg,var(--ah-gold),#D4B86A);border-radius:2px;width:' + pct + '%;transition:width .5s ease"></div>'
+    + '</div>'
+    + _step(1, 'Questionnaire programme', step1Done ? progName : 'Identité + 4 questions Tally', step1Done ? 'done' : 'next')
+    + _step(2, 'Objectifs nutrition', step2Done ? 'Validé' : 'Poids, taille, mode strict/flexible', step1Done ? (step2Done ? 'done' : 'next') : 'lock')
+    + _step(3, 'Tests physiques', step3Done ? 'Validé' : 'Tests adaptés à ton programme', step2Done ? (step3Done ? 'done' : 'next') : 'lock')
+    + cta
+    + '</div>';
+  wrap.innerHTML = html;
+}
+window.renderJourneyCard = renderJourneyCard;
+
+// Bouton CTA → route vers la prochaine étape via le flow existant.
+function _journeyContinue() {
+  var p = {};
+  try { p = JSON.parse(localStorage.getItem('ah_profile') || '{}'); } catch(e) {}
+  if (typeof _routeToOnboardingStep === 'function') {
+    _routeToOnboardingStep(p);
+  } else if (typeof go === 'function') {
+    go('profil1');
+  }
+}
+window._journeyContinue = _journeyContinue;
+
 // Bannière sur Home : affichée seulement si trial actif (et pas de tier payant)
 function renderTrialBanner() {
   var el = document.getElementById('trialBanner');
@@ -21666,6 +21780,12 @@ function obPickObj(el, val) {
 // ═══ SCORING TALLY EXACT — "QUEL PROGRAMME POUR TOI ?" (form id Pd5KB5) ═══
 // Reproduit en natif la logique du form Tally : 4 questions, 6 programmes.
 // Source de vérité : Pd5KB5, extrait via MCP Tally le 2026-05-16.
+// Scoring conforme au Tally Pd5KB5 "QUEL PROGRAMME POUR TOI ?". Vérifié via
+// le MCP Tally le 8 juin 2026 : règles CALCULATE + JUMP_TO_PAGE reproduites
+// à l'identique. Tally Q4 (objectif) est en dernière position côté formulaire
+// web mais on l'a déplacée EN PREMIER dans le flow app (écran #obQ1, avant
+// l'auth) pour engager l'utilisateur sur sa motivation principale avant de
+// lui demander ses contraintes — meilleure conversion onboarding.
 function calcProgramFromTallyAnswers(objectif, sit, cont, mat) {
   var scores = {
     microtraining: 0, eliteathlete: 0, verticaldunk: 0,
