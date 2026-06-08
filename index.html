@@ -12484,11 +12484,21 @@ function renderUserData() {
   if (programAttributed) {
     // Mode complet : séance du jour. La semaine courante n'est PAS stockée
     // dans user.weekNum (qui restait figé à 2 d'origine). On la calcule
-    // dynamiquement à partir de l'historique des séances :
-    // 1 semaine = ~3 séances. Première semaine = 1 par défaut.
-    var _sess = 0;
-    try { _sess = (JSON.parse(localStorage.getItem('ah_set_history') || '[]') || []).length; } catch(e) {}
-    var _wk = Math.max(1, Math.min((user.totalWeeks || 12), Math.floor(_sess / 3) + 1));
+    // dynamiquement à partir de la DATE d'attribution du programme :
+    // 1 semaine = 7 jours calendaires. Avant ça on comptait les séances,
+    // ce qui passait l'user en "Semaine 2" après 3 séances faites le même
+    // jour — comportement aberrant côté UX.
+    var _wk = 1;
+    try {
+      var _p = JSON.parse(localStorage.getItem('ah_profile') || '{}');
+      var _startIso = _p.programStartedAt || _p.trialStartedAt;
+      var _startMs = _startIso ? new Date(_startIso).getTime() : NaN;
+      if (isFinite(_startMs)) {
+        var _days = Math.max(0, Math.floor((Date.now() - _startMs) / 86400000));
+        _wk = Math.floor(_days / 7) + 1;
+      }
+    } catch(e) {}
+    _wk = Math.max(1, Math.min((user.totalWeeks || 12), _wk));
     user.weekNum = _wk;
     if (pcDur)  pcDur.textContent = 'AUJOURD\'HUI · SEMAINE ' + _wk + '/' + (user.totalWeeks || 12);
     if (pcName) pcName.textContent = user.program;
@@ -22910,7 +22920,12 @@ function obCalcProg() {
       program: prog.name,
       programKey: prog.key,
       programObj: prog.obj,
-      trialStartedAt: existingProfile.trialStartedAt || Date.now()
+      trialStartedAt: existingProfile.trialStartedAt || Date.now(),
+      // Date d'attribution du programme — sert au calcul de la semaine
+      // courante (Semaine X/Y de la today-card) basé sur le calendrier
+      // et NON sur le nombre de séances faites. Sans ça, faire 3 séances
+      // le même jour passait l'utilisateur en "Semaine 2/20" à tort.
+      programStartedAt: existingProfile.programStartedAt || new Date().toISOString()
     });
     localStorage.setItem('ah_profile', JSON.stringify(p));
   } catch(e) { console.warn('Save profile1 error:', e); }
