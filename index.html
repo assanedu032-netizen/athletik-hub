@@ -8853,8 +8853,43 @@ function _titanPick(bank, prefix){
   return picked;
 }
 
+// Cache journalier des messages Titan — bug remonté par l'utilisateur :
+// "ça ne doit pas changer tous les jours, ça doit être statique, un jour,
+// ensuite le lendemain, ce n'est pas chaque fois que je me connecte et
+// c'est nouveau". On stocke le résultat du jour dans localStorage et on
+// le re-sert tant que la date locale n'a pas changé. Bonus : ça réduit la
+// volatilité visuelle quand l'utilisateur ouvre Home plusieurs fois.
+function _titanTodayKey() {
+  try {
+    var d = new Date();
+    return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
+  } catch(e) { return ''; }
+}
+function _titanReadDailyCache() {
+  try {
+    var c = JSON.parse(localStorage.getItem('ah_titan_today') || '{}');
+    if (c.date !== _titanTodayKey()) return null;
+    return c.messages || {};
+  } catch(e) { return null; }
+}
+function _titanWriteDailyCache(type, result) {
+  try {
+    var todayKey = _titanTodayKey();
+    var c = {};
+    try { c = JSON.parse(localStorage.getItem('ah_titan_today') || '{}'); } catch(e) {}
+    if (c.date !== todayKey) c = { date: todayKey, messages: {} };
+    c.messages = c.messages || {};
+    c.messages[type] = result;
+    localStorage.setItem('ah_titan_today', JSON.stringify(c));
+  } catch(e) {}
+}
+
 // API publique : récupère { title, message, bookRef } pour un type donné.
 function titanGetSmartMessage(type){
+  // Si on a déjà tiré pour aujourd'hui, on re-sert le même.
+  var cached = _titanReadDailyCache();
+  if (cached && cached[type]) return cached[type];
+
   var bank;
   var prefix = type;
   // Cas spécial : lecture programme = ref dynamique selon programKey
@@ -8862,18 +8897,20 @@ function titanGetSmartMessage(type){
     var pk = _titanGetProgramKey();
     var progRef = pk && BOOK_PROGRAM_REFS[pk] && BOOK_PROGRAM_REFS[pk].chap;
     if (!progRef) return null;
-    return {
+    var progResult = {
       title: 'Lecture recommandée',
       message: 'Avant d\'attaquer ta semaine, relis le chapitre dédié à ton programme. C\'est la logique derrière chaque séance.',
       bookRef: BOOK_CHAPTERS[progRef]
     };
+    _titanWriteDailyCache(type, progResult);
+    return progResult;
   }
   // Cas standard : pioche dans la banque
   bank = TITAN_SMART_RULES[type];
   if (!bank || !bank.length) return null;
   var picked = _titanPick(bank, prefix);
   if (!picked) return null;
-  return {
+  var result = {
     title: type === 'engagement' ? 'Engagement du jour'
          : type === 'lecture_force' ? 'Lecture — Force'
          : type === 'lecture_plio' ? 'Lecture — Pliométrie'
@@ -8890,13 +8927,23 @@ function titanGetSmartMessage(type){
     message: picked.msg,
     bookRef: picked.ref ? BOOK_CHAPTERS[picked.ref] : null
   };
+  _titanWriteDailyCache(type, result);
+  return result;
 }
 window.titanGetSmartMessage = titanGetSmartMessage;
 
 // Choisit une lecture pertinente selon le programme courant (rotation des focus).
+// Cache journalier sur le type de lecture choisi (pas seulement le message) pour
+// éviter que la rotation des focus re-tombe sur un autre type le même jour.
 function titanGetSmartLecture(){
   var pk = _titanGetProgramKey();
   if (!pk || !BOOK_PROGRAM_REFS[pk]) return titanGetSmartMessage('lecture_prog');
+
+  var cached = _titanReadDailyCache();
+  if (cached && cached.__lectureType) {
+    return titanGetSmartMessage(cached.__lectureType);
+  }
+
   var focus = BOOK_PROGRAM_REFS[pk].focus || [];
   var typeMap = {
     cours_force:  'lecture_force',
@@ -8914,7 +8961,9 @@ function titanGetSmartLecture(){
   var shown = _titanGetShown();
   var unseen = focus.filter(function(f){ return !shown.some(function(s){ return s.indexOf(typeMap[f] || '') === 0; }); });
   var pickFocus = (unseen[0] || focus[Math.floor(Math.random() * focus.length)]);
-  return titanGetSmartMessage(typeMap[pickFocus] || 'lecture_prog');
+  var chosenType = typeMap[pickFocus] || 'lecture_prog';
+  _titanWriteDailyCache('__lectureType', chosenType);
+  return titanGetSmartMessage(chosenType);
 }
 window.titanGetSmartLecture = titanGetSmartLecture;
 
