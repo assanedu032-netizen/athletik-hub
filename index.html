@@ -23620,13 +23620,30 @@ var ALL_TESTS = {
 };
 
 // Mapping programme → liste des tests
+// Source de vérité : tableau officiel page 269 du livre "Les Secrets de la
+// Détente Verticale" — "Quel test pour quel programme ?" :
+//   Elite Athlete    : SAT + SET
+//   SHRED Explose    : SET
+//   Vertical Dunk    : Détente + Rep Max squat et soulevé de terre
+//   EXPLOSE+         : SAT + SET
+//   Microtraining    : Détente + tests alternatifs (poids de corps)
+//   Triphasique      : Détente + tests alternatifs (poids de corps)
+//
+// SAT = jump + squat + sdt + ht + dc + sprint30 + ttest + fms
+// SET = jump + sprint60 + feet94 + laneAgility
+// Alternatifs PDC = jump + 4 exos poids du corps
 var PROGRAM_TESTS = {
   'microtraining': ['jump', 'pdcSquatBulgare', 'pdcPompes', 'pdcWallSit', 'pdcFentesSautees'],
   'triphasique':   ['jump', 'pdcSquatBulgare', 'pdcPompes', 'pdcWallSit', 'pdcFentesSautees'],
-  'verticalDunk':  ['jump', 'squat', 'sdt', 'ht'],
-  'eliteAthlete':  ['jump', 'squat', 'sdt', 'ht', 'dc', 'sprint30', 'ttest', 'fms'],  // SAT phase 1
-  'shredExplose':  ['jump', 'sprint60', 'feet94', 'laneAgility'],  // SET direct
-  'explose':       ['jump', 'squat', 'sdt', 'ht', 'dc', 'sprint30', 'ttest', 'fms']   // SAT phase 1
+  // Vertical Dunk : page 269 dit "Test de détente + Rep Max squat et soulevé de
+  // terre" seulement. ht (Hip Thrust) était en trop dans le code précédent.
+  'verticalDunk':  ['jump', 'squat', 'sdt'],
+  // Elite Athlete : SAT + SET. SET = sprint60 + feet94 + laneAgility en plus.
+  'eliteAthlete':  ['jump', 'squat', 'sdt', 'ht', 'dc', 'sprint30', 'ttest', 'fms', 'sprint60', 'feet94', 'laneAgility'],
+  // SHRED Explose : SET uniquement.
+  'shredExplose':  ['jump', 'sprint60', 'feet94', 'laneAgility'],
+  // EXPLOSE+ : SAT + SET (identique à Elite Athlete pour les tests).
+  'explose':       ['jump', 'squat', 'sdt', 'ht', 'dc', 'sprint30', 'ttest', 'fms', 'sprint60', 'feet94', 'laneAgility']
 };
 
 // Alias programme key → mapping key
