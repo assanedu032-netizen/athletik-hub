@@ -3,9 +3,18 @@
   publish = "."
   functions = "netlify/functions"
 
-# Fonction planifiée : rappel push ~30 min avant chaque séance.
+# Fonction planifiée : rappels session (H-60 lecture, H-30 prep, H+5 micro).
+# Cron toutes les 10 minutes — chaque fenêtre fait 10 min de large pour
+# n'envoyer qu'un seul push par utilisateur par fenêtre.
 [functions."session-reminders"]
   schedule = "*/10 * * * *"
+
+# Fonction planifiée : engagement de la semaine, lundi matin.
+# Le cron tourne 1× par heure entre 6h et 10h UTC — la fonction filtre côté
+# user pour ne pousser que ceux qui sont actuellement entre 8h et 9h LOCAL.
+# Couvre les fuseaux UTC-2 à UTC+2 (Europe + Afrique de l'Ouest).
+[functions."weekly-engagement"]
+  schedule = "0 6-10 * * 1"
 
 [[headers]]
   for = "/sw.js"
