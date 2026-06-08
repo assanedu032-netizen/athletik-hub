@@ -13,10 +13,43 @@ const crypto = require('crypto');
 let _cachedToken = null;
 let _cachedTokenExp = 0;
 
-// Fenêtre de rappel, en minutes avant la séance. Le cron tourne toutes les
-// 10 min → fenêtre de 10 min de large pour toucher chaque séance une fois.
-const REMINDER_LO = 30;
-const REMINDER_HI = 40;
+// Trois fenêtres de rappel — le cron tourne toutes les 10 min, chaque fenêtre
+// fait 10 min de large pour ne toucher qu'une fois chaque séance.
+//
+//   1. PRELECTURE (H-60) : ~1h avant → suggère la lecture du livre adaptée.
+//   2. PREP (H-30)       : ~30 min avant → "prépare-toi, la séance arrive".
+//   3. POST (H+5)        : ~5 min après → micro-engagement, note ton ressenti.
+const PRELECTURE_LO = 55;
+const PRELECTURE_HI = 65;
+const PREP_LO       = 30;
+const PREP_HI       = 40;
+const POST_LO       = -10;  // 10 min après l'heure programmée
+const POST_HI       = 0;    // jusqu'à pile à l'heure
+
+// Fenêtre nocturne — pas de push entre 22h et 7h locales. Évite de réveiller
+// l'utilisateur si sa session est planifiée en début/fin de journée pile à
+// cheval sur cette plage.
+const NIGHT_START = 22 * 60;  // 22:00
+const NIGHT_END   = 7  * 60;  // 07:00
+function isNightWindow(localMinutes) {
+  return localMinutes >= NIGHT_START || localMinutes < NIGHT_END;
+}
+
+// Lecture recommandée par programme. Aligné avec BOOK_CHAPTERS / lecture_*
+// côté front (TITAN_SMART_RULES). Pas inventé — chapitres confirmés du livre.
+const LECTURE_BY_PROGRAM = {
+  ea: { titre: 'Cours sur la Périodisation', page: 'p.180', focus: 'comprendre pourquoi cette phase MAINTENANT.' },
+  vd: { titre: 'Cours sur la Triple Extension', page: 'p.55',  focus: 'la mécanique exacte du saut vertical.' },
+  se: { titre: 'Cours sur la Nutrition', page: 'p.125', focus: 'cale ton apport avant la séance.' },
+  mt: { titre: 'Chapitre Méthode MENER', page: 'p.207', focus: 'exécuter proprement, pas piloter à l\'ego.' },
+  tri:{ titre: 'Cours sur la Force', page: 'p.80',  focus: 'comprendre ce que tu construis aujourd\'hui.' },
+  ep: { titre: 'Les Fondations que Personne ne Voit', page: 'p.142', focus: 'les briques invisibles qui font la diff.' }
+};
+function lectureFor(programKey) {
+  if (!programKey) return LECTURE_BY_PROGRAM.ea;
+  const k = String(programKey).toLowerCase();
+  return LECTURE_BY_PROGRAM[k] || LECTURE_BY_PROGRAM.ea;
+}
 
 function base64UrlEncode(input) {
   const b64 = (Buffer.isBuffer(input) ? input : Buffer.from(input)).toString('base64');
@@ -195,16 +228,50 @@ exports.handler = async function () {
     const timeStr = times[nowL.day] != null ? times[nowL.day] : times[String(nowL.day)];
     if (!timeStr || !/^\d{1,2}:\d{2}$/.test(timeStr)) continue;
 
+    // Fenêtre nocturne : on ne dérange jamais. (vérifié AVANT le match window
+    // pour bypasser même un match légitime entre 22h et 7h locales.)
+    if (isNightWindow(nowL.minutes)) continue;
+
     const hm = timeStr.split(':');
     const sessionMin = (+hm[0]) * 60 + (+hm[1]);
     const diff = sessionMin - nowL.minutes;
-    if (diff < REMINDER_LO || diff >= REMINDER_HI) continue;
+
+    // Détermine quelle fenêtre on touche — préséance (H-60), prep (H-30) ou
+    // post-séance (H+5). Si on est en dehors des trois, on saute ce user.
+    let kind = null;
+    if (diff >= PRELECTURE_LO && diff < PRELECTURE_HI) kind = 'prelecture';
+    else if (diff >= PREP_LO  && diff < PREP_HI)       kind = 'prep';
+    else if (diff <= POST_HI  && diff > POST_LO)       kind = 'post';
+    if (!kind) continue;
+
+    // Préférences par catégorie. Default ON pour prelecture/post/weekly,
+    // OFF pour prep (anti-spam). Master switch (notifToggle côté front)
+    // n'enlève PAS le fcmToken — on s'appuie sur la valeur explicite du
+    // toggle, donc on ne peut respecter que ce qui est dans notifPrefs.
+    const np = prof.notifPrefs || {};
+    const onByDefault = { prelecture:true, prep:false, post:true };
+    const isOn = (np[kind] === undefined) ? onByDefault[kind] : !!np[kind];
+    if (!isOn) continue;
+
+    // Construit le payload selon la fenêtre.
+    let title, body;
+    const prenom = prof.prenom || '';
+    if (kind === 'prelecture') {
+      const lec = lectureFor(prof.programKey);
+      title = (prenom ? prenom + ', ' : '') + 'lecture du jour 📖';
+      body  = lec.titre + ' (' + lec.page + ') — ' + lec.focus + ' Séance à ' + timeStr + '.';
+    } else if (kind === 'prep') {
+      title = 'Séance dans ' + diff + ' min 🏋️';
+      body  = (prenom ? prenom + ', ta' : 'Ta') + ' séance de ' + timeStr + ' approche. Prépare-toi — Titan.';
+    } else {
+      // POST H+5 : micro-engagement, court, sans charge.
+      title = (prenom ? prenom + ', bien joué' : 'Bien joué') + ' 💪';
+      body  = 'Note ton ressenti pendant que c\'est frais. La progression se mesure aussi à ta lucidité.';
+    }
 
     try {
       const ok = await sendPush(
-        sa.project_id, accessToken, token,
-        'Séance dans ' + diff + ' min 🏋️',
-        'Ta séance de ' + timeStr + ' approche. Prépare-toi — Titan.'
+        sa.project_id, accessToken, token, title, body
       );
       if (ok) sent++;
     } catch (e) {
