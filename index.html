@@ -4552,6 +4552,10 @@ html body #result, html body #nutriResult{
     <div class="sp-line" style="width:56px;height:2px;background:linear-gradient(90deg,rgba(197,164,78,0),#C5A44E,rgba(197,164,78,0));border-radius:2px;box-shadow:0 0 14px rgba(197,164,78,.55);margin:2px 0"></div>
     <div class="sp-sub" style="font-family:'JetBrains Mono',monospace;font-size:12px;letter-spacing:.18em;color:#F0E3B8;text-transform:uppercase;text-align:center;line-height:1.55;font-weight:600;text-shadow:0 1px 6px rgba(0,0,0,.25)">Les secrets de la<br>détente verticale</div>
     <div class="sp-bar" style="width:140px;height:2px;background:rgba(255,255,255,.10);border-radius:2px;overflow:hidden;margin-top:6px"><div class="sp-bar-in" id="splashBar" style="height:100%;background:linear-gradient(90deg,#C5A44E,#D4B86A);width:0;transition:width .25s;box-shadow:0 0 8px rgba(197,164,78,.60)"></div></div>
+    <!-- CTA "Toucher pour continuer" : apparaît une fois la barre remplie.
+         Avant : auto-advance après 2.2s — l'user n'avait pas le temps de
+         voir l'écran. Maintenant : l'user clique quand il a fini de lire. -->
+    <button id="splashContinueBtn" onclick="window._splashAdvance && window._splashAdvance()" style="margin-top:22px;background:rgba(255,255,255,.06);color:#FFFFFF;border:1px solid rgba(197,164,78,.45);border-radius:14px;padding:13px 28px;font-family:'Bebas Neue',sans-serif;font-size:14px;letter-spacing:.18em;cursor:pointer;opacity:0;transition:opacity .5s ease;backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);box-shadow:0 4px 18px rgba(0,0,0,.18)">TOUCHER POUR CONTINUER →</button>
   </div>
   <!-- Bouton Réinitialiser : masqué en production, visible avec ?dev=1 dans l'URL (devs/QA) -->
   <div id="splashResetWrap" style="display:none;position:absolute;bottom:calc(28px + env(safe-area-inset-bottom,0px));left:0;right:0;text-align:center;z-index:1">
@@ -12258,9 +12262,14 @@ document.addEventListener('DOMContentLoaded', function() {
     try { renderJourneyCard(); } catch(e) {}
   };
 
-  // Splash bar animation
+  // Splash bar animation : remplit en ~1.6s pour le visuel.
+  // Puis affiche le CTA "TOUCHER POUR CONTINUER" : l'user contrôle l'avance.
   var bar = document.getElementById('splashBar');
   if (bar) setTimeout(function(){ bar.style.width='100%'; }, 100);
+  setTimeout(function(){
+    var cta = document.getElementById('splashContinueBtn');
+    if (cta) cta.style.opacity = '1';
+  }, 1700);
 
   // Roadmap v4 — routage initial avec _isOnboardingComplete comme seul critère.
   // Cas Home : onboarding 100% terminé (toutes les étapes validées).
@@ -12322,15 +12331,19 @@ document.addEventListener('DOMContentLoaded', function() {
   if (typeof setGreeting === 'function') try { setGreeting(); } catch(e) {}
   if (typeof renderWeek === 'function') try { renderWeek(); } catch(e) {}
 
-  // Si on revient juste d'une déconnexion : aller directement à l'auth en mode "signin"
-  // (le user a déjà un compte, pas besoin de repasser par Welcome + Q1)
-  setTimeout(function(){
-    if (justLoggedOut && typeof welcomeLogin === 'function') {
-      welcomeLogin();
-    } else {
-      go('welcome');
-    }
-  }, justLoggedOut ? 600 : 2200);
+  // Cas spécial : retour de déconnexion (?logout=…) — on bypass le splash
+  // et on envoie direct sur l'auth (l'user a déjà un compte, il veut juste
+  // se reconnecter, pas se taper le splash + welcome).
+  if (justLoggedOut && typeof welcomeLogin === 'function') {
+    setTimeout(function(){ welcomeLogin(); }, 600);
+  }
+  // Sinon : le splash attend que l'user clique le CTA "Toucher pour continuer".
+  // window._splashAdvance est défini ci-dessous, branché sur onclick du bouton.
+  window._splashAdvance = function() {
+    var cta = document.getElementById('splashContinueBtn');
+    if (cta) cta.disabled = true;  // anti-double-tap
+    try { go('welcome'); } catch(_) {}
+  };
 
   try { renderActiveHabits(); } catch(e) {}
   try { injectPWA(); } catch(e) {} // PWA en dernier, non-bloquant
