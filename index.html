@@ -5169,11 +5169,11 @@ window.tiResetOnEnter = function(){ window.tiShowStep(1); };
         <div class="ah-opt-arrow">→</div>
       </button>
 
-      <!-- C — EXPLOSIF & COMPLET (Tally Q4 C) -->
+      <!-- C — EXPLOSIVITÉ COMPLÈTE (Tally Q4 C) -->
       <button class="ob-opt ah-opt-card" onclick="obPickObj(this,'explosif')">
         <div class="ah-opt-ico"><svg viewBox="0 0 24 24" width="22" height="22" fill="currentColor"><path d="M13 2L3 14h7l-1 8 11-14h-7z"/></svg></div>
         <div class="ah-opt-body">
-          <div class="ah-opt-title">EXPLOSIF &amp; COMPLET</div>
+          <div class="ah-opt-title">EXPLOSIVITÉ COMPLÈTE</div>
           <div class="ah-opt-sub">Vitesse + détente + agilité + physique.</div>
         </div>
         <div class="ah-opt-arrow">→</div>
@@ -5226,7 +5226,7 @@ window.tiResetOnEnter = function(){ window.tiShowStep(1); };
     </div>
 
     <!-- CTA continuer + bulle Titan en bas -->
-    <button class="ah-q1-cta" onclick="window._obQ1Continue && window._obQ1Continue()" style="margin-top:18px;width:100%;padding:15px;background:var(--ah-surface2);color:var(--ah-muted);border:1px solid var(--ah-border);border-radius:12px;font-family:'Bebas Neue',sans-serif;font-size:14px;letter-spacing:.12em;cursor:pointer">CHOISIS POUR CONTINUER</button>
+    <button class="ah-q1-cta" onclick="window._obQ1Continue && window._obQ1Continue()" style="margin-top:18px;width:100%;padding:17px;background:var(--ah-surface2);color:var(--ah-muted);border:1px solid var(--ah-border);border-radius:14px;font-family:'Bebas Neue',sans-serif;font-size:17px;letter-spacing:.14em;cursor:pointer;box-shadow:0 6px 18px rgba(20,30,60,.08);transition:transform .15s">JE CONTINUE →</button>
 
     <div style="display:flex;align-items:flex-start;gap:10px;margin-top:14px;padding:0 2px">
       <div style="width:32px;height:32px;border-radius:50%;border:1.5px solid var(--ah-gold);overflow:hidden;flex-shrink:0;background:var(--ah-navy-deep);display:flex;align-items:center;justify-content:center">
@@ -5414,7 +5414,7 @@ window.tiResetOnEnter = function(){ window.tiShowStep(1); };
 
     <!-- Q2 Contraintes -->
     <div id="p1_q2" style="display:none">
-      <div class="ob-q">Tes contraintes ?</div>
+      <div class="ob-q">Tes contraintes &amp; disponibilité</div>
       <div class="ob-sub">Coche tout ce qui s'applique.</div>
       <div style="display:flex;flex-direction:column;gap:8px;margin:16px 0 20px">
         <button class="ob-chk" onclick="obChk(this,'cont','salle')"><div class="ob-chk-box"></div><div class="ob-chk-txt">J'ai accès à une salle régulièrement</div></button>
@@ -5459,19 +5459,23 @@ window.tiResetOnEnter = function(){ window.tiShowStep(1); };
     <span style="font-family:'Bebas Neue',sans-serif;font-size:40px;color:var(--gold)">T</span>
   </div>
   <div style="font-family:'Bebas Neue',sans-serif;font-size:22px;color:var(--gold);letter-spacing:2px;margin-top:18px;margin-bottom:8px">TITAN ANALYSE</div>
-  <div id="thinkMsg" style="font-size:13px;color:var(--text2);min-height:40px;margin-bottom:20px;max-width:260px;line-height:1.6">Analyse en cours...</div>
+  <div id="thinkMsg" style="font-size:13px;color:var(--ah-text);font-weight:600;min-height:40px;margin-bottom:20px;max-width:280px;line-height:1.6">Titan calibre ton plan. Pas au hasard.</div>
   <div style="width:220px;height:5px;background:var(--border);border-radius:3px;overflow:hidden;margin-bottom:12px">
     <div id="thinkBar" style="height:100%;background:linear-gradient(90deg,var(--gold),#D4B86A);border-radius:3px;width:0%;transition:width .5s ease"></div>
   </div>
   <div id="thinkPct" style="font-family:'Bebas Neue',sans-serif;font-size:42px;color:var(--gold)">0%</div>
-  <div style="font-size:10px;margin-top:14px;color:var(--ah-gold);letter-spacing:.06em;opacity:.7;font-family:'Outfit',sans-serif">Touche Titan et garde le doigt — tu vas le sentir bosser.</div>
+  <div style="font-size:12px;color:var(--ah-text2);margin-top:18px;max-width:280px;line-height:1.55">Il analyse ton profil, tes tests et ton objectif.</div>
+  <div style="font-size:10px;margin-top:10px;color:var(--ah-gold);letter-spacing:.06em;opacity:.7;font-family:'Outfit',sans-serif">Touche Titan et garde le doigt — tu vas le sentir bosser.</div>
 </div>
 
 <!-- ═══ RESULT — Programme révélé + verdict Titan ═══ -->
 <div id="result" class="scr">
   <div style="flex:1;display:flex;flex-direction:column;align-items:center;padding:24px 22px 40px;text-align:center;overflow-y:auto">
-    <div style="font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:.22em;color:var(--ah-gold);text-transform:uppercase;margin-bottom:6px" id="rBadge">FÉLICITATIONS</div>
-    <div style="font-family:'Outfit',sans-serif;font-size:13px;color:var(--ah-text2);margin-bottom:14px;text-align:center;line-height:1.5">Ton programme personnalisé est prêt.<br>Tu vas travailler le programme :</div>
+    <!-- FÉLICITATIONS : agrandi pour donner de l'impact au moment de
+         récompense. Bebas 30px gold, letter-spacing renforcé. Sous-texte
+         "Ton programme personnalisé est prêt." pour humaniser. -->
+    <div style="font-family:'Bebas Neue',sans-serif;font-size:30px;letter-spacing:.18em;color:var(--ah-gold);line-height:1;margin-bottom:10px" id="rBadge">FÉLICITATIONS</div>
+    <div style="font-family:'Outfit',sans-serif;font-size:13.5px;color:var(--ah-text2);margin-bottom:18px;max-width:280px;line-height:1.5">Ton programme personnalisé est prêt.<br>Tu vas travailler le programme :</div>
     <div style="height:2px;width:48px;background:var(--ah-gold);border-radius:2px;margin-bottom:18px;box-shadow:0 0 14px rgba(197,164,78,.55)"></div>
 
     <!-- Carte programme : couleurs inversées (navy + gold) pour faire récompense -->
@@ -5480,10 +5484,10 @@ window.tiResetOnEnter = function(){ window.tiShowStep(1); };
       <div style="position:relative;z-index:1">
         <div class="res-emoji" id="rEmoji" style="font-size:48px;margin-bottom:10px;line-height:1">🏆</div>
         <div class="res-name" id="rName" style="font-family:'Bebas Neue',sans-serif;font-size:34px;color:#fff;letter-spacing:.04em;line-height:1;margin-bottom:6px">ELITE ATHLETE</div>
-        <div class="res-obj" id="rObj" style="font-family:'Outfit',sans-serif;font-size:13.5px;color:rgba(255,255,255,.8);margin-bottom:16px">Explosivité globale</div>
+        <div class="res-obj" id="rObj" style="font-family:'Outfit',sans-serif;font-size:13.5px;color:rgba(255,255,255,.8);margin-bottom:16px">Explosivité complète</div>
         <div class="res-meta" style="display:flex;gap:18px;justify-content:center;border-top:1px solid rgba(255,255,255,.15);padding-top:14px">
-          <div class="res-meta-i" id="rDur" style="font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--ah-gold);letter-spacing:.14em">16-20 SEM</div>
-          <div class="res-meta-i" id="rLvl" style="font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--ah-gold);letter-spacing:.14em">TOUS NIVEAUX</div>
+          <div class="res-meta-i" id="rDur" style="font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--ah-gold);letter-spacing:.14em">16-20 semaines</div>
+          <div class="res-meta-i" id="rLvl" style="font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--ah-gold);letter-spacing:.14em">Progressif</div>
         </div>
       </div>
     </div>
@@ -13483,17 +13487,17 @@ function calcResult() {
 
 function showResult(key) {
   const P = {
-    ea: { emoji:'🏆', name:'ELITE ATHLETE', obj:'Explosivité globale', dur:'⏱ 16-20 sem', lvl:'📊 Tous niveaux',
+    ea: { emoji:'🏆', name:'ELITE ATHLETE', obj:'Explosivité complète', dur:'16-20 semaines', lvl:'Progressif',
       msg:'"Tu veux tout — vitesse, détente, force, explosivité. C’est le programme le plus exigeant. Si tu t’y tiens, les résultats vont parler."' },
-    vd: { emoji:'🏀', name:'VERTICAL DUNK', obj:'Dunker + Détente verticale max', dur:'⏱ 10 sem', lvl:'📊 Tous niveaux',
+    vd: { emoji:'🏀', name:'VERTICAL DUNK', obj:'Dunker + Détente verticale max', dur:'10 semaines', lvl:'Progressif',
       msg:'"Ton objectif c’est le cercle. Dans 10 semaines, soit tu touches le bord, soit tu rappelles que t’as pas suivi le programme."' },
-    tri: { emoji:'💪', name:'TRIPHASIQUE', obj:'Force explosive sans salle', dur:'⏱ 12 sem', lvl:'📊 Tous niveaux',
+    tri: { emoji:'💪', name:'TRIPHASIQUE', obj:'Force explosive sans salle', dur:'12 semaines', lvl:'Progressif',
       msg:'"Pas de salle ? Pas d\'excuse. Poids du corps et méthodes de force avancées. Les résultats vont parler."' },
-    se: { emoji:'🔥', name:'SHRED EXPLOSE', obj:'Perdre du gras + Exploser', dur:'⏱ 16 sem', lvl:'📊 Tous niveaux',
+    se: { emoji:'🔥', name:'SHRED EXPLOSE', obj:'Perdre du gras + Exploser', dur:'16 semaines', lvl:'Progressif',
       msg:'"T’es venu pour perdre du gras et exploser. Ces deux objectifs ensemble, c’est dur. Mais c’est faisable. Si tu suis exactement ce que je dis."' },
-    mt: { emoji:'⏰', name:'MICROTRAINING', obj:'Discipline et habitudes', dur:'⏱ 6 sem', lvl:'📊 Tous niveaux',
+    mt: { emoji:'⏰', name:'MICROTRAINING', obj:'Discipline et habitudes', dur:'6 semaines', lvl:'Progressif',
       msg:'"Séances courtes, calibrées pour réveiller ton système nerveux et installer la discipline. C\'est la fondation de tout."' },
-    ep: { emoji:'⚡', name:'EXPLOSE+', obj:'Transformation totale', dur:'⏱ 16 sem', lvl:'📊 Avancé',
+    ep: { emoji:'⚡', name:'EXPLOSE+', obj:'Transformation totale', dur:'16 semaines', lvl:'Avancé',
       msg:'"Le programme complet. Corps, mental, nutrition, récupération, engagement. Tout. Si t’es pas prêt à tout changer, prends un autre programme."' }
   };
 
