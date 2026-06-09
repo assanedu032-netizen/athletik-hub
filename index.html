@@ -16222,34 +16222,48 @@ function renderSatPhaseTabs() {
   var box = document.getElementById('satPhaseTabs');
   if (!box) return;
   var phases = _satLoadPhases();
-  // Si satPhase pointe sur un legacy debut/fin, mappe.
+  // Migration legacy : satPhase 'debut'/'fin' → 'phase1'/'phase2'.
+  // ET migration des valeurs stockées sous ces clés legacy → nouvelles clés.
+  // Sans ça : clic sur Phase 1 chargeait '{}' au lieu des valeurs sauvées
+  // sous 'debut' → impression que Phase 1 ne marchait pas.
+  var allVals = _satLoadAllValues();
+  var migrated = false;
+  if (allVals.debut && !allVals.phase1) { allVals.phase1 = allVals.debut; migrated = true; }
+  if (allVals.fin   && !allVals.phase2) { allVals.phase2 = allVals.fin;   migrated = true; }
+  if (migrated) _satSaveAllValues(allVals);
   if (satPhase === 'debut') satPhase = 'phase1';
   if (satPhase === 'fin')   satPhase = 'phase2';
   if (phases.indexOf(satPhase) === -1) satPhase = phases[0];
   var html = '';
   phases.forEach(function(p, i){
     var on = (p === satPhase);
-    html += '<div class="tp' + (on ? ' on' : '') + '" onclick="setSatPhase(\'' + p + '\')">' + _satPhaseLabel(p, i) + '</div>';
+    // data-bld-phase pour debug. type="button" pour éviter submit accidentel.
+    html += '<button type="button" class="tp' + (on ? ' on' : '') + '" data-sat-phase="' + p + '" onclick="window.setSatPhase(\'' + p + '\')">' + _satPhaseLabel(p, i) + '</button>';
   });
-  // Bouton "+" pour ajouter une phase. Max 6 phases (suffisant pour la
-  // plupart des plans : pré / mid / post / re-test / etc).
   if (phases.length < 6) {
-    html += '<button class="tp tp-add" onclick="addSatPhase()" aria-label="Ajouter une phase" title="Ajouter une phase">+</button>';
+    html += '<button type="button" class="tp tp-add" onclick="window.addSatPhase()" aria-label="Ajouter une phase" title="Ajouter une phase">+</button>';
   }
   box.innerHTML = html;
 }
 window.renderSatPhaseTabs = renderSatPhaseTabs;
 
 function setSatPhase(phase, _legacyEl) {
-  // Support de l'ancienne signature setSatPhase(el, 'debut') si jamais
-  // appelé via du markup legacy : si premier arg est un DOM node, on
-  // ignore et on utilise le 2e.
-  if (phase && typeof phase === 'object' && phase.nodeType) phase = _legacyEl;
-  // Snapshot AVANT de changer de phase pour ne pas perdre la saisie en cours.
-  _satSnapshotCurrent(satPhase);
-  satPhase = phase;
-  _satRestorePhase(phase);
-  renderSatPhaseTabs();
+  try {
+    // Support de l'ancienne signature setSatPhase(el, 'debut') si jamais
+    // appelé via du markup legacy : si premier arg est un DOM node, on
+    // ignore et on utilise le 2e.
+    if (phase && typeof phase === 'object' && phase.nodeType) phase = _legacyEl;
+    if (typeof phase !== 'string' || !phase) return;
+    if (phase === satPhase) return; // déjà sur cette phase, no-op
+    // Snapshot AVANT de changer (try-catch isolé pour ne pas bloquer
+    // le switch si la sauvegarde plante).
+    try { _satSnapshotCurrent(satPhase); } catch(e) { console.warn('[sat] snapshot', e); }
+    satPhase = phase;
+    try { _satRestorePhase(phase); } catch(e) { console.warn('[sat] restore', e); }
+    renderSatPhaseTabs();
+  } catch(err) {
+    console.error('[setSatPhase]', err);
+  }
 }
 window.setSatPhase = setSatPhase;
 
@@ -16357,20 +16371,26 @@ function renderSetPhaseTabs() {
   var html = '';
   phases.forEach(function(p, i){
     var on = (p === setPhase);
-    html += '<div class="tp' + (on ? ' on' : '') + '" onclick="setSetPhase(\'' + p + '\')">Phase ' + (i+1) + '</div>';
+    html += '<button type="button" class="tp' + (on ? ' on' : '') + '" data-set-phase="' + p + '" onclick="window.setSetPhase(\'' + p + '\')">Phase ' + (i+1) + '</button>';
   });
   if (phases.length < 6) {
-    html += '<button class="tp tp-add" onclick="addSetPhase()" aria-label="Ajouter une phase" title="Ajouter une phase">+</button>';
+    html += '<button type="button" class="tp tp-add" onclick="window.addSetPhase()" aria-label="Ajouter une phase" title="Ajouter une phase">+</button>';
   }
   box.innerHTML = html;
 }
 window.renderSetPhaseTabs = renderSetPhaseTabs;
 
 function setSetPhase(phase) {
-  _setSnapshotCurrent(setPhase);
-  setPhase = phase;
-  _setRestorePhase(phase);
-  renderSetPhaseTabs();
+  try {
+    if (typeof phase !== 'string' || !phase) return;
+    if (phase === setPhase) return;
+    try { _setSnapshotCurrent(setPhase); } catch(e) { console.warn('[set] snapshot', e); }
+    setPhase = phase;
+    try { _setRestorePhase(phase); } catch(e) { console.warn('[set] restore', e); }
+    renderSetPhaseTabs();
+  } catch(err) {
+    console.error('[setSetPhase]', err);
+  }
 }
 window.setSetPhase = setSetPhase;
 
