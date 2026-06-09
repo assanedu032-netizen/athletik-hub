@@ -3419,6 +3419,18 @@ html body #result, html body #nutriResult{
    structuré en sections numérotées.
    ═══════════════════════════════════════════════════════════════════ */
 #profil4 .p4-head{ margin-bottom:18px }
+#profil4 .p4-tinder{
+  display:flex; gap:6px; margin-bottom:12px;
+}
+#profil4 .p4-tinder-seg{
+  flex:1; height:4px; border-radius:2px;
+  background:var(--ah-border2);
+  transition:background .3s ease;
+}
+#profil4 .p4-tinder-seg.on{
+  background:linear-gradient(90deg,var(--ah-gold) 0%, #D4B86A 100%);
+  box-shadow:0 0 8px rgba(197,164,78,.35);
+}
 #profil4 .p4-head-row{
   display:flex; justify-content:space-between; align-items:center;
   margin-bottom:10px;
@@ -5692,10 +5704,19 @@ window.tiResetOnEnter = function(){ window.tiShowStep(1); };
 <div id="profil4" class="scr">
   <div class="scr-inner" style="padding:20px 22px 100px">
 
-    <!-- Header — unifié : eyebrow (section) + step count + barre fine
-         dorée gradient. Un seul indicateur de progression au lieu de deux,
-         plus calme visuellement. -->
+    <!-- Header — double lecture de la progression :
+         1) Barre 3 segments Tinder-style en haut → où on en est dans
+            l'onboarding GLOBAL (Profil 1/3 → 2/3 → 3/3). Profil 2/3 ici
+            → 2 segments dorés, 1 gris. Cohérent avec profil1 et profil3.
+         2) Eyebrow PROFIL 2/3 · NUTRITION + badge "Étape X/3".
+         3) Barre fine dorée juste en dessous → avancée DANS profil4
+            (objectif → mesures → suivi). -->
     <div class="p4-head">
+      <div class="p4-tinder">
+        <div class="p4-tinder-seg on"></div>
+        <div class="p4-tinder-seg on"></div>
+        <div class="p4-tinder-seg"></div>
+      </div>
       <div class="p4-head-row">
         <div class="p4-eyebrow">PROFIL 2 / 3 · NUTRITION</div>
         <div id="p4StepLabel" class="p4-step-badge">Étape 1 / 3</div>
