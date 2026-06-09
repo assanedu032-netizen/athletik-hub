@@ -6550,10 +6550,13 @@ window.tiResetOnEnter = function(){ window.tiShowStep(1); };
       </div>
     </div>
 
-    <!-- Phase selector -->
+    <!-- Phase selector — labels alignés sur la nomenclature programme
+         (Phase 1 / Phase 2). En interne on conserve les clés 'debut' et
+         'fin' pour ne casser ni les data ni la logique de scoring qui
+         compare les 2 jeux de mesures (baseline vs endline). -->
     <div style="display:flex;gap:8px;margin-bottom:16px">
-      <div class="tp on" onclick="setSatPhase(this,'debut')">🏁 Début programme</div>
-      <div class="tp" onclick="setSatPhase(this,'fin')">🏆 Fin programme</div>
+      <div class="tp on" onclick="setSatPhase(this,'debut')">Phase 1</div>
+      <div class="tp" onclick="setSatPhase(this,'fin')">Phase 2</div>
     </div>
 
     <div id="satForm">
