@@ -4294,6 +4294,79 @@ html body #result, html body #nutriResult{
   background:var(--ah-surface);
 }
 
+/* ── Stepper de progression du Builder ──
+   5 segments alignés horizontalement. Le segment "actif" prend la couleur
+   gold sur le dot + label navy gras. Les "done" ont un dot gold plein.
+   Les "à venir" en gris muted. */
+#pgBuilder .bld-stepper{
+  display:flex; align-items:flex-start; gap:6px;
+  padding:6px 18px 10px;
+  background:var(--ah-bg);
+  border-bottom:1px solid var(--ah-border);
+}
+#pgBuilder .bld-step{
+  flex:1; display:flex; flex-direction:column; align-items:center; gap:5px;
+  position:relative;
+}
+#pgBuilder .bld-step::after{
+  content:''; position:absolute;
+  top:6px; right:-3px;
+  width:calc(100% - 12px); height:2px;
+  background:var(--ah-border);
+  z-index:0;
+}
+#pgBuilder .bld-step:last-child::after{ display:none }
+#pgBuilder .bld-step-dot{
+  width:14px; height:14px; border-radius:50%;
+  background:var(--ah-surface);
+  border:2px solid var(--ah-border);
+  flex-shrink:0; z-index:1; position:relative;
+  transition:background .2s, border-color .2s, transform .2s;
+}
+#pgBuilder .bld-step-lbl{
+  font-family:'Outfit',sans-serif; font-size:9.5px; font-weight:600;
+  color:var(--ah-muted); letter-spacing:.04em;
+  text-align:center; line-height:1.1;
+  white-space:nowrap;
+}
+#pgBuilder .bld-step.done .bld-step-dot{
+  background:var(--ah-gold); border-color:var(--ah-gold);
+}
+#pgBuilder .bld-step.done::after{
+  background:var(--ah-gold);
+}
+#pgBuilder .bld-step.on .bld-step-dot{
+  background:#fff; border-color:var(--ah-gold);
+  transform:scale(1.18);
+  box-shadow:0 0 0 4px rgba(197,164,78,.18);
+}
+#pgBuilder .bld-step.on .bld-step-lbl{
+  color:var(--ah-navy); font-weight:700;
+}
+
+/* CTA "Générer ma séance →" rendu dynamiquement dans #builderChips au
+   step "matériel" — distinct des chips de réponse. */
+#pgBuilder #builderChips .bld-generate-cta{
+  width:100%;
+  padding:14px 18px;
+  margin-top:8px;
+  border:0; border-radius:13px;
+  background:linear-gradient(135deg,#D4B45E,#C5A44E 55%,#B89238);
+  color:var(--ah-navy);
+  font-family:'Outfit',sans-serif; font-size:14px; font-weight:800;
+  letter-spacing:.04em;
+  cursor:pointer;
+  box-shadow:0 8px 22px rgba(197,164,78,.32);
+  transition:transform .15s;
+}
+#pgBuilder #builderChips .bld-generate-cta:active{ transform:scale(.985) }
+
+/* Padding-bottom du convo wrap pour que le dernier bouton (CTA générer
+   ou Recommencer) ne soit jamais collé contre la bottom nav. */
+#pgBuilder #builderConvoWrap{
+  padding-bottom:calc(20px + env(safe-area-inset-bottom, 0px));
+}
+
 /* ── INTRO BUILDER : petit parcours d'entrée propre ── */
 #pgBuilder .bld-intro{
   display:none; /* affiché par JS via _builderShow('intro') */
@@ -7047,6 +7120,18 @@ window.tiResetOnEnter = function(){ window.tiShowStep(1); };
 
     <!-- CONVERSATION (Titan pose les questions, l'athlète répond à la voix ou au tap) -->
     <div id="builderConvoWrap" style="display:flex;flex-direction:column">
+
+      <!-- Stepper de progression — 5 segments (Objectif / Exercices /
+           Durée / Matériel / Séance). Le dernier "Séance" représente
+           l'action de génération. Mis à jour par _bUpdateStepper() à
+           chaque _bAskStep / soumission. -->
+      <div id="builderStepper" class="bld-stepper">
+        <div class="bld-step on"  data-bld-step="0"><div class="bld-step-dot"></div><div class="bld-step-lbl">Objectif</div></div>
+        <div class="bld-step"     data-bld-step="1"><div class="bld-step-dot"></div><div class="bld-step-lbl">Exercices</div></div>
+        <div class="bld-step"     data-bld-step="2"><div class="bld-step-dot"></div><div class="bld-step-lbl">Durée</div></div>
+        <div class="bld-step"     data-bld-step="3"><div class="bld-step-dot"></div><div class="bld-step-lbl">Matériel</div></div>
+        <div class="bld-step"     data-bld-step="4"><div class="bld-step-dot"></div><div class="bld-step-lbl">Séance</div></div>
+      </div>
 
       <!-- Fil de discussion -->
       <div id="builderConvo" style="padding:16px 18px 6px;display:flex;flex-direction:column;gap:12px"></div>
@@ -18569,7 +18654,10 @@ function _menerShowResult() {
 window._menerShowResult = _menerShowResult;
 
 const progPhases={ea:{name:'ELITE ATHLETE',obj:'Explosivité globale',phases:[[{name:'Échauffement',detail:'5 min'},{name:'Activation fessiers',detail:'2×12'},{name:'Squat progressif',detail:'3×8 (60%)'},{name:'Pogo Jumps',detail:'3×10'},{name:'Sprint 10m',detail:'5 passages'},{name:'Planche',detail:'3×30s'}],[{name:'Back Squat',detail:'4×5 (75%)'},{name:'Box Jump',detail:'4×5'},{name:'Hip Thrust',detail:'3×8 (70%)'},{name:'Sprint 30m',detail:'4 passages'},{name:'Depth Jump',detail:'3×3'}],[{name:'Power Clean',detail:'5×3 (85%)'},{name:'Back Squat',detail:'5×3 (85%)'},{name:'Depth Jump',detail:'4×3'},{name:'Sprint 60m',detail:'3 passages'},{name:'Box Jump Max',detail:'3×3'}]]},vd:{name:'VERTICAL DUNK',obj:'Dunker + Détente max',phases:[[{name:'CMJ',detail:'5×3'},{name:'Squat Jump',detail:'4×5'},{name:'Pogo Jumps',detail:'3×15'}],[{name:'Depth Jump',detail:'4×3'},{name:'Back Squat',detail:'4×5 (80%)'},{name:'Approach Jump',detail:'5×3'}],[{name:'Box Jump Max',detail:'5×2'},{name:'Single Leg Bound',detail:'3×5/jambe'},{name:'Sprint 10m',detail:'6 passages'}]]},mt:{name:'MICROTRAINING',obj:'Discipline et habitudes',phases:[[{name:'Squat Jump',detail:'3×5'},{name:'Pompes explosives',detail:'3×8'},{name:'Planche',detail:'3×30s'}],[{name:'Pogo Jumps',detail:'3×10'},{name:'V-Ups',detail:'3×12'},{name:'Skip A',detail:'3×15'}],[{name:'Box Jump',detail:'3×5'},{name:'Sprint 10m',detail:'4 passages'}]]},tri:{name:'TRIPHASIQUE',obj:'Force sans salle',phases:[[{name:'Squat PDC',detail:'4×15'},{name:'Fentes',detail:'3×10/jambe'},{name:'Pompes',detail:'4×12'}],[{name:'Squat Jump',detail:'4×8'},{name:'Single Leg Bound',detail:'3×6/jambe'}],[{name:'Pogo Jumps',detail:'4×12'},{name:'Sprint 10m',detail:'5 passages'}]]},se:{name:'SHRED EXPLOSE',obj:'Perdre + Exploser',phases:[[{name:'Circuit cardio',detail:'15 min'},{name:'Squat',detail:'3×12'},{name:'Pogo Jumps',detail:'3×15'}],[{name:'HIIT Sprint',detail:'10×10m'},{name:'Back Squat',detail:'4×8 (65%)'},{name:'Box Jump',detail:'3×8'}],[{name:'Sprint 30m',detail:'6 passages'},{name:'Depth Jump',detail:'3×3'}]]},ep:{name:'EXPLOSE+',obj:'Transformation totale',phases:[[{name:'Questionnaire MENER',detail:'Identifier pilier faible'},{name:'15 engagements',detail:'4 semaines'}],[{name:'Back Squat',detail:'5×5 (80%)'},{name:'Power Clean',detail:'4×3'},{name:'Sprint 30m',detail:'5 passages'}],[{name:'Depth Jump',detail:'5×3'},{name:'Back Squat',detail:'5×3 (90%)'},{name:'Sprint 60m',detail:'4 passages'}]]}};
-function showPg(id){document.querySelectorAll('.pg').forEach(p=>p.classList.remove('on'));document.querySelectorAll('.sub-tab').forEach(t=>t.classList.remove('on'));({lib:'pgLib',prog:'pgProg',builder:'pgBuilder'})[id]&&document.getElementById(({lib:'pgLib',prog:'pgProg',builder:'pgBuilder'})[id]).classList.add('on');event.currentTarget.classList.add('on');var __v=document.getElementById('vTrain');if(__v)__v.scrollTop=0;if(id==='lib'){try{_libCloseDetail();}catch(e){}try{_libRenderFilterChips();}catch(e){}try{_libRender(_libCurrentFilter||'all');}catch(e){}}if(id==='prog'){try{closeProg();}catch(e){}try{updateProgrammeLocks();}catch(e){}}}
+function showPg(id){document.querySelectorAll('.pg').forEach(p=>p.classList.remove('on'));document.querySelectorAll('.sub-tab').forEach(t=>t.classList.remove('on'));({lib:'pgLib',prog:'pgProg',builder:'pgBuilder'})[id]&&document.getElementById(({lib:'pgLib',prog:'pgProg',builder:'pgBuilder'})[id]).classList.add('on');event.currentTarget.classList.add('on');var __v=document.getElementById('vTrain');if(__v)__v.scrollTop=0;
+// FAB chrono masqué sur Builder (chevauche les chips/CTA du convo).
+try { document.body.classList.toggle('ah-no-fab', id === 'builder'); } catch(e) {}
+if(id==='lib'){try{_libCloseDetail();}catch(e){}try{_libRenderFilterChips();}catch(e){}try{_libRender(_libCurrentFilter||'all');}catch(e){}}if(id==='prog'){try{closeProg();}catch(e){}try{updateProgrammeLocks();}catch(e){}}}
 function openCatLegacy(n,ic,k){currentCat=n;currentCatData=catData[k]||[];var t=document.getElementById('catTitle');if(t)t.textContent=ic+' '+n.toUpperCase();var lg=document.getElementById('libGrid');if(lg)lg.classList.add('hidden');var cv=document.getElementById('libCatView');if(cv)cv.classList.remove('hidden');var dv=document.getElementById('libDetailView');if(dv)dv.classList.add('hidden');currentFilter='all';renderCatEx();var __v=document.getElementById('vTrain');if(__v)__v.scrollTop=0}
 function closeCatLegacy(){var lg=document.getElementById('libGrid');if(lg)lg.classList.remove('hidden');var cv=document.getElementById('libCatView');if(cv)cv.classList.add('hidden');var dv=document.getElementById('libDetailView');if(dv)dv.classList.add('hidden')}
 function filterCat(el,lv){document.querySelectorAll('.filter-row .fc').forEach(f=>f.classList.remove('on'));el.classList.add('on');currentFilter=lv;renderCatEx()}
@@ -21383,6 +21471,38 @@ var BUILDER_FOUNDER_EMAILS = ['assanedu032@gmail.com'];
 var _builderIntent = { objectif: '', duree: '', materiel: [], etat: '', phrase: '' };
 var _builderWorkout = null;       // séance générée par Titan (réconciliée librairie)
 var _builderGenerating = false;
+var _builderLeftDuringGen = false; // user a quitté l'app pendant la génération
+
+// Envoie une notif système si l'user a quitté l'app pendant que Titan
+// générait. Utilise registration.showNotification (PWA-friendly, tap
+// pour revenir) avec fallback Notification API simple.
+function _builderNotifyDone(title, body) {
+  if (!_builderLeftDuringGen) return;
+  if (!window.Notification || Notification.permission !== 'granted') return;
+  try {
+    if (navigator.serviceWorker && navigator.serviceWorker.ready) {
+      navigator.serviceWorker.ready.then(function(reg){
+        try {
+          reg.showNotification(title, {
+            body: body,
+            icon: '/icons/icon-192.png',
+            badge: '/icons/icon-192.png',
+            tag: 'builder-done',
+            renotify: true,
+            vibrate: [200, 100, 200]
+          });
+        } catch(_){
+          try { new Notification(title, { body: body, icon: '/icons/icon-192.png' }); } catch(_){}
+        }
+      }).catch(function(){
+        try { new Notification(title, { body: body, icon: '/icons/icon-192.png' }); } catch(_){}
+      });
+    } else {
+      new Notification(title, { body: body, icon: '/icons/icon-192.png' });
+    }
+  } catch(_){}
+}
+window._builderNotifyDone = _builderNotifyDone;
 
 var _BUILDER_OBJECTIFS = ['Détente verticale','Explosivité','Force','Vitesse','Puissance','Mobilité','Prévention blessure','Haut du corps','Bas du corps','Full body','Récupération active'];
 var _BUILDER_DUREES    = ['20 min','30 min','45 min','60 min'];
@@ -21465,12 +21585,15 @@ window._builderShowForm = _builderShowForm;
 // sont pilotées côté client (aucun appel réseau par étape) ; seul le bouton
 // de génération final appelle Titan.
 // ═══════════════════════════════════════════════════════════════════
+// Conversation 4 étapes (objectif → exos → durée → matériel) puis Titan
+// génère. L'ancienne question 'etat' (forme/fatigue) a été retirée pour
+// alléger la conversation — _builderIntent.etat reste init à '' côté
+// payload, Titan génère sans ce signal (acceptable, pondération faible).
 var _B_STEPS = [
   { key:'objectif', q:"Salut 👊 Quel est ton objectif aujourd'hui ?", options:function(){ return _BUILDER_OBJECTIFS; }, multi:false },
   { key:'exos',     q:"Quels exercices tu veux faire ? Dis-les-moi, ou choisis « Peu importe ».", options:function(){ return ['Squat jump','Sprint','Gainage','Pogo jumps','Box jump','Fentes sautées','Peu importe']; }, multi:false, free:true },
   { key:'duree',    q:"Combien de temps tu as ?", options:function(){ return _BUILDER_DUREES; }, multi:false },
-  { key:'materiel', q:"Quel matériel tu as sous la main ? (plusieurs choix possibles)", options:function(){ return _BUILDER_MATERIELS; }, multi:true },
-  { key:'etat',     q:"Dernière chose : comment tu te sens aujourd'hui ?", options:function(){ return _BUILDER_ETATS; }, multi:false }
+  { key:'materiel', q:"Quel matériel tu as sous la main ? (plusieurs choix possibles)", options:function(){ return _BUILDER_MATERIELS; }, multi:true }
 ];
 var _bConvo = { step: 0, answers: {}, free: false, multiSel: [] };
 
@@ -21490,12 +21613,26 @@ window._builderStartConvo = _builderStartConvo;
 function _bAskStep() {
   if (_bConvo.free) return;
   var step = _B_STEPS[_bConvo.step];
-  if (!step) { _bGenerateFromConvo(); return; }
+  if (!step) { _bUpdateStepper(_B_STEPS.length); _bGenerateFromConvo(); return; }
   _bConvo.multiSel = [];
+  _bUpdateStepper(_bConvo.step);
   _bPostTitan(step.q);
   _bRenderStepChips(step);
   var inp = document.getElementById('builderConvoInput');
   if (inp) inp.placeholder = step.free ? 'Réponds ou parle à Titan…' : 'Tape, parle, ou choisis ci-dessus…';
+}
+
+// Met à jour le stepper visuel (Objectif/Exercices/Durée/Matériel/Séance).
+// step < N : segment en cours = 'on', segments avant = 'done'.
+// step === N : tous segments 'done' (génération en cours).
+function _bUpdateStepper(stepIdx) {
+  var dots = document.querySelectorAll('#builderStepper .bld-step');
+  if (!dots || !dots.length) return;
+  for (var i = 0; i < dots.length; i++) {
+    dots[i].classList.remove('on', 'done');
+    if (i < stepIdx)       dots[i].classList.add('done');
+    else if (i === stepIdx) dots[i].classList.add('on');
+  }
 }
 
 function _bRenderStepChips(step) {
@@ -21510,7 +21647,13 @@ function _bRenderStepChips(step) {
     html += '<button class="' + cls + '" onclick="window._bChip(\'' + safe + '\')">' + v + '</button>';
   });
   if (step.multi) {
-    html += '<button class="bld-confirm-multi" onclick="window._bConfirmMulti()">✓ Valider</button>';
+    // À la DERNIÈRE étape (matériel), le bouton de confirmation devient
+    // l'action de génération : "Générer ma séance →" en gold premium.
+    // Ailleurs : "✓ Valider" classique.
+    var isLast = _bConvo.step === _B_STEPS.length - 1;
+    var lbl = isLast ? 'Générer ma séance →' : '✓ Valider';
+    var cls = isLast ? 'bld-confirm-multi bld-generate-cta' : 'bld-confirm-multi';
+    html += '<button class="' + cls + '" onclick="window._bConfirmMulti()">' + lbl + '</button>';
   }
   el.innerHTML = html;
 }
@@ -21751,6 +21894,17 @@ async function _bGenerate() {
 
   _builderGenerating = true;
   _builderShow('loading');
+  // Track si l'user quitte l'app pendant la génération (visibilitychange).
+  // Si oui : à la fin, on envoie une notif "Ta séance est prête" pour
+  // qu'il puisse revenir d'un clic. Demande la permission si pas encore
+  // accordée — silencieux si refusé.
+  _builderLeftDuringGen = false;
+  if (window.Notification && Notification.permission === 'default') {
+    try { Notification.requestPermission(); } catch(_){}
+  }
+  function _bldVisHandler() { if (document.hidden) _builderLeftDuringGen = true; }
+  window._builderVisHandler = _bldVisHandler;
+  document.addEventListener('visibilitychange', _bldVisHandler);
 
   var payload = {
     mode: 'builder',
@@ -21779,11 +21933,19 @@ async function _bGenerate() {
     _builderWorkout = _builderReconcile(data.workout);
     builderRenderResult(_builderWorkout);
     _builderShow('result');
+    // Notif si l'user a quitté pendant la génération.
+    _builderNotifyDone('Ta séance Titan est prête 💪', 'Reviens dans l\'app pour la lancer.');
   } catch (err) {
     if (typeof showToast === 'function') showToast(err.message || 'Erreur de génération. Réessaie.', 'err');
     _builderShow('convo');
+    _builderNotifyDone('Erreur Titan', 'La génération a échoué. Réessaie.');
   } finally {
     _builderGenerating = false;
+    // Nettoie le listener visibilitychange
+    if (window._builderVisHandler) {
+      document.removeEventListener('visibilitychange', window._builderVisHandler);
+      window._builderVisHandler = null;
+    }
   }
 }
 window._bGenerate = _bGenerate;
