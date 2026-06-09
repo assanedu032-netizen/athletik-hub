@@ -23856,15 +23856,38 @@ var selectedHabit = null;
 var selectedDuration = 21;
 
 function openHabitsModal() {
-  if (activeHabits.length >= 3) { alert("Maximum 3 habitudes. Finis une habitude avant d\u2019en ajouter."); return; }
-  renderHabitsList("");
-  document.getElementById("habitsModal").style.display = "block";
-  document.getElementById("habitContract").style.display = "none";
+  try {
+    // Garde de s\u00fbret\u00e9 : si activeHabits n'a pas .length pour quelque raison,
+    // on traite comme tableau vide. Avant : si activeHabits \u00e9tait undef,
+    // le .length plantait et le modal ne s'ouvrait pas (clic silencieux).
+    var n = (window.activeHabits && typeof window.activeHabits.length === 'number')
+      ? window.activeHabits.length : 0;
+    if (n >= 3) {
+      alert("Maximum 3 habitudes. Finis une habitude avant d'en ajouter.");
+      return;
+    }
+    try { renderHabitsList(""); } catch(e) { console.warn('[habits] renderList', e); }
+    var modal = document.getElementById("habitsModal");
+    var contract = document.getElementById("habitContract");
+    if (!modal) {
+      if (typeof showToast === 'function') showToast('Modal indisponible. Recharge l\'app.', 'err');
+      console.error('[habits] #habitsModal introuvable dans le DOM');
+      return;
+    }
+    modal.style.display = "block";
+    if (contract) contract.style.display = "none";
+  } catch(err) {
+    console.error('[openHabitsModal]', err);
+    if (typeof showToast === 'function') showToast('Erreur ouverture habitudes \u2014 ' + (err.message || ''), 'err');
+  }
 }
+window.openHabitsModal = openHabitsModal;
 
 function closeHabitsModal() {
-  document.getElementById("habitsModal").style.display = "none";
+  var modal = document.getElementById("habitsModal");
+  if (modal) modal.style.display = "none";
 }
+window.closeHabitsModal = closeHabitsModal;
 
 function selectDuration(el, dur) {
   document.querySelectorAll(".dur-btn").forEach(function(b) { b.classList.remove("on"); });
