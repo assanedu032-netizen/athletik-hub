@@ -19769,8 +19769,11 @@ window._trkVoiceMultiRel = function(btn, parentSel, fieldsCfg, exoId, exoName, c
         if (typeof window.showPg === 'function') { window.showPg('prog'); return true; }
       }
     } catch(_){}
-    // 13) Fallback : popstate (notre handler renvoie sur Home si on n'y est pas)
-    try { history.back(); return true; } catch(_){}
+    // 13) Plus rien à fermer — c'est à l'appelant (popstate handler ou
+    //     edge-swipe) de décider du fallback. Avant on faisait history.back()
+    //     ici, ce qui créait une boucle infinie avec notre nouveau handler
+    //     d'historique : on retourne false maintenant pour signaler "rien
+    //     d'overlay-like à fermer".
     return false;
   }
   window._tryGoBack = tryGoBack;
@@ -19796,7 +19799,10 @@ window._trkVoiceMultiRel = function(btn, parentSel, fieldsCfg, exoId, exoName, c
     if (dx < H_THRESHOLD) return;
     if (dx < Math.abs(dy) * ANGLE_RATIO) return;
     if (dt > MAX_DURATION) return;
-    tryGoBack();
+    // 1) Essaie d'abord de fermer un overlay/modale visible (tryGoBack).
+    // 2) Sinon : history.back() — notre handler popstate restaurera l'écran
+    //    précédent depuis la pile JS de ahHistoryNav.
+    if (!tryGoBack()) { try { history.back(); } catch(_){} }
   }
   // Capture phase + window pour passer avant les listeners délégués
   window.addEventListener('touchstart', onStart, { passive: true, capture: true });
@@ -19816,7 +19822,7 @@ window._trkVoiceMultiRel = function(btn, parentSel, fieldsCfg, exoId, exoName, c
     if (dx < H_THRESHOLD) return;
     if (dx < Math.abs(dy) * ANGLE_RATIO) return;
     if (dt > MAX_DURATION) return;
-    tryGoBack();
+    if (!tryGoBack()) { try { history.back(); } catch(_){} }
   }, { passive: true, capture: true });
 })();
 
@@ -19931,21 +19937,131 @@ window._trkVoiceMultiRel = function(btn, parentSel, fieldsCfg, exoId, exoName, c
     }
   }, { passive: true });
 
-  // ── Anti retour système : pousse un state au load et intercepte popstate
-  // pour rester dans l'app sans créer de boucle bloquante. Quand on est à
-  // home et qu'on essaie de revenir, on laisse l'OS gérer (back natif).
+  // L'ancien handler popstate hardcodé "toujours retour à home" a été
+  // remplacé par le module ahHistoryNav ci-dessous, qui gère une vraie
+  // pile de navigation.
+})();
+
+// ═══════════════════════════════════════════════════════════════════
+// HISTORY NAV — vrai bouton retour natif (Android back / swipe natif iOS)
+// ───────────────────────────────────────
+// Avant : la nav interne (switchTab/go/showPg/showSec) ne touchait jamais
+// history → Android back / swipe natif quittaient l'app ou re-routaient
+// systématiquement à home.
+//
+// Maintenant : chaque changement d'écran pousse un state dans l'historique
+// + on garde une pile JS de snapshots ({view, scr, pg, sec}). Sur popstate
+// (back natif/swipe), on ferme d'abord la modale/overlay visible (via le
+// _tryGoBack existant), sinon on restaure le snapshot précédent depuis
+// la pile.
+//
+// Idempotence : _ignore = true empêche de re-pousser un state pendant un
+// restore (évite la boucle).
+// ═══════════════════════════════════════════════════════════════════
+(function ahHistoryNav(){
+  var _stack = [];      // pile de snapshots ({view, scr, pg, sec})
+  var _ignore = false;  // anti-reentrance pendant un restore
+
+  function _viewToTab(id){
+    return { vHome:'home', vTracks:'tracks', vChat:'chat', vTrain:'train', vNutri:'nutrition', vMoi:'moi' }[id] || null;
+  }
+  function _snapshot(){
+    var v = document.querySelector('.view.on');
+    var s = document.querySelector('.scr.on');
+    var pg = document.querySelector('#vTrain .pg.on');
+    var sec = document.querySelector('#vTracks .sec.on');
+    return {
+      view: v ? v.id : null,
+      scr:  s ? s.id : null,
+      pg:   pg ? pg.id : null,
+      sec:  sec ? sec.id : null
+    };
+  }
+  function _eq(a,b){
+    return a && b && a.view===b.view && a.scr===b.scr && a.pg===b.pg && a.sec===b.sec;
+  }
+
+  function _push(){
+    if (_ignore) return;
+    var s = _snapshot();
+    // Dedupe : si l'état n'a pas bougé, on ne pousse pas (évite les doublons)
+    if (_stack.length && _eq(s, _stack[_stack.length-1])) return;
+    _stack.push(s);
+    try { history.pushState({ ah:1, idx:_stack.length }, ''); } catch(_){}
+  }
+
+  function _restore(s){
+    if (!s) return;
+    _ignore = true;
+    try {
+      // Onboarding .scr prend la priorité
+      if (s.scr && window.go) window.go(s.scr);
+      else if (s.view){
+        var tab = _viewToTab(s.view);
+        if (tab && window.switchTab) window.switchTab(tab);
+      }
+      // Sous-page dans Train
+      if (s.pg && window.showPg){
+        var pgMap = { pgLib:'lib', pgProg:'prog', pgBuilder:'builder' };
+        if (pgMap[s.pg]) window.showPg(pgMap[s.pg]);
+      }
+      // Sous-section dans Suivi
+      if (s.sec && window.showSec){
+        var m = s.sec.match(/^sec([A-Z][a-z]+)/);
+        if (m) window.showSec(m[1].toLowerCase());
+      }
+    } catch(_){}
+    setTimeout(function(){ _ignore = false; }, 0);
+  }
+
+  // Wrap les fns de nav : à chaque appel, on pousse un snapshot APRÈS
+  // que la fn originale a fait sa job.
+  ['switchTab', 'go', 'showPg', 'showSec'].forEach(function(name){
+    var orig = window[name];
+    if (typeof orig !== 'function') return;
+    window[name] = function(){
+      var ret = orig.apply(this, arguments);
+      try { _push(); } catch(_){}
+      return ret;
+    };
+  });
+
+  // popstate : back natif / swipe natif déclenche ça.
+  // Priorité : 1) fermer overlay visible, 2) restore prev depuis la pile.
+  window.addEventListener('popstate', function(e){
+    if (_ignore) return;
+    _ignore = true;
+    try {
+      var closed = false;
+      if (typeof window._tryGoBack === 'function'){
+        try { closed = !!window._tryGoBack(); } catch(_){}
+      }
+      if (closed){
+        // On a fermé une modale → re-push un state pour que le prochain
+        // back puisse être consommé.
+        try { history.pushState({ ah:1, k:'overlay-closed' }, ''); } catch(_){}
+        return;
+      }
+      // Sinon : pop la pile et restore le snapshot précédent.
+      _stack.pop();
+      var prev = _stack[_stack.length-1];
+      if (prev) _restore(prev);
+      // Pile vide → on laisse l'OS gérer (quittera l'app PWA sur le prochain back).
+    } finally {
+      setTimeout(function(){ _ignore = false; }, 0);
+    }
+  });
+
+  // Seed initial : pose un state racine si pas déjà fait, puis push le
+  // snapshot courant après quelques ms (le temps que l'app initialise
+  // sa première vue).
   try {
     if (history.state == null) history.replaceState({ ah:1, root:1 }, '');
-    window.addEventListener('popstate', function(e){
-      var st = e.state;
-      if (!st || !st.ah) return;
-      var current = getCurrentMain();
-      if (!current || current === 'home') return; // laisse l'OS gérer
-      try { window.switchTab && window.switchTab('home'); } catch(_){}
-      // Re-pousse pour qu'un autre back ait quelque chose à consommer
-      try { history.pushState({ ah:1, tab:'home' }, ''); } catch(_){}
-    });
   } catch(_){}
+  setTimeout(function(){
+    var s = _snapshot();
+    if (s.view || s.scr) _stack.push(s);
+  }, 80);
 })();
 
 // ═══════════════════════════════════════
