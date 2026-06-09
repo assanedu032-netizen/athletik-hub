@@ -3413,6 +3413,290 @@ html body #result, html body #nutriResult{
   position:relative; z-index:1;
 }
 
+/* ═══════════════════════════════════════════════════════════════════
+   PROFIL 2/3 · NUTRITION — refonte design premium (étapes 1 & 2)
+   Header unifié, cartes objectifs avec check, formulaire mesures
+   structuré en sections numérotées.
+   ═══════════════════════════════════════════════════════════════════ */
+#profil4 .p4-head{ margin-bottom:18px }
+#profil4 .p4-head-row{
+  display:flex; justify-content:space-between; align-items:center;
+  margin-bottom:10px;
+}
+#profil4 .p4-eyebrow{
+  font-family:'JetBrains Mono','Outfit',sans-serif;
+  font-size:10px; letter-spacing:.22em; text-transform:uppercase;
+  color:var(--ah-gold); font-weight:700;
+}
+#profil4 .p4-step-badge{
+  font-family:'JetBrains Mono','Outfit',sans-serif;
+  font-size:10px; letter-spacing:.18em;
+  color:var(--ah-text2); font-weight:700;
+  padding:4px 10px; border-radius:999px;
+  background:rgba(197,164,78,.08); border:1px solid rgba(197,164,78,.2);
+}
+#profil4 .p4-progress{
+  height:3px; background:var(--ah-surface2);
+  border-radius:999px; overflow:hidden;
+}
+#profil4 .p4-progress-bar{
+  height:100%;
+  background:linear-gradient(90deg,var(--ah-gold) 0%, #D4B86A 100%);
+  border-radius:999px; transition:width .4s cubic-bezier(.2,.7,.25,1);
+  box-shadow:0 0 8px rgba(197,164,78,.35);
+}
+
+#profil4 .p4-title-wrap{ margin-bottom:18px }
+#profil4 .p4-title{
+  font-family:'Bebas Neue',sans-serif;
+  font-size:30px; line-height:1.05; letter-spacing:.02em;
+  color:var(--ah-navy); margin:0 0 8px; font-weight:700;
+}
+#profil4 .p4-subtitle{
+  font-family:'Outfit',sans-serif; font-size:13.5px; line-height:1.5;
+  color:var(--ah-text2); margin:0;
+}
+#profil4 .p4-reassure{
+  font-family:'Outfit',sans-serif; font-size:12px; line-height:1.4;
+  color:var(--ah-muted); margin:6px 0 0; font-style:italic;
+}
+
+/* Coach Titan — étape 1 */
+#profil4 .p4-coach{
+  display:flex; gap:12px; align-items:flex-start;
+  background:var(--ah-navy);
+  border-left:3px solid var(--ah-gold);
+  border-radius:14px;
+  padding:14px 14px 14px 12px;
+  margin-bottom:22px;
+  box-shadow:0 4px 14px rgba(20,30,60,.10);
+}
+#profil4 .p4-coach-av{
+  width:38px; height:38px; flex-shrink:0;
+  border-radius:50%; overflow:hidden;
+  border:1.5px solid var(--ah-gold);
+  background:var(--ah-navy-deep);
+  display:flex; align-items:center; justify-content:center;
+}
+#profil4 .p4-coach-av img{ width:100%; height:100%; object-fit:cover }
+#profil4 .p4-coach-av-fallback::after{
+  content:'T'; font-family:'Bebas Neue',sans-serif;
+  font-size:18px; color:var(--ah-gold);
+}
+#profil4 .p4-coach-body{ flex:1; min-width:0 }
+#profil4 .p4-coach-label{
+  font-family:'JetBrains Mono','Outfit',sans-serif;
+  font-size:9px; letter-spacing:.22em; color:var(--ah-gold);
+  font-weight:700; margin-bottom:4px;
+}
+#profil4 .p4-coach-msg{
+  font-family:'Outfit',sans-serif; font-size:13px; line-height:1.5;
+  color:#fff;
+}
+
+/* Cartes objectifs — étape 1 */
+#profil4 .p4-obj-grid{
+  display:flex; flex-direction:column; gap:10px; margin-bottom:24px;
+}
+#profil4 .p4-obj-card{
+  display:flex; align-items:center; gap:14px;
+  width:100%; padding:14px 16px;
+  background:var(--ah-surface);
+  border:1.5px solid var(--ah-border);
+  border-radius:14px; cursor:pointer; text-align:left;
+  transition:border-color .15s, background .15s, transform .12s, box-shadow .15s;
+  font-family:inherit; -webkit-tap-highlight-color:transparent;
+}
+#profil4 .p4-obj-card:active{ transform:scale(.985); }
+#profil4 .p4-obj-ico{
+  width:44px; height:44px; flex-shrink:0;
+  border-radius:11px; background:var(--ah-surface2);
+  border:1px solid var(--ah-border);
+  display:flex; align-items:center; justify-content:center;
+  color:var(--ah-navy);
+  transition:background .15s, border-color .15s, color .15s, transform .15s;
+}
+#profil4 .p4-obj-ico svg{ width:22px; height:22px }
+#profil4 .p4-obj-body{ flex:1; min-width:0 }
+#profil4 .p4-obj-title{
+  font-family:'Outfit',sans-serif; font-size:15px; font-weight:700;
+  color:var(--ah-navy); line-height:1.2; margin-bottom:3px;
+  letter-spacing:.01em;
+}
+#profil4 .p4-obj-sub{
+  font-family:'Outfit',sans-serif; font-size:12.5px;
+  color:var(--ah-text2); line-height:1.4;
+}
+#profil4 .p4-obj-check{
+  width:24px; height:24px; flex-shrink:0;
+  border-radius:50%; background:transparent;
+  border:1.5px solid var(--ah-border2);
+  display:flex; align-items:center; justify-content:center;
+  color:transparent; transition:all .15s;
+}
+#profil4 .p4-obj-check svg{ width:14px; height:14px }
+#profil4 .p4-obj-card.on,
+#profil4 .p4-obj-card.sel{
+  background:rgba(197,164,78,.06);
+  border-color:var(--ah-gold);
+  box-shadow:0 4px 14px rgba(197,164,78,.12);
+}
+#profil4 .p4-obj-card.on .p4-obj-ico,
+#profil4 .p4-obj-card.sel .p4-obj-ico{
+  background:var(--ah-gold);
+  border-color:var(--ah-gold);
+  color:var(--ah-navy);
+  transform:scale(1.04);
+}
+#profil4 .p4-obj-card.on .p4-obj-check,
+#profil4 .p4-obj-card.sel .p4-obj-check{
+  background:var(--ah-gold);
+  border-color:var(--ah-gold);
+  color:var(--ah-navy);
+}
+
+/* Formulaire mesures — étape 2 */
+#profil4 .p4-form-card{
+  background:var(--ah-surface);
+  border:1px solid var(--ah-border);
+  border-radius:16px;
+  padding:18px;
+  margin-bottom:18px;
+  box-shadow:0 2px 10px rgba(20,30,60,.04);
+}
+#profil4 .p4-section + .p4-section{
+  margin-top:18px; padding-top:18px;
+  border-top:1px solid var(--ah-border);
+}
+#profil4 .p4-section-head{
+  display:flex; align-items:center; gap:9px; margin-bottom:12px;
+}
+#profil4 .p4-section-num{
+  width:22px; height:22px; flex-shrink:0; border-radius:50%;
+  background:var(--ah-gold); color:var(--ah-navy);
+  font-family:'Bebas Neue',sans-serif; font-size:13px; font-weight:700;
+  display:flex; align-items:center; justify-content:center;
+  letter-spacing:0;
+}
+#profil4 .p4-section-num.p4-section-num-opt{
+  background:var(--ah-surface2);
+  color:var(--ah-text2);
+  border:1px solid var(--ah-border);
+}
+#profil4 .p4-section-title{
+  font-family:'Outfit',sans-serif; font-size:13.5px; font-weight:700;
+  color:var(--ah-navy); letter-spacing:.01em;
+}
+#profil4 .p4-field-row{
+  display:grid; grid-template-columns:1fr 1fr; gap:12px;
+}
+#profil4 .p4-field{ display:flex; flex-direction:column }
+#profil4 .p4-field-label-row{
+  display:flex; align-items:center; justify-content:space-between;
+  margin-bottom:6px;
+}
+#profil4 .p4-field-label{
+  font-family:'Outfit',sans-serif; font-size:12px; font-weight:600;
+  color:var(--ah-text2); display:block; margin-bottom:6px;
+  letter-spacing:.01em;
+}
+#profil4 .p4-field-label-row .p4-field-label{ margin-bottom:0 }
+#profil4 .p4-badge-opt{
+  font-family:'JetBrains Mono','Outfit',sans-serif;
+  font-size:9px; font-weight:700; letter-spacing:.14em;
+  color:var(--ah-muted); text-transform:uppercase;
+  padding:3px 8px; border-radius:999px;
+  background:var(--ah-surface2); border:1px solid var(--ah-border);
+}
+#profil4 .p4-input-wrap{
+  position:relative; display:flex; align-items:stretch;
+  background:var(--ah-surface);
+  border:1.5px solid var(--ah-border);
+  border-radius:11px; overflow:hidden;
+  transition:border-color .15s, box-shadow .15s;
+}
+#profil4 .p4-input-wrap:focus-within{
+  border-color:var(--ah-gold);
+  box-shadow:0 0 0 3px rgba(197,164,78,.12);
+}
+#profil4 .p4-input-wrap.has-err{
+  border-color:#E14B4B;
+  box-shadow:0 0 0 3px rgba(225,75,75,.10);
+}
+#profil4 .p4-input{
+  flex:1; min-width:0;
+  background:transparent; border:0; outline:none;
+  padding:12px 0 12px 14px;
+  font-family:'Outfit',sans-serif; font-size:16px; font-weight:700;
+  color:var(--ah-navy);
+  -moz-appearance:textfield;
+}
+#profil4 .p4-input::-webkit-outer-spin-button,
+#profil4 .p4-input::-webkit-inner-spin-button{ -webkit-appearance:none; margin:0 }
+#profil4 .p4-input::placeholder{
+  color:var(--ah-muted); font-weight:500;
+}
+#profil4 .p4-input-unit{
+  display:flex; align-items:center;
+  padding:0 14px;
+  font-family:'Outfit',sans-serif; font-size:13px; font-weight:700;
+  color:var(--ah-text2);
+  background:var(--ah-surface2);
+  border-left:1px solid var(--ah-border);
+}
+#profil4 .p4-field-hint{
+  font-family:'Outfit',sans-serif; font-size:11px; line-height:1.4;
+  color:var(--ah-muted); margin-top:6px;
+}
+#profil4 .p4-field-err{
+  font-family:'Outfit',sans-serif; font-size:11.5px; line-height:1.4;
+  color:#E14B4B; margin-top:5px; min-height:0;
+  font-weight:600;
+}
+#profil4 .p4-field-err:empty{ display:none }
+#profil4 .p4-field-delta{
+  font-family:'JetBrains Mono','Outfit',sans-serif;
+  font-size:11px; font-weight:700; margin-top:6px;
+}
+
+/* CTA principal + Bouton Retour */
+#profil4 .p4-cta{
+  display:block; width:100%;
+  padding:15px 18px;
+  border:0; border-radius:13px;
+  background:var(--ah-surface2);
+  color:var(--ah-muted);
+  font-family:'Outfit',sans-serif; font-size:15px; font-weight:800;
+  letter-spacing:.03em;
+  cursor:not-allowed;
+  transition:background .2s, color .2s, transform .15s, box-shadow .2s;
+}
+#profil4 .p4-cta:not(:disabled){
+  background:linear-gradient(135deg,#D4B45E,#C5A44E 55%,#B89238);
+  color:var(--ah-navy);
+  box-shadow:0 8px 22px rgba(197,164,78,.32);
+  cursor:pointer;
+}
+#profil4 .p4-cta:not(:disabled):active{ transform:scale(.985) }
+
+#profil4 .p4-cta-row{
+  display:flex; gap:10px;
+}
+#profil4 .p4-back{
+  flex:0 0 auto; display:flex; align-items:center; gap:6px;
+  padding:15px 16px;
+  background:transparent;
+  border:1.5px solid var(--ah-border);
+  border-radius:13px;
+  font-family:'Outfit',sans-serif; font-size:13px; font-weight:700;
+  color:var(--ah-text2); cursor:pointer;
+  transition:border-color .15s, background .15s;
+  -webkit-tap-highlight-color:transparent;
+}
+#profil4 .p4-back:hover{ border-color:var(--ah-gold2); background:rgba(197,164,78,.04) }
+#profil4 .p4-back svg{ flex-shrink:0 }
+#profil4 .p4-cta-row .p4-cta{ flex:1 }
+
 /* ── Section titles ── */
 .sec-title{
   font-family:var(--ah-font-display) !important;
@@ -5408,116 +5692,170 @@ window.tiResetOnEnter = function(){ window.tiShowStep(1); };
 <div id="profil4" class="scr">
   <div class="scr-inner" style="padding:20px 22px 100px">
 
-    <!-- Barre Tinder-style : 3 segments. Profil 2/3 → 2 segments gold. -->
-    <div style="display:flex;gap:6px;margin-bottom:8px">
-      <div style="flex:1;height:4px;border-radius:2px;background:var(--gold)"></div>
-      <div style="flex:1;height:4px;border-radius:2px;background:var(--gold)"></div>
-      <div style="flex:1;height:4px;border-radius:2px;background:var(--border)"></div>
-    </div>
-
-    <!-- Header (commun aux 3 pages) -->
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
-      <div style="font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:.22em;color:var(--ah-gold);text-transform:uppercase">PROFIL 2 / 3 · NUTRITION</div>
-      <div id="p4StepLabel" style="font-size:11px;color:var(--gold);font-weight:700">1 / 3</div>
-    </div>
-
-    <!-- Sous-progression interne (objectif → mesures → suivi). Distincte
-         de la barre Tinder ci-dessus qui montre l'étape globale. -->
-    <div style="height:4px;background:var(--border);border-radius:2px;overflow:hidden;margin-bottom:20px">
-      <div id="p4ProgressBar" style="height:100%;background:linear-gradient(90deg,var(--gold),#D4B86A);border-radius:2px;width:33%;transition:width .35s ease"></div>
+    <!-- Header — unifié : eyebrow (section) + step count + barre fine
+         dorée gradient. Un seul indicateur de progression au lieu de deux,
+         plus calme visuellement. -->
+    <div class="p4-head">
+      <div class="p4-head-row">
+        <div class="p4-eyebrow">PROFIL 2 / 3 · NUTRITION</div>
+        <div id="p4StepLabel" class="p4-step-badge">Étape 1 / 3</div>
+      </div>
+      <div class="p4-progress"><div id="p4ProgressBar" class="p4-progress-bar" style="width:33%"></div></div>
     </div>
 
     <!-- ═══════════════════════════ -->
     <!-- PAGE 1 — Objectif nutritionnel  -->
     <!-- ═══════════════════════════ -->
     <div id="p4_step1" class="p4-step">
-      <div style="margin-bottom:20px">
-        <div style="font-family:'Bebas Neue',sans-serif;font-size:30px;letter-spacing:2px;color:var(--text);line-height:1.05">TON OBJECTIF</div>
-        <div style="font-size:13px;color:var(--muted);margin-top:6px;line-height:1.5">Un seul objectif à la fois. Sois honnête sur ta priorité actuelle.</div>
+      <div class="p4-title-wrap">
+        <h2 class="p4-title">Quel est ton objectif nutrition ?</h2>
+        <p class="p4-subtitle">Sélectionne une priorité. On adaptera ensuite tes apports, ton timing et ta récupération.</p>
       </div>
 
-      <div class="titan-msg" style="margin-bottom:20px">
-        <!-- Audit design B-9 : avatar mascotte 32px au lieu du "T" cercle -->
-        <div class="titan-avatar" style="background:var(--ah-navy-deep);border:2px solid var(--ah-gold);overflow:hidden;padding:0">
-          <img src="images/titan-mascot.png" alt="T" style="width:100%;height:100%;object-fit:cover" onerror="this.style.display='none';this.parentElement.innerHTML='T'">
+      <!-- Coach Titan card — refonte propre : eyebrow "COACH TITAN" pour
+           contextualiser, padding plus généreux, avatar mieux intégré
+           (pas de bordure double), bulle sans queue tordue. -->
+      <div class="p4-coach">
+        <div class="p4-coach-av">
+          <img src="images/titan-mascot.png" alt="Titan" onerror="this.style.display='none';this.parentElement.classList.add('p4-coach-av-fallback')">
         </div>
-        <div class="titan-bubble">Le carburant compte autant que le moteur. Choisis bien ce que tu veux, c'est de là qu'on part.</div>
-      </div>
-
-      <div id="p4ObjGrid" style="display:flex;flex-direction:column;gap:10px;margin-bottom:24px">
-        <div class="p4-obj-card ah-opt-card" data-obj="optimisation" onclick="p4SelectObj(this,'optimisation')">
-          <div class="ah-opt-ico"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M12 1v6m0 10v6"/><path d="M4.22 4.22l4.24 4.24m7.08 7.08l4.24 4.24"/><path d="M1 12h6m10 0h6"/><path d="M4.22 19.78l4.24-4.24m7.08-7.08l4.24-4.24"/></svg></div>
-          <div class="ah-opt-body">
-            <div class="ah-opt-title">OPTIMISATION</div>
-            <div class="ah-opt-sub">Tu es au bon poids. On maximise ta performance — qualité, timing, récupération.</div>
-          </div>
-          <div class="ah-opt-arrow">→</div>
-        </div>
-        <div class="p4-obj-card ah-opt-card" data-obj="priseMuscle" onclick="p4SelectObj(this,'priseMuscle')">
-          <div class="ah-opt-ico"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12h3"/><path d="M18 12h3"/><path d="M6 9v6"/><path d="M18 9v6"/><path d="M9 6v12"/><path d="M15 6v12"/><path d="M9 12h6"/></svg></div>
-          <div class="ah-opt-body">
-            <div class="ah-opt-title">PRISE DE MUSCLE</div>
-            <div class="ah-opt-sub">Construire du muscle qui produit de la puissance. Surplus calorique contrôlé.</div>
-          </div>
-          <div class="ah-opt-arrow">→</div>
-        </div>
-        <div class="p4-obj-card ah-opt-card" data-obj="pertePoids" onclick="p4SelectObj(this,'pertePoids')">
-          <div class="ah-opt-ico"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 17l6-6 4 4 8-8"/><path d="M14 7h7v7"/></svg></div>
-          <div class="ah-opt-body">
-            <div class="ah-opt-title">PERTE DE POIDS</div>
-            <div class="ah-opt-sub">Gagner en relative strength. Déficit contrôlé, protéines hautes.</div>
-          </div>
-          <div class="ah-opt-arrow">→</div>
+        <div class="p4-coach-body">
+          <div class="p4-coach-label">COACH TITAN</div>
+          <div class="p4-coach-msg">La nutrition est ton carburant. Choisis ton objectif principal — on construit le plan autour de ta performance.</div>
         </div>
       </div>
 
-      <button id="p4NextStep1" onclick="p4GoStep(2)" disabled style="width:100%;padding:16px;background:rgba(197,164,78,.3);border:none;border-radius:12px;font-family:'Outfit',sans-serif;font-size:15px;font-weight:800;color:rgba(6,12,24,.4);cursor:not-allowed;transition:all .2s">Continuer →</button>
+      <div id="p4ObjGrid" class="p4-obj-grid">
+        <button type="button" class="p4-obj-card" data-obj="optimisation" onclick="p4SelectObj(this,'optimisation')">
+          <div class="p4-obj-ico">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="12" cy="12" r="4"/>
+              <path d="M12 2v3m0 14v3M2 12h3m14 0h3M5 5l2 2m10 10l2 2M5 19l2-2m10-10l2-2"/>
+            </svg>
+          </div>
+          <div class="p4-obj-body">
+            <div class="p4-obj-title">Optimisation</div>
+            <div class="p4-obj-sub">Maintenir ton poids tout en améliorant ton énergie, ta récupération et tes performances.</div>
+          </div>
+          <div class="p4-obj-check" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 13l4 4L19 7"/></svg>
+          </div>
+        </button>
+
+        <button type="button" class="p4-obj-card" data-obj="priseMuscle" onclick="p4SelectObj(this,'priseMuscle')">
+          <div class="p4-obj-ico">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M6.5 6.5L4 9l3 3-3 3 2.5 2.5L9 14l3 3 3-3 2.5 2.5L20 14l-3-3 3-3-2.5-2.5L15 8 12 5 9 8z"/>
+              <path d="M14.5 9.5l-5 5"/>
+            </svg>
+          </div>
+          <div class="p4-obj-body">
+            <div class="p4-obj-title">Prise de muscle</div>
+            <div class="p4-obj-sub">Construire du muscle utile avec un surplus calorique maîtrisé.</div>
+          </div>
+          <div class="p4-obj-check" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 13l4 4L19 7"/></svg>
+          </div>
+        </button>
+
+        <button type="button" class="p4-obj-card" data-obj="pertePoids" onclick="p4SelectObj(this,'pertePoids')">
+          <div class="p4-obj-ico">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M3 17l6-6 4 4 8-8"/>
+              <path d="M14 7h7v7"/>
+            </svg>
+          </div>
+          <div class="p4-obj-body">
+            <div class="p4-obj-title">Perte de poids</div>
+            <div class="p4-obj-sub">Réduire la masse grasse tout en conservant force, explosivité et récupération.</div>
+          </div>
+          <div class="p4-obj-check" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 13l4 4L19 7"/></svg>
+          </div>
+        </button>
+      </div>
+
+      <button id="p4NextStep1" class="p4-cta" onclick="p4GoStep(2)" disabled>Continuer →</button>
     </div>
 
     <!-- ═══════════════════════════ -->
     <!-- PAGE 2 — Composition corporelle  -->
     <!-- ═══════════════════════════ -->
     <div id="p4_step2" class="p4-step" style="display:none">
-      <div style="margin-bottom:20px">
-        <div style="font-family:'Bebas Neue',sans-serif;font-size:30px;letter-spacing:2px;color:var(--text);line-height:1.05">TES MESURES</div>
-        <div style="font-size:13px;color:var(--muted);margin-top:6px;line-height:1.5">On cale tes besoins en kcal et macros sur tes vraies données.</div>
+      <div class="p4-title-wrap">
+        <h2 class="p4-title">Tes données de départ</h2>
+        <p class="p4-subtitle">Ces informations nous permettent d'estimer tes calories, tes macros et ton évolution.</p>
+        <p class="p4-reassure">Tu pourras modifier ces données plus tard.</p>
       </div>
 
-      <div style="background:var(--surface);border:1.5px solid var(--border);border-radius:14px;padding:16px;margin-bottom:14px">
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px">
-          <div>
-            <label style="font-size:11px;color:var(--text2);font-weight:600;display:block;margin-bottom:5px">Poids actuel</label>
-            <div style="display:flex;align-items:center;gap:6px">
-              <input class="fi" type="number" id="p4Poids" placeholder="75" step="0.1" style="flex:1;text-align:center;font-size:16px;font-weight:700" oninput="p4UpdateValid();p4CalcBesoins()">
-              <span style="font-size:12px;font-weight:700;color:var(--muted)">kg</span>
-            </div>
+      <div class="p4-form-card">
+
+        <!-- Section 1 — Informations de base -->
+        <div class="p4-section">
+          <div class="p4-section-head">
+            <div class="p4-section-num">1</div>
+            <div class="p4-section-title">Informations de base</div>
           </div>
-          <div>
-            <label style="font-size:11px;color:var(--text2);font-weight:600;display:block;margin-bottom:5px">Taille</label>
-            <div style="display:flex;align-items:center;gap:6px">
-              <input class="fi" type="number" id="p4Taille" placeholder="178" style="flex:1;text-align:center;font-size:16px;font-weight:700" oninput="p4UpdateValid();p4CalcBesoins()">
-              <span style="font-size:12px;font-weight:700;color:var(--muted)">cm</span>
+          <div class="p4-field-row">
+            <div class="p4-field">
+              <label class="p4-field-label" for="p4Poids">Poids actuel</label>
+              <div class="p4-input-wrap">
+                <input class="p4-input" type="number" id="p4Poids" placeholder="75" step="0.1" inputmode="decimal" oninput="p4UpdateValid();p4CalcBesoins();p4ValidateField('poids')">
+                <span class="p4-input-unit">kg</span>
+              </div>
+              <div class="p4-field-hint">Ton poids aujourd'hui</div>
+              <div id="p4PoidsErr" class="p4-field-err"></div>
+            </div>
+            <div class="p4-field">
+              <label class="p4-field-label" for="p4Taille">Taille</label>
+              <div class="p4-input-wrap">
+                <input class="p4-input" type="number" id="p4Taille" placeholder="178" inputmode="numeric" oninput="p4UpdateValid();p4CalcBesoins();p4ValidateField('taille')">
+                <span class="p4-input-unit">cm</span>
+              </div>
+              <div class="p4-field-hint">Ta taille actuelle</div>
+              <div id="p4TailleErr" class="p4-field-err"></div>
             </div>
           </div>
         </div>
 
-        <div style="margin-bottom:12px">
-          <label style="font-size:11px;color:var(--text2);font-weight:600;display:block;margin-bottom:5px">🎯 Poids cible <span style="color:var(--muted);font-weight:400">(où tu veux arriver)</span></label>
-          <div style="display:flex;align-items:center;gap:6px">
-            <input class="fi" type="number" id="p4PoidsCible" placeholder="78" step="0.1" style="flex:1;text-align:center;font-size:16px;font-weight:700" oninput="p4CalcBesoins()">
-            <span style="font-size:12px;font-weight:700;color:var(--muted)">kg</span>
+        <!-- Section 2 — Ton objectif -->
+        <div class="p4-section">
+          <div class="p4-section-head">
+            <div class="p4-section-num">2</div>
+            <div class="p4-section-title">Ton objectif</div>
           </div>
-          <div id="p4DeltaPoids" style="display:none;font-size:11px;margin-top:6px;font-weight:600"></div>
+          <div class="p4-field">
+            <label class="p4-field-label" for="p4PoidsCible">Poids cible</label>
+            <div class="p4-input-wrap">
+              <input class="p4-input" type="number" id="p4PoidsCible" placeholder="78" step="0.1" inputmode="decimal" oninput="p4UpdateValid();p4CalcBesoins();p4ValidateField('poidsCible')">
+              <span class="p4-input-unit">kg</span>
+            </div>
+            <div class="p4-field-hint">Le poids que tu souhaites atteindre</div>
+            <div id="p4DeltaPoids" class="p4-field-delta" style="display:none"></div>
+            <div id="p4PoidsCibleErr" class="p4-field-err"></div>
+          </div>
         </div>
 
-        <div>
-          <label style="font-size:11px;color:var(--text2);font-weight:600;display:block;margin-bottom:5px">Masse grasse estimée <span style="color:var(--muted);font-weight:400">(optionnel)</span></label>
-          <div style="display:flex;align-items:center;gap:6px">
-            <input class="fi" type="number" id="p4MG" placeholder="15" step="0.1" style="flex:1;text-align:center;font-size:16px;font-weight:700" oninput="p4CalcBesoins()">
-            <span style="font-size:12px;font-weight:700;color:var(--muted)">%</span>
+        <!-- Section 3 — Optionnel -->
+        <div class="p4-section">
+          <div class="p4-section-head">
+            <div class="p4-section-num p4-section-num-opt">3</div>
+            <div class="p4-section-title">Optionnel</div>
           </div>
-          <div style="font-size:10px;color:var(--muted);margin-top:5px;line-height:1.4">Si tu ne sais pas, laisse vide. Tu pourras mesurer plus tard.</div>
+          <div class="p4-field">
+            <div class="p4-field-label-row">
+              <label class="p4-field-label" for="p4MG">Masse grasse estimée</label>
+              <span class="p4-badge-opt">Optionnel</span>
+            </div>
+            <div class="p4-input-wrap">
+              <input class="p4-input" type="number" id="p4MG" placeholder="15" step="0.1" inputmode="decimal" oninput="p4CalcBesoins();p4ValidateField('mg')">
+              <span class="p4-input-unit">%</span>
+            </div>
+            <div class="p4-field-hint">Pas besoin d'être précis. Si tu ne connais pas ta masse grasse, laisse ce champ vide.</div>
+            <div id="p4MGErr" class="p4-field-err"></div>
+          </div>
         </div>
+
       </div>
 
       <!-- Aperçu besoins calculés (live) -->
@@ -5548,9 +5886,12 @@ window.tiResetOnEnter = function(){ window.tiShowStep(1); };
         </div>
       </div>
 
-      <div style="display:flex;gap:10px">
-        <button onclick="p4GoStep(1)" style="flex:0 0 auto;padding:16px 18px;background:var(--surface2);border:1.5px solid var(--border);border-radius:12px;font-family:'Outfit',sans-serif;font-size:14px;font-weight:700;color:var(--text2);cursor:pointer">← Retour</button>
-        <button id="p4NextStep2" onclick="p4GoStep(3)" disabled style="flex:1;padding:16px;background:rgba(197,164,78,.3);border:none;border-radius:12px;font-family:'Outfit',sans-serif;font-size:15px;font-weight:800;color:rgba(6,12,24,.4);cursor:not-allowed;transition:all .2s">Continuer →</button>
+      <div class="p4-cta-row">
+        <button type="button" class="p4-back" onclick="p4GoStep(1)" aria-label="Retour à l'objectif">
+          <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg>
+          <span>Retour</span>
+        </button>
+        <button type="button" id="p4NextStep2" class="p4-cta" onclick="p4GoStep(3)" disabled>Continuer →</button>
       </div>
     </div>
 
@@ -28548,39 +28889,73 @@ function p4SelectObj(card, obj) {
   p4UpdateValid();
 }
 
+// Plages de validation des inputs (étape 2). Les bornes sont volontairement
+// permissives — on filtre les saisies aberrantes mais on n'empêche pas un
+// athlète très grand/lourd ou un user en perte de poids importante.
+var P4_RANGES = {
+  poids:       { min: 30, max: 250, label:'Poids',       unit:'kg' },
+  taille:      { min:120, max: 230, label:'Taille',      unit:'cm' },
+  poidsCible:  { min: 30, max: 250, label:'Poids cible', unit:'kg' },
+  mg:          { min:  3, max:  60, label:'Masse grasse',unit:'%'  }
+};
+// Map du nom logique vers les ids DOM (input + erreur).
+var P4_FIELD_DOM = {
+  poids:      { input:'p4Poids',       err:'p4PoidsErr' },
+  taille:     { input:'p4Taille',      err:'p4TailleErr' },
+  poidsCible: { input:'p4PoidsCible',  err:'p4PoidsCibleErr' },
+  mg:         { input:'p4MG',          err:'p4MGErr' }
+};
+// Valide un champ et affiche un message doux sous l'input. Retourne true
+// si OK (vide compte comme OK pour MG ; pas pour les 3 autres).
+function p4ValidateField(name) {
+  var range = P4_RANGES[name];
+  var dom = P4_FIELD_DOM[name];
+  if (!range || !dom) return true;
+  var inp = document.getElementById(dom.input);
+  var err = document.getElementById(dom.err);
+  var wrap = inp ? inp.parentElement : null;
+  if (!inp) return true;
+  var raw = (inp.value || '').trim();
+  var msg = '';
+  if (raw === '') {
+    // Vide OK pour MG (optionnel), sinon on attend sans hurler
+    if (name === 'mg') msg = '';
+    else msg = '';
+  } else {
+    var v = parseFloat(raw);
+    if (isNaN(v)) msg = 'Entre une valeur numérique.';
+    else if (v < range.min) msg = range.label + ' un peu faible (min ' + range.min + ' ' + range.unit + ').';
+    else if (v > range.max) msg = range.label + ' un peu élevé (max ' + range.max + ' ' + range.unit + ').';
+  }
+  if (err) err.textContent = msg;
+  if (wrap) { if (msg) wrap.classList.add('has-err'); else wrap.classList.remove('has-err'); }
+  p4UpdateValid();
+  return !msg;
+}
+window.p4ValidateField = p4ValidateField;
+
+function _p4FieldOk(name) {
+  var range = P4_RANGES[name];
+  var dom = P4_FIELD_DOM[name];
+  if (!range || !dom) return false;
+  var raw = ((document.getElementById(dom.input)||{}).value || '').trim();
+  if (raw === '') return false;
+  var v = parseFloat(raw);
+  return !isNaN(v) && v >= range.min && v <= range.max;
+}
+
 function p4UpdateValid() {
-  var poids = parseFloat((document.getElementById('p4Poids')||{}).value);
-  var taille = parseFloat((document.getElementById('p4Taille')||{}).value);
   var obj = OB.objNutri;
   // Bouton "Continuer →" de l'étape 1 (Objectif) — activé dès qu'un objectif est choisi
   var btn1 = document.getElementById('p4NextStep1');
-  if (btn1) {
-    if (obj) {
-      btn1.disabled = false;
-      btn1.style.background = 'linear-gradient(135deg,var(--gold),#D4B86A)';
-      btn1.style.color = 'var(--navy)';
-      btn1.style.cursor = 'pointer';
-    } else {
-      btn1.disabled = true;
-      btn1.style.background = 'rgba(197,164,78,.3)';
-      btn1.style.color = 'rgba(6,12,24,.4)';
-      btn1.style.cursor = 'not-allowed';
-    }
-  }
-  // Bouton "Continuer →" de l'étape 2 (Composition) — activé quand poids+taille remplis
+  if (btn1) btn1.disabled = !obj;
+  // Bouton "Continuer →" de l'étape 2 (Mesures) — activé quand les 3
+  // champs obligatoires sont valides (poids, taille, poids cible).
+  // MG reste optionnel, on l'ignore ici.
   var btn2 = document.getElementById('p4NextStep2');
   if (btn2) {
-    if (poids > 0 && taille > 0) {
-      btn2.disabled = false;
-      btn2.style.background = 'linear-gradient(135deg,var(--gold),#D4B86A)';
-      btn2.style.color = 'var(--navy)';
-      btn2.style.cursor = 'pointer';
-    } else {
-      btn2.disabled = true;
-      btn2.style.background = 'rgba(197,164,78,.3)';
-      btn2.style.color = 'rgba(6,12,24,.4)';
-      btn2.style.cursor = 'not-allowed';
-    }
+    var ok = _p4FieldOk('poids') && _p4FieldOk('taille') && _p4FieldOk('poidsCible');
+    btn2.disabled = !ok;
   }
 }
 
