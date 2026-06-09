@@ -1,4 +1,4 @@
-const CACHE = 'athletik-v150';
+const CACHE = 'athletik-v187';
 const ASSETS = [
   '/',
   '/index.html',
@@ -57,7 +57,8 @@ self.addEventListener('message', e => {
             i === 0 ? '⏰ Timer terminé' : '⏰ Rappel timer',
             {
               body: d.body || 'Le minuteur a sonné',
-              icon: '/icons/icon-192.png',
+              icon: '/images/titan-mascot.png',
+              image: '/images/titan-mascot.png',
               badge: '/icons/icon-192.png',
               tag: 'tim-minut-' + i,
               requireInteraction: true,
