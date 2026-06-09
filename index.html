@@ -26194,10 +26194,11 @@ function renderP3SATStep() {
   html += '<div style="height:100%;background:linear-gradient(90deg,var(--gold),#D4B86A);border-radius:2px;width:' + prog + '%;transition:width .4s ease"></div>';
   html += '</div></div>';
 
-  // Phase tabs
+  // Phase tabs — labels alignés sur la nomenclature programme
+  // (Phase 1 / Phase 2). Cohérent avec les onglets SAT côté Tracks.
   html += '<div style="display:flex;gap:8px;margin-bottom:14px">';
-  html += '<div style="flex:1;padding:11px;background:linear-gradient(135deg,var(--gold),#D4B86A);border:none;border-radius:12px;font-weight:800;color:var(--navy);font-size:13px;text-align:center;cursor:pointer">📅 Début</div>';
-  html += '<div style="flex:1;padding:11px;background:var(--surface2);border:1.5px solid var(--border);border-radius:12px;font-weight:700;color:var(--muted);font-size:13px;text-align:center;cursor:pointer">🏁 Fin</div>';
+  html += '<div style="flex:1;padding:11px;background:linear-gradient(135deg,var(--gold),#D4B86A);border:none;border-radius:12px;font-weight:800;color:var(--navy);font-size:13px;text-align:center;cursor:pointer">Phase 1</div>';
+  html += '<div style="flex:1;padding:11px;background:var(--surface2);border:1.5px solid var(--border);border-radius:12px;font-weight:700;color:var(--muted);font-size:13px;text-align:center;cursor:pointer">Phase 2</div>';
   html += '</div>';
 
   // Exercise card
