@@ -6545,7 +6545,7 @@ window.tiResetOnEnter = function(){ window.tiShowStep(1); };
     <div class="sub-tab on" onclick="showSec('overview',this)">Vue d'ensemble</div>
     <div class="sub-tab" onclick="showSec('tests',this)">Tests</div>
     <div class="sub-tab" onclick="showSec('track',this)">Exercices</div>
-    <div class="sub-tab" onclick="showSec('sessions',this)">Historique</div>
+    <div class="sub-tab" onclick="showSec('sessions',this)">Journal</div>
   </div>
 
   <!-- ══════════════════════════════════════════ -->
@@ -16536,6 +16536,9 @@ function calculateSAT() {
     localStorage.setItem('ah_profile', JSON.stringify(prof));
     if (typeof fbSaveProfile === 'function') fbSaveProfile();
   } catch(e) {}
+  // Log dans le Journal (type 'test' SAT) pour que ça apparaisse dans
+  // l'onglet Suivi > Journal avec les autres activités.
+  try { _journalLogTest('SAT', { score: totalScore, vertJump: vertJump, sprintTime: sprintTime, force1RM: squat1RM }); } catch(e) {}
   try { renderBadges(); } catch(e) {}
 
   document.getElementById('satForm').classList.add('hidden');
@@ -24311,6 +24314,14 @@ function checkHabit(id) {
   h.daysCompleted++;
   h.lastChecked = today;
 
+  // Log dans le Journal — habitude cochée. Persisté dans ah_set_history,
+  // ne disparaît pas après refresh.
+  try {
+    if (typeof window._journalLogHabit === 'function') {
+      window._journalLogHabit(h.name, h.streak, h.daysCompleted, h.duration);
+    }
+  } catch(e) {}
+
   if (h.daysCompleted >= h.duration) {
     // D\u00e9fi termin\u00e9 : bump compteur global pour les badges (zenMaster: flowDone 10x,
     // etc. d\u00e9pendent de habitsDone). Retire l'habitude de la liste active.
@@ -27454,6 +27465,8 @@ function setFinish() {
   try { history = JSON.parse(localStorage.getItem('ah_set_history') || '[]'); } catch(e) {}
   history.push({ date: new Date().toISOString(), values: setValues });
   try { localStorage.setItem('ah_set_history', JSON.stringify(history)); } catch(e) {}
+  // Log dans le Journal (type 'test' SET) — visible dans Suivi > Journal.
+  try { _journalLogTest('SET', { values: setValues }); } catch(e) {}
 
   // 2. Met à jour le profil : satDone + meilleures valeurs canoniques pour
   //    débloquer le programme et alimenter l'AthletikScore + la Home.
@@ -27966,95 +27979,318 @@ function renderTestsLanding() {
 }
 window.renderTestsLanding = renderTestsLanding;
 
-// ─────────── SECTION : SÉANCES ───────────
+// ─────────── SECTION : JOURNAL DE PROGRESSION ATHLÉTIQUE ───────────
+// Refonte ancien "Historique" : journal groupé par date, filtres simples,
+// badges intelligents (Première mesure / Record personnel / Progression)
+// uniquement quand des données réelles permettent la comparaison.
+// Pas de stats inventées, pas de dashboard complexe.
+
+window._journalFilter = window._journalFilter || 'all';
+window._journalSetFilter = function(k) {
+  window._journalFilter = k;
+  try { renderSessionsList(); } catch(_){}
+};
+
+// ── Persistance journal ──
+// Tests SAT/SET et habitudes cochées sont loggés dans ah_set_history
+// avec un type dédié (test, habit). Ces entrées ne disparaissent pas
+// au refresh — c'est la même persistance que les sessions.
+function _journalLogEntry(entry) {
+  if (!entry) return;
+  try {
+    var hist = JSON.parse(localStorage.getItem('ah_set_history') || '[]');
+    if (!Array.isArray(hist)) hist = [];
+    hist.push(entry);
+    localStorage.setItem('ah_set_history', JSON.stringify(hist));
+  } catch(e) { console.warn('[journal] log failed', e); }
+}
+window._journalLogTest = function(testType, data) {
+  _journalLogEntry({
+    type: 'test',
+    testType: testType, // 'SAT' ou 'SET'
+    data: data || {},
+    date: new Date().toISOString()
+  });
+};
+window._journalLogHabit = function(habitName, streak, daysCompleted, duration) {
+  _journalLogEntry({
+    type: 'habit',
+    habitName: habitName,
+    streak: streak,
+    daysCompleted: daysCompleted,
+    duration: duration,
+    date: new Date().toISOString()
+  });
+};
+
+// Label "Aujourd'hui — 9 juin" / "Hier — 8 juin" / "Lundi 3 juin".
+function _journalGroupLabel(iso) {
+  try {
+    var d = new Date(iso); if (isNaN(d.getTime())) return '—';
+    var now = new Date();
+    var ms = ['janv.','févr.','mars','avr.','mai','juin','juil.','août','sept.','oct.','nov.','déc.'];
+    var dayStr = d.getDate() + ' ' + ms[d.getMonth()];
+    var diff = Math.floor((new Date(now.getFullYear(),now.getMonth(),now.getDate()) -
+                           new Date(d.getFullYear(), d.getMonth(), d.getDate())) / 86400000);
+    if (diff === 0) return "Aujourd'hui — " + dayStr;
+    if (diff === 1) return 'Hier — ' + dayStr;
+    if (diff < 7) {
+      var jours = ['Dimanche','Lundi','Mardi','Mercredi','Jeudi','Vendredi','Samedi'];
+      return jours[d.getDay()] + ' — ' + dayStr;
+    }
+    return dayStr;
+  } catch(e) { return '—'; }
+}
+function _journalGroupKey(iso) {
+  // YYYY-MM-DD pour grouper
+  try { var d = new Date(iso); return d.toISOString().slice(0,10); } catch(e) { return '0'; }
+}
+
+// Extrait une valeur numérique "principale" d'un essai pour comparer
+// (reps en priorité, sinon kg, sinon time). Sert aux badges PR / progression.
+function _journalEssaiValue(es) {
+  if (!es) return null;
+  if (es.reps && +es.reps > 0) return +es.reps;
+  if (es.kg && +es.kg > 0) return +es.kg;
+  if (es.time && +es.time > 0) return +es.time;
+  return null;
+}
+function _journalTrackBest(entry) {
+  if (!entry || !Array.isArray(entry.essais) || !entry.essais.length) return null;
+  var best = null;
+  entry.essais.forEach(function(e){
+    var v = _journalEssaiValue(e);
+    if (v != null && (best == null || v > best)) best = v;
+  });
+  return best;
+}
+// Détermine les badges réels pour un tracked exo dans le contexte de
+// toutes ses entrées passées. Renvoie ['Première mesure'] OU
+// ['Record personnel'] OU ['Progression'] OU [].
+function _journalTrackBadges(entry, allTracksByExo) {
+  var exo = (entry && entry.exo) || '';
+  var list = (allTracksByExo[exo] || []).slice().sort(function(a,b){
+    return new Date(a.date).getTime() - new Date(b.date).getTime();
+  });
+  if (!list.length) return [];
+  if (list.length === 1) return ['Première mesure'];
+  var idx = list.findIndex(function(e){ return e.date === entry.date; });
+  if (idx <= 0) return ['Première mesure']; // 1ère chronologiquement
+  var curBest = _journalTrackBest(entry);
+  if (curBest == null) return [];
+  // Max sur toutes les entrées AVANT celle-ci
+  var prevMax = null;
+  for (var i = 0; i < idx; i++) {
+    var v = _journalTrackBest(list[i]);
+    if (v != null && (prevMax == null || v > prevMax)) prevMax = v;
+  }
+  if (prevMax == null) return [];
+  if (curBest > prevMax) return ['Record personnel'];
+  // Progression : meilleur que l'entrée juste précédente (mais pas PR global)
+  var prevBest = _journalTrackBest(list[idx-1]);
+  if (prevBest != null && curBest > prevBest) return ['Progression'];
+  return [];
+}
+
+function _journalBadgePill(label) {
+  var color = 'var(--ah-text2)';
+  var bg = 'rgba(0,0,0,.04)';
+  if (label === 'Record personnel') { color = '#22C55E'; bg = 'rgba(34,197,94,.10)'; }
+  else if (label === 'Progression')  { color = 'var(--ah-gold)'; bg = 'rgba(197,164,78,.10)'; }
+  else if (label === 'Première mesure') { color = 'var(--ah-navy)'; bg = 'rgba(20,30,60,.06)'; }
+  return '<span style="font-size:10px;font-weight:700;padding:3px 10px;border-radius:999px;background:' + bg + ';color:' + color + ';letter-spacing:.02em">' + label + '</span>';
+}
+
+function _journalTrackCard(entry, allTracksByExo) {
+  var bestStr = '';
+  var totalReps = 0, seriesCount = 0;
+  try {
+    if (entry.essais && entry.essais.length) {
+      seriesCount = entry.essais.length;
+      entry.essais.forEach(function(e){ if (e.reps) totalReps += +e.reps || 0; });
+      var bestVal = _journalTrackBest(entry);
+      if (bestVal != null) {
+        // Trouve l'essai correspondant au best pour formatter
+        var bestEs = entry.essais.find(function(e){
+          return _journalEssaiValue(e) === bestVal;
+        }) || entry.essais[0];
+        if (bestEs.reps) bestStr = bestEs.reps + ' reps' + (bestEs.kg ? ' × ' + bestEs.kg + ' kg' : '');
+        else if (bestEs.time) bestStr = (+bestEs.time).toFixed(2) + 's';
+        else if (bestEs.kg) bestStr = bestEs.kg + ' kg';
+      } else if (entry.best) bestStr = entry.best;
+    } else if (entry.best) bestStr = entry.best;
+  } catch(_){}
+  var badges = _journalTrackBadges(entry, allTracksByExo);
+  var h = '';
+  h += '<div style="background:var(--ah-surface);border:1px solid var(--ah-border);border-left:3px solid var(--ah-gold);border-radius:12px;padding:13px 14px;margin-bottom:8px">';
+  h += '<div style="font-family:\'Outfit\',sans-serif;font-size:14px;font-weight:700;color:var(--ah-text);line-height:1.25;margin-bottom:3px">' + _trkEsc(entry.exo || 'Exercice') + '</div>';
+  h += '<div style="font-family:\'JetBrains Mono\',\'Outfit\',sans-serif;font-size:9.5px;color:var(--ah-muted);letter-spacing:.18em;font-weight:700">EXO TRACKÉ</div>';
+  if (bestStr) {
+    var details = [];
+    details.push('Meilleur : <strong style="color:var(--ah-text)">' + _trkEsc(bestStr) + '</strong>');
+    if (totalReps > 0 && seriesCount > 1) details.push('Total : ' + totalReps + ' reps');
+    if (seriesCount > 1) details.push(seriesCount + ' séries');
+    else if (seriesCount === 1) details.push('1 essai');
+    h += '<div style="font-size:12px;color:var(--ah-text2);margin-top:8px;line-height:1.5">' + details.join(' · ') + '</div>';
+  }
+  if (badges.length || entry.rpe) {
+    h += '<div style="display:flex;flex-wrap:wrap;gap:5px;margin-top:9px">';
+    badges.forEach(function(b){ h += _journalBadgePill(b); });
+    if (entry.rpe) h += '<span style="font-size:10px;font-weight:700;padding:3px 10px;border-radius:999px;background:rgba(0,0,0,.04);color:var(--ah-text2)">RPE ' + entry.rpe + '/10</span>';
+    h += '</div>';
+  }
+  h += '</div>';
+  return h;
+}
+
+function _journalSessionCard(s, origIdx) {
+  var fb = s.sessionEndFeedback || {};
+  var quality = fb.sessionQualityScore;
+  var intensity = fb.intensite || fb.intensity;
+  var fatigue   = fb.fatigue;
+  var status    = fb.titanStatus || '';
+  var qcolor = '#22C55E';
+  if (quality != null) {
+    if (quality < 50) qcolor = '#EF4444';
+    else if (quality < 75) qcolor = '#F59E0B';
+  }
+  var h = '';
+  h += '<div onclick="_suiviOpenSession(' + origIdx + ')" style="background:var(--ah-surface);border:1px solid var(--ah-border);border-left:3px solid var(--ah-navy);border-radius:12px;padding:13px 14px;margin-bottom:8px;cursor:pointer">';
+  h += '<div style="font-family:\'Outfit\',sans-serif;font-size:14px;font-weight:700;color:var(--ah-text);line-height:1.25;margin-bottom:3px">' + _trkEsc(s.sessName || 'Séance') + '</div>';
+  h += '<div style="font-family:\'JetBrains Mono\',\'Outfit\',sans-serif;font-size:9.5px;color:var(--ah-muted);letter-spacing:.18em;font-weight:700">SÉANCE TERMINÉE</div>';
+  if (s.progName) h += '<div style="font-size:12px;color:var(--ah-text2);margin-top:5px">' + _trkEsc(s.progName) + '</div>';
+  if (quality != null || intensity != null || fatigue != null || status) {
+    h += '<div style="display:flex;flex-wrap:wrap;gap:5px;margin-top:9px">';
+    if (quality != null)   h += '<span style="font-size:10px;font-weight:700;padding:3px 10px;border-radius:999px;background:rgba(0,0,0,.04);color:' + qcolor + '">Score ' + quality + '%</span>';
+    if (intensity != null) h += '<span style="font-size:10px;font-weight:700;padding:3px 10px;border-radius:999px;background:rgba(0,0,0,.04);color:var(--ah-text2)">Intensité ' + intensity + '/10</span>';
+    if (fatigue != null)   h += '<span style="font-size:10px;font-weight:700;padding:3px 10px;border-radius:999px;background:rgba(0,0,0,.04);color:var(--ah-text2)">Fatigue ' + fatigue + '/10</span>';
+    if (status) h += '<span style="font-size:10px;font-weight:700;padding:3px 10px;border-radius:999px;background:rgba(197,164,78,.10);color:var(--gold)">' + _trkEsc(status.toUpperCase()) + '</span>';
+    h += '</div>';
+  }
+  h += '</div>';
+  return h;
+}
+
+function _journalTestCard(t) {
+  var d = t.data || {};
+  var h = '';
+  h += '<div style="background:var(--ah-surface);border:1px solid var(--ah-border);border-left:3px solid #5B9CF6;border-radius:12px;padding:13px 14px;margin-bottom:8px">';
+  h += '<div style="font-family:\'Outfit\',sans-serif;font-size:14px;font-weight:700;color:var(--ah-text);line-height:1.25;margin-bottom:3px">' + (t.testType || 'Test') + ' — bilan</div>';
+  h += '<div style="font-family:\'JetBrains Mono\',\'Outfit\',sans-serif;font-size:9.5px;color:var(--ah-muted);letter-spacing:.18em;font-weight:700">TEST PHYSIQUE</div>';
+  var details = [];
+  if (d.score != null) details.push('Athletik Score : <strong style="color:var(--ah-gold)">' + d.score + '/100</strong>');
+  if (d.vertJump) details.push('Détente : ' + d.vertJump + ' cm');
+  if (d.sprintTime) details.push('Sprint : ' + d.sprintTime + 's');
+  if (d.force1RM) details.push('Squat 1RM : ' + d.force1RM + ' kg');
+  if (details.length) h += '<div style="font-size:12px;color:var(--ah-text2);margin-top:8px;line-height:1.5">' + details.join(' · ') + '</div>';
+  h += '</div>';
+  return h;
+}
+function _journalHabitCard(t) {
+  var h = '';
+  h += '<div style="background:var(--ah-surface);border:1px solid var(--ah-border);border-left:3px solid #22C55E;border-radius:12px;padding:13px 14px;margin-bottom:8px">';
+  h += '<div style="font-family:\'Outfit\',sans-serif;font-size:14px;font-weight:700;color:var(--ah-text);line-height:1.25;margin-bottom:3px">' + (t.habitName || 'Habitude') + '</div>';
+  h += '<div style="font-family:\'JetBrains Mono\',\'Outfit\',sans-serif;font-size:9.5px;color:var(--ah-muted);letter-spacing:.18em;font-weight:700">HABITUDE COCHÉE</div>';
+  var details = [];
+  if (t.streak) details.push('🔥 Streak ' + t.streak);
+  if (t.daysCompleted != null && t.duration) details.push(t.daysCompleted + '/' + t.duration + ' jours');
+  if (details.length) h += '<div style="font-size:12px;color:var(--ah-text2);margin-top:8px;line-height:1.5">' + details.join(' · ') + '</div>';
+  h += '</div>';
+  return h;
+}
+
 function renderSessionsList() {
   var c = document.getElementById('sessionsBody'); if (!c) return;
-  var sessions = _suiviSessions().slice().reverse(); // plus récente en premier
 
-  // Exos trackés individuellement (Suivi > Exercices > Tracker un exercice).
-  // Persisté dans window.trackHistory via saveData → blob ah_v8. L'utilisateur
-  // a remonté qu'il ne les retrouvait pas dans l'historique → on les fusionne
-  // ici avec les séances pour donner une vraie vue chronologique unifiée.
+  var allHistory = [];
+  try { allHistory = JSON.parse(localStorage.getItem('ah_set_history') || '[]'); } catch(_){}
+  if (!Array.isArray(allHistory)) allHistory = [];
+
+  var sessions = allHistory.filter(function(e){ return e && e.type === 'session'; });
+  var tests    = allHistory.filter(function(e){ return e && e.type === 'test'; });
+  var habits   = allHistory.filter(function(e){ return e && e.type === 'habit'; });
+  var sessIdxMap = sessions.reduce(function(m, s, i){ m[s.date] = i; return m; }, {});
+
   var trackEntries = [];
   try {
     if (Array.isArray(window.trackHistory)) {
-      trackEntries = window.trackHistory.slice().map(function(t){
-        return Object.assign({}, t, { _isTrack: true });
-      });
+      trackEntries = window.trackHistory.slice();
     }
-  } catch(_) {}
+  } catch(_){}
+  // Map exo → toutes ses entrées (pour badges)
+  var allTracksByExo = {};
+  trackEntries.forEach(function(t){
+    var k = t.exo || '';
+    if (!allTracksByExo[k]) allTracksByExo[k] = [];
+    allTracksByExo[k].push(t);
+  });
 
-  // Fusion + tri par date desc
-  var combined = sessions.map(function(s){ return Object.assign({}, s, { _isTrack: false }); })
-    .concat(trackEntries)
-    .sort(function(a, b){ return new Date(b.date).getTime() - new Date(a.date).getTime(); });
+  var entries = sessions.map(function(s){ return Object.assign({}, s, { _kind: 'session' }); })
+    .concat(trackEntries.map(function(t){ return Object.assign({}, t, { _kind: 'track' }); }))
+    .concat(tests.map(function(t){ return Object.assign({}, t, { _kind: 'test' }); }))
+    .concat(habits.map(function(t){ return Object.assign({}, t, { _kind: 'habit' }); }));
 
+  // Filtres : Tout / Exercices / Tests / Séances (les habitudes apparaissent
+  // dans "Tout" mais sans filtre dédié pour ne pas surcharger les chips).
+  var f = window._journalFilter || 'all';
+  var filtered = entries.filter(function(e){
+    if (f === 'all') return true;
+    if (f === 'exos') return e._kind === 'track';
+    if (f === 'tests') return e._kind === 'test';
+    if (f === 'sessions') return e._kind === 'session';
+    return true;
+  });
+  filtered.sort(function(a, b){ return new Date(b.date).getTime() - new Date(a.date).getTime(); });
+
+  // Header journal
   var html = '';
+  html += '<div style="font-family:\'Bebas Neue\',sans-serif;font-size:24px;line-height:1.05;letter-spacing:.02em;color:var(--ah-navy);margin-bottom:4px">JOURNAL DE PROGRESSION ATHLÉTIQUE</div>';
+  html += '<div style="font-size:12.5px;color:var(--ah-text2);margin-bottom:16px;line-height:1.5">Ce que tu mesures, ce que tu répètes, ce que tu améliores.</div>';
 
-  html += '<div style="font-family:\'Bebas Neue\',sans-serif;font-size:18px;letter-spacing:.08em;color:var(--text);margin-bottom:6px">HISTORIQUE</div>';
-  html += '<div style="font-size:12px;color:var(--text2);margin-bottom:14px">Séances terminées + exercices trackés individuellement.</div>';
+  // Filtres chips
+  var filters = [['all','Tout'],['exos','Exercices'],['tests','Tests'],['sessions','Séances']];
+  html += '<div style="display:flex;gap:6px;margin-bottom:18px;flex-wrap:wrap">';
+  filters.forEach(function(p){
+    var on = (f === p[0]);
+    html += '<button type="button" onclick="window._journalSetFilter(\'' + p[0] + '\')" style="padding:7px 14px;border-radius:999px;background:' + (on ? 'var(--ah-navy)' : 'var(--ah-surface)') + ';border:1px solid ' + (on ? 'var(--ah-navy)' : 'var(--ah-border)') + ';color:' + (on ? '#fff' : 'var(--ah-text2)') + ';font-family:\'Outfit\',sans-serif;font-size:12px;font-weight:700;cursor:pointer;letter-spacing:.02em">' + p[1] + '</button>';
+  });
+  html += '</div>';
 
-  if (!combined.length) {
-    html += '<div style="background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:18px;text-align:center">';
-    html += '<div style="font-size:32px;margin-bottom:8px;opacity:.5">🏋️</div>';
-    html += '<div style="font-family:\'Outfit\',sans-serif;font-size:13px;color:var(--text2);line-height:1.5">Pas encore d\'activité. Lance une séance depuis Train ou track un exo dans Suivi &gt; Exercices.</div>';
+  // Empty state
+  if (!filtered.length) {
+    html += '<div style="background:var(--ah-surface);border:1px solid var(--ah-border);border-radius:14px;padding:22px 18px;text-align:center">';
+    html += '<div style="font-size:34px;margin-bottom:10px;opacity:.45">📓</div>';
+    var msg;
+    if (f === 'tests') msg = "Pas encore de test physique enregistré dans ton journal.";
+    else if (f === 'exos') msg = "Tu n'as encore tracké aucun exercice. Va dans Suivi &gt; Exercices.";
+    else if (f === 'sessions') msg = "Pas encore de séance terminée. Lance-en une depuis Train.";
+    else msg = "Tu n'as encore rien tracké. Lance une séance ou enregistre un exercice pour construire ton journal.";
+    html += '<div style="font-family:\'Outfit\',sans-serif;font-size:13px;color:var(--ah-text2);line-height:1.55;max-width:300px;margin:0 auto">' + msg + '</div>';
     html += '</div>';
     c.innerHTML = html;
     return;
   }
 
-  // Indexation des séances pour _suiviOpenSession (compat ancien handler)
-  var sessIdxMap = sessions.reduce(function(m, s, i){ m[s.date] = i; return m; }, {});
+  // Groupes par date
+  var groups = {}, orderedKeys = [];
+  filtered.forEach(function(e){
+    var k = _journalGroupKey(e.date);
+    if (!groups[k]) { groups[k] = { label: _journalGroupLabel(e.date), items: [] }; orderedKeys.push(k); }
+    groups[k].items.push(e);
+  });
 
-  combined.forEach(function(s){
-    if (s._isTrack) {
-      // ── Carte exo tracké ──
-      var bestStr = '';
-      try {
-        if (s.best) bestStr = s.best;
-        else if (s.essais && s.essais.length) {
-          bestStr = s.essais.map(function(e){ return e.reps ? (e.reps + (e.kg ? ' × ' + e.kg + ' kg' : (e.time ? ' × ' + e.time + 's' : ''))) : ''; }).filter(Boolean).join(' · ');
-        }
-      } catch(_) {}
-      html += '<div style="background:var(--surface);border:1px solid var(--border);border-left:3px solid var(--gold);border-radius:14px;padding:14px;margin-bottom:10px">';
-      html += '<div style="display:flex;justify-content:space-between;align-items:flex-start;gap:10px;margin-bottom:6px">';
-      html += '<div style="flex:1;min-width:0"><div style="font-family:\'Outfit\',sans-serif;font-size:14px;font-weight:700;color:var(--text);line-height:1.3">' + _trkEsc(s.exo || 'Exercice') + '</div>';
-      html += '<div style="font-size:11px;color:var(--gold);margin-top:2px;font-weight:700;letter-spacing:.5px">EXO TRACKÉ</div></div>';
-      html += '<div style="font-size:11px;color:var(--muted);white-space:nowrap">' + _suiviRelDate(s.date) + '</div>';
-      html += '</div>';
-      if (bestStr) html += '<div style="font-size:12px;color:var(--text2);margin-top:6px">' + _trkEsc(bestStr) + '</div>';
-      if (s.rpe) html += '<div style="margin-top:6px"><span style="font-size:10px;font-weight:700;padding:3px 8px;border-radius:999px;background:rgba(197,164,78,.10);color:var(--gold)">RPE ' + s.rpe + '/10</span></div>';
-      html += '</div>';
-      return;
-    }
-    // ── Carte séance (inchangé) ──
-    var fb = s.sessionEndFeedback || {};
-    var quality = fb.sessionQualityScore;
-    var intensity = fb.intensite || fb.intensity;
-    var fatigue   = fb.fatigue;
-    var status    = fb.titanStatus || '';
-    var qcolor = '#22C55E';
-    if (quality != null) {
-      if (quality < 50) qcolor = '#EF4444';
-      else if (quality < 75) qcolor = '#F59E0B';
-    }
-    var origIdx = sessIdxMap[s.date];
-    html += '<div onclick="_suiviOpenSession(' + origIdx + ')" style="background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:14px;margin-bottom:10px;cursor:pointer">';
-    html += '<div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:6px;gap:10px">';
-    html += '<div style="flex:1;min-width:0"><div style="font-family:\'Outfit\',sans-serif;font-size:14px;font-weight:700;color:var(--text);line-height:1.3">' + (s.sessName || 'Séance') + '</div>';
-    if (s.progName) html += '<div style="font-size:11px;color:var(--muted);margin-top:2px">' + s.progName + '</div>';
+  orderedKeys.forEach(function(k){
+    var g = groups[k];
+    html += '<div style="display:flex;align-items:center;gap:10px;margin:14px 0 10px">';
+    html += '<div style="font-family:\'Outfit\',sans-serif;font-size:12px;font-weight:700;color:var(--ah-navy);letter-spacing:.02em;white-space:nowrap">' + g.label + '</div>';
+    html += '<div style="flex:1;height:1px;background:var(--ah-border)"></div>';
     html += '</div>';
-    html += '<div style="font-size:11px;color:var(--muted);white-space:nowrap">' + _suiviRelDate(s.date) + '</div>';
-    html += '</div>';
-    if (quality != null || intensity != null || fatigue != null) {
-      html += '<div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:8px">';
-      if (quality != null)   html += '<span style="font-size:10px;font-weight:700;padding:3px 8px;border-radius:999px;background:rgba(0,0,0,.04);color:' + qcolor + '">Score ' + quality + '%</span>';
-      if (intensity != null) html += '<span style="font-size:10px;font-weight:700;padding:3px 8px;border-radius:999px;background:rgba(0,0,0,.04);color:var(--text2)">Intensité ' + intensity + '/10</span>';
-      if (fatigue != null)   html += '<span style="font-size:10px;font-weight:700;padding:3px 8px;border-radius:999px;background:rgba(0,0,0,.04);color:var(--text2)">Fatigue ' + fatigue + '/10</span>';
-      if (status) html += '<span style="font-size:10px;font-weight:700;padding:3px 8px;border-radius:999px;background:rgba(197,164,78,.10);color:var(--gold)">' + status.toUpperCase() + '</span>';
-      html += '</div>';
-    }
-    html += '</div>';
+    g.items.forEach(function(e){
+      if (e._kind === 'track')        html += _journalTrackCard(e, allTracksByExo);
+      else if (e._kind === 'session') html += _journalSessionCard(e, sessIdxMap[e.date]);
+      else if (e._kind === 'test')    html += _journalTestCard(e);
+      else if (e._kind === 'habit')   html += _journalHabitCard(e);
+    });
   });
 
   c.innerHTML = html;
