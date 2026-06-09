@@ -6730,7 +6730,7 @@ window.tiResetOnEnter = function(){ window.tiShowStep(1); };
 
     <!-- Exercise selector -->
     <div class="card">
-      <div class="card-title"><span>📊</span> Tracker un exercice</div>
+      <div class="card-title" style="display:flex;align-items:center;justify-content:space-between;gap:10px"><span><span>📊</span> Tracker un exercice</span><button type="button" onclick="window.openGuide && window.openGuide('track')" aria-label="Guide rapide" title="Guide rapide" style="display:inline-flex;align-items:center;justify-content:center;width:24px;height:24px;border-radius:50%;background:rgba(197,164,78,.10);border:1px solid rgba(197,164,78,.35);color:var(--ah-gold);font-family:'Outfit',sans-serif;font-size:12px;font-weight:800;cursor:pointer;padding:0;line-height:1;flex-shrink:0">?</button></div>
       <div class="fg">
         <label class="fl">Choisis ton exercice</label>
         <input type="hidden" id="trackExSelect">
@@ -7195,6 +7195,27 @@ window.tiResetOnEnter = function(){ window.tiShowStep(1); };
 </div>
 </div>
 
+<!-- ═══ Modal Guides Rapides — player YouTube 16:9 ═══
+     Affichage piloté par window.openGuide(id). Backdrop sombre + carte
+     blanche centrée. Aucune autoplay. Iframe loaded LAZILY (src set
+     uniquement à l'ouverture, vidé à la fermeture pour stop audio). -->
+<div id="ahGuideModal" style="display:none;position:fixed;inset:0;z-index:9000;background:rgba(10,18,40,.78);backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px);padding:18px;align-items:center;justify-content:center" onclick="if(event.target===this)window.closeGuide()">
+  <div style="background:var(--ah-surface);border-radius:16px;width:100%;max-width:520px;overflow:hidden;box-shadow:0 24px 60px rgba(0,0,0,.45);position:relative">
+    <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;padding:14px 16px 12px;border-bottom:1px solid var(--ah-border);background:var(--ah-surface)">
+      <div style="flex:1;min-width:0">
+        <div style="font-family:'JetBrains Mono','Outfit',sans-serif;font-size:9px;letter-spacing:.22em;color:var(--ah-gold);font-weight:700;text-transform:uppercase;margin-bottom:3px">GUIDE RAPIDE</div>
+        <div id="ahGuideTitle" style="font-family:'Outfit',sans-serif;font-size:14px;font-weight:800;color:var(--ah-navy);line-height:1.25;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">—</div>
+      </div>
+      <button type="button" onclick="window.closeGuide()" aria-label="Fermer" style="flex-shrink:0;width:32px;height:32px;border-radius:50%;background:var(--ah-surface2);border:1px solid var(--ah-border);color:var(--ah-text2);font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;line-height:1">×</button>
+    </div>
+    <!-- 16:9 wrapper -->
+    <div style="position:relative;width:100%;padding-top:56.25%;background:#0E1626">
+      <iframe id="ahGuideFrame" src="" title="Guide rapide" allow="accelerometer; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen style="position:absolute;inset:0;width:100%;height:100%;border:0"></iframe>
+    </div>
+    <div id="ahGuideHint" style="padding:11px 16px 14px;font-size:11.5px;color:var(--ah-text2);line-height:1.5;text-align:center;background:var(--ah-surface)">Vidéo courte — 30 à 60 secondes.</div>
+  </div>
+</div>
+
 <!-- ═══ Modal Favoris séances Builder ═══ -->
 <div id="builderFavModal" class="bld-fav-modal">
   <div class="bld-fav-inner">
@@ -7409,6 +7430,16 @@ window.tiResetOnEnter = function(){ window.tiShowStep(1); };
   <div class="sec-title">📅 HISTORIQUE</div>
   <div id="historyList">
     <!-- Injecté par renderHistory() depuis ah_set_history -->
+  </div>
+
+  <!-- ═══ GUIDES RAPIDES (7 vidéos courtes 30-60s) ═══
+       Liste minimaliste. Tap → ouvre le modal player. Les vidéos
+       sont aussi accessibles via les boutons "?" contextuels des
+       écrans clés. -->
+  <div class="sec-title">🎥 GUIDES RAPIDES</div>
+  <div style="font-size:11.5px;color:var(--ah-text2);margin:-4px 0 12px;line-height:1.5">7 vidéos courtes pour comprendre l'app en moins de 10 minutes.</div>
+  <div id="ahGuidesList" style="display:flex;flex-direction:column;gap:8px;margin-bottom:18px">
+    <!-- Rempli par window._renderGuidesList() au boot -->
   </div>
 
   <!-- Settings -->
@@ -13171,7 +13202,7 @@ function switchTab(tab){
   }
   if (tab === 'moi') {
     try { renderProfileCard(); } catch(e) {}
-    try { apiKeyRestore(); fbRefreshAccountSection(window.fbUser); renderBadges(); refreshAccessTierUI(); renderProgression(); renderMoiPlanning(); renderHistory(); } catch(e) {}
+    try { apiKeyRestore(); fbRefreshAccountSection(window.fbUser); renderBadges(); refreshAccessTierUI(); renderProgression(); renderMoiPlanning(); renderHistory(); if (typeof window._renderGuidesList === 'function') window._renderGuidesList(); } catch(e) {}
   }
   // Refresh Athletik Score on Home
   if (tab === 'home') {
@@ -24310,6 +24341,103 @@ function openHabitsModal() {
 }
 window.openHabitsModal = openHabitsModal;
 
+// ═══════════════════════════════════════════════════════════════════
+// GUIDES RAPIDES — 7 vidéos courtes (30-60s) hébergées sur YouTube en
+// non répertorié. Placeholders à remplacer par les vrais IDs YouTube
+// quand les enregistrements seront faits.
+// ═══════════════════════════════════════════════════════════════════
+var AH_GUIDES = [
+  { id:'welcome',  title:'Bienvenue sur Athletik Hub',  ytId:'PLACEHOLDER_WELCOME',  emoji:'👋' },
+  { id:'profile',  title:'Démarrer ton profil',          ytId:'PLACEHOLDER_PROFILE',  emoji:'⚙️' },
+  { id:'tests',    title:'Faire tes tests physiques',    ytId:'PLACEHOLDER_TESTS',    emoji:'📐' },
+  { id:'session',  title:'Lancer ta séance du jour',     ytId:'PLACEHOLDER_SESSION',  emoji:'🔥' },
+  { id:'track',    title:'Tracker un exercice',          ytId:'PLACEHOLDER_TRACK',    emoji:'📊' },
+  { id:'progress', title:'Lire ta progression',          ytId:'PLACEHOLDER_PROGRESS', emoji:'📈' },
+  { id:'titan',    title:'Utiliser Titan',               ytId:'PLACEHOLDER_TITAN',    emoji:'🤖' }
+];
+window.AH_GUIDES = AH_GUIDES;
+
+function _ahGuideFind(id) {
+  for (var i = 0; i < AH_GUIDES.length; i++) if (AH_GUIDES[i].id === id) return AH_GUIDES[i];
+  return null;
+}
+
+// Ouvre le modal player avec la vidéo correspondante.
+// Aucune autoplay : on attend le tap user sur le triangle YouTube.
+window.openGuide = function(id) {
+  var g = _ahGuideFind(id);
+  var modal = document.getElementById('ahGuideModal');
+  var title = document.getElementById('ahGuideTitle');
+  var frame = document.getElementById('ahGuideFrame');
+  if (!modal || !title || !frame || !g) return;
+  title.textContent = g.title;
+  // Placeholder : tant que les vidéos ne sont pas tournées, on affiche
+  // une carte "À venir" au lieu d'un YouTube cassé.
+  if (!g.ytId || g.ytId.indexOf('PLACEHOLDER') === 0) {
+    frame.src = '';
+    // Remplace l'iframe par un placeholder visuel
+    var ph = frame.parentElement;
+    if (ph) {
+      ph.innerHTML = '<div style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;color:#fff;text-align:center;padding:18px;background:linear-gradient(135deg,var(--ah-navy),#0F1B33)">'
+        + '<div style="font-size:48px;margin-bottom:8px">' + (g.emoji || '🎥') + '</div>'
+        + '<div style="font-family:\'Bebas Neue\',sans-serif;font-size:18px;letter-spacing:.05em;color:var(--ah-gold);margin-bottom:4px">VIDÉO À VENIR</div>'
+        + '<div style="font-size:12px;color:rgba(255,255,255,.7);max-width:300px;line-height:1.5">Le guide « ' + g.title + ' » sera disponible très bientôt.</div>'
+        + '</div>';
+    }
+  } else {
+    // Vraie vidéo YouTube (non répertoriée).
+    // rel=0 enlève les suggestions, modestbranding=1 réduit le logo,
+    // playsinline=1 reste in-app sur iOS.
+    frame.src = 'https://www.youtube-nocookie.com/embed/' + g.ytId + '?rel=0&modestbranding=1&playsinline=1';
+  }
+  modal.style.display = 'flex';
+};
+
+window.closeGuide = function() {
+  var modal = document.getElementById('ahGuideModal');
+  var frame = document.getElementById('ahGuideFrame');
+  if (frame) {
+    // Vide l'iframe pour couper l'audio et libérer la ressource.
+    try { frame.src = ''; } catch(_){}
+    // Si l'iframe avait été remplacée par un placeholder, on la remet.
+    var ph = frame.parentElement;
+    if (!document.getElementById('ahGuideFrame') && ph) {
+      ph.innerHTML = '<iframe id="ahGuideFrame" src="" title="Guide rapide" allow="accelerometer; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen style="position:absolute;inset:0;width:100%;height:100%;border:0"></iframe>';
+    }
+  }
+  if (modal) modal.style.display = 'none';
+};
+
+// Rendu de la liste complète (utilisée dans Moi > Guides rapides).
+window._renderGuidesList = function() {
+  var c = document.getElementById('ahGuidesList');
+  if (!c) return;
+  var html = '';
+  AH_GUIDES.forEach(function(g, i){
+    html += '<button type="button" onclick="window.openGuide(\'' + g.id + '\')" style="display:flex;align-items:center;gap:12px;width:100%;background:var(--ah-surface);border:1px solid var(--ah-border);border-radius:12px;padding:12px 14px;cursor:pointer;text-align:left;font-family:inherit;-webkit-tap-highlight-color:transparent">';
+    html += '<div style="width:34px;height:34px;border-radius:10px;background:rgba(197,164,78,.12);display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0">' + (g.emoji || '🎥') + '</div>';
+    html += '<div style="flex:1;min-width:0">';
+    html += '<div style="font-family:\'JetBrains Mono\',\'Outfit\',sans-serif;font-size:9.5px;letter-spacing:.18em;color:var(--ah-muted);font-weight:700;text-transform:uppercase;margin-bottom:2px">Guide ' + (i+1) + '</div>';
+    html += '<div style="font-family:\'Outfit\',sans-serif;font-size:13.5px;font-weight:700;color:var(--ah-navy);line-height:1.25">' + g.title + '</div>';
+    html += '</div>';
+    html += '<div style="flex-shrink:0;color:var(--ah-gold);font-size:18px">▶</div>';
+    html += '</button>';
+  });
+  c.innerHTML = html;
+};
+
+// Helper pour créer un bouton "?" inline qui ouvre un guide.
+// Usage : html += window._guideBtn('tests')  → string HTML d'une icône "?"
+window._guideBtn = function(guideId, opts) {
+  opts = opts || {};
+  var size = opts.size || 22;
+  var ml = opts.ml || 6;
+  return '<button type="button" onclick="window.openGuide(\'' + guideId + '\');event.stopPropagation()" aria-label="Guide rapide" title="Guide rapide" style="display:inline-flex;align-items:center;justify-content:center;width:' + size + 'px;height:' + size + 'px;border-radius:50%;background:rgba(197,164,78,.10);border:1px solid rgba(197,164,78,.35);color:var(--ah-gold);font-family:\'Outfit\',sans-serif;font-size:12px;font-weight:800;cursor:pointer;padding:0;margin-left:' + ml + 'px;vertical-align:middle;line-height:1">?</button>';
+};
+
+// Auto-render au boot + à chaque ouverture de Moi.
+setTimeout(function(){ try { window._renderGuidesList(); } catch(_){} }, 200);
+
 function closeHabitsModal() {
   var modal = document.getElementById("habitsModal");
   if (modal) modal.style.display = "none";
@@ -27943,6 +28071,15 @@ function renderSuiviOverview() {
 
   var html = '';
 
+  // Bouton "?" guide en haut à droite de la Vue d'ensemble
+  // (apparaît UNIQUEMENT si l'user n'a pas encore complété ses tests
+  // — c'est là qu'il a besoin d'aide).
+  if (!hasAnyMetric) {
+    html += '<div style="display:flex;justify-content:flex-end;margin-bottom:6px">';
+    html += '<button type="button" onclick="window.openGuide && window.openGuide(\'tests\')" style="display:inline-flex;align-items:center;gap:6px;padding:6px 12px;border-radius:999px;background:rgba(197,164,78,.10);border:1px solid rgba(197,164,78,.35);color:var(--ah-gold);font-family:\'Outfit\',sans-serif;font-size:11.5px;font-weight:700;cursor:pointer">▶ Guide rapide</button>';
+    html += '</div>';
+  }
+
   // ── 1) ATHLETIK SCORE — hero ou empty state ──
   if (score != null) {
     html += '<div style="background:linear-gradient(135deg,var(--navy),#0F1B33);border-radius:16px;padding:18px 20px;color:#fff;margin-bottom:10px;position:relative;overflow:hidden">';
@@ -28440,9 +28577,12 @@ function renderSessionsList() {
   });
   filtered.sort(function(a, b){ return new Date(b.date).getTime() - new Date(a.date).getTime(); });
 
-  // Header journal
+  // Header journal — titre + bouton "?" guide à droite
   var html = '';
-  html += '<div style="font-family:\'Bebas Neue\',sans-serif;font-size:24px;line-height:1.05;letter-spacing:.02em;color:var(--ah-navy);margin-bottom:4px">JOURNAL DE PROGRESSION ATHLÉTIQUE</div>';
+  html += '<div style="display:flex;align-items:flex-start;justify-content:space-between;gap:10px;margin-bottom:4px">';
+  html += '<div style="font-family:\'Bebas Neue\',sans-serif;font-size:24px;line-height:1.05;letter-spacing:.02em;color:var(--ah-navy);flex:1;min-width:0">JOURNAL DE PROGRESSION ATHLÉTIQUE</div>';
+  html += (window._guideBtn ? window._guideBtn('progress', { size:26 }) : '');
+  html += '</div>';
   html += '<div style="font-size:12.5px;color:var(--ah-text2);margin-bottom:16px;line-height:1.5">Ce que tu mesures, ce que tu répètes, ce que tu améliores.</div>';
 
   // Filtres chips
