@@ -6348,7 +6348,7 @@ window.tiResetOnEnter = function(){ window.tiShowStep(1); };
     <div class="yt-detail-desc" id="ytDetailDesc">Description de l'exercice.</div>
     <div class="yt-detail-section">MUSCLES CIBLÉS</div>
     <div class="tag-row" id="ytDetailTags"></div>
-    <button class="btn btn-gold" style="width:100%;margin-bottom:10px" onclick="showToast('Fonctionnalité Tracks à venir.','info')">📊 Tracker cet exercice</button>
+    <button class="btn btn-gold" style="width:100%;margin-bottom:10px" onclick="_libTrackCurrent()">📊 Tracker cet exercice</button>
     <button class="btn btn-outline btn-disabled" style="width:100%;opacity:.5;cursor:not-allowed">🔒 Workout Builder (après 2 programmes)</button>
   </div>
 </div>
@@ -15783,6 +15783,39 @@ function _trkPickExo(name) {
   _trkRefreshLastScore();
 }
 window._trkPickExo = _trkPickExo;
+
+// Tracker l'exo affiché dans la fiche détail Train > Librairie. Bug
+// remonté : le bouton "Tracker cet exercice" affichait juste un toast
+// "Fonctionnalité Tracks à venir" (placeholder jamais branché).
+// Ce handler lit le nom de l'exo courant dans #ytDetailName, switch
+// sur l'onglet Suivi, ouvre la sub-section Exercices, et pré-remplit
+// l'exo dans le tracker — l'utilisateur n'a plus qu'à saisir ses essais.
+function _libTrackCurrent() {
+  var nameEl = document.getElementById('ytDetailName');
+  var name = nameEl ? (nameEl.textContent || '').trim() : '';
+  if (!name) {
+    if (typeof showToast === 'function') showToast('Exo introuvable, recharge la fiche.', 'err');
+    return;
+  }
+  // 1. Switch sur l'onglet Suivi
+  try { if (typeof switchTab === 'function') switchTab('tracks'); } catch(e){}
+  // 2. Sub-section Exercices (id 'track' dans showSec)
+  setTimeout(function(){
+    try { if (typeof showSec === 'function') showSec('track'); } catch(e){}
+    setTimeout(function(){
+      // 3. Pré-remplit l'exo dans le tracker
+      try {
+        _trkBuildIndex();
+        _trkPickExo(name);
+        // Scroll vers la zone tracker
+        var trkWrap = document.getElementById('trkSelected');
+        if (trkWrap && trkWrap.scrollIntoView) trkWrap.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        if (typeof showToast === 'function') showToast('"' + name + '" prêt à tracker — saisis tes essais.', 'info');
+      } catch(e) { console.warn('libTrackCurrent', e); }
+    }, 150);
+  }, 100);
+}
+window._libTrackCurrent = _libTrackCurrent;
 
 function _trkClearExo() {
   var h = document.getElementById('trackExSelect');
