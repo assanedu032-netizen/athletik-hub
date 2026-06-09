@@ -3602,10 +3602,15 @@ html body #result, html body #nutriResult{
   font-family:'Outfit',sans-serif; font-size:13.5px; font-weight:700;
   color:var(--ah-navy); letter-spacing:.01em;
 }
+/* Avant : 2 colonnes (Poids | Taille) → la 2e débordait à droite sur
+   mobile car la card avait déjà du padding, le gap, et les inputs ne
+   pouvaient pas shrink en dessous du placeholder. La Taille était
+   invisible et le bouton Continuer restait désactivé.
+   Maintenant : stack vertical, chaque champ pleine largeur. */
 #profil4 .p4-field-row{
-  display:grid; grid-template-columns:1fr 1fr; gap:12px;
+  display:flex; flex-direction:column; gap:14px;
 }
-#profil4 .p4-field{ display:flex; flex-direction:column }
+#profil4 .p4-field{ display:flex; flex-direction:column; min-width:0 }
 #profil4 .p4-field-label-row{
   display:flex; align-items:center; justify-content:space-between;
   margin-bottom:6px;
