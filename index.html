@@ -23788,8 +23788,15 @@ function obCalcProg() {
     return;
   }
 
-  // Sinon : flow normal → Aller à Auth
+  // Sinon : flow normal → Aller à Auth en mode SIGNUP (l'user vient de
+  // remplir le questionnaire, il faut lui proposer de créer un compte,
+  // pas de se connecter à un compte existant — sinon "BON RETOUR /
+  // Se connecter" alors que c'est une création).
+  window.authMode = 'signup';
   go('auth');
+  setTimeout(function(){
+    try { if (typeof _fbApplyAuthMode === 'function') _fbApplyAuthMode('signup'); } catch(_){}
+  }, 0);
 }
 
 // Retourne sur la Home en mode découverte (après avoir complété une étape)
