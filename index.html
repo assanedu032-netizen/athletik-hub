@@ -3946,6 +3946,70 @@ html body #result, html body #nutriResult{
   font-weight:700;
   padding:14px 18px 4px;
 }
+/* Quand on est sur l'écran INTRO, on cache le label "OBJECTIF DE LA SÉANCE"
+   et le bouton ⭐ favoris en haut (le bouton est intégré à la carte intro). */
+#pgBuilder #builderUnlocked.bld-state-intro::before{ display:none; }
+#pgBuilder #builderUnlocked.bld-state-intro #builderFavTriggerRow{ display:none !important; }
+
+/* ── INTRO BUILDER : petit parcours d'entrée propre ── */
+#pgBuilder .bld-intro{
+  display:none; /* affiché par JS via _builderShow('intro') */
+  padding:28px 22px 24px;
+  text-align:center;
+  animation:bldIntroIn .35s ease-out;
+}
+@keyframes bldIntroIn{ from{opacity:0;transform:translateY(8px)} to{opacity:1;transform:none} }
+#pgBuilder .bld-intro-eyebrow{
+  font-family:'JetBrains Mono','Outfit',sans-serif;
+  font-size:10px;letter-spacing:.22em;font-weight:700;
+  color:var(--ah-gold);margin-bottom:14px;
+}
+#pgBuilder .bld-intro-title{
+  font-family:'Bebas Neue','Outfit',sans-serif;
+  font-size:34px;line-height:1.05;letter-spacing:.02em;
+  color:var(--ah-navy);margin:0 0 10px;font-weight:700;
+}
+#pgBuilder .bld-intro-sub{
+  font-family:'Outfit',sans-serif;font-size:14px;line-height:1.5;
+  color:var(--ah-text2);margin:0 auto 22px;max-width:300px;
+}
+#pgBuilder .bld-intro-steps{
+  display:flex;flex-direction:column;gap:10px;
+  max-width:320px;margin:0 auto 26px;text-align:left;
+}
+#pgBuilder .bld-intro-step{
+  display:flex;align-items:center;gap:12px;
+  background:var(--ah-surface);border:1px solid var(--ah-border2);
+  border-radius:12px;padding:12px 14px;
+  font-family:'Outfit',sans-serif;font-size:13.5px;font-weight:600;
+  color:var(--ah-text);
+}
+#pgBuilder .bld-intro-num{
+  flex-shrink:0;width:26px;height:26px;border-radius:50%;
+  background:linear-gradient(135deg,var(--ah-gold),#D4B86A);
+  color:var(--ah-navy);font-family:'Bebas Neue',sans-serif;
+  font-size:15px;font-weight:800;
+  display:flex;align-items:center;justify-content:center;
+  box-shadow:0 2px 6px rgba(197,164,78,.25);
+}
+#pgBuilder .bld-intro-cta{
+  display:block;width:100%;max-width:320px;margin:0 auto 14px;
+  padding:16px;border:0;border-radius:14px;
+  background:linear-gradient(135deg,#C5A44E,#D4B86A);
+  color:var(--ah-navy);
+  font-family:'Outfit',sans-serif;font-size:15px;font-weight:800;letter-spacing:.04em;
+  cursor:pointer;box-shadow:0 8px 22px rgba(197,164,78,.28);
+  transition:transform .15s;
+}
+#pgBuilder .bld-intro-cta:active{ transform:scale(.98); }
+#pgBuilder .bld-intro-fav{
+  display:inline-block;padding:9px 18px;border-radius:999px;
+  background:transparent;border:1.5px solid var(--ah-border2);
+  color:var(--ah-gold);font-family:'Outfit',sans-serif;
+  font-size:12px;font-weight:700;cursor:pointer;
+  -webkit-tap-highlight-color:transparent;
+}
+#pgBuilder .bld-intro-fav:hover{ border-color:var(--ah-gold); }
 
 /* Bulle Titan : meilleur alignement avatar + bulle */
 #pgBuilder #builderConvo{ padding:10px 16px 6px !important; gap:10px !important; }
@@ -6433,8 +6497,23 @@ window.tiResetOnEnter = function(){ window.tiShowStep(1); };
   <!-- État débloqué : conversation avec Titan -->
   <div id="builderUnlocked" style="display:none">
 
+    <!-- INTRO — petit parcours d'entrée propre avant de lancer la conversation.
+         Explique en 2 phrases ce que c'est, puis "Démarrer" ouvre le builder. -->
+    <div id="builderIntro" class="bld-intro">
+      <div class="bld-intro-eyebrow">WORKOUT BUILDER</div>
+      <h2 class="bld-intro-title">Construire ma séance</h2>
+      <p class="bld-intro-sub">Titan te programme une séance sur mesure, en quelques questions.</p>
+      <div class="bld-intro-steps">
+        <div class="bld-intro-step"><span class="bld-intro-num">1</span><span>Ton objectif &amp; ton état du jour</span></div>
+        <div class="bld-intro-step"><span class="bld-intro-num">2</span><span>Ton temps &amp; ton matériel</span></div>
+        <div class="bld-intro-step"><span class="bld-intro-num">3</span><span>Titan structure ta séance</span></div>
+      </div>
+      <button class="bld-intro-cta" onclick="window._builderEnter()">Démarrer →</button>
+      <button class="bld-intro-fav" onclick="window._builderOpenFavs()" aria-label="Voir mes séances favorites">⭐ Mes séances favorites</button>
+    </div>
+
     <!-- Bouton "Mes favoris" : accès rapide aux séances sauvegardées -->
-    <div style="padding:12px 18px 0;display:flex;justify-content:flex-end">
+    <div id="builderFavTriggerRow" style="padding:12px 18px 0;display:flex;justify-content:flex-end">
       <button class="bld-fav-trigger" onclick="window._builderOpenFavs()" aria-label="Voir mes séances favorites">⭐ Mes séances favorites</button>
     </div>
 
@@ -20629,18 +20708,33 @@ function renderBuilder() {
   // Ne relance pas la conversation si une séance est déjà générée à l'écran.
   var result = document.getElementById('builderResult');
   if (result && result.style.display !== 'none' && _builderWorkout) return;
-  _builderStartConvo();
+  // Sinon : on affiche d'abord l'INTRO. L'user clique "Démarrer" pour entrer
+  // dans la conversation guidée (_builderEnter).
+  _builderShow('intro');
 }
 
-// ─── Vues (convo / loading / result) ───────────────────────────────
+// ─── Vues (intro / convo / loading / result) ───────────────────────
 function _builderShow(which) {
+  var unlocked = document.getElementById('builderUnlocked');
+  var i = document.getElementById('builderIntro');
   var c = document.getElementById('builderConvoWrap');
   var l = document.getElementById('builderLoading');
   var r = document.getElementById('builderResult');
+  if (i) i.style.display = which === 'intro' ? '' : 'none';
   if (c) c.style.display = which === 'convo' ? 'flex' : 'none';
   if (l) l.style.display = which === 'loading' ? '' : 'none';
   if (r) r.style.display = which === 'result' ? '' : 'none';
+  // Toggle de classe pour cacher le label "OBJECTIF DE LA SÉANCE" et le
+  // bouton ⭐ favoris du haut quand on est sur l'INTRO (intégré à la carte).
+  if (unlocked) {
+    if (which === 'intro') unlocked.classList.add('bld-state-intro');
+    else                   unlocked.classList.remove('bld-state-intro');
+  }
 }
+// Entrée dans le builder depuis l'intro : démarre la conversation guidée.
+window._builderEnter = function() {
+  if (typeof _builderStartConvo === 'function') _builderStartConvo();
+};
 function _builderShowForm() { _builderShow('convo'); } // alias compat
 window._builderShowForm = _builderShowForm;
 
