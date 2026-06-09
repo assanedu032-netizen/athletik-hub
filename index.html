@@ -5797,15 +5797,21 @@ window.tiResetOnEnter = function(){ window.tiShowStep(1); };
          aussi les CTAs de démarrage / skip. -->
     <div id="p3IntroFooter">
       <div style="background:#FEF3C7;border:1px solid #F59E0B;border-radius:12px;padding:12px 14px;margin-bottom:18px;font-size:12px;color:#92400E;line-height:1.5">
-        ⚠️ <strong>S'échauffer correctement avant tout test.</strong> Aucune technique d'intensification. Reproduire les conditions exactement à chaque évaluation pour pouvoir comparer.
+        ⚠️ <strong>Échauffe-toi correctement avant les tests.</strong> Pas d'intensification. Refais les tests dans les mêmes conditions pour comparer ta progression.
       </div>
 
       <!-- CTA principal : commencer le wizard. Le bouton "Valider et
            accéder à mon programme" est rendu par renderP3SATStep au
            dernier exercice du wizard (ne plus le dupliquer ici). -->
-      <button class="bc" onclick="window._p3StartTests && window._p3StartTests()" style="margin-bottom:10px">Commencer les tests physiques</button>
+      <button class="bc" onclick="window._p3StartTests && window._p3StartTests()" style="margin-bottom:6px">Commencer les tests physiques</button>
+      <!-- Indication discrète sous le CTA principal : aide à dimensionner
+           l'effort. -->
+      <div style="font-size:11px;color:var(--ah-muted);text-align:center;margin-bottom:10px;font-family:'Outfit',sans-serif">⏱ Prévois 10–15 min, échauffement inclus.</div>
       <button onclick="obSkipSAT()" style="width:100%;padding:13px;background:none;border:1px solid var(--border2);border-radius:12px;font-family:'Outfit',sans-serif;font-size:13px;font-weight:700;color:var(--ah-text2);cursor:pointer">Passer pour l'instant</button>
-      <div style="font-size:11px;color:#E05252;text-align:center;margin-top:8px;font-weight:600">Sans tests : programme accessible, mais Athletik Score non calculé.</div>
+      <!-- Texte sous "Passer" : remplace l'ancien rouge alarmiste par une
+           version rassurante. L'user doit comprendre que skip ≠ pénalité,
+           juste un report du score. -->
+      <div style="font-size:11px;color:var(--ah-text2);text-align:center;margin-top:10px;line-height:1.5;max-width:320px;margin-left:auto;margin-right:auto">Tu peux passer maintenant. Ton programme reste accessible, mais ton <strong style="color:var(--ah-navy)">Athletik Score</strong> sera calculé après tes tests.</div>
     </div>
 
   </div>
