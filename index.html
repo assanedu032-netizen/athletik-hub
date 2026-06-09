@@ -12759,11 +12759,52 @@ document.addEventListener('DOMContentLoaded', function() {
   if (justLoggedOut && typeof welcomeLogin === 'function') {
     setTimeout(function(){ welcomeLogin(); }, 600);
   }
-  // Sinon : le splash attend que l'user clique le CTA "Toucher pour continuer".
-  // window._splashAdvance est défini ci-dessous, branché sur onclick du bouton.
+
+  // ── RESTAURATION SESSION FIREBASE ──
+  // Firebase utilise browserLocalPersistence : si l'user s'est connecté une
+  // fois, sa session est restaurée au prochain boot. Mais c'est asynchrone
+  // (~500ms-1s). Avant cette fenêtre, window.fbUser est null, et l'user
+  // qui rouvrait l'app voyait splash → welcome → "COMMENCER MON ASCENSION"
+  // → était re-routé vers auth signup. Pas normal — il était déjà connecté.
+  //
+  // Fix : on attend jusqu'à 2.5s qu'onAuthStateChanged ait fire. Si l'user
+  // est restauré ET qu'on est toujours sur le splash → on l'envoie direct
+  // à sa prochaine étape via _routeToOnboardingStep (home si complet, sinon
+  // titanIntro/profil1/profil4/profil3). Pas de re-login.
+  var _bootAuthHandled = false;
+  function _bootHandleAuthRestore() {
+    if (_bootAuthHandled) return;
+    if (!window.fbUser) return;
+    var current = document.querySelector('.scr.on');
+    var curId = current ? current.id : null;
+    // Si l'user a déjà avancé (welcome cliqué, auth ouvert manuellement,
+    // onboarding en cours…), on ne le téléporte pas — il a un intent.
+    if (curId && curId !== 'splash') return;
+    _bootAuthHandled = true;
+    var prof = {};
+    try { prof = JSON.parse(localStorage.getItem('ah_profile') || '{}'); } catch(_){}
+    try { _syncOnboardingDoneFlag(prof); } catch(_){}
+    try { _routeToOnboardingStep(prof); } catch(_){}
+  }
+  // Check immédiat (au cas où Firebase aurait déjà restauré avant ce point).
+  setTimeout(_bootHandleAuthRestore, 50);
+  // Polling court : check toutes les 200ms pendant 2.5s max.
+  var _bootAuthChecks = 0;
+  var _bootAuthPoll = setInterval(function(){
+    _bootAuthChecks++;
+    if (_bootAuthHandled || _bootAuthChecks > 12) {
+      clearInterval(_bootAuthPoll);
+      return;
+    }
+    _bootHandleAuthRestore();
+  }, 200);
+
+  // Splash CTA : si user pas restauré (visiteur ou session expirée), c'est
+  // lui qui contrôle l'avance vers welcome.
   window._splashAdvance = function() {
     var cta = document.getElementById('splashContinueBtn');
     if (cta) cta.disabled = true;  // anti-double-tap
+    _bootAuthHandled = true; // on stoppe le polling si pas déjà fait
     try { go('welcome'); } catch(_) {}
   };
 
