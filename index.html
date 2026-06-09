@@ -5782,6 +5782,19 @@ window.tiResetOnEnter = function(){ window.tiShowStep(1); };
          on cache cet intro et on révèle #p3satSection (le wizard step-by-step).
          L'user comprend ainsi : Explication → Commencer → Saisie → Validation. -->
     <div id="p3IntroBlock">
+      <!-- Placeholder vidéo SAT/SET : remplacé par window._renderP3TestVideo()
+           à l'ouverture de profil3 selon le programme attribué (SAT vs SET).
+           Tap → ouvre le guide vidéo correspondant. Tu remplaceras le
+           PLACEHOLDER YouTube ID quand les vidéos seront tournées. -->
+      <div id="p3TestVideoPlaceholder" onclick="window.openGuide && window.openGuide('tests')" style="background:linear-gradient(135deg,var(--ah-navy),#0F1B33);border:1px solid rgba(197,164,78,.35);border-radius:14px;padding:18px 16px;margin-bottom:14px;cursor:pointer;display:flex;align-items:center;gap:14px;box-shadow:0 6px 18px rgba(20,30,60,.16)">
+        <div style="width:48px;height:48px;border-radius:50%;background:rgba(197,164,78,.18);border:1.5px solid rgba(197,164,78,.55);display:flex;align-items:center;justify-content:center;flex-shrink:0;color:var(--ah-gold);font-size:18px">▶</div>
+        <div style="flex:1;min-width:0;color:#fff">
+          <div style="font-family:'JetBrains Mono',monospace;font-size:9px;letter-spacing:.22em;color:var(--ah-gold);text-transform:uppercase;font-weight:700;margin-bottom:3px">Guide vidéo</div>
+          <div id="p3TestVideoTitle" style="font-family:'Outfit',sans-serif;font-size:14px;font-weight:800;line-height:1.25;margin-bottom:3px">Faire tes tests physiques</div>
+          <div style="font-size:11px;color:rgba(255,255,255,.65);line-height:1.5">Regarde la démo (30-60 sec) avant de commencer.</div>
+        </div>
+      </div>
+
       <!-- Pourquoi ces tests -->
       <div style="background:var(--surface2);border:1px solid var(--border);border-radius:14px;padding:14px 16px;margin-bottom:14px;display:flex;gap:10px">
         <div style="font-size:20px;flex-shrink:0">💡</div>
@@ -6297,19 +6310,39 @@ window.tiResetOnEnter = function(){ window.tiShowStep(1); };
     <div id="todayCardFrame" style="margin:14px 18px 0">
     <div id="todayCard" style="background:var(--ah-navy-deep);border-radius:14px;padding:18px 18px;color:#fff;border-left:3px solid var(--ah-gold);position:relative;overflow:hidden">
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;gap:8px">
-        <div style="font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:.22em;color:var(--ah-gold);text-transform:uppercase" id="pcDur">PROFIL ATHLETIK · 0/4</div>
+        <div style="font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:.22em;color:var(--ah-gold);text-transform:uppercase" id="pcDur">PROFIL ATHLETIK · 0/3</div>
         <div style="display:flex;align-items:center;gap:6px">
           <button type="button" onclick="event.stopPropagation();window.openGuide && window.openGuide('session')" aria-label="Guide rapide" title="Guide rapide" style="display:inline-flex;align-items:center;justify-content:center;width:22px;height:22px;border-radius:50%;background:rgba(197,164,78,.15);border:1px solid rgba(197,164,78,.45);color:var(--ah-gold);font-family:'Outfit',sans-serif;font-size:11px;font-weight:800;cursor:pointer;padding:0;line-height:1">?</button>
           <div style="font-family:'JetBrains Mono',monospace;font-size:9px;letter-spacing:.18em;color:var(--ah-gold);background:rgba(197,164,78,.12);border:1px solid rgba(197,164,78,.35);border-radius:999px;padding:3px 10px;text-transform:uppercase" id="todayCardPill">À FINIR</div>
         </div>
       </div>
+
+      <!-- Barre Tinder 3 segments : Programme · Nutrition · Tests.
+           Chaque segment passe en gold quand son étape de profil est validée.
+           Le label sous la barre montre "Profil X/3 complété". -->
+      <div id="todayCardTinder" style="display:none;margin-bottom:14px">
+        <div style="display:flex;gap:6px;margin-bottom:6px">
+          <div id="tinderSeg1" style="flex:1;height:4px;border-radius:2px;background:rgba(255,255,255,.15);transition:background .3s"></div>
+          <div id="tinderSeg2" style="flex:1;height:4px;border-radius:2px;background:rgba(255,255,255,.15);transition:background .3s"></div>
+          <div id="tinderSeg3" style="flex:1;height:4px;border-radius:2px;background:rgba(255,255,255,.15);transition:background .3s"></div>
+        </div>
+        <div style="display:flex;justify-content:space-between;font-family:'JetBrains Mono',monospace;font-size:8.5px;letter-spacing:.16em;color:rgba(255,255,255,.55);text-transform:uppercase;font-weight:700">
+          <span id="tinderLab1">Programme</span>
+          <span id="tinderLab2">Nutrition</span>
+          <span id="tinderLab3">Tests</span>
+        </div>
+      </div>
+
       <div style="font-family:'Bebas Neue',sans-serif;font-size:24px;color:#fff;letter-spacing:.04em;line-height:1.1;margin-bottom:4px" id="pcName">DÉBLOQUE TA SÉANCE</div>
       <div style="font-family:'Outfit',sans-serif;font-size:13px;color:rgba(255,255,255,.65);line-height:1.45;margin-bottom:14px" id="pcObj">Commence par tes mesures. Sans ça, je ne peux pas te programmer un travail honnête.</div>
       <div style="height:1px;background:rgba(255,255,255,.08);margin-bottom:14px"></div>
-      <button onclick="discoveryStartProfile()" style="width:100%;padding:14px 16px;background:var(--ah-navy2);color:#fff;border:1px solid rgba(255,255,255,.1);border-radius:10px;font-family:'Outfit',sans-serif;font-size:14px;font-weight:600;cursor:pointer;touch-action:manipulation;letter-spacing:.02em;display:flex;align-items:center;justify-content:center;gap:8px">
+      <!-- Bouton state-aware : "Compléter mon profil" si onboarding incomplet
+           (pas de surprise de téléport au tap), "LANCER LA SÉANCE" sinon. -->
+      <button id="todayCardCtaBtn" onclick="window._homeCtaTap && window._homeCtaTap()" style="width:100%;padding:14px 16px;background:var(--ah-navy2);color:#fff;border:1px solid rgba(255,255,255,.1);border-radius:10px;font-family:'Outfit',sans-serif;font-size:14px;font-weight:600;cursor:pointer;touch-action:manipulation;letter-spacing:.02em;display:flex;align-items:center;justify-content:center;gap:8px">
         <span id="todayCardCtaLabel">Commencer mon profil</span> <span style="color:var(--ah-gold)">→</span>
       </button>
-      <!-- Progress bar (mode discovery profil X/4) -->
+      <!-- Progress bar legacy (gardée pour compat avec ancien rendu mais
+           remplacée visuellement par la barre Tinder 3 segments ci-dessus) -->
       <div id="todayCardProgress" style="display:none;height:3px;background:rgba(255,255,255,.08);border-radius:2px;overflow:hidden;margin-top:14px">
         <div id="todayCardProgressFill" style="height:100%;background:var(--ah-gold);width:0%;transition:width .35s ease"></div>
       </div>
@@ -12845,6 +12878,34 @@ function launchTodaySession() {
 }
 window.launchTodaySession = launchTodaySession;
 
+// Handler unifié du bouton principal de la today card. Route selon
+// l'état d'onboarding pour ne PAS surprendre l'user :
+//   - Onboarding complet → launchTodaySession() (vraie séance)
+//   - Onboarding incomplet → route directement vers l'étape manquante
+//     via _routeToOnboardingStep, avec un toast explicite
+//   - Aucun profil → discoveryStartProfile() (point d'entrée découverte)
+window._homeCtaTap = function() {
+  var prof = {};
+  try { prof = JSON.parse(localStorage.getItem('ah_profile') || '{}'); } catch(_){}
+  var complete = (typeof _isOnboardingComplete === 'function') ? _isOnboardingComplete(prof) : false;
+  if (complete) {
+    try { return launchTodaySession(); } catch(e) { console.warn('[homeCta]', e); }
+    return;
+  }
+  // Profil incomplet : on route directement vers la prochaine étape
+  // manquante via _routeToOnboardingStep — pas de surprise teleport.
+  if (typeof _routeToOnboardingStep === 'function') {
+    var nextScreen = (typeof _nextOnboardingScreen === 'function') ? _nextOnboardingScreen(prof) : null;
+    var label = ({
+      profil1:'identité & programme', profil4:'nutrition', profil3:'tests physiques'
+    })[nextScreen] || 'profil';
+    if (typeof showToast === 'function') showToast('On finit : ' + label, 'info');
+    try { _routeToOnboardingStep(prof); return; } catch(e) {}
+  }
+  // Fallback ancien comportement
+  if (typeof discoveryStartProfile === 'function') discoveryStartProfile();
+};
+
 function renderTodayCard() {
   // Legacy : la carte aujourd'hui est maintenant rendue par renderUserData()
   // avec la structure DS v1.0 (discovery / unlocked). No-op pour éviter
@@ -13706,6 +13767,38 @@ function renderUserData() {
   if (profile.nutriObj || profile.nutriDone) dStep = 4;
   var inDiscovery = (dStep < 4) && !programAttributed;
 
+  // ── Profil 3 étapes Tinder (Programme · Nutrition · Tests) ──
+  // Chaque étape a son critère de complétion explicite. Sert à :
+  //   1. Rendre la barre Tinder visuellement (segments gold/blanc)
+  //   2. Calculer si on doit afficher "LANCER LA SÉANCE" ou "COMPLÉTER MON PROFIL"
+  var step1Done = !!(profile.programKey && profile.program && profile.prenom);
+  var step2Done = !!(profile.objNutri && profile.poids && profile.taille);
+  var step3Done = !!(profile.satDone || profile.satSelf);
+  var stepsDone = (step1Done ? 1 : 0) + (step2Done ? 1 : 0) + (step3Done ? 1 : 0);
+  var onboardingFullyDone = (stepsDone === 3);
+
+  // Mise à jour de la barre Tinder
+  function _tinderSet(segId, on) {
+    var el = document.getElementById(segId);
+    if (!el) return;
+    if (on) {
+      el.style.background = 'linear-gradient(90deg,var(--ah-gold),#D4B86A)';
+      el.style.boxShadow = '0 0 8px rgba(197,164,78,.35)';
+    } else {
+      el.style.background = 'rgba(255,255,255,.15)';
+      el.style.boxShadow = '';
+    }
+  }
+  _tinderSet('tinderSeg1', step1Done);
+  _tinderSet('tinderSeg2', step2Done);
+  _tinderSet('tinderSeg3', step3Done);
+  // Label couleur : gold si étape done, gris sinon
+  ['1','2','3'].forEach(function(n){
+    var lab = document.getElementById('tinderLab' + n);
+    var done = (n === '1' ? step1Done : n === '2' ? step2Done : step3Done);
+    if (lab) lab.style.color = done ? 'var(--ah-gold)' : 'rgba(255,255,255,.45)';
+  });
+
   // ── Today card : two modes (discovery locked vs. session unlocked) ──
   var pcName = document.getElementById('pcName');
   var pcObj  = document.getElementById('pcObj');
@@ -13717,13 +13810,13 @@ function renderUserData() {
   var lockedWrap = document.getElementById('lockedSessionWrap');
   var lockedPill = document.getElementById('lockedSessionPill');
 
-  if (programAttributed) {
-    // Mode complet : séance du jour. La semaine courante n'est PAS stockée
-    // dans user.weekNum (qui restait figé à 2 d'origine). On la calcule
-    // dynamiquement à partir de la DATE d'attribution du programme :
-    // 1 semaine = 7 jours calendaires. Avant ça on comptait les séances,
-    // ce qui passait l'user en "Semaine 2" après 3 séances faites le même
-    // jour — comportement aberrant côté UX.
+  // Barre Tinder visible dès qu'il y a au moins 1 étape (donc dès l'arrivée
+  // post-obQ1) et tant que l'onboarding n'est pas FULLY done.
+  var tinderBox = document.getElementById('todayCardTinder');
+  if (tinderBox) tinderBox.style.display = (!onboardingFullyDone && (stepsDone > 0 || profile.objectif)) ? 'block' : 'none';
+
+  if (programAttributed && onboardingFullyDone) {
+    // ── MODE COMPLET ── Séance du jour. Tout est validé, on peut lancer.
     var _wk = 1;
     try {
       var _p = JSON.parse(localStorage.getItem('ah_profile') || '{}');
@@ -13743,18 +13836,37 @@ function renderUserData() {
     if (ctaLbl) ctaLbl.textContent = 'LANCER LA SÉANCE';
     if (prog)   prog.style.display = 'none';
     if (lockedWrap) lockedWrap.style.display = 'none';
+  } else if (programAttributed && !onboardingFullyDone) {
+    // ── MODE PROGRAMME ATTRIBUÉ MAIS PROFIL INCOMPLET ──
+    // Avant : on affichait "LANCER LA SÉANCE" puis le tap téléportait
+    // l'user sur profil1 (surprise désagréable). Maintenant : le bouton
+    // dit clairement ce qu'il fait, l'user n'est pas surpris.
+    if (pcDur)  pcDur.textContent = 'PROFIL ATHLETIK · ' + stepsDone + '/3';
+    if (pcName) pcName.textContent = user.program;
+    if (pcObj) {
+      var missing = [];
+      if (!step1Done) missing.push('identité');
+      if (!step2Done) missing.push('nutrition');
+      if (!step3Done) missing.push('tests');
+      pcObj.textContent = 'Encore ' + missing.length + ' étape' + (missing.length > 1 ? 's' : '') +
+        ' : ' + missing.join(' · ') + '. On finit ça avant la première séance.';
+    }
+    if (pill) { pill.style.display = ''; pill.textContent = 'PROFIL ' + stepsDone + '/3'; }
+    if (ctaLbl) ctaLbl.textContent = 'COMPLÉTER MON PROFIL';
+    if (prog) prog.style.display = 'none';
+    if (lockedWrap) lockedWrap.style.display = 'none';
   } else {
-    // Mode discovery : carte profil X/4
-    if (pcDur)  pcDur.textContent = 'PROFIL ATHLETIK · ' + dStep + '/4';
+    // ── MODE DISCOVERY ── pas encore d'objectif/programme attribué
+    if (pcDur)  pcDur.textContent = 'PROFIL ATHLETIK · ' + stepsDone + '/3';
     if (pcName) pcName.textContent = (dStep === 0 ? 'DÉBLOQUE TA SÉANCE' : 'CONTINUE TON PROFIL');
     if (pcObj)  pcObj.textContent  = (dStep === 0
       ? 'Commence par tes mesures. Sans ça, je ne peux pas te programmer un travail honnête.'
-      : 'Encore ' + (4 - dStep) + ' étape' + (4 - dStep > 1 ? 's' : '') + '. Tu y es presque.');
+      : 'Encore ' + (3 - stepsDone) + ' étape' + (3 - stepsDone > 1 ? 's' : '') + '. Tu y es presque.');
     if (pill)   { pill.style.display = ''; pill.textContent = dStep === 0 ? 'À FINIR' : 'EN COURS'; }
     if (ctaLbl) ctaLbl.textContent = (dStep === 0 ? 'Commencer mon profil' : 'Reprendre où je suis');
-    if (prog)   { prog.style.display = ''; if (progFill) progFill.style.width = (dStep * 25) + '%'; }
+    if (prog)   { prog.style.display = 'none'; }
     if (lockedWrap) lockedWrap.style.display = '';
-    if (lockedPill) lockedPill.textContent = 'PROFIL ' + dStep + '/4 REQUIS';
+    if (lockedPill) lockedPill.textContent = 'PROFIL ' + stepsDone + '/3 REQUIS';
   }
   // Optionnels (legacy) — ces ids n'existent pas forcément dans la nouvelle structure
   var pcPhase = document.getElementById('pcPhase'); if (pcPhase) pcPhase.textContent = `Phase ${user.phase} — Fondations`;
@@ -30072,7 +30184,11 @@ function calcForce1RM(exo) {
   }
 }
 
-// Init profil3 — SAT vs SET selon le programme
+// Init profil3 — choix AUTOMATIQUE du test selon le programme (livre p.5154)
+//   ELITE ATHLETE / EXPLOSE+ / SHRED EXPLOSE → SAT + SET
+//   VERTICAL DUNK → SAT (détente + Rep Max squat/sdt)
+//   MICROTRAINING / TRIPHASIQUE → SAT (détente + alternatifs PDC)
+// L'user ne choisit JAMAIS — c'est le tableau du livre qui décide.
 function initProfil3() {
   var prog = OB.program || '';
   var isSET = (prog === 'explose' || prog === 'shred');
@@ -30088,6 +30204,13 @@ function initProfil3() {
     if (satSec) satSec.style.display = 'block';
     if (setSec) setSec.style.display = 'none';
   }
+  // Met à jour le titre de la carte vidéo placeholder selon le test choisi.
+  // Le tap ouvre toujours le guide 'tests' (lien YouTube placeholder dans
+  // AH_GUIDES — à remplacer côté admin quand la vidéo sera tournée).
+  try {
+    var vTitle = document.getElementById('p3TestVideoTitle');
+    if (vTitle) vTitle.textContent = isSET ? 'Faire ton Super Explosif Test (SET)' : 'Faire ton Super Athlétique Test (SAT)';
+  } catch(_){}
 }
 
 // Calcul live de la détente dans profil3
