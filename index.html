@@ -8574,13 +8574,21 @@ function showRecipe(key, portionsOverride) {
     return html;
   }).join('');
   var rmI = document.getElementById('rmIngredients'); if (rmI) rmI.innerHTML = ingrHtml;
+  // Stocker la recette courante AVANT le re-apply pour que _applyRecipeServings
+  // puisse lire window._currentRecipe.ingredients[i].qty quand il scale.
+  window._currentRecipe = r;
+  // Re-applique le scaling SUR LES INGRÉDIENTS qui viennent d'être rendus.
+  // Le premier _applyRecipeServings() en haut de showRecipe() ne pouvait pas
+  // scaler les ingrédients : le DOM #rmIngredients était encore vide.
+  // Bug remonté : ingrédients restaient à 1 portion alors que portions=2 et
+  // macros étaient bien à 2 portions.
+  _applyRecipeServings();
   // Étapes
   var stepsHtml = r.steps.map(function(s, i) {
     return '<div class="rm-step"><div class="rm-step-num">' + (i+1) + '</div><div class="rm-step-txt">' + s + '</div></div>';
   }).join('');
   var rmS = document.getElementById('rmSteps'); if (rmS) rmS.innerHTML = stepsHtml;
-  // Stocker la recette courante
-  window._currentRecipe = r;
+  // (window._currentRecipe déjà posé plus haut, avant le 2e _applyRecipeServings)
   // Ouvrir le modal
   var modal = document.getElementById('recipeModal');
   modal.classList.add('open');
