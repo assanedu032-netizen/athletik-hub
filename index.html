@@ -7504,6 +7504,16 @@ window.tiResetOnEnter = function(){ window.tiShowStep(1); };
     <div class="si-right">→</div>
   </div>
 
+  <!-- Option "se mettre dans la peau du client" : reset COMPLET de
+       l'onboarding (identité + programme + nutrition + tests) tout en
+       conservant le compte Firebase. L'user retourne sur welcome et
+       refait tout le parcours comme un nouvel inscrit. Historique
+       séances/records conservé pour ne pas tout perdre. -->
+  <div class="setting-item" onclick="window._fullResetOnboarding && window._fullResetOnboarding()">
+    <div class="si-left"><div class="si-icon">🧪</div><div><div class="si-text">Refaire l'onboarding complet</div><div class="si-sub">Pour tester comme un nouveau client</div></div></div>
+    <div class="si-right">→</div>
+  </div>
+
   <div class="setting-item" onclick="openMenerQuiz()">
     <div class="si-left"><div class="si-icon">📋</div><div><div class="si-text">Questionnaire MENER</div><div class="si-sub">Identifier ton pilier le plus faible</div></div></div>
     <div class="si-right">→</div>
@@ -13281,6 +13291,91 @@ function restartOnboarding(){
   if (typeof showToast === 'function') showToast('Questionnaire réinitialisé. Refais tes choix.', 'info');
   setTimeout(function(){ go('obQ1'); }, 300);
 }
+
+// Reset COMPLET de l'onboarding — pour se "mettre dans la peau du client".
+// Différence avec restartOnboarding() :
+//   - restartOnboarding ne reset QUE l'attribution programme
+//     (objectif, sit, cont, mat, programKey…)
+//   - _fullResetOnboarding reset TOUT le parcours d'onboarding :
+//     identité (prenom, age, sexe), programme, nutrition (objNutri,
+//     poids, taille, kcal cible), tests (satDone, athScore, vertJump…),
+//     flags (ah_onboarding_done, ah_ob_inprogress, trialStartedAt).
+// CONSERVÉ : compte Firebase (auth), historique séances (ah_set_history),
+// records (ah_v8), badges, habitudes, journal nutri.
+// L'user retourne sur welcome et refait tout le parcours.
+function _fullResetOnboarding() {
+  var ok = window.confirm(
+    'Refaire l\'onboarding COMPLET ?\n\n' +
+    'Tu vas tout refaire comme un nouveau client (identité, programme, ' +
+    'nutrition, tests).\n\n' +
+    'Conservé : ton compte, ton historique de séances, tes records, badges, habitudes.\n\n' +
+    'Continuer ?'
+  );
+  if (!ok) return;
+
+  // Reset profil — on garde uniquement les compteurs durables (historique de progression)
+  try {
+    var prof = JSON.parse(localStorage.getItem('ah_profile') || '{}');
+    var keep = {
+      // Identifiants compte
+      uid: prof.uid, email: prof.email,
+      // Accès (codes livre)
+      accessTier: prof.accessTier,
+      // Compteurs durables qu'on ne reset PAS
+      programsDone: prof.programsDone || 0,
+      completedPrograms: prof.completedPrograms || [],
+      fcmToken: prof.fcmToken
+    };
+    // Vire toutes les clés sauf celles préservées explicitement
+    localStorage.setItem('ah_profile', JSON.stringify(keep));
+  } catch(e) { console.warn('[fullReset] profile', e); }
+
+  // Reset OB / obChecks / user en mémoire
+  try {
+    if (typeof OB !== 'undefined') {
+      Object.keys(OB).forEach(function(k){ if (k !== 'init') delete OB[k]; });
+    }
+    if (typeof obChecks !== 'undefined') {
+      obChecks.sit = []; obChecks.cont = []; obChecks.mat = [];
+    }
+    if (typeof user !== 'undefined') {
+      user.name = 'ATHLÈTE';
+      user.program = ''; user.programKey = ''; user.programObj = '';
+      user.satDone = false; user.athScore = null; user.vertJump = null;
+    }
+  } catch(e) {}
+
+  // Reset tous les flags d'état onboarding
+  try {
+    localStorage.removeItem('ah_onboarding_done');
+    localStorage.removeItem('ah_ob_inprogress');
+    localStorage.removeItem('ah_discovery_mode');
+    localStorage.removeItem('ah_sat_inprogress');
+    localStorage.removeItem('ah_live_session');
+    localStorage.removeItem('ah_titan_today');
+  } catch(e) {}
+
+  // Sync Firestore : pousse le profil épuré (efface les champs côté serveur)
+  try { if (typeof fbSaveProfile === 'function') fbSaveProfile(); } catch(e) {}
+
+  // Cache la nav + retourne sur welcome (point d'entrée nouveau visiteur)
+  document.querySelectorAll('.view').forEach(function(v){
+    v.classList.remove('on');
+    v.style.display = '';
+  });
+  document.querySelectorAll('.scr').forEach(function(e){
+    e.classList.remove('on','out');
+    e.style.display = '';
+  });
+  var nav = document.getElementById('mainNav');
+  if (nav) nav.style.display = 'none';
+
+  if (typeof showToast === 'function') showToast('Onboarding remis à zéro. Bienvenue, nouveau client 👋', 'info');
+  // Petit délai pour laisser le toast s'afficher puis retour welcome
+  setTimeout(function(){ try { go('welcome'); } catch(_){} }, 400);
+}
+window._fullResetOnboarding = _fullResetOnboarding;
+
 function toggleTheme(){
   darkMode=!darkMode;
   var theme=darkMode?'dark':'light';
