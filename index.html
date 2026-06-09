@@ -15969,15 +15969,33 @@ function _trkBestOfEssais(method, essais) {
     if (!times.length) return '';
     return 'Meilleur : ' + Math.min.apply(null, times).toFixed(2) + 's (' + times.length + ' essai' + (times.length > 1 ? 's' : '') + ')';
   }
+  // Pour les méthodes orientées "reps" (charge × reps et reps seuls), on
+  // ajoute le CUMUL des reps sur toute la séance + le nombre de séries.
+  // Demandé par l'utilisateur : "C'est important de savoir la meilleure rep
+  // mais aussi le cumul des reps par séance."
   if (method === 'charge') {
     var b = essais[0]; var bl = essais[0].load || 0;
     essais.forEach(function(e){ if ((e.load || 0) > bl) { b = e; bl = e.load; } });
-    return 'Meilleur : ' + (b.load || '—') + 'kg × ' + (b.reps || '—') + ' reps';
+    var allReps = essais.map(function(e){ return e.reps; }).filter(function(r){ return !isNaN(r) && r > 0; });
+    var totalReps = allReps.reduce(function(a, n){ return a + n; }, 0);
+    var sets = allReps.length;
+    var line = 'Meilleur : ' + (b.load || '—') + 'kg × ' + (b.reps || '—') + ' reps';
+    if (sets > 1 && totalReps > 0) {
+      line += ' · Total : ' + totalReps + ' reps (' + sets + ' séries)';
+    }
+    return line;
   }
   if (method === 'hauteur') {
     var hs = essais.map(function(e){ return e.height; }).filter(function(h){ return !isNaN(h); });
     if (!hs.length) return '';
-    return 'Meilleur : ' + Math.max.apply(null, hs) + 'cm';
+    var hLine = 'Meilleur : ' + Math.max.apply(null, hs) + 'cm';
+    // Pour Hauteur × Reps : on ajoute aussi le cumul reps si dispo.
+    var hReps = essais.map(function(e){ return e.reps; }).filter(function(r){ return !isNaN(r) && r > 0; });
+    var hTot = hReps.reduce(function(a, n){ return a + n; }, 0);
+    if (hReps.length > 1 && hTot > 0) {
+      hLine += ' · Total : ' + hTot + ' reps (' + hReps.length + ' séries)';
+    }
+    return hLine;
   }
   if (method === 'distance') {
     var ds = essais.map(function(e){ return e.distance; }).filter(function(d){ return !isNaN(d); });
@@ -15985,9 +16003,14 @@ function _trkBestOfEssais(method, essais) {
     return 'Meilleur : ' + Math.max.apply(null, ds) + 'm';
   }
   if (method === 'reps') {
-    var rs = essais.map(function(e){ return e.reps; }).filter(function(r){ return !isNaN(r); });
+    var rs = essais.map(function(e){ return e.reps; }).filter(function(r){ return !isNaN(r) && r > 0; });
     if (!rs.length) return '';
-    return 'Meilleur : ' + Math.max.apply(null, rs) + ' reps';
+    var rLine = 'Meilleur : ' + Math.max.apply(null, rs) + ' reps';
+    var rTot = rs.reduce(function(a, n){ return a + n; }, 0);
+    if (rs.length > 1) {
+      rLine += ' · Total : ' + rTot + ' reps (' + rs.length + ' séries)';
+    }
+    return rLine;
   }
   return '';
 }
