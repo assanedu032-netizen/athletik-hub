@@ -13768,12 +13768,13 @@ function renderUserData() {
   var inDiscovery = (dStep < 4) && !programAttributed;
 
   // ── Profil 3 étapes Tinder (Programme · Nutrition · Tests) ──
-  // Chaque étape a son critère de complétion explicite. Sert à :
-  //   1. Rendre la barre Tinder visuellement (segments gold/blanc)
-  //   2. Calculer si on doit afficher "LANCER LA SÉANCE" ou "COMPLÉTER MON PROFIL"
-  var step1Done = !!(profile.programKey && profile.program && profile.prenom);
+  // CRITIQUE : ces checks doivent matcher EXACTEMENT _isOnboardingComplete()
+  // (cf. _nextOnboardingScreen + launchTodaySession). Sinon le label dit
+  // "LANCER LA SÉANCE" mais le tap reroute vers l'étape manquante → user a
+  // l'impression d'un bug de retour arrière. Source de vérité unique.
+  var step1Done = !!(profile.prenom && profile.age && profile.sexe && profile.programKey);
   var step2Done = !!(profile.objNutri && profile.poids && profile.taille);
-  var step3Done = !!(profile.satDone || profile.satSelf);
+  var step3Done = !!profile.satDone;
   var stepsDone = (step1Done ? 1 : 0) + (step2Done ? 1 : 0) + (step3Done ? 1 : 0);
   var onboardingFullyDone = (stepsDone === 3);
 
