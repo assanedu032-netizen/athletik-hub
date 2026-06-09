@@ -6500,51 +6500,9 @@ window.tiResetOnEnter = function(){ window.tiShowStep(1); };
       <div id="activeHabitsHome"></div>
     </div>
 
-    <!-- ACCÈS RAPIDES — refonte plus légère (avant : grille navy plein écran
-         qui doublait la bottom nav). Maintenant cartes compactes blanches
-         avec icône or, label navy, footer rappelant la section. Padding
-         réduit, hauteurs harmonisées. -->
-    <div style="padding:16px 16px 20px;background:var(--ah-bg)">
-      <div style="font-size:10px;font-weight:700;letter-spacing:.18em;color:var(--ah-muted);text-transform:uppercase;margin-bottom:10px">Accès rapides</div>
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
-        <div onclick="switchTab('tracks')" style="background:var(--ah-surface);border:1px solid var(--ah-border);border-radius:12px;padding:13px;cursor:pointer;touch-action:manipulation;display:flex;align-items:center;gap:10px" ontouchstart="">
-          <div style="width:34px;height:34px;border-radius:10px;background:rgba(197,164,78,.10);display:flex;align-items:center;justify-content:center;flex-shrink:0">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--ah-gold)" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
-          </div>
-          <div style="flex:1;min-width:0">
-            <div style="font-family:'Outfit',sans-serif;font-size:12.5px;font-weight:700;color:var(--ah-navy);line-height:1.1">SAT</div>
-            <div style="font-size:10.5px;color:var(--ah-muted);margin-top:2px">Mon score</div>
-          </div>
-        </div>
-        <div onclick="switchTab('chat')" style="background:var(--ah-surface);border:1px solid var(--ah-border);border-radius:12px;padding:13px;cursor:pointer;touch-action:manipulation;display:flex;align-items:center;gap:10px" ontouchstart="">
-          <div style="width:34px;height:34px;border-radius:10px;background:rgba(197,164,78,.10);display:flex;align-items:center;justify-content:center;flex-shrink:0">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--ah-gold)" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
-          </div>
-          <div style="flex:1;min-width:0">
-            <div style="font-family:'Outfit',sans-serif;font-size:12.5px;font-weight:700;color:var(--ah-navy);line-height:1.1">Titan</div>
-            <div style="font-size:10.5px;color:var(--ah-muted);margin-top:2px">Poser une question</div>
-          </div>
-        </div>
-        <div onclick="switchTab('train')" style="background:var(--ah-surface);border:1px solid var(--ah-border);border-radius:12px;padding:13px;cursor:pointer;touch-action:manipulation;display:flex;align-items:center;gap:10px" ontouchstart="">
-          <div style="width:34px;height:34px;border-radius:10px;background:rgba(197,164,78,.10);display:flex;align-items:center;justify-content:center;flex-shrink:0">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--ah-gold)" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
-          </div>
-          <div style="flex:1;min-width:0">
-            <div style="font-family:'Outfit',sans-serif;font-size:12.5px;font-weight:700;color:var(--ah-navy);line-height:1.1">Vidéos</div>
-            <div style="font-size:10.5px;color:var(--ah-muted);margin-top:2px">Librairie</div>
-          </div>
-        </div>
-        <div onclick="switchTab('nutrition')" style="background:var(--ah-surface);border:1px solid var(--ah-border);border-radius:12px;padding:13px;cursor:pointer;touch-action:manipulation;display:flex;align-items:center;gap:10px" ontouchstart="">
-          <div style="width:34px;height:34px;border-radius:10px;background:rgba(197,164,78,.10);display:flex;align-items:center;justify-content:center;flex-shrink:0">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--ah-gold)" stroke-width="2"><path d="M12 2a7 7 0 0 1 7 7c0 4-3 7-7 9-4-2-7-5-7-9a7 7 0 0 1 7-7z"/><path d="M12 6v6M9 9h6"/></svg>
-          </div>
-          <div style="flex:1;min-width:0">
-            <div style="font-family:'Outfit',sans-serif;font-size:12.5px;font-weight:700;color:var(--ah-navy);line-height:1.1">Nutrition</div>
-            <div style="font-size:10.5px;color:var(--ah-muted);margin-top:2px">Journal du jour</div>
-          </div>
-        </div>
-      </div>
-    </div>
+    <!-- Section "Accès rapides" supprimée — SAT/Titan/Vidéos/Nutrition sont
+         déjà accessibles directement depuis la bottom nav (Suivi/Titan/
+         Train/Nutri). Duplication = bruit visuel pour rien. -->
 
     <!-- Spacer : padding-bottom pour que la bottom nav ne cache jamais la
          dernière carte (hauteur de la nav + safe area iPhone). -->
