@@ -8588,6 +8588,51 @@ function _applyRecipeServings() {
   if ($('rmCarbs')) $('rmCarbs').textContent = fmt(r.carbs) + 'g';
   if ($('rmFat')) $('rmFat').textContent = fmt(r.fat) + 'g';
   if ($('rmServingsVal')) $('rmServingsVal').textContent = curr;
+
+  // ── Mise à jour des quantités d'ingrédients ──
+  // Bug remonté : "Quand je change la portion ça change mais pas au niveau de
+  // la quantité des ingrédient". On parcourt chaque .rm-ingr-qty et on scale
+  // le nombre en début de chaîne en gardant l'unité (g, ml, cm, c.à.c,
+  // pincée, etc.) et la séparation (collée comme "200g" ou avec espace
+  // comme "1 c.à.c") intactes. Les fractions "1/2" sont supportées.
+  var qtyEls = document.querySelectorAll('#rmIngredients .rm-ingr-qty');
+  if (qtyEls.length && Array.isArray(r.ingredients) && r.ingredients.length) {
+    qtyEls.forEach(function(el, i) {
+      var src = r.ingredients[i];
+      if (!src || src.qty == null) return;
+      el.textContent = _scaleIngredientQty(String(src.qty), mult);
+    });
+  }
+}
+
+// Parse "200g", "100ml", "1 c.à.c", "1/2", "2cm" → multiplie le nombre de
+// tête et restitue la chaîne avec son unité collée/séparée intacte.
+function _scaleIngredientQty(qtyStr, mult) {
+  if (!qtyStr || mult === 1) return qtyStr;
+  var m = String(qtyStr).match(/^(\s*)(\d+(?:[.,]\d+)?(?:\s*\/\s*\d+)?)(.*)$/);
+  if (!m) return qtyStr; // ex. "selon goût", "qsp" — on ne touche pas
+  var leading = m[1];
+  var numStr  = m[2].replace(',', '.');
+  var rest    = m[3];
+  var n;
+  if (numStr.indexOf('/') > -1) {
+    var parts = numStr.split('/').map(function(s){ return parseFloat(s.trim()); });
+    if (!parts[1]) return qtyStr;
+    n = parts[0] / parts[1];
+  } else {
+    n = parseFloat(numStr);
+  }
+  if (!isFinite(n)) return qtyStr;
+  var scaled = n * mult;
+  // Format : entier si entier, sinon 1 décimale (ex 1.5, 0.5).
+  // Évite "0.0g" en repassant à 1 si scaled < 0.5.
+  var formatted;
+  if (Math.abs(scaled - Math.round(scaled)) < 0.01) {
+    formatted = String(Math.round(scaled));
+  } else {
+    formatted = scaled.toFixed(1).replace(/\.0$/, '');
+  }
+  return leading + formatted + rest;
 }
 function adjustRecipeServings(delta) {
   var curr = window._currentRecipeServings || 1;
