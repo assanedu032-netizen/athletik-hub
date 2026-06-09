@@ -4796,7 +4796,7 @@ window.tiResetOnEnter = function(){ window.tiShowStep(1); };
     </div>
 
     <!-- CTA continuer + bulle Titan en bas -->
-    <button class="ah-q1-cta" onclick="window.TEST_MODE ? go('profil1') : go('auth')" style="margin-top:18px;width:100%;padding:15px;background:var(--ah-surface2);color:var(--ah-muted);border:1px solid var(--ah-border);border-radius:12px;font-family:'Bebas Neue',sans-serif;font-size:14px;letter-spacing:.12em;cursor:pointer">CHOISIS POUR CONTINUER</button>
+    <button class="ah-q1-cta" onclick="window._obQ1Continue && window._obQ1Continue()" style="margin-top:18px;width:100%;padding:15px;background:var(--ah-surface2);color:var(--ah-muted);border:1px solid var(--ah-border);border-radius:12px;font-family:'Bebas Neue',sans-serif;font-size:14px;letter-spacing:.12em;cursor:pointer">CHOISIS POUR CONTINUER</button>
 
     <div style="display:flex;align-items:flex-start;gap:10px;margin-top:14px;padding:0 2px">
       <div style="width:32px;height:32px;border-radius:50%;border:1.5px solid var(--ah-gold);overflow:hidden;flex-shrink:0;background:var(--ah-navy-deep);display:flex;align-items:center;justify-content:center">
@@ -23958,6 +23958,22 @@ function _inferOnboardingResumeScreen() {
   } catch(e) { return null; }
 }
 
+// Continue button du obQ1 : si l'user est déjà connecté (cas standard
+// avec le nouveau flow welcome → auth → titanIntro → obQ1), on enchaîne
+// sur profil1. Sinon (legacy / TEST_MODE / cas exotiques), on l'envoie
+// sur auth.
+window._obQ1Continue = function() {
+  if (window.fbUser || window.TEST_MODE) {
+    go('profil1');
+  } else {
+    window.authMode = 'signup';
+    go('auth');
+    setTimeout(function(){
+      try { if (typeof _fbApplyAuthMode === 'function') _fbApplyAuthMode('signup'); } catch(_){}
+    }, 0);
+  }
+};
+
 function welcomeStart() {
   // Vérifie un onboarding en cours
   var resumeId = _inferOnboardingResumeScreen();
@@ -23974,11 +23990,26 @@ function welcomeStart() {
       if (typeof obChecks !== 'undefined') { obChecks.sit = []; obChecks.cont = []; obChecks.mat = []; }
     } catch(e) {}
   }
-  // Nouveau visiteur (ou reset) : on commence le parcours d'onboarding
-  go('titanIntro');
-  setTimeout(function() {
-    try { animateTitanText(); } catch(e) { console.warn(e); }
-  }, 400);
+  // Cas spécial : l'user a déjà une session Firebase active (reconnexion
+  // automatique). On lui épargne le re-passage par l'auth et on l'envoie
+  // direct à sa prochaine étape (titanIntro si pas encore d'objectif,
+  // profil1/4/3 si onboarding partiel, ou home si tout est fait).
+  if (window.fbUser && typeof _routeToOnboardingStep === 'function') {
+    var prof = {};
+    try { prof = JSON.parse(localStorage.getItem('ah_profile') || '{}'); } catch(e) {}
+    _routeToOnboardingStep(prof);
+    return;
+  }
+  // Nouveau visiteur : on lui demande de créer son compte AVANT l'onboarding.
+  // Logique : sans compte, rien n'est sauvegardé — autant garantir la
+  // persistance dès le premier engagement. L'onboarding (titanIntro → obQ1
+  // → profil1 → reveal → profil4 → profil3) démarre automatiquement après
+  // signup réussi (cf. fbHandleEmailAuth + _nextOnboardingScreen).
+  window.authMode = 'signup';
+  go('auth');
+  setTimeout(function(){
+    try { if (typeof _fbApplyAuthMode === 'function') _fbApplyAuthMode('signup'); } catch(_){}
+  }, 0);
 }
 
 function welcomeLogin() {
@@ -24458,8 +24489,12 @@ function _nextOnboardingScreen(profile, opts) {
   }
   var isAuthed = opts.isAuthed != null ? opts.isAuthed : !!window.fbUser;
 
-  // 1) Pas d'objectif posé → début du parcours
-  if (!p.objectif) return isAuthed ? 'profil1' : 'welcome';
+  // 1) Pas d'objectif posé :
+  //    - Pas authentifié → welcome (= "EXPLOSE TA DÉTENTE", entry point)
+  //    - Authentifié mais sans objectif → titanIntro (intro Titan 3 steps
+  //      puis obQ1 pour choisir l'objectif). Avant : routait direct sur
+  //      profil1, ce qui sautait l'intro Titan + le choix de l'objectif.
+  if (!p.objectif) return isAuthed ? 'titanIntro' : 'welcome';
 
   // 2) Objectif posé mais pas connecté → écran d'auth
   if (!isAuthed) return 'auth';
@@ -24908,12 +24943,15 @@ function onFirebaseAuthChange(fbUser) {
         var prof = {};
         try { prof = JSON.parse(localStorage.getItem('ah_profile') || '{}'); } catch(e) {}
         _syncOnboardingDoneFlag(prof);
-        // Ne reroute QUE si on est encore sur welcome / auth (boot dans un
-        // état d'attente). Si l'user est déjà sur un écran d'onboarding ou
-        // sur la home, on ne casse pas sa navigation en cours.
+        // Ne reroute QUE si on est encore sur auth / splash (boot dans un
+        // état d'attente avant que l'user ait fait un choix). Si l'user est
+        // sur welcome, on RESPECTE son choix de regarder l'écran d'accueil
+        // (sinon flash quand sa session Firebase se restaure en arrière-plan).
+        // Si l'user est déjà sur un écran d'onboarding ou sur la home, on
+        // ne casse pas sa navigation en cours non plus.
         var current = document.querySelector('.scr.on');
         var curId = current ? current.id : null;
-        if (!current || curId === 'welcome' || curId === 'auth' || curId === 'splash') {
+        if (!current || curId === 'auth' || curId === 'splash') {
           _routeToOnboardingStep(prof);
         }
       } catch(e) { console.warn('Auto-restore Home error:', e); }
