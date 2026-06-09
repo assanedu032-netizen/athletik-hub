@@ -7659,9 +7659,14 @@ window.tiResetOnEnter = function(){ window.tiShowStep(1); };
           <div style="font-size:10px;color:var(--muted);letter-spacing:2px;font-weight:700">AUJOURD’HUI</div>
           <div style="font-family:\'Bebas Neue\',sans-serif;font-size:26px;color:var(--text);letter-spacing:1.5px" id="journalDate"></div>
         </div>
-        <div onclick="journalShowDatePicker()" style="width:36px;height:36px;border-radius:50%;background:var(--surface);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;cursor:pointer">
-          <span style="font-size:16px">📅</span>
-        </div>
+        <!-- Bouton pill discret à droite de la date — ouvre directement
+             le plan repas 7 jours (overlay #mealPlan). Avant : icône
+             📅 cryptique qui menait à un alert "disponible dans la V15"
+             (frustrant). Maintenant : action claire et immédiate. -->
+        <button type="button" onclick="openMealPlan && openMealPlan()" aria-label="Voir le plan 7 jours" style="display:inline-flex;align-items:center;gap:6px;padding:7px 12px;border-radius:999px;background:rgba(197,164,78,.10);border:1px solid rgba(197,164,78,.40);color:var(--gold);font-family:'Outfit',sans-serif;font-size:12px;font-weight:700;cursor:pointer;letter-spacing:.02em;-webkit-tap-highlight-color:transparent;line-height:1">
+          <span style="font-size:13px;line-height:1">📅</span>
+          <span>Plan 7 jours</span>
+        </button>
       </div>
 
       <!-- Photos repas du jour -->
@@ -29524,9 +29529,13 @@ function renderJournalToday() {
   }
 }
 
+// Sélecteur de date Nutri — bouton "Plan 7 jours" est maintenant câblé
+// directement sur openMealPlan() côté markup. Cette fonction reste pour
+// compat avec d'éventuels appels legacy : ouvre le plan repas.
 function journalShowDatePicker() {
-  alert('Sélection de date — disponible dans la V15.');
+  try { if (typeof openMealPlan === 'function') openMealPlan(); } catch(_){}
 }
+window.journalShowDatePicker = journalShowDatePicker;
 
 // ═══════════════════════════════════════════════
 // SCAN BARCODE — Open Food Facts API
