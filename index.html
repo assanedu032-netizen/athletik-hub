@@ -23990,21 +23990,25 @@ function welcomeStart() {
       if (typeof obChecks !== 'undefined') { obChecks.sit = []; obChecks.cont = []; obChecks.mat = []; }
     } catch(e) {}
   }
-  // Cas spécial : l'user a déjà une session Firebase active (reconnexion
-  // automatique). On lui épargne le re-passage par l'auth et on l'envoie
-  // direct à sa prochaine étape (titanIntro si pas encore d'objectif,
-  // profil1/4/3 si onboarding partiel, ou home si tout est fait).
-  if (window.fbUser && typeof _routeToOnboardingStep === 'function') {
-    var prof = {};
-    try { prof = JSON.parse(localStorage.getItem('ah_profile') || '{}'); } catch(e) {}
-    _routeToOnboardingStep(prof);
+  // Marque l'intention : visiteur qui veut faire l'onboarding complet.
+  // Le post-auth handler (fbHandleEmailAuth) utilise ce flag pour FORCER
+  // le démarrage par titanIntro après signup, au lieu d'auto-router via
+  // _routeToOnboardingStep (qui sauterait obQ1 si l'objectif est déjà
+  // posé en localStorage par un test précédent).
+  window._authIntent = 'new';
+
+  // Cas 1 : user déjà connecté (session Firebase active) → skip l'auth
+  // et démarre direct par l'intro Titan (puis obQ1 → onboarding complet).
+  // On NE route PAS via _routeToOnboardingStep ici : l'user a explicitement
+  // cliqué "COMMENCER MON ASCENSION", il veut FAIRE l'onboarding, pas
+  // qu'on le saute parce qu'il a des données stale en localStorage.
+  if (window.fbUser) {
+    go('titanIntro');
+    setTimeout(function(){ try { animateTitanText(); } catch(e) {} }, 400);
     return;
   }
-  // Nouveau visiteur : on lui demande de créer son compte AVANT l'onboarding.
-  // Logique : sans compte, rien n'est sauvegardé — autant garantir la
-  // persistance dès le premier engagement. L'onboarding (titanIntro → obQ1
-  // → profil1 → reveal → profil4 → profil3) démarre automatiquement après
-  // signup réussi (cf. fbHandleEmailAuth + _nextOnboardingScreen).
+  // Cas 2 : pas de session → auth signup. Après succès, fbHandleEmailAuth
+  // route vers titanIntro (cf. _authIntent === 'new').
   window.authMode = 'signup';
   go('auth');
   setTimeout(function(){
@@ -24013,7 +24017,10 @@ function welcomeStart() {
 }
 
 function welcomeLogin() {
-  // Visiteur de retour : on l'envoie directement à l'écran Auth en mode "Sign in"
+  // Visiteur de retour : on l'envoie directement à l'écran Auth en mode "Sign in".
+  // Le flag _authIntent='returning' fait que le post-auth handler route via
+  // _routeToOnboardingStep (qui va à home si l'onboarding est déjà complet).
+  window._authIntent = 'returning';
   go('auth');
   setTimeout(function(){ if (typeof _fbApplyAuthMode === 'function') _fbApplyAuthMode('signin'); }, 150);
 }
@@ -24575,13 +24582,19 @@ async function fbHandleEmailAuth() {
       await fbMigrateLocalToFirestore(cred.user);
       fbShowMsg('Compte créé. Vérifie ton email pour activer ton compte.', 'ok');
       setTimeout(function(){
-        // Roadmap v4 : après signup, on enchaîne profil1 → profil4 → profil3
-        // → thinking → result → home. _nextOnboardingScreen calcule la
-        // prochaine étape selon les données déjà saisies (typiquement
-        // 'profil1' juste après signup classique post-obQ1).
         var prof = {};
         try { prof = JSON.parse(localStorage.getItem('ah_profile') || '{}'); } catch(e) {}
         _syncOnboardingDoneFlag(prof);
+        // Si l'user vient de "COMMENCER MON ASCENSION" (intent 'new'),
+        // on FORCE le démarrage par titanIntro → obQ1 (objectif principal)
+        // → profil1 → ... peu importe l'état du localStorage. Sinon, il
+        // sauterait obQ1 si un objectif y était déjà posé par un test
+        // précédent, et "la création du programme arriverait trop vite".
+        if (window._authIntent === 'new') {
+          go('titanIntro');
+          setTimeout(function(){ try { animateTitanText(); } catch(e) {} }, 400);
+          return;
+        }
         _routeToOnboardingStep(prof);
       }, 1200);
     } else {
@@ -24623,11 +24636,16 @@ async function fbGoogleSignIn() {
       await fbMigrateLocalToFirestore(cred.user);
       fbShowMsg('Compte Google créé. Bienvenue.', 'ok');
       setTimeout(function(){
-        // Roadmap v4 — après signup Google (nouveau compte), continue le
-        // parcours profil1 → profil4 → profil3 → thinking → result → home.
         var prof = {};
         try { prof = JSON.parse(localStorage.getItem('ah_profile') || '{}'); } catch(e) {}
         _syncOnboardingDoneFlag(prof);
+        // Nouveau compte Google : si intent 'new' (clic COMMENCER MON ASCENSION),
+        // FORCE titanIntro → obQ1 → onboarding. Sinon route normal.
+        if (window._authIntent === 'new') {
+          go('titanIntro');
+          setTimeout(function(){ try { animateTitanText(); } catch(e) {} }, 400);
+          return;
+        }
         _routeToOnboardingStep(prof);
       }, 800);
     } else {
