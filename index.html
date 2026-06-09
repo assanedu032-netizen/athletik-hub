@@ -3461,7 +3461,7 @@ html body #result, html body #nutriResult{
 #profil4 .p4-title-wrap{ margin-bottom:18px }
 #profil4 .p4-title{
   font-family:'Bebas Neue',sans-serif;
-  font-size:30px; line-height:1.05; letter-spacing:.02em;
+  font-size:24px; line-height:1.1; letter-spacing:.02em;
   color:var(--ah-navy); margin:0 0 8px; font-weight:700;
 }
 #profil4 .p4-subtitle{
@@ -3513,8 +3513,10 @@ html body #result, html body #nutriResult{
 #profil4 .p4-obj-card{
   display:flex; align-items:center; gap:14px;
   width:100%; padding:14px 16px;
+  min-height:88px; /* Harmonise la hauteur des 3 cartes — l'une avait
+                      2 lignes de sub, l'autre 3, créant un effet bancal. */
   background:var(--ah-surface);
-  border:1.5px solid var(--ah-border);
+  border:1px solid var(--ah-border);
   border-radius:14px; cursor:pointer; text-align:left;
   transition:border-color .15s, background .15s, transform .12s, box-shadow .15s;
   font-family:inherit; -webkit-tap-highlight-color:transparent;
@@ -3540,18 +3542,19 @@ html body #result, html body #nutriResult{
   color:var(--ah-text2); line-height:1.4;
 }
 #profil4 .p4-obj-check{
-  width:24px; height:24px; flex-shrink:0;
+  width:22px; height:22px; flex-shrink:0;
   border-radius:50%; background:transparent;
-  border:1.5px solid var(--ah-border2);
+  border:1px solid var(--ah-border); /* + discret au repos */
   display:flex; align-items:center; justify-content:center;
   color:transparent; transition:all .15s;
 }
-#profil4 .p4-obj-check svg{ width:14px; height:14px }
+#profil4 .p4-obj-check svg{ width:13px; height:13px }
 #profil4 .p4-obj-card.on,
 #profil4 .p4-obj-card.sel{
-  background:rgba(197,164,78,.06);
+  background:rgba(197,164,78,.05);
   border-color:var(--ah-gold);
-  box-shadow:0 4px 14px rgba(197,164,78,.12);
+  border-width:1px; /* finesse — pas de saut de 1px → 2px qui shift l'UI */
+  box-shadow:0 0 0 1px var(--ah-gold), 0 4px 14px rgba(197,164,78,.10);
 }
 #profil4 .p4-obj-card.on .p4-obj-ico,
 #profil4 .p4-obj-card.sel .p4-obj-ico{
@@ -3675,6 +3678,7 @@ html body #result, html body #nutriResult{
 #profil4 .p4-cta{
   display:block; width:100%;
   padding:15px 18px;
+  margin-bottom:calc(20px + env(safe-area-inset-bottom, 0px));
   border:0; border-radius:13px;
   background:var(--ah-surface2);
   color:var(--ah-muted);
@@ -4232,20 +4236,58 @@ html body #result, html body #nutriResult{
    ═══════════════════════════════════════════════════════════════════════════ */
 #pgBuilder, #pgBuilder *{box-sizing:border-box}
 
-/* Petit label "Objectif de la séance" injecté par CSS avant le bloc convo */
-#pgBuilder #builderUnlocked::before{
-  content:'OBJECTIF DE LA SÉANCE';
-  display:block;
-  font-family:'JetBrains Mono','Outfit',sans-serif;
-  font-size:10px;letter-spacing:.18em;
-  color:rgba(20,30,60,.5);
-  font-weight:700;
-  padding:14px 18px 4px;
-}
-/* Quand on est sur l'écran INTRO, on cache le label "OBJECTIF DE LA SÉANCE"
-   et le bouton ⭐ favoris en haut (le bouton est intégré à la carte intro). */
-#pgBuilder #builderUnlocked.bld-state-intro::before{ display:none; }
+/* Plus de label CSS::before "OBJECTIF DE LA SÉANCE" — remplacé par un
+   vrai header (titre + sous-texte) dans le markup, plus clair. */
 #pgBuilder #builderUnlocked.bld-state-intro #builderFavTriggerRow{ display:none !important; }
+#pgBuilder #builderUnlocked.bld-state-intro #builderHero{ display:none !important; }
+
+/* ── HERO Builder — header propre au-dessus de la conversation ── */
+#pgBuilder #builderHero{
+  padding:18px 18px 12px;
+  display:flex; align-items:flex-start; justify-content:space-between; gap:12px;
+}
+#pgBuilder #builderHero .bld-hero-text{ flex:1; min-width:0 }
+#pgBuilder #builderHero .bld-hero-eyebrow{
+  font-family:'JetBrains Mono','Outfit',sans-serif;
+  font-size:10px; letter-spacing:.22em; font-weight:700;
+  color:var(--ah-gold); text-transform:uppercase; margin-bottom:6px;
+}
+#pgBuilder #builderHero .bld-hero-title{
+  font-family:'Bebas Neue',sans-serif;
+  font-size:26px; line-height:1; letter-spacing:.02em;
+  color:var(--ah-navy); margin:0 0 4px; font-weight:700;
+}
+#pgBuilder #builderHero .bld-hero-sub{
+  font-family:'Outfit',sans-serif; font-size:12.5px; line-height:1.45;
+  color:var(--ah-text2); margin:0;
+}
+#pgBuilder #builderHero .bld-hero-fav{
+  flex-shrink:0;
+  display:inline-flex; align-items:center; gap:5px;
+  padding:7px 11px; border-radius:999px;
+  background:transparent; border:1px solid rgba(197,164,78,.35);
+  color:var(--ah-gold); cursor:pointer;
+  font-family:'Outfit',sans-serif; font-size:11px; font-weight:700;
+  letter-spacing:.04em; -webkit-tap-highlight-color:transparent;
+  transition:background .15s, border-color .15s;
+}
+#pgBuilder #builderHero .bld-hero-fav:hover{
+  background:rgba(197,164,78,.06); border-color:var(--ah-gold);
+}
+/* Reset discret en bas de la conversation */
+#pgBuilder .bld-reset-icon{
+  display:inline-flex; align-items:center; gap:6px;
+  padding:8px 14px; border-radius:999px;
+  background:transparent; border:1px solid var(--ah-border);
+  color:var(--ah-muted); cursor:pointer;
+  font-family:'Outfit',sans-serif; font-size:11px; font-weight:700;
+  letter-spacing:.04em; -webkit-tap-highlight-color:transparent;
+  transition:color .15s, border-color .15s, background .15s;
+}
+#pgBuilder .bld-reset-icon:hover{
+  color:var(--ah-text2); border-color:var(--ah-border2);
+  background:var(--ah-surface);
+}
 
 /* ── INTRO BUILDER : petit parcours d'entrée propre ── */
 #pgBuilder .bld-intro{
@@ -5971,49 +6013,54 @@ window.tiResetOnEnter = function(){ window.tiShowStep(1); };
       <span style="font-size:11px;font-weight:700;color:#22C55E;letter-spacing:1.5px">PROFIL COMPLET</span>
     </div>
 
-    <!-- Prénom -->
-    <div style="font-family:'Bebas Neue',sans-serif;font-size:42px;letter-spacing:3px;color:var(--text);line-height:1;margin-bottom:8px" id="planPrenom">ATHLÈTE</div>
+    <!-- Prénom — réduit de 42→32px (avant : écrasait visuellement le total
+         kcal qui doit rester la donnée principale) -->
+    <div style="font-family:'Bebas Neue',sans-serif;font-size:32px;letter-spacing:.16em;color:var(--text);line-height:1;margin-bottom:6px" id="planPrenom">ATHLÈTE</div>
 
     <!-- Titre -->
-    <div style="font-family:'Bebas Neue',sans-serif;font-size:26px;letter-spacing:2px;color:var(--gold);margin-bottom:36px">TON PLAN EST PRÊT</div>
+    <div style="font-family:'Bebas Neue',sans-serif;font-size:22px;letter-spacing:.12em;color:var(--gold);margin-bottom:30px">TON PLAN EST PRÊT</div>
 
-    <!-- Kcal hero -->
-    <div style="margin-bottom:36px">
-      <div style="display:flex;align-items:baseline;justify-content:center;gap:8px">
-        <div style="font-family:'Bebas Neue',sans-serif;font-size:88px;color:var(--gold);line-height:1" id="planKcal">3500</div>
-        <div style="font-size:18px;color:var(--muted);font-weight:600">kcal/jour</div>
+    <!-- Kcal hero — meilleur alignement entre "3227" et "kcal/jour"
+         (baseline + petit gap, font-weight 600 → 700 sur l'unité pour
+         qu'elle paraisse plus intégrée). -->
+    <div style="margin-bottom:30px">
+      <div style="display:flex;align-items:baseline;justify-content:center;gap:6px">
+        <div style="font-family:'Bebas Neue',sans-serif;font-size:84px;color:var(--gold);line-height:1;letter-spacing:.01em" id="planKcal">3500</div>
+        <div style="font-size:16px;color:var(--ah-text2);font-weight:700;letter-spacing:.02em">kcal<span style="opacity:.6">/jour</span></div>
       </div>
-      <div style="font-size:12px;color:var(--muted);margin-top:8px;letter-spacing:1px" id="planObjLabel">OPTIMISATION</div>
+      <div style="font-size:11px;color:var(--ah-muted);margin-top:10px;letter-spacing:.18em;font-weight:700" id="planObjLabel">OPTIMISATION</div>
     </div>
 
-    <!-- Macros breakdown -->
-    <div style="background:var(--surface);border:1.5px solid var(--border);border-radius:14px;padding:16px;margin-bottom:24px;text-align:left">
-      <div style="font-size:10px;font-weight:700;color:var(--muted);letter-spacing:1.5px;margin-bottom:12px">RÉPARTITION MACROS</div>
-      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px">
-        <div style="text-align:center;padding:11px;background:rgba(34,197,94,.06);border-radius:10px">
-          <div style="font-family:'Bebas Neue',sans-serif;font-size:24px;color:#22C55E;line-height:1" id="planProt">—</div>
-          <div style="font-size:10px;color:var(--muted);letter-spacing:.5px;margin-top:3px">PROTÉINES</div>
+    <!-- Macros breakdown — labels plus lisibles (11px > 10px), espacements
+         harmonisés, fonds pastels légèrement renforcés. -->
+    <div style="background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:16px 14px;margin-bottom:22px;text-align:left">
+      <div style="font-size:10px;font-weight:700;color:var(--ah-muted);letter-spacing:.18em;margin-bottom:12px">RÉPARTITION MACROS</div>
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px">
+        <div style="text-align:center;padding:12px 8px;background:rgba(34,197,94,.10);border-radius:10px">
+          <div style="font-family:'Bebas Neue',sans-serif;font-size:22px;color:#22C55E;line-height:1" id="planProt">—</div>
+          <div style="font-size:11px;color:var(--ah-text2);letter-spacing:.08em;margin-top:6px;font-weight:700">PROTÉINES</div>
         </div>
-        <div style="text-align:center;padding:11px;background:rgba(91,156,246,.06);border-radius:10px">
-          <div style="font-family:'Bebas Neue',sans-serif;font-size:24px;color:#5B9CF6;line-height:1" id="planGluc">—</div>
-          <div style="font-size:10px;color:var(--muted);letter-spacing:.5px;margin-top:3px">GLUCIDES</div>
+        <div style="text-align:center;padding:12px 8px;background:rgba(91,156,246,.10);border-radius:10px">
+          <div style="font-family:'Bebas Neue',sans-serif;font-size:22px;color:#5B9CF6;line-height:1" id="planGluc">—</div>
+          <div style="font-size:11px;color:var(--ah-text2);letter-spacing:.08em;margin-top:6px;font-weight:700">GLUCIDES</div>
         </div>
-        <div style="text-align:center;padding:11px;background:rgba(245,158,11,.06);border-radius:10px">
-          <div style="font-family:'Bebas Neue',sans-serif;font-size:24px;color:#F59E0B;line-height:1" id="planLip">—</div>
-          <div style="font-size:10px;color:var(--muted);letter-spacing:.5px;margin-top:3px">LIPIDES</div>
+        <div style="text-align:center;padding:12px 8px;background:rgba(245,158,11,.10);border-radius:10px">
+          <div style="font-family:'Bebas Neue',sans-serif;font-size:22px;color:#F59E0B;line-height:1" id="planLip">—</div>
+          <div style="font-size:11px;color:var(--ah-text2);letter-spacing:.08em;margin-top:6px;font-weight:700">LIPIDES</div>
         </div>
       </div>
     </div>
 
-    <!-- Message Titan -->
-    <div class="titan-msg" style="margin-bottom:24px;text-align:left">
-      <div class="titan-avatar">T</div>
+    <!-- Message Titan — avatar compact 32px (avant : trop dominant),
+         mieux centré verticalement avec le texte. -->
+    <div class="titan-msg" style="margin-bottom:22px;text-align:left;align-items:flex-start">
+      <div class="titan-avatar" style="width:32px;height:32px;font-size:14px">T</div>
       <div class="titan-bubble" id="planTitanMsg">Voilà ton carburant quotidien. Maintenant on bosse.</div>
     </div>
 
     <!-- Boutons -->
-    <button onclick="obFinish()" style="width:100%;padding:16px;background:linear-gradient(135deg,var(--gold),#D4B86A);border:none;border-radius:12px;font-family:'Outfit',sans-serif;font-size:15px;font-weight:800;color:var(--navy);cursor:pointer;margin-bottom:10px">Accéder à l'onglet nutrition 🥗</button>
-    <button onclick="go('profil4');setTimeout(initProfil4,100)" style="width:100%;padding:13px;background:none;border:1.5px dashed var(--border2);border-radius:12px;font-family:'Outfit',sans-serif;font-size:13px;font-weight:600;color:var(--muted);cursor:pointer">← Modifier mes infos</button>
+    <button onclick="obFinish()" style="width:100%;padding:16px;background:linear-gradient(135deg,var(--gold),#D4B86A);border:none;border-radius:12px;font-family:'Outfit',sans-serif;font-size:15px;font-weight:800;color:var(--navy);cursor:pointer;margin-bottom:10px;box-shadow:0 6px 18px rgba(197,164,78,.28)">Voir mon plan nutrition</button>
+    <button onclick="go('profil4');setTimeout(initProfil4,100)" style="width:100%;padding:13px;background:none;border:1px solid var(--border2);border-radius:12px;font-family:'Outfit',sans-serif;font-size:13px;font-weight:700;color:var(--ah-text2);cursor:pointer">← Modifier mes infos</button>
 
   </div>
 </div>
@@ -6878,10 +6925,19 @@ window.tiResetOnEnter = function(){ window.tiShowStep(1); };
       <button class="bld-intro-fav" onclick="window._builderOpenFavs()" aria-label="Voir mes séances favorites">⭐ Mes séances favorites</button>
     </div>
 
-    <!-- Bouton "Mes favoris" : accès rapide aux séances sauvegardées -->
-    <div id="builderFavTriggerRow" style="padding:12px 18px 0;display:flex;justify-content:flex-end">
-      <button class="bld-fav-trigger" onclick="window._builderOpenFavs()" aria-label="Voir mes séances favorites">⭐ Mes séances favorites</button>
+    <!-- Hero — titre principal + sous-texte + lien favoris discret.
+         Remplace l'ancien label CSS::before "OBJECTIF DE LA SÉANCE"
+         qui était peu clair. -->
+    <div id="builderHero">
+      <div class="bld-hero-text">
+        <div class="bld-hero-eyebrow">WORKOUT BUILDER</div>
+        <h2 class="bld-hero-title">Construis ta séance</h2>
+        <p class="bld-hero-sub">Choisis un objectif, Titan te propose une séance adaptée.</p>
+      </div>
+      <button class="bld-hero-fav" onclick="window._builderOpenFavs()" aria-label="Mes séances favorites">★ Favorites</button>
     </div>
+    <!-- Ancienne row favoris : gardée cachée pour compat CSS legacy. -->
+    <div id="builderFavTriggerRow" style="display:none"></div>
 
     <!-- CONVERSATION (Titan pose les questions, l'athlète répond à la voix ou au tap) -->
     <div id="builderConvoWrap" style="display:flex;flex-direction:column">
@@ -6905,10 +6961,14 @@ window.tiResetOnEnter = function(){ window.tiShowStep(1); };
         </div>
       </div>
 
-      <!-- Actions secondaires -->
-      <div style="display:flex;gap:8px;padding:2px 18px 22px">
-        <button onclick="_bFreeMode()" id="builderFreeBtn" class="bld-free-btn" style="flex:1;padding:10px;background:var(--surface);border:1px solid var(--border);border-radius:10px;color:var(--gold);font-size:12px;font-weight:700;cursor:pointer">🎙️ Parler à Titan</button>
-        <button onclick="_builderStartConvo()" class="bld-reset-btn" aria-label="Recommencer" title="Recommencer" style="flex-shrink:0;padding:10px 14px;background:var(--surface);border:1px solid var(--border);border-radius:10px;color:var(--muted);font-size:12px;font-weight:700;cursor:pointer">↺</button>
+      <!-- Action secondaire : reset discret (icône seule). L'ancien gros
+           bouton "Parler à Titan" a été retiré — le mic dans la barre de
+           saisie au-dessus fait déjà le job, plus clair. -->
+      <div style="display:flex;justify-content:center;padding:2px 18px 22px">
+        <button onclick="_builderStartConvo()" id="builderFreeBtn" class="bld-reset-icon" aria-label="Recommencer la conversation" title="Recommencer">
+          <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5"/></svg>
+          <span>Recommencer</span>
+        </button>
       </div>
     </div>
 
@@ -13039,6 +13099,18 @@ function go(id) {
 
   // Trigger thinking → result
   // thinking handled by startThinking()
+
+  // Init des écrans d'onboarding quand on y arrive via go() (pas seulement
+  // via discoveryGoTo). Avant : navigation directe vers profil3 affichait
+  // la page sans le step container des tests SAT, ce qui était incompréhensible.
+  if (id === 'profil1' && typeof initProfil1 === 'function') {
+    try { initProfil1(); } catch(e) { console.warn('initProfil1 error:', e); }
+  } else if (id === 'profil4' && typeof initProfil4 === 'function') {
+    try { initProfil4(); } catch(e) { console.warn('initProfil4 error:', e); }
+  } else if (id === 'profil3') {
+    try { if (typeof initP3SAT === 'function') initP3SAT(); } catch(e) { console.warn('initP3SAT error:', e); }
+    try { if (typeof initProfil3InputsFromOB === 'function') initProfil3InputsFromOB(); } catch(e) {}
+  }
 
   // Adapte le sous-titre de qSATIntro selon le programme (SAT / SET / PDC).
   // À ce stade l'utilisateur a déjà choisi son objectif (sur obQ1) mais pas
