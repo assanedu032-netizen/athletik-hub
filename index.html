@@ -3678,8 +3678,13 @@ html body #result, html body #nutriResult{
 .se-fb-chip{padding:9px 13px;border-radius:999px;background:var(--ah-surface);border:1.5px solid var(--ah-border2);color:var(--ah-text2);font-family:'Outfit',sans-serif;font-size:12px;font-weight:600;cursor:pointer;transition:all .15s;-webkit-tap-highlight-color:transparent}
 .se-fb-chip:hover{border-color:var(--ah-gold)}
 .se-fb-chip.on{background:var(--ah-navy);color:#fff;border-color:var(--ah-gold)}
-.se-fb-note{width:100%;box-sizing:border-box;background:var(--ah-surface);border:1.5px solid var(--ah-border2);border-radius:10px;padding:10px 12px;font-family:'Outfit',sans-serif;font-size:13px;color:var(--ah-text);resize:none;outline:none;line-height:1.4}
+.se-fb-note{width:100%;box-sizing:border-box;background:var(--ah-surface);border:1.5px solid var(--ah-border2);border-radius:10px;padding:10px 44px 10px 12px;font-family:'Outfit',sans-serif;font-size:13px;color:var(--ah-text);resize:none;outline:none;line-height:1.4}
 .se-fb-note:focus{border-color:var(--ah-gold)}
+.se-fb-note-wrap{position:relative}
+.se-fb-note-mic{position:absolute;top:6px;right:6px;width:32px;height:32px;border-radius:50%;background:var(--ah-surface);border:1.5px solid var(--ah-border2);color:var(--ah-text2);font-size:16px;line-height:1;cursor:pointer;display:flex;align-items:center;justify-content:center;padding:0;-webkit-tap-highlight-color:transparent;transition:all .15s}
+.se-fb-note-mic:hover{border-color:var(--ah-gold);color:var(--ah-text)}
+.se-fb-note-mic.rec{background:#E14B4B;border-color:#E14B4B;color:#fff;animation:seFbMicPulse 1.1s ease-in-out infinite}
+@keyframes seFbMicPulse{0%,100%{box-shadow:0 0 0 0 rgba(225,75,75,.55)}50%{box-shadow:0 0 0 8px rgba(225,75,75,0)}}
 .se-fb-foot{position:sticky;bottom:0;background:var(--ah-bg);padding:14px 0 0;margin-top:14px}
 .se-fb-validate{width:100%;padding:16px;background:linear-gradient(135deg,#C5A44E,#D4B86A);color:#243B6B;border:none;border-radius:12px;font-family:'Outfit',sans-serif;font-size:15px;font-weight:800;letter-spacing:.04em;cursor:pointer;box-shadow:0 6px 18px rgba(197,164,78,.28)}
 .se-fb-validate:active{transform:scale(.98)}
@@ -7638,7 +7643,10 @@ window.tiResetOnEnter = function(){ window.tiShowStep(1); };
         </div>
         <div class="se-fb-q">
           <div class="se-fb-q-label" style="margin-bottom:6px">Ajouter quelque chose ?</div>
-          <textarea id="seFbNote" class="se-fb-note" rows="2" placeholder="Optionnel — un mot, une sensation, une douleur…"></textarea>
+          <div class="se-fb-note-wrap">
+            <textarea id="seFbNote" class="se-fb-note" rows="2" placeholder="Optionnel — un mot, une sensation, une douleur…"></textarea>
+            <button type="button" id="seFbNoteMic" class="se-fb-note-mic" onclick="window._seFbVoiceNote(this)" title="Dicter à la voix" aria-label="Dicter à la voix">🎙</button>
+          </div>
         </div>
       </div>
 
@@ -29107,6 +29115,46 @@ window._seFbGoto = function(n) {
 window._seFbStep = function(dir){
   var cur = parseInt((document.getElementById('seFbStepN')||{}).textContent || '1', 10);
   window._seFbGoto(cur + dir);
+};
+// Saisie vocale pour la note libre du feedback fin de séance (étape 3).
+// Click sur le 🎙 → start ; re-click pendant l'écoute → stop ; le texte
+// dicté est ajouté à la suite de ce qui est déjà tapé.
+window._seFbVoiceNote = function(btn){
+  var SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+  if (!SR) {
+    if (typeof showToast === 'function') showToast('Reconnaissance vocale indisponible sur ce navigateur.', 'info');
+    return;
+  }
+  var ta = document.getElementById('seFbNote');
+  if (!ta) return;
+  // Si déjà en écoute, on stoppe.
+  if (window._seFbRec) {
+    try { window._seFbRec.stop(); } catch(e){}
+    return;
+  }
+  var rec = new SR();
+  rec.lang = 'fr-FR';
+  rec.interimResults = false;
+  rec.maxAlternatives = 1;
+  rec.continuous = true;
+  var transcript = '';
+  rec.onstart = function(){ if (btn) btn.classList.add('rec'); };
+  rec.onresult = function(e){
+    for (var i = e.resultIndex; i < e.results.length; i++) {
+      if (e.results[i].isFinal) transcript += (transcript ? ' ' : '') + e.results[i][0].transcript;
+    }
+  };
+  rec.onerror = function(){ if (btn) btn.classList.remove('rec'); window._seFbRec = null; };
+  rec.onend = function(){
+    if (btn) btn.classList.remove('rec');
+    window._seFbRec = null;
+    if (!transcript) return;
+    var cur = (ta.value || '').trim();
+    ta.value = (cur ? cur + ' ' : '') + transcript.trim();
+    ta.dispatchEvent(new Event('input', { bubbles: true }));
+  };
+  try { rec.start(); window._seFbRec = rec; }
+  catch(e){ if (btn) btn.classList.remove('rec'); window._seFbRec = null; }
 };
 function _seFbRenderSummary(){
   var prod  = parseInt((document.getElementById('seFbProd')  || {}).value, 10) || 0;
