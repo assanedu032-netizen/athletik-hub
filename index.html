@@ -433,6 +433,17 @@ button:active{transform:scale(0.97)}
 .ob-chk-txt{font-size:13px;font-weight:600;color:var(--text);line-height:1.35}
 .ob-chk.sel .ob-chk-txt{color:var(--navy)}
 
+/* Variant "rich" : checkbox + icône emoji + titre + sous-titre "Pour : ...".
+   Utilisé sur la Q3 matériel de l'onboarding pour expliciter l'impact de
+   chaque choix sur le programme attribué. */
+.ob-chk-rich{align-items:flex-start;padding:14px}
+.ob-chk-rich .ob-chk-box{margin-top:2px}
+.ob-chk-ic{width:34px;height:34px;border-radius:10px;background:var(--surface2,#F4F2EC);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0;transition:transform .25s cubic-bezier(.34,1.56,.64,1),background .2s,border-color .2s}
+.ob-chk-rich.sel .ob-chk-ic{background:#FFFDF6;border-color:var(--gold);transform:scale(1.08)}
+.ob-chk-content{flex:1;min-width:0}
+.ob-chk-sub{font-size:11.5px;color:var(--text2);margin-top:3px;line-height:1.35;font-weight:500;letter-spacing:.01em}
+.ob-chk-rich.sel .ob-chk-sub{color:var(--navy);opacity:.75}
+
 /* Single choice option */
 .ob-opt{padding:14px 16px;background:var(--surface);border:1.5px solid var(--border);border-radius:14px;cursor:pointer;transition:all .25s;display:flex;align-items:center;gap:13px;user-select:none;touch-action:manipulation;-webkit-tap-highlight-color:rgba(197,164,78,.2);min-height:52px;width:100%;text-align:left;font-family:inherit}
 .ob-opt:active{transform:scale(.98)}
@@ -5427,16 +5438,19 @@ window.tiResetOnEnter = function(){ window.tiShowStep(1); };
       <button class="bc" onclick="obContinueQ('cont','p1_q3',80)">Continuer →</button>
     </div>
 
-    <!-- Q3 Matériel -->
+    <!-- Q3 Matériel — polish UX : icône + sous-titre "Pour : ..." pour chaque
+         option. Aide l'utilisateur à comprendre l'impact de son choix sur
+         le programme attribué (cf. Tally Q3 scoring : halteres/barre →
+         triphasique+vd, elastiques/gilet → triphasique, rien → neutre). -->
     <div id="p1_q3" style="display:none">
       <div class="ob-q">Ton matériel disponible ?</div>
-      <div class="ob-sub">Coche tout ce que tu as.</div>
-      <div style="display:flex;flex-direction:column;gap:8px;margin:16px 0 20px">
-        <button class="ob-chk" onclick="obChk(this,'mat','halteres')"><div class="ob-chk-box"></div><div class="ob-chk-txt">Haltères ou poids libres</div></button>
-        <button class="ob-chk" onclick="obChk(this,'mat','barre')"><div class="ob-chk-box"></div><div class="ob-chk-txt">Barre de musculation + disques</div></button>
-        <button class="ob-chk" onclick="obChk(this,'mat','elastiques')"><div class="ob-chk-box"></div><div class="ob-chk-txt">Élastiques de résistance</div></button>
-        <button class="ob-chk" onclick="obChk(this,'mat','gilet')"><div class="ob-chk-box"></div><div class="ob-chk-txt">Gilet lesté</div></button>
-        <button class="ob-chk" onclick="obChk(this,'mat','rien')"><div class="ob-chk-box"></div><div class="ob-chk-txt">Rien (poids du corps uniquement)</div></button>
+      <div class="ob-sub">Coche tout ce que tu as. Titan adapte le programme.</div>
+      <div style="display:flex;flex-direction:column;gap:10px;margin:16px 0 20px">
+        <button class="ob-chk ob-chk-rich" onclick="obChk(this,'mat','halteres')"><div class="ob-chk-box"></div><div class="ob-chk-ic" aria-hidden="true">🏋️</div><div class="ob-chk-content"><div class="ob-chk-txt">Haltères ou poids libres</div><div class="ob-chk-sub">Pour : force, hypertrophie ciblée</div></div></button>
+        <button class="ob-chk ob-chk-rich" onclick="obChk(this,'mat','barre')"><div class="ob-chk-box"></div><div class="ob-chk-ic" aria-hidden="true">🏗️</div><div class="ob-chk-content"><div class="ob-chk-txt">Barre de musculation + disques</div><div class="ob-chk-sub">Pour : squat, soulevé, force pure</div></div></button>
+        <button class="ob-chk ob-chk-rich" onclick="obChk(this,'mat','elastiques')"><div class="ob-chk-box"></div><div class="ob-chk-ic" aria-hidden="true">🪢</div><div class="ob-chk-content"><div class="ob-chk-txt">Élastiques de résistance</div><div class="ob-chk-sub">Pour : explosivité, mobilité, voyage</div></div></button>
+        <button class="ob-chk ob-chk-rich" onclick="obChk(this,'mat','gilet')"><div class="ob-chk-box"></div><div class="ob-chk-ic" aria-hidden="true">🦺</div><div class="ob-chk-content"><div class="ob-chk-txt">Gilet lesté</div><div class="ob-chk-sub">Pour : pliométrie chargée, sprint</div></div></button>
+        <button class="ob-chk ob-chk-rich" onclick="obChk(this,'mat','rien')"><div class="ob-chk-box"></div><div class="ob-chk-ic" aria-hidden="true">🤸</div><div class="ob-chk-content"><div class="ob-chk-txt">Rien (poids du corps uniquement)</div><div class="ob-chk-sub">Pour : microtraining, partout, tout le temps</div></div></button>
       </div>
       <button class="bc" onclick="obContinueQ('mat',null,100)">Calculer mon programme →</button>
     </div>
