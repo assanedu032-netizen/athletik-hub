@@ -4259,6 +4259,65 @@ html body #result, html body #nutriResult{
 .yt-thumb.has-thumb .yt-cat-pill,.yt-thumb.has-thumb .yt-play-btn,.yt-thumb.has-thumb .yt-dur{z-index:2}
 
 /* ═══════════════════════════════════════════════════════════════════════════
+   LIBRAIRIE V2 — page dédiée mobile-first : header, cartes compactes,
+   sélection "Ma séance" (FAB + bottom sheet). Préfixe libx- pour ne pas
+   entrer en collision avec les styles yt-* legacy (fiche détail conservée).
+   ═══════════════════════════════════════════════════════════════════════ */
+.libx-head{display:flex;align-items:flex-start;justify-content:space-between;gap:10px;margin-bottom:14px}
+.libx-head-title{font-family:'Bebas Neue',sans-serif;font-size:26px;letter-spacing:.05em;line-height:1;color:var(--text)}
+.libx-head-sub{font-size:12px;color:var(--muted);margin-top:4px}
+.libx-head-prog{flex-shrink:0;padding:9px 13px;border-radius:999px;background:var(--navy,#1B2A4A);border:1px solid rgba(197,164,78,.45);color:var(--gold);font-family:'Outfit',sans-serif;font-size:11.5px;font-weight:800;letter-spacing:.03em;cursor:pointer;box-shadow:0 4px 12px rgba(27,42,74,.18);white-space:nowrap}
+.libx-head-prog:active{transform:scale(.96)}
+
+/* Carte compacte : vignette gauche + infos + actions empilées à droite */
+.libx-list{display:flex;flex-direction:column;gap:10px;padding-bottom:90px}
+.libx-card{display:flex;gap:10px;align-items:stretch;background:var(--surface);border:1.5px solid var(--border);border-radius:14px;padding:8px;box-shadow:0 2px 8px rgba(20,30,60,.05);transition:transform .1s}
+.libx-card:active{transform:scale(.985)}
+.libx-thumb{width:104px;min-height:70px;border-radius:10px;background:#0E1626;flex-shrink:0;position:relative;display:flex;align-items:center;justify-content:center;overflow:hidden;cursor:pointer;background-size:cover;background-position:center}
+.libx-thumb-play{width:26px;height:26px;border-radius:50%;background:rgba(0,0,0,.55);display:flex;align-items:center;justify-content:center;border:1px solid rgba(255,255,255,.35)}
+.libx-thumb-tri{width:0;height:0;border-left:8px solid #fff;border-top:5px solid transparent;border-bottom:5px solid transparent;margin-left:2px}
+.libx-body{flex:1;min-width:0;display:flex;flex-direction:column;justify-content:center;gap:2px;cursor:pointer;padding:2px 0}
+.libx-name{font-size:13px;font-weight:800;color:var(--text);line-height:1.3;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.libx-meta{font-size:11px;color:var(--muted);line-height:1.4;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.libx-meta .libx-diff{font-weight:700}
+.libx-diff.easy{color:#1F8A4C}.libx-diff.med{color:#B07E10}.libx-diff.hard{color:#C03434}
+.libx-actions{display:flex;flex-direction:column;gap:6px;justify-content:center;flex-shrink:0}
+.libx-see{padding:7px 12px;border-radius:9px;background:transparent;border:1.5px solid var(--border);color:var(--text2);font-family:'Outfit',sans-serif;font-size:11px;font-weight:700;cursor:pointer;white-space:nowrap}
+.libx-see:active{transform:scale(.95)}
+.libx-add{padding:7px 12px;border-radius:9px;background:linear-gradient(135deg,var(--gold),#A0853A);border:1.5px solid var(--gold);color:var(--navy,#1B2A4A);font-family:'Outfit',sans-serif;font-size:11px;font-weight:800;cursor:pointer;white-space:nowrap;box-shadow:0 3px 8px rgba(197,164,78,.28);transition:transform .1s}
+.libx-add:active{transform:scale(.95)}
+.libx-add.added{background:var(--gold-dim,rgba(197,164,78,.12));border-color:rgba(197,164,78,.5);color:#8A6D2B;box-shadow:none}
+
+/* Meta chips de la fiche détail (niveau · catégorie · durée · matériel) */
+.libx-detail-meta{display:flex;flex-wrap:wrap;gap:6px;margin:8px 0 12px}
+.libx-detail-meta .ldm{padding:5px 10px;border-radius:999px;background:var(--surface2,#F4F2EC);border:1px solid var(--border);font-size:11px;font-weight:700;color:var(--text2)}
+.libx-detail-meta .ldm.easy{color:#1F8A4C}.libx-detail-meta .ldm.med{color:#B07E10}.libx-detail-meta .ldm.hard{color:#C03434}
+
+/* FAB Ma séance — pill gold, même emplacement que le FAB timer (masqué sur lib) */
+.libx-fab{position:fixed;right:16px;bottom:88px;padding:13px 18px;border-radius:999px;background:linear-gradient(135deg,var(--gold),#A0853A);color:var(--navy,#1B2A4A);border:none;font-family:'Outfit',sans-serif;font-size:13px;font-weight:800;letter-spacing:.02em;cursor:pointer;box-shadow:0 6px 20px rgba(197,164,78,.4);z-index:91;display:flex;align-items:center;gap:6px;-webkit-tap-highlight-color:transparent;transition:transform .15s}
+.libx-fab:active{transform:scale(.94)}
+body:has(.scr.on) .libx-fab{display:none!important}
+/* Sur la Librairie le FAB timer cède sa place au FAB Ma séance */
+body.ah-lib-open .tim-fab{display:none!important}
+
+/* Bottom sheet Ma séance */
+.libx-sheet-overlay{position:fixed;inset:0;background:rgba(10,16,30,.55);z-index:120;backdrop-filter:blur(2px)}
+.libx-sheet{position:fixed;left:0;right:0;bottom:0;background:var(--bg,#FAF8F4);border-radius:20px 20px 0 0;z-index:121;padding:10px 16px calc(16px + env(safe-area-inset-bottom,0px));max-height:72vh;display:flex;flex-direction:column;box-shadow:0 -10px 36px rgba(10,16,30,.25);animation:libxSheetUp .22s ease}
+@keyframes libxSheetUp{from{transform:translateY(40px);opacity:0}to{transform:translateY(0);opacity:1}}
+.libx-sheet-grab{width:42px;height:4px;border-radius:2px;background:var(--border2,#D8D3C6);margin:2px auto 12px}
+.libx-sheet-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
+.libx-sheet-title{font-family:'Bebas Neue',sans-serif;font-size:21px;letter-spacing:.06em;color:var(--text);line-height:1}
+.libx-sheet-sub{font-size:11.5px;color:var(--muted);margin-top:3px}
+.libx-sheet-clear{padding:7px 12px;border-radius:9px;background:transparent;border:1.5px solid var(--border);color:var(--muted);font-family:'Outfit',sans-serif;font-size:11px;font-weight:700;cursor:pointer}
+.libx-sheet-list{flex:1;overflow-y:auto;display:flex;flex-direction:column;gap:8px;margin-bottom:12px;min-height:60px}
+.libx-sheet-item{display:flex;align-items:center;gap:10px;background:var(--surface);border:1.5px solid var(--border);border-radius:12px;padding:10px 12px}
+.libx-sheet-item-name{flex:1;min-width:0;font-size:13px;font-weight:700;color:var(--text);line-height:1.3}
+.libx-sheet-item-cat{font-size:10.5px;color:var(--muted);margin-top:2px}
+.libx-sheet-item-rm{width:30px;height:30px;border-radius:9px;background:transparent;border:1.5px solid var(--border);color:var(--muted);font-size:14px;cursor:pointer;flex-shrink:0;display:flex;align-items:center;justify-content:center}
+.libx-sheet-launch{width:100%;padding:15px;background:linear-gradient(135deg,var(--gold),#A0853A);border:0;border-radius:13px;color:var(--navy,#1B2A4A);font-family:'Bebas Neue',sans-serif;font-size:18px;letter-spacing:.12em;cursor:pointer;box-shadow:0 6px 18px rgba(197,164,78,.32)}
+.libx-sheet-launch:disabled{opacity:.45;cursor:not-allowed;box-shadow:none}
+
+/* ═══════════════════════════════════════════════════════════════════════════
    TRAIN > BUILDER — Refonte design premium (CSS overrides uniquement)
    ───────────────────────────────────────────────────────────────────────────
    Brief user : "Plus premium, plus intuitif, moins nuage de tags."
@@ -7039,15 +7098,24 @@ window.tiResetOnEnter = function(){ window.tiShowStep(1); };
 
 <div id="pgLib" class="pg" style="position:relative;overflow:hidden">
 
+<!-- Header Librairie — titre + compteur d'exercices (rempli par _libRenderHead) -->
+<div class="libx-head">
+  <div>
+    <div class="libx-head-title">Librairie d'exercices</div>
+    <div class="libx-head-sub" id="libxHeadSub">Trouve, consulte, ajoute à ta séance.</div>
+  </div>
+  <button type="button" class="libx-head-prog" id="libxHeadProg" onclick="window._libOpenSheet && window._libOpenSheet()">🎯 Ma séance</button>
+</div>
+
 <!-- Search bar -->
 <div class="search-wrap"><div class="search-ic">🔍</div><input class="search-input" id="libSearch" placeholder="Rechercher un exercice..." oninput="_libSearchInput()"></div>
 
-<!-- Filtres : Tous / Mon programme / qualités athlétiques. Rempli par
+<!-- Filtres : Tous / Ajoutés / 7 familles athlétiques. Rempli par
      _libRenderFilterChips() au load + sur showPg('lib'). -->
 <div class="lib-filters" id="libFilters"></div>
 
-<!-- Exercise grid (YouTube-style 2 col) -->
-<div class="yt-grid" id="libYtGrid"></div>
+<!-- Liste compacte des exercices (cartes horizontales, rendu _libCardHtml) -->
+<div class="libx-list" id="libYtGrid"></div>
 
 <!-- Exercise detail (full overlay inside #pgLib) -->
 <div class="yt-detail-view" id="libDetailView">
@@ -7063,12 +7131,23 @@ window.tiResetOnEnter = function(){ window.tiShowStep(1); };
   <div class="yt-detail-body">
     <div class="yt-detail-cat" id="ytDetailCat">PLIOMÉTRIE</div>
     <div class="yt-detail-name" id="ytDetailName">EXERCICE</div>
-    <div class="yt-detail-diff easy" id="ytDetailDiff">Débutant</div>
+    <!-- Meta chips : niveau / catégorie / durée / matériel -->
+    <div class="libx-detail-meta" id="ytDetailMeta"></div>
     <div class="yt-detail-desc" id="ytDetailDesc">Description de l'exercice.</div>
     <div class="yt-detail-section">MUSCLES CIBLÉS</div>
     <div class="tag-row" id="ytDetailTags"></div>
-    <button class="btn btn-gold" style="width:100%;margin-bottom:10px" onclick="_libTrackCurrent()">📊 Tracker cet exercice</button>
-    <button class="btn btn-outline btn-disabled" style="width:100%;opacity:.5;cursor:not-allowed">🔒 Workout Builder (après 2 programmes)</button>
+    <!-- Consignes / erreurs : affichés seulement si les données existent
+         dans catData (champs optionnels consignes / erreurs) -->
+    <div id="ytDetailConsignes" style="display:none">
+      <div class="yt-detail-section">CONSIGNES D'EXÉCUTION</div>
+      <div class="yt-detail-desc" id="ytDetailConsignesTxt"></div>
+    </div>
+    <div id="ytDetailErreurs" style="display:none">
+      <div class="yt-detail-section">ERREURS À ÉVITER</div>
+      <div class="yt-detail-desc" id="ytDetailErreursTxt"></div>
+    </div>
+    <button class="btn btn-gold" id="ytDetailAddBtn" style="width:100%;margin-bottom:10px" onclick="window._libDetailToggleAdd && window._libDetailToggleAdd()">+ Ajouter à ma séance</button>
+    <button class="btn btn-outline" style="width:100%" onclick="_libTrackCurrent()">📊 Tracker cet exercice</button>
   </div>
 </div>
 
@@ -8591,6 +8670,26 @@ window.tiResetOnEnter = function(){ window.tiShowStep(1); };
     </div>
   </div>
 
+</div>
+
+<!-- ═══ LIBRAIRIE V2 — FAB "Ma séance" + bottom sheet ═══
+     Au niveau body (pas dans #pgLib) : .pg garde un transform résiduel
+     (animation fadeUp fill-mode:both) qui ferait du position:fixed un
+     positionnement relatif au .pg, clippé par son overflow:hidden.
+     Visible uniquement sur Train > Librairie (body.ah-lib-open + JS). -->
+<button type="button" class="libx-fab" id="libFab" onclick="window._libOpenSheet && window._libOpenSheet()" style="display:none">🎯 <span id="libFabTxt">Ma séance</span></button>
+<div class="libx-sheet-overlay" id="libSheetOverlay" onclick="window._libCloseSheet && window._libCloseSheet()" style="display:none"></div>
+<div class="libx-sheet" id="libSheet" style="display:none">
+  <div class="libx-sheet-grab"></div>
+  <div class="libx-sheet-head">
+    <div>
+      <div class="libx-sheet-title">MA SÉANCE</div>
+      <div class="libx-sheet-sub" id="libSheetSub">0 exercice</div>
+    </div>
+    <button type="button" class="libx-sheet-clear" id="libSheetClear" onclick="window._libClearSel && window._libClearSel()">Vider</button>
+  </div>
+  <div class="libx-sheet-list" id="libSheetList"></div>
+  <button type="button" class="libx-sheet-launch" id="libSheetLaunch" onclick="window._libLaunchSel && window._libLaunchSel()">▶ LANCER MA SÉANCE</button>
 </div>
 
 <!-- ═══ ATHLETIK TIMER — FAB + overlay (Tabata · HIIT · Sauvegardés) ═══ -->
@@ -13271,6 +13370,19 @@ function switchTab(tab){
   if (tab === 'train') {
     try { updateProgrammeLocks(); } catch(e) {}
     try { _libInit(); } catch(e) {}
+    // Librairie V2 : restaure la classe FAB si la page Librairie est le pg actif
+    try {
+      var pgL = document.getElementById('pgLib');
+      document.body.classList.toggle('ah-lib-open', !!(pgL && pgL.classList.contains('on')));
+      if (typeof _libUpdateFab === 'function') _libUpdateFab();
+    } catch(e) {}
+  } else {
+    // Hors Train : FAB "Ma séance" caché, FAB timer reprend ses droits
+    try {
+      document.body.classList.remove('ah-lib-open');
+      if (typeof _libUpdateFab === 'function') _libUpdateFab();
+      if (window._libCloseSheet) window._libCloseSheet();
+    } catch(e) {}
   }
   // Init Scan check API key + restore form
   if (tab === 'nutrition') {
@@ -19290,6 +19402,11 @@ const progPhases={ea:{name:'ELITE ATHLETE',obj:'Explosivité globale',phases:[[{
 function showPg(id){document.querySelectorAll('.pg').forEach(p=>p.classList.remove('on'));document.querySelectorAll('.sub-tab').forEach(t=>t.classList.remove('on'));({lib:'pgLib',prog:'pgProg',builder:'pgBuilder'})[id]&&document.getElementById(({lib:'pgLib',prog:'pgProg',builder:'pgBuilder'})[id]).classList.add('on');event.currentTarget.classList.add('on');var __v=document.getElementById('vTrain');if(__v)__v.scrollTop=0;
 // FAB chrono masqué sur Builder (chevauche les chips/CTA du convo).
 try { document.body.classList.toggle('ah-no-fab', id === 'builder'); } catch(e) {}
+// Librairie V2 : classe ah-lib-open sur body → masque le FAB timer (remplacé
+// par le FAB "Ma séance") tant que la page Librairie est active.
+try { document.body.classList.toggle('ah-lib-open', id === 'lib'); } catch(e) {}
+try { if (typeof _libUpdateFab === 'function') _libUpdateFab(); } catch(e) {}
+if(id!=='lib'){try{window._libCloseSheet&&window._libCloseSheet();}catch(e){}}
 if(id==='lib'){try{_libCloseDetail();}catch(e){}try{_libRenderFilterChips();}catch(e){}try{_libRender(_libCurrentFilter||'all');}catch(e){}}if(id==='prog'){try{closeProg();}catch(e){}try{updateProgrammeLocks();}catch(e){}}}
 function openCatLegacy(n,ic,k){currentCat=n;currentCatData=catData[k]||[];var t=document.getElementById('catTitle');if(t)t.textContent=ic+' '+n.toUpperCase();var lg=document.getElementById('libGrid');if(lg)lg.classList.add('hidden');var cv=document.getElementById('libCatView');if(cv)cv.classList.remove('hidden');var dv=document.getElementById('libDetailView');if(dv)dv.classList.add('hidden');currentFilter='all';renderCatEx();var __v=document.getElementById('vTrain');if(__v)__v.scrollTop=0}
 function closeCatLegacy(){var lg=document.getElementById('libGrid');if(lg)lg.classList.remove('hidden');var cv=document.getElementById('libCatView');if(cv)cv.classList.add('hidden');var dv=document.getElementById('libDetailView');if(dv)dv.classList.add('hidden')}
@@ -19494,6 +19611,190 @@ var _LIB_VIDEO_MAP = {
 };
 var _libCurrentFilter = 'all';
 var _libCurrentVideo = null;
+var _libCurrentDetail = null; // nom de l'exo affiché dans la fiche détail
+
+// ── Librairie V2 : 7 familles de chips (mobile-first, scroll horizontal).
+// Regroupe les 11 catégories catData en familles lisibles. _LIB_CAT_MAP
+// reste la source des labels/couleurs précis par exo (cartes + détail).
+var _LIB_CHIP_GROUPS = {
+  echauf:  { keys:['echauf'],                   label:'Échauffement' },
+  force:   { keys:['force_pdc','force_charge'], label:'Force' },
+  plio:    { keys:['plio'],                     label:'Plyométrie' },
+  mobi:    { keys:['mobi','proprio'],           label:'Mobilité' },
+  vitesse: { keys:['sprint','pied'],            label:'Vitesse' },
+  core:    { keys:['gainage','rotation'],       label:'Core' },
+  recup:   { keys:['recup'],                    label:'Récupération' }
+};
+
+// ── Librairie V2 : sélection "Ma séance" — exos ajoutés depuis la librairie.
+// Stockée dans ah_lib_selection (array de noms), synchronisée Firestore via
+// FB_SYNC_KEYS. C'est l'action principale de la librairie : construire une
+// séance perso puis la lancer en live session.
+var _LIB_SEL_KEY = 'ah_lib_selection';
+function _libSelGet() {
+  try { var a = JSON.parse(localStorage.getItem(_LIB_SEL_KEY) || '[]'); return Array.isArray(a) ? a : []; }
+  catch(e) { return []; }
+}
+function _libSelSave(arr) {
+  try { localStorage.setItem(_LIB_SEL_KEY, JSON.stringify(arr)); } catch(e) {}
+  try { if (window.fbUser && typeof fbSaveProfile === 'function') fbSaveProfile(); } catch(e) {}
+}
+function _libIsAdded(name) { return _libSelGet().indexOf(name) > -1; }
+
+// Toggle ajout/retrait d'un exo. Met à jour tous les boutons de la carte
+// concernée + le FAB + la fiche détail + le sheet si ouverts.
+window._libToggleAdd = function(name) {
+  var sel = _libSelGet();
+  var idx = sel.indexOf(name);
+  var added;
+  if (idx > -1) { sel.splice(idx, 1); added = false; }
+  else { sel.push(name); added = true; }
+  _libSelSave(sel);
+  _libSyncAddButtons(name, added);
+  _libUpdateFab();
+  _libUpdateChipCount();
+  if (added && typeof showToast === 'function') showToast('Ajouté à ta séance ✓', 'info');
+  // Si on est sur le filtre "Ajoutés" et qu'on retire, re-render la liste
+  if (!added && _libCurrentFilter === 'added') _libRender('added');
+  // Sheet ouvert → re-render
+  var sheet = document.getElementById('libSheet');
+  if (sheet && sheet.style.display !== 'none') _libRenderSheet();
+};
+
+// Met à jour l'état visuel des boutons "+ Ajouter" pour un exo donné
+// (cartes de la liste + bouton de la fiche détail).
+function _libSyncAddButtons(name, added) {
+  var enc = encodeURIComponent(name);
+  document.querySelectorAll('.libx-card[data-exo="' + enc + '"] .libx-add').forEach(function(b){
+    b.classList.toggle('added', added);
+    b.textContent = added ? '✓ Ajouté' : '+ Ajouter';
+  });
+  if (_libCurrentDetail === name) {
+    var db = document.getElementById('ytDetailAddBtn');
+    if (db) {
+      db.textContent = added ? '✓ Dans ma séance' : '+ Ajouter à ma séance';
+      db.style.opacity = added ? '.75' : '';
+    }
+  }
+}
+
+// FAB "Ma séance" : visible uniquement sur la Librairie ET si ≥1 exo ajouté.
+function _libUpdateFab() {
+  var fab = document.getElementById('libFab');
+  if (!fab) return;
+  var n = _libSelGet().length;
+  var onLib = document.body.classList.contains('ah-lib-open');
+  fab.style.display = (onLib && n > 0) ? 'flex' : 'none';
+  var txt = document.getElementById('libFabTxt');
+  if (txt) txt.textContent = n + ' exercice' + (n > 1 ? 's' : '') + ' · Voir';
+}
+
+// Compteur live sur le chip "✓ Ajoutés (N)"
+function _libUpdateChipCount() {
+  var chip = document.querySelector('.lib-flt-chip[data-key="added"]');
+  if (chip) {
+    var n = _libSelGet().length;
+    chip.textContent = '✓ Ajoutés' + (n ? ' (' + n + ')' : '');
+  }
+}
+
+// ── Bottom sheet "Ma séance" ──
+window._libOpenSheet = function() {
+  _libRenderSheet();
+  var ov = document.getElementById('libSheetOverlay');
+  var sh = document.getElementById('libSheet');
+  if (ov) ov.style.display = 'block';
+  if (sh) sh.style.display = 'flex';
+};
+window._libCloseSheet = function() {
+  var ov = document.getElementById('libSheetOverlay');
+  var sh = document.getElementById('libSheet');
+  if (ov) ov.style.display = 'none';
+  if (sh) sh.style.display = 'none';
+};
+function _libRenderSheet() {
+  var list = document.getElementById('libSheetList');
+  var sub = document.getElementById('libSheetSub');
+  var launch = document.getElementById('libSheetLaunch');
+  if (!list) return;
+  var sel = _libSelGet();
+  if (sub) sub.textContent = sel.length + ' exercice' + (sel.length > 1 ? 's' : '');
+  if (launch) launch.disabled = !sel.length;
+  if (!sel.length) {
+    list.innerHTML = '<div style="text-align:center;padding:24px 10px;color:var(--muted);font-size:12.5px;line-height:1.6">Aucun exercice ajouté.<br>Parcours la librairie et appuie sur <b>+ Ajouter</b>.</div>';
+    return;
+  }
+  var all = _libFlatExos('all');
+  list.innerHTML = sel.map(function(name){
+    var it = null;
+    for (var i = 0; i < all.length; i++) { if (all[i].ex.name === name) { it = all[i]; break; } }
+    var cat = it ? it.catLabel : '';
+    var enc = encodeURIComponent(name);
+    return '<div class="libx-sheet-item">'
+      + '<div style="flex:1;min-width:0"><div class="libx-sheet-item-name">' + name + '</div>'
+      + (cat ? '<div class="libx-sheet-item-cat">' + cat + '</div>' : '') + '</div>'
+      + '<button type="button" class="libx-sheet-item-rm" onclick="window._libRemoveSel(\'' + enc + '\')" aria-label="Retirer">✕</button>'
+      + '</div>';
+  }).join('');
+}
+window._libRemoveSel = function(enc) {
+  var name = decodeURIComponent(enc);
+  var sel = _libSelGet();
+  var idx = sel.indexOf(name);
+  if (idx > -1) { sel.splice(idx, 1); _libSelSave(sel); }
+  _libSyncAddButtons(name, false);
+  _libUpdateFab(); _libUpdateChipCount(); _libRenderSheet();
+  if (_libCurrentFilter === 'added') _libRender('added');
+};
+window._libClearSel = function() {
+  var sel = _libSelGet();
+  _libSelSave([]);
+  sel.forEach(function(name){ _libSyncAddButtons(name, false); });
+  _libUpdateFab(); _libUpdateChipCount(); _libRenderSheet();
+  if (_libCurrentFilter === 'added') _libRender('added');
+};
+
+// Paramètres séries/reps par défaut selon la famille de l'exo. La librairie
+// ne porte pas de prescription : on donne un cadre raisonnable, modifiable
+// pendant la live session.
+function _libDefaultSets(catKey) {
+  if (catKey === 'echauf' || catKey === 'mobi' || catKey === 'proprio' || catKey === 'recup')
+    return { s:'2', r:'30-45s', rest:'30s' };
+  if (catKey === 'plio' || catKey === 'sprint' || catKey === 'pied')
+    return { s:'4', r:'6-8', rest:'90s' };
+  if (catKey === 'force_pdc' || catKey === 'force_charge')
+    return { s:'4', r:'5-8', rest:'2-3 min' };
+  return { s:'3', r:'30-45s', rest:'60s' }; // gainage / rotation / défaut
+}
+window._libLaunchSel = function() {
+  var sel = _libSelGet();
+  if (!sel.length) return;
+  var all = _libFlatExos('all');
+  var exos = [];
+  sel.forEach(function(name){
+    var it = null;
+    for (var i = 0; i < all.length; i++) { if (all[i].ex.name === name) { it = all[i]; break; } }
+    if (!it) return;
+    var cfg = _LIB_CAT_MAP[it.catKey] || {};
+    var dk = (cfg.keys && cfg.keys[0]) || it.catKey;
+    var d = _libDefaultSets(dk);
+    exos.push({
+      n: name, name: name,
+      s: d.s, r: d.r, rest: d.rest,
+      note: it.catLabel || '',
+      video: it.ex.video || _LIB_VIDEO_MAP[name] || null
+    });
+  });
+  if (!exos.length) { if (typeof showToast === 'function') showToast('Séance vide.', 'info'); return; }
+  window._libCloseSheet();
+  try { launchSession(exos, 'Ma séance perso', 'LIBRAIRIE', '', ''); }
+  catch(e) { console.warn('_libLaunchSel:', e); if (typeof showToast === 'function') showToast('Erreur au lancement.', 'err'); }
+};
+
+// Bouton "+ Ajouter à ma séance" de la fiche détail
+window._libDetailToggleAdd = function() {
+  if (_libCurrentDetail) window._libToggleAdd(_libCurrentDetail);
+};
 
 // Retourne la liste des noms d'exercices utilisés dans le programme attribué.
 // Parse PROGRAMS_V2[programKey].phases[*].sessions[*].exos et collecte les noms
@@ -19549,10 +19850,26 @@ function _libFlatExos(filterKey) {
     });
     return result;
   }
-  if (filterKey === 'all') {
+  if (filterKey === 'all' || filterKey === 'added') {
     Object.keys(_LIB_CAT_MAP).forEach(function(ck) {
       var cfg = _LIB_CAT_MAP[ck];
       cfg.keys.forEach(function(dk) {
+        (catData[dk]||[]).forEach(function(ex) {
+          result.push({ex:ex, catKey:ck, catLabel:cfg.label, color:cfg.color});
+        });
+      });
+    });
+    if (filterKey === 'added') {
+      var sel = _libSelGet();
+      result = result.filter(function(it){ return sel.indexOf(it.ex.name) > -1; });
+    }
+  } else if (typeof _LIB_CHIP_GROUPS !== 'undefined' && _LIB_CHIP_GROUPS[filterKey]) {
+    // Chip famille (Librairie V2) : agrège plusieurs catégories catData
+    var grp = _LIB_CHIP_GROUPS[filterKey];
+    Object.keys(_LIB_CAT_MAP).forEach(function(ck) {
+      var cfg = _LIB_CAT_MAP[ck];
+      cfg.keys.forEach(function(dk) {
+        if (grp.keys.indexOf(dk) === -1) return;
         (catData[dk]||[]).forEach(function(ex) {
           result.push({ex:ex, catKey:ck, catLabel:cfg.label, color:cfg.color});
         });
@@ -19569,39 +19886,36 @@ function _libFlatExos(filterKey) {
   return result;
 }
 
+// Librairie V2 — carte compacte horizontale : vignette + nom + niveau ·
+// catégorie + durée · matériel + actions [Voir] [+ Ajouter]. Plusieurs
+// exos visibles par écran (vs grosses cartes vidéo 16/9 d'avant) ; les
+// grandes vidéos vivent dans la fiche détail.
 function _libCardHtml(it) {
   var ex = it.ex;
   var dl = ex.diff==='easy'?'Débutant':ex.diff==='med'?'Intermédiaire':'Avancé';
-  var mat = ex.mat && ex.mat !== 'Aucun' ? ex.mat : '';
+  var mat = ex.mat && ex.mat !== 'Aucun' ? ex.mat : 'Sans matériel';
+  var dur = ex.tag || '';
   var nm = ex.name.replace(/'/g,"\\'").replace(/"/g,'&quot;');
-  var initial = it.catLabel.charAt(0).toUpperCase();
-  // Vignette YouTube si une vidéo est associée à cet exo. hqdefault = 480x360,
-  // assez net pour la grille 2 col. Fallback onerror → mqdefault (toujours dispo).
+  var enc = encodeURIComponent(ex.name);
   var ytId = ex.video || _LIB_VIDEO_MAP[ex.name] || null;
-  var thumbStyle = '';
-  if (ytId) {
-    thumbStyle = ' style="background-image:url(https://i.ytimg.com/vi/' + ytId + '/hqdefault.jpg);background-size:cover;background-position:center"';
-  }
+  var thumbStyle = ytId
+    ? ' style="background-image:url(https://i.ytimg.com/vi/' + ytId + '/mqdefault.jpg)"'
+    : ' style="background:' + (it.color || '#0E1626') + '"';
+  var added = _libIsAdded(ex.name);
+  var open = '_libOpenDetail(\'' + nm + '\',\'' + it.catKey + '\')';
   var h = '';
-  h += '<div class="yt-card" onclick="_libOpenDetail(\'' + nm + '\',\'' + it.catKey + '\')">';
-  // Thumbnail — image YouTube si dispo, sinon placeholder dark uniforme
-  h +=   '<div class="yt-thumb' + (ytId ? ' has-thumb' : '') + '"' + thumbStyle + '>';
-  if (ytId) h += '<div class="yt-thumb-shade"></div>';
-  h +=     '<div class="yt-play-btn"><div class="yt-play-tri"></div></div>';
-  h +=     '<div class="yt-cat-pill">' + it.catLabel.toUpperCase() + '</div>';
-  if (ex.tag) h += '<div class="yt-dur">' + ex.tag + '</div>';
+  h += '<div class="libx-card" data-exo="' + enc + '">';
+  h +=   '<div class="libx-thumb"' + thumbStyle + ' onclick="' + open + '">';
+  h +=     '<div class="libx-thumb-play"><div class="libx-thumb-tri"></div></div>';
   h +=   '</div>';
-  // Info row (avatar + meta) like YouTube
-  h +=   '<div class="yt-info">';
-  h +=     '<div class="yt-avatar">' + initial + '</div>';
-  h +=     '<div class="yt-meta">';
-  h +=       '<div class="yt-title">' + ex.name + '</div>';
-  h +=       '<div class="yt-sub">';
-  h +=         '<span class="yt-diff ' + ex.diff + '">' + dl + '</span>';
-  h +=         '<span class="yt-muscle">· ' + it.catLabel + '</span>';
-  if (mat) h += '<span class="yt-mat">· ' + mat + '</span>';
-  h +=       '</div>';
-  h +=     '</div>';
+  h +=   '<div class="libx-body" onclick="' + open + '">';
+  h +=     '<div class="libx-name">' + ex.name + '</div>';
+  h +=     '<div class="libx-meta"><span class="libx-diff ' + ex.diff + '">' + dl + '</span> · ' + it.catLabel + '</div>';
+  h +=     '<div class="libx-meta">' + (dur ? dur + ' · ' : '') + mat + '</div>';
+  h +=   '</div>';
+  h +=   '<div class="libx-actions">';
+  h +=     '<button type="button" class="libx-see" onclick="' + open + '">Voir</button>';
+  h +=     '<button type="button" class="libx-add' + (added ? ' added' : '') + '" onclick="window._libToggleAdd(decodeURIComponent(\'' + enc + '\'))">' + (added ? '✓ Ajouté' : '+ Ajouter') + '</button>';
   h +=   '</div>';
   h += '</div>';
   return h;
@@ -19614,12 +19928,18 @@ function _libRenderFilterChips(){
   var wrap = document.getElementById('libFilters');
   if (!wrap) return;
   var cur = _libCurrentFilter || 'all';
+  // Librairie V2 : "Tous" + "✓ Ajoutés (N)" + 7 familles (vs 11 catégories
+  // brutes avant — trop de chips, scroll interminable sur mobile). Le filtre
+  // 'myprogram' (exos du programme attribué) reste supporté par _libFlatExos
+  // mais n'est plus exposé en chip : il créait la confusion avec la séance
+  // perso construite via "+ Ajouter".
+  var nSel = _libSelGet().length;
   var chips = [
-    { key:'all',       label:'Tous',           icon:'' },
-    { key:'myprogram', label:'Mon programme',  icon:'🎯' }
+    { key:'all',   label:'Tous',                                  icon:'' },
+    { key:'added', label:'Ajoutés' + (nSel ? ' (' + nSel + ')' : ''), icon:'✓' }
   ];
-  Object.keys(_LIB_CAT_MAP).forEach(function(ck){
-    chips.push({ key: ck, label: _LIB_CAT_MAP[ck].label, icon: '' });
+  Object.keys(_LIB_CHIP_GROUPS).forEach(function(ck){
+    chips.push({ key: ck, label: _LIB_CHIP_GROUPS[ck].label, icon: '' });
   });
   wrap.innerHTML = chips.map(function(c){
     var on = (c.key === cur) ? ' on' : '';
@@ -19640,8 +19960,23 @@ function _libRender(filterKey) {
   _libCurrentFilter = filterKey || 'all';
   var grid = document.getElementById('libYtGrid'); if (!grid) return;
   var items = _libFlatExos(_libCurrentFilter);
-  if (!items.length) { grid.innerHTML = '<div style="text-align:center;padding:40px 20px;color:var(--muted)">Aucun exercice.</div>'; return; }
+  if (!items.length) {
+    grid.innerHTML = (_libCurrentFilter === 'added')
+      ? '<div style="text-align:center;padding:40px 20px;color:var(--muted);font-size:13px;line-height:1.6">Aucun exercice ajouté pour l\'instant.<br>Parcours la librairie et appuie sur <b style="color:var(--gold)">+ Ajouter</b> pour construire ta séance.</div>'
+      : '<div style="text-align:center;padding:40px 20px;color:var(--muted)">Aucun exercice.</div>';
+    _libRenderHead(0);
+    return;
+  }
   grid.innerHTML = items.map(_libCardHtml).join('');
+  _libRenderHead(items.length);
+}
+
+// Sous-titre du header : nombre d'exercices affichés
+function _libRenderHead(count) {
+  var sub = document.getElementById('libxHeadSub');
+  if (!sub) return;
+  if (count > 0) sub.textContent = count + ' exercice' + (count > 1 ? 's' : '') + ' · Trouve, consulte, ajoute.';
+  else sub.textContent = 'Trouve, consulte, ajoute à ta séance.';
 }
 
 function _libFilter(el, key) {
@@ -19668,11 +20003,40 @@ function _libOpenDetail(name, catKey) {
   var ex = item.ex;
   var cat = catKey ? (_LIB_CAT_MAP[catKey]||{}).label || catKey : item.catLabel;
   var dl = ex.diff==='easy'?'Débutant':ex.diff==='med'?'Intermédiaire':'Avancé';
+  _libCurrentDetail = ex.name;
   document.getElementById('ytDetailCat').textContent = cat.toUpperCase();
   document.getElementById('ytDetailName').textContent = ex.name.toUpperCase();
-  var dEl = document.getElementById('ytDetailDiff'); dEl.textContent = dl; dEl.className = 'yt-detail-diff ' + ex.diff;
+  // Meta chips : niveau / catégorie / durée (si dispo) / matériel
+  var metaEl = document.getElementById('ytDetailMeta');
+  if (metaEl) {
+    var chips = '<span class="ldm ' + ex.diff + '">' + dl + '</span>'
+              + '<span class="ldm">' + cat + '</span>';
+    if (ex.tag) chips += '<span class="ldm">⏱ ' + ex.tag + '</span>';
+    chips += '<span class="ldm">🛠 ' + (ex.mat && ex.mat !== 'Aucun' ? ex.mat : 'Sans matériel') + '</span>';
+    metaEl.innerHTML = chips;
+  }
   document.getElementById('ytDetailDesc').textContent = ex.desc || '';
   document.getElementById('ytDetailTags').innerHTML = (ex.muscles||[]).map(function(m){ return '<div class="tag">' + m + '</div>'; }).join('');
+  // Consignes / erreurs : champs optionnels de catData (string ou array).
+  // Affichés seulement si renseignés — pas de contenu générique inventé.
+  function _libFillOpt(boxId, txtId, val) {
+    var box = document.getElementById(boxId), txt = document.getElementById(txtId);
+    if (!box || !txt) return;
+    if (!val || (Array.isArray(val) && !val.length)) { box.style.display = 'none'; return; }
+    txt.innerHTML = Array.isArray(val)
+      ? val.map(function(v){ return '• ' + v; }).join('<br>')
+      : String(val);
+    box.style.display = 'block';
+  }
+  _libFillOpt('ytDetailConsignes', 'ytDetailConsignesTxt', ex.consignes);
+  _libFillOpt('ytDetailErreurs', 'ytDetailErreursTxt', ex.erreurs);
+  // État du bouton "+ Ajouter à ma séance"
+  var addBtn = document.getElementById('ytDetailAddBtn');
+  if (addBtn) {
+    var isAdded = _libIsAdded(ex.name);
+    addBtn.textContent = isAdded ? '✓ Dans ma séance' : '+ Ajouter à ma séance';
+    addBtn.style.opacity = isAdded ? '.75' : '';
+  }
   // Video : priorité ex.video (futur champ inline) puis _LIB_VIDEO_MAP[name]
   _libCurrentVideo = ex.video || _LIB_VIDEO_MAP[ex.name] || null;
   var placeholder = document.getElementById('ytDetailPlaceholder');
@@ -19723,18 +20087,18 @@ function _libCloseDetail() {
   var existingIframe = document.getElementById('ytDetailIframe');
   if (existingIframe) existingIframe.remove();
   _libCurrentVideo = null;
+  _libCurrentDetail = null;
 }
 
 // Init lib on first load (called when vTrain becomes active)
 function _libInit() {
   var grid = document.getElementById('libYtGrid');
-  if (grid && !grid.innerHTML.trim()) _libRender('all');
-  // Affiche le chip "🎯 Mon programme" si un programKey est attribué
-  try {
-    var prof = JSON.parse(localStorage.getItem('ah_profile') || '{}');
-    var chip = document.getElementById('libChipMyProgram');
-    if (chip) chip.style.display = prof.programKey ? '' : 'none';
-  } catch(e) {}
+  if (grid && !grid.innerHTML.trim()) {
+    _libRenderFilterChips();
+    _libRender('all');
+  }
+  try { _libUpdateFab(); } catch(e) {}
+  try { _libUpdateChipCount(); } catch(e) {}
 }
 function openProg(k){
   // SAT gate : si pas de SAT et pas test mode, on bloque
@@ -26216,7 +26580,8 @@ var FB_SYNC_KEYS = [
   ['ah_sat_inprogress',           'satInProgress',       true],
   ['ah_live_session',             'liveSession',         true],
   ['ah_access_data',              'accessData',          true],
-  ['ah_active_habits',            'activeHabits',        true]
+  ['ah_active_habits',            'activeHabits',        true],
+  ['ah_lib_selection',            'libSelection',        true]
 ];
 
 function _fbCollectPayload() {
