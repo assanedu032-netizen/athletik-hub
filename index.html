@@ -28879,38 +28879,67 @@ function renderTestsLanding() {
     var btnPrimary = 'background:linear-gradient(135deg,#D4B45E,#C5A44E 55%,#B89238);border:none;color:var(--navy);font-family:\'Bebas Neue\',sans-serif;letter-spacing:.12em;font-size:13px;border-radius:10px;padding:13px;cursor:pointer;box-shadow:0 4px 12px rgba(197,164,78,.22)';
     var btnSecond  = 'background:#fff;border:1.5px solid var(--border2);color:var(--navy);font-family:\'Outfit\',sans-serif;font-weight:700;font-size:12.5px;border-radius:10px;padding:13px;cursor:pointer';
     var goLabel = type === 'SAT' ? 'sat' : 'set';
+    // Action de lancement : sections Tracks pour SAT/SET, wizard partagé
+    // (profil3, filtré PROGRAM_TESTS) pour le PDC qui n'a pas de section.
+    var startClick = opts.startClick || ("showSec('" + goLabel + "')");
 
     h += '<div style="display:flex;gap:8px">';
     if (state === 'inProgress') {
-      h += '<button onclick="showSec(\'' + goLabel + '\')" style="flex:1;' + btnPrimary + '">CONTINUER</button>';
+      h += '<button onclick="' + startClick + '" style="flex:1;' + btnPrimary + '">CONTINUER</button>';
     } else if (state === 'done') {
-      h += '<button onclick="showSec(\'' + goLabel + '\')" style="flex:1;' + btnPrimary + '">REFAIRE</button>';
-      h += '<button onclick="openTestResult(\'' + type + '\')" style="flex:0 0 auto;padding-left:16px;padding-right:16px;' + btnSecond + '">Résultats</button>';
+      h += '<button onclick="' + startClick + '" style="flex:1;' + btnPrimary + '">REFAIRE</button>';
+      if (!opts.noResults) h += '<button onclick="openTestResult(\'' + type + '\')" style="flex:0 0 auto;padding-left:16px;padding-right:16px;' + btnSecond + '">Résultats</button>';
     } else {
-      h += '<button onclick="showSec(\'' + goLabel + '\')" style="flex:1;' + btnPrimary + '">COMMENCER</button>';
+      h += '<button onclick="' + startClick + '" style="flex:1;' + btnPrimary + '">COMMENCER</button>';
     }
     h += '</div>';
     h += '</div>';
     return h;
   }
 
-  var html = '';
-  html += '<div style="font-family:\'Outfit\',sans-serif;font-size:13px;color:var(--text2);line-height:1.55;margin-bottom:14px">Tes bilans mesurent ton niveau physique et ta progression.</div>';
+  // ── Filtrage par programme (livre p.269) : on n'affiche QUE les tests du
+  // programme attribué. Vertical Dunk → SAT. Shred → SET. Elite/Explose+ →
+  // SAT + SET. Micro/Triphasique → PDC (wizard partagé). Sans programme
+  // attribué (onboarding incomplet) : tout est visible.
+  var normProg = (typeof p3NormalizeProgram === 'function') ? p3NormalizeProgram(profile.programKey || '') : 'eliteAthlete';
+  var hasKey = !!profile.programKey;
+  var show = { SAT: true, SET: true, PDC: false };
+  if (hasKey) {
+    if (normProg === 'verticalDunk')                                show = { SAT:true,  SET:false, PDC:false };
+    else if (normProg === 'shredExplose')                           show = { SAT:false, SET:true,  PDC:false };
+    else if (normProg === 'microtraining' || normProg === 'triphasique') show = { SAT:false, SET:false, PDC:true };
+    else                                                            show = { SAT:true,  SET:true,  PDC:false };
+  }
 
-  html += _testCardV2({
+  var html = '';
+  html += '<div style="font-family:\'Outfit\',sans-serif;font-size:13px;color:var(--text2);line-height:1.55;margin-bottom:14px">'
+    + (hasKey ? 'Les tests de <b>ton programme</b> — mesure ton niveau et ta progression.' : 'Tes bilans mesurent ton niveau physique et ta progression.')
+    + '</div>';
+
+  if (show.SAT) html += _testCardV2({
     type: 'SAT',
-    badge: 'BILAN COMPLET · 30 MIN',
+    badge: 'BILAN FORCE · 30 MIN',
     name: 'SAT',
-    desc: 'Détente, force, sprint, agilité, mobilité.',
+    desc: 'Détente verticale + force pure (squat, soulevé, hip thrust, développé couché).',
     state: _testsLandingState('SAT')
   });
 
-  html += _testCardV2({
+  if (show.SET) html += _testCardV2({
     type: 'SET',
-    badge: 'BILAN RAPIDE · 20–30 MIN',
+    badge: 'BILAN EXPLOSIF · 60–75 MIN',
     name: 'SET',
-    desc: 'Détente, sprint 60m, agilité, force.',
+    desc: '94 feet, sprint 60m, détente, physiologique, force pure.',
     state: _testsLandingState('SET')
+  });
+
+  if (show.PDC) html += _testCardV2({
+    type: 'PDC',
+    badge: 'BILAN POIDS DU CORPS · 20 MIN',
+    name: 'PDC',
+    desc: 'Détente, squat bulgare, pompes, wall sit, fentes sautées — zéro matériel.',
+    state: _testsLandingState('PDC'),
+    startClick: 'window._tracksLaunchTestWizard && window._tracksLaunchTestWizard()',
+    noResults: true
   });
 
   c.innerHTML = html;
@@ -30632,6 +30661,41 @@ document.addEventListener('input', function(e) {
   }
 });
 
+// ── Tracks > Tests : lance le wizard partagé (profil3) depuis l'onglet
+// Suivi. Utilisé par la carte PDC (Micro/Triphasique) qui n'a pas de
+// section dédiée dans Tracks — le wizard est déjà filtré par
+// PROGRAM_TESTS donc il montre exactement les tests du programme.
+window._tracksLaunchTestWizard = function() {
+  try {
+    var prof = {};
+    try { prof = JSON.parse(localStorage.getItem('ah_profile') || '{}'); } catch(e) {}
+    if (prof.programKey && typeof OB !== 'undefined') OB.program = prof.programKey;
+    window._satFromTracks = true;
+    if (typeof discoveryGoTo === 'function') discoveryGoTo('profil3');
+    else { go('profil3'); setTimeout(function(){ try { initP3SAT(); } catch(e) {} }, 80); }
+  } catch(e) { console.warn('_tracksLaunchTestWizard:', e); }
+};
+
+// Retour vers Tracks > Tests après un wizard lancé depuis l'onglet Suivi.
+function _satReturnToTracks() {
+  window._satFromTracks = false;
+  // Ré-afficher nav + vues (discoveryGoTo a posé des display:none inline)
+  document.querySelectorAll('.scr').forEach(function(e){ e.classList.remove('on','out'); e.style.display = 'none'; });
+  document.querySelectorAll('.view').forEach(function(v){ v.style.display = ''; });
+  var nav = document.getElementById('mainNav');
+  if (nav) nav.style.display = 'flex';
+  try { switchTab('tracks'); } catch(e) {}
+  setTimeout(function(){
+    try {
+      var tabs = document.querySelectorAll('#vTracks .sub-tab');
+      var testsTab = null;
+      tabs.forEach(function(t){ if ((t.getAttribute('onclick')||'').indexOf("'tests'") > -1) testsTab = t; });
+      showSec('tests', testsTab || undefined);
+      if (typeof renderTestsLanding === 'function') renderTestsLanding();
+    } catch(e) {}
+  }, 80);
+}
+
 function obSubmitSAT(){
   // CRITIQUE : sauvegarder les valeurs du DERNIER step avant la lecture, sinon
   // les inputs typés sur ce step ne sont jamais persistés dans p3Values (pas de
@@ -30674,8 +30738,9 @@ function obSubmitSAT(){
   }
   OB.satDone = true; OB.profilePct = 80;
 
-  // En mode découverte : sauvegarder les tests SAT et retourner Home
-  if (isDiscoveryMode()) {
+  // Lancé depuis Tracks > Tests (carte PDC) OU mode découverte :
+  // on persiste les valeurs dans le profil sans enchaîner sur profil4.
+  if (window._satFromTracks || isDiscoveryMode()) {
     try {
       var existingProfile = {};
       try { existingProfile = JSON.parse(localStorage.getItem('ah_profile') || '{}'); } catch(e) {}
@@ -30692,8 +30757,14 @@ function obSubmitSAT(){
         satFMS: OB.satFMS
       });
       localStorage.setItem('ah_profile', JSON.stringify(p));
+      try { if (window.fbUser && typeof fbSaveProfile === 'function') fbSaveProfile(); } catch(e) {}
     } catch(e) { console.warn('Save SAT error:', e); }
-    discoveryReturnToHome();
+    if (window._satFromTracks) {
+      _satReturnToTracks();
+      try { if (typeof showToast === 'function') showToast('Tests enregistrés ✓', 'info'); } catch(e) {}
+    } else {
+      discoveryReturnToHome();
+    }
     return;
   }
 
@@ -30703,6 +30774,10 @@ function obSubmitSAT(){
 }
 function obSkipSAT(){
   OB.satDone=false;OB.profilePct=66;
+  if (window._satFromTracks) {
+    _satReturnToTracks();
+    return;
+  }
   if (isDiscoveryMode()) {
     discoveryReturnToHome();
     return;
