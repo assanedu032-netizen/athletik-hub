@@ -23935,8 +23935,12 @@ function _mpPickAndPortion(arr, slotTarget, dayOffset, objectif, usedKeys) {
   var ranked = arr.slice().sort(function(a,b){
     return Math.abs((a.cals||0) - slotTarget) - Math.abs((b.cals||0) - slotTarget);
   });
-  // Garde les 6 plus proches (variété entre jours)
-  var top = ranked.slice(0, Math.min(6, ranked.length));
+  // Pool de variété : on garde jusqu'à 20 recettes les plus proches (au lieu de 6).
+  // Avant : top 6 → si l'user avait un objectif spécifique + préférences, le
+  // pool tombait à 2-3 recettes utilisables → répétition garantie sur la
+  // semaine. Maintenant : pool large, l'anti-répétition (usedKeys) peut
+  // vraiment opérer sur 7 jours × 4 slots = 28 picks.
+  var top = ranked.slice(0, Math.min(20, ranked.length));
   // Bias secondaire selon objectif : parmi les "proches", préfère ratio prot/kcal
   // pour pertePoids (satiété + maintien muscle), raw cals pour priseMuscle.
   if (objectif === 'pertePoids') {
