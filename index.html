@@ -24307,7 +24307,9 @@ window.validateMealPlan = validateMealPlan;
 // nécessaires pour matcher le target exact. Renvoie un objet enrichi de
 // plannedPortions, plannedCals, plannedProt, plannedCarbs, plannedFat.
 // `usedKeys` (optional) : keys déjà utilisées cette semaine, déprioriser.
-function _mpPickAndPortion(arr, slotTarget, dayOffset, objectif, usedKeys) {
+// `todayKeys` (optional) : keys déjà servies AUJOURD'HUI — interdit strict
+// (sauf si le pool entier est déjà passé aujourd'hui, cas pathologique).
+function _mpPickAndPortion(arr, slotTarget, dayOffset, objectif, usedKeys, todayKeys) {
   if (!arr.length) return null;
   // Trie par proximité au target du slot
   var ranked = arr.slice().sort(function(a,b){
@@ -24332,6 +24334,15 @@ function _mpPickAndPortion(arr, slotTarget, dayOffset, objectif, usedKeys) {
     for (var i = 0; i < top.length; i++) {
       var idx = (dayOffset + i) % top.length;
       if (!usedKeys[top[idx].key]) { picked = top[idx]; break; }
+    }
+  }
+  // Pool entier déjà servi cette semaine → on retombe sur une recette déjà
+  // vue, MAIS jamais une déjà servie aujourd'hui (le doublon midi/soir du
+  // même jour est le pire cas UX — cf. feedback client 10 juin 2026).
+  if (!picked && todayKeys) {
+    for (var j = 0; j < top.length; j++) {
+      var idx2 = (dayOffset + j) % top.length;
+      if (!todayKeys[top[idx2].key]) { picked = top[idx2]; break; }
     }
   }
   if (!picked) picked = top[dayOffset % top.length];
@@ -24422,16 +24433,23 @@ function generateMealPlan() {
     // Week-end (sam/dim = idx 5,6) : décale fort le seed pour varier vs lundi/mardi
     // → évite l'impression "le week-end recopie le début de semaine".
     var weekendOffset = (i >= 5) ? (Math.floor(meals.length / 2) + i * 3) : 0;
-    // Picker intelligent : recette la plus proche du target du slot + portions adaptées
-    var b = _mpPickAndPortion(breakfasts,  slotTargets.b, i + seed + weekendOffset,                  objectif, usedKeys);
-    var l = _mpPickAndPortion(meals,       slotTargets.l, i + seed + 3 + weekendOffset,              objectif, usedKeys);
-    var c = _mpPickAndPortion(collations,  slotTargets.c, i + seed + 7 + weekendOffset,              objectif, usedKeys);
-    var d = _mpPickAndPortion(meals,       slotTargets.d, i + seed + Math.ceil(meals.length/2) + weekendOffset, objectif, usedKeys);
-    // Marque comme utilisé
-    if (b && b.key) usedKeys[b.key] = (usedKeys[b.key] || 0) + 1;
-    if (l && l.key) usedKeys[l.key] = (usedKeys[l.key] || 0) + 1;
-    if (c && c.key) usedKeys[c.key] = (usedKeys[c.key] || 0) + 1;
-    if (d && d.key) usedKeys[d.key] = (usedKeys[d.key] || 0) + 1;
+    // Picker intelligent : recette la plus proche du target du slot + portions
+    // adaptées. CRITIQUE : chaque pick est marqué dans usedKeys/todayKeys
+    // AVANT le pick suivant. Avant, les 4 picks du jour se faisaient puis on
+    // marquait tout à la fin → le dîner pouvait choisir la même recette que
+    // le déjeuner du même jour (bug "Bowl thaï midi ET soir").
+    var todayKeys = {};
+    function _mpMark(r) {
+      if (r && r.key) { usedKeys[r.key] = (usedKeys[r.key] || 0) + 1; todayKeys[r.key] = 1; }
+    }
+    var b = _mpPickAndPortion(breakfasts,  slotTargets.b, i + seed + weekendOffset,                  objectif, usedKeys, todayKeys);
+    _mpMark(b);
+    var l = _mpPickAndPortion(meals,       slotTargets.l, i + seed + 3 + weekendOffset,              objectif, usedKeys, todayKeys);
+    _mpMark(l);
+    var c = _mpPickAndPortion(collations,  slotTargets.c, i + seed + 7 + weekendOffset,              objectif, usedKeys, todayKeys);
+    _mpMark(c);
+    var d = _mpPickAndPortion(meals,       slotTargets.d, i + seed + Math.ceil(meals.length/2) + weekendOffset, objectif, usedKeys, todayKeys);
+    _mpMark(d);
     // Total avec portions ajustées
     var mealsTotal = (b ? b.plannedCals : 0) + (l ? l.plannedCals : 0) + (c ? c.plannedCals : 0) + (d ? d.plannedCals : 0);
     // Si on est sous la cible de plus de 100 kcal → boosters caloriques visibles
