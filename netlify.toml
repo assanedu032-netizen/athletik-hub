@@ -8,6 +8,12 @@
 [functions."admin-build-index"]
   included_files = ["data/livre.md"]
 
+# Embarque la banque de questions LDV_V1_STABLE_INTRO (pages stables du livre)
+# pour la fonction d'activation post-achat. Le fichier n'est jamais servi au
+# client — seul le bundle de la fonction y a accès.
+[functions."book-challenge"]
+  included_files = ["data/book-challenges.js"]
+
 # Fonction planifiée : rappels session (H-60 lecture, H-30 prep, H+5 micro).
 # Cron toutes les 10 minutes — chaque fenêtre fait 10 min de large pour
 # n'envoyer qu'un seul push par utilisateur par fenêtre.

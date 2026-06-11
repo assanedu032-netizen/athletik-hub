@@ -1,0 +1,125 @@
+{
+  "bookVersion": "LDV_V1_STABLE_INTRO",
+  "_doc": "Seed local pour générer data/book-challenges.js. Copie ce fichier vers bookChallengesSeed.json (gitignored), modifie si besoin, puis lance: node scripts/gen-book-challenges.js  (ou --hash pour la prod).",
+  "challenges": [
+    {
+      "id": "preface_ami_ans",
+      "section": "Préface",
+      "questionText": "Dans la Préface (signée Loïc), quel nombre complète cette phrase : \"Je connais Alassane depuis plus de ___ ans\" ?",
+      "accepted": ["10", "10 ans"],
+      "difficulty": "easy"
+    },
+    {
+      "id": "preface_signataire",
+      "section": "Préface",
+      "questionText": "Quel est le prénom de l'ami qui a signé la Préface du livre ?",
+      "accepted": ["loic", "loïc"],
+      "difficulty": "easy"
+    },
+    {
+      "id": "avantpropos_a_toi",
+      "section": "Avant-Propos",
+      "questionText": "Comment commence l'Avant-Propos ? \"À toi qui lis ce ___.\"",
+      "accepted": ["livre"],
+      "difficulty": "easy"
+    },
+    {
+      "id": "croire_challenge_n",
+      "section": "Pourquoi tu devrais me croire",
+      "questionText": "Quel nombre apparaît dans le nom du challenge d'Alassane ? \"challenge +___\"",
+      "accepted": ["7"],
+      "difficulty": "easy"
+    },
+    {
+      "id": "croire_challenge_cm",
+      "section": "Pourquoi tu devrais me croire",
+      "questionText": "Combien de cm de détente vise le challenge +7 ? \"gagner au moins ___ cm de détente\"",
+      "accepted": ["7", "7 cm"],
+      "difficulty": "easy"
+    },
+    {
+      "id": "croire_challenge_minutes",
+      "section": "Pourquoi tu devrais me croire",
+      "questionText": "Combien de minutes par jour pendant 7 jours dans le challenge ? \"en seulement ___ minutes par jour\"",
+      "accepted": ["20", "20 minutes"],
+      "difficulty": "easy"
+    },
+    {
+      "id": "croire_sportifs",
+      "section": "Pourquoi tu devrais me croire",
+      "questionText": "Combien de sportifs ont testé la méthode selon le livre ? \"Testé par plus de ___ sportifs\"",
+      "accepted": ["900"],
+      "difficulty": "medium"
+    },
+    {
+      "id": "forme_euros",
+      "section": "Comment je me suis formé",
+      "questionText": "Combien d'euros Alassane a-t-il investis en formations ? \"J'ai investi plus de ___ € dans des formations\"",
+      "accepted": ["10000", "10 000", "10.000"],
+      "difficulty": "medium"
+    },
+    {
+      "id": "forme_certification",
+      "section": "Comment je me suis formé",
+      "questionText": "Quelle certification américaine Alassane a-t-il obtenue ? (4 lettres)",
+      "accepted": ["issa"],
+      "difficulty": "medium"
+    },
+    {
+      "id": "forme_bpjeps",
+      "section": "Comment je me suis formé",
+      "questionText": "Quel est l'équivalent français de la certification ISSA mentionné dans le livre ?",
+      "accepted": ["bpjeps"],
+      "difficulty": "medium"
+    },
+    {
+      "id": "dv_annee",
+      "section": "Pourquoi la détente verticale ?",
+      "questionText": "En quelle année tout a-t-il commencé pour Alassane ? \"Tout a commencé en ___\"",
+      "accepted": ["2014"],
+      "difficulty": "easy"
+    },
+    {
+      "id": "dv_age",
+      "section": "Pourquoi la détente verticale ?",
+      "questionText": "Quel âge avait Alassane quand tout a commencé ? \"J'avais ___ ans\"",
+      "accepted": ["14", "14 ans"],
+      "difficulty": "easy"
+    },
+    {
+      "id": "dv_taille",
+      "section": "Pourquoi la détente verticale ?",
+      "questionText": "Quelle taille Alassane mesurait-il à ses débuts ? \"moins d'___\"",
+      "accepted": ["1m60", "160 cm", "160cm", "1,60 m"],
+      "difficulty": "medium"
+    },
+    {
+      "id": "dv_club",
+      "section": "Pourquoi la détente verticale ?",
+      "questionText": "Dans quel club Alassane s'est-il présenté à sa première détection ? \"ma première détection au club de ___\"",
+      "accepted": ["nanterre"],
+      "difficulty": "medium"
+    },
+    {
+      "id": "dv_detente_debut",
+      "section": "Pourquoi la détente verticale ?",
+      "questionText": "De combien de cm de détente Alassane est-il parti ? \"je suis passé de ___ cm à 88 cm\"",
+      "accepted": ["56", "56 cm"],
+      "difficulty": "hard"
+    },
+    {
+      "id": "dv_detente_fin",
+      "section": "Pourquoi la détente verticale ?",
+      "questionText": "Combien de cm de détente Alassane a-t-il atteints ? \"passé de 56 cm à ___ cm de détente verticale\"",
+      "accepted": ["88", "88 cm"],
+      "difficulty": "hard"
+    },
+    {
+      "id": "facon_verite",
+      "section": "Ma façon de faire",
+      "questionText": "Que dit le coach selon Alassane ? \"le coach qui te dit la ___\"",
+      "accepted": ["verite", "vérité"],
+      "difficulty": "easy"
+    }
+  ]
+}

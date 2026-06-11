@@ -4282,6 +4282,32 @@ html body #result, html body #nutriResult{
 .lib-filt-row:active{transform:scale(.98)}
 .lib-filt-row.on{background:var(--gold-dim,rgba(197,164,78,.12));border-color:var(--gold)}
 
+/* ═══════════════════════════════════════════════════════════════════════
+   PREMIUM OVERLAY — popup trial expiré + wizard activation livre
+   Design : overlay sombre, carte centrée navy/gold, hiérarchie claire
+   titre → bénéfices → CTA. Apparait après expiration du trial 3 jours.
+   ═══════════════════════════════════════════════════════════════════════ */
+.prem-ov{position:fixed;inset:0;background:rgba(6,12,24,.88);backdrop-filter:blur(10px);z-index:9600;align-items:center;justify-content:center;padding:18px;opacity:0;transition:opacity .18s ease}
+.prem-ov.on{opacity:1}
+.prem-card{position:relative;width:100%;max-width:440px;max-height:92vh;overflow-y:auto;background:linear-gradient(165deg,#1B2A4A 0%,#0F1B33 100%);border:1px solid rgba(197,164,78,.32);border-radius:22px;padding:28px 22px 24px;color:#fff;box-shadow:0 28px 70px rgba(0,0,0,.55),0 0 0 1px rgba(197,164,78,.06),0 0 60px rgba(197,164,78,.12);transform:translateY(20px) scale(.96);transition:transform .22s cubic-bezier(.34,1.56,.64,1)}
+.prem-card-narrow{max-width:400px}
+.prem-ov.on .prem-card{transform:translateY(0) scale(1)}
+.prem-close{position:absolute;top:12px;right:12px;width:34px;height:34px;border-radius:50%;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);color:rgba(255,255,255,.75);font-size:20px;line-height:1;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:background .15s}
+.prem-close:hover{background:rgba(255,255,255,.12)}
+.prem-eyebrow{font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:.22em;color:var(--ah-gold,#C5A44E);text-transform:uppercase;font-weight:800;margin-bottom:10px}
+.prem-title{font-family:'Bebas Neue',sans-serif;font-size:26px;letter-spacing:.03em;line-height:1.1;color:#fff;margin-bottom:8px}
+.prem-sub{font-family:'Outfit',sans-serif;font-size:13.5px;color:rgba(255,255,255,.78);line-height:1.5;margin-bottom:18px}
+.prem-bullets{list-style:none;margin:0 0 16px;padding:14px 14px 12px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:14px}
+.prem-bullets li{display:flex;align-items:flex-start;gap:10px;padding:5px 0;font-family:'Outfit',sans-serif;font-size:13px;color:rgba(255,255,255,.92);line-height:1.45}
+.prem-check{display:inline-flex;align-items:center;justify-content:center;width:20px;height:20px;border-radius:50%;background:rgba(197,164,78,.18);color:var(--ah-gold,#C5A44E);font-size:11px;font-weight:900;flex-shrink:0;margin-top:1px}
+.prem-help{font-family:'Outfit',sans-serif;font-size:12px;color:rgba(255,255,255,.62);line-height:1.55;margin-bottom:14px}
+.prem-cta-primary{display:block;width:100%;padding:15px;background:linear-gradient(135deg,#D4B45E,#C5A44E 55%,#B89238);border:0;border-radius:14px;font-family:'Bebas Neue',sans-serif;font-size:16px;letter-spacing:.12em;color:#1B2A4A;cursor:pointer;box-shadow:0 8px 22px rgba(197,164,78,.36);transition:transform .1s}
+.prem-cta-primary:active{transform:scale(.98)}
+.prem-cta-secondary{display:block;width:100%;margin-top:8px;padding:13px;background:transparent;border:1.5px solid rgba(212,175,55,.5);border-radius:14px;font-family:'Outfit',sans-serif;font-size:13px;font-weight:800;color:var(--ah-gold,#D4B45E);cursor:pointer;letter-spacing:.04em;transition:background .15s}
+.prem-cta-secondary:hover{background:rgba(212,175,55,.06)}
+.prem-cta-tertiary{display:block;width:100%;margin-top:8px;padding:11px;background:transparent;border:0;font-family:'Outfit',sans-serif;font-size:12px;font-weight:700;color:rgba(255,255,255,.55);cursor:pointer;letter-spacing:.04em;text-decoration:underline;text-decoration-color:rgba(255,255,255,.2);text-underline-offset:3px}
+.prem-cta-tertiary:hover{color:rgba(255,255,255,.85);text-decoration-color:rgba(255,255,255,.6)}
+
 /* ── Librairie : ombre sur les vignettes YouTube pour lisibilité des badges ── */
 .yt-thumb.has-thumb{position:relative;background-color:#0F1A30}
 .yt-thumb-shade{position:absolute;inset:0;background:linear-gradient(180deg,rgba(0,0,0,.25) 0%,rgba(0,0,0,0) 35%,rgba(0,0,0,0) 65%,rgba(0,0,0,.45) 100%);pointer-events:none;z-index:1}
@@ -8289,6 +8315,46 @@ window.tiResetOnEnter = function(){ window.tiShowStep(1); };
     <button onclick="closeMenerQuiz()" style="width:38px;height:38px;border-radius:50%;background:var(--surface2);border:1px solid var(--border);color:var(--text2);font-size:17px;cursor:pointer;font-family:'Outfit',sans-serif">✕</button>
   </div>
   <div id="menerQuizBody" style="flex:1;overflow-y:auto;padding:18px 16px 24px"></div>
+</div>
+
+<!-- ═══ POPUP PREMIUM — apparait après expiration du trial 3 jours ═══
+     Cohérent avec l'identité Athletik Hub (navy + or + serif Bebas), animé
+     fade-in + scale. Pas une simple alerte : 3 CTA hiérarchisés
+     (Activer / Acheter / J'ai un code). Fermable mais le contenu premium
+     reste bloqué tant que hasBookAccess n'est pas true. -->
+<div id="premiumOverlay" class="prem-ov" style="display:none">
+  <div class="prem-card" role="dialog" aria-labelledby="premTitle">
+    <button class="prem-close" onclick="window._closePremiumOverlay()" aria-label="Fermer">×</button>
+    <div class="prem-eyebrow">Athletik Hub · Premium</div>
+    <div class="prem-title" id="premTitle">Tes 3 jours d'accès découverte sont terminés</div>
+    <div class="prem-sub">Active ton accès lecteur pour continuer.</div>
+
+    <ul class="prem-bullets">
+      <li><span class="prem-check">✓</span><span>Accède à ton programme personnalisé</span></li>
+      <li><span class="prem-check">✓</span><span>Débloque les séances premium</span></li>
+      <li><span class="prem-check">✓</span><span>Suis ta progression étape par étape</span></li>
+      <li><span class="prem-check">✓</span><span>Utilise Titan comme coach personnel</span></li>
+      <li><span class="prem-check">✓</span><span>Profite des ressources réservées aux lecteurs</span></li>
+    </ul>
+
+    <div class="prem-help">Pour continuer, active ton accès avec ton livre ou achète-le sur Amazon.</div>
+
+    <button class="prem-cta-primary" onclick="window.openBookActivation()">Activer mon accès</button>
+    <button class="prem-cta-secondary" onclick="window.openAmazonBook()">📕 Acheter le livre</button>
+    <button class="prem-cta-tertiary" onclick="window._closePremiumOverlay(); setTimeout(function(){try{openAccessCode();}catch(e){}}, 200)">J'ai un code BETA / VIP</button>
+  </div>
+</div>
+
+<!-- ═══ ACTIVATION LIVRE — wizard 2 étapes (Amazon order → question livre) ═══
+     Appelle /api/book-challenge (start + verify). Le frontend ne reçoit
+     jamais la réponse correcte ; le serveur Netlify Function valide tout
+     (HMAC sessionId, normalisation, anti-réutilisation Amazon order). -->
+<div id="bookActivationModal" class="prem-ov" style="display:none">
+  <div class="prem-card prem-card-narrow" role="dialog" aria-labelledby="bookActTitle">
+    <button class="prem-close" onclick="window.closeBookActivation()" aria-label="Fermer">×</button>
+    <div class="prem-eyebrow" id="bookActStepLabel">ÉTAPE 1 / 2</div>
+    <div id="bookActStepBody"></div>
+  </div>
 </div>
 
 <!-- ═══ ACCÈS POST-LIVRE — modal de saisie code/question ═══ -->
@@ -23774,7 +23840,7 @@ var ACCESS_BOOK_ANSWERS = ['loic', 'loïc'];
 // Lien Amazon du livre — source unique pour tous les CTA d'achat / avis.
 // Utilisé par : modal d'accès (CTA "Acheter"), bannière essai (lien "L'acheter"),
 // paramètres ("Laisser un avis"). Centraliser ici permet de changer en un point.
-var AMAZON_BOOK_URL = 'https://amzn.eu/d/02ZPlUOp';
+var AMAZON_BOOK_URL = 'https://amzn.eu/d/07XocCgp';
 window.AMAZON_BOOK_URL = AMAZON_BOOK_URL;
 function openAmazonBook() {
   try { window.open(AMAZON_BOOK_URL, '_blank', 'noopener,noreferrer'); } catch(e) { location.href = AMAZON_BOOK_URL; }
@@ -23970,16 +24036,227 @@ window.getTrialInfo = function() {
 };
 
 window.hasValidAccess = function() {
+  // Accès post-livre validé serveur (book-challenge.js → Firestore)
+  try {
+    var p = JSON.parse(localStorage.getItem('ah_profile') || '{}');
+    if (p.hasBookAccess === true) return true;
+  } catch(e) {}
+  // Codes spéciaux BETA/VIP/MASTER
   if (window.hasAccessTier && window.hasAccessTier('BETA')) return true;
+  // Trial 3 jours en cours
   var t = window.getTrialInfo();
   return !!t.active;
 };
 
+// Affiche le popup premium "Tes 3 jours d'accès découverte sont terminés".
+// Remplace l'ancien toast + redirection vers la modal code legacy. L'utilisateur
+// voit une carte premium (overlay sombre, hero navy/gold, bénéfices, 3 CTA :
+// Activer mon accès / Acheter le livre / J'ai un code). Cf. #premiumOverlay.
 window._showAccessRequired = function() {
-  if (typeof showToast === 'function') {
-    showToast('⏰ Ton essai de 3 jours est terminé. Saisis ton code livre pour continuer.', 'info');
+  var ov = document.getElementById('premiumOverlay');
+  if (!ov) {
+    // Fallback si le popup n'est pas dans le DOM (cas legacy / cache stale)
+    if (typeof showToast === 'function') showToast('⏰ Ton essai de 3 jours est terminé. Saisis ton code livre pour continuer.', 'info');
+    setTimeout(function() { try { openAccessCode(); } catch(e) {} }, 700);
+    return;
   }
-  setTimeout(function() { try { openAccessCode(); } catch(e) {} }, 700);
+  ov.style.display = 'flex';
+  // Petit délai pour que l'animation CSS s'enclenche
+  requestAnimationFrame(function(){ ov.classList.add('on'); });
+};
+
+window._closePremiumOverlay = function() {
+  var ov = document.getElementById('premiumOverlay');
+  if (!ov) return;
+  ov.classList.remove('on');
+  setTimeout(function(){ ov.style.display = 'none'; }, 180);
+};
+
+// ═══════════════════════════════════════════════════════════════════════════
+// ACTIVATION POST-LIVRE — wizard 2 étapes (Amazon + question livre).
+// ───────────────────────────────────────────────────────────────────────────
+// Étape 1 : numéro de commande Amazon. Étape 2 : question aléatoire piochée
+// par le serveur (/api/book-challenge action=start). La réponse est envoyée
+// au serveur (action=verify) qui hashe le numéro Amazon, vérifie l'unicité
+// (Netlify Blobs) et marque users/{uid}.hasBookAccess=true dans Firestore.
+// Le frontend n'a jamais accès à la réponse correcte.
+// ═══════════════════════════════════════════════════════════════════════════
+window._bookActivation = {
+  step: 1,
+  sessionId: null,
+  questionText: null,
+  amazonOrder: ''
+};
+
+window.openBookActivation = function() {
+  // Auth requise — si l'utilisateur n'est pas connecté, on l'envoie sur auth
+  if (!window.fbUser) {
+    if (typeof showToast === 'function') showToast('Connecte-toi d\'abord pour activer ton accès.', 'info');
+    try { go('auth'); } catch(e) {}
+    return;
+  }
+  window._closePremiumOverlay();
+  window._bookActivation = { step: 1, sessionId: null, questionText: null, amazonOrder: '' };
+  var m = document.getElementById('bookActivationModal');
+  if (m) { m.style.display = 'flex'; requestAnimationFrame(function(){ m.classList.add('on'); }); }
+  _renderBookActivationStep();
+};
+
+window.closeBookActivation = function() {
+  var m = document.getElementById('bookActivationModal');
+  if (!m) return;
+  m.classList.remove('on');
+  setTimeout(function(){ m.style.display = 'none'; }, 180);
+};
+
+function _renderBookActivationStep() {
+  var body = document.getElementById('bookActStepBody');
+  var st = document.getElementById('bookActStepLabel');
+  if (!body) return;
+  var state = window._bookActivation;
+  if (st) st.textContent = 'ÉTAPE ' + state.step + ' / 2';
+
+  if (state.step === 1) {
+    body.innerHTML =
+      '<div style="font-family:\'Bebas Neue\',sans-serif;font-size:24px;letter-spacing:.04em;color:#fff;line-height:1.05;margin-bottom:8px">Ton numéro de commande Amazon</div>'
+      + '<div style="font-family:\'Outfit\',sans-serif;font-size:12.5px;color:rgba(255,255,255,.72);line-height:1.55;margin-bottom:18px">Ton numéro de commande sert <b>uniquement</b> à vérifier ton achat. Il est hashé côté serveur et n\'est <b>jamais stocké en clair</b>.</div>'
+      + '<label style="font-family:\'JetBrains Mono\',monospace;font-size:10px;letter-spacing:.18em;color:var(--ah-gold);text-transform:uppercase;font-weight:700">N° commande Amazon</label>'
+      + '<input id="bookActOrderInput" type="text" placeholder="123-1234567-1234567" value="' + (state.amazonOrder || '') + '" autocomplete="off" inputmode="text" style="width:100%;margin-top:6px;padding:13px 14px;background:rgba(255,255,255,.06);border:1.5px solid rgba(255,255,255,.16);border-radius:12px;font-family:\'Outfit\',sans-serif;font-size:14px;color:#fff;outline:none;box-sizing:border-box;letter-spacing:.04em">'
+      + '<div style="font-size:11px;color:rgba(255,255,255,.5);line-height:1.5;margin-top:6px">Format Amazon : 3 chiffres - 7 chiffres - 7 chiffres.</div>'
+      + '<div id="bookActMsg" style="display:none;font-size:12.5px;line-height:1.5;margin-top:12px;padding:10px 12px;border-radius:10px"></div>'
+      + '<button onclick="window._bookActivationNext()" style="width:100%;margin-top:18px;padding:14px;background:linear-gradient(135deg,#D4B45E,#C5A44E 55%,#B89238);border:0;border-radius:12px;font-family:\'Bebas Neue\',sans-serif;font-size:15px;letter-spacing:.14em;color:var(--ah-navy);cursor:pointer;box-shadow:0 6px 18px rgba(197,164,78,.34)">CONTINUER →</button>'
+      + '<button onclick="window.openAmazonBook()" style="width:100%;margin-top:8px;padding:11px;background:transparent;border:1.5px solid rgba(212,175,55,.5);border-radius:12px;font-family:\'Outfit\',sans-serif;font-size:12.5px;font-weight:800;color:#D4B45E;cursor:pointer;letter-spacing:.04em">📕 Pas encore le livre — Acheter sur Amazon</button>';
+    setTimeout(function(){ var i = document.getElementById('bookActOrderInput'); if (i) i.focus(); }, 50);
+    return;
+  }
+
+  // Étape 2 : question livre
+  body.innerHTML =
+    '<div style="font-family:\'Bebas Neue\',sans-serif;font-size:22px;letter-spacing:.04em;color:#fff;line-height:1.1;margin-bottom:6px">Question livre</div>'
+    + (state.section ? '<div style="display:inline-block;font-family:\'JetBrains Mono\',monospace;font-size:9px;letter-spacing:.2em;color:var(--ah-gold);text-transform:uppercase;background:rgba(197,164,78,.14);border:1px solid rgba(197,164,78,.4);border-radius:999px;padding:4px 10px;margin-bottom:14px">' + state.section + '</div>' : '')
+    + '<div style="font-family:\'Outfit\',sans-serif;font-size:13.5px;color:rgba(255,255,255,.88);line-height:1.55;margin-bottom:16px">' + (state.questionText || 'Chargement de la question...') + '</div>'
+    + '<label style="font-family:\'JetBrains Mono\',monospace;font-size:10px;letter-spacing:.18em;color:var(--ah-gold);text-transform:uppercase;font-weight:700">Ta réponse</label>'
+    + '<input id="bookActAnswerInput" type="text" placeholder="Tape ta réponse..." autocomplete="off" style="width:100%;margin-top:6px;padding:13px 14px;background:rgba(255,255,255,.06);border:1.5px solid rgba(255,255,255,.16);border-radius:12px;font-family:\'Outfit\',sans-serif;font-size:14px;color:#fff;outline:none;box-sizing:border-box">'
+    + '<div id="bookActMsg" style="display:none;font-size:12.5px;line-height:1.5;margin-top:12px;padding:10px 12px;border-radius:10px"></div>'
+    + '<button id="bookActValidateBtn" onclick="window._bookActivationValidate()" style="width:100%;margin-top:18px;padding:14px;background:linear-gradient(135deg,#D4B45E,#C5A44E 55%,#B89238);border:0;border-radius:12px;font-family:\'Bebas Neue\',sans-serif;font-size:15px;letter-spacing:.14em;color:var(--ah-navy);cursor:pointer;box-shadow:0 6px 18px rgba(197,164,78,.34)">VALIDER MON ACCÈS</button>'
+    + '<button onclick="window._bookActivation.step = 1; _renderBookActivationStep()" style="width:100%;margin-top:8px;padding:11px;background:transparent;border:1px solid rgba(255,255,255,.18);border-radius:12px;font-family:\'Outfit\',sans-serif;font-size:12px;font-weight:700;color:rgba(255,255,255,.7);cursor:pointer">← Modifier le numéro Amazon</button>';
+  setTimeout(function(){ var i = document.getElementById('bookActAnswerInput'); if (i) i.focus(); }, 50);
+}
+
+function _bookActMsg(text, kind) {
+  var el = document.getElementById('bookActMsg');
+  if (!el) return;
+  var bg = kind === 'ok' ? 'rgba(34,197,94,.16)' : (kind === 'info' ? 'rgba(212,175,55,.14)' : 'rgba(239,68,68,.16)');
+  var color = kind === 'ok' ? '#22C55E' : (kind === 'info' ? '#D4B45E' : '#FCA5A5');
+  el.style.background = bg;
+  el.style.border = '1px solid ' + (kind === 'ok' ? 'rgba(34,197,94,.4)' : (kind === 'info' ? 'rgba(212,175,55,.4)' : 'rgba(239,68,68,.4)'));
+  el.style.color = color;
+  el.textContent = text;
+  el.style.display = '';
+}
+
+window._bookActivationNext = async function() {
+  var input = document.getElementById('bookActOrderInput');
+  var order = (input && input.value || '').trim();
+  if (!order) { _bookActMsg('Saisis ton numéro de commande Amazon.', 'err'); return; }
+  // Format souple : on valide en regex large pour ne pas bloquer un user qui
+  // copie/colle avec ou sans tirets. Le serveur fait l'autorité.
+  var compact = order.replace(/\s+/g, '');
+  if (!/^[0-9A-Z\-]{8,30}$/i.test(compact)) {
+    _bookActMsg('Format de commande invalide. Ex : 123-1234567-1234567.', 'err');
+    return;
+  }
+  window._bookActivation.amazonOrder = order;
+
+  // Auth ID token
+  if (!window.fbUser) { _bookActMsg('Reconnecte-toi puis réessaie.', 'err'); return; }
+  _bookActMsg('Chargement de la question...', 'info');
+  let idToken;
+  try { idToken = await window.fbUser.getIdToken(); }
+  catch(e) { _bookActMsg('Session expirée. Reconnecte-toi.', 'err'); return; }
+
+  try {
+    var res = await fetch('/.netlify/functions/book-challenge', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + idToken },
+      body: JSON.stringify({ action: 'start' })
+    });
+    var data = await res.json();
+    if (!res.ok || !data.ok) {
+      _bookActMsg((data && data.message) || 'Service indisponible. Réessaie plus tard.', 'err');
+      return;
+    }
+    window._bookActivation.step = 2;
+    window._bookActivation.sessionId = data.sessionId;
+    window._bookActivation.questionText = data.questionText;
+    window._bookActivation.section = data.section;
+    _renderBookActivationStep();
+  } catch (e) {
+    _bookActMsg('Connexion impossible. Vérifie ton réseau.', 'err');
+  }
+};
+
+window._bookActivationValidate = async function() {
+  var state = window._bookActivation;
+  var input = document.getElementById('bookActAnswerInput');
+  var btn = document.getElementById('bookActValidateBtn');
+  var answer = (input && input.value || '').trim();
+  if (!answer) { _bookActMsg('Tape ta réponse.', 'err'); return; }
+  if (!state.sessionId) { _bookActMsg('Session expirée. Relance la procédure.', 'err'); return; }
+  if (!window.fbUser) { _bookActMsg('Reconnecte-toi.', 'err'); return; }
+
+  if (btn) { btn.disabled = true; btn.style.opacity = '.6'; }
+  _bookActMsg('Vérification...', 'info');
+  let idToken;
+  try { idToken = await window.fbUser.getIdToken(); }
+  catch(e) { _bookActMsg('Session expirée. Reconnecte-toi.', 'err'); if (btn){btn.disabled=false;btn.style.opacity='1';} return; }
+
+  try {
+    var res = await fetch('/.netlify/functions/book-challenge', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + idToken },
+      body: JSON.stringify({
+        action: 'verify',
+        sessionId: state.sessionId,
+        answer: answer,
+        amazonOrder: state.amazonOrder
+      })
+    });
+    var data = await res.json();
+    if (btn) { btn.disabled = false; btn.style.opacity = '1'; }
+    if (!data.ok) {
+      var msg = (data && data.message) || 'Erreur. Réessaie.';
+      _bookActMsg(msg, 'err');
+      // Sur wrong_answer on RE-pioche une question (sessionId non réutilisable)
+      if (data.error === 'wrong_answer' || data.error === 'session_invalid') {
+        setTimeout(function(){
+          state.step = 1;
+          state.sessionId = null;
+          state.questionText = null;
+          _renderBookActivationStep();
+        }, 1400);
+      }
+      return;
+    }
+    // Succès — màj profil local + sync Firestore
+    try {
+      var prof = JSON.parse(localStorage.getItem('ah_profile') || '{}');
+      prof.hasBookAccess = true;
+      prof.accessMethod = 'amazon_order_book_question';
+      prof.bookAccessVerifiedAt = Date.now();
+      prof.trialStatus = 'converted';
+      localStorage.setItem('ah_profile', JSON.stringify(prof));
+    } catch(e) {}
+    _bookActMsg('✓ Accès débloqué. Bienvenue dans ton espace Athletik Hub.', 'ok');
+    if (typeof showToast === 'function') showToast('🎉 Accès débloqué — l\'app est à toi.', 'info');
+    setTimeout(function(){
+      window.closeBookActivation();
+      try { if (typeof renderUserData === 'function') renderUserData(); } catch(e) {}
+    }, 1100);
+  } catch (e) {
+    if (btn) { btn.disabled = false; btn.style.opacity = '1'; }
+    _bookActMsg('Connexion impossible. Vérifie ton réseau.', 'err');
+  }
 };
 
 // Formate le restant : "2j 4h" / "3h 12mn" / "23 mn"
