@@ -4591,6 +4591,153 @@ html body #result, html body #nutriResult{
 }
 .prem-back:hover{border-color:rgba(255,255,255,.30);color:rgba(255,255,255,.90)}
 
+/* ═══════════════════════════════════════════════════════════════════════
+   VARIANTE LIGHT — même hiérarchie premium, palette ivoire/or/navy
+   Activée automatiquement quand data-theme="light" (défaut de l'app).
+   La version sombre reste utilisée en data-theme="dark".
+   ═══════════════════════════════════════════════════════════════════════ */
+
+/* Backdrop : voile navy translucide sur l'app, pas un fond plein écran sombre */
+[data-theme="light"] .prem-ov{
+  background:
+    radial-gradient(ellipse 70% 50% at 18% 12%, rgba(197,164,78,.22), transparent 55%),
+    radial-gradient(ellipse 60% 50% at 82% 88%, rgba(212,175,55,.14), transparent 60%),
+    radial-gradient(ellipse 100% 90% at 50% 50%, rgba(36,59,107,.55), rgba(20,30,60,.78));
+  backdrop-filter:blur(10px);
+}
+[data-theme="light"] .prem-ov::before{
+  background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 400 800' preserveAspectRatio='xMidYMid slice'><g fill='none' stroke='%23C5A44E' stroke-width='1.5' opacity='0.22'><path d='M 0 720 L 400 720'/><circle cx='200' cy='720' r='90' /><circle cx='200' cy='720' r='10' fill='%23C5A44E'/><path d='M 80 720 L 80 580 Q 80 540 120 540 L 280 540 Q 320 540 320 580 L 320 720'/><path d='M 0 100 Q 200 -40 400 100'/></g></svg>");
+  opacity:.45;
+}
+[data-theme="light"] .prem-ov::after{ opacity:.18 }
+
+/* Carte ivoire avec accent gold subtil + ombre profonde */
+[data-theme="light"] .prem-card{
+  background:
+    radial-gradient(ellipse 90% 40% at 50% 0%, rgba(197,164,78,.12), transparent 60%),
+    linear-gradient(180deg, #FFFFFF 0%, #FAF6EC 100%);
+  border:1px solid rgba(197,164,78,.30);
+  color:#1B2A4A;
+  box-shadow:
+    0 36px 90px rgba(20,30,60,.32),
+    0 0 0 1px rgba(197,164,78,.10),
+    0 0 60px rgba(197,164,78,.12),
+    inset 0 1px 0 rgba(255,255,255,.9);
+}
+
+/* Bouton X navy */
+[data-theme="light"] .prem-close{
+  background:rgba(20,30,60,.06);
+  border:1px solid rgba(20,30,60,.10);
+  color:rgba(20,30,60,.55);
+}
+[data-theme="light"] .prem-close:hover{background:rgba(20,30,60,.12);color:rgba(20,30,60,.85)}
+
+/* Titre navy + gradient navy → muted navy */
+[data-theme="light"] .prem-title{
+  background:linear-gradient(180deg, #1B2A4A 0%, #2F4477 100%);
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;
+  background-clip:text;
+  text-shadow:0 0 24px rgba(197,164,78,.10);
+}
+[data-theme="light"] .prem-sub{color:rgba(20,30,60,.66)}
+[data-theme="light"] .prem-help{color:rgba(20,30,60,.55)}
+
+/* Bénéfices : fond crème avec accents gold, divider gold visible */
+[data-theme="light"] .prem-bullets{
+  background:linear-gradient(180deg, #FBF7EA 0%, #F5F1E2 100%);
+  border:1px solid rgba(197,164,78,.32);
+}
+[data-theme="light"] .prem-bullets::before{
+  background:linear-gradient(90deg, transparent, rgba(197,164,78,.55), transparent);
+}
+[data-theme="light"] .prem-bullets li{color:rgba(20,30,60,.92)}
+[data-theme="light"] .prem-bullets li + li{border-top-color:rgba(20,30,60,.08)}
+/* Check icon : même médaillon gold 3D — il fonctionne sur fond clair */
+[data-theme="light"] .prem-check::after{
+  border-right-color:#FFFFFF;border-bottom-color:#FFFFFF;
+}
+[data-theme="light"] .prem-check{
+  box-shadow:0 4px 12px rgba(197,164,78,.35), inset 0 1px 0 rgba(255,255,255,.5);
+}
+
+/* CTA primaire : même gold luxueux, texte navy */
+[data-theme="light"] .prem-cta-primary{
+  color:#FFFFFF;
+  background:linear-gradient(135deg, #C5A44E 0%, #B89238 50%, #A0853A 100%);
+  box-shadow:
+    0 12px 28px rgba(197,164,78,.42),
+    0 0 0 1px rgba(160,133,58,.30),
+    inset 0 1px 0 rgba(255,255,255,.35),
+    inset 0 -2px 0 rgba(0,0,0,.12);
+  text-shadow:0 1px 0 rgba(0,0,0,.18);
+}
+[data-theme="light"] .prem-cta-primary:hover{
+  box-shadow:0 14px 34px rgba(197,164,78,.55), 0 0 0 1px rgba(160,133,58,.45), inset 0 1px 0 rgba(255,255,255,.35);
+}
+
+/* CTA secondaire : outline navy/gold */
+[data-theme="light"] .prem-cta-secondary{
+  border-color:rgba(20,30,60,.20);
+  color:#8A6D2B;
+  background:#FFFFFF;
+}
+[data-theme="light"] .prem-cta-secondary:hover{
+  background:rgba(197,164,78,.06);
+  border-color:rgba(197,164,78,.55);
+}
+
+/* CTA tertiaire : lien gris foncé */
+[data-theme="light"] .prem-cta-tertiary{
+  color:rgba(20,30,60,.50);
+  text-decoration-color:rgba(20,30,60,.20);
+}
+[data-theme="light"] .prem-cta-tertiary:hover{
+  color:rgba(20,30,60,.80);
+  text-decoration-color:rgba(20,30,60,.55);
+}
+
+/* Inputs ivoire */
+[data-theme="light"] .prem-input{
+  background:#FFFFFF;
+  border:1.5px solid rgba(20,30,60,.14);
+  color:#1B2A4A;
+  box-shadow:inset 0 1px 2px rgba(20,30,60,.04);
+}
+[data-theme="light"] .prem-input:focus{
+  border-color:rgba(197,164,78,.7);
+  background:#FFFDF8;
+  box-shadow:0 0 0 3px rgba(197,164,78,.18);
+}
+[data-theme="light"] .prem-input::placeholder{color:rgba(20,30,60,.30)}
+[data-theme="light"] .prem-input-label{color:#8A6D2B}
+[data-theme="light"] .prem-input-hint{color:rgba(20,30,60,.50)}
+
+/* Trust badge vert : version light */
+[data-theme="light"] .prem-trust{
+  background:rgba(34,197,94,.08);
+  border-color:rgba(34,197,94,.32);
+  color:#155F39;
+}
+
+/* Chip section question */
+[data-theme="light"] .prem-chip{
+  background:rgba(197,164,78,.12);
+  border-color:rgba(197,164,78,.50);
+  color:#8A6D2B;
+}
+[data-theme="light"] .prem-question{color:rgba(20,30,60,.92)}
+
+/* Bouton retour discret */
+[data-theme="light"] .prem-back{
+  border-color:rgba(20,30,60,.12);
+  color:rgba(20,30,60,.55);
+}
+[data-theme="light"] .prem-back:hover{
+  border-color:rgba(20,30,60,.30);
+  color:rgba(20,30,60,.85);
+}
+
 /* ── Librairie : ombre sur les vignettes YouTube pour lisibilité des badges ── */
 .yt-thumb.has-thumb{position:relative;background-color:#0F1A30}
 .yt-thumb-shade{position:absolute;inset:0;background:linear-gradient(180deg,rgba(0,0,0,.25) 0%,rgba(0,0,0,0) 35%,rgba(0,0,0,0) 65%,rgba(0,0,0,.45) 100%);pointer-events:none;z-index:1}
