@@ -4257,11 +4257,30 @@ html body #result, html body #nutriResult{
 @keyframes blShimmer{0%{background-position:200% 0}100%{background-position:-200% 0}}
 
 /* ── Librairie : chips de filtre par catégorie / programme ── */
-.lib-filters{display:flex;flex-wrap:nowrap;gap:8px;overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none;padding:6px 16px 12px;margin:0 -16px}
+/* Librairie V3 : filtres plus discrets — 3 chips primaires + bouton "Filtres".
+   Avant : 9 chips qui prenaient toute la largeur sur mobile. Maintenant les
+   chips sont plus petits (padding 6/11, font 11px) pour redonner la priorité
+   visuelle aux cartes d'exercices. */
+.lib-filters{display:flex;flex-wrap:nowrap;gap:6px;overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none;padding:4px 16px 10px;margin:0 -16px}
 .lib-filters::-webkit-scrollbar{display:none}
-.lib-flt-chip{flex-shrink:0;padding:8px 14px;border-radius:999px;background:#fff;border:1.5px solid rgba(20,30,60,.10);color:#243B6B;font-family:'Outfit',sans-serif;font-size:12px;font-weight:700;letter-spacing:.02em;cursor:pointer;white-space:nowrap;box-shadow:0 1px 3px rgba(20,30,60,.04);transition:transform .12s,background .15s}
-.lib-flt-chip:active{transform:scale(.96)}
-.lib-flt-chip.on{background:#243B6B;border-color:#243B6B;color:#C5A44E;box-shadow:0 4px 12px rgba(27,42,74,.18)}
+.lib-flt-chip{flex-shrink:0;padding:6px 11px;border-radius:999px;background:transparent;border:1px solid rgba(20,30,60,.14);color:var(--text2,#243B6B);font-family:'Outfit',sans-serif;font-size:11.5px;font-weight:700;letter-spacing:.01em;cursor:pointer;white-space:nowrap;transition:transform .1s,background .15s,border-color .15s}
+.lib-flt-chip:active{transform:scale(.95)}
+.lib-flt-chip.on{background:var(--navy,#243B6B);border-color:var(--navy,#243B6B);color:var(--gold,#C5A44E)}
+.lib-flt-more{flex-shrink:0;display:inline-flex;align-items:center;gap:5px;padding:6px 11px;border-radius:999px;background:transparent;border:1px solid rgba(20,30,60,.14);color:var(--text2,#243B6B);font-family:'Outfit',sans-serif;font-size:11.5px;font-weight:700;letter-spacing:.01em;cursor:pointer;white-space:nowrap;transition:transform .1s,background .15s}
+.lib-flt-more:active{transform:scale(.95)}
+.lib-flt-more.on{background:var(--navy,#243B6B);border-color:var(--navy,#243B6B);color:var(--gold,#C5A44E)}
+
+/* Bottom sheet des filtres secondaires */
+.lib-filt-overlay{position:fixed;inset:0;background:rgba(10,16,30,.55);z-index:120;backdrop-filter:blur(2px)}
+.lib-filt-sheet{position:fixed;left:0;right:0;bottom:0;background:var(--bg,#FAF8F4);border-radius:20px 20px 0 0;z-index:121;padding:10px 16px calc(16px + env(safe-area-inset-bottom,0px));max-height:72vh;display:flex;flex-direction:column;box-shadow:0 -10px 36px rgba(10,16,30,.25);animation:libFiltSheetUp .2s ease}
+@keyframes libFiltSheetUp{from{transform:translateY(40px);opacity:0}to{transform:translateY(0);opacity:1}}
+.lib-filt-grab{width:42px;height:4px;border-radius:2px;background:var(--border2,#D8D3C6);margin:2px auto 12px}
+.lib-filt-title{font-family:'Bebas Neue',sans-serif;font-size:20px;letter-spacing:.06em;color:var(--text);line-height:1;margin-bottom:4px}
+.lib-filt-sub{font-size:11.5px;color:var(--muted);margin-bottom:14px}
+.lib-filt-list{flex:1;overflow-y:auto;display:flex;flex-direction:column;gap:6px}
+.lib-filt-row{display:flex;align-items:center;justify-content:space-between;width:100%;text-align:left;background:var(--surface);border:1.5px solid var(--border);border-radius:12px;padding:13px 14px;font-family:'Outfit',sans-serif;font-size:13.5px;font-weight:700;color:var(--text);cursor:pointer;transition:transform .1s,background .15s,border-color .15s}
+.lib-filt-row:active{transform:scale(.98)}
+.lib-filt-row.on{background:var(--gold-dim,rgba(197,164,78,.12));border-color:var(--gold)}
 
 /* ── Librairie : ombre sur les vignettes YouTube pour lisibilité des badges ── */
 .yt-thumb.has-thumb{position:relative;background-color:#0F1A30}
@@ -8691,6 +8710,18 @@ window.tiResetOnEnter = function(){ window.tiShowStep(1); };
      (animation fadeUp fill-mode:both) qui ferait du position:fixed un
      positionnement relatif au .pg, clippé par son overflow:hidden.
      Visible uniquement sur Train > Librairie (body.ah-lib-open + JS). -->
+
+<!-- Bottom sheet "Plus de filtres" — catégories secondaires de la Librairie.
+     Rempli par _libRenderFiltersSheet(). Ouvert via le bouton "Filtres" de
+     la rangée de chips primaires. -->
+<div class="lib-filt-overlay" id="libFiltOverlay" onclick="window._libCloseFiltersSheet && window._libCloseFiltersSheet()" style="display:none"></div>
+<div class="lib-filt-sheet" id="libFiltSheet" style="display:none">
+  <div class="lib-filt-grab"></div>
+  <div class="lib-filt-title">FILTRER</div>
+  <div class="lib-filt-sub">Choisis une catégorie pour affiner la librairie.</div>
+  <div class="lib-filt-list" id="libFiltSheetList"></div>
+</div>
+
 <button type="button" class="libx-fab" id="libFab" onclick="window._libOpenSheet && window._libOpenSheet()" style="display:none">🎯 <span id="libFabTxt">Ma séance</span></button>
 <div class="libx-sheet-overlay" id="libSheetOverlay" onclick="window._libCloseSheet && window._libCloseSheet()" style="display:none"></div>
 <div class="libx-sheet" id="libSheet" style="display:none">
@@ -20102,29 +20133,84 @@ function _libCardHtml(it) {
 // Render les chips de filtre : Tous / Mon programme / + 1 chip par catégorie
 // athlétique (Échauffement, Mobilité, Pliométrie, Force, etc.). Click → appelle
 // _libRender(key) qui re-construit la grille filtrée.
+// Librairie V3 : filtres discrets, mobile-first. 3 chips visibles seulement
+// (Tous / Mon programme / Échauffement) + un bouton "Filtres" qui ouvre une
+// bottom sheet avec les catégories secondaires. Évite la rangée massive de
+// 9 chips qui dominait l'écran sur mobile (feedback client).
+var _LIB_PRIMARY_CHIPS = ['all', 'myprogram', 'echauf'];
 function _libRenderFilterChips(){
   var wrap = document.getElementById('libFilters');
   if (!wrap) return;
   var cur = _libCurrentFilter || 'all';
-  // Librairie V2 : "Tous" + "✓ Ajoutés (N)" + 7 familles (vs 11 catégories
-  // brutes avant — trop de chips, scroll interminable sur mobile). Le filtre
-  // 'myprogram' (exos du programme attribué) reste supporté par _libFlatExos
-  // mais n'est plus exposé en chip : il créait la confusion avec la séance
-  // perso construite via "+ Ajouter".
   var nSel = _libSelGet().length;
-  var chips = [
-    { key:'all',   label:'Tous',                                  icon:'' },
-    { key:'added', label:'Ajoutés' + (nSel ? ' (' + nSel + ')' : ''), icon:'✓' }
+  // Si le filtre courant n'est pas un chip primaire (l'user a choisi une
+  // catégorie dans la sheet), on affiche son libellé sur le bouton Filtres
+  // pour garder le contexte visible.
+  var isCustom = _LIB_PRIMARY_CHIPS.indexOf(cur) === -1 && cur !== 'added';
+  var customLbl = isCustom ? ((_LIB_CHIP_GROUPS[cur] || {}).label || cur) : '';
+  var primary = [
+    { key:'all',       label:'Tous',          icon:'' },
+    { key:'myprogram', label:'Mon programme', icon:'🎯' },
+    { key:'echauf',    label:'Échauffement',  icon:'' }
   ];
-  Object.keys(_LIB_CHIP_GROUPS).forEach(function(ck){
-    chips.push({ key: ck, label: _LIB_CHIP_GROUPS[ck].label, icon: '' });
-  });
-  wrap.innerHTML = chips.map(function(c){
+  var html = '';
+  primary.forEach(function(c){
     var on = (c.key === cur) ? ' on' : '';
     var lbl = (c.icon ? c.icon + ' ' : '') + c.label;
-    return '<button type="button" class="lib-flt-chip' + on + '" data-key="' + c.key + '" onclick="window._libPickFilter(this, \'' + c.key + '\')">' + lbl + '</button>';
+    html += '<button type="button" class="lib-flt-chip' + on + '" data-key="' + c.key + '" onclick="window._libPickFilter(this, \'' + c.key + '\')">' + lbl + '</button>';
+  });
+  // Chip "Ajoutés (N)" visible UNIQUEMENT si l'user a déjà sélectionné des exos.
+  if (nSel > 0) {
+    var onA = (cur === 'added') ? ' on' : '';
+    html += '<button type="button" class="lib-flt-chip' + onA + '" data-key="added" onclick="window._libPickFilter(this, \'added\')">✓ ' + nSel + '</button>';
+  }
+  // Bouton "Filtres" — sliders icon + libellé. Garde le nom de la catégorie
+  // active si l'user a piqué un filtre dans la sheet (au lieu de juste "Filtres").
+  var onF = isCustom ? ' on' : '';
+  var fLbl = isCustom ? customLbl : 'Filtres';
+  html += '<button type="button" class="lib-flt-more' + onF + '" onclick="window._libOpenFiltersSheet && window._libOpenFiltersSheet()" aria-label="Plus de filtres">'
+       +    '<svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0"><line x1="4" y1="6" x2="20" y2="6"/><line x1="4" y1="12" x2="14" y2="12"/><line x1="4" y1="18" x2="10" y2="18"/></svg>'
+       +    '<span>' + fLbl + '</span>'
+       + '</button>';
+  wrap.innerHTML = html;
+}
+
+// Bottom sheet des catégories secondaires (toutes les familles sauf Échauffement
+// qui est déjà en chip primaire). Single-select : tap → applique + ferme.
+window._libOpenFiltersSheet = function() {
+  _libRenderFiltersSheet();
+  var ov = document.getElementById('libFiltOverlay');
+  var sh = document.getElementById('libFiltSheet');
+  if (ov) ov.style.display = 'block';
+  if (sh) sh.style.display = 'flex';
+};
+window._libCloseFiltersSheet = function() {
+  var ov = document.getElementById('libFiltOverlay');
+  var sh = document.getElementById('libFiltSheet');
+  if (ov) ov.style.display = 'none';
+  if (sh) sh.style.display = 'none';
+};
+function _libRenderFiltersSheet() {
+  var list = document.getElementById('libFiltSheetList');
+  if (!list) return;
+  var cur = _libCurrentFilter || 'all';
+  // Secondaires : on retire 'echauf' (déjà chip primaire).
+  var keys = Object.keys(_LIB_CHIP_GROUPS).filter(function(k){ return k !== 'echauf'; });
+  list.innerHTML = keys.map(function(k){
+    var cfg = _LIB_CHIP_GROUPS[k];
+    var on = (k === cur) ? ' on' : '';
+    return '<button type="button" class="lib-filt-row' + on + '" onclick="window._libPickFilterFromSheet(\'' + k + '\')">'
+      +    '<span>' + cfg.label + '</span>'
+      +    (k === cur ? '<span style="color:var(--gold);font-weight:800">✓</span>' : '<span style="color:var(--muted);font-size:14px">›</span>')
+      + '</button>';
   }).join('');
 }
+window._libPickFilterFromSheet = function(key) {
+  _libRender(key);
+  _libRenderFilterChips();
+  window._libCloseFiltersSheet();
+  var v = document.getElementById('vTrain'); if (v) v.scrollTop = 0;
+};
 window._libPickFilter = function(btn, key){
   var wrap = document.getElementById('libFilters');
   if (wrap) wrap.querySelectorAll('.lib-flt-chip').forEach(function(c){ c.classList.remove('on'); });
