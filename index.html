@@ -4291,9 +4291,16 @@ html body #result, html body #nutriResult{
    ═══════════════════════════════════════════════════════════════════════ */
 
 /* Background ambiance "terrain sombre" : couches de gradients radials
-   imitant des projecteurs gold + court lines en SVG très subtil. */
+   imitant des projecteurs gold + court lines en SVG très subtil.
+
+   CENTRAGE : pattern grid + place-items=center (plus robuste que flex
+   sur les vieux WebView Android où le combo width:100% + max-width +
+   flex enfants ne centre pas correctement). Le card a aussi sa largeur
+   exprimée en min() pour ne JAMAIS être plus petit que prévu. */
 .prem-ov{
   position:fixed;inset:0;
+  display:none; /* JS le passe à grid quand on ouvre */
+  place-items:center;
   background:
     /* Spotlight gauche-haut */
     radial-gradient(ellipse 60% 50% at 18% 12%, rgba(197,164,78,.18), transparent 55%),
@@ -4305,11 +4312,16 @@ html body #result, html body #nutriResult{
     linear-gradient(180deg, #06101F 0%, #020812 100%);
   backdrop-filter:blur(8px);
   z-index:9600;
-  align-items:center;justify-content:center;
-  padding:0;
+  padding:18px;
   opacity:0;transition:opacity .25s ease;
   overflow:hidden;
 }
+/* Quand le JS ouvre l'overlay (style="display:flex" ou .on ajouté),
+   on force display:grid avec !important pour battre l'inline style.
+   Grid + place-items est plus prévisible que flex sur vieux WebView. */
+.prem-ov[style*="display: flex"],
+.prem-ov[style*="display:flex"],
+.prem-ov.on{display:grid !important}
 .prem-ov.on{opacity:1}
 /* Court lines silhouette — pseudo en SVG inline, opacity très basse */
 .prem-ov::before{
@@ -4318,7 +4330,7 @@ html body #result, html body #nutriResult{
   background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 400 800' preserveAspectRatio='xMidYMid slice'><g fill='none' stroke='%23C5A44E' stroke-width='1.5' opacity='0.18'><path d='M 0 720 L 400 720'/><circle cx='200' cy='720' r='90' /><circle cx='200' cy='720' r='10' fill='%23C5A44E'/><path d='M 80 720 L 80 580 Q 80 540 120 540 L 280 540 Q 320 540 320 580 L 320 720'/><path d='M 0 100 Q 200 -40 400 100'/></g></svg>");
   background-size:cover;background-position:center;
   pointer-events:none;
-  opacity:.6;
+  opacity:.45; /* baissé pour ne pas concurrencer la carte */
 }
 /* Grain texture pour matiere */
 .prem-ov::after{
@@ -4326,14 +4338,17 @@ html body #result, html body #nutriResult{
   position:absolute;inset:0;
   background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='200' height='200'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2'/><feColorMatrix values='0 0 0 0 0.78 0 0 0 0 0.65 0 0 0 0 0.31 0 0 0 0.5 0'/></filter><rect width='200' height='200' filter='url(%23n)' opacity='0.18'/></svg>");
   pointer-events:none;
-  opacity:.35;mix-blend-mode:overlay;
+  opacity:.25;mix-blend-mode:overlay;
 }
 
-/* Carte principale : full-width sur mobile, aérée, glow gold subtil */
+/* Carte principale : largeur garantie par min() = jamais sous le seuil
+   target même si un parent ou flex se comporte mal. justify-self/align-self
+   centrent dans la grid. */
 .prem-card{
   position:relative;
-  width:100%;max-width:460px;
-  max-height:96vh;overflow-y:auto;
+  width:min(460px, 100%);
+  justify-self:center;align-self:center;
+  max-height:min(96vh, 820px);overflow-y:auto;
   background:
     radial-gradient(ellipse 80% 50% at 50% 0%, rgba(197,164,78,.10), transparent 55%),
     linear-gradient(180deg, #14223D 0%, #0A1426 50%, #08111F 100%);
@@ -4348,10 +4363,9 @@ html body #result, html body #nutriResult{
     inset 0 1px 0 rgba(255,255,255,.05);
   transform:translateY(30px) scale(.94);
   transition:transform .32s cubic-bezier(.18,.89,.32,1.18);
-  margin:18px;
   z-index:1;
 }
-.prem-card-narrow{max-width:420px}
+.prem-card-narrow{width:min(420px, 100%)}
 .prem-ov.on .prem-card{transform:translateY(0) scale(1)}
 
 /* Bouton X dans un cercle premium */
