@@ -21,6 +21,11 @@ firebase-adminsdk-*.json
 secrets/
 .secrets/
 
+# Seed activation livre — réponses en clair. Lu localement par
+# scripts/gen-book-challenges.js pour régénérer data/book-challenges.js.
+# Seul bookChallengesSeed.example.json est commité (template public).
+bookChallengesSeed.json
+
 # ─── Build / dépendances ───────────────────────────────────────────────────
 node_modules/
 dist/
