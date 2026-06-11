@@ -4329,8 +4329,13 @@ html body #result, html body #nutriResult{
 .libx-card{display:flex;gap:10px;align-items:stretch;background:var(--surface);border:1.5px solid var(--border);border-radius:14px;padding:8px;box-shadow:0 2px 8px rgba(20,30,60,.05);transition:transform .1s}
 .libx-card:active{transform:scale(.985)}
 .libx-thumb{width:104px;min-height:70px;border-radius:10px;background:#0E1626;flex-shrink:0;position:relative;display:flex;align-items:center;justify-content:center;overflow:hidden;cursor:pointer;background-size:cover;background-position:center}
-.libx-thumb-play{width:26px;height:26px;border-radius:50%;background:rgba(0,0,0,.55);display:flex;align-items:center;justify-content:center;border:1px solid rgba(255,255,255,.35)}
-.libx-thumb-tri{width:0;height:0;border-left:8px solid #fff;border-top:5px solid transparent;border-bottom:5px solid transparent;margin-left:2px}
+/* Placeholder vidéo : fond navy sobre avec léger dégradé + filigrane gold
+   subtil. Plus de gradient catégorie orange/feu (feedback client) — la
+   couleur de la catégorie reste visible via le chip de la fiche détail. */
+.libx-thumb-empty{background:linear-gradient(160deg,#243B6B 0%,#0F1B33 100%);position:relative}
+.libx-thumb-empty::before{content:"";position:absolute;inset:0;background:radial-gradient(circle at 30% 35%,rgba(197,164,78,.10),transparent 55%);pointer-events:none}
+.libx-thumb-play{width:30px;height:30px;border-radius:50%;background:rgba(0,0,0,.45);display:flex;align-items:center;justify-content:center;border:1px solid rgba(197,164,78,.45);position:relative;z-index:1}
+.libx-thumb-tri{width:0;height:0;border-left:9px solid #fff;border-top:6px solid transparent;border-bottom:6px solid transparent;margin-left:2px}
 .libx-body{flex:1;min-width:0;display:flex;flex-direction:column;justify-content:center;gap:2px;cursor:pointer;padding:2px 0}
 .libx-name{font-size:13px;font-weight:800;color:var(--text);line-height:1.3;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
 .libx-meta{font-size:11px;color:var(--muted);line-height:1.4;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
@@ -7163,7 +7168,7 @@ window.tiResetOnEnter = function(){ window.tiShowStep(1); };
     <div class="libx-head-title">Librairie d'exercices</div>
     <div class="libx-head-sub" id="libxHeadSub">Trouve, consulte, ajoute à ta séance.</div>
   </div>
-  <button type="button" class="libx-head-prog" id="libxHeadProg" onclick="window._libOpenSheet && window._libOpenSheet()">🎯 Ma séance</button>
+  <button type="button" class="libx-head-prog" id="libxHeadProg" onclick="window._libOpenSheet && window._libOpenSheet()" style="display:none">🎯 <span id="libxHeadProgTxt">Ma séance</span></button>
 </div>
 
 <!-- Search bar -->
@@ -19919,12 +19924,14 @@ function _libIsAdded(name) { return _libSelGet().indexOf(name) > -1; }
 // Toggle ajout/retrait d'un exo. Met à jour tous les boutons de la carte
 // concernée + le FAB + la fiche détail + le sheet si ouverts.
 window._libToggleAdd = function(name) {
+  var before = _libSelGet().length;
   var sel = _libSelGet();
   var idx = sel.indexOf(name);
   var added;
   if (idx > -1) { sel.splice(idx, 1); added = false; }
   else { sel.push(name); added = true; }
   _libSelSave(sel);
+  var after = sel.length;
   _libSyncAddButtons(name, added);
   _libUpdateFab();
   _libUpdateChipCount();
@@ -19934,6 +19941,9 @@ window._libToggleAdd = function(name) {
   // Sheet ouvert → re-render
   var sheet = document.getElementById('libSheet');
   if (sheet && sheet.style.display !== 'none') _libRenderSheet();
+  // Transition build mode (0 ↔ ≥1) → re-render la grille pour afficher /
+  // masquer les boutons "+ Ajouter" sur les cartes.
+  if ((before === 0) !== (after === 0)) _libRender(_libCurrentFilter || 'all');
 };
 
 // Met à jour l'état visuel des boutons "+ Ajouter" pour un exo donné
@@ -19955,13 +19965,20 @@ function _libSyncAddButtons(name, added) {
 
 // FAB "Ma séance" : visible uniquement sur la Librairie ET si ≥1 exo ajouté.
 function _libUpdateFab() {
-  var fab = document.getElementById('libFab');
-  if (!fab) return;
   var n = _libSelGet().length;
   var onLib = document.body.classList.contains('ah-lib-open');
-  fab.style.display = (onLib && n > 0) ? 'flex' : 'none';
-  var txt = document.getElementById('libFabTxt');
-  if (txt) txt.textContent = n + ' exercice' + (n > 1 ? 's' : '') + ' · Voir';
+  var fab = document.getElementById('libFab');
+  if (fab) {
+    fab.style.display = (onLib && n > 0) ? 'flex' : 'none';
+    var txt = document.getElementById('libFabTxt');
+    if (txt) txt.textContent = n + ' exercice' + (n > 1 ? 's' : '') + ' · Voir';
+  }
+  // Bouton header "🎯 Ma séance" : visible UNIQUEMENT si une séance est en
+  // construction (>=1 exo ajouté). Sinon la Librairie reste minimaliste.
+  var head = document.getElementById('libxHeadProg');
+  var headTxt = document.getElementById('libxHeadProgTxt');
+  if (head) head.style.display = (n > 0) ? '' : 'none';
+  if (headTxt) headTxt.textContent = 'Ma séance · ' + n;
 }
 
 // Compteur live sur le chip "✓ Ajoutés (N)"
@@ -20173,27 +20190,49 @@ function _libCardHtml(it) {
   var nm = ex.name.replace(/'/g,"\\'").replace(/"/g,'&quot;');
   var enc = encodeURIComponent(ex.name);
   var ytId = ex.video || _LIB_VIDEO_MAP[ex.name] || null;
+  // Thumbs : vraie miniature si vidéo associée, sinon placeholder navy sobre
+  // (plus de gradient catégorie orange/feu — feedback client). La couleur de
+  // la catégorie reste visible via le chip "Échauffement / Force / Plyo..."
+  // de la fiche détail.
+  var thumbCls = ytId ? 'libx-thumb' : 'libx-thumb libx-thumb-empty';
   var thumbStyle = ytId
     ? ' style="background-image:url(https://i.ytimg.com/vi/' + ytId + '/mqdefault.jpg)"'
-    : ' style="background:' + (it.color || '#0E1626') + '"';
-  var added = _libIsAdded(ex.name);
+    : '';
   var open = '_libOpenDetail(\'' + nm + '\',\'' + it.catKey + '\')';
+  var added = _libIsAdded(ex.name);
+  // "+ Ajouter" affiché UNIQUEMENT en mode "construction de séance" :
+  //   - body.ah-lib-build (le sheet "Ma séance" est ouvert)
+  //   - OU une séance est en cours de construction (>=1 exo déjà ajouté)
+  // Sinon : carte minimaliste "Voir" uniquement, ajout via la fiche détail.
+  var buildMode = _libInBuildMode();
   var h = '';
-  h += '<div class="libx-card" data-exo="' + enc + '">';
-  h +=   '<div class="libx-thumb"' + thumbStyle + ' onclick="' + open + '">';
+  h += '<div class="libx-card" data-exo="' + enc + '" onclick="' + open + '">';
+  h +=   '<div class="' + thumbCls + '"' + thumbStyle + '>';
   h +=     '<div class="libx-thumb-play"><div class="libx-thumb-tri"></div></div>';
   h +=   '</div>';
-  h +=   '<div class="libx-body" onclick="' + open + '">';
+  h +=   '<div class="libx-body">';
   h +=     '<div class="libx-name">' + ex.name + '</div>';
   h +=     '<div class="libx-meta"><span class="libx-diff ' + ex.diff + '">' + dl + '</span> · ' + it.catLabel + '</div>';
   h +=     '<div class="libx-meta">' + (dur ? dur + ' · ' : '') + mat + '</div>';
   h +=   '</div>';
-  h +=   '<div class="libx-actions">';
+  // Actions : "Voir" toujours, "+ Ajouter" seulement en build mode.
+  h +=   '<div class="libx-actions" onclick="event.stopPropagation()">';
   h +=     '<button type="button" class="libx-see" onclick="' + open + '">Voir</button>';
-  h +=     '<button type="button" class="libx-add' + (added ? ' added' : '') + '" onclick="window._libToggleAdd(decodeURIComponent(\'' + enc + '\'))">' + (added ? '✓ Ajouté' : '+ Ajouter') + '</button>';
+  if (buildMode) {
+    h +=   '<button type="button" class="libx-add' + (added ? ' added' : '') + '" onclick="window._libToggleAdd(decodeURIComponent(\'' + enc + '\'))">' + (added ? '✓ Ajouté' : '+ Ajouter') + '</button>';
+  }
   h +=   '</div>';
   h += '</div>';
   return h;
+}
+
+// Mode "construction de séance" : l'utilisateur est explicitement en train de
+// composer sa séance perso (>=1 exo déjà ajouté). Active l'affichage des
+// boutons "+ Ajouter" sur les cartes. Le bouton "Ma séance" du header n'est
+// pas un déclencheur — il sert à consulter. La fiche détail reste le point
+// d'entrée standard pour ajouter à sa séance.
+function _libInBuildMode() {
+  try { return _libSelGet().length > 0; } catch(e) { return false; }
 }
 
 // Render les chips de filtre : Tous / Mon programme / + 1 chip par catégorie
