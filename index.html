@@ -4284,29 +4284,312 @@ html body #result, html body #nutriResult{
 
 /* ═══════════════════════════════════════════════════════════════════════
    PREMIUM OVERLAY — popup trial expiré + wizard activation livre
-   Design : overlay sombre, carte centrée navy/gold, hiérarchie claire
-   titre → bénéfices → CTA. Apparait après expiration du trial 3 jours.
+   v2 (juin 2026) : refonte design émotionnel "écran premium" plutôt que
+   simple popup. Ambiance terrain de basket sombre, lumière dramatique
+   (radial gold spotlights), card aérée avec hiérarchie forte, CTA gold
+   massif et glow. Toute la logique JS et tous les IDs DOM sont conservés.
    ═══════════════════════════════════════════════════════════════════════ */
-.prem-ov{position:fixed;inset:0;background:rgba(6,12,24,.88);backdrop-filter:blur(10px);z-index:9600;align-items:center;justify-content:center;padding:18px;opacity:0;transition:opacity .18s ease}
+
+/* Background ambiance "terrain sombre" : couches de gradients radials
+   imitant des projecteurs gold + court lines en SVG très subtil. */
+.prem-ov{
+  position:fixed;inset:0;
+  background:
+    /* Spotlight gauche-haut */
+    radial-gradient(ellipse 60% 50% at 18% 12%, rgba(197,164,78,.18), transparent 55%),
+    /* Spotlight droit-bas */
+    radial-gradient(ellipse 50% 50% at 82% 88%, rgba(212,175,55,.10), transparent 60%),
+    /* Halo central derrière la carte */
+    radial-gradient(ellipse 80% 60% at 50% 50%, rgba(20,30,60,.45), rgba(6,10,20,.95)),
+    /* Fond profond navy nuit */
+    linear-gradient(180deg, #06101F 0%, #020812 100%);
+  backdrop-filter:blur(8px);
+  z-index:9600;
+  align-items:center;justify-content:center;
+  padding:0;
+  opacity:0;transition:opacity .25s ease;
+  overflow:hidden;
+}
 .prem-ov.on{opacity:1}
-.prem-card{position:relative;width:100%;max-width:440px;max-height:92vh;overflow-y:auto;background:linear-gradient(165deg,#1B2A4A 0%,#0F1B33 100%);border:1px solid rgba(197,164,78,.32);border-radius:22px;padding:28px 22px 24px;color:#fff;box-shadow:0 28px 70px rgba(0,0,0,.55),0 0 0 1px rgba(197,164,78,.06),0 0 60px rgba(197,164,78,.12);transform:translateY(20px) scale(.96);transition:transform .22s cubic-bezier(.34,1.56,.64,1)}
-.prem-card-narrow{max-width:400px}
+/* Court lines silhouette — pseudo en SVG inline, opacity très basse */
+.prem-ov::before{
+  content:"";
+  position:absolute;inset:0;
+  background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 400 800' preserveAspectRatio='xMidYMid slice'><g fill='none' stroke='%23C5A44E' stroke-width='1.5' opacity='0.18'><path d='M 0 720 L 400 720'/><circle cx='200' cy='720' r='90' /><circle cx='200' cy='720' r='10' fill='%23C5A44E'/><path d='M 80 720 L 80 580 Q 80 540 120 540 L 280 540 Q 320 540 320 580 L 320 720'/><path d='M 0 100 Q 200 -40 400 100'/></g></svg>");
+  background-size:cover;background-position:center;
+  pointer-events:none;
+  opacity:.6;
+}
+/* Grain texture pour matiere */
+.prem-ov::after{
+  content:"";
+  position:absolute;inset:0;
+  background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='200' height='200'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2'/><feColorMatrix values='0 0 0 0 0.78 0 0 0 0 0.65 0 0 0 0 0.31 0 0 0 0.5 0'/></filter><rect width='200' height='200' filter='url(%23n)' opacity='0.18'/></svg>");
+  pointer-events:none;
+  opacity:.35;mix-blend-mode:overlay;
+}
+
+/* Carte principale : full-width sur mobile, aérée, glow gold subtil */
+.prem-card{
+  position:relative;
+  width:100%;max-width:460px;
+  max-height:96vh;overflow-y:auto;
+  background:
+    radial-gradient(ellipse 80% 50% at 50% 0%, rgba(197,164,78,.10), transparent 55%),
+    linear-gradient(180deg, #14223D 0%, #0A1426 50%, #08111F 100%);
+  border:1px solid rgba(197,164,78,.28);
+  border-radius:28px;
+  padding:36px 26px 28px;
+  color:#fff;
+  box-shadow:
+    0 40px 90px rgba(0,0,0,.65),
+    0 0 0 1px rgba(197,164,78,.05),
+    0 0 80px rgba(197,164,78,.10),
+    inset 0 1px 0 rgba(255,255,255,.05);
+  transform:translateY(30px) scale(.94);
+  transition:transform .32s cubic-bezier(.18,.89,.32,1.18);
+  margin:18px;
+  z-index:1;
+}
+.prem-card-narrow{max-width:420px}
 .prem-ov.on .prem-card{transform:translateY(0) scale(1)}
-.prem-close{position:absolute;top:12px;right:12px;width:34px;height:34px;border-radius:50%;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);color:rgba(255,255,255,.75);font-size:20px;line-height:1;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:background .15s}
-.prem-close:hover{background:rgba(255,255,255,.12)}
-.prem-eyebrow{font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:.22em;color:var(--ah-gold,#C5A44E);text-transform:uppercase;font-weight:800;margin-bottom:10px}
-.prem-title{font-family:'Bebas Neue',sans-serif;font-size:26px;letter-spacing:.03em;line-height:1.1;color:#fff;margin-bottom:8px}
-.prem-sub{font-family:'Outfit',sans-serif;font-size:13.5px;color:rgba(255,255,255,.78);line-height:1.5;margin-bottom:18px}
-.prem-bullets{list-style:none;margin:0 0 16px;padding:14px 14px 12px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:14px}
-.prem-bullets li{display:flex;align-items:flex-start;gap:10px;padding:5px 0;font-family:'Outfit',sans-serif;font-size:13px;color:rgba(255,255,255,.92);line-height:1.45}
-.prem-check{display:inline-flex;align-items:center;justify-content:center;width:20px;height:20px;border-radius:50%;background:rgba(197,164,78,.18);color:var(--ah-gold,#C5A44E);font-size:11px;font-weight:900;flex-shrink:0;margin-top:1px}
-.prem-help{font-family:'Outfit',sans-serif;font-size:12px;color:rgba(255,255,255,.62);line-height:1.55;margin-bottom:14px}
-.prem-cta-primary{display:block;width:100%;padding:15px;background:linear-gradient(135deg,#D4B45E,#C5A44E 55%,#B89238);border:0;border-radius:14px;font-family:'Bebas Neue',sans-serif;font-size:16px;letter-spacing:.12em;color:#1B2A4A;cursor:pointer;box-shadow:0 8px 22px rgba(197,164,78,.36);transition:transform .1s}
+
+/* Bouton X dans un cercle premium */
+.prem-close{
+  position:absolute;top:14px;right:14px;
+  width:38px;height:38px;border-radius:50%;
+  background:rgba(255,255,255,.06);
+  border:1px solid rgba(255,255,255,.10);
+  color:rgba(255,255,255,.70);
+  font-size:22px;line-height:1;cursor:pointer;
+  display:flex;align-items:center;justify-content:center;
+  transition:background .18s, transform .12s;
+  z-index:2;
+}
+.prem-close:hover{background:rgba(255,255,255,.12);transform:rotate(90deg)}
+
+/* Eyebrow gold mono */
+.prem-eyebrow{
+  font-family:'JetBrains Mono',monospace;
+  font-size:10.5px;letter-spacing:.30em;
+  color:var(--ah-gold,#C5A44E);
+  text-transform:uppercase;font-weight:800;
+  margin-bottom:14px;
+  display:inline-block;
+}
+.prem-eyebrow::before{
+  content:"";display:inline-block;
+  width:18px;height:1.5px;
+  background:var(--ah-gold,#C5A44E);
+  vertical-align:middle;margin-right:9px;
+  box-shadow:0 0 8px rgba(197,164,78,.6);
+}
+
+/* Titre massif Bebas Neue avec gradient gold subtil */
+.prem-title{
+  font-family:'Bebas Neue',sans-serif;
+  font-size:34px;letter-spacing:.04em;line-height:1.05;
+  color:#fff;margin-bottom:10px;
+  background:linear-gradient(180deg, #FFFFFF 0%, #E8DCB5 100%);
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;
+  background-clip:text;
+  text-shadow:0 0 30px rgba(197,164,78,.18);
+}
+
+/* Sous-titre */
+.prem-sub{
+  font-family:'Outfit',sans-serif;
+  font-size:14.5px;color:rgba(255,255,255,.78);
+  line-height:1.55;margin-bottom:22px;font-weight:500;
+}
+
+/* Bloc bénéfices : cartelette avec divider subtil entre les lignes */
+.prem-bullets{
+  list-style:none;margin:0 0 20px;
+  padding:18px 16px 14px;
+  background:linear-gradient(180deg, rgba(255,255,255,.045) 0%, rgba(255,255,255,.015) 100%);
+  border:1px solid rgba(197,164,78,.18);
+  border-radius:16px;
+  position:relative;
+}
+.prem-bullets::before{
+  content:"";position:absolute;top:0;left:18px;right:18px;height:1px;
+  background:linear-gradient(90deg, transparent, rgba(197,164,78,.4), transparent);
+}
+.prem-bullets li{
+  display:flex;align-items:flex-start;gap:12px;
+  padding:9px 0;
+  font-family:'Outfit',sans-serif;
+  font-size:13.5px;color:rgba(255,255,255,.94);
+  line-height:1.45;font-weight:500;
+}
+.prem-bullets li + li{border-top:1px dashed rgba(255,255,255,.06)}
+/* Check icon : cercle gold avec liseré + glow + SVG check blanc */
+.prem-check{
+  display:inline-flex;align-items:center;justify-content:center;
+  width:22px;height:22px;flex-shrink:0;margin-top:0;
+  border-radius:50%;
+  background:radial-gradient(circle at 30% 25%, #E8C76E 0%, #C5A44E 60%, #A0853A 100%);
+  color:#1B2A4A;font-size:0;
+  box-shadow:0 4px 10px rgba(197,164,78,.30), inset 0 1px 0 rgba(255,255,255,.35);
+  position:relative;
+}
+.prem-check::after{
+  content:"";
+  position:absolute;
+  width:7px;height:11px;
+  border-right:2.2px solid #1B2A4A;
+  border-bottom:2.2px solid #1B2A4A;
+  transform:rotate(45deg) translate(-1px, -1px);
+  border-radius:1px;
+}
+
+/* Texte d'aide secondaire */
+.prem-help{
+  font-family:'Outfit',sans-serif;
+  font-size:12.5px;color:rgba(255,255,255,.55);
+  line-height:1.55;margin-bottom:16px;
+  text-align:center;
+}
+
+/* CTA principal — bouton premium massif gold */
+.prem-cta-primary{
+  display:block;width:100%;
+  padding:18px 16px;
+  background:linear-gradient(135deg, #E8C76E 0%, #D4B45E 35%, #C5A44E 65%, #A0853A 100%);
+  border:0;border-radius:16px;
+  font-family:'Bebas Neue',sans-serif;
+  font-size:18px;letter-spacing:.14em;
+  color:#0A1426;cursor:pointer;
+  box-shadow:
+    0 12px 28px rgba(197,164,78,.45),
+    0 0 0 1px rgba(197,164,78,.20),
+    inset 0 1px 0 rgba(255,255,255,.45),
+    inset 0 -2px 0 rgba(0,0,0,.10);
+  transition:transform .12s, box-shadow .15s;
+  position:relative;overflow:hidden;
+}
+.prem-cta-primary::after{
+  content:"";position:absolute;top:0;left:-100%;
+  width:50%;height:100%;
+  background:linear-gradient(90deg, transparent, rgba(255,255,255,.40), transparent);
+  animation:premShine 4s ease-in-out infinite;
+}
+@keyframes premShine{
+  0%, 100% { left:-100%; }
+  50%      { left:150%; }
+}
 .prem-cta-primary:active{transform:scale(.98)}
-.prem-cta-secondary{display:block;width:100%;margin-top:8px;padding:13px;background:transparent;border:1.5px solid rgba(212,175,55,.5);border-radius:14px;font-family:'Outfit',sans-serif;font-size:13px;font-weight:800;color:var(--ah-gold,#D4B45E);cursor:pointer;letter-spacing:.04em;transition:background .15s}
-.prem-cta-secondary:hover{background:rgba(212,175,55,.06)}
-.prem-cta-tertiary{display:block;width:100%;margin-top:8px;padding:11px;background:transparent;border:0;font-family:'Outfit',sans-serif;font-size:12px;font-weight:700;color:rgba(255,255,255,.55);cursor:pointer;letter-spacing:.04em;text-decoration:underline;text-decoration-color:rgba(255,255,255,.2);text-underline-offset:3px}
+.prem-cta-primary:hover{box-shadow:0 14px 34px rgba(197,164,78,.55), 0 0 0 1px rgba(197,164,78,.30), inset 0 1px 0 rgba(255,255,255,.45)}
+
+/* CTA secondaire — outline gold */
+.prem-cta-secondary{
+  display:block;width:100%;
+  margin-top:10px;padding:15px 14px;
+  background:transparent;
+  border:1.5px solid rgba(212,175,55,.55);
+  border-radius:16px;
+  font-family:'Outfit',sans-serif;
+  font-size:13.5px;font-weight:800;letter-spacing:.04em;
+  color:var(--ah-gold,#D4B45E);
+  cursor:pointer;
+  transition:background .15s, border-color .15s;
+}
+.prem-cta-secondary:hover{background:rgba(212,175,55,.07);border-color:rgba(212,175,55,.75)}
+
+/* CTA tertiaire — lien discret */
+.prem-cta-tertiary{
+  display:block;width:100%;
+  margin-top:12px;padding:8px 0;
+  background:transparent;border:0;
+  font-family:'Outfit',sans-serif;
+  font-size:12.5px;font-weight:600;
+  color:rgba(255,255,255,.55);
+  cursor:pointer;letter-spacing:.04em;
+  text-decoration:underline;
+  text-decoration-color:rgba(255,255,255,.20);
+  text-underline-offset:4px;
+  transition:color .15s;
+}
 .prem-cta-tertiary:hover{color:rgba(255,255,255,.85);text-decoration-color:rgba(255,255,255,.6)}
+
+/* Inputs du wizard — plus premium, padding plus généreux */
+.prem-input{
+  width:100%;padding:16px 16px;
+  background:rgba(255,255,255,.05);
+  border:1.5px solid rgba(255,255,255,.14);
+  border-radius:14px;
+  font-family:'Outfit',sans-serif;font-size:15px;
+  color:#fff;outline:none;box-sizing:border-box;
+  letter-spacing:.02em;
+  transition:border-color .15s, background .15s, box-shadow .15s;
+}
+.prem-input:focus{
+  border-color:rgba(212,175,55,.6);
+  background:rgba(255,255,255,.08);
+  box-shadow:0 0 0 3px rgba(197,164,78,.15);
+}
+.prem-input::placeholder{color:rgba(255,255,255,.35)}
+.prem-input-label{
+  font-family:'JetBrains Mono',monospace;
+  font-size:10.5px;letter-spacing:.20em;
+  color:var(--ah-gold,#C5A44E);
+  text-transform:uppercase;font-weight:800;
+  display:block;margin-bottom:8px;
+}
+.prem-input-hint{
+  font-size:11.5px;color:rgba(255,255,255,.50);
+  line-height:1.5;margin-top:8px;
+}
+
+/* Badge rassurance "aucune donnée bancaire" — barrette gauche gold */
+.prem-trust{
+  display:flex;align-items:flex-start;gap:10px;
+  padding:12px 14px;margin:14px 0 0;
+  background:rgba(34,197,94,.07);
+  border:1px solid rgba(34,197,94,.22);
+  border-radius:12px;
+  font-family:'Outfit',sans-serif;
+  font-size:12px;color:rgba(220,255,235,.85);
+  line-height:1.5;
+}
+.prem-trust-ic{
+  flex-shrink:0;width:18px;height:18px;border-radius:50%;
+  background:#22C55E;color:#fff;font-size:11px;font-weight:800;
+  display:flex;align-items:center;justify-content:center;
+}
+
+/* Chip section (question livre) */
+.prem-chip{
+  display:inline-block;
+  font-family:'JetBrains Mono',monospace;
+  font-size:10px;letter-spacing:.22em;
+  color:var(--ah-gold,#C5A44E);
+  text-transform:uppercase;
+  background:rgba(197,164,78,.16);
+  border:1px solid rgba(197,164,78,.45);
+  border-radius:999px;
+  padding:5px 12px;margin-bottom:14px;font-weight:800;
+}
+
+/* Question livre — typo + spacing premium */
+.prem-question{
+  font-family:'Outfit',sans-serif;
+  font-size:15px;color:rgba(255,255,255,.94);
+  line-height:1.55;margin-bottom:18px;font-weight:500;
+}
+
+/* Bouton retour discret */
+.prem-back{
+  width:100%;margin-top:10px;padding:12px;
+  background:transparent;
+  border:1px solid rgba(255,255,255,.14);
+  border-radius:12px;
+  font-family:'Outfit',sans-serif;font-size:12.5px;font-weight:700;
+  color:rgba(255,255,255,.65);cursor:pointer;
+  transition:border-color .15s, color .15s;
+}
+.prem-back:hover{border-color:rgba(255,255,255,.30);color:rgba(255,255,255,.90)}
 
 /* ── Librairie : ombre sur les vignettes YouTube pour lisibilité des badges ── */
 .yt-thumb.has-thumb{position:relative;background-color:#0F1A30}
@@ -8331,20 +8614,20 @@ window.tiResetOnEnter = function(){ window.tiShowStep(1); };
   <div class="prem-card" role="dialog" aria-labelledby="premTitle">
     <button class="prem-close" onclick="window._closePremiumOverlay()" aria-label="Fermer">×</button>
     <div class="prem-eyebrow">Athletik Hub · Premium</div>
-    <div class="prem-title" id="premTitle">Tes 3 jours d'accès découverte sont terminés</div>
-    <div class="prem-sub">Active ton accès lecteur pour continuer.</div>
+    <div class="prem-title" id="premTitle">TON PROGRAMME PREMIUM EST PRÊT</div>
+    <div class="prem-sub">Tes 3 jours de découverte sont terminés. Active ton accès lecteur pour passer au niveau supérieur.</div>
 
     <ul class="prem-bullets">
-      <li><span class="prem-check">✓</span><span>Accède à ton programme personnalisé</span></li>
-      <li><span class="prem-check">✓</span><span>Débloque les séances premium</span></li>
-      <li><span class="prem-check">✓</span><span>Suis ta progression étape par étape</span></li>
-      <li><span class="prem-check">✓</span><span>Utilise Titan comme coach personnel</span></li>
-      <li><span class="prem-check">✓</span><span>Profite des ressources réservées aux lecteurs</span></li>
+      <li><span class="prem-check"></span><span>Programme personnalisé sur tes objectifs</span></li>
+      <li><span class="prem-check"></span><span>Progression mesurée étape par étape</span></li>
+      <li><span class="prem-check"></span><span>Exercices adaptés à ton profil athlète</span></li>
+      <li><span class="prem-check"></span><span>Suivi premium de tes performances</span></li>
+      <li><span class="prem-check"></span><span>Ressources réservées aux lecteurs</span></li>
     </ul>
 
-    <div class="prem-help">Pour continuer, active ton accès avec ton livre ou achète-le sur Amazon.</div>
+    <div class="prem-help">Active avec ton livre ou achète-le sur Amazon — tu reviens ensuite ici pour valider.</div>
 
-    <button class="prem-cta-primary" onclick="window.openBookActivation()">Activer mon accès</button>
+    <button class="prem-cta-primary" onclick="window.openBookActivation()">DÉBLOQUER MON ACCÈS</button>
     <button class="prem-cta-secondary" onclick="window.openAmazonBook()">📕 Acheter le livre</button>
     <button class="prem-cta-tertiary" onclick="window._closePremiumOverlay(); setTimeout(function(){try{openAccessCode();}catch(e){}}, 200)">J'ai un code BETA / VIP</button>
   </div>
@@ -24207,28 +24490,33 @@ function _renderBookActivationStep() {
 
   if (state.step === 1) {
     body.innerHTML =
-      '<div style="font-family:\'Bebas Neue\',sans-serif;font-size:24px;letter-spacing:.04em;color:#fff;line-height:1.05;margin-bottom:8px">Ton numéro de commande Amazon</div>'
-      + '<div style="font-family:\'Outfit\',sans-serif;font-size:12.5px;color:rgba(255,255,255,.72);line-height:1.55;margin-bottom:18px">Ton numéro de commande sert <b>uniquement</b> à vérifier ton achat. Il est hashé côté serveur et n\'est <b>jamais stocké en clair</b>.</div>'
-      + '<label style="font-family:\'JetBrains Mono\',monospace;font-size:10px;letter-spacing:.18em;color:var(--ah-gold);text-transform:uppercase;font-weight:700">N° commande Amazon</label>'
-      + '<input id="bookActOrderInput" type="text" placeholder="123-1234567-1234567" value="' + (state.amazonOrder || '') + '" autocomplete="off" inputmode="text" style="width:100%;margin-top:6px;padding:13px 14px;background:rgba(255,255,255,.06);border:1.5px solid rgba(255,255,255,.16);border-radius:12px;font-family:\'Outfit\',sans-serif;font-size:14px;color:#fff;outline:none;box-sizing:border-box;letter-spacing:.04em">'
-      + '<div style="font-size:11px;color:rgba(255,255,255,.5);line-height:1.5;margin-top:6px">Format Amazon : 3 chiffres - 7 chiffres - 7 chiffres.</div>'
-      + '<div id="bookActMsg" style="display:none;font-size:12.5px;line-height:1.5;margin-top:12px;padding:10px 12px;border-radius:10px"></div>'
-      + '<button onclick="window._bookActivationNext()" style="width:100%;margin-top:18px;padding:14px;background:linear-gradient(135deg,#D4B45E,#C5A44E 55%,#B89238);border:0;border-radius:12px;font-family:\'Bebas Neue\',sans-serif;font-size:15px;letter-spacing:.14em;color:var(--ah-navy);cursor:pointer;box-shadow:0 6px 18px rgba(197,164,78,.34)">CONTINUER →</button>'
-      + '<button onclick="window.openAmazonBook()" style="width:100%;margin-top:8px;padding:11px;background:transparent;border:1.5px solid rgba(212,175,55,.5);border-radius:12px;font-family:\'Outfit\',sans-serif;font-size:12.5px;font-weight:800;color:#D4B45E;cursor:pointer;letter-spacing:.04em">📕 Pas encore le livre — Acheter sur Amazon</button>';
+      '<div class="prem-title" style="font-size:28px">Ton numéro de commande Amazon</div>'
+      + '<div class="prem-sub">Une seule étape pour vérifier que tu as bien le livre. Aucune donnée bancaire n\'est demandée.</div>'
+      + '<label class="prem-input-label">N° commande Amazon</label>'
+      + '<input id="bookActOrderInput" class="prem-input" type="text" placeholder="123-1234567-1234567" value="' + (state.amazonOrder || '') + '" autocomplete="off" inputmode="text" style="letter-spacing:.06em">'
+      + '<div class="prem-input-hint">Format Amazon : 3 chiffres - 7 chiffres - 7 chiffres.</div>'
+      + '<div class="prem-trust">'
+      +   '<div class="prem-trust-ic">🔒</div>'
+      +   '<div>Nous utilisons uniquement ce numéro pour vérifier ton livre. <b>Aucune donnée bancaire</b> n\'est demandée. Ton numéro est hashé côté serveur et n\'est <b>jamais stocké en clair</b>.</div>'
+      + '</div>'
+      + '<div id="bookActMsg" style="display:none;font-size:12.5px;line-height:1.5;margin-top:14px;padding:11px 13px;border-radius:12px"></div>'
+      + '<button class="prem-cta-primary" style="margin-top:22px" onclick="window._bookActivationNext()">VALIDER MON LIVRE</button>'
+      + '<button class="prem-cta-secondary" onclick="window.openAmazonBook()">📕 Pas encore le livre — Acheter sur Amazon</button>';
     setTimeout(function(){ var i = document.getElementById('bookActOrderInput'); if (i) i.focus(); }, 50);
     return;
   }
 
   // Étape 2 : question livre
   body.innerHTML =
-    '<div style="font-family:\'Bebas Neue\',sans-serif;font-size:22px;letter-spacing:.04em;color:#fff;line-height:1.1;margin-bottom:6px">Question livre</div>'
-    + (state.section ? '<div style="display:inline-block;font-family:\'JetBrains Mono\',monospace;font-size:9px;letter-spacing:.2em;color:var(--ah-gold);text-transform:uppercase;background:rgba(197,164,78,.14);border:1px solid rgba(197,164,78,.4);border-radius:999px;padding:4px 10px;margin-bottom:14px">' + state.section + '</div>' : '')
-    + '<div style="font-family:\'Outfit\',sans-serif;font-size:13.5px;color:rgba(255,255,255,.88);line-height:1.55;margin-bottom:16px">' + (state.questionText || 'Chargement de la question...') + '</div>'
-    + '<label style="font-family:\'JetBrains Mono\',monospace;font-size:10px;letter-spacing:.18em;color:var(--ah-gold);text-transform:uppercase;font-weight:700">Ta réponse</label>'
-    + '<input id="bookActAnswerInput" type="text" placeholder="Tape ta réponse..." autocomplete="off" style="width:100%;margin-top:6px;padding:13px 14px;background:rgba(255,255,255,.06);border:1.5px solid rgba(255,255,255,.16);border-radius:12px;font-family:\'Outfit\',sans-serif;font-size:14px;color:#fff;outline:none;box-sizing:border-box">'
-    + '<div id="bookActMsg" style="display:none;font-size:12.5px;line-height:1.5;margin-top:12px;padding:10px 12px;border-radius:10px"></div>'
-    + '<button id="bookActValidateBtn" onclick="window._bookActivationValidate()" style="width:100%;margin-top:18px;padding:14px;background:linear-gradient(135deg,#D4B45E,#C5A44E 55%,#B89238);border:0;border-radius:12px;font-family:\'Bebas Neue\',sans-serif;font-size:15px;letter-spacing:.14em;color:var(--ah-navy);cursor:pointer;box-shadow:0 6px 18px rgba(197,164,78,.34)">VALIDER MON ACCÈS</button>'
-    + '<button onclick="window._bookActivation.step = 1; _renderBookActivationStep()" style="width:100%;margin-top:8px;padding:11px;background:transparent;border:1px solid rgba(255,255,255,.18);border-radius:12px;font-family:\'Outfit\',sans-serif;font-size:12px;font-weight:700;color:rgba(255,255,255,.7);cursor:pointer">← Modifier le numéro Amazon</button>';
+    '<div class="prem-title" style="font-size:26px">Une dernière vérification</div>'
+    + (state.section ? '<div class="prem-chip">' + state.section + '</div>' : '')
+    + '<div class="prem-question">' + (state.questionText || 'Chargement de la question...') + '</div>'
+    + '<label class="prem-input-label">Ta réponse</label>'
+    + '<input id="bookActAnswerInput" class="prem-input" type="text" placeholder="Un mot, un nombre, une phrase courte..." autocomplete="off">'
+    + '<div class="prem-input-hint">La réponse est tirée des premières pages stables du livre.</div>'
+    + '<div id="bookActMsg" style="display:none;font-size:12.5px;line-height:1.5;margin-top:14px;padding:11px 13px;border-radius:12px"></div>'
+    + '<button id="bookActValidateBtn" class="prem-cta-primary" style="margin-top:22px" onclick="window._bookActivationValidate()">VALIDER MON ACCÈS</button>'
+    + '<button class="prem-back" onclick="window._bookActivation.step = 1; _renderBookActivationStep()">← Modifier le numéro Amazon</button>';
   setTimeout(function(){ var i = document.getElementById('bookActAnswerInput'); if (i) i.focus(); }, 50);
 }
 
