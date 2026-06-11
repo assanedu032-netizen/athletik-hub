@@ -19,18 +19,24 @@ service cloud.firestore {
 
     // ─────────────────────────────────────────────────────
     // /users/{uid} — profil athlète (owner-only)
+    // Les champs d'accès premium (trial / hasBookAccess) sont au
+    // TOP LEVEL et écrits uniquement par les fonctions serveur via
+    // Admin SDK (qui bypasse ces rules). Le client n'a aucun moyen
+    // de les modifier ou de les forger.
     // ─────────────────────────────────────────────────────
     match /users/{uid} {
       allow read: if isOwner(uid);
 
       allow create: if isOwner(uid)
                     && validProfileShape(request.resource.data)
-                    && validAccessTier(request.resource.data);
+                    && validAccessTier(request.resource.data)
+                    && noLockedOnCreate(request.resource.data);
 
       allow update: if isOwner(uid)
                     && validProfileShape(request.resource.data)
                     && validAccessTier(request.resource.data)
-                    && noFcmTokenLeak(request.resource.data, resource.data);
+                    && noFcmTokenLeak(request.resource.data, resource.data)
+                    && noLockedDiff(request.resource.data, resource.data);
 
       // Pas de suppression côté client — historique conservé. Si besoin,
       // un user peut faire "export + logout" via l'UI, mais le doc reste
@@ -41,13 +47,35 @@ service cloud.firestore {
     // ─────────────────────────────────────────────────────
     // Sous-collections : users/{uid}/bodyfat, /timerPresets, /sessions, etc.
     // Owner-only + plafond taille pour éviter les payloads abusifs.
+    // titanQuota reste serveur-uniquement (compteur anti-abus Titan).
     // ─────────────────────────────────────────────────────
+    match /users/{uid}/titanQuota/{day} {
+      allow read, write: if false;
+    }
     match /users/{uid}/{subcollection}/{docId} {
       allow read: if isOwner(uid);
       allow create, update: if isOwner(uid)
                             && request.resource.data.size() < 100;
       allow delete: if isOwner(uid);
     }
+
+    // ─────────────────────────────────────────────────────
+    // Collections SERVEUR UNIQUEMENT (deny all client access).
+    // - accessRedemptions : logs d'activation (book-challenge.js, check-code.js)
+    // - bookChallenges    : banque de questions (réservée — actuellement
+    //                       embarquée dans data/book-challenges.js)
+    // - accessCodes       : codes BETA/VIP/MASTER (réservée — actuellement
+    //                       HMAC stateless via check-code.js)
+    // - usedAmazonOrders  : empreintes numéros Amazon (actuellement Netlify Blobs)
+    // - activationAttempts: audit tentatives (réservée)
+    // - security_logs     : logs anti-injection (titan.js)
+    // ─────────────────────────────────────────────────────
+    match /accessRedemptions/{id} { allow read, write: if false; }
+    match /bookChallenges/{id}    { allow read, write: if false; }
+    match /accessCodes/{id}       { allow read, write: if false; }
+    match /usedAmazonOrders/{id}  { allow read, write: if false; }
+    match /activationAttempts/{id}{ allow read, write: if false; }
+    match /security_logs/{id}     { allow read, write: if false; }
 
     // ─────────────────────────────────────────────────────
     // Tout le reste : refusé par défaut (defense in depth)
@@ -101,5 +129,27 @@ service cloud.firestore {
   // Pour le moment c'est juste une garantie de cohérence, pas un anti-abuse.
   function noFcmTokenLeak(newData, oldData) {
     return true; // hook pour durcissement Phase 3
+  }
+
+  // ─── Champs verrouillés côté serveur ───
+  // Les fonctions Netlify (Admin SDK) bypassent les rules et écrivent ces
+  // champs. Le client n'a aucun chemin valide pour les forger ou les modifier.
+  function lockedFields() {
+    return [
+      'hasBookAccess',
+      'accessMethod',
+      'bookAccessVerifiedAt',
+      'trialStartedAt',
+      'trialEndsAt',
+      'trialStatus',
+      'createdAt',
+      'bookVersionUsed'
+    ];
+  }
+  function noLockedOnCreate(newData) {
+    return !newData.keys().hasAny(lockedFields());
+  }
+  function noLockedDiff(newData, oldData) {
+    return !newData.diff(oldData).affectedKeys().hasAny(lockedFields());
   }
 }

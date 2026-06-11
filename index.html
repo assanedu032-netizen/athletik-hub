@@ -24023,15 +24023,24 @@ window.TRIAL_MS = 3 * 86400000; // 72h
 window.getTrialInfo = function() {
   try {
     var prof = JSON.parse(localStorage.getItem('ah_profile') || '{}');
+    // hasBookAccess → trial converti, ne plus afficher de compteur
+    if (prof.hasBookAccess === true) {
+      return { active: true, remaining: Infinity, started: prof.trialStartedAt || Date.now(), elapsed: 0, converted: true };
+    }
+    // Si trialEndsAt vient du serveur (init-user.js), on l'utilise comme
+    // source de vérité absolue. Sinon fallback sur trialStartedAt + TRIAL_MS.
     if (!prof.trialStartedAt) {
-      // Premier check pour un user existant sans champ : démarre maintenant
+      // Pre-bootstrap : on initialise localement, init-user.js posera le
+      // serverTimestamp à la prochaine connexion.
       prof.trialStartedAt = Date.now();
       try { localStorage.setItem('ah_profile', JSON.stringify(prof)); } catch(e) {}
       try { if (typeof fbSaveProfile === 'function') fbSaveProfile(); } catch(e) {}
     }
-    var elapsed = Date.now() - prof.trialStartedAt;
-    var remaining = window.TRIAL_MS - elapsed;
-    return { started: prof.trialStartedAt, elapsed: elapsed, remaining: remaining, active: remaining > 0 };
+    var endsAt = prof.trialEndsAt || (prof.trialStartedAt + window.TRIAL_MS);
+    var now = Date.now();
+    var remaining = endsAt - now;
+    var elapsed = now - prof.trialStartedAt;
+    return { started: prof.trialStartedAt, endsAt: endsAt, elapsed: elapsed, remaining: remaining, active: remaining > 0 };
   } catch(e) { return { active: false, remaining: 0 }; }
 };
 
@@ -24046,6 +24055,47 @@ window.hasValidAccess = function() {
   // Trial 3 jours en cours
   var t = window.getTrialInfo();
   return !!t.active;
+};
+
+// ═══════════════════════════════════════════════════════════════════════════
+// _bootstrapAccessFromServer(fbUser)
+// ───────────────────────────────────────────────────────────────────────────
+// Appelé par onFirebaseAuthChange à chaque sign-in. Demande au serveur les
+// vraies dates de trial (serverTimestamps verrouillés par Firestore Rules) +
+// l'état hasBookAccess. Met à jour le cache local ah_profile pour que la
+// vérif hasValidAccess() soit cohérente offline. Idempotent.
+// ═══════════════════════════════════════════════════════════════════════════
+window._bootstrapAccessFromServer = async function(fbUser) {
+  if (!fbUser || typeof fbUser.getIdToken !== 'function') return;
+  // Évite les appels en rafale : un seul bootstrap actif à la fois.
+  if (window._bootstrapInflight) return;
+  window._bootstrapInflight = true;
+  try {
+    var idToken = await fbUser.getIdToken();
+    var res = await fetch('/.netlify/functions/init-user', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + idToken },
+      body: JSON.stringify({})
+    });
+    var data = await res.json();
+    if (!data || !data.ok) return;
+    var a = data.access || {};
+    var prof = {};
+    try { prof = JSON.parse(localStorage.getItem('ah_profile') || '{}'); } catch(e) {}
+    prof.trialStartedAt    = a.trialStartedAt    || prof.trialStartedAt    || Date.now();
+    prof.trialEndsAt       = a.trialEndsAt       || prof.trialEndsAt       || (prof.trialStartedAt + (window.TRIAL_MS || 3*86400000));
+    prof.trialStatus       = a.trialStatus       || prof.trialStatus       || 'active';
+    prof.hasBookAccess     = a.hasBookAccess === true;
+    prof.accessMethod      = a.accessMethod || prof.accessMethod || null;
+    localStorage.setItem('ah_profile', JSON.stringify(prof));
+    // Rafraîchit l'UI qui dépend de l'accès (bannière, gates)
+    try { if (typeof renderTrialBanner === 'function') renderTrialBanner(); } catch(e) {}
+    try { if (typeof renderUserData === 'function') renderUserData(); } catch(e) {}
+  } catch (e) {
+    console.warn('[bootstrapAccess]', e && e.message);
+  } finally {
+    window._bootstrapInflight = false;
+  }
 };
 
 // Affiche le popup premium "Tes 3 jours d'accès découverte sont terminés".
@@ -24370,27 +24420,44 @@ function _journeyContinue() {
 }
 window._journeyContinue = _journeyContinue;
 
-// Bannière sur Home : affichée seulement si trial actif (et pas de tier payant)
+// Bannière sur Home : affichée selon l'état d'accès.
+// - hasBookAccess=true ou tier BETA/VIP/MASTER → bannière cachée
+// - Trial actif > 24h → rappel discret "Il te reste Xj Xh..."
+// - Trial actif < 24h → rappel urgent ambré "Ton accès se termine bientôt"
+// - Trial expiré → bannière rouge bloquante (le popup premium gère le reste)
 function renderTrialBanner() {
   var el = document.getElementById('trialBanner');
   if (!el) return;
-  // Tier payant → pas de bannière
+  // Accès post-livre ou tier spécial → pas de bannière
+  try {
+    var p = JSON.parse(localStorage.getItem('ah_profile') || '{}');
+    if (p.hasBookAccess === true) { el.innerHTML = ''; el.style.display = 'none'; return; }
+  } catch(e) {}
   if (window.hasAccessTier && window.hasAccessTier('BETA')) { el.innerHTML = ''; el.style.display = 'none'; return; }
   var t = window.getTrialInfo();
   el.style.display = '';
+  var H24 = 24 * 60 * 60 * 1000;
   if (t.active) {
     var rem = window._formatTrialRemaining(t.remaining);
+    var urgent = t.remaining < H24;
+    var bg = urgent ? 'rgba(245,158,11,.10)' : 'rgba(197,164,78,.08)';
+    var bg2 = urgent ? 'rgba(245,158,11,.04)' : 'rgba(197,164,78,.02)';
+    var border = urgent ? 'rgba(245,158,11,.45)' : 'rgba(197,164,78,.25)';
+    var pillColor = urgent ? '#F59E0B' : 'var(--gold)';
+    var label = urgent ? 'Accès découverte se termine bientôt' : 'Essai découverte';
+    var line = urgent
+      ? 'Il te reste <strong>' + rem + '</strong>. Active ton accès pour continuer sans interruption.'
+      : 'Il te reste <strong>' + rem + '</strong> pour activer ton accès lecteur.';
     el.innerHTML =
-      '<div style="background:linear-gradient(135deg,rgba(197,164,78,.10),rgba(197,164,78,.04));border:1px solid rgba(197,164,78,.35);border-radius:12px;padding:12px 14px;margin:12px 16px">' +
+      '<div style="background:linear-gradient(135deg,' + bg + ',' + bg2 + ');border:1px solid ' + border + ';border-radius:12px;padding:12px 14px;margin:12px 16px">' +
         '<div style="display:flex;align-items:center;justify-content:space-between;gap:10px">' +
           '<div style="flex:1;min-width:0">' +
-            '<div style="font-size:11px;letter-spacing:1.5px;font-weight:800;color:var(--gold);text-transform:uppercase">Essai gratuit</div>' +
-            '<div style="font-size:13px;color:var(--text);font-weight:600;margin-top:2px">Reste <strong>' + rem + '</strong> avant blocage</div>' +
+            '<div style="font-family:\'JetBrains Mono\',monospace;font-size:10px;letter-spacing:.18em;font-weight:800;color:' + pillColor + ';text-transform:uppercase">' + label + '</div>' +
+            '<div style="font-size:13px;color:var(--text);font-weight:500;margin-top:3px;line-height:1.4">' + line + '</div>' +
           '</div>' +
-          '<button onclick="openAccessCode()" style="background:var(--gold);color:#243B6B;border:0;padding:8px 14px;border-radius:10px;font-family:\'Outfit\',sans-serif;font-size:12px;font-weight:800;cursor:pointer;white-space:nowrap;letter-spacing:.3px">📕 J\'ai le livre</button>' +
+          '<button onclick="window.openBookActivation && window.openBookActivation()" style="background:var(--gold);color:#243B6B;border:0;padding:8px 14px;border-radius:10px;font-family:\'Outfit\',sans-serif;font-size:12px;font-weight:800;cursor:pointer;white-space:nowrap;letter-spacing:.3px">Activer</button>' +
         '</div>' +
-        // CTA secondaire pour ceux qui n'ont pas encore acheté le livre.
-        '<div style="margin-top:8px;padding-top:8px;border-top:1px dashed rgba(197,164,78,.25);font-size:11.5px;color:var(--text2);text-align:center">' +
+        '<div style="margin-top:8px;padding-top:8px;border-top:1px dashed ' + border + ';font-size:11.5px;color:var(--text2);text-align:center">' +
           'Pas encore le livre ? ' +
           '<a href="javascript:void(0)" onclick="openAmazonBook()" style="color:var(--gold);font-weight:700;text-decoration:underline;text-underline-offset:3px">L\'acheter sur Amazon →</a>' +
         '</div>' +
@@ -27401,6 +27468,14 @@ function onFirebaseAuthChange(fbUser) {
     user.fbUid = fbUser.uid;
     user.emailVerified = fbUser.emailVerified;
   }
+
+  // ── Bootstrap accès premium côté serveur ──
+  // Appelle /api/init-user pour que Firestore ait des serverTimestamps
+  // verrouillés (trialStartedAt, trialEndsAt) et renvoie l'état d'accès
+  // calculé serveur. Le client cache le résultat dans ah_profile pour
+  // les vérifications UI offline (hasValidAccess). La source de vérité
+  // reste Firestore — les rules empêchent toute modification client.
+  if (fbUser) { try { _bootstrapAccessFromServer(fbUser); } catch(e) { console.warn('initUser:', e); } }
 
   // Roadmap v4 — quand l'auth state change avec un user (connexion sur
   // nouveau device, restauration de session…) :
