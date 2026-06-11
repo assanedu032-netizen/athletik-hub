@@ -850,7 +850,21 @@ body{background:var(--bg);color:var(--text);font-family:'Outfit',sans-serif;disp
 .rm-subs{background:rgba(197,164,78,.06);border-left:3px solid var(--gold);border-radius:0 8px 8px 0;padding:8px 12px;margin:2px 0 8px 26px}
 .rm-subs-label{font-size:10px;color:var(--gold);font-weight:700;letter-spacing:1px;text-transform:uppercase;margin-bottom:6px}
 .rm-subs-list{display:flex;flex-wrap:wrap;gap:5px}
-.rm-sub-chip{font-size:11px;padding:3px 9px;background:var(--surface);border:1px solid var(--border);border-radius:10px;color:var(--text2);font-weight:600}
+/* Chip cliquable : bordure gold subtile au repos, pleine au survol,
+   scale au tap pour signaler que c'est un bouton de swap. */
+.rm-sub-chip{font-size:11px;padding:4px 10px;background:var(--surface);border:1px solid rgba(197,164,78,.35);border-radius:10px;color:var(--text2);font-weight:600;cursor:pointer;font-family:inherit;transition:background .12s,border-color .12s,transform .1s}
+.rm-sub-chip:hover{background:rgba(197,164,78,.1);border-color:var(--gold);color:var(--text)}
+.rm-sub-chip:active{transform:scale(.94)}
+/* Confirmation inline qui remplace la liste des chips au tap */
+.rm-subs-confirm{padding:4px 0 2px}
+.rm-subs-confirm-q{font-size:12px;color:var(--text);line-height:1.4;margin-bottom:7px}
+.rm-subs-confirm-q b{color:var(--gold);font-weight:800}
+.rm-subs-confirm-row{display:flex;gap:6px}
+.rm-sub-cancel,.rm-sub-confirm{flex:1;font-size:11px;font-weight:800;padding:7px 10px;border-radius:8px;cursor:pointer;font-family:inherit;letter-spacing:.02em;transition:transform .1s,background .12s}
+.rm-sub-cancel{background:transparent;border:1px solid var(--border2);color:var(--muted)}
+.rm-sub-cancel:hover{background:var(--surface2);color:var(--text)}
+.rm-sub-confirm{background:linear-gradient(135deg,var(--gold),#A0853A);border:0;color:#1B2A4A;box-shadow:0 3px 8px rgba(197,164,78,.28)}
+.rm-sub-confirm:active{transform:scale(.96)}
 
 /* ═══ PLAN REPAS — Vue plein écran ═══ */
 .mp-overlay{position:fixed;inset:0;z-index:300;background:var(--bg);display:none;flex-direction:column;font-family:'Outfit',sans-serif}
@@ -9974,8 +9988,15 @@ function showNutriTab(el, tab) {
 // déjà adaptées). Bug remonté : "quand je clique par exemple ou la portion
 // c'est 2 pour pancakes protéinés j'atterris sur proposition 1 fois".
 function showRecipe(key, portionsOverride) {
-  var r = RECIPES[key];
-  if (!r) return;
+  var src = RECIPES[key];
+  if (!src) return;
+  // Copie défensive : on clone les ingrédients pour pouvoir les muter
+  // (swap par alternative) sans contaminer la base RECIPES. À chaque
+  // ouverture de la modal on repart de l'état d'origine — pas de
+  // persistance des swaps pour le MVP.
+  var r = Object.assign({}, src, {
+    ingredients: (src.ingredients || []).map(function(i){ return Object.assign({}, i); })
+  });
   document.getElementById('rmTitle').textContent = r.name;
   var tagEl = document.getElementById('rmTag');
   tagEl.textContent = r.tagLabel;
@@ -10031,8 +10052,12 @@ function showRecipe(key, portionsOverride) {
       + '</div></div>';
     if (subs) {
       html += '<div class="rm-subs" id="rmSubs' + idx + '" style="display:none">'
-        + '<div class="rm-subs-label">💡 Alternatives</div>'
-        + '<div class="rm-subs-list">' + subs.map(function(a){ return '<span class="rm-sub-chip">' + a + '</span>'; }).join('') + '</div>'
+        + '<div class="rm-subs-label">💡 Alternatives — tap pour remplacer</div>'
+        + '<div class="rm-subs-list" id="rmSubsList' + idx + '">' + subs.map(function(a){
+            var safe = a.replace(/'/g,"\\'");
+            return '<button type="button" class="rm-sub-chip" onclick="window._proposeSwapIngr(' + idx + ',\'' + safe + '\')">' + a + '</button>';
+          }).join('') + '</div>'
+        + '<div class="rm-subs-confirm" id="rmSubsConfirm' + idx + '" style="display:none"></div>'
         + '</div>';
     }
     return html;
@@ -11030,8 +11055,88 @@ function toggleSubs(idx) {
   var el = document.getElementById('rmSubs' + idx);
   if (!el) return;
   el.style.display = (el.style.display === 'none' || !el.style.display) ? 'block' : 'none';
+  // Si on referme, on annule aussi une éventuelle proposition de swap en cours.
+  if (el.style.display === 'none') _cancelSwapIngr(idx);
 }
 window.toggleSubs = toggleSubs;
+
+// ═══════════════════════════════════════════════════════════════════════
+// SWAP D'INGRÉDIENT — l'utilisateur tape une alternative dans le panneau
+// 💡 Alternatives → on lui demande de confirmer ("Remplacer X par Y ?")
+// → on échange l'ingrédient dans la recette courante, on recalcule les
+// parts kcal/macros (via CIQUAL) et on rafraîchit l'affichage. La base
+// RECIPES n'est PAS mutée (cf. clone défensif dans showRecipe). Pas de
+// persistance entre 2 ouvertures de la modal — feature MVP demandée par
+// le client (chirurgical).
+// ═══════════════════════════════════════════════════════════════════════
+window._proposeSwapIngr = function(idx, newName) {
+  var r = window._currentRecipe;
+  if (!r || !r.ingredients || !r.ingredients[idx]) return;
+  var list = document.getElementById('rmSubsList' + idx);
+  var box  = document.getElementById('rmSubsConfirm' + idx);
+  if (!box) return;
+  var cur = r.ingredients[idx].name;
+  // Échappement minimal pour passer en onclick (apostrophes)
+  var safeNew = newName.replace(/'/g, "\\'");
+  box.innerHTML =
+      '<div class="rm-subs-confirm-q">Remplacer <b>' + cur + '</b> par <b>' + newName + '</b> ?</div>'
+    + '<div class="rm-subs-confirm-row">'
+    +   '<button type="button" class="rm-sub-cancel" onclick="window._cancelSwapIngr(' + idx + ')">✕ Annuler</button>'
+    +   '<button type="button" class="rm-sub-confirm" onclick="window._confirmSwapIngr(' + idx + ',\'' + safeNew + '\')">✓ Confirmer</button>'
+    + '</div>';
+  if (list) list.style.display = 'none';
+  box.style.display = 'block';
+};
+
+window._cancelSwapIngr = function(idx) {
+  var list = document.getElementById('rmSubsList' + idx);
+  var box  = document.getElementById('rmSubsConfirm' + idx);
+  if (box) { box.innerHTML = ''; box.style.display = 'none'; }
+  if (list) list.style.display = '';
+};
+
+window._confirmSwapIngr = function(idx, newName) {
+  var r = window._currentRecipe;
+  if (!r || !r.ingredients || !r.ingredients[idx]) return;
+  var oldName = r.ingredients[idx].name;
+  // Mute l'ingrédient en place (sur la copie défensive de la recette)
+  r.ingredients[idx].name = newName;
+  // Recalcule TOUTE la grille de parts kcal/macros — l'ingrédient swappé
+  // a une part CIQUAL différente, et la normalisation des autres parts
+  // doit être refaite pour matcher exactement le total de la recette.
+  try { window._currentRecipeShares = _recipeIngredientShares(r); } catch(e) {}
+  // Re-render uniquement la ligne de cet ingrédient (la liste entière
+  // serait trop coûteuse + on perdrait l'état cochage/décochage des autres).
+  var row = document.getElementById('rmIngr' + idx);
+  if (row) {
+    var nameEl = row.querySelector('.rm-ingr-name');
+    var qtyEl  = row.querySelector('.rm-ingr-qty');
+    if (nameEl) {
+      // Conserve le bouton d'alternatives ↻ s'il existe
+      var subs = _findSubs(newName);
+      var html = newName;
+      if (subs) html += ' <button class="rm-sub-btn" onclick="toggleSubs(' + idx + ')" aria-label="Voir les alternatives" title="Alternatives">↻</button>';
+      nameEl.innerHTML = html;
+    }
+    if (qtyEl) {
+      var share = window._currentRecipeShares[idx];
+      var kc = share ? Math.round(share.kcal) : 0;
+      var q = String(r.ingredients[idx].qty || '');
+      qtyEl.innerHTML = q + (kc > 0 ? '<span class="rm-ingr-kc">· ~' + kc + ' kcal</span>' : '');
+    }
+  }
+  // Cache le panneau d'alternatives + recalcule les totaux affichés
+  var panel = document.getElementById('rmSubs' + idx);
+  if (panel) panel.style.display = 'none';
+  _cancelSwapIngr(idx);
+  try { _applyRecipeServings(); } catch(e) {}
+  // Feedback discret
+  try {
+    if (typeof showToast === 'function') {
+      showToast('« ' + oldName + ' » → « ' + newName + ' » ✓', 'info');
+    }
+  } catch(e) {}
+};
 
 function closeRecipeModal() {
   document.getElementById('recipeModal').classList.remove('open');
