@@ -2242,6 +2242,16 @@ body:has(.scr.on) .tim-fab{display:none}
 .rm-ingr-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--gold); flex-shrink: 0; }
 .rm-ingr-name { flex: 1; font-size: 13px; color: var(--text); }
 .rm-ingr-qty { font-size: 12px; font-weight: 700; color: var(--muted); }
+/* Décoche ingrédients : remplace le dot par une checkbox. Quand l'utilisateur
+   décoche, _applyRecipeServings() recalcule la somme avec uniquement les ingr
+   gardés (part proportionnelle estimée via CIQUAL ou égalitaire). */
+.rm-ingr-chk { width: 20px; height: 20px; border-radius: 6px; border: 1.5px solid var(--border2); background: var(--surface); display: flex; align-items: center; justify-content: center; cursor: pointer; flex-shrink: 0; transition: all .15s; color: transparent; font-size: 12px; font-weight: 800; user-select: none; }
+.rm-ingr-chk.on { background: var(--gold); border-color: var(--gold); color: #fff; box-shadow: 0 2px 6px rgba(197,164,78,.28); }
+.rm-ingr-chk:active { transform: scale(.92); }
+.rm-ingr.off .rm-ingr-name { color: var(--muted); text-decoration: line-through; opacity: .6; }
+.rm-ingr.off .rm-ingr-qty { opacity: .5; }
+.rm-ingr-kc { font-size: 10.5px; color: var(--muted); margin-left: 6px; font-weight: 600; white-space: nowrap; }
+.rm-ingr.off .rm-ingr-kc { opacity: .45; }
 
 .rm-step { display: flex; gap: 12px; margin-bottom: 12px; align-items: flex-start; }
 .rm-step-num { width: 28px; height: 28px; border-radius: 50%; background: var(--navy); color: var(--gold); font-family: 'Bebas Neue', sans-serif; font-size: 14px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; margin-top: 1px; }
@@ -9451,16 +9461,28 @@ function showRecipe(key, portionsOverride) {
     startPortions = r.servings || 1;
   }
   window._currentRecipeServings = startPortions;
-  _applyRecipeServings();
+  // Ingrédients cochés par défaut + parts kcal/macros estimées (normalisées
+  // pour que tout coché matche le total). L'utilisateur peut décocher un
+  // ingrédient → recalc direct via _applyRecipeServings().
+  window._currentRecipeIngrChecked = r.ingredients.map(function(){ return true; });
+  window._currentRecipeShares = _recipeIngredientShares(r);
   // État favoris (étoile + bouton)
   window._currentRecipeKey = key;
   _refreshRecipeModalFavUI();
-  // Ingrédients — avec substitutions possibles
+  // Ingrédients — checkbox + nom + alternatives + qté + kcal estimé.
+  // L'utilisateur peut décocher un ingr → kcal/macros recalculés en direct.
   var ingrHtml = r.ingredients.map(function(i, idx) {
     var subs = _findSubs(i.name);
-    var html = '<div class="rm-ingr"><div class="rm-ingr-dot"></div><div class="rm-ingr-name">' + i.name
+    var share = window._currentRecipeShares[idx];
+    var kcEst = share ? Math.round(share.kcal) : 0;
+    var html = '<div class="rm-ingr" id="rmIngr' + idx + '">'
+      + '<div class="rm-ingr-chk on" onclick="window._toggleIngr(' + idx + ')" role="checkbox" aria-checked="true">✓</div>'
+      + '<div class="rm-ingr-name">' + i.name
       + (subs ? ' <button class="rm-sub-btn" onclick="toggleSubs(' + idx + ')" aria-label="Voir les alternatives" title="Alternatives">↻</button>' : '')
-      + '</div><div class="rm-ingr-qty">' + i.qty + '</div></div>';
+      + '</div>'
+      + '<div class="rm-ingr-qty">' + i.qty
+      + (kcEst > 0 ? '<span class="rm-ingr-kc">· ~' + kcEst + ' kcal</span>' : '')
+      + '</div></div>';
     if (subs) {
       html += '<div class="rm-subs" id="rmSubs' + idx + '" style="display:none">'
         + '<div class="rm-subs-label">💡 Alternatives</div>'
@@ -9470,14 +9492,9 @@ function showRecipe(key, portionsOverride) {
     return html;
   }).join('');
   var rmI = document.getElementById('rmIngredients'); if (rmI) rmI.innerHTML = ingrHtml;
-  // Stocker la recette courante AVANT le re-apply pour que _applyRecipeServings
-  // puisse lire window._currentRecipe.ingredients[i].qty quand il scale.
+  // Stocker la recette courante AVANT _applyRecipeServings pour qu'il puisse
+  // lire window._currentRecipe.ingredients[i].qty (scaling des quantités).
   window._currentRecipe = r;
-  // Re-applique le scaling SUR LES INGRÉDIENTS qui viennent d'être rendus.
-  // Le premier _applyRecipeServings() en haut de showRecipe() ne pouvait pas
-  // scaler les ingrédients : le DOM #rmIngredients était encore vide.
-  // Bug remonté : ingrédients restaient à 1 portion alors que portions=2 et
-  // macros étaient bien à 2 portions.
   _applyRecipeServings();
   // Étapes
   var stepsHtml = r.steps.map(function(s, i) {
@@ -9491,19 +9508,37 @@ function showRecipe(key, portionsOverride) {
   modal.scrollTop = 0;
 }
 
-// Recalcule les macros affichées dans la modal selon le nombre de portions courant
+// Recalcule les macros affichées dans la modal selon le nombre de portions
+// ET les ingrédients cochés. Pour chaque ingrédient décoché, on retranche
+// sa part estimée (normalisée pour que tout coché = total de la recette).
 function _applyRecipeServings() {
   var r = window._currentRecipe;
   if (!r) return;
   var base = r.servings || 1;
   var curr = window._currentRecipeServings || base;
   var mult = curr / base;
-  var fmt = function(v) { return Math.round(v * mult); };
+  // Somme des parts des ingrédients COCHÉS / somme totale → ratio "kept".
+  // En l'absence de shares (recette sans ingrédients), kept=1.
+  var shares = window._currentRecipeShares || [];
+  var checked = window._currentRecipeIngrChecked || [];
+  var sums = { kcal:0, prot:0, carbs:0, fat:0 };
+  var totals = { kcal:0, prot:0, carbs:0, fat:0 };
+  shares.forEach(function(s, idx){
+    totals.kcal += s.kcal; totals.prot += s.prot; totals.carbs += s.carbs; totals.fat += s.fat;
+    if (checked[idx] !== false) {
+      sums.kcal += s.kcal; sums.prot += s.prot; sums.carbs += s.carbs; sums.fat += s.fat;
+    }
+  });
+  function _ratio(k){ return totals[k] > 0 ? (sums[k]/totals[k]) : 1; }
   var $ = function(id) { return document.getElementById(id); };
-  if ($('rmCals')) $('rmCals').textContent = fmt(r.cals) + ' kcal';
-  if ($('rmProt')) $('rmProt').textContent = fmt(r.prot) + 'g';
-  if ($('rmCarbs')) $('rmCarbs').textContent = fmt(r.carbs) + 'g';
-  if ($('rmFat')) $('rmFat').textContent = fmt(r.fat) + 'g';
+  var rCals  = Math.round(r.cals  * mult * _ratio('kcal'));
+  var rProt  = Math.round(r.prot  * mult * _ratio('prot'));
+  var rCarbs = Math.round(r.carbs * mult * _ratio('carbs'));
+  var rFat   = Math.round(r.fat   * mult * _ratio('fat'));
+  if ($('rmCals'))  $('rmCals').textContent  = rCals  + ' kcal';
+  if ($('rmProt'))  $('rmProt').textContent  = rProt  + 'g';
+  if ($('rmCarbs')) $('rmCarbs').textContent = rCarbs + 'g';
+  if ($('rmFat'))   $('rmFat').textContent   = rFat   + 'g';
   if ($('rmServingsVal')) $('rmServingsVal').textContent = curr;
 
   // ── Mise à jour des quantités d'ingrédients ──
@@ -9550,6 +9585,145 @@ function _scaleIngredientQty(qtyStr, mult) {
     formatted = scaled.toFixed(1).replace(/\.0$/, '');
   }
   return leading + formatted + rest;
+}
+
+// Toggle un ingrédient (coché/décoché) → recalcule kcal/macros en direct.
+window._toggleIngr = function(idx) {
+  var arr = window._currentRecipeIngrChecked;
+  var row = document.getElementById('rmIngr' + idx);
+  if (!arr || !row) return;
+  arr[idx] = arr[idx] === false ? true : false;
+  var chk = row.querySelector('.rm-ingr-chk');
+  if (arr[idx]) {
+    row.classList.remove('off');
+    if (chk) { chk.classList.add('on'); chk.textContent = '✓'; chk.setAttribute('aria-checked','true'); }
+  } else {
+    row.classList.add('off');
+    if (chk) { chk.classList.remove('on'); chk.textContent = ''; chk.setAttribute('aria-checked','false'); }
+  }
+  _applyRecipeServings();
+};
+
+// Estime la part kcal/prot/carbs/fat de chaque ingrédient d'une recette.
+// Heuristique : matche le nom dans CIQUAL, parse la quantité en grammes,
+// calcule la contribution réelle. Les parts sont ensuite NORMALISÉES pour
+// que leur somme égale les totaux de la recette (gomme les approximations
+// de matching/parsing). Ingrédient sans match → reçoit une part résiduelle
+// égale au reste à distribuer.
+function _recipeIngredientShares(r) {
+  if (!r || !r.ingredients || !r.ingredients.length) return [];
+  var ings = r.ingredients;
+  var raw = ings.map(function(i){
+    var grams = _recipeParseQtyGrams(i.qty, i.name);
+    var foodIdx = _recipeFindCiqual(i.name);
+    if (!grams || foodIdx < 0) return null;
+    var f = window.CIQUAL_FOODS[foodIdx];
+    var ratio = grams / 100;
+    return { kcal: f[1]*ratio, prot: f[2]*ratio, carbs: f[3]*ratio, fat: f[4]*ratio };
+  });
+  // Somme des contributions trouvées par macro
+  var found = { kcal:0, prot:0, carbs:0, fat:0 };
+  var foundCount = 0, missingCount = 0;
+  raw.forEach(function(x){ if (x) { found.kcal += x.kcal; found.prot += x.prot; found.carbs += x.carbs; found.fat += x.fat; foundCount++; } else missingCount++; });
+  // Pour chaque macro, ce qui reste après les ingrédients matchés est
+  // distribué également entre les non-matchés (et 0 si tous matchés).
+  var T = { kcal:r.cals||0, prot:r.prot||0, carbs:r.carbs||0, fat:r.fat||0 };
+  var rem = { kcal:Math.max(0,T.kcal-found.kcal), prot:Math.max(0,T.prot-found.prot),
+              carbs:Math.max(0,T.carbs-found.carbs), fat:Math.max(0,T.fat-found.fat) };
+  var per = missingCount > 0
+    ? { kcal:rem.kcal/missingCount, prot:rem.prot/missingCount, carbs:rem.carbs/missingCount, fat:rem.fat/missingCount }
+    : { kcal:0, prot:0, carbs:0, fat:0 };
+  // Première passe : remplit les manquants. Puis renormalise tout pour
+  // matcher exactement les totaux (en cas de surplus côté matchés).
+  var shares = raw.map(function(x){ return x || { kcal:per.kcal, prot:per.prot, carbs:per.carbs, fat:per.fat }; });
+  ['kcal','prot','carbs','fat'].forEach(function(k){
+    var s = 0; shares.forEach(function(sh){ s += sh[k]; });
+    if (s > 0 && T[k] > 0) {
+      var scale = T[k] / s;
+      shares.forEach(function(sh){ sh[k] = sh[k] * scale; });
+    }
+  });
+  return shares;
+}
+
+// Parse une quantité texte ("150g", "1 c. à soupe", "1 banane", "1/2 oignon")
+// vers une approximation en grammes. Pas parfait, suffisant pour pondérer.
+function _recipeParseQtyGrams(qty, name) {
+  if (!qty) return 0;
+  var q = String(qty).toLowerCase().trim();
+  // Format poids direct : "150g", "1.5 kg", "200 g"
+  var mG = q.match(/(\d+(?:[\.,]\d+)?)\s*g\b/);
+  if (mG) return parseFloat(mG[1].replace(',','.'));
+  var mKg = q.match(/(\d+(?:[\.,]\d+)?)\s*kg\b/);
+  if (mKg) return parseFloat(mKg[1].replace(',','.')) * 1000;
+  // Volume → conversion approximative (1ml ≈ 1g pour eau/lait/jus)
+  var mMl = q.match(/(\d+(?:[\.,]\d+)?)\s*ml\b/);
+  if (mMl) return parseFloat(mMl[1].replace(',','.'));
+  var mCl = q.match(/(\d+(?:[\.,]\d+)?)\s*cl\b/);
+  if (mCl) return parseFloat(mCl[1].replace(',','.')) * 10;
+  var mL = q.match(/(\d+(?:[\.,]\d+)?)\s*l\b/);
+  if (mL) return parseFloat(mL[1].replace(',','.')) * 1000;
+  // Cuillères
+  if (/c\.?\s*à\s*soupe|cuill[èe]re?\s*à\s*soupe|c\.\s*s\b|cs\b/.test(q)) {
+    var nS = (q.match(/^(\d+(?:[\.,]\d+)?)/) || [])[1];
+    return (parseFloat((nS||'1').replace(',','.'))) * 15;
+  }
+  if (/c\.?\s*à\s*café|cuill[èe]re?\s*à\s*café|c\.\s*c\b|cc\b/.test(q)) {
+    var nC = (q.match(/^(\d+(?:[\.,]\d+)?)/) || [])[1];
+    return (parseFloat((nC||'1').replace(',','.'))) * 5;
+  }
+  // Pincée
+  if (/pinc[ée]e/.test(q)) return 1;
+  // Fractions ("1/2 oignon")
+  var mFr = q.match(/^(\d+)\s*\/\s*(\d+)/);
+  // Unités via nom : œuf=55g, banane=120g, pomme=180g, etc. (table courte)
+  var unitMap = {
+    'oeuf':55,'œuf':55,'banane':120,'pomme':180,'orange':180,'poire':180,
+    'tomate':120,'oignon':100,'gousse':5,'avocat':150,'concombre':300,
+    'carotte':80,'pomme de terre':150,'patate':150,'courgette':200,
+    'tranche':30,'tasse':200,'verre':200,'bol':250,'portion':100,
+    'biscotte':10,'galette':10,'crêpe':50,'pancake':50
+  };
+  var nLow = String(name||'').toLowerCase();
+  for (var key in unitMap) {
+    if (nLow.indexOf(key) > -1 || q.indexOf(key) > -1) {
+      var nm = (q.match(/^(\d+(?:[\.,]\d+)?)/) || [])[1];
+      var n = nm ? parseFloat(nm.replace(',','.')) : 1;
+      if (mFr) n = parseInt(mFr[1],10) / parseInt(mFr[2],10);
+      return n * unitMap[key];
+    }
+  }
+  // Nombre seul ("2 œufs" sans match table) → ~80g par unité
+  var mN = q.match(/^(\d+(?:[\.,]\d+)?)/);
+  if (mN) return parseFloat(mN[1].replace(',','.')) * 80;
+  return 0;
+}
+
+// Recherche un ingrédient dans CIQUAL (matching simple par mots-clés).
+// Renvoie l'index ou -1. Cache mémoïsé pour éviter de rescanner les 3484
+// aliments à chaque ingrédient.
+window._ciqualMatchCache = window._ciqualMatchCache || {};
+function _recipeFindCiqual(name) {
+  if (!name || !window.CIQUAL_FOODS) return -1;
+  var key = String(name).toLowerCase();
+  if (key in window._ciqualMatchCache) return window._ciqualMatchCache[key];
+  function _norm(s){ return s.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,''); }
+  var n = _norm(name);
+  // Mots significatifs (>2 lettres, hors mots vides)
+  var stop = {'de':1,'du':1,'la':1,'le':1,'les':1,'des':1,'un':1,'une':1,'et':1,'au':1,'aux':1,'avec':1,'sans':1,'ou':1,'en':1};
+  var tokens = n.split(/[^a-z]+/).filter(function(t){ return t.length > 2 && !stop[t]; });
+  if (!tokens.length) { window._ciqualMatchCache[key] = -1; return -1; }
+  var foods = window.CIQUAL_FOODS;
+  var bestIdx = -1, bestScore = 0;
+  for (var i = 0; i < foods.length; i++) {
+    var fn = _norm(foods[i][0]);
+    var score = 0;
+    for (var t = 0; t < tokens.length; t++) if (fn.indexOf(tokens[t]) > -1) score++;
+    if (score > bestScore) { bestScore = score; bestIdx = i; if (score === tokens.length) break; }
+  }
+  var result = bestScore >= Math.min(1, tokens.length) ? bestIdx : -1;
+  window._ciqualMatchCache[key] = result;
+  return result;
 }
 function adjustRecipeServings(delta) {
   var curr = window._currentRecipeServings || 1;
