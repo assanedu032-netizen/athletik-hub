@@ -28490,6 +28490,123 @@ function openNPI() { go('profil2'); }
 // Filtré selon le programme dans p3GetTestsForProgram()
 // ═══════════════════════════════════════════════
 
+// ═══════════════════════════════════════════════════════════════════════════
+// SOURCE DE VÉRITÉ UNIQUE — TESTS PHYSIQUES PAR PROGRAMME
+// ───────────────────────────────────────────────────────────────────────────
+// Sources : livre "Les Secrets de la Détente Verticale" — table p.269
+// "Quel test pour quel programme ?" + protocoles SAT (p.257-262) et SET
+// (p.288-289). Cette source est utilisée par :
+//   - l'onboarding step-by-step (profil3) via p3GetTestsForProgram
+//   - le Tracks tab (vue Suivi > Tests) via getActiveSatExercices +
+//     renderTestsLanding
+//   - Titan (à brancher dans buildSystemPrompt si besoin)
+// → Plus de double source : si tu modifies AH_TEST_PROTOCOLS ici,
+//   l'onboarding ET la vue Suivi changent en même temps.
+//
+// Les *définitions* des tests (champs, hint, timer…) restent dans
+// ALL_TESTS (juste après). Ce bloc-ci ne décrit que la STRUCTURE
+// protocolaire — quels tests vont dans quel protocole, quel protocole
+// pour quel programme.
+// ═══════════════════════════════════════════════════════════════════════════
+var AH_TEST_PROTOCOLS = {
+  // SAT — Super Athlétique Test : force maximale + détente
+  SAT: {
+    code: 'SAT', name: 'Super Athlétique Test',
+    short: 'SAT', shelf: 'Bilan force',
+    duration: '30 min',
+    desc: 'Force maximale + détente verticale.',
+    longDesc: 'Détente verticale + Squat 1RM + Soulevé de terre 1RM + Hip Thrust 1RM + Développé couché 1RM.',
+    section: 'sat', // sub-section Tracks correspondante
+    tests: ['jump', 'squat', 'sdt', 'ht', 'dc'],
+    icon: '🏋️'
+  },
+  // SET — Super Explosif Test : explosivité + profil physiologique
+  SET: {
+    code: 'SET', name: 'Super Explosif Test',
+    short: 'SET', shelf: 'Bilan explosif',
+    duration: '60-75 min',
+    desc: 'Explosivité + profil athlétique global.',
+    longDesc: 'Détente verticale + 94 Feet Test + Test physiologique (poids, photos) + Squat 1RM + Hip Thrust 1RM + Développé couché 1RM + Soulevé de terre 1RM.',
+    section: 'set',
+    tests: ['jump', 'feet94', 'physio', 'sprint60', 'squat', 'ht', 'dc', 'sdt'],
+    icon: '⚡'
+  },
+  // VERTICAL_DUNK_TEST — détente + 2 mouvements de force essentiels
+  // (Test propre à Vertical Dunk — pas un SAT ni un SET complet)
+  VERTICAL_DUNK_TEST: {
+    code: 'VDT', name: 'Bilan Vertical Dunk',
+    short: 'VDT', shelf: 'Détente + Force',
+    duration: '30 min',
+    desc: 'Détente verticale + 1RM squat + 1RM soulevé de terre.',
+    longDesc: 'Test de détente verticale + Rep Max squat + Rep Max soulevé de terre.',
+    section: 'sat', // réutilise le wizard SAT (filtré PROGRAM_TESTS)
+    tests: ['jump', 'squat', 'sdt'],
+    icon: '🏀'
+  },
+  // BODYWEIGHT_ALTERNATIVE_TESTS — placeholder pour Microtraining / Triphasique
+  // Le livre p.269 mentionne "Détente + tests alternatifs (poids de corps)"
+  // sans en donner la liste exacte. Les 4 tests ci-dessous sont des
+  // *propositions* internes (squat bulgare, pompes max, wall sit, fentes
+  // sautées) → marqués isProposed:true. À valider avec l'auteur avant
+  // de retirer le flag.
+  BODYWEIGHT_ALTERNATIVE_TESTS: {
+    code: 'BWT', name: 'Détente + tests alternatifs',
+    short: 'PDC', shelf: 'Bilan poids du corps',
+    duration: '20 min',
+    desc: 'Détente verticale + tests alternatifs au poids du corps.',
+    longDesc: 'Détente verticale + tests alternatifs (squat bulgare, pompes, wall sit, fentes sautées) — à valider avec ton coach.',
+    section: 'sat',
+    tests: ['jump', 'pdcSquatBulgare', 'pdcPompes', 'pdcWallSit', 'pdcFentesSautees'],
+    icon: '💪',
+    isProposed: true,
+    proposalNote: 'Les 4 tests alternatifs au poids du corps sont des propositions internes (le livre p.269 mentionne "tests alternatifs" sans en donner la liste exacte). À valider avec ton coach avant publication finale.'
+  }
+};
+
+// Mapping programme → protocoles à proposer (source : livre p.269)
+// Les clés sont les programmes normalisés (cf. p3NormalizeProgram).
+var AH_PROGRAM_TESTS = {
+  eliteAthlete:  ['SAT', 'SET'],
+  shredExplose:  ['SET'],
+  verticalDunk:  ['VERTICAL_DUNK_TEST'],
+  explose:       ['SAT', 'SET'],
+  microtraining: ['BODYWEIGHT_ALTERNATIVE_TESTS'],
+  triphasique:   ['BODYWEIGHT_ALTERNATIVE_TESTS']
+};
+
+// Source de vérité unique : retourne la liste APLATIE des test ids
+// applicables au programme, dans l'ordre où ils doivent être présentés.
+// Utilisée par l'onboarding, par le Tracks tab, et par Titan.
+function getTestsForProgram(programId) {
+  var norm = (typeof p3NormalizeProgram === 'function')
+    ? p3NormalizeProgram(programId)
+    : String(programId || 'eliteAthlete').toLowerCase();
+  var protocols = AH_PROGRAM_TESTS[norm] || AH_PROGRAM_TESTS.eliteAthlete;
+  var ids = [];
+  var seen = {};
+  protocols.forEach(function (pcode) {
+    var proto = AH_TEST_PROTOCOLS[pcode];
+    if (!proto) return;
+    proto.tests.forEach(function (id) {
+      if (!seen[id]) { seen[id] = 1; ids.push(id); }
+    });
+  });
+  return ids;
+}
+// Liste les protocoles applicables (objets enrichis) — utilisé par le
+// landing Tracks > Tests pour afficher les bonnes cartes.
+function getProtocolsForProgram(programId) {
+  var norm = (typeof p3NormalizeProgram === 'function')
+    ? p3NormalizeProgram(programId)
+    : String(programId || 'eliteAthlete').toLowerCase();
+  var protocols = AH_PROGRAM_TESTS[norm] || AH_PROGRAM_TESTS.eliteAthlete;
+  return protocols.map(function (pcode) { return AH_TEST_PROTOCOLS[pcode]; }).filter(Boolean);
+}
+window.AH_TEST_PROTOCOLS = AH_TEST_PROTOCOLS;
+window.AH_PROGRAM_TESTS = AH_PROGRAM_TESTS;
+window.getTestsForProgram = getTestsForProgram;
+window.getProtocolsForProgram = getProtocolsForProgram;
+
 var ALL_TESTS = {
   // ── TESTS COMMUNS (tous programmes) ──
   jump: {
@@ -28673,24 +28790,18 @@ var ALL_TESTS = {
 // SAT = jump + squat + sdt + ht + dc + sprint30 + ttest + fms
 // SET = jump + sprint60 + feet94 + laneAgility
 // Alternatifs PDC = jump + 4 exos poids du corps
-var PROGRAM_TESTS = {
-  // Sources : livre p.269 (table programme → tests associés) + pages SAT
-  // et SET illustrées. Les tests qui n'apparaissent PAS dans le livre
-  // (laneAgility, sprint30, ttest, fms) ont été retirés pour ne mesurer
-  // que ce que l'auteur prescrit réellement.
-  'microtraining': ['jump', 'pdcSquatBulgare', 'pdcPompes', 'pdcWallSit', 'pdcFentesSautees'],
-  'triphasique':   ['jump', 'pdcSquatBulgare', 'pdcPompes', 'pdcWallSit', 'pdcFentesSautees'],
-  // Vertical Dunk : livre = détente + 1RM squat + 1RM soulevé de terre.
-  'verticalDunk':  ['jump', 'squat', 'sdt'],
-  // Elite Athlete : SAT (squat + sdt + détente + ht + dc) + SET (94feet +
-  // sprint60 + détente + physio + force pure). Détente partagée → l'id
-  // 'jump' apparaît une fois.
-  'eliteAthlete':  ['jump', 'squat', 'sdt', 'ht', 'dc', 'sprint60', 'feet94', 'physio'],
-  // SHRED Explose : SET uniquement (livre p.269).
-  'shredExplose':  ['jump', 'sprint60', 'feet94', 'physio', 'squat', 'sdt', 'ht', 'dc'],
-  // EXPLOSE+ : SAT + SET (identique à Elite Athlete pour les tests).
-  'explose':       ['jump', 'squat', 'sdt', 'ht', 'dc', 'sprint60', 'feet94', 'physio']
-};
+// PROGRAM_TESTS — DÉRIVÉ de AH_PROGRAM_TESTS + AH_TEST_PROTOCOLS.
+// Conservé pour rétro-compatibilité avec le reste du code (les anciens
+// appelants comme _testsLandingState ou getActiveSatExercices y accèdent
+// directement). Toute modification doit se faire en haut, dans
+// AH_PROGRAM_TESTS / AH_TEST_PROTOCOLS — ne JAMAIS éditer ce bloc à la main.
+var PROGRAM_TESTS = (function buildPROGRAM_TESTS() {
+  var out = {};
+  Object.keys(AH_PROGRAM_TESTS).forEach(function (progKey) {
+    out[progKey] = getTestsForProgram(progKey);
+  });
+  return out;
+})();
 
 // Alias programme key → mapping key
 function p3NormalizeProgram(progKey) {
@@ -30379,29 +30490,57 @@ function renderTestsLanding() {
   // programme attribué. Vertical Dunk → SAT. Shred → SET. Elite/Explose+ →
   // SAT + SET. Micro/Triphasique → PDC (wizard partagé). Sans programme
   // attribué (onboarding incomplet) : tout est visible.
-  var normProg = (typeof p3NormalizeProgram === 'function') ? p3NormalizeProgram(profile.programKey || '') : 'eliteAthlete';
+  // ── Source de vérité unique : AH_PROGRAM_TESTS via getProtocolsForProgram.
+  // Le landing affiche UNIQUEMENT les protocoles du programme attribué
+  // (cohérent avec ce que l'onboarding fait faire à l'utilisateur).
+  // Sans programme attribué (onboarding incomplet) : on tombe sur le
+  // protocole "tous types" (SAT + SET) pour ne pas masquer l'app.
   var hasKey = !!profile.programKey;
-  var show = { SAT: true, SET: true, PDC: false };
-  if (hasKey) {
-    if (normProg === 'verticalDunk')                                show = { SAT:true,  SET:false, PDC:false };
-    else if (normProg === 'shredExplose')                           show = { SAT:false, SET:true,  PDC:false };
-    else if (normProg === 'microtraining' || normProg === 'triphasique') show = { SAT:false, SET:false, PDC:true };
-    else                                                            show = { SAT:true,  SET:true,  PDC:false };
-  }
+  var protocols = hasKey
+    ? (typeof getProtocolsForProgram === 'function' ? getProtocolsForProgram(profile.programKey) : [])
+    : [AH_TEST_PROTOCOLS.SAT, AH_TEST_PROTOCOLS.SET];
 
   var html = '';
   html += '<div style="font-family:\'Outfit\',sans-serif;font-size:13px;color:var(--text2);line-height:1.55;margin-bottom:14px">'
     + (hasKey ? 'Les tests de <b>ton programme</b> — mesure ton niveau et ta progression.' : 'Tes bilans mesurent ton niveau physique et ta progression.')
     + '</div>';
 
+  // Rendu générique d'une carte par protocole (SAT / SET / VDT / BWT) :
+  // - SAT/SET conservent leur entrée /typage actuel pour ne pas casser
+  //   _testsLandingState et openTestResult qui regardent 'SAT' / 'SET'.
+  // - VDT et BWT utilisent type 'SAT' (ils empruntent le wizard sat),
+  //   mais la carte affiche le nom du protocole + son shelf + sa durée.
+  protocols.forEach(function (proto) {
+    var t = proto.code;
+    var badge = (proto.shelf || '').toUpperCase() + ' · ' + (proto.duration || '');
+    var typeKey = (t === 'SAT' || t === 'SET') ? t : 'SAT';
+    html += _testCardV2({
+      type: typeKey,
+      badge: badge,
+      name: proto.short || proto.name,
+      desc: proto.desc,
+      state: _testsLandingState(typeKey)
+    });
+  });
+
+  // Si BWT (placeholder) : on signale clairement que c'est en cours de validation.
+  var hasProposed = protocols.some(function (p) { return p && p.isProposed; });
+  if (hasProposed) {
+    html += '<div style="margin:6px 0 14px;padding:10px 12px;background:rgba(245,158,11,.10);border:1px solid rgba(245,158,11,.32);border-radius:10px;font-size:11.5px;color:var(--text2);line-height:1.55">'
+      +     '<b style="color:#B45309">⚠ À valider</b> — Les tests alternatifs au poids du corps ci-dessus sont des <i>propositions</i> internes. Le livre mentionne cette catégorie p.269 sans en donner la liste exacte ; à confirmer avec ton coach avant utilisation officielle.'
+      + '</div>';
+  }
+
+  // ⚠️ ANCIEN CODE — gardé temporairement en commentaire pour audit du diff.
+  // Le bloc ci-dessous était l'ancienne logique de filtrage ad-hoc avant
+  // la centralisation AH_PROGRAM_TESTS. Si tu vois un comportement bizarre,
+  // compare avec ce que renvoie getProtocolsForProgram(profile.programKey).
+  /* OLD :
   if (show.SAT) html += _testCardV2({
-    type: 'SAT',
-    badge: 'BILAN FORCE · 30 MIN',
-    name: 'SAT',
+    type: 'SAT', badge: 'BILAN FORCE · 30 MIN', name: 'SAT',
     desc: 'Détente verticale + force pure (squat, soulevé, hip thrust, développé couché).',
     state: _testsLandingState('SAT')
   });
-
   if (show.SET) html += _testCardV2({
     type: 'SET',
     badge: 'BILAN EXPLOSIF · 60–75 MIN',
@@ -30409,7 +30548,6 @@ function renderTestsLanding() {
     desc: '94 feet, sprint 60m, détente, physiologique, force pure.',
     state: _testsLandingState('SET')
   });
-
   if (show.PDC) html += _testCardV2({
     type: 'PDC',
     badge: 'BILAN POIDS DU CORPS · 20 MIN',
@@ -30419,6 +30557,7 @@ function renderTestsLanding() {
     startClick: 'window._tracksLaunchTestWizard && window._tracksLaunchTestWizard()',
     noResults: true
   });
+  */ // ← fin de l'ancien code en commentaire
 
   c.innerHTML = html;
 
