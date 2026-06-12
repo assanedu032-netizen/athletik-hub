@@ -20945,18 +20945,155 @@ function _mtRenderFreeChoiceDetail(sess, mt) {
 
 function _mtRenderSprintDetail(sess) {
   var h = '';
-  h += '<div style="font-size:9px;color:var(--muted);font-weight:800;letter-spacing:1.5px;margin-bottom:8px">⚡ NIVEAUX SPRINT CARDIO</div>';
+  var profile = {}; try { profile = JSON.parse(localStorage.getItem('ah_profile') || '{}'); } catch(e) {}
+  var currentLvl = profile.mtSprintLevel || 1;
+
+  h += '<div style="font-size:9px;color:var(--muted);font-weight:800;letter-spacing:1.5px;margin-bottom:8px">⚡ CHOISIS TON NIVEAU</div>';
   (sess.sprintLevels || []).forEach(function(lvl) {
-    h += '<div style="background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:11px 13px;margin-bottom:6px;display:flex;justify-content:space-between;align-items:center">';
+    var on = (currentLvl === lvl.id);
+    h += '<div onclick="_mtSetSprintLevel(' + lvl.id + ')" style="background:' + (on?'rgba(197,164,78,.12)':'var(--surface)') + ';border:1px solid ' + (on?'var(--gold)':'var(--border)') + ';border-radius:10px;padding:11px 13px;margin-bottom:6px;display:flex;justify-content:space-between;align-items:center;cursor:pointer">';
     h +=   '<div>';
-    h +=     '<div style="font-size:12px;font-weight:800;color:var(--text)">' + lvl.label + '</div>';
+    h +=     '<div style="font-size:12px;font-weight:800;color:var(--text)">' + lvl.label + (on?' · TON NIVEAU':'') + '</div>';
     h +=     '<div style="font-size:10.5px;color:var(--muted);margin-top:2px">' + lvl.cycles + ' cycles · ' + lvl.totalDuration + '</div>';
     h +=   '</div>';
-    h +=   '<div style="font-family:\'Bebas Neue\',sans-serif;font-size:22px;color:var(--gold)">' + lvl.cycles + '×</div>';
+    h +=   '<div style="font-family:\'Bebas Neue\',sans-serif;font-size:22px;color:' + (on?'var(--gold)':'var(--text2)') + '">' + lvl.cycles + '×</div>';
     h += '</div>';
   });
-  h += '<div style="background:var(--surface2);padding:9px 12px;border-radius:8px;font-size:11px;color:var(--text2);line-height:1.5;margin-top:6px">💡 Protocole : Sprint 10s + Jogging 30s + Marche 20s. 100% sur chaque sprint.</div>';
+  h += '<div style="background:var(--surface2);padding:9px 12px;border-radius:8px;font-size:11px;color:var(--text2);line-height:1.55;margin-top:6px;margin-bottom:14px">💡 Protocole : Sprint 10s (100%) + Jogging 30s + Marche 20s. Si tu ne tiens pas l\'intensité, baisse d\'un niveau — pas l\'effort sur le sprint.</div>';
+  // CTA — lance le compteur de cycles plein écran
+  var lvl = (sess.sprintLevels || []).find(function(l){return l.id === currentLvl;}) || sess.sprintLevels[0];
+  if (lvl) {
+    h += '<button type="button" onclick="_mtStartSprintTimer(' + lvl.cycles + ')" class="btn btn-gold" style="width:100%">⚡ Démarrer Sprint Cardio (' + lvl.cycles + ' cycles)</button>';
+  }
   return h;
+}
+
+function _mtSetSprintLevel(id) {
+  try {
+    var profile = JSON.parse(localStorage.getItem('ah_profile') || '{}');
+    profile.mtSprintLevel = id;
+    localStorage.setItem('ah_profile', JSON.stringify(profile));
+    try { if (typeof fbSaveProfile === 'function') fbSaveProfile(); } catch(e) {}
+    _openMicroV2('mt_m8');  // re-render
+  } catch(e) { console.warn('_mtSetSprintLevel:', e); }
+}
+
+// ─── Sprint Cardio timer plein écran (cycles Sprint 10s + Jog 30s + Marche 20s)
+function _mtStartSprintTimer(targetCycles) {
+  var existing = document.getElementById('mtSprintModal');
+  if (existing) existing.remove();
+  window._mtSprintState = {
+    targetCycles: targetCycles,
+    currentCycle: 1,
+    phase: 'ready', // 'ready' | 'sprint' | 'jog' | 'walk' | 'done'
+    phaseEndMs: 0,
+    started: false
+  };
+  var modal = document.createElement('div');
+  modal.id = 'mtSprintModal';
+  modal.style.cssText = 'position:fixed;inset:0;background:#0E1626;z-index:9000;display:flex;flex-direction:column;align-items:center;justify-content:space-between;padding:32px 22px;color:#fff;padding-top:env(safe-area-inset-top,32px);padding-bottom:env(safe-area-inset-bottom,32px)';
+  modal.innerHTML = ''
+    + '<div>'
+    +   '<div id="mtSprintCycle" style="font-size:11px;font-weight:800;letter-spacing:2px;opacity:.7;text-align:center">CYCLE 1 / ' + targetCycles + '</div>'
+    +   '<div id="mtSprintPhase" style="font-family:\'Bebas Neue\',sans-serif;font-size:28px;letter-spacing:2px;margin-top:6px;text-align:center">PRÊT</div>'
+    + '</div>'
+    + '<div style="text-align:center">'
+    +   '<div id="mtSprintCountdown" style="font-family:\'Bebas Neue\',sans-serif;font-size:120px;letter-spacing:4px;line-height:1">--</div>'
+    +   '<div id="mtSprintHint" style="font-size:13px;opacity:.7;margin-top:8px">Touche démarrer pour lancer le 1er sprint</div>'
+    + '</div>'
+    + '<div style="display:flex;flex-direction:column;gap:10px;width:100%;max-width:340px">'
+    +   '<button id="mtSprintStartBtn" onclick="_mtSprintStart()" style="padding:14px;background:#C5A44E;border:0;border-radius:12px;font-family:\'Outfit\',sans-serif;font-size:14px;font-weight:800;color:#0E1626;cursor:pointer">▶ Démarrer</button>'
+    +   '<button onclick="_mtSprintClose()" style="padding:10px;background:transparent;border:1px solid rgba(255,255,255,.3);border-radius:12px;font-family:\'Outfit\',sans-serif;font-size:12px;color:rgba(255,255,255,.7);cursor:pointer">Fermer</button>'
+    + '</div>';
+  document.body.appendChild(modal);
+}
+
+function _mtSprintStart() {
+  var st = window._mtSprintState;
+  if (!st) return;
+  st.started = true;
+  _mtSprintNextPhase();
+  if (window._mtSprintInterval) clearInterval(window._mtSprintInterval);
+  window._mtSprintInterval = setInterval(_mtSprintTick, 250);
+  var btn = document.getElementById('mtSprintStartBtn');
+  if (btn) btn.style.display = 'none';
+}
+
+function _mtSprintNextPhase() {
+  var st = window._mtSprintState;
+  if (!st) return;
+  var now = Date.now();
+  var durMs = { sprint: 10000, jog: 30000, walk: 20000 };
+  if (st.phase === 'ready' || st.phase === 'walk') {
+    if (st.phase === 'walk') {
+      // fin d'un cycle, prochain ou terminer
+      if (st.currentCycle >= st.targetCycles) { st.phase = 'done'; return _mtSprintDone(); }
+      st.currentCycle++;
+    }
+    st.phase = 'sprint';
+    st.phaseEndMs = now + durMs.sprint;
+  } else if (st.phase === 'sprint') {
+    st.phase = 'jog';
+    st.phaseEndMs = now + durMs.jog;
+  } else if (st.phase === 'jog') {
+    st.phase = 'walk';
+    st.phaseEndMs = now + durMs.walk;
+  }
+  var phaseEl = document.getElementById('mtSprintPhase');
+  var hintEl = document.getElementById('mtSprintHint');
+  var cycleEl = document.getElementById('mtSprintCycle');
+  if (cycleEl) cycleEl.textContent = 'CYCLE ' + st.currentCycle + ' / ' + st.targetCycles;
+  var phaseLabel = { sprint: 'SPRINT — 100%', jog: 'JOGGING', walk: 'MARCHE' }[st.phase];
+  var phaseHint = { sprint: '🔥 Donne tout', jog: 'Reprends ton souffle', walk: 'Récupération' }[st.phase];
+  if (phaseEl) phaseEl.textContent = phaseLabel || st.phase.toUpperCase();
+  if (hintEl) hintEl.textContent = phaseHint || '';
+  // Vibration + son (si possible)
+  try { if (navigator.vibrate) navigator.vibrate(150); } catch(e) {}
+}
+
+function _mtSprintTick() {
+  var st = window._mtSprintState;
+  if (!st || !st.started) return;
+  var remaining = st.phaseEndMs - Date.now();
+  var cdEl = document.getElementById('mtSprintCountdown');
+  if (remaining <= 0) {
+    _mtSprintNextPhase();
+    return;
+  }
+  if (cdEl) cdEl.textContent = Math.ceil(remaining / 1000);
+  // Couleur fond selon phase
+  var modal = document.getElementById('mtSprintModal');
+  if (modal) {
+    var bg = { sprint: '#7A1A1A', jog: '#1F4F8A', walk: '#0E1626' }[st.phase] || '#0E1626';
+    modal.style.background = bg;
+  }
+}
+
+function _mtSprintDone() {
+  if (window._mtSprintInterval) { clearInterval(window._mtSprintInterval); window._mtSprintInterval = null; }
+  var modal = document.getElementById('mtSprintModal');
+  if (modal) {
+    modal.style.background = '#1F8A4C';
+    var phaseEl = document.getElementById('mtSprintPhase');
+    var hintEl = document.getElementById('mtSprintHint');
+    var cdEl = document.getElementById('mtSprintCountdown');
+    if (phaseEl) phaseEl.textContent = 'TERMINÉ 🎉';
+    if (hintEl) hintEl.textContent = 'Tous les cycles complétés.';
+    if (cdEl) cdEl.textContent = '✓';
+  }
+  try { if (navigator.vibrate) navigator.vibrate([200,100,200,100,400]); } catch(e) {}
+  // Auto-validate après 3s
+  setTimeout(function(){
+    _mtSprintClose();
+    _mtMarkMicroDone('mt_m8');
+  }, 3000);
+}
+
+function _mtSprintClose() {
+  if (window._mtSprintInterval) { clearInterval(window._mtSprintInterval); window._mtSprintInterval = null; }
+  window._mtSprintState = null;
+  var m = document.getElementById('mtSprintModal');
+  if (m) m.remove();
 }
 
 function _mtRenderCircuitDetail(sess) {
