@@ -1,0 +1,105 @@
+════════════════════════════════════════════════════════════════
+ELITE ATHLÈTE — SOURCE DE VÉRITÉ — RÉSUMÉ
+════════════════════════════════════════════════════════════════
+Version source        : EA_SOT_V1
+Phases                : 3
+  - Fondation Athlétique   4 sem · 4 jours / semaine (Lun · Mer · Ven · Sam)
+  - Detox Turbo            6 sem · 6 jours / semaine (repos le dimanche)
+  - Explosive Muscle       8 sem · 4 jours / semaine (Lun · Mer · Ven · Sam)
+Semaines totales      : 18 (continuité: OK)
+Sessions totales      : 85
+Instances d'exercices : 902
+Exercices uniques     : 93
+  - avec vidéo dispo  : 12  (depth_jumps, sprint_lineaire, test_1rm_squat, test_1rm_souleve, test_1rm_hip_thrust, test_1rm_dc, box_jumps, squat_barre, souleve_de_terre, developpe_couche, hip_thrust_charge, power_clean)
+  - sans vidéo (⏳)   : 81
+  - hors librairie Excel : 1  (pompes_max)
+Problèmes détectés    : 0
+
+────────────────────────────────────────────────────────────────
+TABLE DE VÉRIFICATION (phase | sem | session | titre | exos | vidéos | statut)
+────────────────────────────────────────────────────────────────
+Fondation Athlétique   | W1  | EA-P1-W1-S1    | Pliométrie extensive + Mobilité            | 10 | 0✓/10⏳   | OK
+Fondation Athlétique   | W1  | EA-P1-W1-S2    | Pliométrie extensive & intensive + Mobilit | 13 | 1✓/12⏳   | OK
+Fondation Athlétique   | W1  | EA-P1-W1-S3    | Pliométrie extensive + Mobilité            | 10 | 0✓/10⏳   | OK
+Fondation Athlétique   | W1  | EA-P1-W1-S4    | Pliométrie intensive + Stato-dynamique + S | 11 | 2✓/9⏳    | OK
+Fondation Athlétique   | W2  | EA-P1-W2-S1    | Pliométrie extensive + Mobilité            | 10 | 0✓/10⏳   | OK
+Fondation Athlétique   | W2  | EA-P1-W2-S2    | Pliométrie extensive & intensive + Mobilit | 13 | 1✓/12⏳   | OK
+Fondation Athlétique   | W2  | EA-P1-W2-S3    | Pliométrie extensive + Mobilité            | 10 | 0✓/10⏳   | OK
+Fondation Athlétique   | W2  | EA-P1-W2-S4    | Pliométrie intensive + Stato-dynamique + S | 11 | 2✓/9⏳    | OK
+Fondation Athlétique   | W3  | EA-P1-W3-S1    | Pliométrie extensive + Mobilité            | 10 | 0✓/10⏳   | OK
+Fondation Athlétique   | W3  | EA-P1-W3-S2    | Pliométrie extensive & intensive + Mobilit | 13 | 1✓/12⏳   | OK
+Fondation Athlétique   | W3  | EA-P1-W3-S3    | Pliométrie extensive + Mobilité            | 10 | 0✓/10⏳   | OK
+Fondation Athlétique   | W3  | EA-P1-W3-S4    | Pliométrie intensive + Stato-dynamique + S | 11 | 2✓/9⏳    | OK
+Fondation Athlétique   | W4  | EA-P1-W4-S1    | Transmission de force — sauts libres à 100 |  3 | 0✓/3⏳    | OK
+Fondation Athlétique   | W4  | EA-P1-W4-S2    | Transmission de force — 2e passage         |  3 | 0✓/3⏳    | OK
+Fondation Athlétique   | W4  | EA-P1-W4-S3    | Test de détente verticale                  |  2 | 0✓/2⏳    | OK
+Detox Turbo            | W1  | EA-P2-W1-S1    | UPPER — Challenge + Circuit Cluster + Épau |  8 | 0✓/8⏳    | OK
+Detox Turbo            | W1  | EA-P2-W1-S2    | LOWER — Isométrique + Sprint               | 12 | 0✓/12⏳   | OK
+Detox Turbo            | W1  | EA-P2-W1-S3    | UPPER — Focus épaules + Proprioception     | 10 | 0✓/10⏳   | OK
+Detox Turbo            | W1  | EA-P2-W1-S4    | LOWER — Cardio 35 mn                       |  3 | 0✓/3⏳    | OK
+Detox Turbo            | W1  | EA-P2-W1-S5    | UPPER — Focus épaules + Sprint haute inten |  8 | 0✓/8⏳    | OK
+Detox Turbo            | W1  | EA-P2-W1-S6    | LOWER — Isométrique + Pied                 | 12 | 0✓/12⏳   | OK
+Detox Turbo            | W2  | EA-P2-W2-S1    | UPPER — Challenge + Circuit Cluster + Épau |  8 | 0✓/8⏳    | OK
+Detox Turbo            | W2  | EA-P2-W2-S2    | LOWER — Isométrique + Sprint               | 12 | 0✓/12⏳   | OK
+Detox Turbo            | W2  | EA-P2-W2-S3    | UPPER — Focus épaules + Proprioception     | 10 | 0✓/10⏳   | OK
+Detox Turbo            | W2  | EA-P2-W2-S4    | LOWER — Cardio 35 mn                       |  3 | 0✓/3⏳    | OK
+Detox Turbo            | W2  | EA-P2-W2-S5    | UPPER — Focus épaules + Sprint haute inten |  8 | 0✓/8⏳    | OK
+Detox Turbo            | W2  | EA-P2-W2-S6    | LOWER — Isométrique + Pied                 | 12 | 0✓/12⏳   | OK
+Detox Turbo            | W3  | EA-P2-W3-S1    | UPPER — Challenge + Circuit Cluster + Épau |  8 | 0✓/8⏳    | OK
+Detox Turbo            | W3  | EA-P2-W3-S2    | LOWER — Isométrique + Sprint               | 12 | 0✓/12⏳   | OK
+Detox Turbo            | W3  | EA-P2-W3-S3    | UPPER — Focus épaules + Proprioception     | 10 | 0✓/10⏳   | OK
+Detox Turbo            | W3  | EA-P2-W3-S4    | LOWER — Cardio 35 mn                       |  3 | 0✓/3⏳    | OK
+Detox Turbo            | W3  | EA-P2-W3-S5    | UPPER — Focus épaules + Sprint haute inten |  8 | 0✓/8⏳    | OK
+Detox Turbo            | W3  | EA-P2-W3-S6    | LOWER — Isométrique + Pied                 | 12 | 0✓/12⏳   | OK
+Detox Turbo            | W4  | EA-P2-W4-S1    | UPPER — Challenge + Circuit Cluster + Épau |  8 | 0✓/8⏳    | OK
+Detox Turbo            | W4  | EA-P2-W4-S2    | LOWER — Isométrique + Sprint               | 12 | 0✓/12⏳   | OK
+Detox Turbo            | W4  | EA-P2-W4-S3    | UPPER — Focus épaules + Proprioception     | 10 | 0✓/10⏳   | OK
+Detox Turbo            | W4  | EA-P2-W4-S4    | LOWER — Cardio 35 mn                       |  3 | 0✓/3⏳    | OK
+Detox Turbo            | W4  | EA-P2-W4-S5    | UPPER — Focus épaules + Sprint haute inten |  8 | 0✓/8⏳    | OK
+Detox Turbo            | W4  | EA-P2-W4-S6    | LOWER — Isométrique + Pied                 | 12 | 0✓/12⏳   | OK
+Detox Turbo            | W5  | EA-P2-W5-S1    | UPPER — Challenge + Circuit Cluster + Épau |  8 | 0✓/8⏳    | OK
+Detox Turbo            | W5  | EA-P2-W5-S2    | LOWER — Isométrique + Sprint               | 12 | 0✓/12⏳   | OK
+Detox Turbo            | W5  | EA-P2-W5-S3    | UPPER — Focus épaules + Proprioception     | 10 | 0✓/10⏳   | OK
+Detox Turbo            | W5  | EA-P2-W5-S4    | LOWER — Cardio 35 mn                       |  3 | 0✓/3⏳    | OK
+Detox Turbo            | W5  | EA-P2-W5-S5    | UPPER — Focus épaules + Sprint haute inten |  8 | 0✓/8⏳    | OK
+Detox Turbo            | W5  | EA-P2-W5-S6    | LOWER — Isométrique + Pied                 | 12 | 0✓/12⏳   | OK
+Detox Turbo            | W6  | EA-P2-W6-S1    | UPPER — Challenge + Circuit Cluster + Épau |  8 | 0✓/8⏳    | OK
+Detox Turbo            | W6  | EA-P2-W6-S2    | LOWER — Isométrique + Sprint               | 12 | 0✓/12⏳   | OK
+Detox Turbo            | W6  | EA-P2-W6-S3    | UPPER — Focus épaules + Proprioception     | 10 | 0✓/10⏳   | OK
+Detox Turbo            | W6  | EA-P2-W6-S4    | LOWER — Cardio 35 mn                       |  3 | 0✓/3⏳    | OK
+Detox Turbo            | W6  | EA-P2-W6-S5    | UPPER — Focus épaules + Sprint haute inten |  8 | 0✓/8⏳    | OK
+Detox Turbo            | W6  | EA-P2-W6-S6    | LOWER — Isométrique + Pied                 | 12 | 0✓/12⏳   | OK
+Explosive Muscle       | W1  | EA-P3-W1-S0    | Tests obligatoires avant de démarrer la ph |  6 | 4✓/2⏳    | OK
+Explosive Muscle       | W1  | EA-P3-W1-S1    | Force pure + Pliométrie — dernière série à | 12 | 4✓/8⏳    | OK
+Explosive Muscle       | W1  | EA-P3-W1-S2    | Puissance haut du corps + Explosivité      | 13 | 1✓/12⏳   | OK
+Explosive Muscle       | W1  | EA-P3-W1-S3    | Explosivité bas du corps + Pliométrie      | 13 | 2✓/11⏳   | OK
+Explosive Muscle       | W1  | EA-P3-W1-S4    | Force complète + Conditionnement           | 16 | 0✓/16⏳   | OK
+Explosive Muscle       | W2  | EA-P3-W2-S1    | Force pure + Pliométrie — dernière série à | 12 | 4✓/8⏳    | OK
+Explosive Muscle       | W2  | EA-P3-W2-S2    | Puissance haut du corps + Explosivité      | 13 | 1✓/12⏳   | OK
+Explosive Muscle       | W2  | EA-P3-W2-S3    | Explosivité bas du corps + Pliométrie      | 13 | 2✓/11⏳   | OK
+Explosive Muscle       | W2  | EA-P3-W2-S4    | Force complète + Conditionnement           | 16 | 0✓/16⏳   | OK
+Explosive Muscle       | W3  | EA-P3-W3-S1    | Force pure + Pliométrie — dernière série à | 12 | 4✓/8⏳    | OK
+Explosive Muscle       | W3  | EA-P3-W3-S2    | Puissance haut du corps + Explosivité      | 13 | 1✓/12⏳   | OK
+Explosive Muscle       | W3  | EA-P3-W3-S3    | Explosivité bas du corps + Pliométrie      | 13 | 2✓/11⏳   | OK
+Explosive Muscle       | W3  | EA-P3-W3-S4    | Force complète + Conditionnement           | 16 | 0✓/16⏳   | OK
+Explosive Muscle       | W4  | EA-P3-W4-S1    | Force pure + Pliométrie — dernière série à | 12 | 4✓/8⏳    | OK
+Explosive Muscle       | W4  | EA-P3-W4-S2    | Puissance haut du corps + Explosivité      | 13 | 1✓/12⏳   | OK
+Explosive Muscle       | W4  | EA-P3-W4-S3    | Explosivité bas du corps + Pliométrie      | 13 | 2✓/11⏳   | OK
+Explosive Muscle       | W4  | EA-P3-W4-S4    | Force complète + Conditionnement           | 16 | 0✓/16⏳   | OK
+Explosive Muscle       | W5  | EA-P3-W5-S1    | Force pure + Pliométrie — dernière série à | 12 | 4✓/8⏳    | OK
+Explosive Muscle       | W5  | EA-P3-W5-S2    | Puissance haut du corps + Explosivité      | 13 | 1✓/12⏳   | OK
+Explosive Muscle       | W5  | EA-P3-W5-S3    | Explosivité bas du corps + Pliométrie      | 13 | 2✓/11⏳   | OK
+Explosive Muscle       | W5  | EA-P3-W5-S4    | Force complète + Conditionnement           | 16 | 0✓/16⏳   | OK
+Explosive Muscle       | W6  | EA-P3-W6-S1    | Force pure + Pliométrie — dernière série à | 12 | 4✓/8⏳    | OK
+Explosive Muscle       | W6  | EA-P3-W6-S2    | Puissance haut du corps + Explosivité      | 13 | 1✓/12⏳   | OK
+Explosive Muscle       | W6  | EA-P3-W6-S3    | Explosivité bas du corps + Pliométrie      | 13 | 2✓/11⏳   | OK
+Explosive Muscle       | W6  | EA-P3-W6-S4    | Force complète + Conditionnement           | 16 | 0✓/16⏳   | OK
+Explosive Muscle       | W7  | EA-P3-W7-S1    | Force pure + Pliométrie — dernière série à | 12 | 4✓/8⏳    | OK
+Explosive Muscle       | W7  | EA-P3-W7-S2    | Puissance haut du corps + Explosivité      | 13 | 1✓/12⏳   | OK
+Explosive Muscle       | W7  | EA-P3-W7-S3    | Explosivité bas du corps + Pliométrie      | 13 | 2✓/11⏳   | OK
+Explosive Muscle       | W7  | EA-P3-W7-S4    | Force complète + Conditionnement           | 16 | 0✓/16⏳   | OK
+Explosive Muscle       | W8  | EA-P3-W8-S1    | Force pure + Pliométrie — dernière série à | 12 | 4✓/8⏳    | OK
+Explosive Muscle       | W8  | EA-P3-W8-S2    | Puissance haut du corps + Explosivité      | 13 | 1✓/12⏳   | OK
+Explosive Muscle       | W8  | EA-P3-W8-S3    | Explosivité bas du corps + Pliométrie      | 13 | 2✓/11⏳   | OK
+Explosive Muscle       | W8  | EA-P3-W8-S4    | Force complète + Conditionnement           | 16 | 0✓/16⏳   | OK
+Explosive Muscle       | W8  | EA-P3-W8-S5    | Retest final — mesure tes gains            |  6 | 4✓/2⏳    | OK
