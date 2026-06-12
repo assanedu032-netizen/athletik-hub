@@ -24406,8 +24406,20 @@ window._trkVoiceMultiRel = function(btn, parentSel, fieldsCfg, exoId, exoName, c
     if (!s) return;
     _ignore = true;
     try {
-      // Onboarding .scr prend la priorité
-      if (s.scr && window.go) window.go(s.scr);
+      // Onboarding .scr prend la priorité, MAIS jamais splash ni auth qui
+      // sont des écrans de boot. Si la pile JS contient un snapshot splash
+      // (souvent le seed initial pris à 80ms avant que le boot ait routé
+      // ailleurs), un back-gesture peut dépiler jusqu'à lui — résultat
+      // visuel : "la page quitte vers l'accueil splash". Bug remonté par
+      // l'user après plusieurs clics dans le Plan Repas. Le fallback
+      // remonte à home dans ce cas. Idem auth : pas un état de navigation
+      // normal vers lequel on peut revenir.
+      var SCR_NEVER_RESTORE = { splash: 1, auth: 1 };
+      if (s.scr && !SCR_NEVER_RESTORE[s.scr] && window.go) window.go(s.scr);
+      else if (s.scr && SCR_NEVER_RESTORE[s.scr]) {
+        // Évite splash/auth : route sur home si possible
+        if (typeof window.switchTab === 'function') window.switchTab('home');
+      }
       else if (s.view){
         var tab = _viewToTab(s.view);
         if (tab && window.switchTab) window.switchTab(tab);
@@ -24472,6 +24484,10 @@ window._trkVoiceMultiRel = function(btn, parentSel, fieldsCfg, exoId, exoName, c
   } catch(_){}
   setTimeout(function(){
     var s = _snapshot();
+    // Skip splash/auth — ces écrans de boot ne doivent jamais être
+    // restaurés via popstate (sinon l'app paraît "redémarrer" au back).
+    // Bug remonté : click récurrent dans le Plan Repas → app remontait à splash.
+    if (s.scr === 'splash' || s.scr === 'auth') return;
     if (s.view || s.scr) _stack.push(s);
   }, 80);
 })();
