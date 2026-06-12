@@ -20704,8 +20704,23 @@ function _openMicroV2(microKey) {
     h += '</div>';
   }
 
-  // CTA Valider (placeholder — la vraie exec arrive à l'étape 2)
-  h += '<button type="button" onclick="_mtMarkMicroDone(\'' + microKey + '\')" class="btn btn-gold" style="width:100%;margin-top:14px">✓ Valider cette micro</button>';
+  // CTA selon type :
+  // - fasting    : bouton ouvre le timer jeûne (déjà dans _mtRenderFastingDetail)
+  // - cardio-hiit: bouton ouvre le timer sprint (déjà dans _mtRenderSprintDetail)
+  // - breathing  : bouton "Valider" simple (protocole vidéo externe)
+  // - free-choice: pas de bouton (sélection redirige)
+  // - circuit/iso/plio-intensive : bouton "▶ Lancer la séance" → timer générique
+  if (sess.sessionType !== 'fasting' && sess.sessionType !== 'cardio-hiit' && sess.sessionType !== 'free-choice') {
+    if (sess.sessionType === 'breathing') {
+      h += '<button type="button" onclick="_mtMarkMicroDone(\'' + microKey + '\')" class="btn btn-gold" style="width:100%;margin-top:14px">✓ Valider cette micro</button>';
+    } else {
+      // Circuit/iso/plio : lance le timer guidé
+      h += '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:14px">';
+      h +=   '<button type="button" onclick="_mtStartCircuitTimer(\'' + microKey + '\')" class="btn btn-gold" style="width:100%">▶ Lancer la séance</button>';
+      h +=   '<button type="button" onclick="_mtMarkMicroDone(\'' + microKey + '\')" style="width:100%;padding:12px;background:var(--surface2);border:1px solid var(--border);border-radius:10px;font-family:\'Outfit\',sans-serif;font-size:13px;font-weight:700;color:var(--text);cursor:pointer">✓ Valider directement</button>';
+      h += '</div>';
+    }
+  }
 
   container.innerHTML = h;
 }
@@ -21093,6 +21108,247 @@ function _mtSprintClose() {
   if (window._mtSprintInterval) { clearInterval(window._mtSprintInterval); window._mtSprintInterval = null; }
   window._mtSprintState = null;
   var m = document.getElementById('mtSprintModal');
+  if (m) m.remove();
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// CIRCUIT TIMER GÉNÉRIQUE — Micros 2 / 4 / 5 / 6 / 7
+// ═══════════════════════════════════════════════════════════════════════════
+// Pour chaque micro circuit :
+//   1. Parse les blocks SOT (skip warmup/cooldown au timer, juste affiché en intro)
+//   2. Chaque block a : title, executionMode, rounds (3), restBetweenRounds (49s/1mn)
+//   3. Boucle : exo 1 → exo 2 → ... → exo N → repos restBetweenRounds → tour 2 → ...
+//   4. Quand tous les blocks principaux sont finis → validation auto
+// Les blocks "warmup" et "cooldown" sont affichés mais sans timer (l'user les
+// fait à son rythme).
+
+function _mtStartCircuitTimer(microKey) {
+  var mt = window.MICROTRAINING_PROGRAM;
+  if (!mt) return;
+  var sess = mt.phases[0].sessions[microKey];
+  if (!sess) return;
+  // Construire la liste à plat des étapes : {type, blockTitle, blockRounds, restBetweenRounds, exo}
+  var blocks = sess.blocks || [];
+  var exos = sess.exercises || [];
+  // Filtrer les blocks "main" / "circuit" (skip warmup + cooldown)
+  var workBlocks = blocks.filter(function(b){ return b.blockType !== 'warmup' && b.blockType !== 'recovery' && b.blockType !== 'cooldown'; });
+  var warmupBlock = blocks.find(function(b){ return b.blockType === 'warmup'; });
+  var cooldownBlock = blocks.find(function(b){ return b.blockType === 'recovery' || b.blockType === 'cooldown'; });
+
+  // Pour chaque block, compter les exos qui lui appartiennent
+  var blockData = workBlocks.map(function(b) {
+    var bExos = exos.filter(function(e){ return _exoMatchesBlock(e, b); });
+    return {
+      block: b,
+      exos: bExos,
+      rounds: b.rounds || (b.executionMode === 'repos-fin-tour' ? 3 : 1),
+      restBetweenRounds: _mtParseRestMs(b.restBetweenRounds) || 60000
+    };
+  }).filter(function(bd){ return bd.exos.length > 0; });
+
+  if (!blockData.length) {
+    if (typeof showToast === 'function') showToast('Aucun exo à exécuter — séance non structurée.', 'info');
+    return;
+  }
+
+  window._mtCircuitState = {
+    microKey: microKey,
+    blocks: blockData,
+    blockIdx: 0,
+    roundIdx: 0,      // 0-indexé
+    exoIdx: 0,
+    phase: 'exo',     // 'exo' | 'rest-end-tour' | 'done'
+    phaseEndMs: 0,
+    warmupShown: false,
+    sess: sess
+  };
+  _mtOpenCircuitModal();
+}
+
+// Parse strings type "1 mn", "49 s", "2 mn 30" en ms
+function _mtParseRestMs(s) {
+  if (!s || typeof s !== 'string') return null;
+  s = s.toLowerCase().trim();
+  // "X mn YY" ou "X mn YY s"
+  var m1 = s.match(/(\d+)\s*mn\s*(\d+)/);
+  if (m1) return (parseInt(m1[1]) * 60 + parseInt(m1[2])) * 1000;
+  // "X mn"
+  var m2 = s.match(/(\d+)\s*mn/);
+  if (m2) return parseInt(m2[1]) * 60 * 1000;
+  // "X s" ou "XX s"
+  var m3 = s.match(/(\d+)\s*s/);
+  if (m3) return parseInt(m3[1]) * 1000;
+  return null;
+}
+
+function _mtOpenCircuitModal() {
+  var existing = document.getElementById('mtCircuitModal');
+  if (existing) existing.remove();
+  var modal = document.createElement('div');
+  modal.id = 'mtCircuitModal';
+  modal.style.cssText = 'position:fixed;inset:0;background:#0E1626;z-index:9000;display:flex;flex-direction:column;color:#fff;padding:env(safe-area-inset-top,20px) 20px env(safe-area-inset-bottom,20px) 20px';
+  modal.innerHTML = ''
+    + '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">'
+    +   '<div id="mtCircuitHeader" style="font-size:10px;font-weight:800;letter-spacing:2px;opacity:.7">CIRCUIT 1</div>'
+    +   '<button onclick="_mtCircuitClose()" style="background:transparent;border:0;color:rgba(255,255,255,.5);font-size:20px;cursor:pointer;padding:0 8px">×</button>'
+    + '</div>'
+    + '<div id="mtCircuitProgress" style="display:flex;gap:4px;margin-bottom:18px"></div>'
+    + '<div id="mtCircuitBody" style="flex:1;display:flex;flex-direction:column;justify-content:center;align-items:center;text-align:center"></div>'
+    + '<div id="mtCircuitActions" style="display:flex;flex-direction:column;gap:10px;margin-top:18px"></div>';
+  document.body.appendChild(modal);
+  _mtCircuitRender();
+}
+
+function _mtCircuitRender() {
+  var st = window._mtCircuitState;
+  if (!st) return;
+  var bd = st.blocks[st.blockIdx];
+  if (!bd) return _mtCircuitDone();
+
+  var header = document.getElementById('mtCircuitHeader');
+  var progress = document.getElementById('mtCircuitProgress');
+  var body = document.getElementById('mtCircuitBody');
+  var actions = document.getElementById('mtCircuitActions');
+  var modal = document.getElementById('mtCircuitModal');
+
+  if (header) header.textContent = bd.block.title.toUpperCase() + ' · TOUR ' + (st.roundIdx + 1) + ' / ' + bd.rounds;
+
+  // Barre progression visuelle : un point par exo × tours
+  if (progress) {
+    var html = '';
+    var totalSteps = bd.exos.length * bd.rounds;
+    var currentStep = st.roundIdx * bd.exos.length + st.exoIdx;
+    for (var i = 0; i < totalSteps; i++) {
+      var filled = i < currentStep;
+      var current = i === currentStep;
+      html += '<div style="flex:1;height:5px;border-radius:3px;background:' + (filled ? 'var(--gold)' : (current ? 'rgba(197,164,78,.4)' : 'rgba(255,255,255,.15)')) + '"></div>';
+    }
+    progress.innerHTML = html;
+  }
+
+  // Body selon phase
+  if (st.phase === 'exo') {
+    var exo = bd.exos[st.exoIdx];
+    if (!exo) return _mtCircuitAdvance();
+    if (modal) modal.style.background = '#0E1626';
+    body.innerHTML = ''
+      + '<div style="font-size:10px;color:var(--gold);letter-spacing:1.5px;font-weight:800;margin-bottom:8px">EXO ' + (st.exoIdx + 1) + ' / ' + bd.exos.length + '</div>'
+      + '<div style="font-family:\'Bebas Neue\',sans-serif;font-size:36px;letter-spacing:1.5px;line-height:1.05;margin-bottom:12px;padding:0 12px">' + exo.exerciseName + '</div>'
+      + '<div style="font-size:18px;font-weight:800;color:var(--gold);margin-bottom:6px">' + (exo.repsOrDuration || '') + '</div>'
+      + (exo.note ? '<div style="font-size:12px;color:rgba(255,255,255,.65);margin-top:6px;padding:0 16px;line-height:1.5">' + exo.note + '</div>' : '');
+    actions.innerHTML = ''
+      + '<button onclick="_mtCircuitAdvance()" style="padding:16px;background:var(--gold);border:0;border-radius:14px;font-family:\'Outfit\',sans-serif;font-size:15px;font-weight:800;color:#0E1626;cursor:pointer">✓ Fait — exo suivant</button>'
+      + (st.exoIdx > 0 ? '<button onclick="_mtCircuitBack()" style="padding:10px;background:transparent;border:1px solid rgba(255,255,255,.25);border-radius:12px;font-family:\'Outfit\',sans-serif;font-size:12px;font-weight:600;color:rgba(255,255,255,.7);cursor:pointer">← Exo précédent</button>' : '');
+  } else if (st.phase === 'rest-end-tour') {
+    if (modal) modal.style.background = '#1F4F8A';
+    var remaining = st.phaseEndMs - Date.now();
+    var sec = Math.max(0, Math.ceil(remaining / 1000));
+    body.innerHTML = ''
+      + '<div style="font-size:64px;margin-bottom:8px">😮‍💨</div>'
+      + '<div style="font-family:\'Bebas Neue\',sans-serif;font-size:28px;letter-spacing:2px;margin-bottom:8px">REPOS</div>'
+      + '<div id="mtCircuitRestCD" style="font-family:\'Bebas Neue\',sans-serif;font-size:88px;letter-spacing:3px;line-height:1">' + sec + '</div>'
+      + '<div style="font-size:12px;opacity:.7;margin-top:10px">Tour suivant : ' + (st.roundIdx + 2) + ' / ' + bd.rounds + '</div>';
+    actions.innerHTML = ''
+      + '<button onclick="_mtCircuitSkipRest()" style="padding:14px;background:rgba(255,255,255,.15);border:0;border-radius:14px;font-family:\'Outfit\',sans-serif;font-size:14px;font-weight:700;color:#fff;cursor:pointer">⏭ Passer le repos</button>';
+  }
+}
+
+function _mtCircuitAdvance() {
+  var st = window._mtCircuitState;
+  if (!st) return;
+  var bd = st.blocks[st.blockIdx];
+  if (!bd) return _mtCircuitDone();
+
+  if (st.phase === 'exo') {
+    if (st.exoIdx < bd.exos.length - 1) {
+      st.exoIdx++;
+      _mtCircuitRender();
+    } else {
+      // Fin du tour
+      if (st.roundIdx < bd.rounds - 1) {
+        // Repos fin de tour
+        st.phase = 'rest-end-tour';
+        st.phaseEndMs = Date.now() + bd.restBetweenRounds;
+        if (window._mtCircuitRestInterval) clearInterval(window._mtCircuitRestInterval);
+        window._mtCircuitRestInterval = setInterval(_mtCircuitRestTick, 250);
+        _mtCircuitRender();
+      } else {
+        // Fin du dernier tour de ce block → block suivant
+        if (st.blockIdx < st.blocks.length - 1) {
+          st.blockIdx++;
+          st.roundIdx = 0;
+          st.exoIdx = 0;
+          st.phase = 'exo';
+          _mtCircuitRender();
+        } else {
+          _mtCircuitDone();
+        }
+      }
+    }
+  } else if (st.phase === 'rest-end-tour') {
+    // L'user a appuyé sur "Passer le repos" — non utilisé via advance, mais safety
+    _mtCircuitSkipRest();
+  }
+}
+
+function _mtCircuitBack() {
+  var st = window._mtCircuitState;
+  if (!st || st.phase !== 'exo') return;
+  if (st.exoIdx > 0) { st.exoIdx--; _mtCircuitRender(); }
+}
+
+function _mtCircuitSkipRest() {
+  var st = window._mtCircuitState;
+  if (!st) return;
+  if (window._mtCircuitRestInterval) { clearInterval(window._mtCircuitRestInterval); window._mtCircuitRestInterval = null; }
+  st.phase = 'exo';
+  st.roundIdx++;
+  st.exoIdx = 0;
+  _mtCircuitRender();
+}
+
+function _mtCircuitRestTick() {
+  var st = window._mtCircuitState;
+  if (!st || st.phase !== 'rest-end-tour') return;
+  var remaining = st.phaseEndMs - Date.now();
+  if (remaining <= 0) {
+    _mtCircuitSkipRest();
+    try { if (navigator.vibrate) navigator.vibrate(200); } catch(e) {}
+    return;
+  }
+  var cdEl = document.getElementById('mtCircuitRestCD');
+  if (cdEl) cdEl.textContent = Math.ceil(remaining / 1000);
+}
+
+function _mtCircuitDone() {
+  var st = window._mtCircuitState;
+  if (!st) return;
+  if (window._mtCircuitRestInterval) { clearInterval(window._mtCircuitRestInterval); window._mtCircuitRestInterval = null; }
+  st.phase = 'done';
+  var modal = document.getElementById('mtCircuitModal');
+  if (modal) modal.style.background = '#1F8A4C';
+  var body = document.getElementById('mtCircuitBody');
+  var actions = document.getElementById('mtCircuitActions');
+  if (body) body.innerHTML = ''
+    + '<div style="font-size:72px;margin-bottom:12px">🎉</div>'
+    + '<div style="font-family:\'Bebas Neue\',sans-serif;font-size:36px;letter-spacing:2px">TERMINÉ</div>'
+    + '<div style="font-size:13px;opacity:.85;margin-top:8px">Tous les circuits complétés.</div>';
+  if (actions) actions.innerHTML = ''
+    + '<button onclick="_mtCircuitValidate()" style="padding:16px;background:#fff;border:0;border-radius:14px;font-family:\'Outfit\',sans-serif;font-size:15px;font-weight:800;color:#0E1626;cursor:pointer">✓ Valider la micro</button>';
+  try { if (navigator.vibrate) navigator.vibrate([200,100,200,100,400]); } catch(e) {}
+}
+
+function _mtCircuitValidate() {
+  var st = window._mtCircuitState;
+  var key = st ? st.microKey : null;
+  _mtCircuitClose();
+  if (key) _mtMarkMicroDone(key);
+}
+
+function _mtCircuitClose() {
+  if (window._mtCircuitRestInterval) { clearInterval(window._mtCircuitRestInterval); window._mtCircuitRestInterval = null; }
+  window._mtCircuitState = null;
+  var m = document.getElementById('mtCircuitModal');
   if (m) m.remove();
 }
 
