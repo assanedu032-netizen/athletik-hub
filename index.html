@@ -22915,16 +22915,45 @@ window._trkVoiceMultiRel = function(btn, parentSel, fieldsCfg, exoId, exoName, c
 // sur history.back().
 // ═══════════════════════════════════════
 (function initEdgeBackSwipe(){
-  var START_EDGE = 45;        // tolérant : Android consomme parfois les 20-25px du bord
-  var H_THRESHOLD = 50;       // moins d'engagement requis
-  var ANGLE_RATIO = 1.2;      // plus permissif sur l'angle (geste plus naturel)
-  var MAX_DURATION = 1000;    // 1s plein pour le geste
+  // Brief client : geste mobile universel "swipe vers la droite = retour".
+  // Seuils alignés sur le brief : ≥ 70 px horizontal, ≤ 50 px vertical.
+  // Démarrage depuis le bord gauche pour ne pas entrer en conflit avec les
+  // scrollers horizontaux (filtres librairie, day strip, etc.).
+  var START_EDGE = 50;        // bord gauche, tolérant pour Android
+  var H_THRESHOLD = 70;       // brief : 70 px minimum
+  var V_MAX = 50;             // brief : 50 px max vertical
+  var MAX_DURATION = 900;     // ≤ 0,9 s — geste vif typique mobile
   var ex = 0, ey = 0, eT = 0, tracking = false;
 
   function isVisible(el){
     if (!el) return false;
     var st = getComputedStyle(el);
     return st.display !== 'none' && st.visibility !== 'hidden';
+  }
+
+  // Détecte si l'utilisateur est en train de saisir du texte → on ignore
+  // le swipe (brief : "ne pas déclencher pendant écriture").
+  function _swIsTypingTarget(el) {
+    if (!el) return false;
+    var tag = (el.tagName || '').toLowerCase();
+    if (tag === 'input' || tag === 'textarea' || tag === 'select') return true;
+    if (el.isContentEditable) return true;
+    return false;
+  }
+  // Détecte si la cible est dans un scroller horizontal ou un slider/range
+  // (filtres library, day strip, range, etc.) → on ignore.
+  function _swInHorizontalContext(el) {
+    if (!el) return false;
+    if ((el.type || '').toLowerCase() === 'range') return true;
+    var n = el;
+    for (var hop = 0; hop < 8 && n && n.nodeType === 1; hop++) {
+      var st = getComputedStyle(n);
+      var ox = st.overflowX;
+      if ((ox === 'auto' || ox === 'scroll') && n.scrollWidth > n.clientWidth + 4) return true;
+      if (n.classList && (n.classList.contains('lv2-swipe') || n.classList.contains('lib-filters') || n.classList.contains('chips'))) return true;
+      n = n.parentElement;
+    }
+    return false;
   }
 
   // Tente de fermer la modale/overlay la plus haute. True si quelque chose
@@ -22990,10 +23019,27 @@ window._trkVoiceMultiRel = function(btn, parentSel, fieldsCfg, exoId, exoName, c
       // Sinon on ne ferme pas (l'user doit valider sa séance — règle métier)
       return false;
     }
-    // 10) Live session — on ne ferme PAS par swipe (training en cours), c'est trop
-    //     risqué. L'user doit cliquer "← Quitter" explicitement.
+    // 10) Live session — ferme comme le bouton ✕ du header. Le client a
+    //     demandé explicitement ce comportement (auparavant on refusait
+    //     pour éviter un "quit accidentel", mais en pratique l'absence
+    //     de swipe casse l'UX mobile native).
     el = document.getElementById('liveSession');
-    if (el && el.classList.contains('ls-open')) return false;
+    if (el && el.classList.contains('ls-open')) {
+      try {
+        if (typeof window._lsClose === 'function') window._lsClose();
+        else el.classList.remove('ls-open');
+      } catch(_){ el.classList.remove('ls-open'); }
+      return true;
+    }
+    // 10b) Fiche détail librairie ouverte (yt-detail-view) → retour à la liste
+    el = document.getElementById('libDetailView');
+    if (el && isVisible(el) && el.style.display !== 'none') {
+      try {
+        if (typeof window._libCloseDetail === 'function') window._libCloseDetail();
+        else el.style.display = 'none';
+      } catch(_){ el.style.display = 'none'; }
+      return true;
+    }
     // 11) SAT step > 0 → previous step
     try {
       if (typeof window.prevSATStep === 'function' && document.querySelector('#vTracks.view.on') && document.querySelector('#satForm .ah-progress')) {
@@ -23025,7 +23071,14 @@ window._trkVoiceMultiRel = function(btn, parentSel, fieldsCfg, exoId, exoName, c
   function onStart(e){
     if (!e.touches || e.touches.length !== 1) { tracking = false; return; }
     var t = e.touches[0];
+    // Brief : démarrage depuis le bord gauche (Android consomme parfois
+    // les 20-25 premiers px, donc 50 est tolérant sans piéger les scrollers).
     if (t.clientX > START_EDGE) { tracking = false; return; }
+    // Brief : ne pas déclencher pendant écriture / interaction horizontale.
+    var ae = document.activeElement;
+    if (_swIsTypingTarget(ae)) { tracking = false; return; }
+    if (_swIsTypingTarget(e.target)) { tracking = false; return; }
+    if (_swInHorizontalContext(e.target)) { tracking = false; return; }
     tracking = true;
     ex = t.clientX; ey = t.clientY; eT = Date.now();
   }
@@ -23037,8 +23090,9 @@ window._trkVoiceMultiRel = function(btn, parentSel, fieldsCfg, exoId, exoName, c
     var dx = t.clientX - ex;
     var dy = t.clientY - ey;
     var dt = Date.now() - eT;
+    // Seuils brief client : H ≥ 70 px, |V| ≤ 50 px, durée ≤ 0,9 s
     if (dx < H_THRESHOLD) return;
-    if (dx < Math.abs(dy) * ANGLE_RATIO) return;
+    if (Math.abs(dy) > V_MAX) return;
     if (dt > MAX_DURATION) return;
     // 1) Essaie d'abord de fermer un overlay/modale visible (tryGoBack).
     // 2) Sinon : history.back() — notre handler popstate restaurera l'écran
