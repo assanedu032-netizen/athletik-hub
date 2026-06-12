@@ -20437,6 +20437,20 @@ function _nextSessionToDo(progKey) {
 function _renderPhaseBody(p, idx) {
   var body = document.getElementById('pgV2Body');
   if (!body) return;
+  // ─── MICROTRAINING SOT V1 ──────────────────────────────────────────────
+  // Si le programme est 'mt' ET window.MICROTRAINING_PROGRAM est chargée,
+  // on utilise le rendu spécial (9 micros card-by-card) au lieu du calendrier
+  // semaine type. Les autres programmes continuent avec le rendu standard.
+  // Fallback transparent : si la SOT n'est pas dispo, le rendu standard
+  // s'applique (PROGRAMS_V2.mt reste la structure de secours).
+  try {
+    if (window._progV2State && window._progV2State.key === 'mt'
+        && typeof window.MICROTRAINING_PROGRAM !== 'undefined'
+        && typeof _renderMicrotrainingFromSOT === 'function') {
+      _renderMicrotrainingFromSOT(body, p, idx);
+      return;
+    }
+  } catch(e) { console.warn('MT SOT render fallback:', e); }
   var ph = p.phases[idx]; if (!ph) return;
   var h = '';
   h += '<div style="font-family:\'Bebas Neue\',sans-serif;font-size:20px;color:var(--text);letter-spacing:1.5px;line-height:1.05">' + ph.title + '</div>';
@@ -20523,6 +20537,376 @@ function _renderPhaseBody(p, idx) {
 
   body.innerHTML = h;
   try { updateStartSessionLock(); } catch(e) {}
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// MICROTRAINING — RENDU CHIRURGICAL DEPUIS LA SOT (window.MICROTRAINING_PROGRAM)
+// ═══════════════════════════════════════════════════════════════════════════
+// Pourquoi : la SOT a 9 micros distincts + types spéciaux (fasting/breathing/
+// circuit/free-choice) que PROGRAMS_V2.mt ne sait pas représenter (paires
+// m12/m34/m56...). Ce renderer remplace UNIQUEMENT le body de la fiche
+// programme quand key === 'mt', et seulement si la SOT est chargée. Le
+// reste de l'app reste sur PROGRAMS_V2 (calendrier, launchSession, etc.).
+//
+// Étape 1 d'intégration : le user VOIT la nouvelle structure (les 9 micros
+// individuels avec icônes et types). Étape 2 (à venir) : launchSession qui
+// consomme blocks[] + executionMode. Pour l'instant, le clic sur un micro
+// ouvre une vue détail STATIQUE (lecture seule du protocole + bouton info).
+// Pas encore de launch — on n'écrase pas le flow existant.
+
+// Mapping icône/couleur par sessionType de la SOT
+var _MT_TYPE_META = {
+  'fasting':      { icon: '🕒', color: '#9C7B3E', label: 'Mental & Discipline' },
+  'circuit':      { icon: '⚡', color: '#C5A44E', label: 'Vitesse & Puissance' },
+  'breathing':    { icon: '🌬️', color: '#5B7CC2', label: 'Récupération active' },
+  'plio-intensive':{ icon: '🔥', color: '#C03434', label: 'Explosivité' },
+  'iso':          { icon: '🗿', color: '#7A6B5C', label: 'Force statique' },
+  'cardio-hiit':  { icon: '🏃', color: '#1F8A4C', label: 'Capacité aérobie' },
+  'free-choice':  { icon: '🎯', color: '#B07E10', label: 'Ta séance préférée' }
+};
+
+function _mtTypeMeta(sessionType) {
+  return _MT_TYPE_META[sessionType] || { icon:'💪', color:'var(--gold)', label:sessionType||'' };
+}
+
+function _renderMicrotrainingFromSOT(body, p, idx) {
+  var mt = window.MICROTRAINING_PROGRAM;
+  if (!mt || !mt.phases || !mt.phases[0]) {
+    // Sécurité : si la SOT est défaillante, fallback vers le rendu standard
+    var ph = p.phases[idx]; if (!ph) return;
+    body.innerHTML = '<div style="color:var(--muted);padding:14px">Chargement de la source de vérité Microtraining…</div>';
+    return;
+  }
+  var phase = mt.phases[0];
+  var sessions = phase.sessions || {};
+  var weekProgress = null;
+  try { weekProgress = getProgramProgress('mt'); } catch(e) {}
+
+  var h = '';
+  // Header — titre phase + état semaine
+  h += '<div style="font-family:\'Bebas Neue\',sans-serif;font-size:20px;color:var(--text);letter-spacing:1.5px;line-height:1.05">' + phase.phaseName + '</div>';
+  h += '<div style="font-size:12px;color:var(--muted);margin:3px 0 12px;font-style:italic">' + phase.phaseGoal + '</div>';
+
+  // Bandeau semaine courante + compteur 0/9
+  var currentWeek = weekProgress ? weekProgress.week : 1;
+  var doneThisWeek = (weekProgress && weekProgress.doneThisWeek) ? Object.keys(weekProgress.doneThisWeek).length : 0;
+  h += '<div style="background:rgba(197,164,78,.12);border:1px solid rgba(197,164,78,.35);border-radius:10px;padding:10px 14px;margin-bottom:12px;display:flex;justify-content:space-between;align-items:center">';
+  h +=   '<div>';
+  h +=     '<div style="font-size:9px;font-weight:800;color:var(--gold);letter-spacing:1.5px">📍 SEMAINE ' + currentWeek + ' / 6</div>';
+  h +=     '<div style="font-size:11px;color:var(--text2);margin-top:3px">Objectif : 9 micro-séances validées</div>';
+  h +=   '</div>';
+  h +=   '<div style="font-family:\'Bebas Neue\',sans-serif;font-size:28px;color:var(--gold);letter-spacing:1px">' + doneThisWeek + '/9</div>';
+  h += '</div>';
+
+  // Encart 3 colonnes : durée / fréquence / lieu
+  h += '<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:14px;background:var(--surface2);border-radius:12px;padding:12px 10px;text-align:center">';
+  h += '<div><div style="font-size:9px;color:var(--muted);letter-spacing:1px">DURÉE</div><div style="font-size:13px;font-weight:800;color:var(--text);margin-top:3px">' + mt.totalWeeks + ' sem</div></div>';
+  h += '<div><div style="font-size:9px;color:var(--muted);letter-spacing:1px">FRÉQUENCE</div><div style="font-size:11px;font-weight:700;color:var(--text);margin-top:3px;line-height:1.2">9/sem · max 2/j</div></div>';
+  h += '<div><div style="font-size:9px;color:var(--muted);letter-spacing:1px">LIEU</div><div style="font-size:11px;font-weight:700;color:var(--text);margin-top:3px;line-height:1.2">' + mt.programLocation + '</div></div>';
+  h += '</div>';
+
+  // Règle 9/9 mise en avant
+  h += '<div style="background:rgba(197,164,78,.06);border-left:3px solid var(--gold);border-radius:0 10px 10px 0;padding:11px 13px;margin-bottom:14px">';
+  h += '<div style="font-size:9px;color:var(--gold);font-weight:800;letter-spacing:1.5px;margin-bottom:5px">⚠️ RÈGLE 9/9</div>';
+  h += '<div style="font-size:12px;color:var(--text2);line-height:1.55">9/9 = semaine validée. 8/9 ou moins = tu recommences la même semaine. Pas de cumul d\'une semaine sur l\'autre.</div>';
+  h += '</div>';
+
+  // Liste des 9 micros
+  h += '<div style="font-size:9px;color:var(--muted);font-weight:800;letter-spacing:1.5px;margin-bottom:8px">📋 LES 9 MICRO-SÉANCES</div>';
+  h += '<div style="display:flex;flex-direction:column;gap:8px;margin-bottom:14px">';
+  // Ordre canonique : m1, m2, m3, m4, m5, m6, m7, m8, m9
+  ['mt_m1','mt_m2','mt_m3','mt_m4','mt_m5','mt_m6','mt_m7','mt_m8','mt_m9'].forEach(function(sk) {
+    var sess = sessions[sk];
+    if (!sess) return;
+    var meta = _mtTypeMeta(sess.sessionType);
+    var doneToday = (weekProgress && weekProgress.doneThisWeek && weekProgress.doneThisWeek[sk]);
+    var checkIcon = doneToday ? '<div style="color:#10B981;font-size:16px">✓</div>' : '<div style="color:var(--border);font-size:14px">○</div>';
+    h += '<div onclick="_openMicroV2(\'' + sk + '\')" style="display:flex;align-items:center;gap:12px;background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:11px 12px;cursor:pointer">';
+    h +=   '<div style="font-size:22px;width:32px;text-align:center">' + meta.icon + '</div>';
+    h +=   '<div style="flex:1;min-width:0">';
+    h +=     '<div style="font-size:13px;font-weight:800;color:var(--text);line-height:1.2">' + sess.sessionTitle.replace(/^Micro \d+ — /, '') + '</div>';
+    h +=     '<div style="font-size:10.5px;color:var(--muted);margin-top:2px;line-height:1.3">' + meta.label + ' · ' + sess.estimatedDuration + '</div>';
+    h +=   '</div>';
+    h +=   checkIcon;
+    h += '</div>';
+  });
+  h += '</div>';
+
+  // Liens vers bilan / actions
+  h += '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px">';
+  h += '<button type="button" onclick="_mtShowBilan()" style="padding:11px;background:var(--surface2);border:1px solid var(--border);border-radius:10px;font-family:\'Outfit\',sans-serif;font-size:12px;font-weight:700;color:var(--text);cursor:pointer">📊 Bilan semaine</button>';
+  h += '<button type="button" onclick="_mtSuggestMicro()" style="padding:11px;background:var(--navy);border:1px solid var(--navy);border-radius:10px;font-family:\'Outfit\',sans-serif;font-size:12px;font-weight:700;color:var(--gold);cursor:pointer">🎯 Suggérer micro</button>';
+  h += '</div>';
+
+  body.innerHTML = h;
+}
+
+// ─── Détail d'une micro (vue lecture seule depuis la SOT) ─────────────────
+function _openMicroV2(microKey) {
+  var mt = window.MICROTRAINING_PROGRAM;
+  if (!mt) return;
+  var sess = mt.phases[0].sessions[microKey];
+  if (!sess) return;
+  var meta = _mtTypeMeta(sess.sessionType);
+
+  var container = document.getElementById('progDetail');
+  if (!container) return;
+
+  var h = '';
+  h += '<div class="back-btn" onclick="_backToMTPhase()">← Retour Microtraining</div>';
+
+  // Header : icône + nom + focus + durée
+  h += '<div style="background:linear-gradient(135deg,var(--navy),#1B2A4A);border-radius:14px;padding:18px;margin-bottom:14px;color:#fff">';
+  h +=   '<div style="font-size:36px;margin-bottom:6px">' + meta.icon + '</div>';
+  h +=   '<div style="font-family:\'Bebas Neue\',sans-serif;font-size:24px;letter-spacing:1.5px;line-height:1.05">' + sess.sessionTitle + '</div>';
+  h +=   '<div style="font-size:11px;color:rgba(255,255,255,.65);margin-top:4px">' + meta.label + ' · ' + sess.estimatedDuration + '</div>';
+  h += '</div>';
+
+  // Titan intro
+  if (sess.titanIntroMessage) {
+    h += '<div style="background:rgba(197,164,78,.08);border-left:3px solid var(--gold);padding:11px 13px;border-radius:0 10px 10px 0;margin-bottom:14px">';
+    h +=   '<div style="font-size:9px;color:var(--gold);font-weight:800;letter-spacing:1.5px;margin-bottom:4px">🗣 TITAN</div>';
+    h +=   '<div style="font-size:12px;color:var(--text2);line-height:1.55;font-style:italic">"' + sess.titanIntroMessage + '"</div>';
+    h += '</div>';
+  }
+
+  // Special instructions
+  if (sess.specialInstructions) {
+    h += '<div style="background:var(--surface2);padding:11px 13px;border-radius:10px;margin-bottom:14px">';
+    h +=   '<div style="font-size:9px;color:var(--muted);font-weight:800;letter-spacing:1.5px;margin-bottom:4px">📌 CONSIGNES</div>';
+    h +=   '<div style="font-size:12px;color:var(--text2);line-height:1.55">' + sess.specialInstructions + '</div>';
+    h += '</div>';
+  }
+
+  // Vue selon type
+  if (sess.sessionType === 'fasting') {
+    // Affichage paliers jeûne
+    h += _mtRenderFastingDetail(sess, mt);
+  } else if (sess.sessionType === 'breathing') {
+    // Protocole respiration
+    h += _mtRenderBreathingDetail(sess);
+  } else if (sess.sessionType === 'free-choice') {
+    // Choix parmi les 8 autres micros
+    h += _mtRenderFreeChoiceDetail(sess, mt);
+  } else if (sess.sessionType === 'cardio-hiit') {
+    // Sprint cardio avec niveaux
+    h += _mtRenderSprintDetail(sess);
+  } else {
+    // Circuit / iso / plio — affichage par blocks
+    h += _mtRenderCircuitDetail(sess);
+  }
+
+  // Footer : règle validation
+  if (sess.validationCriteria) {
+    h += '<div style="background:rgba(16,185,129,.08);border:1px solid rgba(16,185,129,.25);padding:10px 13px;border-radius:10px;margin-top:14px">';
+    h +=   '<div style="font-size:9px;color:#10B981;font-weight:800;letter-spacing:1.5px;margin-bottom:3px">✓ VALIDATION</div>';
+    h +=   '<div style="font-size:11.5px;color:var(--text2);line-height:1.5">' + sess.validationCriteria + '</div>';
+    h += '</div>';
+  }
+
+  // CTA Valider (placeholder — la vraie exec arrive à l'étape 2)
+  h += '<button type="button" onclick="_mtMarkMicroDone(\'' + microKey + '\')" class="btn btn-gold" style="width:100%;margin-top:14px">✓ Valider cette micro</button>';
+
+  container.innerHTML = h;
+}
+
+function _mtRenderFastingDetail(sess, mt) {
+  var h = '';
+  var fl = mt.fastingLevels || (window.MICROTRAINING_LIB && window.MICROTRAINING_LIB.fastingLevels);
+  if (!fl) return '<div style="color:var(--muted);font-size:11px">Paliers non chargés.</div>';
+  h += '<div style="font-size:9px;color:var(--muted);font-weight:800;letter-spacing:1.5px;margin-bottom:8px">📊 PALIERS DE PROGRESSION</div>';
+  ['debutant','avance'].forEach(function(lvl) {
+    var level = fl[lvl];
+    if (!level) return;
+    h += '<div style="background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:12px;margin-bottom:10px">';
+    h +=   '<div style="font-size:11px;font-weight:800;color:var(--text);margin-bottom:8px;letter-spacing:.5px">' + level.label + '</div>';
+    h +=   '<div style="display:grid;grid-template-columns:repeat(5,1fr);gap:4px">';
+    level.paliers.forEach(function(p) {
+      h += '<div style="background:var(--surface2);border-radius:6px;padding:6px 4px;text-align:center">';
+      h +=   '<div style="font-size:9px;color:var(--muted);font-weight:700">SEM ' + p.weekRange + '</div>';
+      h +=   '<div style="font-size:13px;font-weight:800;color:var(--gold);margin-top:2px">' + p.durationHours + 'h</div>';
+      h += '</div>';
+    });
+    h +=   '</div>';
+    h += '</div>';
+  });
+  if (fl.note) {
+    h += '<div style="background:rgba(197,164,78,.06);padding:9px 12px;border-radius:8px;font-size:11px;color:var(--text2);line-height:1.5">💡 ' + fl.note + '</div>';
+  }
+  return h;
+}
+
+function _mtRenderBreathingDetail(sess) {
+  var h = '';
+  h += '<div style="background:linear-gradient(135deg,#5B7CC2,#3D5A93);border-radius:14px;padding:20px;margin-bottom:14px;color:#fff;text-align:center">';
+  h +=   '<div style="font-size:48px;margin-bottom:8px">🌬️</div>';
+  h +=   '<div style="font-family:\'Bebas Neue\',sans-serif;font-size:22px;letter-spacing:1.5px;margin-bottom:6px">' + sess.estimatedDuration + '</div>';
+  h +=   '<div style="font-size:12px;color:rgba(255,255,255,.85);line-height:1.5">Lieu calme · Réduction du stress · Système nerveux parasympathique</div>';
+  h += '</div>';
+  h += '<div style="background:var(--surface2);padding:11px 13px;border-radius:10px;font-size:11.5px;color:var(--text2);line-height:1.55">📺 Protocole disponible en vidéo dans l\'application (à venir).</div>';
+  return h;
+}
+
+function _mtRenderFreeChoiceDetail(sess, mt) {
+  var h = '';
+  h += '<div style="font-size:9px;color:var(--muted);font-weight:800;letter-spacing:1.5px;margin-bottom:8px">🎯 CHOISIS UNE MICRO À REFAIRE</div>';
+  h += '<div style="display:flex;flex-direction:column;gap:6px;margin-bottom:14px">';
+  (sess.availableChoices || []).forEach(function(choiceKey) {
+    var s = mt.phases[0].sessions[choiceKey];
+    if (!s) return;
+    var meta = _mtTypeMeta(s.sessionType);
+    h += '<div onclick="_openMicroV2(\'' + choiceKey + '\')" style="display:flex;align-items:center;gap:10px;background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:10px 12px;cursor:pointer">';
+    h +=   '<div style="font-size:18px">' + meta.icon + '</div>';
+    h +=   '<div style="flex:1;font-size:12px;font-weight:700;color:var(--text)">' + s.sessionTitle.replace(/^Micro \d+ — /, '') + '</div>';
+    h +=   '<div style="font-size:11px;color:var(--muted)">' + s.estimatedDuration + '</div>';
+    h += '</div>';
+  });
+  h += '</div>';
+  return h;
+}
+
+function _mtRenderSprintDetail(sess) {
+  var h = '';
+  h += '<div style="font-size:9px;color:var(--muted);font-weight:800;letter-spacing:1.5px;margin-bottom:8px">⚡ NIVEAUX SPRINT CARDIO</div>';
+  (sess.sprintLevels || []).forEach(function(lvl) {
+    h += '<div style="background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:11px 13px;margin-bottom:6px;display:flex;justify-content:space-between;align-items:center">';
+    h +=   '<div>';
+    h +=     '<div style="font-size:12px;font-weight:800;color:var(--text)">' + lvl.label + '</div>';
+    h +=     '<div style="font-size:10.5px;color:var(--muted);margin-top:2px">' + lvl.cycles + ' cycles · ' + lvl.totalDuration + '</div>';
+    h +=   '</div>';
+    h +=   '<div style="font-family:\'Bebas Neue\',sans-serif;font-size:22px;color:var(--gold)">' + lvl.cycles + '×</div>';
+    h += '</div>';
+  });
+  h += '<div style="background:var(--surface2);padding:9px 12px;border-radius:8px;font-size:11px;color:var(--text2);line-height:1.5;margin-top:6px">💡 Protocole : Sprint 10s + Jogging 30s + Marche 20s. 100% sur chaque sprint.</div>';
+  return h;
+}
+
+function _mtRenderCircuitDetail(sess) {
+  var h = '';
+  var blocks = sess.blocks || [];
+  var exos = sess.exercises || [];
+  blocks.forEach(function(b) {
+    var blockExos = exos.filter(function(e) { return e.blockType === b.blockType || (e.blockType === 'main' && b.blockType === 'main'); });
+    // Filtrage simpliste — on regroupe par blockId aussi
+    blockExos = exos.filter(function(e) { return _exoMatchesBlock(e, b); });
+    if (!blockExos.length) return;
+    h += '<div style="margin-bottom:14px">';
+    h += '<div style="font-size:10px;color:var(--gold);font-weight:800;letter-spacing:1px;margin-bottom:6px">' + b.title.toUpperCase() + (b.executionMode === 'repos-fin-tour' ? ' · 🔁 Enchaînement, repos fin de tour' : '') + (b.restBetweenRounds ? ' · ' + b.restBetweenRounds + ' entre tours' : '') + '</div>';
+    h += '<div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;overflow:hidden">';
+    blockExos.forEach(function(ex, i) {
+      var alt = (i % 2 === 0) ? 'var(--surface)' : 'var(--surface2)';
+      h += '<div style="display:grid;grid-template-columns:24px 1fr 80px 80px;gap:8px;padding:10px 12px;background:' + alt + ';font-size:12px;border-top:' + (i===0?'0':'1px solid var(--border)') + ';align-items:center">';
+      h +=   '<div style="font-weight:800;color:var(--gold)">' + (i+1) + '</div>';
+      h +=   '<div style="line-height:1.3">' + ex.exerciseName + (ex.note?'<div style="font-size:10px;color:var(--muted);margin-top:2px">'+ex.note+'</div>':'') + '</div>';
+      h +=   '<div style="text-align:center;font-size:11px;color:var(--text2)">' + (ex.sets || '-') + '</div>';
+      h +=   '<div style="text-align:center;font-size:11px;color:var(--text2)">' + (ex.repsOrDuration || '-') + '</div>';
+      h += '</div>';
+    });
+    h += '</div>';
+    h += '</div>';
+  });
+  return h;
+}
+
+// Helper : un exo appartient-il à ce block ? (matching simple sur blockId via la 1ère lettre)
+// Le data file utilise opts.block ('warmup','c1','c2',...) qu'on a stocké dans blockType
+function _exoMatchesBlock(exo, block) {
+  // On a stocké le block source dans exo.blockType (cf. helper ex({block:'c1'}))
+  // Mais le block object a son propre blockId. On compare via blockId si présent.
+  if (!exo || !block) return false;
+  // Si exo.blockType est égal à block.blockId ou block.blockType
+  return exo.blockType === block.blockId || exo.blockType === block.blockType;
+}
+
+function _backToMTPhase() {
+  // Re-render la fiche programme MT
+  var p = PROGRAMS_V2 ? PROGRAMS_V2['mt'] : null;
+  if (!p) return;
+  var container = document.getElementById('progDetail');
+  if (!container) return;
+  container.innerHTML = _renderProgHeader(p) + _renderPhaseTabs(p, 0) + '<div id="pgV2Body"></div>';
+  _renderPhaseBody(p, 0);
+  if (container.scrollTop !== undefined) container.scrollTop = 0;
+}
+
+// ─── Marquer une micro terminée (étape 1 — placeholder logique) ──────────
+function _mtMarkMicroDone(microKey) {
+  try {
+    var st = getProgramProgress('mt');
+    if (!st.doneThisWeek) st.doneThisWeek = {};
+    if (st.doneThisWeek[microKey]) {
+      if (typeof showToast === 'function') showToast('Cette micro est déjà validée cette semaine.', 'info');
+      return;
+    }
+    // Vérifier limite 2 micros/jour
+    var today = new Date().toISOString().slice(0,10);
+    if (!st.doneByDay) st.doneByDay = {};
+    var todayCount = (st.doneByDay[today] || []).length;
+    if (todayCount >= 2) {
+      if (typeof showToast === 'function') showToast('⚠️ Max 2 micros par jour. Reprends demain.', 'info');
+      return;
+    }
+    st.doneThisWeek[microKey] = true;
+    if (!st.doneByDay[today]) st.doneByDay[today] = [];
+    st.doneByDay[today].push(microKey);
+    _saveProgramProgress('mt', st);
+
+    // Compteur badges + streak
+    try {
+      _bumpProfileCounter('sessionsDone', 1);
+      _bumpSessionStreak();
+      var hist = JSON.parse(localStorage.getItem('ah_set_history') || '[]');
+      hist.push({ type:'session', progKey:'mt', sessKey:microKey, progName:'Microtraining', sessName: window.MICROTRAINING_PROGRAM.phases[0].sessions[microKey].sessionTitle, date:new Date().toISOString() });
+      localStorage.setItem('ah_set_history', JSON.stringify(hist));
+    } catch(e) {}
+
+    var doneCount = Object.keys(st.doneThisWeek).length;
+    if (doneCount >= 9) {
+      // Semaine validée — avance à la suivante
+      if (st.week < 6) { st.week++; st.doneThisWeek = {}; st.doneByDay = {}; _saveProgramProgress('mt', st); }
+      if (typeof showToast === 'function') showToast('🎉 Semaine ' + (st.week-1) + ' VALIDÉE 9/9 !', 'ok');
+    } else {
+      if (typeof showToast === 'function') showToast('✓ Micro validée (' + doneCount + '/9 cette semaine)', 'ok');
+    }
+    if (typeof renderBadges === 'function') renderBadges();
+    _backToMTPhase();
+  } catch(e) { console.warn('_mtMarkMicroDone:', e); }
+}
+
+// ─── Bilan semaine (UI rapide) ────────────────────────────────────────────
+function _mtShowBilan() {
+  try {
+    var st = getProgramProgress('mt');
+    var done = (st.doneThisWeek) ? Object.keys(st.doneThisWeek).length : 0;
+    var week = st.week || 1;
+    var msg;
+    if (done >= 9) {
+      msg = '✅ Semaine ' + week + ' VALIDÉE : 9/9.\nTu passes à la semaine suivante.';
+    } else if (done === 0) {
+      msg = '📋 Semaine ' + week + ' : 0/9.\nIl te reste 9 micros à valider.';
+    } else {
+      msg = '⏳ Semaine ' + week + ' : ' + done + '/9.\nIl te reste ' + (9-done) + ' micros à valider. Sinon → tu recommences cette même semaine.';
+    }
+    if (typeof showToast === 'function') showToast(msg, done >= 9 ? 'ok' : 'info');
+    else alert(msg);
+  } catch(e) { console.warn('_mtShowBilan:', e); }
+}
+
+// ─── Suggestion de la prochaine micro (logique simple) ────────────────────
+function _mtSuggestMicro() {
+  try {
+    var mt = window.MICROTRAINING_PROGRAM;
+    var st = getProgramProgress('mt');
+    var done = st.doneThisWeek || {};
+    // Prend la 1ère micro non faite dans l'ordre canonique
+    var order = ['mt_m1','mt_m2','mt_m3','mt_m4','mt_m5','mt_m6','mt_m7','mt_m8','mt_m9'];
+    var next = order.find(function(k){ return !done[k]; });
+    if (next && mt) {
+      _openMicroV2(next);
+    } else {
+      if (typeof showToast === 'function') showToast('🎉 Toutes les micros faites cette semaine !', 'ok');
+    }
+  } catch(e) { console.warn('_mtSuggestMicro:', e); }
 }
 
 // Affiche le détail d'une séance (table d'exercices) en pleine page
