@@ -22100,13 +22100,16 @@ function exitLiveV2(finished) {
         + '<div class="sum-body"><div class="sum-name">' + d.name + '</div>'
         + '<div class="sum-data">' + (d.reps !== '—' ? d.reps : 'Terminé') + '</div></div></div>';
     });
-    // Badge hooks : count completed session
+    // Complétion centralisée — passe par le même helper que _lsFinalizeSession
+    // pour que sessionsDone / streak / phasesDone / programsDone soient
+    // bumpés à la même règle quel que soit le chemin de fin de séance.
     try {
-      _bumpProfileCounter('sessionsDone', 1);
-      var hist = JSON.parse(localStorage.getItem('ah_set_history') || '[]');
-      hist.push({ type:'session', sessName: lv2State.sessName || 'Séance', date: new Date().toISOString() });
-      localStorage.setItem('ah_set_history', JSON.stringify(hist));
-      renderBadges();
+      _recordSessionCompletion({
+        progKey:  (lv2State.prog && lv2State.prog.key) || lv2State.programKey || '',
+        sessKey:  '',
+        progName: (lv2State.prog && lv2State.prog.name) || '',
+        sessName: lv2State.sessName || 'Séance'
+      });
     } catch(e) {}
   } else {
     document.getElementById('liveStart').classList.remove('hidden');
@@ -25845,9 +25848,47 @@ function _bumpProfileCounter(key, delta) {
   } catch(e) {}
 }
 
+// Helper UNIQUE de complétion de séance — appelé par les DEUX chemins de
+// fin de séance (_lsFinalizeSession pour le live moderne, exitLiveV2 pour
+// le mode coaché GBG legacy). Garantit que sessionsDone / streak / history
+// / phasesDone / programsDone sont incrémentés à la même règle partout.
+//
+// opts = { progKey?, sessKey?, sessName?, progName?, feedback?, builder? }
+function _recordSessionCompletion(opts) {
+  opts = opts || {};
+  try {
+    _bumpProfileCounter('sessionsDone', 1);
+    _bumpSessionStreak();
+    var hist = JSON.parse(localStorage.getItem('ah_set_history') || '[]');
+    var entry = {
+      type:    'session',
+      progKey: opts.progKey || '',
+      sessKey: opts.sessKey || '',
+      progName: opts.progName || '',
+      sessName: opts.sessName || 'Séance',
+      date:    new Date().toISOString()
+    };
+    if (opts.feedback) entry.sessionEndFeedback = opts.feedback;
+    if (opts.builder)  entry.builder = true;
+    hist.push(entry);
+    localStorage.setItem('ah_set_history', JSON.stringify(hist));
+    if (typeof renderBadges === 'function') renderBadges();
+    // Avance phase/programme uniquement si on a les clés (chemin V1 legacy
+    // n'en a pas → ces compteurs n'avancent que via le chemin programmé).
+    var weekDone = false, programDone = false;
+    if (opts.progKey && opts.sessKey) {
+      try { weekDone = _advanceProgramProgress(opts.progKey, opts.sessKey); } catch(e) {}
+    }
+    if (opts.progKey && typeof _checkProgramCompletion === 'function') {
+      try { programDone = !!_checkProgramCompletion(opts.progKey); } catch(e) {}
+    }
+    return { weekDone: weekDone, programDone: programDone };
+  } catch(e) { console.warn('_recordSessionCompletion error', e); return { weekDone: false, programDone: false }; }
+}
+
 // Met à jour profile.streak (jours consécutifs avec ≥ 1 séance terminée).
 // Règle : J = J-1 → streak+1 ; même jour → no-op ; gap > 1 jour → reset à 1.
-// Appelé depuis _lsFinalizeSession quand une séance est validée.
+// Appelé depuis _recordSessionCompletion uniquement.
 function _bumpSessionStreak() {
   try {
     var profile = JSON.parse(localStorage.getItem('ah_profile') || '{}');
@@ -34230,39 +34271,30 @@ function _lsFinalizeSession(feedback) {
   if (body) body.scrollTop = 0;
   showToast('Séance validée 🔥', 'ok');
 
-  // Tracking complétion : sessionsDone + streak quotidien + historique.
-  try {
-    _bumpProfileCounter('sessionsDone', 1);
-    _bumpSessionStreak();
-    var hist = JSON.parse(localStorage.getItem('ah_set_history') || '[]');
-    hist.push({
-      type: 'session',
-      progKey: _LS.progKey || '',
-      sessKey: _LS.sessKey || '',
-      progName: _LS.progName || '',
-      sessName: _LS.sessName || '',
-      date: new Date().toISOString(),
-      sessionEndFeedback: feedback
-    });
-    localStorage.setItem('ah_set_history', JSON.stringify(hist));
-    if (typeof renderBadges === 'function') renderBadges();
-    if (_LS.progKey && _LS.sessKey) {
+  // Complétion centralisée — sessionsDone + streak + history + program
+  // progress + program completion, tous bumpés dans le même ordre par
+  // _recordSessionCompletion (helper unique partagé avec exitLiveV2).
+  var _rec = _recordSessionCompletion({
+    progKey:  _LS.progKey,
+    sessKey:  _LS.sessKey,
+    progName: _LS.progName,
+    sessName: _LS.sessName,
+    feedback: feedback,
+    builder:  !!_LS.builderMeta
+  });
+  if (_rec.weekDone && _LS.progKey) {
+    setTimeout(function() {
       try {
-        var weekDone = _advanceProgramProgress(_LS.progKey, _LS.sessKey);
-        if (weekDone) {
-          setTimeout(function() {
-            var st = getProgramProgress(_LS.progKey);
-            showToast('✅ Semaine validée — tu passes à la semaine ' + st.week, 'ok');
-          }, 1200);
-        }
+        var st = getProgramProgress(_LS.progKey);
+        showToast('✅ Semaine validée — tu passes à la semaine ' + st.week, 'ok');
       } catch(e) {}
-    }
-    if (_LS.progKey && _checkProgramCompletion(_LS.progKey)) {
-      setTimeout(function() {
-        showToast('🏆 Programme ' + (_LS.progName || _LS.progKey) + ' terminé !', 'ok');
-      }, 1800);
-    }
-  } catch(e) { console.warn('session tracking error', e); }
+    }, 1200);
+  }
+  if (_rec.programDone) {
+    setTimeout(function() {
+      showToast('🏆 Programme ' + (_LS.progName || _LS.progKey) + ' terminé !', 'ok');
+    }, 1800);
+  }
 
   // Séance issue du Workout Builder → sauvegarde cloud + collecte du ressenti.
   if (_LS.builderMeta) {
