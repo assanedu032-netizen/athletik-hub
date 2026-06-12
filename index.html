@@ -21133,11 +21133,10 @@ function _exoMatchesBlock(exo, block) {
   return exo.blockType === block.blockId || exo.blockType === block.blockType;
 }
 
-// ─── CROSS-PROGRAMME : récupère le titanIntroMessage d'une séance depuis sa SOT
+// ─── CROSS-PROGRAMME : récupère la session SOT correspondante (objet complet)
 // programKey ∈ {vd, se, ep, tri, mt, ea} ; phase = phase PROGRAMS_V2 courante ;
-// sessKey = clé courte ('j1','j2',...). Mappe vers la SOT si chargée.
-// Renvoie le message ou null.
-function _sotGetSessionTitanIntro(programKey, phase, sessKey) {
+// sessKey = clé courte ('j1','j2',...). Renvoie l'objet session SOT ou null.
+function _sotGetSessionData(programKey, phase, sessKey) {
   if (!programKey || !sessKey) return null;
   var sotMap = {
     vd: window.VERTICAL_DUNK_PROGRAM,
@@ -21163,8 +21162,13 @@ function _sotGetSessionTitanIntro(programKey, phase, sessKey) {
       found = sotPhase.sessions[sid];
     }
   });
-  if (!found) return null;
-  return found.titanIntroMessage || null;
+  return found || null;
+}
+
+// Rétro-compat — ancien helper qui ne renvoyait que le message Titan
+function _sotGetSessionTitanIntro(programKey, phase, sessKey) {
+  var data = _sotGetSessionData(programKey, phase, sessKey);
+  return data ? (data.titanIntroMessage || null) : null;
 }
 
 function _backToMTPhase() {
@@ -21347,17 +21351,28 @@ function _openSessionV2(sessKey) {
   h += '<div style="font-family:\'Bebas Neue\',sans-serif;font-size:18px;color:var(--gold);letter-spacing:1px;margin-bottom:4px">' + p.name + ' · ' + ph.title.replace(/^PHASE \d+ — /, 'Phase ' + ph.n + ' — ') + '</div>';
   h += '<div style="font-family:\'Bebas Neue\',sans-serif;font-size:22px;color:var(--text);letter-spacing:1.5px;line-height:1.05;margin-bottom:14px">' + sess.name + '</div>';
 
-  // CROSS-PROGRAMME : si la SOT du programme est chargée et contient un
-  // titanIntroMessage pour cette séance, on l'affiche au-dessus de la
-  // table d'exos. Bénéfice : tous les programmes affichent le ton Titan
-  // dès l'ouverture de la séance, sans toucher au moteur existant.
+  // CROSS-PROGRAMME : si la SOT du programme est chargée pour cette séance,
+  // on affiche au-dessus de la table d'exos :
+  //   1. titanIntroMessage (ton Titan court, motivant)
+  //   2. specialInstructions (règles d'exécution critiques — tempo, repos,
+  //      enchaînement — qui ne sont PAS dans la table d'exos PDF)
+  // Bénéfice : tous les programmes (VD/SE/EP/TRI) reçoivent ce niveau
+  // d'info sans toucher au moteur existant.
   try {
-    var sotMsg = _sotGetSessionTitanIntro(window._progV2State.key, ph, sessKey);
-    if (sotMsg) {
-      h += '<div style="background:rgba(197,164,78,.08);border-left:3px solid var(--gold);padding:11px 13px;border-radius:0 10px 10px 0;margin-bottom:14px">';
-      h +=   '<div style="font-size:9px;color:var(--gold);font-weight:800;letter-spacing:1.5px;margin-bottom:4px">🗣 TITAN</div>';
-      h +=   '<div style="font-size:12px;color:var(--text2);line-height:1.55;font-style:italic">"' + sotMsg + '"</div>';
-      h += '</div>';
+    var sotData = _sotGetSessionData(window._progV2State.key, ph, sessKey);
+    if (sotData) {
+      if (sotData.titanIntroMessage) {
+        h += '<div style="background:rgba(197,164,78,.08);border-left:3px solid var(--gold);padding:11px 13px;border-radius:0 10px 10px 0;margin-bottom:10px">';
+        h +=   '<div style="font-size:9px;color:var(--gold);font-weight:800;letter-spacing:1.5px;margin-bottom:4px">🗣 TITAN</div>';
+        h +=   '<div style="font-size:12px;color:var(--text2);line-height:1.55;font-style:italic">"' + sotData.titanIntroMessage + '"</div>';
+        h += '</div>';
+      }
+      if (sotData.specialInstructions) {
+        h += '<div style="background:rgba(108,99,255,.06);border-left:3px solid #6C63FF;padding:11px 13px;border-radius:0 10px 10px 0;margin-bottom:14px">';
+        h +=   '<div style="font-size:9px;color:#6C63FF;font-weight:800;letter-spacing:1.5px;margin-bottom:4px">📌 CONSIGNES</div>';
+        h +=   '<div style="font-size:12px;color:var(--text2);line-height:1.55">' + sotData.specialInstructions + '</div>';
+        h += '</div>';
+      }
     }
   } catch(e) {}
 
