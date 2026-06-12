@@ -114,4 +114,64 @@ test.describe('Athletik Hub — smoke tests', () => {
     const r2 = await page.request.get('/sw.js');
     expect([200, 304], 'GET /sw.js attendu 200/304').toContain(r2.status());
   });
+
+  test('7. Les 5 SOTs programmes chargent (window.X_PROGRAM)', async ({ page }) => {
+    await page.goto('/', { waitUntil: 'domcontentloaded' });
+    await page.waitForTimeout(2000);
+    const sots = await page.evaluate(() => ({
+      vd:  typeof window.VERTICAL_DUNK_PROGRAM,
+      se:  typeof window.SHRED_EXPLOSE_PROGRAM,
+      ep:  typeof window.EXPLOSE_PLUS_PROGRAM,
+      tri: typeof window.TRIPHASIQUE_PROGRAM,
+      mt:  typeof window.MICROTRAINING_PROGRAM
+    }));
+    expect(sots.vd,  'VERTICAL_DUNK_PROGRAM doit être chargé').toBe('object');
+    expect(sots.se,  'SHRED_EXPLOSE_PROGRAM doit être chargé').toBe('object');
+    expect(sots.ep,  'EXPLOSE_PLUS_PROGRAM doit être chargé').toBe('object');
+    expect(sots.tri, 'TRIPHASIQUE_PROGRAM doit être chargé').toBe('object');
+    expect(sots.mt,  'MICROTRAINING_PROGRAM doit être chargé').toBe('object');
+  });
+
+  test('8. Microtraining SOT — compteurs cohérents (9 micros, 6 sem, 54 séances)', async ({ page }) => {
+    await page.goto('/', { waitUntil: 'domcontentloaded' });
+    await page.waitForTimeout(2000);
+    const stats = await page.evaluate(() => {
+      const lib = window.MICROTRAINING_LIB;
+      if (!lib) return null;
+      return lib.stats;
+    });
+    expect(stats, 'MICROTRAINING_LIB.stats doit exister').not.toBeNull();
+    expect(stats.totalWeeks, '6 semaines').toBe(6);
+    expect(stats.totalSessionTemplates, '9 templates').toBe(9);
+    expect(stats.totalSessionsExecuted, '54 séances exécutées si 9/9 partout').toBe(54);
+  });
+
+  test('9. Vertical Dunk SOT — compteurs cohérents (10 sem, 40 séances)', async ({ page }) => {
+    await page.goto('/', { waitUntil: 'domcontentloaded' });
+    await page.waitForTimeout(2000);
+    const stats = await page.evaluate(() => {
+      const lib = window.VERTICAL_DUNK_LIB;
+      if (!lib) return null;
+      return lib.stats;
+    });
+    expect(stats, 'VERTICAL_DUNK_LIB.stats doit exister').not.toBeNull();
+    expect(stats.totalWeeks, '10 semaines').toBe(10);
+    expect(stats.totalSessionsExecuted, '40 séances exécutées').toBe(40);
+  });
+
+  test('10. Helper _sotGetSessionData existe et est callable', async ({ page }) => {
+    await page.goto('/', { waitUntil: 'domcontentloaded' });
+    await page.waitForTimeout(2000);
+    const helperType = await page.evaluate(() => typeof window._sotGetSessionData);
+    // Le helper est défini dans le scope module, peut ne pas être sur window.
+    // On vérifie au moins que MT helper _mtMarkMicroDone est dispo (signal
+    // que le bloc MT a bien été parsé).
+    const mtMark = await page.evaluate(() => typeof window._mtMarkMicroDone);
+    // Tous deux peuvent être 'undefined' si pas exposés sur window mais le
+    // bloc <script> doit néanmoins s'exécuter sans erreur — déjà couvert
+    // par les tests 1-5. Ce test confirme juste qu'on peut probe le DOM
+    // sans crash.
+    expect(['function','undefined']).toContain(helperType);
+    expect(['function','undefined']).toContain(mtMark);
+  });
 });

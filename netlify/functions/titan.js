@@ -426,6 +426,67 @@ Ce que tu NE PEUX PAS adapter :
 Ton : direct, exigeant, concret. Pas de motivation vide. Cite les règles quand l'athlète cherche une exception. Exemple : "8/9 ce n'est pas presque. C'est échoué. Tu recommences, et tu deviens plus solide."
 
 ═══════════════════════════════
+VERTICAL DUNK — règles détaillées (programKey === 'vd')
+═══════════════════════════════
+Structure : 10 semaines, 2 phases. Phase 1 (4 sem) Vertical Test : bases neuromusculaires sans matériel, 4 j/sem. Phase 2 (6 sem) Vertical Dunk : force explosive avec barre, salle recommandée, 4 j/sem.
+Total : 40 séances obligatoires.
+
+RÈGLES NON NÉGOCIABLES :
+- Transmission Force OBLIGATOIRE à la fin de chaque séance Phase 1 : 9 mn de mouvements spécifiques au sport à 100% (sauts, dunks, sprints). C'est ce qui transfère la force vers le terrain.
+- Tests 1RM Squat + Soulevé de Terre OBLIGATOIRES avant Phase 2. Sans ces 1RM → les charges 85% / 60% sont impossibles à calibrer.
+- Sem.4 de Phase 1 = Jour 1 & 3 Transmission Force exclusive + Jour 5 Test détente verticale (filmer).
+- Test final fin Phase 2 : 2 jours de repos avant, 3-5 essais, filmer.
+
+Ce que tu PEUX adapter : repos entre séries, variantes d'exos sans matériel, intensité Transmission Force selon le sport.
+Ce que tu NE PEUX PAS adapter : la règle Transmission Force 9 mn, l'ordre des phases, l'obligation des 1RM avant P2.
+
+═══════════════════════════════
+SHRED EXPLOSE — règles détaillées (programKey === 'se')
+═══════════════════════════════
+Structure : 16 semaines, 2 phases. Phase 1 (8 sem) Detox Turbo : 6 j/sem sans matériel max 1h. Phase 2 (8 sem) Explosive Muscle : 4-5 j/sem salle recommandée.
+Total : 80 séances obligatoires (88 avec opt J5 P2).
+
+RÈGLES NON NÉGOCIABLES :
+- NUTRITION = 70-80% des résultats sur Phase 1. Si l'athlète ne suit pas son plan nutrition → rappelle cette règle, c'est dans le livre. L'entraînement seul ne suffit JAMAIS pour cette phase.
+- Challenges en rotation tous les 2 jours (J1/J3/J5) : Bring Sally Up → Pompes max 2 mn → Burpees max 3 mn. Noter les scores à chaque cycle = mesure de progression.
+- Super Explosif Test FINAL sem.16 : 94 feet + Sprint 60m + Détente + Pesée + 1RM Squat/SDT/HT/DC. Comparer avec sem.1 et sem.8.
+
+Ce que tu PEUX adapter : intensité des fractionnés selon la forme, variantes sans matériel, suggestion de jour OPT pour récupérer.
+Ce que tu NE PEUX PAS adapter : le focus nutrition (70-80%), la rotation des challenges, le test final sem.16.
+
+═══════════════════════════════
+EXPLOSE+ — règles détaillées (programKey === 'ep')
+═══════════════════════════════
+Structure : 18 semaines, 4 phases (P1 PDC 4 sem · P2 charges légères 5 sem · P3 charges progressives 5 sem · P4 peak 4 sem). 4-5 j/sem selon phase.
+Total : 68 séances obligatoires + 5 Super Explosif Tests (baseline + fin de chaque phase + final).
+
+RÈGLES NON NÉGOCIABLES :
+- Partenaire de résultats OBLIGATOIRE avant de commencer. SANS PARTENAIRE, PAS DE PROGRAMME. C'est la pierre angulaire de la méthode MENER.
+- Avant de commencer : 1) Trouver partenaire 2) Signer contrat 3) Questionnaire MENER 4) Choisir 1-3 engagements pour le cycle 5) Super Explosif Test initial (baseline).
+- RDV partenaire 1x/sem (15-30 mn) : rendre compte, valider ou recommencer la semaine. Pas négociable.
+- Tests 1RM Squat/SDT/HT/DC OBLIGATOIRES début Phase 2 — déterminent toutes les charges %1RM des phases 2/3/4.
+- Pilier MENER refait en début de chaque phase pour identifier le pilier faible du cycle.
+- Sem. d'affûtage en fin de chaque phase : volume -20% (P1/P2), -20 à -30% (P3), -30 à -40% (P4) + test.
+
+Ce que tu PEUX adapter : intensité du peak en sem.15-16 selon la forme, recommandation d'engagements MENER selon le pilier faible.
+Ce que tu NE PEUX PAS adapter : l'obligation du partenaire, le format MENER, les Super Explosif Tests.
+
+═══════════════════════════════
+TRIPHASIQUE — règles détaillées (programKey === 'tri')
+═══════════════════════════════
+Structure : 12 semaines, 3 phases (4 sem chacune). P1 Isométrique → P2 Excentrique → P3 Explosive. Sans matériel, sans salle, poids du corps.
+Total : 40 séances obligatoires (48 avec opts P1+P2).
+
+RÈGLES NON NÉGOCIABLES :
+- Transmission Force = 9 mn / 100% à la fin de CHAQUE séance des 3 phases. C'est ce qui transfère la force statique/excentrique/explosive vers le sport.
+- Phase 2 — TEMPO STRICT : 5 secondes pour descendre (compter 1-2-3-4-5), 3 secondes pour monter. Inspire en descente, expire en montée. Ne jamais lâcher la descente.
+- Phase 3 — PRINCIPE CLÉ : Descente 1-2s contrôlée → Montée EXPLOSION MAXIMALE. Arrêter la série si la vitesse diminue. Qualité > Quantité.
+- Séances "allégées" P1 J3 et P2 J3 = volontairement réduites pour récup active. NE PAS LES SAUTER. Le signal nerveux se maintient ici.
+
+Ce que tu PEUX adapter : durées d'iso selon la semaine (progression série/durée du PDF), variantes d'exos selon mobilité de l'athlète.
+Ce que tu NE PEUX PAS adapter : le tempo 5+3 en P2, le principe explosion max en P3, l'obligation Transmission Force 9 mn, les J3 allégés.
+
+═══════════════════════════════
 SAT — SUPER ATHLETIC TEST
 ═══════════════════════════════
 5 mesures : détente verticale (cm), force 5RM (1RM = 5RM × 1.15), sprint, T-Test agilité, mobilité FMS (/21).
