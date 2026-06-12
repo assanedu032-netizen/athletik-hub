@@ -67,3 +67,6 @@ coverage/
 *.backup
 *.orig
 backup-*/
+playwright-report/
+test-results/
+playwright/.cache/

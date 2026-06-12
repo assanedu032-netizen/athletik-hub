@@ -1132,6 +1132,9 @@ body{background:var(--bg);color:var(--text);font-family:'Outfit',sans-serif;disp
 .yt-detail-video{width:100%;aspect-ratio:16/9;background:#0E1626;position:relative;overflow:hidden;display:flex;align-items:center;justify-content:center}
 .yt-detail-video iframe{width:100%;height:100%;border:none;position:absolute;inset:0}
 .yt-detail-video-placeholder{display:flex;flex-direction:column;align-items:center;gap:8px;cursor:pointer}
+/* Pastille SVG vidéo (placeholder fiche détail) — navy + filigrane gold,
+   identité Athletik Hub. Remplace l'ancien 🎬 orange. */
+.yt-empty-pill{width:56px;height:56px;border-radius:50%;display:flex;align-items:center;justify-content:center;background:radial-gradient(circle at 30% 30%, rgba(197,164,78,.18), rgba(197,164,78,.04) 60%, transparent 70%);border:1px solid rgba(197,164,78,.30);box-shadow:inset 0 0 30px rgba(197,164,78,.10)}
 .yt-detail-play{width:60px;height:60px;border-radius:50%;background:rgba(197,164,78,.18);border:2px solid rgba(197,164,78,.5);display:flex;align-items:center;justify-content:center}
 .yt-detail-play-tri{width:0;height:0;border-top:11px solid transparent;border-bottom:11px solid transparent;border-left:18px solid var(--gold);margin-left:4px}
 .yt-detail-body{padding:16px 16px 100px}
@@ -2495,6 +2498,91 @@ body.test-mode #testSkipBar{display:flex}
   background: rgba(197,164,78,.09); border: 1.5px solid rgba(197,164,78,.25);
   color: var(--gold); font-size: 11px; font-weight: 700; letter-spacing: 1px;
   text-transform: uppercase; cursor: pointer; text-align: center;
+}
+.ls-video-hint {
+  margin: 4px 16px 0; font-size: 11px; color: rgba(255,255,255,.45);
+  text-align: center; font-style: italic;
+}
+
+/* Carte "À faire maintenant" — couche interface séance (vs vidéo démo).
+   Sépare clairement la technique des reps, indique série/round + instruction. */
+.ls-now-card {
+  margin: 14px 16px 4px; padding: 14px;
+  background: linear-gradient(165deg, rgba(197,164,78,.08), rgba(197,164,78,.02));
+  border: 1px solid rgba(197,164,78,.30); border-radius: 14px;
+  position: relative;
+}
+.ls-now-card::before {
+  content: "À FAIRE MAINTENANT";
+  position: absolute; top: -8px; left: 14px;
+  font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: .18em;
+  color: var(--gold); background: var(--navy); padding: 2px 8px; border-radius: 4px;
+  font-weight: 800;
+}
+.ls-now-row {
+  display: flex; align-items: center; justify-content: space-between;
+  gap: 10px; margin-bottom: 8px;
+}
+.ls-now-tech {
+  display: inline-block; padding: 4px 10px;
+  background: rgba(197,164,78,.18); border: 1px solid rgba(197,164,78,.4);
+  border-radius: 999px; font-family: 'JetBrains Mono', monospace;
+  font-size: 10px; letter-spacing: .12em; font-weight: 800;
+  color: var(--gold); text-transform: uppercase;
+}
+.ls-now-help {
+  background: transparent; border: 0; color: rgba(255,255,255,.55);
+  font-family: 'Outfit', sans-serif; font-size: 11px; font-weight: 600;
+  cursor: pointer; padding: 4px 6px; text-decoration: underline;
+  text-underline-offset: 3px; text-decoration-color: rgba(255,255,255,.25);
+}
+.ls-now-help:hover { color: var(--gold); text-decoration-color: var(--gold); }
+.ls-now-todo {
+  font-family: 'Bebas Neue', sans-serif; font-size: 26px; letter-spacing: .04em;
+  color: #fff; line-height: 1; margin-bottom: 4px;
+}
+.ls-now-set {
+  font-family: 'Outfit', sans-serif; font-size: 12px; font-weight: 700;
+  color: rgba(255,255,255,.7); letter-spacing: .04em; margin-bottom: 8px;
+}
+.ls-now-instr {
+  font-family: 'Outfit', sans-serif; font-size: 12.5px;
+  color: rgba(255,255,255,.82); line-height: 1.5;
+  padding-top: 8px; border-top: 1px dashed rgba(255,255,255,.10);
+}
+
+/* Bottom sheet "Comment faire ?" — explication courte de la technique. */
+.ls-th-ov {
+  position: fixed; inset: 0; background: rgba(6,12,24,.78);
+  backdrop-filter: blur(6px); z-index: 9700; display: none;
+  align-items: flex-end; justify-content: center; opacity: 0;
+  transition: opacity .2s ease;
+}
+.ls-th-ov.on { display: flex; opacity: 1; }
+.ls-th-sheet {
+  width: 100%; max-width: 480px; background: var(--bg, #FAF8F4);
+  border-radius: 22px 22px 0 0; padding: 12px 18px calc(20px + env(safe-area-inset-bottom,0px));
+  box-shadow: 0 -16px 50px rgba(10,16,30,.4);
+  animation: libxSheetUp .22s ease;
+}
+.ls-th-grab { width: 42px; height: 4px; border-radius: 2px; background: var(--border2, #D8D3C6); margin: 2px auto 14px; }
+.ls-th-eyebrow {
+  font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: .22em;
+  color: var(--gold); text-transform: uppercase; font-weight: 800; margin-bottom: 4px;
+}
+.ls-th-title {
+  font-family: 'Bebas Neue', sans-serif; font-size: 24px; letter-spacing: .04em;
+  color: var(--text); line-height: 1; margin-bottom: 12px;
+}
+.ls-th-text {
+  font-family: 'Outfit', sans-serif; font-size: 13.5px; color: var(--text2);
+  line-height: 1.55; margin-bottom: 16px;
+}
+.ls-th-cta {
+  width: 100%; padding: 13px; background: linear-gradient(135deg, var(--gold), #A0853A);
+  border: 0; border-radius: 12px; font-family: 'Bebas Neue', sans-serif;
+  font-size: 15px; letter-spacing: .12em; color: var(--navy); cursor: pointer;
+  box-shadow: 0 6px 18px rgba(197,164,78,.32);
 }
 
 .ls-metrics {
@@ -4782,29 +4870,31 @@ html body #result, html body #nutriResult{
 .libx-head-prog{flex-shrink:0;padding:9px 13px;border-radius:999px;background:var(--navy,#1B2A4A);border:1px solid rgba(197,164,78,.45);color:var(--gold);font-family:'Outfit',sans-serif;font-size:11.5px;font-weight:800;letter-spacing:.03em;cursor:pointer;box-shadow:0 4px 12px rgba(27,42,74,.18);white-space:nowrap}
 .libx-head-prog:active{transform:scale(.96)}
 
-/* Carte compacte : vignette gauche + infos + actions empilées à droite */
-.libx-list{display:flex;flex-direction:column;gap:10px;padding-bottom:90px}
-.libx-card{display:flex;gap:10px;align-items:stretch;background:var(--surface);border:1.5px solid var(--border);border-radius:14px;padding:8px;box-shadow:0 2px 8px rgba(20,30,60,.05);transition:transform .1s}
-.libx-card:active{transform:scale(.985)}
-.libx-thumb{width:104px;min-height:70px;border-radius:10px;background:#0E1626;flex-shrink:0;position:relative;display:flex;align-items:center;justify-content:center;overflow:hidden;cursor:pointer;background-size:cover;background-position:center}
-/* Placeholder vidéo : fond navy sobre avec léger dégradé + filigrane gold
-   subtil. Plus de gradient catégorie orange/feu (feedback client) — la
-   couleur de la catégorie reste visible via le chip de la fiche détail. */
+/* Librairie V4 : catalogue dense — cartes compactes, miniature 80×60,
+   meta sur 1 seule ligne, aucun bouton textuel (l'icône play sur la
+   thumb fait office de "Voir démo"). Tap card = fiche détail, tap thumb
+   = ouvre la vidéo directement (stopPropagation côté markup). */
+.libx-list{display:flex;flex-direction:column;gap:6px;padding-bottom:90px}
+.libx-card{display:flex;gap:10px;align-items:center;background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:6px;box-shadow:0 1px 3px rgba(20,30,60,.04);transition:transform .1s, box-shadow .15s, border-color .15s;cursor:pointer}
+.libx-card:hover{border-color:rgba(197,164,78,.35);box-shadow:0 3px 10px rgba(20,30,60,.06)}
+.libx-card:active{transform:scale(.99)}
+.libx-thumb{width:80px;height:60px;border-radius:8px;background:#0E1626;flex-shrink:0;position:relative;display:flex;align-items:center;justify-content:center;overflow:hidden;cursor:pointer;background-size:cover;background-position:center}
+/* Placeholder vidéo : navy sobre + filigrane gold discret. */
 .libx-thumb-empty{background:linear-gradient(160deg,#243B6B 0%,#0F1B33 100%);position:relative}
 .libx-thumb-empty::before{content:"";position:absolute;inset:0;background:radial-gradient(circle at 30% 35%,rgba(197,164,78,.10),transparent 55%);pointer-events:none}
-.libx-thumb-play{width:30px;height:30px;border-radius:50%;background:rgba(0,0,0,.45);display:flex;align-items:center;justify-content:center;border:1px solid rgba(197,164,78,.45);position:relative;z-index:1}
-.libx-thumb-tri{width:0;height:0;border-left:9px solid #fff;border-top:6px solid transparent;border-bottom:6px solid transparent;margin-left:2px}
-.libx-body{flex:1;min-width:0;display:flex;flex-direction:column;justify-content:center;gap:2px;cursor:pointer;padding:2px 0}
-.libx-name{font-size:13px;font-weight:800;color:var(--text);line-height:1.3;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
-.libx-meta{font-size:11px;color:var(--muted);line-height:1.4;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.libx-meta .libx-diff{font-weight:700}
+.libx-thumb-play{width:26px;height:26px;border-radius:50%;background:rgba(0,0,0,.55);display:flex;align-items:center;justify-content:center;border:1px solid rgba(197,164,78,.50);position:relative;z-index:1;transition:transform .12s,background .15s}
+.libx-thumb:hover .libx-thumb-play{background:rgba(197,164,78,.85);transform:scale(1.08)}
+.libx-thumb-tri{width:0;height:0;border-left:8px solid #fff;border-top:5px solid transparent;border-bottom:5px solid transparent;margin-left:2px}
+.libx-body{flex:1;min-width:0;display:flex;flex-direction:column;justify-content:center;gap:2px;padding:2px 4px 2px 0}
+.libx-name{font-size:13px;font-weight:700;color:var(--text);line-height:1.25;display:-webkit-box;-webkit-line-clamp:1;-webkit-box-orient:vertical;overflow:hidden;text-overflow:ellipsis}
+.libx-meta-single{font-size:11px;color:var(--muted);line-height:1.4;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.libx-meta .libx-diff,.libx-meta-single .libx-diff{font-weight:700}
 .libx-diff.easy{color:#1F8A4C}.libx-diff.med{color:#B07E10}.libx-diff.hard{color:#C03434}
-.libx-actions{display:flex;flex-direction:column;gap:6px;justify-content:center;flex-shrink:0}
-.libx-see{padding:7px 12px;border-radius:9px;background:transparent;border:1.5px solid var(--border);color:var(--text2);font-family:'Outfit',sans-serif;font-size:11px;font-weight:700;cursor:pointer;white-space:nowrap}
-.libx-see:active{transform:scale(.95)}
-.libx-add{padding:7px 12px;border-radius:9px;background:linear-gradient(135deg,var(--gold),#A0853A);border:1.5px solid var(--gold);color:var(--navy,#1B2A4A);font-family:'Outfit',sans-serif;font-size:11px;font-weight:800;cursor:pointer;white-space:nowrap;box-shadow:0 3px 8px rgba(197,164,78,.28);transition:transform .1s}
-.libx-add:active{transform:scale(.95)}
-.libx-add.added{background:var(--gold-dim,rgba(197,164,78,.12));border-color:rgba(197,164,78,.5);color:#8A6D2B;box-shadow:none}
+/* Bouton "+" en build mode — petit cercle gold à droite, jamais affiché
+   hors build mode (la librairie reste un catalogue propre). */
+.libx-add{width:30px;height:30px;border-radius:50%;background:linear-gradient(135deg,var(--gold),#A0853A);border:0;color:var(--navy,#1B2A4A);font-family:'Outfit',sans-serif;font-size:15px;font-weight:800;cursor:pointer;flex-shrink:0;box-shadow:0 2px 6px rgba(197,164,78,.30);transition:transform .1s;display:flex;align-items:center;justify-content:center}
+.libx-add:active{transform:scale(.92)}
+.libx-add.added{background:var(--gold-dim,rgba(197,164,78,.18));color:#8A6D2B;box-shadow:none}
 
 /* Meta chips de la fiche détail (niveau · catégorie · durée · matériel) */
 .libx-detail-meta{display:flex;flex-wrap:wrap;gap:6px;margin:8px 0 12px}
@@ -6934,11 +7024,11 @@ window.tiResetOnEnter = function(){ window.tiShowStep(1); };
 
     <!-- ═══ SCOREBOARD navy-deep DS v1.0 ═══ -->
     <div class="ah-scoreboard" id="homeScoreboard" style="margin:6px 20px 0;background:var(--ah-navy-deep);padding:14px 18px;border-radius:14px">
-      <div class="grp"><span class="lbl">SET</span><span class="val empty" id="sbSet">—</span></div>
+      <div class="grp"><span class="lbl">SCORE</span><span class="val empty" id="sbSet">—</span></div>
       <div class="div"></div>
-      <div class="grp"><span class="lbl">CMJ</span><span class="val empty" id="sbCmj">—</span></div>
+      <div class="grp"><span class="lbl">DÉTENTE</span><span class="val empty" id="sbCmj">—</span></div>
       <div class="div"></div>
-      <div class="grp"><span class="lbl">J</span><span class="val empty" id="sbJours">—</span></div>
+      <div class="grp"><span class="lbl">STREAK</span><span class="val empty" id="sbJours">—</span></div>
     </div>
 
     <!-- ═══ CARTE PROFIL ATHLETIK (mode discovery — locked) ═══
@@ -7361,7 +7451,7 @@ window.tiResetOnEnter = function(){ window.tiShowStep(1); };
           <div class="sc-row"><div class="sc-row-label">🦘 Détente verticale</div><div><span class="sc-row-val" id="scJump">—</span><span class="sc-row-pct">40%</span></div></div>
           <div class="sc-row"><div class="sc-row-label">🏋️ Force (1RM Squat)</div><div><span class="sc-row-val" id="scForce">—</span><span class="sc-row-pct">25%</span></div></div>
           <div class="sc-row"><div class="sc-row-label">⚡ Sprint</div><div><span class="sc-row-val" id="scSprint">—</span><span class="sc-row-pct">20%</span></div></div>
-          <div class="sc-row"><div class="sc-row-label">🧘 Mobilité FMS</div><div><span class="sc-row-val" id="scMobility">—</span><span class="sc-row-pct">15%</span></div></div>
+          <div class="sc-row"><div class="sc-row-label">🧘 Mobilité fonctionnelle</div><div><span class="sc-row-val" id="scMobility">—</span><span class="sc-row-pct">15%</span></div></div>
         </div>
       </div>
 
@@ -7709,8 +7799,13 @@ window.tiResetOnEnter = function(){ window.tiShowStep(1); };
       <div class="yt-detail-section">ERREURS À ÉVITER</div>
       <div class="yt-detail-desc" id="ytDetailErreursTxt"></div>
     </div>
-    <button class="btn btn-gold" id="ytDetailAddBtn" style="width:100%;margin-bottom:10px" onclick="window._libDetailToggleAdd && window._libDetailToggleAdd()">+ Ajouter à ma séance</button>
-    <button class="btn btn-outline" style="width:100%" onclick="_libTrackCurrent()">📊 Tracker cet exercice</button>
+    <!-- Action principale : Tracker (suivi/progression). Le bouton "Ajouter
+         à ma séance" reste possible mais devient contextuel — affiché
+         UNIQUEMENT si une séance est déjà en construction (window._libIsBuildMode).
+         Hors build mode, la Librairie reste un catalogue de consultation. -->
+    <button class="btn btn-gold" id="ytDetailTrackBtn" style="width:100%;margin-bottom:6px" onclick="_libTrackCurrent()">📊 Tracker cet exercice</button>
+    <div id="ytDetailTrackHint" style="font-size:11px;color:var(--muted);text-align:center;margin-bottom:14px;line-height:1.5">Ajoute cet exercice à ton suivi pour voir ton évolution.</div>
+    <button class="btn btn-outline" id="ytDetailAddBtn" style="display:none;width:100%;margin-bottom:10px" onclick="window._libDetailToggleAdd && window._libDetailToggleAdd()">+ Ajouter à ma séance</button>
   </div>
 </div>
 
@@ -7989,9 +8084,9 @@ window.tiResetOnEnter = function(){ window.tiShowStep(1); };
     <div class="prof-email" id="profEmail">athlete@email.com</div>
     <div class="prof-stats">
       <div class="ps-item"><div class="ps-val" id="psScore">—</div><div class="ps-label">Score /100</div></div>
-      <div class="ps-item"><div class="ps-val" id="psStreak">3</div><div class="ps-label">Jours streak</div></div>
-      <div class="ps-item"><div class="ps-val" id="psSessions">8</div><div class="ps-label">Séances</div></div>
-      <div class="ps-item"><div class="ps-val" id="psBadges">2</div><div class="ps-label">Badges</div></div>
+      <div class="ps-item"><div class="ps-val" id="psStreak">—</div><div class="ps-label">Jours streak</div></div>
+      <div class="ps-item"><div class="ps-val" id="psSessions">—</div><div class="ps-label">Séances</div></div>
+      <div class="ps-item"><div class="ps-val" id="psBadges">0</div><div class="ps-label">Badges</div></div>
     </div>
   </div>
 
@@ -8059,37 +8154,13 @@ window.tiResetOnEnter = function(){ window.tiShowStep(1); };
     </div>
   </div>
 
-  <!-- Golden Titan Badges -->
-  <div class="sec-title">🏅 GOLDEN TITAN BADGE</div>
-  <div class="gtb-row">
-    <div class="gtb locked">
-      <div class="gtb-shine"></div>
-      <div class="gtb-icon">🥉</div>
-      <div class="gtb-name">Bronze</div>
-      <div class="gtb-req">Rythme parfait<br>1 mois</div>
-    </div>
-    <div class="gtb locked">
-      <div class="gtb-shine"></div>
-      <div class="gtb-icon">🥈</div>
-      <div class="gtb-name">Argent</div>
-      <div class="gtb-req">Rythme parfait<br>3 mois</div>
-    </div>
-    <div class="gtb locked">
-      <div class="gtb-shine"></div>
-      <div class="gtb-icon">🥇</div>
-      <div class="gtb-name">Or</div>
-      <div class="gtb-req">Rythme parfait<br>6 mois</div>
-    </div>
-    <div class="gtb locked">
-      <div class="gtb-shine"></div>
-      <div class="gtb-icon">🔱</div>
-      <div class="gtb-name">Suprême</div>
-      <div class="gtb-req">Rythme parfait<br>1 an (perdable)</div>
-    </div>
-  </div>
+  <!-- Section "Golden Titan Badges" supprimée : les 4 médailles
+       (Bronze/Argent/Or/Suprême) reposaient sur "Rythme parfait" qui
+       n'était jamais défini ni calculé → 4 cartes verrouillées éternellement.
+       On garde un seul système de badges, branché à des compteurs réels. -->
 
   <!-- Achievement Badges -->
-  <div class="sec-title">🎖️ BADGES <span id="badgesCount" style="font-size:11px;color:var(--muted);font-weight:600;margin-left:8px">0 / 12</span></div>
+  <div class="sec-title">🎖️ BADGES <span id="badgesCount" style="font-size:11px;color:var(--muted);font-weight:600;margin-left:8px">0 / 9</span></div>
   <div class="badge-grid" id="badgeGrid">
     <!-- Injecté par renderBadges() -->
   </div>
@@ -8965,6 +9036,11 @@ window.tiResetOnEnter = function(){ window.tiShowStep(1); };
       </div>
     </div>
     <div class="ls-video-btn" onclick="_lsOpenVideo()">▶ VOIR LA VIDÉO DÉMO</div>
+    <div class="ls-video-hint">Regarde le mouvement, puis lance ta série.</div>
+
+    <!-- Carte "À faire maintenant" — sépare clairement la technique des reps.
+         Rempli par _lsRenderEx() avec : Technique · Reps · Série/Round · Instruction. -->
+    <div class="ls-now-card" id="lsNowCard"></div>
 
     <!-- Metrics: Sets / Reps / Rest -->
     <div class="ls-metrics">
@@ -12818,7 +12894,7 @@ var SET_TYPES = {
     { ic: '🦘', name: 'Détente verticale', target: 'Hauteur max atteinte', unit: 'cm', placeholder: '290' },
     { ic: '⚡', name: 'Sprint 30m', target: 'Temps meilleur essai', unit: 'sec', placeholder: '4.2' },
     { ic: '🏋️', name: 'Back Squat 5RM', target: 'Charge max', unit: 'kg', placeholder: '80' },
-    { ic: '🧘', name: 'FMS Mobilité', target: 'Score sur 21 points', unit: '/21', placeholder: '14' },
+    { ic: '🧘', name: 'Mobilité fonctionnelle', target: '7 mouvements notés /3 — total /21', unit: '/21', placeholder: '14' },
   ]
 };
 
@@ -13336,12 +13412,12 @@ var satExercices = [
     hasTimer: true, timerSec: 300, timerLabel: 'Récupération sprint', hasStopwatch: true
   },
   {
-    id: 'fms', name: 'FMS Mobilité', emoji: '🧘',
-    desc: 'Score ton niveau de mobilité sur 21 points (7 mouvements × 3 points max).',
-    libraryName: 'FMS',
+    id: 'fms', name: 'Mobilité fonctionnelle', emoji: '🧘',
+    desc: 'Évalue ta mobilité sur 7 mouvements fondamentaux (squat, fente, épaules, etc.). Chaque mouvement est noté /3 — score total /21. Méthode FMS (Functional Movement Screen).',
+    libraryName: 'Mobilité fonctionnelle',
     video: 'https://www.youtube.com/embed/4dsrMFf_SRY',
-    fields: [{id:'satFMS', label:'Score FMS', unit:'/21', placeholder:'14'}],
-    hint: '< 14 = risque blessure. Travaille la mobilité en priorité.',
+    fields: [{id:'satFMS', label:'Ton score /21', unit:'/21', placeholder:'14'}],
+    hint: '< 14 = risque de blessure. Travaille la mobilité en priorité.',
     hasTimer: false
   }
 ];
@@ -13808,6 +13884,7 @@ function _eaSessionToExos(session) {
       video: e.videoUrl || null,
       _eaExerciseId: e.exerciseId,
       _eaBlockType: e.blockType,
+      _eaTechnique: e.technique || 'classique',  // cluster / circuit / bi-set / superset / isometrie / classique / challenge
       _eaVideoStatus: e.videoStatus // 'available' | 'placeholder'
     };
   });
@@ -14335,7 +14412,11 @@ let currentRPE=0,liveRPE=0,timerInterval=null,timerSeconds=120,timerRunning=fals
 let currentCat=null,currentCatData=[],currentFilter='all',currentProgKey=null;
 let conversationHistory=[],liveData=[],currentLiveEx=0;
 // Clés API toutes côté serveur (Netlify Function /titan). Aucune clé en clair ici.
-const user={name:'ATHLÈTE',email:'',program:'ELITE ATHLETE',programKey:'ea',programObj:'Explosivité globale',phase:1,weekNum:2,totalWeeks:20,progressPct:12,streak:3,athScore:null,vertJump:null,level:'Rookie',levelIcon:'🥉',satDone:false,sport:'Basket',age:22};
+// Valeurs par défaut HONNÊTES — pas de fake streak/weekNum/progressPct.
+// Les vraies valeurs viennent de ah_profile (renderUserData / loadProfile).
+// Avant : streak:3 / weekNum:2 / progressPct:12 affichaient des stats bidon
+// sur le scoreboard Home (J=3) tant qu'aucune séance n'avait été faite.
+const user={name:'ATHLÈTE',email:'',program:'ELITE ATHLETE',programKey:'ea',programObj:'Explosivité globale',phase:1,weekNum:1,totalWeeks:20,progressPct:0,streak:0,athScore:null,vertJump:null,level:'Rookie',levelIcon:'🥉',satDone:false,sport:'Basket',age:22};
 
 
 // ═══ STUBS DE SÉCURITÉ ═══
@@ -16104,7 +16185,18 @@ function _bfDrawChart(data) {
   } catch(e) {}
   var tim_soundStyle = localStorage.getItem('tim_sound') || 'sport';
   var tim_mode = 'minuteur'; // Tabata retiré sur demande user — défaut Minuteur
-  var tim_T = { queue:[], idx:0, rem:0, total:0, running:false, iv:null, startMs:null, doneRounds:0, modeLabel:'', totalWorkPhases:0 };
+  // tim_T — état du timer Tabata/HIIT.
+  //   rem      : secondes restantes affichées (recalculées via endMs)
+  //   endMs    : Date.now() de la FIN de la phase courante. C'est la
+  //              source de vérité — quand l'onglet est en background,
+  //              setInterval ralentit (throttle navigateur), mais au
+  //              retour le tick suivant resynchronise immédiatement
+  //              via tim_resyncFromEndMs().
+  //   phaseDoneFlag : protège contre les doubles tim_endPhase() quand
+  //              la page revient au foreground après expiration.
+  var tim_T = { queue:[], idx:0, rem:0, total:0, running:false, iv:null,
+                startMs:null, endMs:null, doneRounds:0, modeLabel:'',
+                totalWorkPhases:0, phaseDoneFlag:false };
   var tim_savedLocal = [];
   var tim_unsub = null;
   var tim_toastT = null;
@@ -16540,7 +16632,13 @@ function _bfDrawChart(data) {
   });
 
   // ── MINUTEUR (compte à rebours simple — fonction principale) ──
-  var _tim_minut = { running:false, totalMs:0, remMs:0, startMs:0, iv:null };
+  // _tim_minut — minuteur (compte à rebours simple).
+  //   endMs    : Date.now() de fin réelle. Plus stable que (startMs + totalMs)
+  //              dans les cas de pause/reprise où on resette startMs.
+  //   finished*: garde-fous anti-doublon (1 son, 1 notif, 1 état "terminé").
+  var _tim_minut = { running:false, totalMs:0, remMs:0, startMs:0, endMs:null,
+                     iv:null, finishedFlag:false, soundPlayed:false,
+                     notifSent:false, lastBipSec:null };
   function _tim_minutFmt(ms){
     var totalS = Math.max(0, Math.ceil(ms/1000));
     var s = totalS % 60;
@@ -16803,18 +16901,31 @@ function _bfDrawChart(data) {
       _tim_minut.totalMs = secs * 1000;
       _tim_minut.remMs = _tim_minut.totalMs;
       _tim_minut.startMs = Date.now();
+      // endMs = source de vérité. Tous les recalculs (tick page, visibility
+      // resync, fin) le consomment. Plus de doute sur la durée réelle même
+      // si le compteur dérive en background.
+      _tim_minut.endMs = _tim_minut.startMs + _tim_minut.totalMs;
+      // Reset des garde-fous anti-doublon pour cette nouvelle session
+      _tim_minut.finishedFlag = false;
+      _tim_minut.soundPlayed = false;
+      _tim_minut.notifSent = false;
+      _tim_minut.lastBipSec = null;
       if (tim_audioCtx && tim_audioCtx.state === 'suspended') tim_audioCtx.resume(); tim_beepUnlock();
       _tim_minut.iv = setInterval(_tim_minutTick, 200);
       _tim_minut.running = true;
       var b = document.getElementById('timMinutBtn'); if (b) b.textContent = '⏸';
       _tim_minutRender();
       _tim_minutPersist();
-      tim_minutScheduleNotif(Date.now() + _tim_minut.totalMs);
-      // Warning persistant si pas de permission notif (le timer démarre quand
-      // même, mais l'user sait qu'il faut rester sur l'app).
+      tim_minutScheduleNotif(_tim_minut.endMs);
+      // Toast UX clair selon l'état des permissions notif. Pas de jargon
+      // technique — message court, sportif, mobile-first.
       try {
-        if (typeof Notification !== 'undefined' && Notification.permission !== 'granted') {
-          tim_toast('⚠️ Notifs OFF — reste sur l\'app pour entendre la sonnerie', 6000);
+        if (typeof Notification === 'undefined') {
+          tim_toast('Alertes arrière-plan indisponibles sur ce navigateur', 4000);
+        } else if (Notification.permission === 'granted') {
+          tim_toast('🔔 Alerte activée — tu seras prévenu même si tu quittes l\'app', 3500);
+        } else {
+          tim_toast('Alertes arrière-plan désactivées — garde l\'app ouverte ou active les notifications', 5000);
         }
       } catch(_) {}
     };
@@ -16830,27 +16941,46 @@ function _bfDrawChart(data) {
     _runStart();
   }
   function _tim_minutTick(){
-    _tim_minut.remMs = _tim_minut.totalMs - (Date.now() - _tim_minut.startMs);
-    // Bip d'urgence sur les 3 dernières secondes.
+    // Calcul direct depuis endMs (source de vérité), pas un compteur
+    // décrémenté. Si l'app était endormie/en background, le tick suivant
+    // récupère immédiatement le bon état (et déclenche la fin si dépassée).
+    if (_tim_minut.endMs == null) return;
+    _tim_minut.remMs = _tim_minut.endMs - Date.now();
     var sLeft = Math.ceil(_tim_minut.remMs / 1000);
     if (sLeft <= 3 && sLeft > 0 && _tim_minut.lastBipSec !== sLeft) {
       _tim_minut.lastBipSec = sLeft;
       if (typeof tim_sndUrgence === 'function') tim_sndUrgence();
     }
     if (_tim_minut.remMs <= 0) {
-      clearInterval(_tim_minut.iv);
-      _tim_minut.running = false;
-      _tim_minut.remMs = 0;
-      _tim_minut.totalMs = 0;
-      _tim_minutRender();
-      if (typeof tim_sndFinish === 'function') tim_sndFinish();
-      tim_toast('⏰ Temps écoulé !');
-      var b = document.getElementById('timMinutBtn'); if (b) b.textContent = '▶';
-      _tim_minutClearPersist();
+      _tim_minutFinish();
       return;
     }
     _tim_minutRender();
   }
+
+  // Point d'entrée UNIQUE de fin de minuteur. Garde-fous anti-doublon :
+  //   - finishedFlag : empêche tim_endPhase d'être ré-exécuté
+  //   - soundPlayed  : empêche un 2e tim_sndFinish (par ex. SW + visibility)
+  //   - notifSent    : empêche showNotification x2
+  function _tim_minutFinish(){
+    if (_tim_minut.finishedFlag) return;
+    _tim_minut.finishedFlag = true;
+    if (_tim_minut.iv) { clearInterval(_tim_minut.iv); _tim_minut.iv = null; }
+    _tim_minut.running = false;
+    _tim_minut.remMs = 0;
+    _tim_minut.totalMs = 0;
+    _tim_minut.endMs = null;
+    _tim_minutRender();
+    if (!_tim_minut.soundPlayed) {
+      _tim_minut.soundPlayed = true;
+      if (typeof tim_sndFinish === 'function') tim_sndFinish();
+    }
+    try { if (navigator.vibrate) navigator.vibrate([500, 200, 500]); } catch(_){}
+    tim_toast('⏰ Temps écoulé !');
+    var b = document.getElementById('timMinutBtn'); if (b) b.textContent = '▶';
+    _tim_minutClearPersist();
+  }
+  window._tim_minutFinish = _tim_minutFinish; // hook pour le visibility handler
   function tim_minutToggle(){
     if (_tim_minut.running) {
       // Pause
@@ -17183,6 +17313,14 @@ function _bfDrawChart(data) {
     screen.className = 'tim-timer-screen on ' + step.ph;
     var p = document.getElementById('timPhaseName'); if (p) p.textContent = step.lbl || '';
     var e = document.getElementById('timExName'); if (e) e.textContent = step.ex || '';
+    // ── Source de vérité absolue : endMs = Date.now() + durée × 1000.
+    // Tous les calculs `remaining` viennent désormais de endMs (pas d'un
+    // compteur décrémenté). Garantit que background/throttle/visibility
+    // n'altèrent pas la durée perçue.
+    tim_T.endMs = Date.now() + (step.dur || 0) * 1000;
+    tim_T.phaseDoneFlag = false;
+    tim_T.rem = step.dur || 0;
+    tim_T.total = step.dur || 0;
     var next = tim_T.queue[tim_T.idx + 1];
     var nL = document.getElementById('timNextLabel');
     var nT = document.getElementById('timNextTime');
@@ -17205,14 +17343,38 @@ function _bfDrawChart(data) {
     var t = document.getElementById('timTotalTime'); if (t) t.textContent = tim_fmtMSS(remaining);
   }
   function tim_tick(){
-    tim_T.rem--;
-    if (tim_T.rem <= 3 && tim_T.rem > 0) {
+    // Source de vérité : Date.now() vs endMs. PLUS de décrément basé sur
+    // le tick — quand le navigateur ralentit setInterval en background,
+    // ça ne change rien : le calcul direct récupère le bon état.
+    if (!tim_T.endMs) return;
+    var msLeft = tim_T.endMs - Date.now();
+    var newRem = Math.max(0, Math.ceil(msLeft / 1000));
+    // Détection de passage dans la zone urgence (3,2,1) — joué une seule
+    // fois par seconde (vs ancien qui jouait à chaque tick décrémenté).
+    if (newRem !== tim_T.rem && newRem <= 3 && newRem > 0) {
       tim_sndUrgence();
       var d = document.getElementById('timBigTime');
       if (d) { d.classList.add('pulse'); setTimeout(function(){ d.classList.remove('pulse'); }, 200); }
     }
-    if (tim_T.rem === 0) { tim_endPhase(); return; }
+    tim_T.rem = newRem;
+    if (msLeft <= 0) {
+      if (!tim_T.phaseDoneFlag) { tim_T.phaseDoneFlag = true; tim_endPhase(); }
+      return;
+    }
     tim_updateDisplay(tim_T.rem);
+  }
+  // Re-synchronise depuis endMs : utilisé par le Page Visibility handler
+  // au retour au foreground. Si l'utilisateur revient APRÈS la fin du
+  // timer, force tim_endPhase() (avec garde anti-doublon).
+  function tim_resyncFromEndMs(){
+    if (!tim_T.endMs || !tim_T.running) return;
+    var msLeft = tim_T.endMs - Date.now();
+    tim_T.rem = Math.max(0, Math.ceil(msLeft / 1000));
+    tim_updateDisplay(tim_T.rem);
+    if (msLeft <= 0 && !tim_T.phaseDoneFlag) {
+      tim_T.phaseDoneFlag = true;
+      tim_endPhase();
+    }
   }
   function tim_endPhase(){
     var cur = tim_T.queue[tim_T.idx];
@@ -17484,6 +17646,40 @@ function _bfDrawChart(data) {
     tim_savedLocal = arr;
     tim_renderSaved();
     tim_toast('Supprimée');
+  }
+
+  // ═══════════════════════════════════════════════════════════════════
+  // PAGE VISIBILITY — resync immédiat au retour foreground
+  // ───────────────────────────────────────────────────────────────────
+  // Quand l'utilisateur quitte l'app (Instagram, musique, écran verrouillé),
+  // le navigateur THROTTLE setInterval (1 tick toutes les minutes en
+  // background sur Chrome). Notre logique de fin de timer ne se déclenche
+  // donc PAS à l'heure. Au retour, on resync immédiatement depuis endMs.
+  //
+  // Les couches background (notif système SW + audio bg) restent les
+  // déclencheurs PRIMAIRES de l'alerte ; ce handler est la défense
+  // foreground (cas "retour rapide dans l'app", quelques secondes avant
+  // expiration, ou juste après).
+  function _tim_onVisibilityChange(){
+    if (document.visibilityState !== 'visible') return;
+    // 1) Minuteur en cours
+    try {
+      if (_tim_minut && _tim_minut.running && _tim_minut.endMs != null) {
+        var msLeft = _tim_minut.endMs - Date.now();
+        _tim_minut.remMs = Math.max(0, msLeft);
+        _tim_minutRender();
+        if (msLeft <= 0) _tim_minutFinish(); // garde-fou anti-doublon dans _tim_minutFinish
+      }
+    } catch(_){}
+    // 2) Tabata/HIIT en cours
+    try {
+      if (typeof tim_T !== 'undefined' && tim_T.running && tim_T.endMs) {
+        tim_resyncFromEndMs();
+      }
+    } catch(_){}
+  }
+  if (typeof document !== 'undefined') {
+    document.addEventListener('visibilitychange', _tim_onVisibilityChange);
   }
 
   // ── EXPOSE ──
@@ -18322,11 +18518,70 @@ window._trkClearExo = _trkClearExo;
 
 // Init de l'onglet Tracks : construit l'index de recherche et rend l'historique réel.
 function _trkInit() {
+  // ⚠ IMPORTANT : hydrate AVANT le render — sinon le Journal s'affiche
+  // vide même si des entrées existent en localStorage / Firestore.
+  try { _trkLoadHistory(); } catch(e) {}
   try { _trkBuildIndex(); } catch(e) {}
   try { _trkRenderHistory(); } catch(e) {}
   try { _trkRenderProgression(); } catch(e) {}
 }
 window._trkInit = _trkInit;
+
+// ─── Persistance dédiée du journal de tracking (Suivi > Exercices) ───
+// Bug remonté : entrées tracker qui disparaissent au reload de la PWA.
+// Cause : auparavant SEULE source = ah_v8 (saveData blob legacy), pas
+// inscrite dans FB_SYNC_KEYS → aucune sync Firestore, et risque
+// d'écrasement quand _fbApplyPayload restore le profil.
+// Fix : clé dédiée ah_track_history ajoutée à FB_SYNC_KEYS. Le journal
+// est désormais relu au boot via _trkLoadHistory et re-sauvé à chaque
+// entrée via _trkPersistHistory (+ sync Firestore via fbSaveProfile).
+function _trkPersistHistory() {
+  try {
+    var arr = Array.isArray(window.trackHistory) ? window.trackHistory : [];
+    // Borne raisonnable : 1000 entrées max (≈ 2 ans à 1 entrée/jour).
+    if (arr.length > 1000) arr = arr.slice(-1000);
+    localStorage.setItem('ah_track_history', JSON.stringify(arr));
+    window.trackHistory = arr;
+  } catch(e) { console.warn('[trk] persist:', e); }
+  // Sync cloud (Firestore via FB_SYNC_KEYS — clé trackHistory)
+  try { if (typeof fbSaveProfile === 'function') fbSaveProfile(); } catch(e) {}
+}
+window._trkPersistHistory = _trkPersistHistory;
+
+function _trkLoadHistory() {
+  // Sources possibles, dans l'ordre de priorité :
+  // 1. ah_track_history (clé dédiée, sync Firestore via FB_SYNC_KEYS)
+  // 2. window.trackHistory déjà hydraté par _fbApplyPayload (boot Firebase)
+  // 3. ah_v8.trackHistory (legacy saveData, fallback)
+  // On garde la plus LONGUE des sources pour ne perdre aucune entrée
+  // (anti-régression : un user qui a tracké AVANT cette correction a son
+  //  historique uniquement dans ah_v8).
+  var srcs = [];
+  try {
+    var dedi = JSON.parse(localStorage.getItem('ah_track_history') || '[]');
+    if (Array.isArray(dedi)) srcs.push({ from: 'dedi', arr: dedi });
+  } catch(e) {}
+  try {
+    if (Array.isArray(window.trackHistory) && window.trackHistory.length) {
+      srcs.push({ from: 'mem', arr: window.trackHistory.slice() });
+    }
+  } catch(e) {}
+  try {
+    var legacy = JSON.parse(localStorage.getItem('ah_v8') || '{}');
+    if (legacy && Array.isArray(legacy.trackHistory)) {
+      srcs.push({ from: 'v8', arr: legacy.trackHistory });
+    }
+  } catch(e) {}
+  if (!srcs.length) { window.trackHistory = []; return; }
+  // Choisit la source la plus pleine
+  srcs.sort(function(a, b) { return b.arr.length - a.arr.length; });
+  window.trackHistory = srcs[0].arr;
+  // Si la source gagnante n'était PAS la clé dédiée, on migre.
+  if (srcs[0].from !== 'dedi') {
+    try { localStorage.setItem('ah_track_history', JSON.stringify(window.trackHistory)); } catch(e) {}
+  }
+}
+window._trkLoadHistory = _trkLoadHistory;
 
 // Change la méthode de tracking et reconstruit les essais.
 function setTrackMethod(method, btn) {
@@ -18715,25 +18970,66 @@ function saveTrack() {
   var sel = document.getElementById('trackExSelect');
   var exoName = sel && sel.value;
   if (!exoName) {
-    if (!window.TEST_MODE) { alert('Choisis un exercice d\'abord.'); return; }
+    if (!window.TEST_MODE) {
+      if (typeof showToast === 'function') showToast('Choisis un exercice d\'abord.', 'err');
+      else alert('Choisis un exercice d\'abord.');
+      return;
+    }
   }
   if (!_trkMethod) _trkMethod = 'charge';
   var essais = _collectEssais();
-  if (!essais.length && !window.TEST_MODE) { alert('Renseigne au moins un essai.'); return; }
+  if (!essais.length && !window.TEST_MODE) {
+    if (typeof showToast === 'function') showToast('Renseigne au moins un essai avant d\'enregistrer.', 'err');
+    else alert('Renseigne au moins un essai.');
+    return;
+  }
   var best = _trkBestOfEssais(_trkMethod, essais);
 
-  // Persiste dans window.trackHistory (sauvegardé via saveData → ah_v8 blob).
+  // Construit une entrée de journal STRUCTURÉE + rétro-compat avec l'ancien
+  // schéma (exo/method/essais/best). userId + source = traçabilité pour
+  // Titan/SAV. createdAt en epoch pour tri rapide ; date ISO pour lisibilité.
   try {
+    var nowIso = new Date().toISOString();
+    var nowMs = Date.now();
+    var uid = '';
+    try { uid = (window.fbUser && window.fbUser.uid) || ''; } catch(_){}
+    // Méthode normalisée pour la sortie structurée
+    var trackingMethodMap = {
+      charge:        'charge_reps',
+      reps:          'reps_only',
+      temps:         'temps',
+      distance:      'distance',
+      hauteur:       'hauteur_reps'
+    };
+    var values = {};
+    var firstEssai = essais[0] || {};
+    if (_trkMethod === 'charge')   { values.charge = firstEssai.charge; values.reps = firstEssai.reps; }
+    if (_trkMethod === 'reps')     { values.reps = firstEssai.reps; }
+    if (_trkMethod === 'temps')    { values.temps = firstEssai.temps; }
+    if (_trkMethod === 'distance') { values.distance = firstEssai.distance; }
+    if (_trkMethod === 'hauteur')  { values.hauteur = firstEssai.hauteur; values.reps = firstEssai.reps; }
+
     var entry = {
-      date: new Date().toISOString(),
-      exo: exoName || '',
-      method: _trkMethod,
-      essais: essais,
-      rpe: (typeof currentRPE === 'number' ? currentRPE : 0),
-      best: best
+      // ── Forme structurée (brief client) ──
+      userId:         uid,
+      exerciseName:   exoName || '',
+      trackingMethod: trackingMethodMap[_trkMethod] || _trkMethod,
+      values:         values,
+      rpe:            (typeof currentRPE === 'number' ? currentRPE : 0),
+      date:           nowIso.slice(0, 10),    // YYYY-MM-DD
+      createdAt:      nowMs,
+      source:         'exercise_tracker',
+      // ── Rétro-compat avec _trkRenderHistory + ProgressionDelta + statistiques ──
+      exo:            exoName || '',
+      method:         _trkMethod,
+      essais:         essais,
+      best:           best
     };
     if (!Array.isArray(window.trackHistory)) window.trackHistory = [];
     window.trackHistory.push(entry);
+    // Persistance UNIFIÉE : ah_track_history (sync Firestore) + ah_v8
+    // (compat legacy saveData). La clé dédiée a maintenant priorité au boot.
+    _trkPersistHistory();
     if (typeof saveData === 'function') saveData();
   } catch(e) { console.warn('saveTrack persist:', e); }
 
@@ -20718,7 +21014,12 @@ var _LIB_CHIP_GROUPS = {
   mobi:    { keys:['mobi','proprio'],           label:'Mobilité' },
   vitesse: { keys:['sprint','pied'],            label:'Vitesse' },
   core:    { keys:['gainage','rotation'],       label:'Core' },
-  recup:   { keys:['recup'],                    label:'Récupération' }
+  recup:   { keys:['recup'],                    label:'Récupération' },
+  // Filtre transverse "Sans matériel" — pas une catégorie de catData,
+  // mais un meta-filtre qui croise toutes les catégories pour ne retenir
+  // que les exos avec mat === 'Aucun' ou champ absent. Géré dans
+  // _libFlatExos comme cas particulier.
+  nomat:   { keys:[],                            label:'Sans matériel', virtual:true }
 };
 
 // ── Librairie V2 : sélection "Ma séance" — exos ajoutés depuis la librairie.
@@ -20970,6 +21271,21 @@ function _libFlatExos(filterKey) {
       var sel = _libSelGet();
       result = result.filter(function(it){ return sel.indexOf(it.ex.name) > -1; });
     }
+  } else if (filterKey === 'nomat') {
+    // Filtre transverse "Sans matériel" — toutes les catégories, mais
+    // uniquement les exos qui n'ont pas besoin de matériel.
+    Object.keys(_LIB_CAT_MAP).forEach(function (ck) {
+      var cfg = _LIB_CAT_MAP[ck];
+      cfg.keys.forEach(function (dk) {
+        (catData[dk] || []).forEach(function (ex) {
+          var m = (ex.mat || '').trim();
+          if (!m || m === 'Aucun') {
+            result.push({ ex: ex, catKey: ck, catLabel: cfg.label, color: cfg.color });
+          }
+        });
+      });
+    });
+    return result;
   } else if (typeof _LIB_CHIP_GROUPS !== 'undefined' && _LIB_CHIP_GROUPS[filterKey]) {
     // Chip famille (Librairie V2) : agrège plusieurs catégories catData
     var grp = _LIB_CHIP_GROUPS[filterKey];
@@ -20999,47 +21315,62 @@ function _libFlatExos(filterKey) {
 // grandes vidéos vivent dans la fiche détail.
 function _libCardHtml(it) {
   var ex = it.ex;
-  var dl = ex.diff==='easy'?'Débutant':ex.diff==='med'?'Intermédiaire':'Avancé';
+  var dl = ex.diff === 'easy' ? 'Débutant' : ex.diff === 'med' ? 'Intermédiaire' : 'Avancé';
   var mat = ex.mat && ex.mat !== 'Aucun' ? ex.mat : 'Sans matériel';
-  var dur = ex.tag || '';
-  var nm = ex.name.replace(/'/g,"\\'").replace(/"/g,'&quot;');
+  var nm = ex.name.replace(/'/g, "\\'").replace(/"/g, '&quot;');
   var enc = encodeURIComponent(ex.name);
   var ytId = ex.video || _LIB_VIDEO_MAP[ex.name] || null;
-  // Thumbs : vraie miniature si vidéo associée, sinon placeholder navy sobre
-  // (plus de gradient catégorie orange/feu — feedback client). La couleur de
-  // la catégorie reste visible via le chip "Échauffement / Force / Plyo..."
-  // de la fiche détail.
+  // Thumb : YouTube mq si dispo, sinon placeholder navy sobre.
   var thumbCls = ytId ? 'libx-thumb' : 'libx-thumb libx-thumb-empty';
   var thumbStyle = ytId
     ? ' style="background-image:url(https://i.ytimg.com/vi/' + ytId + '/mqdefault.jpg)"'
     : '';
   var open = '_libOpenDetail(\'' + nm + '\',\'' + it.catKey + '\')';
   var added = _libIsAdded(ex.name);
-  // "+ Ajouter" affiché UNIQUEMENT en mode "construction de séance" :
-  //   - body.ah-lib-build (le sheet "Ma séance" est ouvert)
-  //   - OU une séance est en cours de construction (>=1 exo déjà ajouté)
-  // Sinon : carte minimaliste "Voir" uniquement, ajout via la fiche détail.
   var buildMode = _libInBuildMode();
+
+  // Meta sur UNE seule ligne (Cat · Niveau · Matériel) — pas de répétition
+  // (le filtre actif affiche déjà la catégorie en chip ; ici on garde une
+  // ligne info compacte, lisible d'un coup d'œil).
+  var metaLine = it.catLabel + ' · '
+    + '<span class="libx-diff ' + ex.diff + '">' + dl + '</span>'
+    + ' · ' + mat;
+
+  // Tap CARD = ouvre la fiche détail. Tap ICÔNE PLAY = ouvre uniquement
+  // la vidéo via la fiche détail puis _libPlayVideo (stopPropagation).
+  // Le client veut "un bouton discret 'Voir démo' ou une icône play" :
+  // le play sur la thumb fait office de bouton démo.
   var h = '';
   h += '<div class="libx-card" data-exo="' + enc + '" onclick="' + open + '">';
-  h +=   '<div class="' + thumbCls + '"' + thumbStyle + '>';
+  h +=   '<div class="' + thumbCls + '"' + thumbStyle + ' onclick="event.stopPropagation();window._libQuickDemo&&window._libQuickDemo(\'' + nm + '\',\'' + it.catKey + '\')" aria-label="Voir la démo">';
   h +=     '<div class="libx-thumb-play"><div class="libx-thumb-tri"></div></div>';
   h +=   '</div>';
   h +=   '<div class="libx-body">';
   h +=     '<div class="libx-name">' + ex.name + '</div>';
-  h +=     '<div class="libx-meta"><span class="libx-diff ' + ex.diff + '">' + dl + '</span> · ' + it.catLabel + '</div>';
-  h +=     '<div class="libx-meta">' + (dur ? dur + ' · ' : '') + mat + '</div>';
+  h +=     '<div class="libx-meta libx-meta-single">' + metaLine + '</div>';
   h +=   '</div>';
-  // Actions : "Voir" toujours, "+ Ajouter" seulement en build mode.
-  h +=   '<div class="libx-actions" onclick="event.stopPropagation()">';
-  h +=     '<button type="button" class="libx-see" onclick="' + open + '">Voir</button>';
+  // "+ Ajouter" affiché UNIQUEMENT en mode construction (≥1 exo dans la
+  // séance) — sinon la lib reste 100% catalogue, l'ajout passe par la
+  // fiche détail. Le bouton "Voir" textuel est supprimé : l'icône play
+  // sur la thumb le remplace.
   if (buildMode) {
-    h +=   '<button type="button" class="libx-add' + (added ? ' added' : '') + '" onclick="window._libToggleAdd(decodeURIComponent(\'' + enc + '\'))">' + (added ? '✓ Ajouté' : '+ Ajouter') + '</button>';
+    h += '<button type="button" class="libx-add' + (added ? ' added' : '') + '" onclick="event.stopPropagation();window._libToggleAdd(decodeURIComponent(\'' + enc + '\'))">' + (added ? '✓' : '+') + '</button>';
   }
-  h +=   '</div>';
   h += '</div>';
   return h;
 }
+
+// Quick demo : ouvre la fiche détail puis lance la vidéo immédiatement.
+// Évite à l'utilisateur de devoir tap 2 fois (carte → fiche → bouton vidéo)
+// quand il veut juste voir le mouvement.
+window._libQuickDemo = function (name, catKey) {
+  try {
+    _libOpenDetail(name, catKey);
+    setTimeout(function () {
+      try { if (typeof _libPlayVideo === 'function') _libPlayVideo(); } catch(_) {}
+    }, 80);
+  } catch(_) {}
+};
 
 // Mode "construction de séance" : l'utilisateur est explicitement en train de
 // composer sa séance perso (>=1 exo déjà ajouté). Active l'affichage des
@@ -21214,19 +21545,31 @@ function _libOpenDetail(name, catKey) {
   }
   _libFillOpt('ytDetailConsignes', 'ytDetailConsignesTxt', ex.consignes);
   _libFillOpt('ytDetailErreurs', 'ytDetailErreursTxt', ex.erreurs);
-  // État du bouton "+ Ajouter à ma séance"
+  // État + visibilité du bouton "+ Ajouter à ma séance".
+  // Visible UNIQUEMENT si une construction de séance est déjà en cours
+  // (≥ 1 exo dans _libSelGet()) — sinon la Librairie reste un catalogue
+  // de consultation sans pousser l'utilisateur vers le Builder.
   var addBtn = document.getElementById('ytDetailAddBtn');
   if (addBtn) {
     var isAdded = _libIsAdded(ex.name);
-    addBtn.textContent = isAdded ? '✓ Dans ma séance' : '+ Ajouter à ma séance';
-    addBtn.style.opacity = isAdded ? '.75' : '';
+    var inBuildMode = (typeof _libSelGet === 'function' && _libSelGet().length > 0) || isAdded;
+    if (inBuildMode) {
+      addBtn.style.display = '';
+      addBtn.textContent = isAdded ? '✓ Dans ma séance' : '+ Ajouter à ma séance';
+      addBtn.style.opacity = isAdded ? '.75' : '';
+    } else {
+      addBtn.style.display = 'none';
+    }
   }
   // Video : priorité ex.video (futur champ inline) puis _LIB_VIDEO_MAP[name]
   _libCurrentVideo = ex.video || _LIB_VIDEO_MAP[ex.name] || null;
   var placeholder = document.getElementById('ytDetailPlaceholder');
   placeholder.style.display = 'flex';
-  // Adapte le placeholder selon disponibilité de la vidéo. Quand pas de vidéo,
-  // on indique clairement "à venir" et on propose une recherche YouTube en fallback.
+  // Adapte le placeholder selon disponibilité de la vidéo. Quand pas de vidéo
+  // démo, on affiche un placeholder PREMIUM (navy + filigrane gold + icône
+  // play discrète) — pas le 🎬 orange agressif d'avant. Le lien "Chercher
+  // sur YouTube" devient un lien texte secondaire très discret (pour ne pas
+  // pousser l'user hors de l'app par défaut).
   if (_libCurrentVideo) {
     placeholder.innerHTML =
       '<div class="yt-detail-play"><div class="yt-detail-play-tri"></div></div>' +
@@ -21236,9 +21579,13 @@ function _libOpenDetail(name, catKey) {
   } else {
     var q = encodeURIComponent(ex.name + ' technique tutoriel');
     placeholder.innerHTML =
-      '<div style="font-size:36px;opacity:.5">🎬</div>' +
-      '<div style="font-size:10px;color:rgba(255,255,255,.45);letter-spacing:1px;text-transform:uppercase;margin-top:6px">Vidéo de démo à venir</div>' +
-      '<a href="https://www.youtube.com/results?search_query=' + q + '" target="_blank" rel="noopener" style="margin-top:8px;font-size:10px;color:rgba(255,255,255,.7);text-decoration:underline;letter-spacing:.5px" onclick="event.stopPropagation()">Chercher sur YouTube ↗</a>';
+        '<div class="yt-empty-pill">'
+      +   '<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="#C5A44E" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">'
+      +     '<rect x="3" y="6" width="13" height="12" rx="2"/><polygon points="16 9 22 6 22 18 16 15" fill="rgba(197,164,78,.18)" stroke="#C5A44E"/>'
+      +   '</svg>'
+      + '</div>'
+      + '<div style="font-family:\'JetBrains Mono\',monospace;font-size:10px;color:rgba(255,255,255,.55);letter-spacing:.20em;text-transform:uppercase;margin-top:10px;font-weight:700">Vidéo démo à venir</div>'
+      + '<a href="https://www.youtube.com/results?search_query=' + q + '" target="_blank" rel="noopener" style="margin-top:14px;font-size:10px;color:rgba(255,255,255,.40);letter-spacing:.04em;text-decoration:underline;text-underline-offset:3px" onclick="event.stopPropagation()">Chercher sur YouTube</a>';
     placeholder.style.cursor = 'default';
     placeholder.onclick = null;
   }
@@ -21753,13 +22100,16 @@ function exitLiveV2(finished) {
         + '<div class="sum-body"><div class="sum-name">' + d.name + '</div>'
         + '<div class="sum-data">' + (d.reps !== '—' ? d.reps : 'Terminé') + '</div></div></div>';
     });
-    // Badge hooks : count completed session
+    // Complétion centralisée — passe par le même helper que _lsFinalizeSession
+    // pour que sessionsDone / streak / phasesDone / programsDone soient
+    // bumpés à la même règle quel que soit le chemin de fin de séance.
     try {
-      _bumpProfileCounter('sessionsDone', 1);
-      var hist = JSON.parse(localStorage.getItem('ah_set_history') || '[]');
-      hist.push({ type:'session', sessName: lv2State.sessName || 'Séance', date: new Date().toISOString() });
-      localStorage.setItem('ah_set_history', JSON.stringify(hist));
-      renderBadges();
+      _recordSessionCompletion({
+        progKey:  (lv2State.prog && lv2State.prog.key) || lv2State.programKey || '',
+        sessKey:  '',
+        progName: (lv2State.prog && lv2State.prog.name) || '',
+        sessName: lv2State.sessName || 'Séance'
+      });
     } catch(e) {}
   } else {
     document.getElementById('liveStart').classList.remove('hidden');
@@ -22548,16 +22898,45 @@ window._trkVoiceMultiRel = function(btn, parentSel, fieldsCfg, exoId, exoName, c
 // sur history.back().
 // ═══════════════════════════════════════
 (function initEdgeBackSwipe(){
-  var START_EDGE = 45;        // tolérant : Android consomme parfois les 20-25px du bord
-  var H_THRESHOLD = 50;       // moins d'engagement requis
-  var ANGLE_RATIO = 1.2;      // plus permissif sur l'angle (geste plus naturel)
-  var MAX_DURATION = 1000;    // 1s plein pour le geste
+  // Brief client : geste mobile universel "swipe vers la droite = retour".
+  // Seuils alignés sur le brief : ≥ 70 px horizontal, ≤ 50 px vertical.
+  // Démarrage depuis le bord gauche pour ne pas entrer en conflit avec les
+  // scrollers horizontaux (filtres librairie, day strip, etc.).
+  var START_EDGE = 50;        // bord gauche, tolérant pour Android
+  var H_THRESHOLD = 70;       // brief : 70 px minimum
+  var V_MAX = 50;             // brief : 50 px max vertical
+  var MAX_DURATION = 900;     // ≤ 0,9 s — geste vif typique mobile
   var ex = 0, ey = 0, eT = 0, tracking = false;
 
   function isVisible(el){
     if (!el) return false;
     var st = getComputedStyle(el);
     return st.display !== 'none' && st.visibility !== 'hidden';
+  }
+
+  // Détecte si l'utilisateur est en train de saisir du texte → on ignore
+  // le swipe (brief : "ne pas déclencher pendant écriture").
+  function _swIsTypingTarget(el) {
+    if (!el) return false;
+    var tag = (el.tagName || '').toLowerCase();
+    if (tag === 'input' || tag === 'textarea' || tag === 'select') return true;
+    if (el.isContentEditable) return true;
+    return false;
+  }
+  // Détecte si la cible est dans un scroller horizontal ou un slider/range
+  // (filtres library, day strip, range, etc.) → on ignore.
+  function _swInHorizontalContext(el) {
+    if (!el) return false;
+    if ((el.type || '').toLowerCase() === 'range') return true;
+    var n = el;
+    for (var hop = 0; hop < 8 && n && n.nodeType === 1; hop++) {
+      var st = getComputedStyle(n);
+      var ox = st.overflowX;
+      if ((ox === 'auto' || ox === 'scroll') && n.scrollWidth > n.clientWidth + 4) return true;
+      if (n.classList && (n.classList.contains('lv2-swipe') || n.classList.contains('lib-filters') || n.classList.contains('chips'))) return true;
+      n = n.parentElement;
+    }
+    return false;
   }
 
   // Tente de fermer la modale/overlay la plus haute. True si quelque chose
@@ -22623,10 +23002,27 @@ window._trkVoiceMultiRel = function(btn, parentSel, fieldsCfg, exoId, exoName, c
       // Sinon on ne ferme pas (l'user doit valider sa séance — règle métier)
       return false;
     }
-    // 10) Live session — on ne ferme PAS par swipe (training en cours), c'est trop
-    //     risqué. L'user doit cliquer "← Quitter" explicitement.
+    // 10) Live session — ferme comme le bouton ✕ du header. Le client a
+    //     demandé explicitement ce comportement (auparavant on refusait
+    //     pour éviter un "quit accidentel", mais en pratique l'absence
+    //     de swipe casse l'UX mobile native).
     el = document.getElementById('liveSession');
-    if (el && el.classList.contains('ls-open')) return false;
+    if (el && el.classList.contains('ls-open')) {
+      try {
+        if (typeof window._lsClose === 'function') window._lsClose();
+        else el.classList.remove('ls-open');
+      } catch(_){ el.classList.remove('ls-open'); }
+      return true;
+    }
+    // 10b) Fiche détail librairie ouverte (yt-detail-view) → retour à la liste
+    el = document.getElementById('libDetailView');
+    if (el && isVisible(el) && el.style.display !== 'none') {
+      try {
+        if (typeof window._libCloseDetail === 'function') window._libCloseDetail();
+        else el.style.display = 'none';
+      } catch(_){ el.style.display = 'none'; }
+      return true;
+    }
     // 11) SAT step > 0 → previous step
     try {
       if (typeof window.prevSATStep === 'function' && document.querySelector('#vTracks.view.on') && document.querySelector('#satForm .ah-progress')) {
@@ -22658,7 +23054,14 @@ window._trkVoiceMultiRel = function(btn, parentSel, fieldsCfg, exoId, exoName, c
   function onStart(e){
     if (!e.touches || e.touches.length !== 1) { tracking = false; return; }
     var t = e.touches[0];
+    // Brief : démarrage depuis le bord gauche (Android consomme parfois
+    // les 20-25 premiers px, donc 50 est tolérant sans piéger les scrollers).
     if (t.clientX > START_EDGE) { tracking = false; return; }
+    // Brief : ne pas déclencher pendant écriture / interaction horizontale.
+    var ae = document.activeElement;
+    if (_swIsTypingTarget(ae)) { tracking = false; return; }
+    if (_swIsTypingTarget(e.target)) { tracking = false; return; }
+    if (_swInHorizontalContext(e.target)) { tracking = false; return; }
     tracking = true;
     ex = t.clientX; ey = t.clientY; eT = Date.now();
   }
@@ -22670,8 +23073,9 @@ window._trkVoiceMultiRel = function(btn, parentSel, fieldsCfg, exoId, exoName, c
     var dx = t.clientX - ex;
     var dy = t.clientY - ey;
     var dt = Date.now() - eT;
+    // Seuils brief client : H ≥ 70 px, |V| ≤ 50 px, durée ≤ 0,9 s
     if (dx < H_THRESHOLD) return;
-    if (dx < Math.abs(dy) * ANGLE_RATIO) return;
+    if (Math.abs(dy) > V_MAX) return;
     if (dt > MAX_DURATION) return;
     // 1) Essaie d'abord de fermer un overlay/modale visible (tryGoBack).
     // 2) Sinon : history.back() — notre handler popstate restaurera l'écran
@@ -25341,40 +25745,52 @@ function renderTrialBanner() {
 window.renderTrialBanner = renderTrialBanner;
 
 // ═══ BADGES (logique d'unlock) ═══
+// Liste resserrée à 9 badges, chacun adossé à un compteur réel et incrémenté
+// quelque part dans le code (cf. tableau de hooks ci-dessous). On a viré
+// PR Hunter (pas de tracking PR), Zen Master (pas de protocole Flow câblé)
+// et Légende (doublon strict de Builder, même condition programsDone>=2).
+//
+//   sessionsDone  → _lsShowComplete (line ~34207) + lsClose V2 (line ~22128)
+//   trackEntries  → ah_set_history filter (toute entrée typée track/exo)
+//   satDone       → calculateSAT() / profil3 finish
+//   streak        → _bumpSessionStreak() appelé dans _lsFinalizeSession
+//   phasesDone    → _advanceProgramProgress() quand phaseIdx avance
+//   programsDone  → _checkProgramCompletion() (line ~33870)
+//   athScore      → calculateSAT() (valeur réelle calculée)
 var BADGES_DEF = [
   { id:'firstStep',  icon:'🔥', name:'Premier Pas',  desc:'1ère séance terminée',     check: function(s){ return (s.sessionsDone||0) >= 1; } },
   { id:'dataDriven', icon:'📊', name:'Data Driven',  desc:'1er exercice tracké',      check: function(s){ return (s.trackEntries||0) >= 1; } },
   { id:'tester',     icon:'🏆', name:'Testeur',      desc:'SAT complété',             check: function(s){ return !!s.satDone; } },
   { id:'streak7',    icon:'⚡', name:'Streak 7',     desc:'7 jours consécutifs',      check: function(s){ return (s.streak||0) >= 7; } },
   { id:'streak30',   icon:'🦅', name:'Streak 30',    desc:'30 jours consécutifs',     check: function(s){ return (s.streak||0) >= 30; } },
-  { id:'phase1',     icon:'💪', name:'Phase 1',      desc:'Fondations terminées',     check: function(s){ return (s.phasesDone||0) >= 1; } },
+  { id:'phase1',     icon:'💪', name:'Phase 1',      desc:'1ère phase terminée',      check: function(s){ return (s.phasesDone||0) >= 1; } },
   { id:'prog1',      icon:'🏀', name:'Programme 1',  desc:'1er programme fini',       check: function(s){ return (s.programsDone||0) >= 1; } },
   { id:'builder',    icon:'🛠️', name:'Builder',      desc:'Workout Builder débloqué', check: function(s){ return (s.programsDone||0) >= 2; } },
   { id:'surhumain',  icon:'🔱', name:'Surhumain',    desc:'Score 91+/100',            check: function(s){ return (s.athScore||0) >= 91; } },
-  { id:'prHunter',   icon:'📈', name:'PR Hunter',    desc:'5 records personnels',     check: function(s){ return (s.prs||0) >= 5; } },
-  { id:'zenMaster',  icon:'🧘', name:'Zen Master',   desc:'Protocole Flow 10 fois',   check: function(s){ return (s.flowDone||0) >= 10; } },
-  { id:'legende',    icon:'👑', name:'Légende',      desc:'2 programmes terminés',    check: function(s){ return (s.programsDone||0) >= 2; } },
 ];
 
 function _badgeState() {
   var profile = {};
   try { profile = JSON.parse(localStorage.getItem('ah_profile') || '{}'); } catch(e) {}
+  // Fallbacks STRICTS (anti-faux positif) : on ne compte que les entrées
+  // explicitement typées. Avant : "h.sessName" matchait des entrées SET
+  // legacy et gonflait sessionsDone tant que profile.sessionsDone n'avait
+  // pas été initialisé par _bumpProfileCounter.
   var hist = [];
   try { hist = JSON.parse(localStorage.getItem('ah_set_history') || '[]'); } catch(e) {}
-  // Count unique session-completion events
-  var sessionsDone = hist.filter(function(h){ return h.type === 'session' || h.sessName; }).length;
-  // Count tracked entries (SET history, SAT, set history)
-  var trackEntries = hist.filter(function(h){ return h.exo || h.type === 'track'; }).length;
+  var trackHist = [];
+  try { trackHist = JSON.parse(localStorage.getItem('ah_track_history') || '[]'); } catch(e) {}
+  var sessionsDoneFallback = hist.filter(function(h){ return h && h.type === 'session'; }).length;
+  var trackEntriesFallback = trackHist.length
+    || hist.filter(function(h){ return h && h.type === 'track'; }).length;
   return {
-    sessionsDone: profile.sessionsDone != null ? profile.sessionsDone : sessionsDone,
-    trackEntries: profile.trackEntries != null ? profile.trackEntries : trackEntries,
+    sessionsDone: profile.sessionsDone != null ? profile.sessionsDone : sessionsDoneFallback,
+    trackEntries: profile.trackEntries != null ? profile.trackEntries : trackEntriesFallback,
     satDone:      !!(profile.satDone || (typeof user !== 'undefined' && user.satDone)),
-    streak:       profile.streak || (typeof user !== 'undefined' ? user.streak : 0) || 0,
+    streak:       profile.streak || 0,
     phasesDone:   profile.phasesDone || 0,
     programsDone: profile.programsDone || 0,
     athScore:     profile.athScore || (typeof user !== 'undefined' ? user.athScore : 0) || 0,
-    prs:          profile.prs || 0,
-    flowDone:     profile.flowDone || 0,
   };
 }
 
@@ -25396,8 +25812,15 @@ function renderBadges() {
   grid.innerHTML = html;
   var cnt = document.getElementById('badgesCount');
   if (cnt) cnt.textContent = earnedCount + ' / ' + BADGES_DEF.length;
-  var psBadges = document.getElementById('psBadges');
-  if (psBadges) psBadges.textContent = earnedCount;
+  // Stats du header Profil (Moi) — données réelles, plus de placeholders.
+  var psBadges  = document.getElementById('psBadges');
+  var psScore   = document.getElementById('psScore');
+  var psStreak  = document.getElementById('psStreak');
+  var psSessions= document.getElementById('psSessions');
+  if (psBadges)   psBadges.textContent   = earnedCount;
+  if (psScore)    psScore.textContent    = s.athScore     > 0 ? s.athScore     : '—';
+  if (psStreak)   psStreak.textContent   = s.streak       > 0 ? s.streak       : '—';
+  if (psSessions) psSessions.textContent = s.sessionsDone > 0 ? s.sessionsDone : '—';
 
   // Trigger badge-earned celebration if any new ones were unlocked since last render
   try {
@@ -25420,6 +25843,69 @@ function _bumpProfileCounter(key, delta) {
   try {
     var profile = JSON.parse(localStorage.getItem('ah_profile') || '{}');
     profile[key] = (profile[key] || 0) + (delta || 1);
+    localStorage.setItem('ah_profile', JSON.stringify(profile));
+    try { if (typeof fbSaveProfile === 'function') fbSaveProfile(); } catch(e) {}
+  } catch(e) {}
+}
+
+// Helper UNIQUE de complétion de séance — appelé par les DEUX chemins de
+// fin de séance (_lsFinalizeSession pour le live moderne, exitLiveV2 pour
+// le mode coaché GBG legacy). Garantit que sessionsDone / streak / history
+// / phasesDone / programsDone sont incrémentés à la même règle partout.
+//
+// opts = { progKey?, sessKey?, sessName?, progName?, feedback?, builder? }
+function _recordSessionCompletion(opts) {
+  opts = opts || {};
+  try {
+    _bumpProfileCounter('sessionsDone', 1);
+    _bumpSessionStreak();
+    var hist = JSON.parse(localStorage.getItem('ah_set_history') || '[]');
+    var entry = {
+      type:    'session',
+      progKey: opts.progKey || '',
+      sessKey: opts.sessKey || '',
+      progName: opts.progName || '',
+      sessName: opts.sessName || 'Séance',
+      date:    new Date().toISOString()
+    };
+    if (opts.feedback) entry.sessionEndFeedback = opts.feedback;
+    if (opts.builder)  entry.builder = true;
+    hist.push(entry);
+    localStorage.setItem('ah_set_history', JSON.stringify(hist));
+    if (typeof renderBadges === 'function') renderBadges();
+    // Avance phase/programme uniquement si on a les clés (chemin V1 legacy
+    // n'en a pas → ces compteurs n'avancent que via le chemin programmé).
+    var weekDone = false, programDone = false;
+    if (opts.progKey && opts.sessKey) {
+      try { weekDone = _advanceProgramProgress(opts.progKey, opts.sessKey); } catch(e) {}
+    }
+    if (opts.progKey && typeof _checkProgramCompletion === 'function') {
+      try { programDone = !!_checkProgramCompletion(opts.progKey); } catch(e) {}
+    }
+    return { weekDone: weekDone, programDone: programDone };
+  } catch(e) { console.warn('_recordSessionCompletion error', e); return { weekDone: false, programDone: false }; }
+}
+
+// Met à jour profile.streak (jours consécutifs avec ≥ 1 séance terminée).
+// Règle : J = J-1 → streak+1 ; même jour → no-op ; gap > 1 jour → reset à 1.
+// Appelé depuis _recordSessionCompletion uniquement.
+function _bumpSessionStreak() {
+  try {
+    var profile = JSON.parse(localStorage.getItem('ah_profile') || '{}');
+    var todayKey = new Date().toISOString().slice(0, 10);
+    var lastKey  = profile.lastSessionDay || null;
+    if (lastKey === todayKey) return; // déjà une séance aujourd'hui
+    var streak = profile.streak || 0;
+    if (lastKey) {
+      var lastTs  = new Date(lastKey + 'T00:00:00Z').getTime();
+      var todayTs = new Date(todayKey + 'T00:00:00Z').getTime();
+      var dayGap  = Math.round((todayTs - lastTs) / 86400000);
+      streak = (dayGap === 1) ? streak + 1 : 1; // 1 = aujourd'hui compte
+    } else {
+      streak = 1;
+    }
+    profile.streak = streak;
+    profile.lastSessionDay = todayKey;
     localStorage.setItem('ah_profile', JSON.stringify(profile));
     try { if (typeof fbSaveProfile === 'function') fbSaveProfile(); } catch(e) {}
   } catch(e) {}
@@ -25776,54 +26262,91 @@ window.validateMealPlan = validateMealPlan;
 // `usedKeys` (optional) : keys déjà utilisées cette semaine, déprioriser.
 // `todayKeys` (optional) : keys déjà servies AUJOURD'HUI — interdit strict
 // (sauf si le pool entier est déjà passé aujourd'hui, cas pathologique).
-function _mpPickAndPortion(arr, slotTarget, dayOffset, objectif, usedKeys, todayKeys) {
+// ────────────────────────────────────────────────────────────────────────
+// _mpPickAndPortion — sélection d'une recette pour un slot de la journée
+// ────────────────────────────────────────────────────────────────────────
+// Priorités (du brief client, jamais casser P1 et P2) :
+//   P1 — Restrictions utilisateur (allergies/exclusions/préférences/objectif).
+//        Déjà filtrées en amont dans generateMealPlan() → `arr` ne contient
+//        plus de recettes interdites.
+//   P2 — JAMAIS deux fois la même recette dans la même journée (todayKeys
+//        absolu, garde stricte sur TOUT le pool, pas juste le top 20).
+//   P3 — Éviter < 48h depuis le dernier usage (paramètre lastUsedDay).
+//   P4 — Limiter à ≤ 2 apparitions par semaine si possible.
+//   P5 — Se rapprocher du target calorique (le tri initial gère ça).
+//
+// Le pool de recherche est ÉTENDU à `arr` complet si le top 20 ne suffit
+// pas à respecter P2/P3/P4 — la variété calorique cède du terrain à la
+// variété de recettes, ce que le client préfère (cf. screenshot Poulet
+// Cajun midi+soir).
+function _mpPickAndPortion(arr, slotTarget, dayOffset, objectif, usedKeys, todayKeys, currentDayIdx, lastUsedDay) {
   if (!arr.length) return null;
-  // Trie par proximité au target du slot
-  var ranked = arr.slice().sort(function(a,b){
-    return Math.abs((a.cals||0) - slotTarget) - Math.abs((b.cals||0) - slotTarget);
+  // Tri par proximité au target → on aura plusieurs "couches" : top-20 (best
+  // match calorique) puis le reste, en s'assouplissant sur les contraintes.
+  var ranked = arr.slice().sort(function (a, b) {
+    return Math.abs((a.cals || 0) - slotTarget) - Math.abs((b.cals || 0) - slotTarget);
   });
-  // Pool de variété : on garde jusqu'à 20 recettes les plus proches (au lieu de 6).
-  // Avant : top 6 → si l'user avait un objectif spécifique + préférences, le
-  // pool tombait à 2-3 recettes utilisables → répétition garantie sur la
-  // semaine. Maintenant : pool large, l'anti-répétition (usedKeys) peut
-  // vraiment opérer sur 7 jours × 4 slots = 28 picks.
-  var top = ranked.slice(0, Math.min(20, ranked.length));
-  // Bias secondaire selon objectif : parmi les "proches", préfère ratio prot/kcal
-  // pour pertePoids (satiété + maintien muscle), raw cals pour priseMuscle.
+  var top20 = ranked.slice(0, Math.min(20, ranked.length));
+  // Bias secondaire selon objectif : pertePoids → préfère ratio prot/kcal.
   if (objectif === 'pertePoids') {
-    top.sort(function(a,b){
-      return ((b.prot||0)/Math.max(1,b.cals||1)) - ((a.prot||0)/Math.max(1,a.cals||1));
+    top20.sort(function (a, b) {
+      return ((b.prot || 0) / Math.max(1, b.cals || 1)) - ((a.prot || 0) / Math.max(1, a.cals || 1));
     });
   }
-  // Anti-répétition : essaie d'abord une recette non utilisée cette semaine
-  var picked = null;
-  if (usedKeys) {
-    for (var i = 0; i < top.length; i++) {
-      var idx = (dayOffset + i) % top.length;
-      if (!usedKeys[top[idx].key]) { picked = top[idx]; break; }
+
+  function passes(p2, p3, p4, candidates, startIdx) {
+    // Cherche dans candidates (à partir d'un offset pseudo-aléatoire) une
+    // recette qui respecte les contraintes activées.
+    for (var i = 0; i < candidates.length; i++) {
+      var idx = ((startIdx || 0) + i) % candidates.length;
+      var r = candidates[idx];
+      if (!r || !r.key) continue;
+      if (p2 && todayKeys && todayKeys[r.key]) continue; // P2 strict
+      if (p3 && lastUsedDay && currentDayIdx != null
+            && lastUsedDay[r.key] != null
+            && (currentDayIdx - lastUsedDay[r.key]) < 2) continue; // P3 (< 48h)
+      if (p4 && usedKeys && (usedKeys[r.key] || 0) >= 2) continue; // P4 (cap 2/sem)
+      return r;
     }
+    return null;
   }
-  // Pool entier déjà servi cette semaine → on retombe sur une recette déjà
-  // vue, MAIS jamais une déjà servie aujourd'hui (le doublon midi/soir du
-  // même jour est le pire cas UX — cf. feedback client 10 juin 2026).
-  if (!picked && todayKeys) {
-    for (var j = 0; j < top.length; j++) {
-      var idx2 = (dayOffset + j) % top.length;
-      if (!todayKeys[top[idx2].key]) { picked = top[idx2]; break; }
-    }
+
+  var startIdx = dayOffset;
+  // Tentative 1 (idéal) : top 20, respecte P2+P3+P4
+  var picked = passes(true, true, true, top20, startIdx);
+  // Tentative 2 : top 20, on lâche P4 (cap hebdo) — variété calorique d'abord
+  if (!picked) picked = passes(true, true, false, top20, startIdx);
+  // Tentative 3 : top 20, on lâche P3 (48h)
+  if (!picked) picked = passes(true, false, false, top20, startIdx);
+  // Tentative 4 : POOL COMPLET (au-delà du top 20), garde stricte P2 + P3
+  if (!picked) picked = passes(true, true, false, ranked, startIdx);
+  // Tentative 5 : pool complet, P2 strict + P4 lâche + P3 lâche
+  if (!picked) picked = passes(true, false, false, ranked, startIdx);
+  // Tentative 6 (ultime) : pool complet, P2 strict UNIQUEMENT
+  //   → JAMAIS deux fois la même recette dans la même journée.
+  if (!picked) picked = passes(true, false, false, ranked, startIdx);
+
+  // Si après tout ça aucune recette ne passe P2, on signale et on retourne
+  // null — le caller doit gérer (laisser le slot vide est moins pire qu'un
+  // doublon midi/soir). En pratique : on tombe ici seulement si le pool
+  // total < nb de slots déjà servis aujourd'hui (3 ou moins, vraiment rare).
+  if (!picked) {
+    try {
+      console.warn('[mealPlan] Aucune recette compatible pour ce slot après P2 strict — pool insuffisant. dayIdx=' + currentDayIdx + ' slot=' + slotTarget + 'kcal. Stock total=' + arr.length + ', déjà servis aujourd\'hui=' + Object.keys(todayKeys || {}).length);
+    } catch (_) {}
+    return null;
   }
-  if (!picked) picked = top[dayOffset % top.length];
-  if (!picked || !picked.cals) return picked;
-  // Calcule les portions nécessaires pour matcher le slot target (0.5 → 4x
-  // pour pouvoir atteindre les gros objectifs caloriques)
+
+  if (!picked.cals) return picked;
+  // Portions adaptées (0.5x → 4x pour atteindre les gros objectifs).
   var rawRatio = slotTarget / picked.cals;
   var portions = Math.max(0.5, Math.min(4, Math.round(rawRatio * 2) / 2));
   return Object.assign({}, picked, {
     plannedPortions: portions,
-    plannedCals: Math.round((picked.cals||0) * portions),
-    plannedProt: Math.round((picked.prot||0) * portions),
-    plannedCarbs: Math.round((picked.carbs||0) * portions),
-    plannedFat: Math.round((picked.fat||0) * portions)
+    plannedCals: Math.round((picked.cals || 0) * portions),
+    plannedProt: Math.round((picked.prot || 0) * portions),
+    plannedCarbs: Math.round((picked.carbs || 0) * portions),
+    plannedFat: Math.round((picked.fat || 0) * portions)
   });
 }
 
@@ -25893,6 +26416,24 @@ function generateMealPlan() {
     c: Math.round(targetCal * MP_SLOT_RATIOS.snack),
     d: Math.round(targetCal * MP_SLOT_RATIOS.dinner)
   };
+  // ── Diagnostic stock recettes (audit interne, log console uniquement) ──
+  // 28 slots à pourvoir (7j × 4 repas). Pour respecter cap 2/semaine,
+  // il faut idéalement ≥ 4 breakfasts + ≥ 7 meals (midi+soir = 14 picks
+  // dans le même pool, cap 2/sem → 7 recettes min) + ≥ 4 collations.
+  var fallbackRepetitionCount = 0;
+  try {
+    var diag = [];
+    if (breakfasts.length < 4) diag.push((4 - breakfasts.length) + ' petits-déj');
+    if (meals.length < 7)      diag.push((7 - meals.length)      + ' repas (midi+soir)');
+    if (collations.length < 4) diag.push((4 - collations.length) + ' collations');
+    if (diag.length) {
+      console.warn('[mealPlan] Stock recettes insuffisant pour 28 slots sans répétition contrôlée : ajoute ' + diag.join(', ') + ' pour améliorer la variété.');
+    }
+  } catch (_) {}
+
+  // Tracking inter-jours pour P3 (≥ 48h) : recipeId → dernier dayIdx servi.
+  var _mpLastDay = {};
+
   for (var i = 0; i < 7; i++) {
     // Anti-répétition : tracker des keys déjà utilisées cette semaine
     if (i === 0) window._mpWeekUsed = {};
@@ -25900,23 +26441,30 @@ function generateMealPlan() {
     // Week-end (sam/dim = idx 5,6) : décale fort le seed pour varier vs lundi/mardi
     // → évite l'impression "le week-end recopie le début de semaine".
     var weekendOffset = (i >= 5) ? (Math.floor(meals.length / 2) + i * 3) : 0;
-    // Picker intelligent : recette la plus proche du target du slot + portions
-    // adaptées. CRITIQUE : chaque pick est marqué dans usedKeys/todayKeys
-    // AVANT le pick suivant. Avant, les 4 picks du jour se faisaient puis on
-    // marquait tout à la fin → le dîner pouvait choisir la même recette que
-    // le déjeuner du même jour (bug "Bowl thaï midi ET soir").
+    // CRITIQUE : todayKeys est RÉINITIALISÉ à chaque jour. _mpMark marque
+    // IMMÉDIATEMENT après chaque pick (donc le dîner sait que le déjeuner
+    // vient de prendre telle recette). _mpLastDay garde la trace inter-jours.
     var todayKeys = {};
     function _mpMark(r) {
-      if (r && r.key) { usedKeys[r.key] = (usedKeys[r.key] || 0) + 1; todayKeys[r.key] = 1; }
+      if (r && r.key) {
+        usedKeys[r.key] = (usedKeys[r.key] || 0) + 1;
+        todayKeys[r.key] = 1;
+        _mpLastDay[r.key] = i;
+      }
     }
-    var b = _mpPickAndPortion(breakfasts,  slotTargets.b, i + seed + weekendOffset,                  objectif, usedKeys, todayKeys);
-    _mpMark(b);
-    var l = _mpPickAndPortion(meals,       slotTargets.l, i + seed + 3 + weekendOffset,              objectif, usedKeys, todayKeys);
-    _mpMark(l);
-    var c = _mpPickAndPortion(collations,  slotTargets.c, i + seed + 7 + weekendOffset,              objectif, usedKeys, todayKeys);
-    _mpMark(c);
-    var d = _mpPickAndPortion(meals,       slotTargets.d, i + seed + Math.ceil(meals.length/2) + weekendOffset, objectif, usedKeys, todayKeys);
-    _mpMark(d);
+    function _mpCount(r) {
+      // Si on retombe sur une recette déjà servie dans la semaine,
+      // c'est une répétition contrôlée → on incrémente pour le toast UX.
+      if (r && r.key && usedKeys[r.key]) fallbackRepetitionCount++;
+    }
+    var b = _mpPickAndPortion(breakfasts,  slotTargets.b, i + seed + weekendOffset,                                       objectif, usedKeys, todayKeys, i, _mpLastDay);
+    _mpCount(b); _mpMark(b);
+    var l = _mpPickAndPortion(meals,       slotTargets.l, i + seed + 3 + weekendOffset,                                   objectif, usedKeys, todayKeys, i, _mpLastDay);
+    _mpCount(l); _mpMark(l);
+    var c = _mpPickAndPortion(collations,  slotTargets.c, i + seed + 7 + weekendOffset,                                   objectif, usedKeys, todayKeys, i, _mpLastDay);
+    _mpCount(c); _mpMark(c);
+    var d = _mpPickAndPortion(meals,       slotTargets.d, i + seed + Math.ceil(meals.length/2) + weekendOffset,           objectif, usedKeys, todayKeys, i, _mpLastDay);
+    _mpCount(d); _mpMark(d);
     // Total avec portions ajustées
     var mealsTotal = (b ? b.plannedCals : 0) + (l ? l.plannedCals : 0) + (c ? c.plannedCals : 0) + (d ? d.plannedCals : 0);
     // Si on est sous la cible de plus de 100 kcal → boosters caloriques visibles
@@ -25987,6 +26535,14 @@ function generateMealPlan() {
        +  '<button class="btn btn-outline" onclick="generateMealPlan()" style="margin-top:8px">🔄 Régénérer un nouveau plan</button>';
   var grid = document.getElementById('mealPlanGrid');
   if (grid) { grid.innerHTML = html; grid.classList.remove('hidden'); }
+  // Toast UX discret si on a dû recourir à des répétitions contrôlées
+  // (stock recettes insuffisant). Le message est non-technique — pour le
+  // diagnostic technique, regarder la console.
+  try {
+    if (fallbackRepetitionCount >= 4 && typeof showToast === 'function') {
+      showToast('Plan généré avec quelques répétitions contrôlées. Ajoute plus de recettes pour plus de variété.', 'info');
+    }
+  } catch (_) {}
   // Ouvre l'overlay plein écran avec le plan généré (vue d'ensemble)
   try { if (typeof openMealPlan === 'function') setTimeout(openMealPlan, 100); } catch(e) {}
 }
@@ -28069,7 +28625,11 @@ var FB_SYNC_KEYS = [
   ['ah_lib_selection',            'libSelection',        true],
   // Elite Athlète — progression séquentielle + feedbacks 5 questions
   ['ah_ea_progress',               'eaProgress',          true],
-  ['ah_ea_feedback',               'eaFeedback',          true]
+  ['ah_ea_feedback',               'eaFeedback',          true],
+  // Journal de tracking exercices (Suivi > Exercices > Enregistrer)
+  // Auparavant uniquement dans ah_v8 legacy → pas de sync Firestore →
+  // entrées perdues au changement de device et parfois localement.
+  ['ah_track_history',             'trackHistory',        true]
 ];
 
 function _fbCollectPayload() {
@@ -28490,6 +29050,123 @@ function openNPI() { go('profil2'); }
 // Filtré selon le programme dans p3GetTestsForProgram()
 // ═══════════════════════════════════════════════
 
+// ═══════════════════════════════════════════════════════════════════════════
+// SOURCE DE VÉRITÉ UNIQUE — TESTS PHYSIQUES PAR PROGRAMME
+// ───────────────────────────────────────────────────────────────────────────
+// Sources : livre "Les Secrets de la Détente Verticale" — table p.269
+// "Quel test pour quel programme ?" + protocoles SAT (p.257-262) et SET
+// (p.288-289). Cette source est utilisée par :
+//   - l'onboarding step-by-step (profil3) via p3GetTestsForProgram
+//   - le Tracks tab (vue Suivi > Tests) via getActiveSatExercices +
+//     renderTestsLanding
+//   - Titan (à brancher dans buildSystemPrompt si besoin)
+// → Plus de double source : si tu modifies AH_TEST_PROTOCOLS ici,
+//   l'onboarding ET la vue Suivi changent en même temps.
+//
+// Les *définitions* des tests (champs, hint, timer…) restent dans
+// ALL_TESTS (juste après). Ce bloc-ci ne décrit que la STRUCTURE
+// protocolaire — quels tests vont dans quel protocole, quel protocole
+// pour quel programme.
+// ═══════════════════════════════════════════════════════════════════════════
+var AH_TEST_PROTOCOLS = {
+  // SAT — Super Athlétique Test : force maximale + détente
+  SAT: {
+    code: 'SAT', name: 'Super Athlétique Test',
+    short: 'SAT', shelf: 'Bilan force',
+    duration: '30 min',
+    desc: 'Force maximale + détente verticale.',
+    longDesc: 'Détente verticale + Squat 1RM + Soulevé de terre 1RM + Hip Thrust 1RM + Développé couché 1RM.',
+    section: 'sat', // sub-section Tracks correspondante
+    tests: ['jump', 'squat', 'sdt', 'ht', 'dc'],
+    icon: '🏋️'
+  },
+  // SET — Super Explosif Test : explosivité + profil physiologique
+  SET: {
+    code: 'SET', name: 'Super Explosif Test',
+    short: 'SET', shelf: 'Bilan explosif',
+    duration: '60-75 min',
+    desc: 'Explosivité + profil athlétique global.',
+    longDesc: 'Détente verticale + 94 Feet Test + Test physiologique (poids, photos) + Squat 1RM + Hip Thrust 1RM + Développé couché 1RM + Soulevé de terre 1RM.',
+    section: 'set',
+    tests: ['jump', 'feet94', 'physio', 'sprint60', 'squat', 'ht', 'dc', 'sdt'],
+    icon: '⚡'
+  },
+  // VERTICAL_DUNK_TEST — détente + 2 mouvements de force essentiels
+  // (Test propre à Vertical Dunk — pas un SAT ni un SET complet)
+  VERTICAL_DUNK_TEST: {
+    code: 'VDT', name: 'Bilan Vertical Dunk',
+    short: 'VDT', shelf: 'Détente + Force',
+    duration: '30 min',
+    desc: 'Détente verticale + 1RM squat + 1RM soulevé de terre.',
+    longDesc: 'Test de détente verticale + Rep Max squat + Rep Max soulevé de terre.',
+    section: 'sat', // réutilise le wizard SAT (filtré PROGRAM_TESTS)
+    tests: ['jump', 'squat', 'sdt'],
+    icon: '🏀'
+  },
+  // BODYWEIGHT_ALTERNATIVE_TESTS — placeholder pour Microtraining / Triphasique
+  // Le livre p.269 mentionne "Détente + tests alternatifs (poids de corps)"
+  // sans en donner la liste exacte. Les 4 tests ci-dessous sont des
+  // *propositions* internes (squat bulgare, pompes max, wall sit, fentes
+  // sautées) → marqués isProposed:true. À valider avec l'auteur avant
+  // de retirer le flag.
+  BODYWEIGHT_ALTERNATIVE_TESTS: {
+    code: 'BWT', name: 'Détente + tests alternatifs',
+    short: 'PDC', shelf: 'Bilan poids du corps',
+    duration: '20 min',
+    desc: 'Détente verticale + tests alternatifs au poids du corps.',
+    longDesc: 'Détente verticale + tests alternatifs (squat bulgare, pompes, wall sit, fentes sautées) — à valider avec ton coach.',
+    section: 'sat',
+    tests: ['jump', 'pdcSquatBulgare', 'pdcPompes', 'pdcWallSit', 'pdcFentesSautees'],
+    icon: '💪',
+    isProposed: true,
+    proposalNote: 'Les 4 tests alternatifs au poids du corps sont des propositions internes (le livre p.269 mentionne "tests alternatifs" sans en donner la liste exacte). À valider avec ton coach avant publication finale.'
+  }
+};
+
+// Mapping programme → protocoles à proposer (source : livre p.269)
+// Les clés sont les programmes normalisés (cf. p3NormalizeProgram).
+var AH_PROGRAM_TESTS = {
+  eliteAthlete:  ['SAT', 'SET'],
+  shredExplose:  ['SET'],
+  verticalDunk:  ['VERTICAL_DUNK_TEST'],
+  explose:       ['SAT', 'SET'],
+  microtraining: ['BODYWEIGHT_ALTERNATIVE_TESTS'],
+  triphasique:   ['BODYWEIGHT_ALTERNATIVE_TESTS']
+};
+
+// Source de vérité unique : retourne la liste APLATIE des test ids
+// applicables au programme, dans l'ordre où ils doivent être présentés.
+// Utilisée par l'onboarding, par le Tracks tab, et par Titan.
+function getTestsForProgram(programId) {
+  var norm = (typeof p3NormalizeProgram === 'function')
+    ? p3NormalizeProgram(programId)
+    : String(programId || 'eliteAthlete').toLowerCase();
+  var protocols = AH_PROGRAM_TESTS[norm] || AH_PROGRAM_TESTS.eliteAthlete;
+  var ids = [];
+  var seen = {};
+  protocols.forEach(function (pcode) {
+    var proto = AH_TEST_PROTOCOLS[pcode];
+    if (!proto) return;
+    proto.tests.forEach(function (id) {
+      if (!seen[id]) { seen[id] = 1; ids.push(id); }
+    });
+  });
+  return ids;
+}
+// Liste les protocoles applicables (objets enrichis) — utilisé par le
+// landing Tracks > Tests pour afficher les bonnes cartes.
+function getProtocolsForProgram(programId) {
+  var norm = (typeof p3NormalizeProgram === 'function')
+    ? p3NormalizeProgram(programId)
+    : String(programId || 'eliteAthlete').toLowerCase();
+  var protocols = AH_PROGRAM_TESTS[norm] || AH_PROGRAM_TESTS.eliteAthlete;
+  return protocols.map(function (pcode) { return AH_TEST_PROTOCOLS[pcode]; }).filter(Boolean);
+}
+window.AH_TEST_PROTOCOLS = AH_TEST_PROTOCOLS;
+window.AH_PROGRAM_TESTS = AH_PROGRAM_TESTS;
+window.getTestsForProgram = getTestsForProgram;
+window.getProtocolsForProgram = getProtocolsForProgram;
+
 var ALL_TESTS = {
   // ── TESTS COMMUNS (tous programmes) ──
   jump: {
@@ -28587,10 +29264,10 @@ var ALL_TESTS = {
     type: 'sat'
   },
   fms: {
-    id: 'fms', name: 'Mobilité FMS', emoji: '🧘',
-    desc: '7 mouvements fondamentaux notés de 0 à 3. Score total sur 21.',
-    fields: [{id:'p3FMS', label:'Score FMS', unit:'/21', placeholder:'14'}],
-    hint: '< 14 = risque blessure. Travaille la mobilité en priorité.',
+    id: 'fms', name: 'Mobilité fonctionnelle', emoji: '🧘',
+    desc: '7 mouvements fondamentaux (squat, fente, épaules…) notés /3. Score total /21. Méthode FMS (Functional Movement Screen).',
+    fields: [{id:'p3FMS', label:'Ton score /21', unit:'/21', placeholder:'14'}],
+    hint: '< 14 = risque de blessure. Travaille la mobilité en priorité.',
     hasTimer: false,
     type: 'sat'
   },
@@ -28673,24 +29350,18 @@ var ALL_TESTS = {
 // SAT = jump + squat + sdt + ht + dc + sprint30 + ttest + fms
 // SET = jump + sprint60 + feet94 + laneAgility
 // Alternatifs PDC = jump + 4 exos poids du corps
-var PROGRAM_TESTS = {
-  // Sources : livre p.269 (table programme → tests associés) + pages SAT
-  // et SET illustrées. Les tests qui n'apparaissent PAS dans le livre
-  // (laneAgility, sprint30, ttest, fms) ont été retirés pour ne mesurer
-  // que ce que l'auteur prescrit réellement.
-  'microtraining': ['jump', 'pdcSquatBulgare', 'pdcPompes', 'pdcWallSit', 'pdcFentesSautees'],
-  'triphasique':   ['jump', 'pdcSquatBulgare', 'pdcPompes', 'pdcWallSit', 'pdcFentesSautees'],
-  // Vertical Dunk : livre = détente + 1RM squat + 1RM soulevé de terre.
-  'verticalDunk':  ['jump', 'squat', 'sdt'],
-  // Elite Athlete : SAT (squat + sdt + détente + ht + dc) + SET (94feet +
-  // sprint60 + détente + physio + force pure). Détente partagée → l'id
-  // 'jump' apparaît une fois.
-  'eliteAthlete':  ['jump', 'squat', 'sdt', 'ht', 'dc', 'sprint60', 'feet94', 'physio'],
-  // SHRED Explose : SET uniquement (livre p.269).
-  'shredExplose':  ['jump', 'sprint60', 'feet94', 'physio', 'squat', 'sdt', 'ht', 'dc'],
-  // EXPLOSE+ : SAT + SET (identique à Elite Athlete pour les tests).
-  'explose':       ['jump', 'squat', 'sdt', 'ht', 'dc', 'sprint60', 'feet94', 'physio']
-};
+// PROGRAM_TESTS — DÉRIVÉ de AH_PROGRAM_TESTS + AH_TEST_PROTOCOLS.
+// Conservé pour rétro-compatibilité avec le reste du code (les anciens
+// appelants comme _testsLandingState ou getActiveSatExercices y accèdent
+// directement). Toute modification doit se faire en haut, dans
+// AH_PROGRAM_TESTS / AH_TEST_PROTOCOLS — ne JAMAIS éditer ce bloc à la main.
+var PROGRAM_TESTS = (function buildPROGRAM_TESTS() {
+  var out = {};
+  Object.keys(AH_PROGRAM_TESTS).forEach(function (progKey) {
+    out[progKey] = getTestsForProgram(progKey);
+  });
+  return out;
+})();
 
 // Alias programme key → mapping key
 function p3NormalizeProgram(progKey) {
@@ -29914,7 +30585,7 @@ function _trMetricLabel(key) {
   return ({
     detente:'Détente verticale', squat:'Squat', hipthrust:'Hip Thrust',
     sdt:'Soulevé de terre', dc:'Développé couché', sprint30:'Sprint',
-    fms:'Mobilité (FMS)'
+    fms:'Mobilité fonctionnelle'
   })[key] || key;
 }
 function _trTitanAnalysis(score, weakLabel) {
@@ -30095,7 +30766,7 @@ function renderTestResult(testType) {
   if (metrics.hipthrust != null) html += _trPerfCard('Hip Thrust', metrics.hipthrust.toFixed(2), '× BW', _trComment('hipthrust', metrics.hipthrust));
   if (metrics.sdt != null)      html += _trPerfCard('Soulevé de terre', metrics.sdt.toFixed(2), '× BW', _trComment('sdt', metrics.sdt));
   if (metrics.dc != null)       html += _trPerfCard('Développé couché', metrics.dc.toFixed(2), '× BW', _trComment('dc', metrics.dc));
-  if (metrics.fms != null)      html += _trPerfCard('Mobilité FMS', metrics.fms, '/ 21', _trComment('fms', metrics.fms));
+  if (metrics.fms != null)      html += _trPerfCard('Mobilité fonctionnelle', metrics.fms, '/ 21', _trComment('fms', metrics.fms));
   html += '</div></div>';
 
   // 5. Analyse Titan
@@ -30379,29 +31050,57 @@ function renderTestsLanding() {
   // programme attribué. Vertical Dunk → SAT. Shred → SET. Elite/Explose+ →
   // SAT + SET. Micro/Triphasique → PDC (wizard partagé). Sans programme
   // attribué (onboarding incomplet) : tout est visible.
-  var normProg = (typeof p3NormalizeProgram === 'function') ? p3NormalizeProgram(profile.programKey || '') : 'eliteAthlete';
+  // ── Source de vérité unique : AH_PROGRAM_TESTS via getProtocolsForProgram.
+  // Le landing affiche UNIQUEMENT les protocoles du programme attribué
+  // (cohérent avec ce que l'onboarding fait faire à l'utilisateur).
+  // Sans programme attribué (onboarding incomplet) : on tombe sur le
+  // protocole "tous types" (SAT + SET) pour ne pas masquer l'app.
   var hasKey = !!profile.programKey;
-  var show = { SAT: true, SET: true, PDC: false };
-  if (hasKey) {
-    if (normProg === 'verticalDunk')                                show = { SAT:true,  SET:false, PDC:false };
-    else if (normProg === 'shredExplose')                           show = { SAT:false, SET:true,  PDC:false };
-    else if (normProg === 'microtraining' || normProg === 'triphasique') show = { SAT:false, SET:false, PDC:true };
-    else                                                            show = { SAT:true,  SET:true,  PDC:false };
-  }
+  var protocols = hasKey
+    ? (typeof getProtocolsForProgram === 'function' ? getProtocolsForProgram(profile.programKey) : [])
+    : [AH_TEST_PROTOCOLS.SAT, AH_TEST_PROTOCOLS.SET];
 
   var html = '';
   html += '<div style="font-family:\'Outfit\',sans-serif;font-size:13px;color:var(--text2);line-height:1.55;margin-bottom:14px">'
     + (hasKey ? 'Les tests de <b>ton programme</b> — mesure ton niveau et ta progression.' : 'Tes bilans mesurent ton niveau physique et ta progression.')
     + '</div>';
 
+  // Rendu générique d'une carte par protocole (SAT / SET / VDT / BWT) :
+  // - SAT/SET conservent leur entrée /typage actuel pour ne pas casser
+  //   _testsLandingState et openTestResult qui regardent 'SAT' / 'SET'.
+  // - VDT et BWT utilisent type 'SAT' (ils empruntent le wizard sat),
+  //   mais la carte affiche le nom du protocole + son shelf + sa durée.
+  protocols.forEach(function (proto) {
+    var t = proto.code;
+    var badge = (proto.shelf || '').toUpperCase() + ' · ' + (proto.duration || '');
+    var typeKey = (t === 'SAT' || t === 'SET') ? t : 'SAT';
+    html += _testCardV2({
+      type: typeKey,
+      badge: badge,
+      name: proto.short || proto.name,
+      desc: proto.desc,
+      state: _testsLandingState(typeKey)
+    });
+  });
+
+  // Si BWT (placeholder) : on signale clairement que c'est en cours de validation.
+  var hasProposed = protocols.some(function (p) { return p && p.isProposed; });
+  if (hasProposed) {
+    html += '<div style="margin:6px 0 14px;padding:10px 12px;background:rgba(245,158,11,.10);border:1px solid rgba(245,158,11,.32);border-radius:10px;font-size:11.5px;color:var(--text2);line-height:1.55">'
+      +     '<b style="color:#B45309">⚠ À valider</b> — Les tests alternatifs au poids du corps ci-dessus sont des <i>propositions</i> internes. Le livre mentionne cette catégorie p.269 sans en donner la liste exacte ; à confirmer avec ton coach avant utilisation officielle.'
+      + '</div>';
+  }
+
+  // ⚠️ ANCIEN CODE — gardé temporairement en commentaire pour audit du diff.
+  // Le bloc ci-dessous était l'ancienne logique de filtrage ad-hoc avant
+  // la centralisation AH_PROGRAM_TESTS. Si tu vois un comportement bizarre,
+  // compare avec ce que renvoie getProtocolsForProgram(profile.programKey).
+  /* OLD :
   if (show.SAT) html += _testCardV2({
-    type: 'SAT',
-    badge: 'BILAN FORCE · 30 MIN',
-    name: 'SAT',
+    type: 'SAT', badge: 'BILAN FORCE · 30 MIN', name: 'SAT',
     desc: 'Détente verticale + force pure (squat, soulevé, hip thrust, développé couché).',
     state: _testsLandingState('SAT')
   });
-
   if (show.SET) html += _testCardV2({
     type: 'SET',
     badge: 'BILAN EXPLOSIF · 60–75 MIN',
@@ -30409,7 +31108,6 @@ function renderTestsLanding() {
     desc: '94 feet, sprint 60m, détente, physiologique, force pure.',
     state: _testsLandingState('SET')
   });
-
   if (show.PDC) html += _testCardV2({
     type: 'PDC',
     badge: 'BILAN POIDS DU CORPS · 20 MIN',
@@ -30419,6 +31117,7 @@ function renderTestsLanding() {
     startClick: 'window._tracksLaunchTestWizard && window._tracksLaunchTestWizard()',
     noResults: true
   });
+  */ // ← fin de l'ancien code en commentaire
 
   c.innerHTML = html;
 
@@ -30917,7 +31616,7 @@ var ATHLETIK_STANDARDS = {
     }
   },
   fms: {  // score sur 21
-    label: 'Mobilité FMS',
+    label: 'Mobilité fonctionnelle',
     icon: '🧘',
     unit: '/21',
     higherIsBetter: true,
@@ -32799,6 +33498,121 @@ function launchSession(exos, sessName, progName, progKey, sessKey) {
   _lsPersist();
 }
 
+// ═══════════════════════════════════════════════════════════════════════════
+// Workout player — carte "À faire maintenant" + détection de technique
+// ───────────────────────────────────────────────────────────────────────────
+// Sépare clairement les 3 couches demandées par le client :
+//   1. Vidéo démo  → montre le mouvement (réutilisable entre programmes)
+//   2. Carte "À faire maintenant" → reps + technique + série/round + instruction
+//   3. Bouton principal → action contextuelle (Valider série / Round / Continuer)
+//
+// La technique vient en priorité de _eaTechnique (SOT EA) ; à défaut on la
+// détecte dans ex.r ou ex.note (legacy PROGRAMS_V2). Aucune invention :
+// si rien n'est trouvé → 'classique' silencieux.
+// ═══════════════════════════════════════════════════════════════════════════
+function _lsDetectTechnique(ex) {
+  if (!ex) return 'classique';
+  if (ex._eaTechnique && ex._eaTechnique !== 'classique') return ex._eaTechnique;
+  var hay = ((ex.r || '') + ' ' + (ex.n || '') + ' ' + (ex.note || '')).toLowerCase();
+  if (/cluster/.test(hay)) return 'cluster';
+  if (/challenge|bring sally|max\s+(reps?|en\s+\d)/.test(hay)) return 'challenge';
+  if (/circuit/.test(hay)) return 'circuit';
+  if (/bi-?set|enchaîner avec|a\)\s|b\)\s/.test(hay)) return 'bi-set';
+  if (/superset/.test(hay)) return 'superset';
+  if (/isomé|hold|maintien/.test(hay)) return 'isometrie';
+  if (/fractionn[eé]/.test(hay)) return 'fractionne';
+  if (/stato-?dyn/.test(hay)) return 'stato-dynamique';
+  return 'classique';
+}
+
+// Libellé public de la technique (à afficher sur la carte).
+function _lsTechniqueLabel(t) {
+  return {
+    cluster: 'Cluster Set',
+    'bi-set': 'Bi-set',
+    superset: 'Superset',
+    circuit: 'Circuit',
+    challenge: 'Challenge',
+    isometrie: 'Isométrie',
+    fractionne: 'Fractionné',
+    'stato-dynamique': 'Stato-dynamique',
+    classique: 'Classique'
+  }[t] || 'Classique';
+}
+
+// Instruction courte affichée sur la carte "À faire maintenant".
+function _lsTechniqueInstruction(t) {
+  return {
+    cluster: 'Garde de la puissance sur chaque répétition. Mini-repos puis enchaîne.',
+    'bi-set': 'Enchaîne directement avec l\'exercice suivant. Repos après les 2.',
+    superset: 'Enchaîne sans repos avec l\'exercice suivant.',
+    circuit: 'Enchaîne proprement, sans te précipiter.',
+    challenge: 'Donne tout — note ton score pour mesurer ta progression.',
+    isometrie: 'Tiens la position. Respire calmement.',
+    fractionne: 'Alterne effort ALL OUT et récup active.',
+    'stato-dynamique': 'Tiens la position, puis explose à la sortie.',
+    classique: 'Contrôle le mouvement. Qualité avant quantité.'
+  }[t] || 'Contrôle le mouvement. Qualité avant quantité.';
+}
+
+// Aide "Comment faire ?" — texte court, direct, sportif.
+function _lsTechniqueHelp(t) {
+  return {
+    cluster: 'Un cluster set coupe une série en petits blocs de reps explosives avec de courts repos. Le but : garder un maximum de puissance.',
+    'bi-set': 'Un bi-set est une paire d\'exercices enchaînés. Tu fais le A, tu enchaînes le B, puis tu prends ton repos. Le but : densifier l\'entraînement.',
+    superset: 'Un superset enchaîne 2 exercices sans repos entre les deux. Le but : densifier la séance et accumuler du volume.',
+    circuit: 'Un circuit enchaîne plusieurs exercices avec peu ou pas de repos. Le but : garder le rythme tout en restant propre techniquement.',
+    challenge: 'Un challenge est un test ponctuel : donne ton maximum, note ton score, compare à ta prochaine séance.',
+    isometrie: 'Une isométrie maintient une position sans bouger. Le but : renforcer en profondeur sans fatigue articulaire excessive.',
+    fractionne: 'Un fractionné alterne effort intense et récup active. Le but : développer l\'endurance et la capacité à répéter des sprints.',
+    'stato-dynamique': 'Le stato-dynamique combine une isométrie profonde puis une explosion. Le but : transformer la force en puissance.',
+    classique: 'Une série classique : fais tes reps avec contrôle, repose-toi, puis recommence. Le but : volume + qualité technique.'
+  }[t] || 'Une série classique : fais tes reps avec contrôle, repose-toi, puis recommence.';
+}
+
+// Libellé du timer de repos selon le contexte. Le client demande des
+// libellés précis : pas juste "Temps de repos" mais "Mini-repos cluster",
+// "Repos entre séries", "Transition", etc.
+//   tech       : technique détectée
+//   isInterEx  : true si on enchaîne sur le prochain exercice (fin d'exo)
+//                false si on est entre 2 séries du même exo
+function _lsRestLabel(tech, isInterEx) {
+  if (tech === 'cluster' && !isInterEx) return '⏱ Mini-repos cluster';
+  if (tech === 'circuit' && !isInterEx) return '⏱ Repos circuit';
+  if (tech === 'bi-set' || tech === 'superset') return '⏱ Repos après le bloc';
+  if (tech === 'fractionne') return '⏱ Récup active';
+  if (isInterEx) return '⏱ Transition';
+  return '⏱ Repos entre séries';
+}
+
+// Affiche le bottom-sheet "Comment faire ?" pour la technique courante.
+window._lsShowTechniqueHelp = function() {
+  var ex = _LS.exos[_LS.idx];
+  var t = _lsDetectTechnique(ex);
+  var label = _lsTechniqueLabel(t);
+  var help = _lsTechniqueHelp(t);
+  var ov = document.getElementById('lsTechHelpOverlay');
+  if (!ov) {
+    ov = document.createElement('div');
+    ov.id = 'lsTechHelpOverlay';
+    ov.className = 'ls-th-ov';
+    ov.onclick = function(e) { if (e.target === ov) window._lsCloseTechniqueHelp(); };
+    document.body.appendChild(ov);
+  }
+  ov.innerHTML = '<div class="ls-th-sheet">'
+    + '<div class="ls-th-grab"></div>'
+    + '<div class="ls-th-eyebrow">Technique</div>'
+    + '<div class="ls-th-title">' + label + '</div>'
+    + '<div class="ls-th-text">' + help + '</div>'
+    + '<button class="ls-th-cta" onclick="window._lsCloseTechniqueHelp()">J\'ai compris</button>'
+    + '</div>';
+  ov.classList.add('on');
+};
+window._lsCloseTechniqueHelp = function() {
+  var ov = document.getElementById('lsTechHelpOverlay');
+  if (ov) ov.classList.remove('on');
+};
+
 function _lsRenderEx() {
   var ex = _LS.exos[_LS.idx];
   if (!ex) return;
@@ -32825,7 +33639,14 @@ function _lsRenderEx() {
   document.getElementById('lsMetSets').textContent = totalSets > 1
     ? (_LS.setNum + '/' + totalSets)
     : (ex.s && ex.s !== '-' ? ex.s : '—');
-  document.getElementById('lsMetReps').textContent = ex.r && ex.r !== '-' ? ex.r : '—';
+  // Reps : on STRIPPE le mot "cluster" / "circuit" déjà mélangé pour ne
+  // garder QUE le nombre/durée. La technique est affichée séparément
+  // dans la carte "À faire maintenant" (client demande explicitement de
+  // ne plus mélanger reps et technique).
+  var repsRaw = ex.r && ex.r !== '-' ? ex.r : '—';
+  var repsClean = String(repsRaw).replace(/\s*(?:cluster|circuit|superset|bi-?set|challenge)\s*$/i, '').trim();
+  if (!repsClean) repsClean = repsRaw;
+  document.getElementById('lsMetReps').textContent = repsClean;
   // Rest display: short format
   var restSec = _lsParseRest(ex.rest);
   var rm = Math.floor(restSec / 60), rs = restSec % 60;
@@ -32836,12 +33657,41 @@ function _lsRenderEx() {
   clearInterval(_LS.restInterval);
   _LS.restActive = false;
 
-  // Done button label — reflète la série en cours et l'étape
+  // ── Carte "À faire maintenant" ───────────────────────────────────────
+  // Sortie de la technique des reps. Affiche : technique + reps + série
+  // ou round courant + instruction courte. C'est la couche "interface
+  // séance" demandée par le client (vs la couche "vidéo démo" du player).
+  var tech = _lsDetectTechnique(ex);
+  var techLbl = _lsTechniqueLabel(tech);
+  var instruction = _lsTechniqueInstruction(tech);
+  var isCircuit = tech === 'circuit';
+  var setOrRoundLine = '';
+  if (totalSets > 1) {
+    setOrRoundLine = (isCircuit ? 'Round ' : 'Série ') + _LS.setNum + ' / ' + totalSets;
+  } else if (ex.s && ex.s !== '-') {
+    setOrRoundLine = (isCircuit ? 'Round' : 'Série') + ' unique';
+  }
+  var nowCard = document.getElementById('lsNowCard');
+  if (nowCard) {
+    nowCard.innerHTML =
+        '<div class="ls-now-row">'
+      +   '<span class="ls-now-tech">' + techLbl + '</span>'
+      +   '<button type="button" class="ls-now-help" onclick="window._lsShowTechniqueHelp()" aria-label="Comment faire ?">? Comment faire</button>'
+      + '</div>'
+      + '<div class="ls-now-todo">' + repsClean + (repsClean.match(/^[0-9]/) ? ' reps' : '') + '</div>'
+      + (setOrRoundLine ? '<div class="ls-now-set">' + setOrRoundLine + '</div>' : '')
+      + '<div class="ls-now-instr">' + instruction + '</div>';
+  }
+
+  // Done button label — reflète la série/round en cours, contexte technique
   var isLast = (_LS.idx === total - 1);
   var isLastSet = (_LS.setNum >= totalSets);
   var btnLabel;
+  var unit = isCircuit ? 'ROUND' : 'SÉRIE';
   if (isLast && isLastSet) btnLabel = '✓ TERMINER LA SÉANCE';
-  else if (totalSets > 1 && !isLastSet) btnLabel = '✓ SÉRIE ' + _LS.setNum + ' / ' + totalSets;
+  else if (totalSets > 1 && !isLastSet) btnLabel = '✓ VALIDER ' + unit + ' ' + _LS.setNum + ' / ' + totalSets;
+  else if (tech === 'cluster' && totalSets > 1) btnLabel = '✓ VALIDER SÉRIE COMPLÈTE';
+  else if (tech === 'challenge') btnLabel = '✓ CHALLENGE TERMINÉ';
   else btnLabel = '✓ EXERCICE SUIVANT →';
   document.getElementById('lsBtnDone').textContent = btnLabel;
 
@@ -32887,6 +33737,16 @@ function _lsDoneSet() {
   _LS._pendingAction = isLastSet ? 'nextEx' : 'nextSet';
   var restSec = _lsParseRest(ex ? ex.rest : null);
   if (restSec > 0) {
+    // Label de repos contextuel : "Mini-repos cluster", "Repos circuit",
+    // "Transition", etc. selon la technique et si on enchaîne sur le
+    // prochain exo (vs entre 2 séries du même exo).
+    try {
+      var tEl = document.querySelector('#lsRestOverlay .ls-rest-title');
+      if (tEl) {
+        var tech = _lsDetectTechnique(ex);
+        tEl.textContent = _lsRestLabel(tech, isLastSet);
+      }
+    } catch(_){}
     _lsStartRest(restSec);
   } else {
     _lsApplyPending();
@@ -33140,8 +34000,15 @@ function _advanceProgramProgress(progKey, sessKey) {
     } else if (st.phaseIdx < prog.phases.length - 1) {
       st.phaseIdx++;
       st.week = 1;
+      // Phase précédente terminée → bump compteur global (badge phase1).
+      try { _bumpProfileCounter('phasesDone', 1); } catch(e) {}
     } else {
       st.week = phase.weeks || 1;
+      // Dernière phase terminée → bump aussi (cas mono-phase ou fin de
+      // programme). programsDone est géré séparément via _checkProgramCompletion.
+      if (!st.completed) {
+        try { _bumpProfileCounter('phasesDone', 1); } catch(e) {}
+      }
       st.completed = true;
     }
   }
@@ -33404,38 +34271,30 @@ function _lsFinalizeSession(feedback) {
   if (body) body.scrollTop = 0;
   showToast('Séance validée 🔥', 'ok');
 
-  // Tracking complétion : sessionsDone + historique avec feedback attaché.
-  try {
-    _bumpProfileCounter('sessionsDone', 1);
-    var hist = JSON.parse(localStorage.getItem('ah_set_history') || '[]');
-    hist.push({
-      type: 'session',
-      progKey: _LS.progKey || '',
-      sessKey: _LS.sessKey || '',
-      progName: _LS.progName || '',
-      sessName: _LS.sessName || '',
-      date: new Date().toISOString(),
-      sessionEndFeedback: feedback
-    });
-    localStorage.setItem('ah_set_history', JSON.stringify(hist));
-    if (typeof renderBadges === 'function') renderBadges();
-    if (_LS.progKey && _LS.sessKey) {
+  // Complétion centralisée — sessionsDone + streak + history + program
+  // progress + program completion, tous bumpés dans le même ordre par
+  // _recordSessionCompletion (helper unique partagé avec exitLiveV2).
+  var _rec = _recordSessionCompletion({
+    progKey:  _LS.progKey,
+    sessKey:  _LS.sessKey,
+    progName: _LS.progName,
+    sessName: _LS.sessName,
+    feedback: feedback,
+    builder:  !!_LS.builderMeta
+  });
+  if (_rec.weekDone && _LS.progKey) {
+    setTimeout(function() {
       try {
-        var weekDone = _advanceProgramProgress(_LS.progKey, _LS.sessKey);
-        if (weekDone) {
-          setTimeout(function() {
-            var st = getProgramProgress(_LS.progKey);
-            showToast('✅ Semaine validée — tu passes à la semaine ' + st.week, 'ok');
-          }, 1200);
-        }
+        var st = getProgramProgress(_LS.progKey);
+        showToast('✅ Semaine validée — tu passes à la semaine ' + st.week, 'ok');
       } catch(e) {}
-    }
-    if (_LS.progKey && _checkProgramCompletion(_LS.progKey)) {
-      setTimeout(function() {
-        showToast('🏆 Programme ' + (_LS.progName || _LS.progKey) + ' terminé !', 'ok');
-      }, 1800);
-    }
-  } catch(e) { console.warn('session tracking error', e); }
+    }, 1200);
+  }
+  if (_rec.programDone) {
+    setTimeout(function() {
+      showToast('🏆 Programme ' + (_LS.progName || _LS.progKey) + ' terminé !', 'ok');
+    }, 1800);
+  }
 
   // Séance issue du Workout Builder → sauvegarde cloud + collecte du ressenti.
   if (_LS.builderMeta) {
