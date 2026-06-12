@@ -20913,21 +20913,57 @@ function _mtFastClose() {
   if (m) m.remove();
 }
 
-// Restauration : si un jeûne est en cours au prochain reload, on rouvre le modal.
+// Restauration : SI un jeûne est en cours ET que l'user n'a pas validé
+// au-delà du temps cible + tolérance, on AFFICHE UNE BANNIÈRE non-intrusive
+// au lieu d'ouvrir la modal plein écran qui couvrait l'app (bug remonté :
+// "Quand je suis dans l'onglet Nutrition la page quitte seul au bout de
+//  quelques secondes" — la modal s'ouvrait 1.5s après load peu importe
+// l'onglet courant, masquant la page).
+// La bannière laisse l'user décider de rouvrir le timer. Nettoyage
+// automatique si jeûne très ancien (> 48h depuis démarrage).
 window.addEventListener('load', function() {
   try {
     var raw = localStorage.getItem('ah_mt_fasting');
     if (!raw) return;
     var s = JSON.parse(raw);
-    if (s && s.endsAt && Date.now() - s.startedAt < 48 * 3600 * 1000) {
-      // < 48h depuis le démarrage → on rouvre. Au-delà, on suppose oubli + nettoie.
-      // On attend que l'app soit prête (1.5s), pour ne pas spammer au boot
-      setTimeout(_mtOpenFastingTimerModal, 1500);
-    } else if (s) {
+    if (!s || !s.startedAt) { localStorage.removeItem('ah_mt_fasting'); return; }
+    var ageMs = Date.now() - s.startedAt;
+    if (ageMs > 48 * 3600 * 1000) {
+      // > 48h depuis le démarrage = oubli probable → nettoyage silencieux
       localStorage.removeItem('ah_mt_fasting');
+      return;
     }
+    // Affiche une bannière fixe en bas non-bloquante, l'user choisit
+    setTimeout(_mtShowFastingResumeBanner, 1500);
   } catch(e) {}
 });
+
+function _mtShowFastingResumeBanner() {
+  if (document.getElementById('mtFastingBanner')) return;
+  try {
+    var raw = localStorage.getItem('ah_mt_fasting');
+    if (!raw) return;
+    var s = JSON.parse(raw);
+    if (!s) return;
+    var remaining = s.endsAt - Date.now();
+    var label = remaining > 0
+      ? '🕒 Jeûne en cours · ' + Math.max(0, Math.ceil(remaining / 3600000)) + 'h restantes'
+      : '✓ Jeûne terminé — valide-le';
+    var b = document.createElement('div');
+    b.id = 'mtFastingBanner';
+    b.style.cssText = 'position:fixed;left:14px;right:14px;bottom:84px;z-index:850;background:linear-gradient(135deg,#9C7B3E,#7A5F2D);color:#fff;border-radius:12px;padding:10px 14px;display:flex;align-items:center;gap:10px;font-family:\'Outfit\',sans-serif;box-shadow:0 6px 20px rgba(0,0,0,.25)';
+    b.innerHTML = ''
+      + '<div style="flex:1;font-size:12px;font-weight:700;line-height:1.3">' + label + '</div>'
+      + '<button onclick="_mtOpenFastingTimerModal()" style="background:rgba(255,255,255,.95);border:0;border-radius:8px;padding:7px 12px;font-family:inherit;font-size:11px;font-weight:800;color:#5A4424;cursor:pointer">Ouvrir</button>'
+      + '<button onclick="_mtDismissFastingBanner()" aria-label="Fermer" style="background:transparent;border:0;color:rgba(255,255,255,.7);font-size:18px;cursor:pointer;padding:0 4px">×</button>';
+    document.body.appendChild(b);
+  } catch(e) {}
+}
+
+function _mtDismissFastingBanner() {
+  var b = document.getElementById('mtFastingBanner');
+  if (b) b.remove();
+}
 
 function _mtRenderBreathingDetail(sess) {
   var h = '';
