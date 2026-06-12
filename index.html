@@ -18538,11 +18538,70 @@ window._trkClearExo = _trkClearExo;
 
 // Init de l'onglet Tracks : construit l'index de recherche et rend l'historique réel.
 function _trkInit() {
+  // ⚠ IMPORTANT : hydrate AVANT le render — sinon le Journal s'affiche
+  // vide même si des entrées existent en localStorage / Firestore.
+  try { _trkLoadHistory(); } catch(e) {}
   try { _trkBuildIndex(); } catch(e) {}
   try { _trkRenderHistory(); } catch(e) {}
   try { _trkRenderProgression(); } catch(e) {}
 }
 window._trkInit = _trkInit;
+
+// ─── Persistance dédiée du journal de tracking (Suivi > Exercices) ───
+// Bug remonté : entrées tracker qui disparaissent au reload de la PWA.
+// Cause : auparavant SEULE source = ah_v8 (saveData blob legacy), pas
+// inscrite dans FB_SYNC_KEYS → aucune sync Firestore, et risque
+// d'écrasement quand _fbApplyPayload restore le profil.
+// Fix : clé dédiée ah_track_history ajoutée à FB_SYNC_KEYS. Le journal
+// est désormais relu au boot via _trkLoadHistory et re-sauvé à chaque
+// entrée via _trkPersistHistory (+ sync Firestore via fbSaveProfile).
+function _trkPersistHistory() {
+  try {
+    var arr = Array.isArray(window.trackHistory) ? window.trackHistory : [];
+    // Borne raisonnable : 1000 entrées max (≈ 2 ans à 1 entrée/jour).
+    if (arr.length > 1000) arr = arr.slice(-1000);
+    localStorage.setItem('ah_track_history', JSON.stringify(arr));
+    window.trackHistory = arr;
+  } catch(e) { console.warn('[trk] persist:', e); }
+  // Sync cloud (Firestore via FB_SYNC_KEYS — clé trackHistory)
+  try { if (typeof fbSaveProfile === 'function') fbSaveProfile(); } catch(e) {}
+}
+window._trkPersistHistory = _trkPersistHistory;
+
+function _trkLoadHistory() {
+  // Sources possibles, dans l'ordre de priorité :
+  // 1. ah_track_history (clé dédiée, sync Firestore via FB_SYNC_KEYS)
+  // 2. window.trackHistory déjà hydraté par _fbApplyPayload (boot Firebase)
+  // 3. ah_v8.trackHistory (legacy saveData, fallback)
+  // On garde la plus LONGUE des sources pour ne perdre aucune entrée
+  // (anti-régression : un user qui a tracké AVANT cette correction a son
+  //  historique uniquement dans ah_v8).
+  var srcs = [];
+  try {
+    var dedi = JSON.parse(localStorage.getItem('ah_track_history') || '[]');
+    if (Array.isArray(dedi)) srcs.push({ from: 'dedi', arr: dedi });
+  } catch(e) {}
+  try {
+    if (Array.isArray(window.trackHistory) && window.trackHistory.length) {
+      srcs.push({ from: 'mem', arr: window.trackHistory.slice() });
+    }
+  } catch(e) {}
+  try {
+    var legacy = JSON.parse(localStorage.getItem('ah_v8') || '{}');
+    if (legacy && Array.isArray(legacy.trackHistory)) {
+      srcs.push({ from: 'v8', arr: legacy.trackHistory });
+    }
+  } catch(e) {}
+  if (!srcs.length) { window.trackHistory = []; return; }
+  // Choisit la source la plus pleine
+  srcs.sort(function(a, b) { return b.arr.length - a.arr.length; });
+  window.trackHistory = srcs[0].arr;
+  // Si la source gagnante n'était PAS la clé dédiée, on migre.
+  if (srcs[0].from !== 'dedi') {
+    try { localStorage.setItem('ah_track_history', JSON.stringify(window.trackHistory)); } catch(e) {}
+  }
+}
+window._trkLoadHistory = _trkLoadHistory;
 
 // Change la méthode de tracking et reconstruit les essais.
 function setTrackMethod(method, btn) {
@@ -18931,25 +18990,66 @@ function saveTrack() {
   var sel = document.getElementById('trackExSelect');
   var exoName = sel && sel.value;
   if (!exoName) {
-    if (!window.TEST_MODE) { alert('Choisis un exercice d\'abord.'); return; }
+    if (!window.TEST_MODE) {
+      if (typeof showToast === 'function') showToast('Choisis un exercice d\'abord.', 'err');
+      else alert('Choisis un exercice d\'abord.');
+      return;
+    }
   }
   if (!_trkMethod) _trkMethod = 'charge';
   var essais = _collectEssais();
-  if (!essais.length && !window.TEST_MODE) { alert('Renseigne au moins un essai.'); return; }
+  if (!essais.length && !window.TEST_MODE) {
+    if (typeof showToast === 'function') showToast('Renseigne au moins un essai avant d\'enregistrer.', 'err');
+    else alert('Renseigne au moins un essai.');
+    return;
+  }
   var best = _trkBestOfEssais(_trkMethod, essais);
 
-  // Persiste dans window.trackHistory (sauvegardé via saveData → ah_v8 blob).
+  // Construit une entrée de journal STRUCTURÉE + rétro-compat avec l'ancien
+  // schéma (exo/method/essais/best). userId + source = traçabilité pour
+  // Titan/SAV. createdAt en epoch pour tri rapide ; date ISO pour lisibilité.
   try {
+    var nowIso = new Date().toISOString();
+    var nowMs = Date.now();
+    var uid = '';
+    try { uid = (window.fbUser && window.fbUser.uid) || ''; } catch(_){}
+    // Méthode normalisée pour la sortie structurée
+    var trackingMethodMap = {
+      charge:        'charge_reps',
+      reps:          'reps_only',
+      temps:         'temps',
+      distance:      'distance',
+      hauteur:       'hauteur_reps'
+    };
+    var values = {};
+    var firstEssai = essais[0] || {};
+    if (_trkMethod === 'charge')   { values.charge = firstEssai.charge; values.reps = firstEssai.reps; }
+    if (_trkMethod === 'reps')     { values.reps = firstEssai.reps; }
+    if (_trkMethod === 'temps')    { values.temps = firstEssai.temps; }
+    if (_trkMethod === 'distance') { values.distance = firstEssai.distance; }
+    if (_trkMethod === 'hauteur')  { values.hauteur = firstEssai.hauteur; values.reps = firstEssai.reps; }
+
     var entry = {
-      date: new Date().toISOString(),
-      exo: exoName || '',
-      method: _trkMethod,
-      essais: essais,
-      rpe: (typeof currentRPE === 'number' ? currentRPE : 0),
-      best: best
+      // ── Forme structurée (brief client) ──
+      userId:         uid,
+      exerciseName:   exoName || '',
+      trackingMethod: trackingMethodMap[_trkMethod] || _trkMethod,
+      values:         values,
+      rpe:            (typeof currentRPE === 'number' ? currentRPE : 0),
+      date:           nowIso.slice(0, 10),    // YYYY-MM-DD
+      createdAt:      nowMs,
+      source:         'exercise_tracker',
+      // ── Rétro-compat avec _trkRenderHistory + ProgressionDelta + statistiques ──
+      exo:            exoName || '',
+      method:         _trkMethod,
+      essais:         essais,
+      best:           best
     };
     if (!Array.isArray(window.trackHistory)) window.trackHistory = [];
     window.trackHistory.push(entry);
+    // Persistance UNIFIÉE : ah_track_history (sync Firestore) + ah_v8
+    // (compat legacy saveData). La clé dédiée a maintenant priorité au boot.
+    _trkPersistHistory();
     if (typeof saveData === 'function') saveData();
   } catch(e) { console.warn('saveTrack persist:', e); }
 
@@ -28406,7 +28506,11 @@ var FB_SYNC_KEYS = [
   ['ah_lib_selection',            'libSelection',        true],
   // Elite Athlète — progression séquentielle + feedbacks 5 questions
   ['ah_ea_progress',               'eaProgress',          true],
-  ['ah_ea_feedback',               'eaFeedback',          true]
+  ['ah_ea_feedback',               'eaFeedback',          true],
+  // Journal de tracking exercices (Suivi > Exercices > Enregistrer)
+  // Auparavant uniquement dans ah_v8 legacy → pas de sync Firestore →
+  // entrées perdues au changement de device et parfois localement.
+  ['ah_track_history',             'trackHistory',        true]
 ];
 
 function _fbCollectPayload() {
