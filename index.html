@@ -14007,6 +14007,22 @@ function launchTodaySession() {
     return;
   }
 
+  // ── Elite Athlète : court-circuite vers la SOT (séance courante de la
+  // progression séquentielle) au lieu de la semaine-type PROGRAMS_V2.
+  // L'utilisateur voit alors les vraies séries de la semaine (5/4/3 en P1,
+  // % 1RM en P3, etc.) et le compteur global de progression incrémente.
+  if (key === 'ea' && typeof window.ELITE_ATHLETE_PROGRAM !== 'undefined') {
+    try {
+      var eaLoc = (typeof _eaCurrentLocation === 'function') ? _eaCurrentLocation() : null;
+      if (eaLoc) {
+        window.launchEASession(eaLoc.phaseIdx, eaLoc.weekIdx, eaLoc.sessIdx);
+        return;
+      }
+      if (typeof showToast === 'function') showToast('🏆 Programme Elite Athlète terminé — bravo !', 'info');
+      return;
+    } catch (e) { console.warn('[EA launchToday]', e); /* fallback ci-dessous */ }
+  }
+
   var prog = PROGRAMS_V2[key];
   var phaseIdx = prof.phaseIdx || 0;
   if (phaseIdx >= prog.phases.length) phaseIdx = 0;
@@ -33640,6 +33656,20 @@ function startSessionGuarded() {
   // Get current session exercises
   var state = window._progV2State || {};
   var progKey = state.key || (typeof currentProgKey !== 'undefined' ? currentProgKey : null);
+
+  // Elite Athlète : court-circuite vers la SOT (séance courante séquentielle).
+  if (progKey === 'ea' && typeof window.ELITE_ATHLETE_PROGRAM !== 'undefined') {
+    try {
+      var eaLoc2 = (typeof _eaCurrentLocation === 'function') ? _eaCurrentLocation() : null;
+      if (eaLoc2) {
+        window.launchEASession(eaLoc2.phaseIdx, eaLoc2.weekIdx, eaLoc2.sessIdx);
+        return;
+      }
+      if (typeof showToast === 'function') showToast('🏆 Programme Elite Athlète terminé — bravo !', 'info');
+      return;
+    } catch (e) { console.warn('[EA startGuarded]', e); /* fallback ci-dessous */ }
+  }
+
   var prog = progKey && typeof PROGRAMS_V2 !== 'undefined' ? PROGRAMS_V2[progKey] : null;
   var exos = null, sessName = '', progName = '', resolvedSessKey = '';
 
