@@ -8084,9 +8084,9 @@ window.tiResetOnEnter = function(){ window.tiShowStep(1); };
     <div class="prof-email" id="profEmail">athlete@email.com</div>
     <div class="prof-stats">
       <div class="ps-item"><div class="ps-val" id="psScore">—</div><div class="ps-label">Score /100</div></div>
-      <div class="ps-item"><div class="ps-val" id="psStreak">3</div><div class="ps-label">Jours streak</div></div>
-      <div class="ps-item"><div class="ps-val" id="psSessions">8</div><div class="ps-label">Séances</div></div>
-      <div class="ps-item"><div class="ps-val" id="psBadges">2</div><div class="ps-label">Badges</div></div>
+      <div class="ps-item"><div class="ps-val" id="psStreak">—</div><div class="ps-label">Jours streak</div></div>
+      <div class="ps-item"><div class="ps-val" id="psSessions">—</div><div class="ps-label">Séances</div></div>
+      <div class="ps-item"><div class="ps-val" id="psBadges">0</div><div class="ps-label">Badges</div></div>
     </div>
   </div>
 
@@ -8154,37 +8154,13 @@ window.tiResetOnEnter = function(){ window.tiShowStep(1); };
     </div>
   </div>
 
-  <!-- Golden Titan Badges -->
-  <div class="sec-title">🏅 GOLDEN TITAN BADGE</div>
-  <div class="gtb-row">
-    <div class="gtb locked">
-      <div class="gtb-shine"></div>
-      <div class="gtb-icon">🥉</div>
-      <div class="gtb-name">Bronze</div>
-      <div class="gtb-req">Rythme parfait<br>1 mois</div>
-    </div>
-    <div class="gtb locked">
-      <div class="gtb-shine"></div>
-      <div class="gtb-icon">🥈</div>
-      <div class="gtb-name">Argent</div>
-      <div class="gtb-req">Rythme parfait<br>3 mois</div>
-    </div>
-    <div class="gtb locked">
-      <div class="gtb-shine"></div>
-      <div class="gtb-icon">🥇</div>
-      <div class="gtb-name">Or</div>
-      <div class="gtb-req">Rythme parfait<br>6 mois</div>
-    </div>
-    <div class="gtb locked">
-      <div class="gtb-shine"></div>
-      <div class="gtb-icon">🔱</div>
-      <div class="gtb-name">Suprême</div>
-      <div class="gtb-req">Rythme parfait<br>1 an (perdable)</div>
-    </div>
-  </div>
+  <!-- Section "Golden Titan Badges" supprimée : les 4 médailles
+       (Bronze/Argent/Or/Suprême) reposaient sur "Rythme parfait" qui
+       n'était jamais défini ni calculé → 4 cartes verrouillées éternellement.
+       On garde un seul système de badges, branché à des compteurs réels. -->
 
   <!-- Achievement Badges -->
-  <div class="sec-title">🎖️ BADGES <span id="badgesCount" style="font-size:11px;color:var(--muted);font-weight:600;margin-left:8px">0 / 12</span></div>
+  <div class="sec-title">🎖️ BADGES <span id="badgesCount" style="font-size:11px;color:var(--muted);font-weight:600;margin-left:8px">0 / 9</span></div>
   <div class="badge-grid" id="badgeGrid">
     <!-- Injecté par renderBadges() -->
   </div>
@@ -25766,40 +25742,52 @@ function renderTrialBanner() {
 window.renderTrialBanner = renderTrialBanner;
 
 // ═══ BADGES (logique d'unlock) ═══
+// Liste resserrée à 9 badges, chacun adossé à un compteur réel et incrémenté
+// quelque part dans le code (cf. tableau de hooks ci-dessous). On a viré
+// PR Hunter (pas de tracking PR), Zen Master (pas de protocole Flow câblé)
+// et Légende (doublon strict de Builder, même condition programsDone>=2).
+//
+//   sessionsDone  → _lsShowComplete (line ~34207) + lsClose V2 (line ~22128)
+//   trackEntries  → ah_set_history filter (toute entrée typée track/exo)
+//   satDone       → calculateSAT() / profil3 finish
+//   streak        → _bumpSessionStreak() appelé dans _lsFinalizeSession
+//   phasesDone    → _advanceProgramProgress() quand phaseIdx avance
+//   programsDone  → _checkProgramCompletion() (line ~33870)
+//   athScore      → calculateSAT() (valeur réelle calculée)
 var BADGES_DEF = [
   { id:'firstStep',  icon:'🔥', name:'Premier Pas',  desc:'1ère séance terminée',     check: function(s){ return (s.sessionsDone||0) >= 1; } },
   { id:'dataDriven', icon:'📊', name:'Data Driven',  desc:'1er exercice tracké',      check: function(s){ return (s.trackEntries||0) >= 1; } },
   { id:'tester',     icon:'🏆', name:'Testeur',      desc:'SAT complété',             check: function(s){ return !!s.satDone; } },
   { id:'streak7',    icon:'⚡', name:'Streak 7',     desc:'7 jours consécutifs',      check: function(s){ return (s.streak||0) >= 7; } },
   { id:'streak30',   icon:'🦅', name:'Streak 30',    desc:'30 jours consécutifs',     check: function(s){ return (s.streak||0) >= 30; } },
-  { id:'phase1',     icon:'💪', name:'Phase 1',      desc:'Fondations terminées',     check: function(s){ return (s.phasesDone||0) >= 1; } },
+  { id:'phase1',     icon:'💪', name:'Phase 1',      desc:'1ère phase terminée',      check: function(s){ return (s.phasesDone||0) >= 1; } },
   { id:'prog1',      icon:'🏀', name:'Programme 1',  desc:'1er programme fini',       check: function(s){ return (s.programsDone||0) >= 1; } },
   { id:'builder',    icon:'🛠️', name:'Builder',      desc:'Workout Builder débloqué', check: function(s){ return (s.programsDone||0) >= 2; } },
   { id:'surhumain',  icon:'🔱', name:'Surhumain',    desc:'Score 91+/100',            check: function(s){ return (s.athScore||0) >= 91; } },
-  { id:'prHunter',   icon:'📈', name:'PR Hunter',    desc:'5 records personnels',     check: function(s){ return (s.prs||0) >= 5; } },
-  { id:'zenMaster',  icon:'🧘', name:'Zen Master',   desc:'Protocole Flow 10 fois',   check: function(s){ return (s.flowDone||0) >= 10; } },
-  { id:'legende',    icon:'👑', name:'Légende',      desc:'2 programmes terminés',    check: function(s){ return (s.programsDone||0) >= 2; } },
 ];
 
 function _badgeState() {
   var profile = {};
   try { profile = JSON.parse(localStorage.getItem('ah_profile') || '{}'); } catch(e) {}
+  // Fallbacks STRICTS (anti-faux positif) : on ne compte que les entrées
+  // explicitement typées. Avant : "h.sessName" matchait des entrées SET
+  // legacy et gonflait sessionsDone tant que profile.sessionsDone n'avait
+  // pas été initialisé par _bumpProfileCounter.
   var hist = [];
   try { hist = JSON.parse(localStorage.getItem('ah_set_history') || '[]'); } catch(e) {}
-  // Count unique session-completion events
-  var sessionsDone = hist.filter(function(h){ return h.type === 'session' || h.sessName; }).length;
-  // Count tracked entries (SET history, SAT, set history)
-  var trackEntries = hist.filter(function(h){ return h.exo || h.type === 'track'; }).length;
+  var trackHist = [];
+  try { trackHist = JSON.parse(localStorage.getItem('ah_track_history') || '[]'); } catch(e) {}
+  var sessionsDoneFallback = hist.filter(function(h){ return h && h.type === 'session'; }).length;
+  var trackEntriesFallback = trackHist.length
+    || hist.filter(function(h){ return h && h.type === 'track'; }).length;
   return {
-    sessionsDone: profile.sessionsDone != null ? profile.sessionsDone : sessionsDone,
-    trackEntries: profile.trackEntries != null ? profile.trackEntries : trackEntries,
+    sessionsDone: profile.sessionsDone != null ? profile.sessionsDone : sessionsDoneFallback,
+    trackEntries: profile.trackEntries != null ? profile.trackEntries : trackEntriesFallback,
     satDone:      !!(profile.satDone || (typeof user !== 'undefined' && user.satDone)),
-    streak:       profile.streak || (typeof user !== 'undefined' ? user.streak : 0) || 0,
+    streak:       profile.streak || 0,
     phasesDone:   profile.phasesDone || 0,
     programsDone: profile.programsDone || 0,
     athScore:     profile.athScore || (typeof user !== 'undefined' ? user.athScore : 0) || 0,
-    prs:          profile.prs || 0,
-    flowDone:     profile.flowDone || 0,
   };
 }
 
@@ -25821,8 +25809,15 @@ function renderBadges() {
   grid.innerHTML = html;
   var cnt = document.getElementById('badgesCount');
   if (cnt) cnt.textContent = earnedCount + ' / ' + BADGES_DEF.length;
-  var psBadges = document.getElementById('psBadges');
-  if (psBadges) psBadges.textContent = earnedCount;
+  // Stats du header Profil (Moi) — données réelles, plus de placeholders.
+  var psBadges  = document.getElementById('psBadges');
+  var psScore   = document.getElementById('psScore');
+  var psStreak  = document.getElementById('psStreak');
+  var psSessions= document.getElementById('psSessions');
+  if (psBadges)   psBadges.textContent   = earnedCount;
+  if (psScore)    psScore.textContent    = s.athScore     > 0 ? s.athScore     : '—';
+  if (psStreak)   psStreak.textContent   = s.streak       > 0 ? s.streak       : '—';
+  if (psSessions) psSessions.textContent = s.sessionsDone > 0 ? s.sessionsDone : '—';
 
   // Trigger badge-earned celebration if any new ones were unlocked since last render
   try {
@@ -25845,6 +25840,31 @@ function _bumpProfileCounter(key, delta) {
   try {
     var profile = JSON.parse(localStorage.getItem('ah_profile') || '{}');
     profile[key] = (profile[key] || 0) + (delta || 1);
+    localStorage.setItem('ah_profile', JSON.stringify(profile));
+    try { if (typeof fbSaveProfile === 'function') fbSaveProfile(); } catch(e) {}
+  } catch(e) {}
+}
+
+// Met à jour profile.streak (jours consécutifs avec ≥ 1 séance terminée).
+// Règle : J = J-1 → streak+1 ; même jour → no-op ; gap > 1 jour → reset à 1.
+// Appelé depuis _lsFinalizeSession quand une séance est validée.
+function _bumpSessionStreak() {
+  try {
+    var profile = JSON.parse(localStorage.getItem('ah_profile') || '{}');
+    var todayKey = new Date().toISOString().slice(0, 10);
+    var lastKey  = profile.lastSessionDay || null;
+    if (lastKey === todayKey) return; // déjà une séance aujourd'hui
+    var streak = profile.streak || 0;
+    if (lastKey) {
+      var lastTs  = new Date(lastKey + 'T00:00:00Z').getTime();
+      var todayTs = new Date(todayKey + 'T00:00:00Z').getTime();
+      var dayGap  = Math.round((todayTs - lastTs) / 86400000);
+      streak = (dayGap === 1) ? streak + 1 : 1; // 1 = aujourd'hui compte
+    } else {
+      streak = 1;
+    }
+    profile.streak = streak;
+    profile.lastSessionDay = todayKey;
     localStorage.setItem('ah_profile', JSON.stringify(profile));
     try { if (typeof fbSaveProfile === 'function') fbSaveProfile(); } catch(e) {}
   } catch(e) {}
@@ -33939,8 +33959,15 @@ function _advanceProgramProgress(progKey, sessKey) {
     } else if (st.phaseIdx < prog.phases.length - 1) {
       st.phaseIdx++;
       st.week = 1;
+      // Phase précédente terminée → bump compteur global (badge phase1).
+      try { _bumpProfileCounter('phasesDone', 1); } catch(e) {}
     } else {
       st.week = phase.weeks || 1;
+      // Dernière phase terminée → bump aussi (cas mono-phase ou fin de
+      // programme). programsDone est géré séparément via _checkProgramCompletion.
+      if (!st.completed) {
+        try { _bumpProfileCounter('phasesDone', 1); } catch(e) {}
+      }
       st.completed = true;
     }
   }
@@ -34203,9 +34230,10 @@ function _lsFinalizeSession(feedback) {
   if (body) body.scrollTop = 0;
   showToast('Séance validée 🔥', 'ok');
 
-  // Tracking complétion : sessionsDone + historique avec feedback attaché.
+  // Tracking complétion : sessionsDone + streak quotidien + historique.
   try {
     _bumpProfileCounter('sessionsDone', 1);
+    _bumpSessionStreak();
     var hist = JSON.parse(localStorage.getItem('ah_set_history') || '[]');
     hist.push({
       type: 'session',
