@@ -9784,10 +9784,21 @@ window.tiResetOnEnter = function(){ window.tiShowStep(1); };
 
 <!-- Base CIQUAL 2025 (ANSES) — 3484 aliments, chargée pour la recherche nutrition -->
 <script src="ciqual-data.js"></script>
-<!-- Source de vérité du programme Elite Athlète (EA_SOT_V1) — voir
-     data/elite-athlete-program.js. Expose window.ELITE_ATHLETE_PROGRAM
-     et window.ELITE_ATHLETE_LIB. Pas d'effet sur les autres programmes. -->
+<!-- ═══ SOURCES DE VÉRITÉ PROGRAMMES (data/*-program.js) ═══════════════════
+     Chaque programme expose window.<NAME>_PROGRAM + window.<NAME>_LIB.
+     Aucune SOT n'est encore consommée pour exécuter les séances — seule EA
+     l'est (voir _eaCache, launchEASession, renderEAProgress). Les 5 autres
+     sont chargées en parallèle pour la future intégration chirurgicale,
+     l'inspection console et la vérification utilisateur (window.<X>_LIB).
+     Si l'un de ces fichiers échoue à charger, l'app continue de fonctionner
+     normalement (les helpers EA et PROGRAMS_V2 sont indépendants).
+     ──────────────────────────────────────────────────────────────────── -->
 <script src="data/elite-athlete-program.js"></script>
+<script src="data/vertical-dunk-program.js"></script>
+<script src="data/shred-explose-program.js"></script>
+<script src="data/explose-plus-program.js"></script>
+<script src="data/triphasique-program.js"></script>
+<script src="data/microtraining-program.js"></script>
 <script>
 function showNutriTab(el, tab) {
   document.querySelectorAll('#vNutri .sub-tab').forEach(function(t){ t.classList.remove('on'); });

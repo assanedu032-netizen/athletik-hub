@@ -1,9 +1,14 @@
-const CACHE = 'athletik-v200';
+const CACHE = 'athletik-v202';
 const ASSETS = [
   '/',
   '/index.html',
   '/ciqual-data.js',
   '/data/elite-athlete-program.js',
+  '/data/vertical-dunk-program.js',
+  '/data/shred-explose-program.js',
+  '/data/explose-plus-program.js',
+  '/data/triphasique-program.js',
+  '/data/microtraining-program.js',
   '/icons/icon-192.png',
   '/icons/icon-512.png',
   '/assets/sounds/timer-beep.mp3'
