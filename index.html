@@ -7024,11 +7024,11 @@ window.tiResetOnEnter = function(){ window.tiShowStep(1); };
 
     <!-- ═══ SCOREBOARD navy-deep DS v1.0 ═══ -->
     <div class="ah-scoreboard" id="homeScoreboard" style="margin:6px 20px 0;background:var(--ah-navy-deep);padding:14px 18px;border-radius:14px">
-      <div class="grp"><span class="lbl">SET</span><span class="val empty" id="sbSet">—</span></div>
+      <div class="grp"><span class="lbl">SCORE</span><span class="val empty" id="sbSet">—</span></div>
       <div class="div"></div>
-      <div class="grp"><span class="lbl">CMJ</span><span class="val empty" id="sbCmj">—</span></div>
+      <div class="grp"><span class="lbl">DÉTENTE</span><span class="val empty" id="sbCmj">—</span></div>
       <div class="div"></div>
-      <div class="grp"><span class="lbl">J</span><span class="val empty" id="sbJours">—</span></div>
+      <div class="grp"><span class="lbl">STREAK</span><span class="val empty" id="sbJours">—</span></div>
     </div>
 
     <!-- ═══ CARTE PROFIL ATHLETIK (mode discovery — locked) ═══
@@ -7451,7 +7451,7 @@ window.tiResetOnEnter = function(){ window.tiShowStep(1); };
           <div class="sc-row"><div class="sc-row-label">🦘 Détente verticale</div><div><span class="sc-row-val" id="scJump">—</span><span class="sc-row-pct">40%</span></div></div>
           <div class="sc-row"><div class="sc-row-label">🏋️ Force (1RM Squat)</div><div><span class="sc-row-val" id="scForce">—</span><span class="sc-row-pct">25%</span></div></div>
           <div class="sc-row"><div class="sc-row-label">⚡ Sprint</div><div><span class="sc-row-val" id="scSprint">—</span><span class="sc-row-pct">20%</span></div></div>
-          <div class="sc-row"><div class="sc-row-label">🧘 Mobilité FMS</div><div><span class="sc-row-val" id="scMobility">—</span><span class="sc-row-pct">15%</span></div></div>
+          <div class="sc-row"><div class="sc-row-label">🧘 Mobilité fonctionnelle</div><div><span class="sc-row-val" id="scMobility">—</span><span class="sc-row-pct">15%</span></div></div>
         </div>
       </div>
 
@@ -12918,7 +12918,7 @@ var SET_TYPES = {
     { ic: '🦘', name: 'Détente verticale', target: 'Hauteur max atteinte', unit: 'cm', placeholder: '290' },
     { ic: '⚡', name: 'Sprint 30m', target: 'Temps meilleur essai', unit: 'sec', placeholder: '4.2' },
     { ic: '🏋️', name: 'Back Squat 5RM', target: 'Charge max', unit: 'kg', placeholder: '80' },
-    { ic: '🧘', name: 'FMS Mobilité', target: 'Score sur 21 points', unit: '/21', placeholder: '14' },
+    { ic: '🧘', name: 'Mobilité fonctionnelle', target: '7 mouvements notés /3 — total /21', unit: '/21', placeholder: '14' },
   ]
 };
 
@@ -13436,12 +13436,12 @@ var satExercices = [
     hasTimer: true, timerSec: 300, timerLabel: 'Récupération sprint', hasStopwatch: true
   },
   {
-    id: 'fms', name: 'FMS Mobilité', emoji: '🧘',
-    desc: 'Score ton niveau de mobilité sur 21 points (7 mouvements × 3 points max).',
-    libraryName: 'FMS',
+    id: 'fms', name: 'Mobilité fonctionnelle', emoji: '🧘',
+    desc: 'Évalue ta mobilité sur 7 mouvements fondamentaux (squat, fente, épaules, etc.). Chaque mouvement est noté /3 — score total /21. Méthode FMS (Functional Movement Screen).',
+    libraryName: 'Mobilité fonctionnelle',
     video: 'https://www.youtube.com/embed/4dsrMFf_SRY',
-    fields: [{id:'satFMS', label:'Score FMS', unit:'/21', placeholder:'14'}],
-    hint: '< 14 = risque blessure. Travaille la mobilité en priorité.',
+    fields: [{id:'satFMS', label:'Ton score /21', unit:'/21', placeholder:'14'}],
+    hint: '< 14 = risque de blessure. Travaille la mobilité en priorité.',
     hasTimer: false
   }
 ];
@@ -14436,7 +14436,11 @@ let currentRPE=0,liveRPE=0,timerInterval=null,timerSeconds=120,timerRunning=fals
 let currentCat=null,currentCatData=[],currentFilter='all',currentProgKey=null;
 let conversationHistory=[],liveData=[],currentLiveEx=0;
 // Clés API toutes côté serveur (Netlify Function /titan). Aucune clé en clair ici.
-const user={name:'ATHLÈTE',email:'',program:'ELITE ATHLETE',programKey:'ea',programObj:'Explosivité globale',phase:1,weekNum:2,totalWeeks:20,progressPct:12,streak:3,athScore:null,vertJump:null,level:'Rookie',levelIcon:'🥉',satDone:false,sport:'Basket',age:22};
+// Valeurs par défaut HONNÊTES — pas de fake streak/weekNum/progressPct.
+// Les vraies valeurs viennent de ah_profile (renderUserData / loadProfile).
+// Avant : streak:3 / weekNum:2 / progressPct:12 affichaient des stats bidon
+// sur le scoreboard Home (J=3) tant qu'aucune séance n'avait été faite.
+const user={name:'ATHLÈTE',email:'',program:'ELITE ATHLETE',programKey:'ea',programObj:'Explosivité globale',phase:1,weekNum:1,totalWeeks:20,progressPct:0,streak:0,athScore:null,vertJump:null,level:'Rookie',levelIcon:'🥉',satDone:false,sport:'Basket',age:22};
 
 
 // ═══ STUBS DE SÉCURITÉ ═══
@@ -29199,10 +29203,10 @@ var ALL_TESTS = {
     type: 'sat'
   },
   fms: {
-    id: 'fms', name: 'Mobilité FMS', emoji: '🧘',
-    desc: '7 mouvements fondamentaux notés de 0 à 3. Score total sur 21.',
-    fields: [{id:'p3FMS', label:'Score FMS', unit:'/21', placeholder:'14'}],
-    hint: '< 14 = risque blessure. Travaille la mobilité en priorité.',
+    id: 'fms', name: 'Mobilité fonctionnelle', emoji: '🧘',
+    desc: '7 mouvements fondamentaux (squat, fente, épaules…) notés /3. Score total /21. Méthode FMS (Functional Movement Screen).',
+    fields: [{id:'p3FMS', label:'Ton score /21', unit:'/21', placeholder:'14'}],
+    hint: '< 14 = risque de blessure. Travaille la mobilité en priorité.',
     hasTimer: false,
     type: 'sat'
   },
@@ -30520,7 +30524,7 @@ function _trMetricLabel(key) {
   return ({
     detente:'Détente verticale', squat:'Squat', hipthrust:'Hip Thrust',
     sdt:'Soulevé de terre', dc:'Développé couché', sprint30:'Sprint',
-    fms:'Mobilité (FMS)'
+    fms:'Mobilité fonctionnelle'
   })[key] || key;
 }
 function _trTitanAnalysis(score, weakLabel) {
@@ -30701,7 +30705,7 @@ function renderTestResult(testType) {
   if (metrics.hipthrust != null) html += _trPerfCard('Hip Thrust', metrics.hipthrust.toFixed(2), '× BW', _trComment('hipthrust', metrics.hipthrust));
   if (metrics.sdt != null)      html += _trPerfCard('Soulevé de terre', metrics.sdt.toFixed(2), '× BW', _trComment('sdt', metrics.sdt));
   if (metrics.dc != null)       html += _trPerfCard('Développé couché', metrics.dc.toFixed(2), '× BW', _trComment('dc', metrics.dc));
-  if (metrics.fms != null)      html += _trPerfCard('Mobilité FMS', metrics.fms, '/ 21', _trComment('fms', metrics.fms));
+  if (metrics.fms != null)      html += _trPerfCard('Mobilité fonctionnelle', metrics.fms, '/ 21', _trComment('fms', metrics.fms));
   html += '</div></div>';
 
   // 5. Analyse Titan
@@ -31551,7 +31555,7 @@ var ATHLETIK_STANDARDS = {
     }
   },
   fms: {  // score sur 21
-    label: 'Mobilité FMS',
+    label: 'Mobilité fonctionnelle',
     icon: '🧘',
     unit: '/21',
     higherIsBetter: true,
