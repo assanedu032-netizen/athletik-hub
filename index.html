@@ -20710,16 +20710,65 @@ function _openMicroV2(microKey) {
   container.innerHTML = h;
 }
 
+// ─── Détermine le palier de jeûne actuel pour l'utilisateur ───────────────
+function _mtGetCurrentFastingTarget() {
+  try {
+    var fl = window.MICROTRAINING_LIB && window.MICROTRAINING_LIB.fastingLevels;
+    if (!fl) return null;
+    var profile = JSON.parse(localStorage.getItem('ah_profile') || '{}');
+    var level = profile.mtFastingLevel || 'debutant';
+    var st = getProgramProgress('mt');
+    var week = st.week || 1;
+    var paliers = (fl[level] || fl.debutant).paliers;
+    // Match weekRange (e.g. "1-2", "3", "4", etc.)
+    for (var i = 0; i < paliers.length; i++) {
+      var rng = paliers[i].weekRange;
+      if (rng.indexOf('-') > -1) {
+        var parts = rng.split('-').map(function(x){return parseInt(x);});
+        if (week >= parts[0] && week <= parts[1]) return { level: level, palier: paliers[i] };
+      } else if (parseInt(rng) === week) {
+        return { level: level, palier: paliers[i] };
+      }
+    }
+    return { level: level, palier: paliers[paliers.length - 1] };
+  } catch(e) { return null; }
+}
+
 function _mtRenderFastingDetail(sess, mt) {
   var h = '';
   var fl = mt.fastingLevels || (window.MICROTRAINING_LIB && window.MICROTRAINING_LIB.fastingLevels);
   if (!fl) return '<div style="color:var(--muted);font-size:11px">Paliers non chargés.</div>';
+  var target = _mtGetCurrentFastingTarget();
+
+  // Hero : palier actuel + bouton démarrer
+  if (target) {
+    var st = getProgramProgress('mt');
+    h += '<div style="background:linear-gradient(135deg,#9C7B3E,#7A5F2D);border-radius:14px;padding:18px;margin-bottom:14px;color:#fff;text-align:center">';
+    h +=   '<div style="font-size:9px;font-weight:800;letter-spacing:1.5px;opacity:.7">PALIER ' + (target.level === 'avance' ? 'AVANCÉ' : 'DÉBUTANT') + ' · SEMAINE ' + (st.week || 1) + '</div>';
+    h +=   '<div style="font-family:\'Bebas Neue\',sans-serif;font-size:46px;letter-spacing:2px;margin:8px 0;line-height:1">' + target.palier.durationHours + 'H</div>';
+    h +=   '<div style="font-size:11.5px;opacity:.85;line-height:1.5">Eau uniquement. Pas de café sucré, jus, ni grignotage.</div>';
+    h += '</div>';
+    h += '<button type="button" onclick="_mtStartFastingTimer(' + target.palier.durationHours + ')" class="btn btn-gold" style="width:100%;margin-bottom:14px">🕒 Démarrer le jeûne (' + target.palier.durationHours + 'h)</button>';
+  }
+
+  // Sélecteur de niveau (débutant / avancé)
+  var currentLvl = (target && target.level) || 'debutant';
+  h += '<div style="font-size:9px;color:var(--muted);font-weight:800;letter-spacing:1.5px;margin-bottom:8px">⚙️ MON NIVEAU</div>';
+  h += '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:14px">';
+  ['debutant','avance'].forEach(function(lvl) {
+    var on = (currentLvl === lvl);
+    h += '<button type="button" onclick="_mtSetFastingLevel(\'' + lvl + '\')" style="padding:10px;background:' + (on?'var(--navy)':'var(--surface)') + ';border:1px solid ' + (on?'var(--navy)':'var(--border)') + ';border-radius:10px;font-family:\'Outfit\',sans-serif;font-size:12px;font-weight:700;color:' + (on?'var(--gold)':'var(--text)') + ';cursor:pointer">' + (lvl==='avance'?'⚡ Avancé':'🌱 Débutant') + '</button>';
+  });
+  h += '</div>';
+
+  // Paliers progression
   h += '<div style="font-size:9px;color:var(--muted);font-weight:800;letter-spacing:1.5px;margin-bottom:8px">📊 PALIERS DE PROGRESSION</div>';
   ['debutant','avance'].forEach(function(lvl) {
     var level = fl[lvl];
     if (!level) return;
-    h += '<div style="background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:12px;margin-bottom:10px">';
-    h +=   '<div style="font-size:11px;font-weight:800;color:var(--text);margin-bottom:8px;letter-spacing:.5px">' + level.label + '</div>';
+    var isMine = (currentLvl === lvl);
+    h += '<div style="background:var(--surface);border:1px solid ' + (isMine?'rgba(197,164,78,.4)':'var(--border)') + ';border-radius:10px;padding:12px;margin-bottom:10px;opacity:' + (isMine?'1':'.6') + '">';
+    h +=   '<div style="font-size:11px;font-weight:800;color:var(--text);margin-bottom:8px;letter-spacing:.5px">' + level.label + (isMine ? ' · TON NIVEAU' : '') + '</div>';
     h +=   '<div style="display:grid;grid-template-columns:repeat(5,1fr);gap:4px">';
     level.paliers.forEach(function(p) {
       h += '<div style="background:var(--surface2);border-radius:6px;padding:6px 4px;text-align:center">';
@@ -20731,10 +20780,139 @@ function _mtRenderFastingDetail(sess, mt) {
     h += '</div>';
   });
   if (fl.note) {
-    h += '<div style="background:rgba(197,164,78,.06);padding:9px 12px;border-radius:8px;font-size:11px;color:var(--text2);line-height:1.5">💡 ' + fl.note + '</div>';
+    h += '<div style="background:rgba(197,164,78,.06);padding:9px 12px;border-radius:8px;font-size:11px;color:var(--text2);line-height:1.5;margin-bottom:14px">💡 ' + fl.note + '</div>';
   }
+  // Sécurité
+  h += '<div style="background:rgba(224,82,82,.06);border:1px solid rgba(224,82,82,.25);padding:11px 13px;border-radius:10px">';
+  h +=   '<div style="font-size:9px;color:#E05252;font-weight:800;letter-spacing:1.5px;margin-bottom:5px">⚠️ SÉCURITÉ</div>';
+  h +=   '<div style="font-size:11.5px;color:var(--text2);line-height:1.55">Si vertiges, nausées ou malaise → arrête immédiatement et bois de l\'eau. Hydratation obligatoire. Si problème de santé, consulte un médecin avant de jeûner.</div>';
+  h += '</div>';
   return h;
 }
+
+// ─── Stockage du choix de niveau jeûne ────────────────────────────────────
+function _mtSetFastingLevel(level) {
+  try {
+    var profile = JSON.parse(localStorage.getItem('ah_profile') || '{}');
+    profile.mtFastingLevel = level;
+    localStorage.setItem('ah_profile', JSON.stringify(profile));
+    try { if (typeof fbSaveProfile === 'function') fbSaveProfile(); } catch(e) {}
+    if (typeof showToast === 'function') showToast('Niveau jeûne : ' + (level === 'avance' ? 'Avancé ⚡' : 'Débutant 🌱'), 'ok');
+    _openMicroV2('mt_m1');  // re-render
+  } catch(e) { console.warn('_mtSetFastingLevel:', e); }
+}
+
+// ─── Démarre le timer de jeûne (persisté localStorage, survit aux fermetures)
+function _mtStartFastingTimer(targetHours) {
+  try {
+    var now = Date.now();
+    var endMs = now + targetHours * 3600 * 1000;
+    var session = { startedAt: now, endsAt: endMs, targetHours: targetHours, status: 'active' };
+    localStorage.setItem('ah_mt_fasting', JSON.stringify(session));
+    _mtOpenFastingTimerModal();
+  } catch(e) { console.warn('_mtStartFastingTimer:', e); }
+}
+
+// ─── Modal plein écran du timer jeûne (countdown + actions) ──────────────
+function _mtOpenFastingTimerModal() {
+  var existing = document.getElementById('mtFastingModal');
+  if (existing) existing.remove();
+  var modal = document.createElement('div');
+  modal.id = 'mtFastingModal';
+  modal.style.cssText = 'position:fixed;inset:0;background:linear-gradient(135deg,#9C7B3E,#5A4424);z-index:9000;display:flex;flex-direction:column;align-items:center;justify-content:space-between;padding:32px 22px;color:#fff;padding-top:env(safe-area-inset-top,32px);padding-bottom:env(safe-area-inset-bottom,32px)';
+  modal.innerHTML = ''
+    + '<div style="font-size:9px;font-weight:800;letter-spacing:2px;opacity:.7">JEÛNE EN COURS</div>'
+    + '<div style="text-align:center">'
+    +   '<div id="mtFastIcon" style="font-size:64px;margin-bottom:12px">🕒</div>'
+    +   '<div id="mtFastCountdown" style="font-family:\'Bebas Neue\',sans-serif;font-size:72px;letter-spacing:3px;line-height:1">--:--:--</div>'
+    +   '<div id="mtFastTarget" style="font-size:13px;opacity:.7;margin-top:8px"></div>'
+    + '</div>'
+    + '<div style="display:flex;flex-direction:column;gap:10px;width:100%;max-width:340px">'
+    +   '<button onclick="_mtFastValidate()" style="padding:14px;background:rgba(255,255,255,.95);border:0;border-radius:12px;font-family:\'Outfit\',sans-serif;font-size:14px;font-weight:800;color:#5A4424;cursor:pointer">✓ Valider — jeûne terminé</button>'
+    +   '<button onclick="_mtFastAbort()" style="padding:12px;background:transparent;border:1px solid rgba(255,255,255,.4);border-radius:12px;font-family:\'Outfit\',sans-serif;font-size:12px;font-weight:700;color:#fff;cursor:pointer">🛑 Arrêter (vertiges, malaise…)</button>'
+    +   '<button onclick="_mtFastClose()" style="padding:10px;background:transparent;border:0;color:rgba(255,255,255,.6);font-family:\'Outfit\',sans-serif;font-size:11.5px;cursor:pointer">Fermer (le jeûne continue en arrière-plan)</button>'
+    + '</div>';
+  document.body.appendChild(modal);
+  _mtFastingTick();
+  if (window._mtFastingTimerInterval) clearInterval(window._mtFastingTimerInterval);
+  window._mtFastingTimerInterval = setInterval(_mtFastingTick, 1000);
+}
+
+function _mtFastingTick() {
+  try {
+    var raw = localStorage.getItem('ah_mt_fasting');
+    if (!raw) return;
+    var s = JSON.parse(raw);
+    var now = Date.now();
+    var remaining = s.endsAt - now;
+    var modal = document.getElementById('mtFastingModal');
+    if (!modal) return;
+    var elapsed = now - s.startedAt;
+    var elapsedHours = elapsed / 3600000;
+    var targetH = s.targetHours;
+    var pct = Math.min(100, (elapsedHours / targetH) * 100);
+    var tgtEl = document.getElementById('mtFastTarget');
+    if (tgtEl) tgtEl.textContent = 'Cible : ' + targetH + 'h · ' + Math.round(pct) + '% écoulé';
+    var iconEl = document.getElementById('mtFastIcon');
+    var cdEl = document.getElementById('mtFastCountdown');
+    if (remaining <= 0) {
+      if (cdEl) cdEl.textContent = '✓ TERMINÉ';
+      if (iconEl) iconEl.textContent = '🎉';
+      // Notif si possible (pas bloquant)
+      try { if (Notification && Notification.permission === 'granted') new Notification('Microtraining', { body: 'Jeûne terminé. Tu peux valider.' }); } catch(e) {}
+    } else {
+      var hh = Math.floor(remaining / 3600000);
+      var mm = Math.floor((remaining % 3600000) / 60000);
+      var ss = Math.floor((remaining % 60000) / 1000);
+      if (cdEl) cdEl.textContent = String(hh).padStart(2,'0') + ':' + String(mm).padStart(2,'0') + ':' + String(ss).padStart(2,'0');
+    }
+  } catch(e) {}
+}
+
+function _mtFastValidate() {
+  try {
+    var raw = localStorage.getItem('ah_mt_fasting');
+    if (!raw) { _mtFastClose(); return; }
+    var s = JSON.parse(raw);
+    var elapsedHours = (Date.now() - s.startedAt) / 3600000;
+    var reached = elapsedHours >= s.targetHours * 0.9;  // tolérance 10%
+    if (!reached) {
+      if (!confirm('Tu n\'as pas atteint la cible (' + s.targetHours + 'h). Tu confirmes la validation ?')) return;
+    }
+    localStorage.removeItem('ah_mt_fasting');
+    _mtFastClose();
+    _mtMarkMicroDone('mt_m1');
+  } catch(e) { console.warn('_mtFastValidate:', e); }
+}
+
+function _mtFastAbort() {
+  if (!confirm('Tu veux arrêter le jeûne ?\n\nLa micro ne sera PAS validée. Tu pourras réessayer plus tard ou choisir un palier plus court.')) return;
+  try { localStorage.removeItem('ah_mt_fasting'); } catch(e) {}
+  _mtFastClose();
+  if (typeof showToast === 'function') showToast('Jeûne arrêté. Pense à t\'hydrater.', 'info');
+}
+
+function _mtFastClose() {
+  if (window._mtFastingTimerInterval) { clearInterval(window._mtFastingTimerInterval); window._mtFastingTimerInterval = null; }
+  var m = document.getElementById('mtFastingModal');
+  if (m) m.remove();
+}
+
+// Restauration : si un jeûne est en cours au prochain reload, on rouvre le modal.
+window.addEventListener('load', function() {
+  try {
+    var raw = localStorage.getItem('ah_mt_fasting');
+    if (!raw) return;
+    var s = JSON.parse(raw);
+    if (s && s.endsAt && Date.now() - s.startedAt < 48 * 3600 * 1000) {
+      // < 48h depuis le démarrage → on rouvre. Au-delà, on suppose oubli + nettoie.
+      // On attend que l'app soit prête (1.5s), pour ne pas spammer au boot
+      setTimeout(_mtOpenFastingTimerModal, 1500);
+    } else if (s) {
+      localStorage.removeItem('ah_mt_fasting');
+    }
+  } catch(e) {}
+});
 
 function _mtRenderBreathingDetail(sess) {
   var h = '';
@@ -20767,18 +20945,155 @@ function _mtRenderFreeChoiceDetail(sess, mt) {
 
 function _mtRenderSprintDetail(sess) {
   var h = '';
-  h += '<div style="font-size:9px;color:var(--muted);font-weight:800;letter-spacing:1.5px;margin-bottom:8px">⚡ NIVEAUX SPRINT CARDIO</div>';
+  var profile = {}; try { profile = JSON.parse(localStorage.getItem('ah_profile') || '{}'); } catch(e) {}
+  var currentLvl = profile.mtSprintLevel || 1;
+
+  h += '<div style="font-size:9px;color:var(--muted);font-weight:800;letter-spacing:1.5px;margin-bottom:8px">⚡ CHOISIS TON NIVEAU</div>';
   (sess.sprintLevels || []).forEach(function(lvl) {
-    h += '<div style="background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:11px 13px;margin-bottom:6px;display:flex;justify-content:space-between;align-items:center">';
+    var on = (currentLvl === lvl.id);
+    h += '<div onclick="_mtSetSprintLevel(' + lvl.id + ')" style="background:' + (on?'rgba(197,164,78,.12)':'var(--surface)') + ';border:1px solid ' + (on?'var(--gold)':'var(--border)') + ';border-radius:10px;padding:11px 13px;margin-bottom:6px;display:flex;justify-content:space-between;align-items:center;cursor:pointer">';
     h +=   '<div>';
-    h +=     '<div style="font-size:12px;font-weight:800;color:var(--text)">' + lvl.label + '</div>';
+    h +=     '<div style="font-size:12px;font-weight:800;color:var(--text)">' + lvl.label + (on?' · TON NIVEAU':'') + '</div>';
     h +=     '<div style="font-size:10.5px;color:var(--muted);margin-top:2px">' + lvl.cycles + ' cycles · ' + lvl.totalDuration + '</div>';
     h +=   '</div>';
-    h +=   '<div style="font-family:\'Bebas Neue\',sans-serif;font-size:22px;color:var(--gold)">' + lvl.cycles + '×</div>';
+    h +=   '<div style="font-family:\'Bebas Neue\',sans-serif;font-size:22px;color:' + (on?'var(--gold)':'var(--text2)') + '">' + lvl.cycles + '×</div>';
     h += '</div>';
   });
-  h += '<div style="background:var(--surface2);padding:9px 12px;border-radius:8px;font-size:11px;color:var(--text2);line-height:1.5;margin-top:6px">💡 Protocole : Sprint 10s + Jogging 30s + Marche 20s. 100% sur chaque sprint.</div>';
+  h += '<div style="background:var(--surface2);padding:9px 12px;border-radius:8px;font-size:11px;color:var(--text2);line-height:1.55;margin-top:6px;margin-bottom:14px">💡 Protocole : Sprint 10s (100%) + Jogging 30s + Marche 20s. Si tu ne tiens pas l\'intensité, baisse d\'un niveau — pas l\'effort sur le sprint.</div>';
+  // CTA — lance le compteur de cycles plein écran
+  var lvl = (sess.sprintLevels || []).find(function(l){return l.id === currentLvl;}) || sess.sprintLevels[0];
+  if (lvl) {
+    h += '<button type="button" onclick="_mtStartSprintTimer(' + lvl.cycles + ')" class="btn btn-gold" style="width:100%">⚡ Démarrer Sprint Cardio (' + lvl.cycles + ' cycles)</button>';
+  }
   return h;
+}
+
+function _mtSetSprintLevel(id) {
+  try {
+    var profile = JSON.parse(localStorage.getItem('ah_profile') || '{}');
+    profile.mtSprintLevel = id;
+    localStorage.setItem('ah_profile', JSON.stringify(profile));
+    try { if (typeof fbSaveProfile === 'function') fbSaveProfile(); } catch(e) {}
+    _openMicroV2('mt_m8');  // re-render
+  } catch(e) { console.warn('_mtSetSprintLevel:', e); }
+}
+
+// ─── Sprint Cardio timer plein écran (cycles Sprint 10s + Jog 30s + Marche 20s)
+function _mtStartSprintTimer(targetCycles) {
+  var existing = document.getElementById('mtSprintModal');
+  if (existing) existing.remove();
+  window._mtSprintState = {
+    targetCycles: targetCycles,
+    currentCycle: 1,
+    phase: 'ready', // 'ready' | 'sprint' | 'jog' | 'walk' | 'done'
+    phaseEndMs: 0,
+    started: false
+  };
+  var modal = document.createElement('div');
+  modal.id = 'mtSprintModal';
+  modal.style.cssText = 'position:fixed;inset:0;background:#0E1626;z-index:9000;display:flex;flex-direction:column;align-items:center;justify-content:space-between;padding:32px 22px;color:#fff;padding-top:env(safe-area-inset-top,32px);padding-bottom:env(safe-area-inset-bottom,32px)';
+  modal.innerHTML = ''
+    + '<div>'
+    +   '<div id="mtSprintCycle" style="font-size:11px;font-weight:800;letter-spacing:2px;opacity:.7;text-align:center">CYCLE 1 / ' + targetCycles + '</div>'
+    +   '<div id="mtSprintPhase" style="font-family:\'Bebas Neue\',sans-serif;font-size:28px;letter-spacing:2px;margin-top:6px;text-align:center">PRÊT</div>'
+    + '</div>'
+    + '<div style="text-align:center">'
+    +   '<div id="mtSprintCountdown" style="font-family:\'Bebas Neue\',sans-serif;font-size:120px;letter-spacing:4px;line-height:1">--</div>'
+    +   '<div id="mtSprintHint" style="font-size:13px;opacity:.7;margin-top:8px">Touche démarrer pour lancer le 1er sprint</div>'
+    + '</div>'
+    + '<div style="display:flex;flex-direction:column;gap:10px;width:100%;max-width:340px">'
+    +   '<button id="mtSprintStartBtn" onclick="_mtSprintStart()" style="padding:14px;background:#C5A44E;border:0;border-radius:12px;font-family:\'Outfit\',sans-serif;font-size:14px;font-weight:800;color:#0E1626;cursor:pointer">▶ Démarrer</button>'
+    +   '<button onclick="_mtSprintClose()" style="padding:10px;background:transparent;border:1px solid rgba(255,255,255,.3);border-radius:12px;font-family:\'Outfit\',sans-serif;font-size:12px;color:rgba(255,255,255,.7);cursor:pointer">Fermer</button>'
+    + '</div>';
+  document.body.appendChild(modal);
+}
+
+function _mtSprintStart() {
+  var st = window._mtSprintState;
+  if (!st) return;
+  st.started = true;
+  _mtSprintNextPhase();
+  if (window._mtSprintInterval) clearInterval(window._mtSprintInterval);
+  window._mtSprintInterval = setInterval(_mtSprintTick, 250);
+  var btn = document.getElementById('mtSprintStartBtn');
+  if (btn) btn.style.display = 'none';
+}
+
+function _mtSprintNextPhase() {
+  var st = window._mtSprintState;
+  if (!st) return;
+  var now = Date.now();
+  var durMs = { sprint: 10000, jog: 30000, walk: 20000 };
+  if (st.phase === 'ready' || st.phase === 'walk') {
+    if (st.phase === 'walk') {
+      // fin d'un cycle, prochain ou terminer
+      if (st.currentCycle >= st.targetCycles) { st.phase = 'done'; return _mtSprintDone(); }
+      st.currentCycle++;
+    }
+    st.phase = 'sprint';
+    st.phaseEndMs = now + durMs.sprint;
+  } else if (st.phase === 'sprint') {
+    st.phase = 'jog';
+    st.phaseEndMs = now + durMs.jog;
+  } else if (st.phase === 'jog') {
+    st.phase = 'walk';
+    st.phaseEndMs = now + durMs.walk;
+  }
+  var phaseEl = document.getElementById('mtSprintPhase');
+  var hintEl = document.getElementById('mtSprintHint');
+  var cycleEl = document.getElementById('mtSprintCycle');
+  if (cycleEl) cycleEl.textContent = 'CYCLE ' + st.currentCycle + ' / ' + st.targetCycles;
+  var phaseLabel = { sprint: 'SPRINT — 100%', jog: 'JOGGING', walk: 'MARCHE' }[st.phase];
+  var phaseHint = { sprint: '🔥 Donne tout', jog: 'Reprends ton souffle', walk: 'Récupération' }[st.phase];
+  if (phaseEl) phaseEl.textContent = phaseLabel || st.phase.toUpperCase();
+  if (hintEl) hintEl.textContent = phaseHint || '';
+  // Vibration + son (si possible)
+  try { if (navigator.vibrate) navigator.vibrate(150); } catch(e) {}
+}
+
+function _mtSprintTick() {
+  var st = window._mtSprintState;
+  if (!st || !st.started) return;
+  var remaining = st.phaseEndMs - Date.now();
+  var cdEl = document.getElementById('mtSprintCountdown');
+  if (remaining <= 0) {
+    _mtSprintNextPhase();
+    return;
+  }
+  if (cdEl) cdEl.textContent = Math.ceil(remaining / 1000);
+  // Couleur fond selon phase
+  var modal = document.getElementById('mtSprintModal');
+  if (modal) {
+    var bg = { sprint: '#7A1A1A', jog: '#1F4F8A', walk: '#0E1626' }[st.phase] || '#0E1626';
+    modal.style.background = bg;
+  }
+}
+
+function _mtSprintDone() {
+  if (window._mtSprintInterval) { clearInterval(window._mtSprintInterval); window._mtSprintInterval = null; }
+  var modal = document.getElementById('mtSprintModal');
+  if (modal) {
+    modal.style.background = '#1F8A4C';
+    var phaseEl = document.getElementById('mtSprintPhase');
+    var hintEl = document.getElementById('mtSprintHint');
+    var cdEl = document.getElementById('mtSprintCountdown');
+    if (phaseEl) phaseEl.textContent = 'TERMINÉ 🎉';
+    if (hintEl) hintEl.textContent = 'Tous les cycles complétés.';
+    if (cdEl) cdEl.textContent = '✓';
+  }
+  try { if (navigator.vibrate) navigator.vibrate([200,100,200,100,400]); } catch(e) {}
+  // Auto-validate après 3s
+  setTimeout(function(){
+    _mtSprintClose();
+    _mtMarkMicroDone('mt_m8');
+  }, 3000);
+}
+
+function _mtSprintClose() {
+  if (window._mtSprintInterval) { clearInterval(window._mtSprintInterval); window._mtSprintInterval = null; }
+  window._mtSprintState = null;
+  var m = document.getElementById('mtSprintModal');
+  if (m) m.remove();
 }
 
 function _mtRenderCircuitDetail(sess) {
@@ -20816,6 +21131,44 @@ function _exoMatchesBlock(exo, block) {
   if (!exo || !block) return false;
   // Si exo.blockType est égal à block.blockId ou block.blockType
   return exo.blockType === block.blockId || exo.blockType === block.blockType;
+}
+
+// ─── CROSS-PROGRAMME : récupère la session SOT correspondante (objet complet)
+// programKey ∈ {vd, se, ep, tri, mt, ea} ; phase = phase PROGRAMS_V2 courante ;
+// sessKey = clé courte ('j1','j2',...). Renvoie l'objet session SOT ou null.
+function _sotGetSessionData(programKey, phase, sessKey) {
+  if (!programKey || !sessKey) return null;
+  var sotMap = {
+    vd: window.VERTICAL_DUNK_PROGRAM,
+    se: window.SHRED_EXPLOSE_PROGRAM,
+    ep: window.EXPLOSE_PLUS_PROGRAM,
+    tri: window.TRIPHASIQUE_PROGRAM,
+    mt: window.MICROTRAINING_PROGRAM
+    // EA gère ses messages via launchEASession + son propre moteur.
+  };
+  var sot = sotMap[programKey];
+  if (!sot || !sot.phases) return null;
+  // Trouve la phase SOT correspondante (par phaseNumber == phase.n)
+  var phaseN = phase && (phase.n || phase.phaseNumber) || 1;
+  var sotPhase = sot.phases.find(function(p) {
+    return (p.phaseNumber || p.n) === phaseN;
+  }) || sot.phases[0];
+  if (!sotPhase || !sotPhase.sessions) return null;
+  // Cherche une session dont l'id se termine par '_' + sessKey
+  var found = null;
+  Object.keys(sotPhase.sessions).forEach(function(sid) {
+    if (found) return;
+    if (sid === sessKey || sid.endsWith('_' + sessKey) || sid.endsWith('_' + sessKey.toLowerCase())) {
+      found = sotPhase.sessions[sid];
+    }
+  });
+  return found || null;
+}
+
+// Rétro-compat — ancien helper qui ne renvoyait que le message Titan
+function _sotGetSessionTitanIntro(programKey, phase, sessKey) {
+  var data = _sotGetSessionData(programKey, phase, sessKey);
+  return data ? (data.titanIntroMessage || null) : null;
 }
 
 function _backToMTPhase() {
@@ -20873,22 +21226,91 @@ function _mtMarkMicroDone(microKey) {
   } catch(e) { console.warn('_mtMarkMicroDone:', e); }
 }
 
-// ─── Bilan semaine (UI rapide) ────────────────────────────────────────────
+// ─── Bilan semaine (UI complète — écran dédié) ────────────────────────────
 function _mtShowBilan() {
   try {
     var st = getProgramProgress('mt');
-    var done = (st.doneThisWeek) ? Object.keys(st.doneThisWeek).length : 0;
+    var done = st.doneThisWeek || {};
+    var doneCount = Object.keys(done).length;
     var week = st.week || 1;
-    var msg;
-    if (done >= 9) {
-      msg = '✅ Semaine ' + week + ' VALIDÉE : 9/9.\nTu passes à la semaine suivante.';
-    } else if (done === 0) {
-      msg = '📋 Semaine ' + week + ' : 0/9.\nIl te reste 9 micros à valider.';
-    } else {
-      msg = '⏳ Semaine ' + week + ' : ' + done + '/9.\nIl te reste ' + (9-done) + ' micros à valider. Sinon → tu recommences cette même semaine.';
+    var mt = window.MICROTRAINING_PROGRAM;
+    if (!mt) { alert('Source Microtraining non chargée.'); return; }
+
+    var container = document.getElementById('progDetail');
+    if (!container) return;
+
+    var h = '';
+    h += '<div class="back-btn" onclick="_backToMTPhase()">← Retour Microtraining</div>';
+
+    // Header : titre + statut semaine
+    var statusColor = doneCount >= 9 ? '#10B981' : (doneCount >= 6 ? '#C5A44E' : (doneCount >= 3 ? '#F59E0B' : '#9CA3AF'));
+    var statusLabel = doneCount >= 9 ? '✅ SEMAINE VALIDÉE' : (doneCount === 0 ? '📋 SEMAINE À DÉMARRER' : '⏳ EN COURS');
+    h += '<div style="background:linear-gradient(135deg,var(--navy),#1B2A4A);border-radius:14px;padding:20px;margin-bottom:14px;color:#fff;text-align:center">';
+    h +=   '<div style="font-size:9px;color:' + statusColor + ';font-weight:800;letter-spacing:1.5px;margin-bottom:4px">' + statusLabel + '</div>';
+    h +=   '<div style="font-family:\'Bebas Neue\',sans-serif;font-size:42px;color:var(--gold);letter-spacing:2px;line-height:1">' + doneCount + '/9</div>';
+    h +=   '<div style="font-size:12px;color:rgba(255,255,255,.7);margin-top:6px">Semaine ' + week + ' / 6</div>';
+    // Barre progression visuelle
+    h +=   '<div style="display:flex;gap:3px;margin-top:14px;justify-content:center">';
+    for (var i = 0; i < 9; i++) {
+      var filled = i < doneCount;
+      h += '<div style="width:24px;height:6px;border-radius:3px;background:' + (filled ? 'var(--gold)' : 'rgba(255,255,255,.15)') + '"></div>';
     }
-    if (typeof showToast === 'function') showToast(msg, done >= 9 ? 'ok' : 'info');
-    else alert(msg);
+    h +=   '</div>';
+    h += '</div>';
+
+    // Liste des 9 micros avec leur statut
+    h += '<div style="font-size:9px;color:var(--muted);font-weight:800;letter-spacing:1.5px;margin-bottom:8px">📋 ÉTAT DES MICROS — SEMAINE ' + week + '</div>';
+    h += '<div style="display:flex;flex-direction:column;gap:6px;margin-bottom:14px">';
+    ['mt_m1','mt_m2','mt_m3','mt_m4','mt_m5','mt_m6','mt_m7','mt_m8','mt_m9'].forEach(function(sk){
+      var sess = mt.phases[0].sessions[sk];
+      if (!sess) return;
+      var meta = _mtTypeMeta(sess.sessionType);
+      var isDone = !!done[sk];
+      var statusIcon = isDone ? '<span style="color:#10B981;font-size:18px">✓</span>' : '<span style="color:var(--border);font-size:14px">○</span>';
+      var bg = isDone ? 'rgba(16,185,129,.05)' : 'var(--surface)';
+      var br = isDone ? 'rgba(16,185,129,.25)' : 'var(--border)';
+      h += '<div style="display:flex;align-items:center;gap:10px;padding:9px 12px;background:' + bg + ';border:1px solid ' + br + ';border-radius:10px">';
+      h +=   '<div style="font-size:18px;width:26px;text-align:center">' + meta.icon + '</div>';
+      h +=   '<div style="flex:1;font-size:12px;font-weight:700;color:var(--text);line-height:1.25">' + sess.sessionTitle.replace(/^Micro \d+ — /, '') + '</div>';
+      h +=   statusIcon;
+      h += '</div>';
+    });
+    h += '</div>';
+
+    // Message Titan adapté au résultat
+    var titanMsg, titanColor;
+    if (doneCount >= 9) {
+      titanMsg = '"' + (week >= 6 ? 'TU AS FINI LES 6 SEMAINES. Tu n\'es plus la même personne. Discipline ancrée." — Titan' : 'Semaine ' + week + ' validée 9/9. Tu passes à la suivante. Reste régulier — c\'est ça qui compte.') + '"';
+      titanColor = '#10B981';
+    } else if (doneCount > 0) {
+      titanMsg = '"' + doneCount + '/9 — pas encore. Il reste ' + (9-doneCount) + ' micros à valider d\'ici la fin de semaine. Pas de cumul possible : si tu ne fais pas tout, tu recommences cette semaine." — Titan';
+      titanColor = '#C5A44E';
+    } else {
+      titanMsg = '"0/9. La semaine commence maintenant. 9 micros sur 7 jours — max 2 par jour. C\'est la discipline qui crée le résultat, pas le talent." — Titan';
+      titanColor = '#9CA3AF';
+    }
+    h += '<div style="background:rgba(' + (doneCount >= 9 ? '16,185,129' : '197,164,78') + ',.08);border-left:3px solid ' + titanColor + ';padding:12px 14px;border-radius:0 10px 10px 0;margin-bottom:14px">';
+    h +=   '<div style="font-size:9px;color:' + titanColor + ';font-weight:800;letter-spacing:1.5px;margin-bottom:5px">🗣 TITAN</div>';
+    h +=   '<div style="font-size:12px;color:var(--text2);line-height:1.55;font-style:italic">' + titanMsg + '</div>';
+    h += '</div>';
+
+    // Stats globales programme
+    var profile = {}; try { profile = JSON.parse(localStorage.getItem('ah_profile') || '{}'); } catch(e) {}
+    var totalSessionsAllTime = profile.sessionsDone || 0;
+    var streak = profile.streak || 0;
+    h += '<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:14px;background:var(--surface2);border-radius:12px;padding:12px 10px;text-align:center">';
+    h +=   '<div><div style="font-size:9px;color:var(--muted);letter-spacing:1px">SEM. RESTANTES</div><div style="font-size:15px;font-weight:800;color:var(--text);margin-top:3px">' + Math.max(0, 6 - week + 1) + '</div></div>';
+    h +=   '<div><div style="font-size:9px;color:var(--muted);letter-spacing:1px">SÉANCES</div><div style="font-size:15px;font-weight:800;color:var(--text);margin-top:3px">' + totalSessionsAllTime + '</div></div>';
+    h +=   '<div><div style="font-size:9px;color:var(--muted);letter-spacing:1px">STREAK</div><div style="font-size:15px;font-weight:800;color:var(--gold);margin-top:3px">' + (streak || '—') + '</div></div>';
+    h += '</div>';
+
+    // Règles rappel
+    h += '<div style="background:var(--surface2);padding:11px 13px;border-radius:10px;margin-bottom:14px">';
+    h +=   '<div style="font-size:9px;color:var(--muted);font-weight:800;letter-spacing:1.5px;margin-bottom:6px">📌 RAPPEL DES RÈGLES</div>';
+    h +=   '<div style="font-size:11px;color:var(--text2);line-height:1.6">• 9/9 = semaine validée<br>• 8/9 ou moins = recommencer cette semaine<br>• Max 2 micros par jour<br>• Pas de cumul d\'une semaine sur l\'autre</div>';
+    h += '</div>';
+
+    container.innerHTML = h;
   } catch(e) { console.warn('_mtShowBilan:', e); }
 }
 
@@ -20928,6 +21350,31 @@ function _openSessionV2(sessKey) {
   h += '<div class="back-btn" onclick="_backToPhaseV2()">← Retour Phase ' + ph.n + '</div>';
   h += '<div style="font-family:\'Bebas Neue\',sans-serif;font-size:18px;color:var(--gold);letter-spacing:1px;margin-bottom:4px">' + p.name + ' · ' + ph.title.replace(/^PHASE \d+ — /, 'Phase ' + ph.n + ' — ') + '</div>';
   h += '<div style="font-family:\'Bebas Neue\',sans-serif;font-size:22px;color:var(--text);letter-spacing:1.5px;line-height:1.05;margin-bottom:14px">' + sess.name + '</div>';
+
+  // CROSS-PROGRAMME : si la SOT du programme est chargée pour cette séance,
+  // on affiche au-dessus de la table d'exos :
+  //   1. titanIntroMessage (ton Titan court, motivant)
+  //   2. specialInstructions (règles d'exécution critiques — tempo, repos,
+  //      enchaînement — qui ne sont PAS dans la table d'exos PDF)
+  // Bénéfice : tous les programmes (VD/SE/EP/TRI) reçoivent ce niveau
+  // d'info sans toucher au moteur existant.
+  try {
+    var sotData = _sotGetSessionData(window._progV2State.key, ph, sessKey);
+    if (sotData) {
+      if (sotData.titanIntroMessage) {
+        h += '<div style="background:rgba(197,164,78,.08);border-left:3px solid var(--gold);padding:11px 13px;border-radius:0 10px 10px 0;margin-bottom:10px">';
+        h +=   '<div style="font-size:9px;color:var(--gold);font-weight:800;letter-spacing:1.5px;margin-bottom:4px">🗣 TITAN</div>';
+        h +=   '<div style="font-size:12px;color:var(--text2);line-height:1.55;font-style:italic">"' + sotData.titanIntroMessage + '"</div>';
+        h += '</div>';
+      }
+      if (sotData.specialInstructions) {
+        h += '<div style="background:rgba(108,99,255,.06);border-left:3px solid #6C63FF;padding:11px 13px;border-radius:0 10px 10px 0;margin-bottom:14px">';
+        h +=   '<div style="font-size:9px;color:#6C63FF;font-weight:800;letter-spacing:1.5px;margin-bottom:4px">📌 CONSIGNES</div>';
+        h +=   '<div style="font-size:12px;color:var(--text2);line-height:1.55">' + sotData.specialInstructions + '</div>';
+        h += '</div>';
+      }
+    }
+  } catch(e) {}
 
   // Table d'exercices style PDF
   h += '<div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;overflow:hidden">';
