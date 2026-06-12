@@ -2496,6 +2496,91 @@ body.test-mode #testSkipBar{display:flex}
   color: var(--gold); font-size: 11px; font-weight: 700; letter-spacing: 1px;
   text-transform: uppercase; cursor: pointer; text-align: center;
 }
+.ls-video-hint {
+  margin: 4px 16px 0; font-size: 11px; color: rgba(255,255,255,.45);
+  text-align: center; font-style: italic;
+}
+
+/* Carte "À faire maintenant" — couche interface séance (vs vidéo démo).
+   Sépare clairement la technique des reps, indique série/round + instruction. */
+.ls-now-card {
+  margin: 14px 16px 4px; padding: 14px;
+  background: linear-gradient(165deg, rgba(197,164,78,.08), rgba(197,164,78,.02));
+  border: 1px solid rgba(197,164,78,.30); border-radius: 14px;
+  position: relative;
+}
+.ls-now-card::before {
+  content: "À FAIRE MAINTENANT";
+  position: absolute; top: -8px; left: 14px;
+  font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: .18em;
+  color: var(--gold); background: var(--navy); padding: 2px 8px; border-radius: 4px;
+  font-weight: 800;
+}
+.ls-now-row {
+  display: flex; align-items: center; justify-content: space-between;
+  gap: 10px; margin-bottom: 8px;
+}
+.ls-now-tech {
+  display: inline-block; padding: 4px 10px;
+  background: rgba(197,164,78,.18); border: 1px solid rgba(197,164,78,.4);
+  border-radius: 999px; font-family: 'JetBrains Mono', monospace;
+  font-size: 10px; letter-spacing: .12em; font-weight: 800;
+  color: var(--gold); text-transform: uppercase;
+}
+.ls-now-help {
+  background: transparent; border: 0; color: rgba(255,255,255,.55);
+  font-family: 'Outfit', sans-serif; font-size: 11px; font-weight: 600;
+  cursor: pointer; padding: 4px 6px; text-decoration: underline;
+  text-underline-offset: 3px; text-decoration-color: rgba(255,255,255,.25);
+}
+.ls-now-help:hover { color: var(--gold); text-decoration-color: var(--gold); }
+.ls-now-todo {
+  font-family: 'Bebas Neue', sans-serif; font-size: 26px; letter-spacing: .04em;
+  color: #fff; line-height: 1; margin-bottom: 4px;
+}
+.ls-now-set {
+  font-family: 'Outfit', sans-serif; font-size: 12px; font-weight: 700;
+  color: rgba(255,255,255,.7); letter-spacing: .04em; margin-bottom: 8px;
+}
+.ls-now-instr {
+  font-family: 'Outfit', sans-serif; font-size: 12.5px;
+  color: rgba(255,255,255,.82); line-height: 1.5;
+  padding-top: 8px; border-top: 1px dashed rgba(255,255,255,.10);
+}
+
+/* Bottom sheet "Comment faire ?" — explication courte de la technique. */
+.ls-th-ov {
+  position: fixed; inset: 0; background: rgba(6,12,24,.78);
+  backdrop-filter: blur(6px); z-index: 9700; display: none;
+  align-items: flex-end; justify-content: center; opacity: 0;
+  transition: opacity .2s ease;
+}
+.ls-th-ov.on { display: flex; opacity: 1; }
+.ls-th-sheet {
+  width: 100%; max-width: 480px; background: var(--bg, #FAF8F4);
+  border-radius: 22px 22px 0 0; padding: 12px 18px calc(20px + env(safe-area-inset-bottom,0px));
+  box-shadow: 0 -16px 50px rgba(10,16,30,.4);
+  animation: libxSheetUp .22s ease;
+}
+.ls-th-grab { width: 42px; height: 4px; border-radius: 2px; background: var(--border2, #D8D3C6); margin: 2px auto 14px; }
+.ls-th-eyebrow {
+  font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: .22em;
+  color: var(--gold); text-transform: uppercase; font-weight: 800; margin-bottom: 4px;
+}
+.ls-th-title {
+  font-family: 'Bebas Neue', sans-serif; font-size: 24px; letter-spacing: .04em;
+  color: var(--text); line-height: 1; margin-bottom: 12px;
+}
+.ls-th-text {
+  font-family: 'Outfit', sans-serif; font-size: 13.5px; color: var(--text2);
+  line-height: 1.55; margin-bottom: 16px;
+}
+.ls-th-cta {
+  width: 100%; padding: 13px; background: linear-gradient(135deg, var(--gold), #A0853A);
+  border: 0; border-radius: 12px; font-family: 'Bebas Neue', sans-serif;
+  font-size: 15px; letter-spacing: .12em; color: var(--navy); cursor: pointer;
+  box-shadow: 0 6px 18px rgba(197,164,78,.32);
+}
 
 .ls-metrics {
   display: grid; grid-template-columns: 1fr 1fr 1fr;
@@ -8965,6 +9050,11 @@ window.tiResetOnEnter = function(){ window.tiShowStep(1); };
       </div>
     </div>
     <div class="ls-video-btn" onclick="_lsOpenVideo()">▶ VOIR LA VIDÉO DÉMO</div>
+    <div class="ls-video-hint">Regarde le mouvement, puis lance ta série.</div>
+
+    <!-- Carte "À faire maintenant" — sépare clairement la technique des reps.
+         Rempli par _lsRenderEx() avec : Technique · Reps · Série/Round · Instruction. -->
+    <div class="ls-now-card" id="lsNowCard"></div>
 
     <!-- Metrics: Sets / Reps / Rest -->
     <div class="ls-metrics">
@@ -13808,6 +13898,7 @@ function _eaSessionToExos(session) {
       video: e.videoUrl || null,
       _eaExerciseId: e.exerciseId,
       _eaBlockType: e.blockType,
+      _eaTechnique: e.technique || 'classique',  // cluster / circuit / bi-set / superset / isometrie / classique / challenge
       _eaVideoStatus: e.videoStatus // 'available' | 'placeholder'
     };
   });
@@ -33053,6 +33144,121 @@ function launchSession(exos, sessName, progName, progKey, sessKey) {
   _lsPersist();
 }
 
+// ═══════════════════════════════════════════════════════════════════════════
+// Workout player — carte "À faire maintenant" + détection de technique
+// ───────────────────────────────────────────────────────────────────────────
+// Sépare clairement les 3 couches demandées par le client :
+//   1. Vidéo démo  → montre le mouvement (réutilisable entre programmes)
+//   2. Carte "À faire maintenant" → reps + technique + série/round + instruction
+//   3. Bouton principal → action contextuelle (Valider série / Round / Continuer)
+//
+// La technique vient en priorité de _eaTechnique (SOT EA) ; à défaut on la
+// détecte dans ex.r ou ex.note (legacy PROGRAMS_V2). Aucune invention :
+// si rien n'est trouvé → 'classique' silencieux.
+// ═══════════════════════════════════════════════════════════════════════════
+function _lsDetectTechnique(ex) {
+  if (!ex) return 'classique';
+  if (ex._eaTechnique && ex._eaTechnique !== 'classique') return ex._eaTechnique;
+  var hay = ((ex.r || '') + ' ' + (ex.n || '') + ' ' + (ex.note || '')).toLowerCase();
+  if (/cluster/.test(hay)) return 'cluster';
+  if (/challenge|bring sally|max\s+(reps?|en\s+\d)/.test(hay)) return 'challenge';
+  if (/circuit/.test(hay)) return 'circuit';
+  if (/bi-?set|enchaîner avec|a\)\s|b\)\s/.test(hay)) return 'bi-set';
+  if (/superset/.test(hay)) return 'superset';
+  if (/isomé|hold|maintien/.test(hay)) return 'isometrie';
+  if (/fractionn[eé]/.test(hay)) return 'fractionne';
+  if (/stato-?dyn/.test(hay)) return 'stato-dynamique';
+  return 'classique';
+}
+
+// Libellé public de la technique (à afficher sur la carte).
+function _lsTechniqueLabel(t) {
+  return {
+    cluster: 'Cluster Set',
+    'bi-set': 'Bi-set',
+    superset: 'Superset',
+    circuit: 'Circuit',
+    challenge: 'Challenge',
+    isometrie: 'Isométrie',
+    fractionne: 'Fractionné',
+    'stato-dynamique': 'Stato-dynamique',
+    classique: 'Classique'
+  }[t] || 'Classique';
+}
+
+// Instruction courte affichée sur la carte "À faire maintenant".
+function _lsTechniqueInstruction(t) {
+  return {
+    cluster: 'Garde de la puissance sur chaque répétition. Mini-repos puis enchaîne.',
+    'bi-set': 'Enchaîne directement avec l\'exercice suivant. Repos après les 2.',
+    superset: 'Enchaîne sans repos avec l\'exercice suivant.',
+    circuit: 'Enchaîne proprement, sans te précipiter.',
+    challenge: 'Donne tout — note ton score pour mesurer ta progression.',
+    isometrie: 'Tiens la position. Respire calmement.',
+    fractionne: 'Alterne effort ALL OUT et récup active.',
+    'stato-dynamique': 'Tiens la position, puis explose à la sortie.',
+    classique: 'Contrôle le mouvement. Qualité avant quantité.'
+  }[t] || 'Contrôle le mouvement. Qualité avant quantité.';
+}
+
+// Aide "Comment faire ?" — texte court, direct, sportif.
+function _lsTechniqueHelp(t) {
+  return {
+    cluster: 'Un cluster set coupe une série en petits blocs de reps explosives avec de courts repos. Le but : garder un maximum de puissance.',
+    'bi-set': 'Un bi-set est une paire d\'exercices enchaînés. Tu fais le A, tu enchaînes le B, puis tu prends ton repos. Le but : densifier l\'entraînement.',
+    superset: 'Un superset enchaîne 2 exercices sans repos entre les deux. Le but : densifier la séance et accumuler du volume.',
+    circuit: 'Un circuit enchaîne plusieurs exercices avec peu ou pas de repos. Le but : garder le rythme tout en restant propre techniquement.',
+    challenge: 'Un challenge est un test ponctuel : donne ton maximum, note ton score, compare à ta prochaine séance.',
+    isometrie: 'Une isométrie maintient une position sans bouger. Le but : renforcer en profondeur sans fatigue articulaire excessive.',
+    fractionne: 'Un fractionné alterne effort intense et récup active. Le but : développer l\'endurance et la capacité à répéter des sprints.',
+    'stato-dynamique': 'Le stato-dynamique combine une isométrie profonde puis une explosion. Le but : transformer la force en puissance.',
+    classique: 'Une série classique : fais tes reps avec contrôle, repose-toi, puis recommence. Le but : volume + qualité technique.'
+  }[t] || 'Une série classique : fais tes reps avec contrôle, repose-toi, puis recommence.';
+}
+
+// Libellé du timer de repos selon le contexte. Le client demande des
+// libellés précis : pas juste "Temps de repos" mais "Mini-repos cluster",
+// "Repos entre séries", "Transition", etc.
+//   tech       : technique détectée
+//   isInterEx  : true si on enchaîne sur le prochain exercice (fin d'exo)
+//                false si on est entre 2 séries du même exo
+function _lsRestLabel(tech, isInterEx) {
+  if (tech === 'cluster' && !isInterEx) return '⏱ Mini-repos cluster';
+  if (tech === 'circuit' && !isInterEx) return '⏱ Repos circuit';
+  if (tech === 'bi-set' || tech === 'superset') return '⏱ Repos après le bloc';
+  if (tech === 'fractionne') return '⏱ Récup active';
+  if (isInterEx) return '⏱ Transition';
+  return '⏱ Repos entre séries';
+}
+
+// Affiche le bottom-sheet "Comment faire ?" pour la technique courante.
+window._lsShowTechniqueHelp = function() {
+  var ex = _LS.exos[_LS.idx];
+  var t = _lsDetectTechnique(ex);
+  var label = _lsTechniqueLabel(t);
+  var help = _lsTechniqueHelp(t);
+  var ov = document.getElementById('lsTechHelpOverlay');
+  if (!ov) {
+    ov = document.createElement('div');
+    ov.id = 'lsTechHelpOverlay';
+    ov.className = 'ls-th-ov';
+    ov.onclick = function(e) { if (e.target === ov) window._lsCloseTechniqueHelp(); };
+    document.body.appendChild(ov);
+  }
+  ov.innerHTML = '<div class="ls-th-sheet">'
+    + '<div class="ls-th-grab"></div>'
+    + '<div class="ls-th-eyebrow">Technique</div>'
+    + '<div class="ls-th-title">' + label + '</div>'
+    + '<div class="ls-th-text">' + help + '</div>'
+    + '<button class="ls-th-cta" onclick="window._lsCloseTechniqueHelp()">J\'ai compris</button>'
+    + '</div>';
+  ov.classList.add('on');
+};
+window._lsCloseTechniqueHelp = function() {
+  var ov = document.getElementById('lsTechHelpOverlay');
+  if (ov) ov.classList.remove('on');
+};
+
 function _lsRenderEx() {
   var ex = _LS.exos[_LS.idx];
   if (!ex) return;
@@ -33079,7 +33285,14 @@ function _lsRenderEx() {
   document.getElementById('lsMetSets').textContent = totalSets > 1
     ? (_LS.setNum + '/' + totalSets)
     : (ex.s && ex.s !== '-' ? ex.s : '—');
-  document.getElementById('lsMetReps').textContent = ex.r && ex.r !== '-' ? ex.r : '—';
+  // Reps : on STRIPPE le mot "cluster" / "circuit" déjà mélangé pour ne
+  // garder QUE le nombre/durée. La technique est affichée séparément
+  // dans la carte "À faire maintenant" (client demande explicitement de
+  // ne plus mélanger reps et technique).
+  var repsRaw = ex.r && ex.r !== '-' ? ex.r : '—';
+  var repsClean = String(repsRaw).replace(/\s*(?:cluster|circuit|superset|bi-?set|challenge)\s*$/i, '').trim();
+  if (!repsClean) repsClean = repsRaw;
+  document.getElementById('lsMetReps').textContent = repsClean;
   // Rest display: short format
   var restSec = _lsParseRest(ex.rest);
   var rm = Math.floor(restSec / 60), rs = restSec % 60;
@@ -33090,12 +33303,41 @@ function _lsRenderEx() {
   clearInterval(_LS.restInterval);
   _LS.restActive = false;
 
-  // Done button label — reflète la série en cours et l'étape
+  // ── Carte "À faire maintenant" ───────────────────────────────────────
+  // Sortie de la technique des reps. Affiche : technique + reps + série
+  // ou round courant + instruction courte. C'est la couche "interface
+  // séance" demandée par le client (vs la couche "vidéo démo" du player).
+  var tech = _lsDetectTechnique(ex);
+  var techLbl = _lsTechniqueLabel(tech);
+  var instruction = _lsTechniqueInstruction(tech);
+  var isCircuit = tech === 'circuit';
+  var setOrRoundLine = '';
+  if (totalSets > 1) {
+    setOrRoundLine = (isCircuit ? 'Round ' : 'Série ') + _LS.setNum + ' / ' + totalSets;
+  } else if (ex.s && ex.s !== '-') {
+    setOrRoundLine = (isCircuit ? 'Round' : 'Série') + ' unique';
+  }
+  var nowCard = document.getElementById('lsNowCard');
+  if (nowCard) {
+    nowCard.innerHTML =
+        '<div class="ls-now-row">'
+      +   '<span class="ls-now-tech">' + techLbl + '</span>'
+      +   '<button type="button" class="ls-now-help" onclick="window._lsShowTechniqueHelp()" aria-label="Comment faire ?">? Comment faire</button>'
+      + '</div>'
+      + '<div class="ls-now-todo">' + repsClean + (repsClean.match(/^[0-9]/) ? ' reps' : '') + '</div>'
+      + (setOrRoundLine ? '<div class="ls-now-set">' + setOrRoundLine + '</div>' : '')
+      + '<div class="ls-now-instr">' + instruction + '</div>';
+  }
+
+  // Done button label — reflète la série/round en cours, contexte technique
   var isLast = (_LS.idx === total - 1);
   var isLastSet = (_LS.setNum >= totalSets);
   var btnLabel;
+  var unit = isCircuit ? 'ROUND' : 'SÉRIE';
   if (isLast && isLastSet) btnLabel = '✓ TERMINER LA SÉANCE';
-  else if (totalSets > 1 && !isLastSet) btnLabel = '✓ SÉRIE ' + _LS.setNum + ' / ' + totalSets;
+  else if (totalSets > 1 && !isLastSet) btnLabel = '✓ VALIDER ' + unit + ' ' + _LS.setNum + ' / ' + totalSets;
+  else if (tech === 'cluster' && totalSets > 1) btnLabel = '✓ VALIDER SÉRIE COMPLÈTE';
+  else if (tech === 'challenge') btnLabel = '✓ CHALLENGE TERMINÉ';
   else btnLabel = '✓ EXERCICE SUIVANT →';
   document.getElementById('lsBtnDone').textContent = btnLabel;
 
@@ -33141,6 +33383,16 @@ function _lsDoneSet() {
   _LS._pendingAction = isLastSet ? 'nextEx' : 'nextSet';
   var restSec = _lsParseRest(ex ? ex.rest : null);
   if (restSec > 0) {
+    // Label de repos contextuel : "Mini-repos cluster", "Repos circuit",
+    // "Transition", etc. selon la technique et si on enchaîne sur le
+    // prochain exo (vs entre 2 séries du même exo).
+    try {
+      var tEl = document.querySelector('#lsRestOverlay .ls-rest-title');
+      if (tEl) {
+        var tech = _lsDetectTechnique(ex);
+        tEl.textContent = _lsRestLabel(tech, isLastSet);
+      }
+    } catch(_){}
     _lsStartRest(restSec);
   } else {
     _lsApplyPending();
