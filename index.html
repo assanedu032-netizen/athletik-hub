@@ -4821,6 +4821,47 @@ body.ah-lib-open .tim-fab{display:none!important}
 /* Bottom sheet Ma séance */
 .libx-sheet-overlay{position:fixed;inset:0;background:rgba(10,16,30,.55);z-index:120;backdrop-filter:blur(2px)}
 .libx-sheet{position:fixed;left:0;right:0;bottom:0;background:var(--bg,#FAF8F4);border-radius:20px 20px 0 0;z-index:121;padding:10px 16px calc(16px + env(safe-area-inset-bottom,0px));max-height:72vh;display:flex;flex-direction:column;box-shadow:0 -10px 36px rgba(10,16,30,.25);animation:libxSheetUp .22s ease}
+
+/* ── Elite Athlète — overlay "Toutes les séances" ───────────────────────
+   Liste séquentielle des 18 semaines avec leurs séances. État par séance :
+   ✓ done (verte) · ▶ courante (gold) · · à venir (grise). Tap = lance. */
+.ea-ov{position:fixed;inset:0;background:rgba(10,16,30,.78);backdrop-filter:blur(8px);z-index:9550;display:none;align-items:flex-end;justify-content:center;opacity:0;transition:opacity .2s ease}
+.ea-ov.on{display:flex;opacity:1}
+.ea-ov-card{width:100%;max-width:520px;height:92vh;background:var(--bg,#FAF8F4);border-radius:22px 22px 0 0;display:flex;flex-direction:column;box-shadow:0 -20px 60px rgba(10,16,30,.4);animation:libxSheetUp .25s ease}
+.ea-ov-head{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;padding:18px 18px 12px;border-bottom:1px solid var(--border)}
+.ea-ov-eyebrow{font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:.20em;color:var(--gold);text-transform:uppercase;font-weight:800;margin-bottom:4px}
+.ea-ov-title{font-family:'Bebas Neue',sans-serif;font-size:24px;letter-spacing:.04em;color:var(--text);line-height:1}
+.ea-ov-close{width:34px;height:34px;border-radius:50%;background:var(--surface2);border:1px solid var(--border);color:var(--muted);font-size:22px;line-height:1;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.ea-ov-body{flex:1;overflow-y:auto;padding:14px 18px calc(20px + env(safe-area-inset-bottom,0px))}
+.ea-phase-head{padding:14px 0 8px;border-bottom:1px solid var(--border);margin-bottom:10px}
+.ea-phase-name{font-family:'Bebas Neue',sans-serif;font-size:20px;letter-spacing:.04em;color:var(--gold);line-height:1}
+.ea-phase-meta{font-size:11.5px;color:var(--muted);margin-top:2px}
+.ea-week{margin-bottom:14px}
+.ea-week-head{display:flex;align-items:baseline;gap:10px;padding:6px 0 6px;font-family:'Outfit',sans-serif}
+.ea-week-num{font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:.18em;font-weight:800;color:var(--navy);background:var(--surface2);border-radius:6px;padding:3px 8px}
+.ea-week-focus{font-size:11.5px;color:var(--text2);line-height:1.4;flex:1;min-width:0}
+.ea-sess{display:flex;align-items:center;gap:11px;width:100%;text-align:left;background:var(--surface);border:1.5px solid var(--border);border-radius:12px;padding:10px 12px;margin-bottom:6px;cursor:pointer;font-family:inherit;transition:transform .1s,border-color .15s,background .15s}
+.ea-sess:active{transform:scale(.985)}
+.ea-sess:hover{border-color:var(--gold)}
+.ea-sess.done{background:rgba(34,197,94,.06);border-color:rgba(34,197,94,.25)}
+.ea-sess.current{background:rgba(197,164,78,.08);border-color:var(--gold);box-shadow:0 4px 12px rgba(197,164,78,.18)}
+.ea-sess-ic{width:24px;height:24px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:800;flex-shrink:0;background:var(--surface2);color:var(--muted)}
+.ea-sess.done .ea-sess-ic{background:#22C55E;color:#fff}
+.ea-sess.current .ea-sess-ic{background:var(--gold);color:var(--navy);box-shadow:0 0 0 3px rgba(197,164,78,.25)}
+.ea-sess-body{flex:1;min-width:0}
+.ea-sess-title{display:block;font-size:13px;font-weight:700;color:var(--text);line-height:1.3}
+.ea-sess-meta{display:block;font-size:11px;color:var(--muted);margin-top:1px}
+.ea-sess-go{color:var(--muted);font-size:18px;flex-shrink:0}
+
+/* ── Feedback fin de séance Elite Athlète ───────────────────────────
+   Affiché dans le panneau de complétion live, juste avant les CTA finaux. */
+.ea-fb{margin-top:16px;padding:14px;background:var(--surface);border:1px solid var(--border);border-radius:14px}
+.ea-fb-q{font-family:'Outfit',sans-serif;font-size:12.5px;color:var(--text);font-weight:700;margin:8px 0 6px;letter-spacing:.01em}
+.ea-fb-q:first-child{margin-top:0}
+.ea-fb-scale{display:flex;gap:5px;flex-wrap:wrap}
+.ea-fb-btn{flex:1;min-width:0;padding:8px 4px;background:var(--surface2);border:1.5px solid var(--border);border-radius:8px;font-size:11.5px;font-weight:700;color:var(--text2);cursor:pointer;font-family:inherit;transition:transform .1s,background .15s,border-color .15s}
+.ea-fb-btn:active{transform:scale(.95)}
+.ea-fb-btn.on{background:var(--navy);border-color:var(--navy);color:var(--gold)}
 @keyframes libxSheetUp{from{transform:translateY(40px);opacity:0}to{transform:translateY(0);opacity:1}}
 .libx-sheet-grab{width:42px;height:4px;border-radius:2px;background:var(--border2,#D8D3C6);margin:2px auto 12px}
 .libx-sheet-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
@@ -9667,6 +9708,10 @@ window.tiResetOnEnter = function(){ window.tiShowStep(1); };
 
 <!-- Base CIQUAL 2025 (ANSES) — 3484 aliments, chargée pour la recherche nutrition -->
 <script src="ciqual-data.js"></script>
+<!-- Source de vérité du programme Elite Athlète (EA_SOT_V1) — voir
+     data/elite-athlete-program.js. Expose window.ELITE_ATHLETE_PROGRAM
+     et window.ELITE_ATHLETE_LIB. Pas d'effet sur les autres programmes. -->
+<script src="data/elite-athlete-program.js"></script>
 <script>
 function showNutriTab(el, tab) {
   document.querySelectorAll('#vNutri .sub-tab').forEach(function(t){ t.classList.remove('on'); });
@@ -13718,6 +13763,200 @@ function getTodaySession() {
     };
   }
 }
+
+// ════════════════════════════════════════════════════════════════════════════
+// ELITE ATHLÈTE — Couche d'intégration source de vérité ↔ UI existante
+// ────────────────────────────────────────────────────────────────────────────
+// La SOT vit dans window.ELITE_ATHLETE_PROGRAM (data/elite-athlete-program.js).
+// Ce module la branche sur l'UI existante SANS toucher au design programmes :
+//   - _eaGetProgram() : renvoie le programme construit (cached)
+//   - _eaSessionToExos(session) : adapte une session SOT au format `exos` de
+//     launchSession ({n,s,r,rest,note,video})
+//   - _eaCurrentLocation() : retourne {phaseIdx, weekIdx, sessIdx} à partir
+//     de l'avancement utilisateur (heuristique simple : on additionne les
+//     sessions terminées)
+//   - openEAWeeksOverview() : ouvre une feuille "Toutes les semaines" qui
+//     liste les 18 semaines avec leurs séances cliquables
+//   - launchEASession(phaseIdx, weekIdx, sessIdx) : lance la séance via
+//     launchSession + flag _LS.eaSessionId pour activer le feedback de fin
+//   - _eaSaveFeedback(payload) : sauvegarde dans ah_ea_feedback (sync FB)
+// Ne casse rien : si ELITE_ATHLETE_PROGRAM est absent, les helpers no-op.
+// ════════════════════════════════════════════════════════════════════════════
+var _eaCache = null;
+function _eaGetProgram() {
+  if (_eaCache) return _eaCache;
+  if (typeof window.ELITE_ATHLETE_PROGRAM !== 'undefined') {
+    _eaCache = window.ELITE_ATHLETE_PROGRAM;
+  }
+  return _eaCache;
+}
+
+// Adapte une session SOT au format `exos` attendu par launchSession.
+// La live session existante consomme {n, s, r, rest, note, video, sets[]…},
+// donc la conversion est directe ; on enrichit avec videoUrl / coachingCue.
+function _eaSessionToExos(session) {
+  if (!session || !session.exercises) return [];
+  return session.exercises.map(function(e) {
+    var note = e.coachingCue ? e.coachingCue : '';
+    if (e.intensity) note = note ? (note + ' · ' + e.intensity) : e.intensity;
+    return {
+      n: e.exerciseName,
+      s: e.sets != null ? String(e.sets) : '-',
+      r: e.repsOrDuration || '-',
+      rest: e.rest || '-',
+      note: note,
+      video: e.videoUrl || null,
+      _eaExerciseId: e.exerciseId,
+      _eaBlockType: e.blockType,
+      _eaVideoStatus: e.videoStatus // 'available' | 'placeholder'
+    };
+  });
+}
+
+// Retourne le compteur d'avancement EA (sessionsDone) cumulé sur tout le
+// programme. Source : ah_ea_progress. Stocke uniquement le nombre de
+// sessions complètes — la "position courante" est déduite séquentiellement.
+function _eaGetProgress() {
+  try {
+    var raw = localStorage.getItem('ah_ea_progress');
+    var st = raw ? JSON.parse(raw) : {};
+    return {
+      sessionsDone: st.sessionsDone || 0,
+      sessionsDoneIds: st.sessionsDoneIds || []
+    };
+  } catch(e) { return { sessionsDone: 0, sessionsDoneIds: [] }; }
+}
+
+function _eaMarkSessionDone(sessionId) {
+  var st = _eaGetProgress();
+  if (st.sessionsDoneIds.indexOf(sessionId) === -1) {
+    st.sessionsDoneIds.push(sessionId);
+    st.sessionsDone = st.sessionsDoneIds.length;
+    try { localStorage.setItem('ah_ea_progress', JSON.stringify(st)); } catch(e) {}
+    try { if (typeof fbSaveProfile === 'function') fbSaveProfile(); } catch(e) {}
+  }
+}
+
+// Position courante : phaseIdx + weekIdx + sessIdx de la PROCHAINE séance à
+// faire, sur la base de sessionsDone (séquentiel strict).
+function _eaCurrentLocation() {
+  var prog = _eaGetProgram();
+  if (!prog) return null;
+  var done = _eaGetProgress().sessionsDone;
+  var cursor = 0;
+  for (var pi = 0; pi < prog.phases.length; pi++) {
+    var phase = prog.phases[pi];
+    for (var wi = 0; wi < phase.weeks.length; wi++) {
+      var week = phase.weeks[wi];
+      for (var si = 0; si < week.sessions.length; si++) {
+        if (cursor === done) return { phaseIdx: pi, weekIdx: wi, sessIdx: si, totalDone: done };
+        cursor++;
+      }
+    }
+  }
+  return null; // programme terminé
+}
+
+// Ouvre la liste séquentielle des 18 semaines (Vue "Toutes les semaines").
+window.openEAWeeksOverview = function() {
+  var prog = _eaGetProgram();
+  if (!prog) { if (typeof showToast === 'function') showToast('Données EA indisponibles.', 'err'); return; }
+  var loc = _eaCurrentLocation();
+  var doneIds = _eaGetProgress().sessionsDoneIds;
+
+  var ov = document.getElementById('eaWeeksOverlay');
+  if (!ov) {
+    ov = document.createElement('div');
+    ov.id = 'eaWeeksOverlay';
+    ov.className = 'ea-ov';
+    document.body.appendChild(ov);
+  }
+  var html = '<div class="ea-ov-card" role="dialog">'
+    + '<div class="ea-ov-head">'
+    +   '<div>'
+    +     '<div class="ea-ov-eyebrow">' + prog.programName + ' · ' + prog.totalWeeks + ' semaines</div>'
+    +     '<div class="ea-ov-title">Toutes les séances</div>'
+    +   '</div>'
+    +   '<button class="ea-ov-close" onclick="window.closeEAWeeksOverview()" aria-label="Fermer">×</button>'
+    + '</div>'
+    + '<div class="ea-ov-body">';
+
+  prog.phases.forEach(function(phase, pi) {
+    html += '<div class="ea-phase-head">'
+      +   '<div class="ea-phase-name">' + phase.phaseName + '</div>'
+      +   '<div class="ea-phase-meta">' + phase.durationWeeks + ' sem · ' + phase.frequency + '</div>'
+      + '</div>';
+    phase.weeks.forEach(function(week, wi) {
+      html += '<div class="ea-week">'
+        +   '<div class="ea-week-head">'
+        +     '<span class="ea-week-num">SEM. ' + week.globalWeekNumber + '</span>'
+        +     '<span class="ea-week-focus">' + (week.weekFocus || '') + '</span>'
+        +   '</div>';
+      week.sessions.forEach(function(sess, si) {
+        var isDone = doneIds.indexOf(sess.sessionId) !== -1;
+        var isCurrent = loc && loc.phaseIdx === pi && loc.weekIdx === wi && loc.sessIdx === si;
+        var stateClass = isDone ? 'done' : (isCurrent ? 'current' : '');
+        var icon = isDone ? '✓' : (isCurrent ? '▶' : '·');
+        html += '<button type="button" class="ea-sess ' + stateClass + '" onclick="window.launchEASession(' + pi + ',' + wi + ',' + si + ')">'
+          +   '<span class="ea-sess-ic">' + icon + '</span>'
+          +   '<span class="ea-sess-body">'
+          +     '<span class="ea-sess-title">' + sess.sessionTitle + '</span>'
+          +     '<span class="ea-sess-meta">' + sess.exercises.length + ' exos · ' + sess.estimatedDuration + (sess.sessionType === 'test' ? ' · TEST' : '') + '</span>'
+          +   '</span>'
+          +   '<span class="ea-sess-go">›</span>'
+          + '</button>';
+      });
+      html += '</div>';
+    });
+  });
+  html += '</div></div>';
+  ov.innerHTML = html;
+  ov.classList.add('on');
+};
+
+window.closeEAWeeksOverview = function() {
+  var ov = document.getElementById('eaWeeksOverlay');
+  if (ov) ov.classList.remove('on');
+};
+
+// Lance une séance EA dans la live session existante + flag pour le feedback fin.
+window.launchEASession = function(pi, wi, si) {
+  var prog = _eaGetProgram();
+  if (!prog) return;
+  var phase = prog.phases[pi]; if (!phase) return;
+  var week  = phase.weeks[wi];  if (!week) return;
+  var sess  = week.sessions[si]; if (!sess) return;
+  var exos = _eaSessionToExos(sess);
+  if (!exos.length) { if (typeof showToast === 'function') showToast('Séance vide.', 'info'); return; }
+  try { window.closeEAWeeksOverview(); } catch(e) {}
+  try { launchSession(exos, sess.sessionTitle, prog.programName + ' — Sem. ' + week.globalWeekNumber, 'ea', sess.sessionId); }
+  catch(e) { console.warn('[EA launch]', e); return; }
+  // Annote la live session pour activer le feedback de fin
+  try {
+    if (window._LS) {
+      window._LS.eaSessionId = sess.sessionId;
+      window._LS.eaPhaseIdx = pi;
+      window._LS.eaWeekIdx = wi;
+      window._LS.eaSessIdx = si;
+      window._LS.eaSessionGoal = sess.sessionGoal;
+      window._LS.eaPhaseName = phase.phaseName;
+    }
+  } catch(e) {}
+};
+
+// Sauvegarde locale + (best-effort) cloud du feedback de fin de séance.
+// Forme : ah_ea_feedback = [{ sessionId, at, difficulty, fatigue, pain,
+//   technique, completion, notes }]
+window._eaSaveFeedback = function(payload) {
+  try {
+    var raw = localStorage.getItem('ah_ea_feedback');
+    var arr = raw ? JSON.parse(raw) : [];
+    arr.push(Object.assign({ at: Date.now() }, payload || {}));
+    if (arr.length > 200) arr = arr.slice(-200); // borne raisonnable
+    localStorage.setItem('ah_ea_feedback', JSON.stringify(arr));
+  } catch(e) {}
+  try { if (typeof fbSaveProfile === 'function') fbSaveProfile(); } catch(e) {}
+};
 
 // Lance directement la séance du jour à partir du programme attribué.
 // Mappe le jour de la semaine sur le weekDays du programme pour trouver
@@ -19776,6 +20015,13 @@ function renderProgramV2(key) {
 }
 
 function _renderProgHeader(p) {
+  // Pour Elite Athlète UNIQUEMENT : bouton "Toutes les semaines" qui ouvre
+  // la vue séquentielle EA_SOT_V1 (source de vérité). Les autres programmes
+  // n'ont pas (encore) cette vue → on n'affiche pas le bouton.
+  var isEA = (window._progV2State && window._progV2State.key === 'ea') && (typeof window.ELITE_ATHLETE_PROGRAM !== 'undefined');
+  var eaCta = isEA
+    ? '<button type="button" onclick="window.openEAWeeksOverview && window.openEAWeeksOverview()" style="margin-left:auto;flex-shrink:0;padding:8px 12px;background:var(--navy);border:1px solid rgba(197,164,78,.5);border-radius:10px;color:var(--gold);font-family:\'Outfit\',sans-serif;font-size:11.5px;font-weight:800;letter-spacing:.04em;cursor:pointer;white-space:nowrap">📅 Toutes les séances</button>'
+    : '';
   return '<div class="back-btn" onclick="closeProg()">← Retour Programmes</div>'
     + '<div style="display:flex;gap:14px;align-items:center;margin-bottom:8px">'
     +   '<img src="' + (p.img||'') + '" style="width:64px;height:64px;border-radius:12px;object-fit:cover;object-position:center top;background:#243B6B;flex-shrink:0" onerror="this.style.display=\'none\'">'
@@ -19784,6 +20030,7 @@ function _renderProgHeader(p) {
     +     '<div style="font-size:11px;color:var(--muted);margin-top:3px;line-height:1.4">' + (p.tagline||'') + '</div>'
     +     '<div style="font-size:10px;color:var(--gold);margin-top:4px;font-weight:700;letter-spacing:1px">' + p.totalWeeks + ' SEMAINES · ' + p.phases.length + ' PHASE' + (p.phases.length>1?'S':'') + ' · ' + (p.level||'') + '</div>'
     +   '</div>'
+    +   eaCta
     + '</div>';
 }
 
@@ -27800,7 +28047,10 @@ var FB_SYNC_KEYS = [
   ['ah_live_session',             'liveSession',         true],
   ['ah_access_data',              'accessData',          true],
   ['ah_active_habits',            'activeHabits',        true],
-  ['ah_lib_selection',            'libSelection',        true]
+  ['ah_lib_selection',            'libSelection',        true],
+  // Elite Athlète — progression séquentielle + feedbacks 5 questions
+  ['ah_ea_progress',               'eaProgress',          true],
+  ['ah_ea_feedback',               'eaFeedback',          true]
 ];
 
 function _fbCollectPayload() {
@@ -33183,9 +33433,122 @@ function _lsShowComplete() {
   _LS.restActive = false;
   var ov = document.getElementById('lsRestOverlay');
   if (ov) ov.classList.remove('ls-rest-active');
-  // Avant de valider la séance, on demande le feedback (3 sliders + chips).
-  // C'est dans _seFbValidate qu'on appellera _lsFinalizeSession.
+  // Séance Elite Athlète : feedback 5 questions spécifique (Prompt 2 §
+  // "Boucle feedback") → on saute le wizard standard. Pour les autres
+  // programmes (VD, Builder, Librairie séance perso…), on garde le flow
+  // existant _seFbOpen → _seFbValidate → _lsFinalizeSession.
+  if (window._LS && _LS.eaSessionId) {
+    try { window._eaOpenFeedback(); return; } catch(e) { console.warn('[EA fb]', e); }
+  }
   _seFbOpen();
+}
+
+// ── Elite Athlète — modal feedback 5 questions (fin de séance) ─────────
+window._eaOpenFeedback = function() {
+  var m = document.getElementById('eaFeedbackOverlay');
+  if (!m) {
+    m = document.createElement('div');
+    m.id = 'eaFeedbackOverlay';
+    m.className = 'ea-ov';
+    document.body.appendChild(m);
+  }
+  m.innerHTML = _eaFeedbackHtml();
+  m.classList.add('on');
+  window._eaFbState = { difficulty: null, fatigue: null, pain: null, technique: null, completion: null };
+};
+window._eaCloseFeedback = function(skip) {
+  var m = document.getElementById('eaFeedbackOverlay');
+  if (m) m.classList.remove('on');
+  if (skip) {
+    // Refus de feedback : on finalise quand même la séance.
+    try {
+      if (window._LS && _LS.eaSessionId) _eaMarkSessionDone(_LS.eaSessionId);
+      _lsFinalizeSession({ skipped: true, completedAt: new Date().toISOString() });
+    } catch(e) {}
+  }
+};
+window._eaFbPick = function(field, value) {
+  window._eaFbState = window._eaFbState || {};
+  window._eaFbState[field] = value;
+  // Highlight visuel : on retrouve le groupe par data-field et on bascule .on
+  var groups = document.querySelectorAll('#eaFeedbackOverlay .ea-fb-scale[data-field="' + field + '"] .ea-fb-btn');
+  groups.forEach(function(b){
+    b.classList.toggle('on', b.getAttribute('data-value') === String(value));
+  });
+  // Active le bouton Valider quand les 5 sont remplies
+  var allOk = ['difficulty','fatigue','pain','technique','completion'].every(function(k){ return window._eaFbState[k] != null; });
+  var btn = document.getElementById('eaFbValidate');
+  if (btn) { btn.disabled = !allOk; btn.style.opacity = allOk ? '1' : '.55'; }
+};
+window._eaFbValidate = function() {
+  var st = window._eaFbState || {};
+  if (st.difficulty == null) return;
+  var payload = {
+    sessionId: _LS.eaSessionId,
+    phaseName: _LS.eaPhaseName,
+    sessionGoal: _LS.eaSessionGoal,
+    difficulty: st.difficulty,
+    fatigue: st.fatigue,
+    pain: st.pain,
+    technique: st.technique,
+    completion: st.completion,
+    completedAt: new Date().toISOString()
+  };
+  try { _eaSaveFeedback(payload); } catch(e) {}
+  // Une séance comptée comme done seulement si "complète" ou "partielle"
+  // — abandon n'incrémente pas le compteur (l'utilisateur peut la refaire).
+  if (st.completion !== 'abandon') {
+    try { if (_LS.eaSessionId) _eaMarkSessionDone(_LS.eaSessionId); } catch(e) {}
+  }
+  window._eaCloseFeedback(false);
+  _lsFinalizeSession(payload);
+};
+
+function _eaFeedbackHtml() {
+  function btn(field, value, label) {
+    return '<button type="button" class="ea-fb-btn" data-value="' + value + '" onclick="window._eaFbPick(\'' + field + '\',\'' + value + '\')">' + label + '</button>';
+  }
+  function scale(field, items) {
+    return '<div class="ea-fb-scale" data-field="' + field + '">' + items.join('') + '</div>';
+  }
+  var diff = [];
+  for (var i = 1; i <= 10; i++) diff.push(btn('difficulty', i, String(i)));
+  return '<div class="ea-ov-card" role="dialog">'
+    + '<div class="ea-ov-head">'
+    +   '<div>'
+    +     '<div class="ea-ov-eyebrow">Séance terminée</div>'
+    +     '<div class="ea-ov-title">Comment tu te sens ?</div>'
+    +   '</div>'
+    +   '<button class="ea-ov-close" onclick="window._eaCloseFeedback(true)" aria-label="Passer">×</button>'
+    + '</div>'
+    + '<div class="ea-ov-body">'
+    +   '<div class="ea-fb">'
+    +     '<div class="ea-fb-q">1. Difficulté ressentie</div>' + scale('difficulty', diff)
+    +     '<div class="ea-fb-q">2. Fatigue</div>' + scale('fatigue', [
+            btn('fatigue','basse','Basse'),
+            btn('fatigue','normale','Normale'),
+            btn('fatigue','elevee','Élevée')
+          ])
+    +     '<div class="ea-fb-q">3. Douleur</div>' + scale('pain', [
+            btn('pain','non','Non'),
+            btn('pain','legere','Légère'),
+            btn('pain','genante','Gênante')
+          ])
+    +     '<div class="ea-fb-q">4. Qualité technique ressentie</div>' + scale('technique', [
+            btn('technique','mauvaise','Mauvaise'),
+            btn('technique','correcte','Correcte'),
+            btn('technique','bonne','Bonne')
+          ])
+    +     '<div class="ea-fb-q">5. Séance</div>' + scale('completion', [
+            btn('completion','complete','Complète'),
+            btn('completion','partielle','Partielle'),
+            btn('completion','abandon','Abandonnée')
+          ])
+    +   '</div>'
+    +   '<button id="eaFbValidate" type="button" disabled style="opacity:.55;width:100%;margin-top:14px;padding:14px;background:linear-gradient(135deg,var(--gold),#A0853A);border:0;border-radius:12px;font-family:\'Bebas Neue\',sans-serif;font-size:15px;letter-spacing:.12em;color:var(--navy);cursor:pointer" onclick="window._eaFbValidate()">VALIDER MON RESSENTI</button>'
+    +   '<div style="text-align:center;margin-top:10px;font-size:11px;color:var(--muted);line-height:1.5">Si tu ressens une douleur inhabituelle ou persistante, arrête l\'exercice concerné et consulte un professionnel.</div>'
+    + '</div>'
+    + '</div>';
 }
 
 function _lsClose() {

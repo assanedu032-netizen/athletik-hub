@@ -1,8 +1,9 @@
-const CACHE = 'athletik-v197';
+const CACHE = 'athletik-v198';
 const ASSETS = [
   '/',
   '/index.html',
   '/ciqual-data.js',
+  '/data/elite-athlete-program.js',
   '/icons/icon-192.png',
   '/icons/icon-512.png',
   '/assets/sounds/timer-beep.mp3'
