@@ -16104,7 +16104,18 @@ function _bfDrawChart(data) {
   } catch(e) {}
   var tim_soundStyle = localStorage.getItem('tim_sound') || 'sport';
   var tim_mode = 'minuteur'; // Tabata retiré sur demande user — défaut Minuteur
-  var tim_T = { queue:[], idx:0, rem:0, total:0, running:false, iv:null, startMs:null, doneRounds:0, modeLabel:'', totalWorkPhases:0 };
+  // tim_T — état du timer Tabata/HIIT.
+  //   rem      : secondes restantes affichées (recalculées via endMs)
+  //   endMs    : Date.now() de la FIN de la phase courante. C'est la
+  //              source de vérité — quand l'onglet est en background,
+  //              setInterval ralentit (throttle navigateur), mais au
+  //              retour le tick suivant resynchronise immédiatement
+  //              via tim_resyncFromEndMs().
+  //   phaseDoneFlag : protège contre les doubles tim_endPhase() quand
+  //              la page revient au foreground après expiration.
+  var tim_T = { queue:[], idx:0, rem:0, total:0, running:false, iv:null,
+                startMs:null, endMs:null, doneRounds:0, modeLabel:'',
+                totalWorkPhases:0, phaseDoneFlag:false };
   var tim_savedLocal = [];
   var tim_unsub = null;
   var tim_toastT = null;
@@ -16540,7 +16551,13 @@ function _bfDrawChart(data) {
   });
 
   // ── MINUTEUR (compte à rebours simple — fonction principale) ──
-  var _tim_minut = { running:false, totalMs:0, remMs:0, startMs:0, iv:null };
+  // _tim_minut — minuteur (compte à rebours simple).
+  //   endMs    : Date.now() de fin réelle. Plus stable que (startMs + totalMs)
+  //              dans les cas de pause/reprise où on resette startMs.
+  //   finished*: garde-fous anti-doublon (1 son, 1 notif, 1 état "terminé").
+  var _tim_minut = { running:false, totalMs:0, remMs:0, startMs:0, endMs:null,
+                     iv:null, finishedFlag:false, soundPlayed:false,
+                     notifSent:false, lastBipSec:null };
   function _tim_minutFmt(ms){
     var totalS = Math.max(0, Math.ceil(ms/1000));
     var s = totalS % 60;
@@ -16803,18 +16820,31 @@ function _bfDrawChart(data) {
       _tim_minut.totalMs = secs * 1000;
       _tim_minut.remMs = _tim_minut.totalMs;
       _tim_minut.startMs = Date.now();
+      // endMs = source de vérité. Tous les recalculs (tick page, visibility
+      // resync, fin) le consomment. Plus de doute sur la durée réelle même
+      // si le compteur dérive en background.
+      _tim_minut.endMs = _tim_minut.startMs + _tim_minut.totalMs;
+      // Reset des garde-fous anti-doublon pour cette nouvelle session
+      _tim_minut.finishedFlag = false;
+      _tim_minut.soundPlayed = false;
+      _tim_minut.notifSent = false;
+      _tim_minut.lastBipSec = null;
       if (tim_audioCtx && tim_audioCtx.state === 'suspended') tim_audioCtx.resume(); tim_beepUnlock();
       _tim_minut.iv = setInterval(_tim_minutTick, 200);
       _tim_minut.running = true;
       var b = document.getElementById('timMinutBtn'); if (b) b.textContent = '⏸';
       _tim_minutRender();
       _tim_minutPersist();
-      tim_minutScheduleNotif(Date.now() + _tim_minut.totalMs);
-      // Warning persistant si pas de permission notif (le timer démarre quand
-      // même, mais l'user sait qu'il faut rester sur l'app).
+      tim_minutScheduleNotif(_tim_minut.endMs);
+      // Toast UX clair selon l'état des permissions notif. Pas de jargon
+      // technique — message court, sportif, mobile-first.
       try {
-        if (typeof Notification !== 'undefined' && Notification.permission !== 'granted') {
-          tim_toast('⚠️ Notifs OFF — reste sur l\'app pour entendre la sonnerie', 6000);
+        if (typeof Notification === 'undefined') {
+          tim_toast('Alertes arrière-plan indisponibles sur ce navigateur', 4000);
+        } else if (Notification.permission === 'granted') {
+          tim_toast('🔔 Alerte activée — tu seras prévenu même si tu quittes l\'app', 3500);
+        } else {
+          tim_toast('Alertes arrière-plan désactivées — garde l\'app ouverte ou active les notifications', 5000);
         }
       } catch(_) {}
     };
@@ -16830,27 +16860,46 @@ function _bfDrawChart(data) {
     _runStart();
   }
   function _tim_minutTick(){
-    _tim_minut.remMs = _tim_minut.totalMs - (Date.now() - _tim_minut.startMs);
-    // Bip d'urgence sur les 3 dernières secondes.
+    // Calcul direct depuis endMs (source de vérité), pas un compteur
+    // décrémenté. Si l'app était endormie/en background, le tick suivant
+    // récupère immédiatement le bon état (et déclenche la fin si dépassée).
+    if (_tim_minut.endMs == null) return;
+    _tim_minut.remMs = _tim_minut.endMs - Date.now();
     var sLeft = Math.ceil(_tim_minut.remMs / 1000);
     if (sLeft <= 3 && sLeft > 0 && _tim_minut.lastBipSec !== sLeft) {
       _tim_minut.lastBipSec = sLeft;
       if (typeof tim_sndUrgence === 'function') tim_sndUrgence();
     }
     if (_tim_minut.remMs <= 0) {
-      clearInterval(_tim_minut.iv);
-      _tim_minut.running = false;
-      _tim_minut.remMs = 0;
-      _tim_minut.totalMs = 0;
-      _tim_minutRender();
-      if (typeof tim_sndFinish === 'function') tim_sndFinish();
-      tim_toast('⏰ Temps écoulé !');
-      var b = document.getElementById('timMinutBtn'); if (b) b.textContent = '▶';
-      _tim_minutClearPersist();
+      _tim_minutFinish();
       return;
     }
     _tim_minutRender();
   }
+
+  // Point d'entrée UNIQUE de fin de minuteur. Garde-fous anti-doublon :
+  //   - finishedFlag : empêche tim_endPhase d'être ré-exécuté
+  //   - soundPlayed  : empêche un 2e tim_sndFinish (par ex. SW + visibility)
+  //   - notifSent    : empêche showNotification x2
+  function _tim_minutFinish(){
+    if (_tim_minut.finishedFlag) return;
+    _tim_minut.finishedFlag = true;
+    if (_tim_minut.iv) { clearInterval(_tim_minut.iv); _tim_minut.iv = null; }
+    _tim_minut.running = false;
+    _tim_minut.remMs = 0;
+    _tim_minut.totalMs = 0;
+    _tim_minut.endMs = null;
+    _tim_minutRender();
+    if (!_tim_minut.soundPlayed) {
+      _tim_minut.soundPlayed = true;
+      if (typeof tim_sndFinish === 'function') tim_sndFinish();
+    }
+    try { if (navigator.vibrate) navigator.vibrate([500, 200, 500]); } catch(_){}
+    tim_toast('⏰ Temps écoulé !');
+    var b = document.getElementById('timMinutBtn'); if (b) b.textContent = '▶';
+    _tim_minutClearPersist();
+  }
+  window._tim_minutFinish = _tim_minutFinish; // hook pour le visibility handler
   function tim_minutToggle(){
     if (_tim_minut.running) {
       // Pause
@@ -17183,6 +17232,14 @@ function _bfDrawChart(data) {
     screen.className = 'tim-timer-screen on ' + step.ph;
     var p = document.getElementById('timPhaseName'); if (p) p.textContent = step.lbl || '';
     var e = document.getElementById('timExName'); if (e) e.textContent = step.ex || '';
+    // ── Source de vérité absolue : endMs = Date.now() + durée × 1000.
+    // Tous les calculs `remaining` viennent désormais de endMs (pas d'un
+    // compteur décrémenté). Garantit que background/throttle/visibility
+    // n'altèrent pas la durée perçue.
+    tim_T.endMs = Date.now() + (step.dur || 0) * 1000;
+    tim_T.phaseDoneFlag = false;
+    tim_T.rem = step.dur || 0;
+    tim_T.total = step.dur || 0;
     var next = tim_T.queue[tim_T.idx + 1];
     var nL = document.getElementById('timNextLabel');
     var nT = document.getElementById('timNextTime');
@@ -17205,14 +17262,38 @@ function _bfDrawChart(data) {
     var t = document.getElementById('timTotalTime'); if (t) t.textContent = tim_fmtMSS(remaining);
   }
   function tim_tick(){
-    tim_T.rem--;
-    if (tim_T.rem <= 3 && tim_T.rem > 0) {
+    // Source de vérité : Date.now() vs endMs. PLUS de décrément basé sur
+    // le tick — quand le navigateur ralentit setInterval en background,
+    // ça ne change rien : le calcul direct récupère le bon état.
+    if (!tim_T.endMs) return;
+    var msLeft = tim_T.endMs - Date.now();
+    var newRem = Math.max(0, Math.ceil(msLeft / 1000));
+    // Détection de passage dans la zone urgence (3,2,1) — joué une seule
+    // fois par seconde (vs ancien qui jouait à chaque tick décrémenté).
+    if (newRem !== tim_T.rem && newRem <= 3 && newRem > 0) {
       tim_sndUrgence();
       var d = document.getElementById('timBigTime');
       if (d) { d.classList.add('pulse'); setTimeout(function(){ d.classList.remove('pulse'); }, 200); }
     }
-    if (tim_T.rem === 0) { tim_endPhase(); return; }
+    tim_T.rem = newRem;
+    if (msLeft <= 0) {
+      if (!tim_T.phaseDoneFlag) { tim_T.phaseDoneFlag = true; tim_endPhase(); }
+      return;
+    }
     tim_updateDisplay(tim_T.rem);
+  }
+  // Re-synchronise depuis endMs : utilisé par le Page Visibility handler
+  // au retour au foreground. Si l'utilisateur revient APRÈS la fin du
+  // timer, force tim_endPhase() (avec garde anti-doublon).
+  function tim_resyncFromEndMs(){
+    if (!tim_T.endMs || !tim_T.running) return;
+    var msLeft = tim_T.endMs - Date.now();
+    tim_T.rem = Math.max(0, Math.ceil(msLeft / 1000));
+    tim_updateDisplay(tim_T.rem);
+    if (msLeft <= 0 && !tim_T.phaseDoneFlag) {
+      tim_T.phaseDoneFlag = true;
+      tim_endPhase();
+    }
   }
   function tim_endPhase(){
     var cur = tim_T.queue[tim_T.idx];
@@ -17484,6 +17565,40 @@ function _bfDrawChart(data) {
     tim_savedLocal = arr;
     tim_renderSaved();
     tim_toast('Supprimée');
+  }
+
+  // ═══════════════════════════════════════════════════════════════════
+  // PAGE VISIBILITY — resync immédiat au retour foreground
+  // ───────────────────────────────────────────────────────────────────
+  // Quand l'utilisateur quitte l'app (Instagram, musique, écran verrouillé),
+  // le navigateur THROTTLE setInterval (1 tick toutes les minutes en
+  // background sur Chrome). Notre logique de fin de timer ne se déclenche
+  // donc PAS à l'heure. Au retour, on resync immédiatement depuis endMs.
+  //
+  // Les couches background (notif système SW + audio bg) restent les
+  // déclencheurs PRIMAIRES de l'alerte ; ce handler est la défense
+  // foreground (cas "retour rapide dans l'app", quelques secondes avant
+  // expiration, ou juste après).
+  function _tim_onVisibilityChange(){
+    if (document.visibilityState !== 'visible') return;
+    // 1) Minuteur en cours
+    try {
+      if (_tim_minut && _tim_minut.running && _tim_minut.endMs != null) {
+        var msLeft = _tim_minut.endMs - Date.now();
+        _tim_minut.remMs = Math.max(0, msLeft);
+        _tim_minutRender();
+        if (msLeft <= 0) _tim_minutFinish(); // garde-fou anti-doublon dans _tim_minutFinish
+      }
+    } catch(_){}
+    // 2) Tabata/HIIT en cours
+    try {
+      if (typeof tim_T !== 'undefined' && tim_T.running && tim_T.endMs) {
+        tim_resyncFromEndMs();
+      }
+    } catch(_){}
+  }
+  if (typeof document !== 'undefined') {
+    document.addEventListener('visibilitychange', _tim_onVisibilityChange);
   }
 
   // ── EXPOSE ──
