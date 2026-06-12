@@ -1132,6 +1132,9 @@ body{background:var(--bg);color:var(--text);font-family:'Outfit',sans-serif;disp
 .yt-detail-video{width:100%;aspect-ratio:16/9;background:#0E1626;position:relative;overflow:hidden;display:flex;align-items:center;justify-content:center}
 .yt-detail-video iframe{width:100%;height:100%;border:none;position:absolute;inset:0}
 .yt-detail-video-placeholder{display:flex;flex-direction:column;align-items:center;gap:8px;cursor:pointer}
+/* Pastille SVG vidéo (placeholder fiche détail) — navy + filigrane gold,
+   identité Athletik Hub. Remplace l'ancien 🎬 orange. */
+.yt-empty-pill{width:56px;height:56px;border-radius:50%;display:flex;align-items:center;justify-content:center;background:radial-gradient(circle at 30% 30%, rgba(197,164,78,.18), rgba(197,164,78,.04) 60%, transparent 70%);border:1px solid rgba(197,164,78,.30);box-shadow:inset 0 0 30px rgba(197,164,78,.10)}
 .yt-detail-play{width:60px;height:60px;border-radius:50%;background:rgba(197,164,78,.18);border:2px solid rgba(197,164,78,.5);display:flex;align-items:center;justify-content:center}
 .yt-detail-play-tri{width:0;height:0;border-top:11px solid transparent;border-bottom:11px solid transparent;border-left:18px solid var(--gold);margin-left:4px}
 .yt-detail-body{padding:16px 16px 100px}
@@ -7796,8 +7799,13 @@ window.tiResetOnEnter = function(){ window.tiShowStep(1); };
       <div class="yt-detail-section">ERREURS À ÉVITER</div>
       <div class="yt-detail-desc" id="ytDetailErreursTxt"></div>
     </div>
-    <button class="btn btn-gold" id="ytDetailAddBtn" style="width:100%;margin-bottom:10px" onclick="window._libDetailToggleAdd && window._libDetailToggleAdd()">+ Ajouter à ma séance</button>
-    <button class="btn btn-outline" style="width:100%" onclick="_libTrackCurrent()">📊 Tracker cet exercice</button>
+    <!-- Action principale : Tracker (suivi/progression). Le bouton "Ajouter
+         à ma séance" reste possible mais devient contextuel — affiché
+         UNIQUEMENT si une séance est déjà en construction (window._libIsBuildMode).
+         Hors build mode, la Librairie reste un catalogue de consultation. -->
+    <button class="btn btn-gold" id="ytDetailTrackBtn" style="width:100%;margin-bottom:6px" onclick="_libTrackCurrent()">📊 Tracker cet exercice</button>
+    <div id="ytDetailTrackHint" style="font-size:11px;color:var(--muted);text-align:center;margin-bottom:14px;line-height:1.5">Ajoute cet exercice à ton suivi pour voir ton évolution.</div>
+    <button class="btn btn-outline" id="ytDetailAddBtn" style="display:none;width:100%;margin-bottom:10px" onclick="window._libDetailToggleAdd && window._libDetailToggleAdd()">+ Ajouter à ma séance</button>
   </div>
 </div>
 
@@ -21457,19 +21465,31 @@ function _libOpenDetail(name, catKey) {
   }
   _libFillOpt('ytDetailConsignes', 'ytDetailConsignesTxt', ex.consignes);
   _libFillOpt('ytDetailErreurs', 'ytDetailErreursTxt', ex.erreurs);
-  // État du bouton "+ Ajouter à ma séance"
+  // État + visibilité du bouton "+ Ajouter à ma séance".
+  // Visible UNIQUEMENT si une construction de séance est déjà en cours
+  // (≥ 1 exo dans _libSelGet()) — sinon la Librairie reste un catalogue
+  // de consultation sans pousser l'utilisateur vers le Builder.
   var addBtn = document.getElementById('ytDetailAddBtn');
   if (addBtn) {
     var isAdded = _libIsAdded(ex.name);
-    addBtn.textContent = isAdded ? '✓ Dans ma séance' : '+ Ajouter à ma séance';
-    addBtn.style.opacity = isAdded ? '.75' : '';
+    var inBuildMode = (typeof _libSelGet === 'function' && _libSelGet().length > 0) || isAdded;
+    if (inBuildMode) {
+      addBtn.style.display = '';
+      addBtn.textContent = isAdded ? '✓ Dans ma séance' : '+ Ajouter à ma séance';
+      addBtn.style.opacity = isAdded ? '.75' : '';
+    } else {
+      addBtn.style.display = 'none';
+    }
   }
   // Video : priorité ex.video (futur champ inline) puis _LIB_VIDEO_MAP[name]
   _libCurrentVideo = ex.video || _LIB_VIDEO_MAP[ex.name] || null;
   var placeholder = document.getElementById('ytDetailPlaceholder');
   placeholder.style.display = 'flex';
-  // Adapte le placeholder selon disponibilité de la vidéo. Quand pas de vidéo,
-  // on indique clairement "à venir" et on propose une recherche YouTube en fallback.
+  // Adapte le placeholder selon disponibilité de la vidéo. Quand pas de vidéo
+  // démo, on affiche un placeholder PREMIUM (navy + filigrane gold + icône
+  // play discrète) — pas le 🎬 orange agressif d'avant. Le lien "Chercher
+  // sur YouTube" devient un lien texte secondaire très discret (pour ne pas
+  // pousser l'user hors de l'app par défaut).
   if (_libCurrentVideo) {
     placeholder.innerHTML =
       '<div class="yt-detail-play"><div class="yt-detail-play-tri"></div></div>' +
@@ -21479,9 +21499,13 @@ function _libOpenDetail(name, catKey) {
   } else {
     var q = encodeURIComponent(ex.name + ' technique tutoriel');
     placeholder.innerHTML =
-      '<div style="font-size:36px;opacity:.5">🎬</div>' +
-      '<div style="font-size:10px;color:rgba(255,255,255,.45);letter-spacing:1px;text-transform:uppercase;margin-top:6px">Vidéo de démo à venir</div>' +
-      '<a href="https://www.youtube.com/results?search_query=' + q + '" target="_blank" rel="noopener" style="margin-top:8px;font-size:10px;color:rgba(255,255,255,.7);text-decoration:underline;letter-spacing:.5px" onclick="event.stopPropagation()">Chercher sur YouTube ↗</a>';
+        '<div class="yt-empty-pill">'
+      +   '<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="#C5A44E" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">'
+      +     '<rect x="3" y="6" width="13" height="12" rx="2"/><polygon points="16 9 22 6 22 18 16 15" fill="rgba(197,164,78,.18)" stroke="#C5A44E"/>'
+      +   '</svg>'
+      + '</div>'
+      + '<div style="font-family:\'JetBrains Mono\',monospace;font-size:10px;color:rgba(255,255,255,.55);letter-spacing:.20em;text-transform:uppercase;margin-top:10px;font-weight:700">Vidéo démo à venir</div>'
+      + '<a href="https://www.youtube.com/results?search_query=' + q + '" target="_blank" rel="noopener" style="margin-top:14px;font-size:10px;color:rgba(255,255,255,.40);letter-spacing:.04em;text-decoration:underline;text-underline-offset:3px" onclick="event.stopPropagation()">Chercher sur YouTube</a>';
     placeholder.style.cursor = 'default';
     placeholder.onclick = null;
   }
