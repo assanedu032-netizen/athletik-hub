@@ -25982,54 +25982,91 @@ window.validateMealPlan = validateMealPlan;
 // `usedKeys` (optional) : keys déjà utilisées cette semaine, déprioriser.
 // `todayKeys` (optional) : keys déjà servies AUJOURD'HUI — interdit strict
 // (sauf si le pool entier est déjà passé aujourd'hui, cas pathologique).
-function _mpPickAndPortion(arr, slotTarget, dayOffset, objectif, usedKeys, todayKeys) {
+// ────────────────────────────────────────────────────────────────────────
+// _mpPickAndPortion — sélection d'une recette pour un slot de la journée
+// ────────────────────────────────────────────────────────────────────────
+// Priorités (du brief client, jamais casser P1 et P2) :
+//   P1 — Restrictions utilisateur (allergies/exclusions/préférences/objectif).
+//        Déjà filtrées en amont dans generateMealPlan() → `arr` ne contient
+//        plus de recettes interdites.
+//   P2 — JAMAIS deux fois la même recette dans la même journée (todayKeys
+//        absolu, garde stricte sur TOUT le pool, pas juste le top 20).
+//   P3 — Éviter < 48h depuis le dernier usage (paramètre lastUsedDay).
+//   P4 — Limiter à ≤ 2 apparitions par semaine si possible.
+//   P5 — Se rapprocher du target calorique (le tri initial gère ça).
+//
+// Le pool de recherche est ÉTENDU à `arr` complet si le top 20 ne suffit
+// pas à respecter P2/P3/P4 — la variété calorique cède du terrain à la
+// variété de recettes, ce que le client préfère (cf. screenshot Poulet
+// Cajun midi+soir).
+function _mpPickAndPortion(arr, slotTarget, dayOffset, objectif, usedKeys, todayKeys, currentDayIdx, lastUsedDay) {
   if (!arr.length) return null;
-  // Trie par proximité au target du slot
-  var ranked = arr.slice().sort(function(a,b){
-    return Math.abs((a.cals||0) - slotTarget) - Math.abs((b.cals||0) - slotTarget);
+  // Tri par proximité au target → on aura plusieurs "couches" : top-20 (best
+  // match calorique) puis le reste, en s'assouplissant sur les contraintes.
+  var ranked = arr.slice().sort(function (a, b) {
+    return Math.abs((a.cals || 0) - slotTarget) - Math.abs((b.cals || 0) - slotTarget);
   });
-  // Pool de variété : on garde jusqu'à 20 recettes les plus proches (au lieu de 6).
-  // Avant : top 6 → si l'user avait un objectif spécifique + préférences, le
-  // pool tombait à 2-3 recettes utilisables → répétition garantie sur la
-  // semaine. Maintenant : pool large, l'anti-répétition (usedKeys) peut
-  // vraiment opérer sur 7 jours × 4 slots = 28 picks.
-  var top = ranked.slice(0, Math.min(20, ranked.length));
-  // Bias secondaire selon objectif : parmi les "proches", préfère ratio prot/kcal
-  // pour pertePoids (satiété + maintien muscle), raw cals pour priseMuscle.
+  var top20 = ranked.slice(0, Math.min(20, ranked.length));
+  // Bias secondaire selon objectif : pertePoids → préfère ratio prot/kcal.
   if (objectif === 'pertePoids') {
-    top.sort(function(a,b){
-      return ((b.prot||0)/Math.max(1,b.cals||1)) - ((a.prot||0)/Math.max(1,a.cals||1));
+    top20.sort(function (a, b) {
+      return ((b.prot || 0) / Math.max(1, b.cals || 1)) - ((a.prot || 0) / Math.max(1, a.cals || 1));
     });
   }
-  // Anti-répétition : essaie d'abord une recette non utilisée cette semaine
-  var picked = null;
-  if (usedKeys) {
-    for (var i = 0; i < top.length; i++) {
-      var idx = (dayOffset + i) % top.length;
-      if (!usedKeys[top[idx].key]) { picked = top[idx]; break; }
+
+  function passes(p2, p3, p4, candidates, startIdx) {
+    // Cherche dans candidates (à partir d'un offset pseudo-aléatoire) une
+    // recette qui respecte les contraintes activées.
+    for (var i = 0; i < candidates.length; i++) {
+      var idx = ((startIdx || 0) + i) % candidates.length;
+      var r = candidates[idx];
+      if (!r || !r.key) continue;
+      if (p2 && todayKeys && todayKeys[r.key]) continue; // P2 strict
+      if (p3 && lastUsedDay && currentDayIdx != null
+            && lastUsedDay[r.key] != null
+            && (currentDayIdx - lastUsedDay[r.key]) < 2) continue; // P3 (< 48h)
+      if (p4 && usedKeys && (usedKeys[r.key] || 0) >= 2) continue; // P4 (cap 2/sem)
+      return r;
     }
+    return null;
   }
-  // Pool entier déjà servi cette semaine → on retombe sur une recette déjà
-  // vue, MAIS jamais une déjà servie aujourd'hui (le doublon midi/soir du
-  // même jour est le pire cas UX — cf. feedback client 10 juin 2026).
-  if (!picked && todayKeys) {
-    for (var j = 0; j < top.length; j++) {
-      var idx2 = (dayOffset + j) % top.length;
-      if (!todayKeys[top[idx2].key]) { picked = top[idx2]; break; }
-    }
+
+  var startIdx = dayOffset;
+  // Tentative 1 (idéal) : top 20, respecte P2+P3+P4
+  var picked = passes(true, true, true, top20, startIdx);
+  // Tentative 2 : top 20, on lâche P4 (cap hebdo) — variété calorique d'abord
+  if (!picked) picked = passes(true, true, false, top20, startIdx);
+  // Tentative 3 : top 20, on lâche P3 (48h)
+  if (!picked) picked = passes(true, false, false, top20, startIdx);
+  // Tentative 4 : POOL COMPLET (au-delà du top 20), garde stricte P2 + P3
+  if (!picked) picked = passes(true, true, false, ranked, startIdx);
+  // Tentative 5 : pool complet, P2 strict + P4 lâche + P3 lâche
+  if (!picked) picked = passes(true, false, false, ranked, startIdx);
+  // Tentative 6 (ultime) : pool complet, P2 strict UNIQUEMENT
+  //   → JAMAIS deux fois la même recette dans la même journée.
+  if (!picked) picked = passes(true, false, false, ranked, startIdx);
+
+  // Si après tout ça aucune recette ne passe P2, on signale et on retourne
+  // null — le caller doit gérer (laisser le slot vide est moins pire qu'un
+  // doublon midi/soir). En pratique : on tombe ici seulement si le pool
+  // total < nb de slots déjà servis aujourd'hui (3 ou moins, vraiment rare).
+  if (!picked) {
+    try {
+      console.warn('[mealPlan] Aucune recette compatible pour ce slot après P2 strict — pool insuffisant. dayIdx=' + currentDayIdx + ' slot=' + slotTarget + 'kcal. Stock total=' + arr.length + ', déjà servis aujourd\'hui=' + Object.keys(todayKeys || {}).length);
+    } catch (_) {}
+    return null;
   }
-  if (!picked) picked = top[dayOffset % top.length];
-  if (!picked || !picked.cals) return picked;
-  // Calcule les portions nécessaires pour matcher le slot target (0.5 → 4x
-  // pour pouvoir atteindre les gros objectifs caloriques)
+
+  if (!picked.cals) return picked;
+  // Portions adaptées (0.5x → 4x pour atteindre les gros objectifs).
   var rawRatio = slotTarget / picked.cals;
   var portions = Math.max(0.5, Math.min(4, Math.round(rawRatio * 2) / 2));
   return Object.assign({}, picked, {
     plannedPortions: portions,
-    plannedCals: Math.round((picked.cals||0) * portions),
-    plannedProt: Math.round((picked.prot||0) * portions),
-    plannedCarbs: Math.round((picked.carbs||0) * portions),
-    plannedFat: Math.round((picked.fat||0) * portions)
+    plannedCals: Math.round((picked.cals || 0) * portions),
+    plannedProt: Math.round((picked.prot || 0) * portions),
+    plannedCarbs: Math.round((picked.carbs || 0) * portions),
+    plannedFat: Math.round((picked.fat || 0) * portions)
   });
 }
 
@@ -26099,6 +26136,24 @@ function generateMealPlan() {
     c: Math.round(targetCal * MP_SLOT_RATIOS.snack),
     d: Math.round(targetCal * MP_SLOT_RATIOS.dinner)
   };
+  // ── Diagnostic stock recettes (audit interne, log console uniquement) ──
+  // 28 slots à pourvoir (7j × 4 repas). Pour respecter cap 2/semaine,
+  // il faut idéalement ≥ 4 breakfasts + ≥ 7 meals (midi+soir = 14 picks
+  // dans le même pool, cap 2/sem → 7 recettes min) + ≥ 4 collations.
+  var fallbackRepetitionCount = 0;
+  try {
+    var diag = [];
+    if (breakfasts.length < 4) diag.push((4 - breakfasts.length) + ' petits-déj');
+    if (meals.length < 7)      diag.push((7 - meals.length)      + ' repas (midi+soir)');
+    if (collations.length < 4) diag.push((4 - collations.length) + ' collations');
+    if (diag.length) {
+      console.warn('[mealPlan] Stock recettes insuffisant pour 28 slots sans répétition contrôlée : ajoute ' + diag.join(', ') + ' pour améliorer la variété.');
+    }
+  } catch (_) {}
+
+  // Tracking inter-jours pour P3 (≥ 48h) : recipeId → dernier dayIdx servi.
+  var _mpLastDay = {};
+
   for (var i = 0; i < 7; i++) {
     // Anti-répétition : tracker des keys déjà utilisées cette semaine
     if (i === 0) window._mpWeekUsed = {};
@@ -26106,23 +26161,30 @@ function generateMealPlan() {
     // Week-end (sam/dim = idx 5,6) : décale fort le seed pour varier vs lundi/mardi
     // → évite l'impression "le week-end recopie le début de semaine".
     var weekendOffset = (i >= 5) ? (Math.floor(meals.length / 2) + i * 3) : 0;
-    // Picker intelligent : recette la plus proche du target du slot + portions
-    // adaptées. CRITIQUE : chaque pick est marqué dans usedKeys/todayKeys
-    // AVANT le pick suivant. Avant, les 4 picks du jour se faisaient puis on
-    // marquait tout à la fin → le dîner pouvait choisir la même recette que
-    // le déjeuner du même jour (bug "Bowl thaï midi ET soir").
+    // CRITIQUE : todayKeys est RÉINITIALISÉ à chaque jour. _mpMark marque
+    // IMMÉDIATEMENT après chaque pick (donc le dîner sait que le déjeuner
+    // vient de prendre telle recette). _mpLastDay garde la trace inter-jours.
     var todayKeys = {};
     function _mpMark(r) {
-      if (r && r.key) { usedKeys[r.key] = (usedKeys[r.key] || 0) + 1; todayKeys[r.key] = 1; }
+      if (r && r.key) {
+        usedKeys[r.key] = (usedKeys[r.key] || 0) + 1;
+        todayKeys[r.key] = 1;
+        _mpLastDay[r.key] = i;
+      }
     }
-    var b = _mpPickAndPortion(breakfasts,  slotTargets.b, i + seed + weekendOffset,                  objectif, usedKeys, todayKeys);
-    _mpMark(b);
-    var l = _mpPickAndPortion(meals,       slotTargets.l, i + seed + 3 + weekendOffset,              objectif, usedKeys, todayKeys);
-    _mpMark(l);
-    var c = _mpPickAndPortion(collations,  slotTargets.c, i + seed + 7 + weekendOffset,              objectif, usedKeys, todayKeys);
-    _mpMark(c);
-    var d = _mpPickAndPortion(meals,       slotTargets.d, i + seed + Math.ceil(meals.length/2) + weekendOffset, objectif, usedKeys, todayKeys);
-    _mpMark(d);
+    function _mpCount(r) {
+      // Si on retombe sur une recette déjà servie dans la semaine,
+      // c'est une répétition contrôlée → on incrémente pour le toast UX.
+      if (r && r.key && usedKeys[r.key]) fallbackRepetitionCount++;
+    }
+    var b = _mpPickAndPortion(breakfasts,  slotTargets.b, i + seed + weekendOffset,                                       objectif, usedKeys, todayKeys, i, _mpLastDay);
+    _mpCount(b); _mpMark(b);
+    var l = _mpPickAndPortion(meals,       slotTargets.l, i + seed + 3 + weekendOffset,                                   objectif, usedKeys, todayKeys, i, _mpLastDay);
+    _mpCount(l); _mpMark(l);
+    var c = _mpPickAndPortion(collations,  slotTargets.c, i + seed + 7 + weekendOffset,                                   objectif, usedKeys, todayKeys, i, _mpLastDay);
+    _mpCount(c); _mpMark(c);
+    var d = _mpPickAndPortion(meals,       slotTargets.d, i + seed + Math.ceil(meals.length/2) + weekendOffset,           objectif, usedKeys, todayKeys, i, _mpLastDay);
+    _mpCount(d); _mpMark(d);
     // Total avec portions ajustées
     var mealsTotal = (b ? b.plannedCals : 0) + (l ? l.plannedCals : 0) + (c ? c.plannedCals : 0) + (d ? d.plannedCals : 0);
     // Si on est sous la cible de plus de 100 kcal → boosters caloriques visibles
@@ -26193,6 +26255,14 @@ function generateMealPlan() {
        +  '<button class="btn btn-outline" onclick="generateMealPlan()" style="margin-top:8px">🔄 Régénérer un nouveau plan</button>';
   var grid = document.getElementById('mealPlanGrid');
   if (grid) { grid.innerHTML = html; grid.classList.remove('hidden'); }
+  // Toast UX discret si on a dû recourir à des répétitions contrôlées
+  // (stock recettes insuffisant). Le message est non-technique — pour le
+  // diagnostic technique, regarder la console.
+  try {
+    if (fallbackRepetitionCount >= 4 && typeof showToast === 'function') {
+      showToast('Plan généré avec quelques répétitions contrôlées. Ajoute plus de recettes pour plus de variété.', 'info');
+    }
+  } catch (_) {}
   // Ouvre l'overlay plein écran avec le plan généré (vue d'ensemble)
   try { if (typeof openMealPlan === 'function') setTimeout(openMealPlan, 100); } catch(e) {}
 }
