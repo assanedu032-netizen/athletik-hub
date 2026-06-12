@@ -605,11 +605,17 @@
 
   // ─── STATS ──────────────────────────────────────────────────────────────
   var allExoIds = Object.keys(MT_MASTER_EXERCISES);
+  // Compteur séances :
+  //   totalSessionTemplates = 9 (les 9 micros distincts, structure invariante)
+  //   totalSessionsExecuted = 54 (6 sem × 9 micros) — si zéro échec.
+  //                           En cas d'échec une semaine, l'utilisateur la
+  //                           recommence → le total peut dépasser 54.
   var stats = {
     totalPhases:           1,
     totalWeeks:            6,
-    totalSessionTemplates: 9,       // 9 micros (structure invariante sem.1-6)
-    expectedTotalSessions: 54,      // 6 sem × 9 micros si zéro échec
+    totalSessionTemplates: 9,
+    totalSessionsExecuted: 54,           // 6 sem × 9 micros (si 9/9 partout)
+    expectedTotalSessions: 54,           // alias rétro-compat
     uniqueExercises:       allExoIds.length,
     exercisesWithVideo:    0,
     exercisesWithoutVideo: allExoIds.map(function(id){

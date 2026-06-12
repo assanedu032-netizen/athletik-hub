@@ -979,10 +979,21 @@
   });
 
   var allExoIds = Object.keys(EP_MASTER_EXERCISES);
+  // ─── Compteur séances ─────────────────────────────────────────────────────
+  // totalSessionTemplates  = 16 (4 phases × 4 séances)
+  // totalSessionsExecuted  = P1: 3 obl × 4 sem = 12  (J4 OPT non compté)
+  //                          P2: 4 × 5 sem = 20
+  //                          P3: 4 × 5 sem = 20
+  //                          P4: 4 × 4 sem = 16
+  //                          TOTAL = 68 séances (+ 5 Super Explosif Tests intégrés)
+  // Avec J4 P1 OPT fait : +4 = 72.
   var stats = {
     totalPhases:4,
     totalWeeks:18,
-    totalSessionTemplates:16, // 4 phases × 4 séances = 16
+    totalSessionTemplates:16,
+    totalSessionsExecuted:        68,    // obligatoires hors Super Explosif Tests
+    totalSessionsExecutedWithOpt: 72,    // +4 si J4 P1 opt fait
+    superExplosifTestsCount:      5,     // baseline + fin P1 + fin P2 + fin P3 + final
     uniqueExercises:allExoIds.length,
     exercisesWithVideo:0,
     exercisesWithoutVideo:allExoIds.map(function(id){return{exerciseId:id,masterName:EP_MASTER_EXERCISES[id].masterName,category:EP_MASTER_EXERCISES[id].category};})
