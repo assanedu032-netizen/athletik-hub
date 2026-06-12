@@ -683,10 +683,17 @@
   for (var w2=9; w2<=16; w2++) verificationTable.push({program:'se',phase:2,week:w2,sessions:['j1','j2','j3','j4','j5(opt)'],status: w2===16 ? 'TEST FINAL' : 'OK'});
 
   var allExoIds = Object.keys(SE_MASTER_EXERCISES);
+  // ─── Compteur séances ─────────────────────────────────────────────────────
+  // totalSessionTemplates  = 11 (6 P1 + 5 P2)
+  // totalSessionsExecuted  = (6 j × 8 sem P1) + (4 obligatoires × 8 sem P2) = 48 + 32 = 80
+  //                           Si Jour 5 P2 (OPT) fait : +8 = 88
+  // Chiffre à afficher dans l'UI : 80 (obligatoires) — 88 max si tous les opt faits.
   var stats = {
     totalPhases:2,
     totalWeeks:16,
     totalSessionTemplates:11,
+    totalSessionsExecuted:        80,    // 6×8 + 4×8 (J5 P2 opt non compté)
+    totalSessionsExecutedWithOpt: 88,    // +8 si J5 P2 opt fait
     uniqueExercises:allExoIds.length,
     exercisesWithVideo:0,
     exercisesWithoutVideo:allExoIds.map(function(id){return{exerciseId:id,masterName:SE_MASTER_EXERCISES[id].masterName,category:SE_MASTER_EXERCISES[id].category};})

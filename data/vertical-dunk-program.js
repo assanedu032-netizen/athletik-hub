@@ -578,10 +578,16 @@
   // 6. STATS UTILES (calculées à partir des données)
   // ──────────────────────────────────────────────────────────────────────────
   var allExoIds = Object.keys(VD_MASTER_EXERCISES);
+  // ─── Compteur séances — DEUX valeurs distinctes ───────────────────────────
+  // totalSessionTemplates  = nb de jours-types distincts (J1/J2/J3/J4 × phases) = 8
+  // totalSessionsExecuted  = nb réel de séances sur tout le programme
+  //                          (4 j × 4 sem P1) + (4 j × 6 sem P2) = 16 + 24 = 40
+  // C'est totalSessionsExecuted qu'il faut afficher dans l'UI utilisateur.
   var stats = {
-    totalPhases:           program.phases.length,                                  // 2
-    totalWeeks:            program.phases.reduce(function(a,p){return a+p.durationWeeks;}, 0),  // 10
-    totalSessionTemplates: program.phases.reduce(function(a,p){return a+Object.keys(p.sessions).length;}, 0), // 8
+    totalPhases:           program.phases.length,
+    totalWeeks:            program.phases.reduce(function(a,p){return a+p.durationWeeks;}, 0),
+    totalSessionTemplates: program.phases.reduce(function(a,p){return a+Object.keys(p.sessions).length;}, 0),
+    totalSessionsExecuted: program.phases.reduce(function(a,p){return a + Object.keys(p.sessions).length * p.durationWeeks;}, 0),
     uniqueExercises:       allExoIds.length,
     exercisesWithVideo:    allExoIds.filter(function(id){ return !!VD_MASTER_EXERCISES[id].videoUrl; }).length,
     exercisesWithoutVideo: allExoIds.filter(function(id){ return !VD_MASTER_EXERCISES[id].videoUrl; }).map(function(id){

@@ -671,11 +671,20 @@
   });
 
   var allExoIds = Object.keys(TRI_MASTER_EXERCISES);
+  // ─── Compteur séances ─────────────────────────────────────────────────────
+  // totalSessionTemplates  = 11 (P1×4 + P2×4 dont 1 placeholder + P3×4)
+  // totalSessionsExecuted  = P1: 3 obl × 4 sem = 12   (J4 OPT non compté)
+  //                          P2: 3 obl × 4 sem = 12   (J4 OPT non compté)
+  //                          P3: 4 × 4 sem = 16
+  //                          TOTAL = 40 séances
+  // Avec J4 P1+P2 OPT fait : +4+4 = 48.
   var stats = {
     totalPhases:3,
     totalWeeks:12,
-    totalSessionTemplates:11, // P1×4 + P2×3 + P3×4 (P2 J4 placeholder compte mais marqué)
-    placeholderSessions:1,
+    totalSessionTemplates:11,
+    totalSessionsExecuted:        40,    // obligatoires
+    totalSessionsExecutedWithOpt: 48,    // +8 si J4 P1+P2 opt fait
+    placeholderSessions:          1,     // P2 J4 — exos non détaillés dans PDF
     uniqueExercises:allExoIds.length,
     exercisesWithVideo:0,
     exercisesWithoutVideo:allExoIds.map(function(id){return{exerciseId:id,masterName:TRI_MASTER_EXERCISES[id].masterName,category:TRI_MASTER_EXERCISES[id].category};})
