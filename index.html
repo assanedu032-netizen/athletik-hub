@@ -35805,12 +35805,48 @@ async function fbSaveProfile() {
 
   // On ne re-recharge qu'une fois par cycle d'update (évite boucle infinie).
   var refreshing = false;
-  navigator.serviceWorker.addEventListener('controllerchange', function(){
+  // Bug critique remonté 2026-06-13 : le reload auto SW interrompait l'user
+  // au milieu d'une action (recette ouverte, séance en cours, formulaire
+  // saisi…). Symptôme côté user : "j'ouvre une recette, après 2-3s l'app
+  // quitte l'écran". Le SW se mettait à jour en arrière-plan, prenait le
+  // contrôle, et déclenchait location.reload() qui ramenait l'user au boot.
+  //
+  // Fix : on vérifie que l'user est dans un état "safe" (aucune modale/
+  // overlay critique ouvert) avant de reload. Sinon on reporte au prochain
+  // visibility change.
+  function _swIsSafeToReload() {
+    try {
+      var rm = document.getElementById('recipeModal');
+      if (rm && rm.classList && rm.classList.contains('open')) return false;
+      var mp = document.getElementById('mealPlan');
+      if (mp && mp.classList && mp.classList.contains('on')) return false;
+      var ls = document.getElementById('liveSession');
+      if (ls && ls.classList && ls.classList.contains('ls-open')) return false;
+      if (document.getElementById('mtFastingModal')) return false;
+      if (document.getElementById('mtSprintModal')) return false;
+      if (document.getElementById('mtCircuitModal')) return false;
+      var scr = document.querySelector('.scr.on');
+      if (scr && scr.id !== 'splash') return false;
+      var fb = document.getElementById('seFeedback');
+      if (fb && getComputedStyle(fb).display !== 'none') return false;
+      var vm = document.getElementById('videoModal');
+      if (vm && getComputedStyle(vm).display !== 'none') return false;
+      return true;
+    } catch(_) { return true; }
+  }
+
+  function _swDoReload() {
     if (refreshing) return;
+    if (!_swIsSafeToReload()) {
+      console.info('[SW] Update prête, reload différé (modale/écran actif)');
+      return;
+    }
     refreshing = true;
     console.info('[SW] Nouvelle version activée → reload');
     window.location.reload();
-  });
+  }
+
+  navigator.serviceWorker.addEventListener('controllerchange', _swDoReload);
 
   // Enregistre le SW après le load pour ne pas concurrencer le rendering initial.
   window.addEventListener('load', function(){
@@ -35834,18 +35870,20 @@ async function fbSaveProfile() {
           });
         });
         // Force un check d'update à chaque ouverture (utile en PWA installée).
-        // Si une nouvelle version existe côté serveur, elle commencera son install.
         try { reg.update(); } catch(e) {}
       })
       .catch(function(err){ console.warn('[SW] register failed:', err); });
   });
 
-  // Re-check chaque retour-au-foreground (passage onglet ou retour app PWA).
+  // Re-check chaque retour-au-foreground + retry reload si en attente.
   document.addEventListener('visibilitychange', function(){
     if (document.visibilityState !== 'visible') return;
     navigator.serviceWorker.getRegistration('/sw.js').then(function(reg){
       if (reg) { try { reg.update(); } catch(e) {} }
     });
+    // Si le SW a déjà changé pendant qu'on n'était pas safe, retry reload
+    // maintenant (probablement plus de modale ouverte).
+    setTimeout(_swDoReload, 200);
   });
 })();
 
