@@ -14357,8 +14357,13 @@ document.addEventListener('DOMContentLoaded', function() {
     var current = document.querySelector('.scr.on');
     var curId = current ? current.id : null;
     // Si l'user a déjà avancé (welcome cliqué, auth ouvert manuellement,
-    // onboarding en cours…), on ne le téléporte pas — il a un intent.
-    if (curId && curId !== 'splash') return;
+    // onboarding en cours…) OU s'il est sur une view (vHome/vNutri/vTrain
+    // etc., curId=null), on ne le téléporte pas — il a un intent.
+    // Bug fix (recipe modal qui se ferme au bout de 2-3s) : avant on routait
+    // aussi quand current était null (user déjà sur view) → switchTab('home')
+    // déchirait l'expérience pendant qu'une modale (Plan Repas, recipeModal)
+    // était ouverte. On route UNIQUEMENT si on est encore sur splash.
+    if (curId !== 'splash') return;
     _bootAuthHandled = true;
     var prof = {};
     try { prof = JSON.parse(localStorage.getItem('ah_profile') || '{}'); } catch(_){}
@@ -30070,7 +30075,13 @@ function onFirebaseAuthChange(fbUser) {
         // ne casse pas sa navigation en cours non plus.
         var current = document.querySelector('.scr.on');
         var curId = current ? current.id : null;
-        if (!current || curId === 'auth' || curId === 'splash') {
+        // Route UNIQUEMENT si l'user est encore sur splash ou auth (écrans
+        // de boot). Si current est null, l'user est déjà sur une view
+        // (vHome/vNutri/vTrain) — il a navigué, il a un intent. Le router
+        // précédent appelait switchTab('home') même quand l'user était sur
+        // nutrition avec une recette ouverte → modale écrasée 2-3 s après
+        // l'ouverture (bug critique remonté par l'user 2026-06-13).
+        if (curId === 'auth' || curId === 'splash') {
           _routeToOnboardingStep(prof);
         }
       } catch(e) { console.warn('Auto-restore Home error:', e); }
