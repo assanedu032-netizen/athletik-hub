@@ -33,6 +33,13 @@ build/
 .next/
 .nuxt/
 .cache/
+# Pas de lockfile : projet purement statique (HTML/CSS/JS monolithe).
+# Netlify n'utilise pas package.json pour le build (pas de build command).
+# Le lockfile peut apparaître localement après un npm install — gitignoré
+# pour éviter les commits accidentels qui déclencheraient des rebuilds Netlify.
+package-lock.json
+yarn.lock
+pnpm-lock.yaml
 
 # ─── Netlify local ─────────────────────────────────────────────────────────
 .netlify/
