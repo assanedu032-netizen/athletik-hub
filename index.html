@@ -35877,8 +35877,16 @@ async function fbSaveProfile() {
     } catch(_) { return true; }
   }
 
+  // updatePending = true UNIQUEMENT quand un nouveau SW a réellement pris
+  // le contrôle (controllerchange). Sans ce flag, le retry de reload posé
+  // sur visibilitychange (v213) rechargeait la page à CHAQUE retour au
+  // premier plan, même sans mise à jour — l'app repartait sur le splash
+  // dès qu'on basculait vers YouTube et revenait (bug remonté 2026-06-14).
+  var updatePending = false;
+
   function _swDoReload() {
     if (refreshing) return;
+    if (!updatePending) return; // aucun nouveau SW n'a pris le contrôle → rien à recharger
     if (!_swIsSafeToReload()) {
       console.info('[SW] Update prête, reload différé (modale/écran actif)');
       return;
@@ -35888,7 +35896,10 @@ async function fbSaveProfile() {
     window.location.reload();
   }
 
-  navigator.serviceWorker.addEventListener('controllerchange', _swDoReload);
+  navigator.serviceWorker.addEventListener('controllerchange', function(){
+    updatePending = true;
+    _swDoReload();
+  });
 
   // Enregistre le SW après le load pour ne pas concurrencer le rendering initial.
   window.addEventListener('load', function(){
