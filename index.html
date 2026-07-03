@@ -20343,6 +20343,12 @@ function renderProgramV2(key) {
   container.innerHTML = _renderProgHeader(p) + _renderPhaseTabs(p, startPhase) + '<div id="pgV2Body"></div>';
   _renderPhaseBody(p, startPhase);
   var v = document.getElementById('vTrain'); if (v) v.scrollTop = 0;
+  // Fix cadrage : le vrai conteneur scrollable de l'onglet Train est
+  // #mainScroll (imbriqué dans #vTrain), pas #vTrain lui-même. Sans ce
+  // reset, un scroll résiduel de la liste Programmes/Librairie restait
+  // appliqué au nouvel écran ouvert, coupant visuellement le titre "TRAIN"
+  // en haut de page (bug remonté par capture d'écran 2026-06-13).
+  var m = document.getElementById('mainScroll'); if (m) m.scrollTop = 0;
 }
 
 function _renderProgHeader(p) {
@@ -21694,6 +21700,12 @@ function _openSessionV2(sessKey) {
 
   container.innerHTML = h;
   var v = document.getElementById('vTrain'); if (v) v.scrollTop = 0;
+  // Fix cadrage : le vrai conteneur scrollable de l'onglet Train est
+  // #mainScroll (imbriqué dans #vTrain), pas #vTrain lui-même. Sans ce
+  // reset, un scroll résiduel de la liste Programmes/Librairie restait
+  // appliqué au nouvel écran ouvert, coupant visuellement le titre "TRAIN"
+  // en haut de page (bug remonté par capture d'écran 2026-06-13).
+  var m = document.getElementById('mainScroll'); if (m) m.scrollTop = 0;
   try { updateStartSessionLock(); } catch(e) {}
 }
 
@@ -21704,6 +21716,12 @@ function _backToPhaseV2() {
   container.innerHTML = _renderProgHeader(p) + _renderPhaseTabs(p, window._progV2State.phaseIdx) + '<div id="pgV2Body"></div>';
   _renderPhaseBody(p, window._progV2State.phaseIdx);
   var v = document.getElementById('vTrain'); if (v) v.scrollTop = 0;
+  // Fix cadrage : le vrai conteneur scrollable de l'onglet Train est
+  // #mainScroll (imbriqué dans #vTrain), pas #vTrain lui-même. Sans ce
+  // reset, un scroll résiduel de la liste Programmes/Librairie restait
+  // appliqué au nouvel écran ouvert, coupant visuellement le titre "TRAIN"
+  // en haut de page (bug remonté par capture d'écran 2026-06-13).
+  var m = document.getElementById('mainScroll'); if (m) m.scrollTop = 0;
 }
 
 // ═══════════════════════════════════════════════════
@@ -21929,7 +21947,7 @@ function _menerShowResult() {
 window._menerShowResult = _menerShowResult;
 
 const progPhases={ea:{name:'ELITE ATHLETE',obj:'Explosivité globale',phases:[[{name:'Échauffement',detail:'5 min'},{name:'Activation fessiers',detail:'2×12'},{name:'Squat progressif',detail:'3×8 (60%)'},{name:'Pogo Jumps',detail:'3×10'},{name:'Sprint 10m',detail:'5 passages'},{name:'Planche',detail:'3×30s'}],[{name:'Back Squat',detail:'4×5 (75%)'},{name:'Box Jump',detail:'4×5'},{name:'Hip Thrust',detail:'3×8 (70%)'},{name:'Sprint 30m',detail:'4 passages'},{name:'Depth Jump',detail:'3×3'}],[{name:'Power Clean',detail:'5×3 (85%)'},{name:'Back Squat',detail:'5×3 (85%)'},{name:'Depth Jump',detail:'4×3'},{name:'Sprint 60m',detail:'3 passages'},{name:'Box Jump Max',detail:'3×3'}]]},vd:{name:'VERTICAL DUNK',obj:'Dunker + Détente max',phases:[[{name:'CMJ',detail:'5×3'},{name:'Squat Jump',detail:'4×5'},{name:'Pogo Jumps',detail:'3×15'}],[{name:'Depth Jump',detail:'4×3'},{name:'Back Squat',detail:'4×5 (80%)'},{name:'Approach Jump',detail:'5×3'}],[{name:'Box Jump Max',detail:'5×2'},{name:'Single Leg Bound',detail:'3×5/jambe'},{name:'Sprint 10m',detail:'6 passages'}]]},mt:{name:'MICROTRAINING',obj:'Discipline et habitudes',phases:[[{name:'Squat Jump',detail:'3×5'},{name:'Pompes explosives',detail:'3×8'},{name:'Planche',detail:'3×30s'}],[{name:'Pogo Jumps',detail:'3×10'},{name:'V-Ups',detail:'3×12'},{name:'Skip A',detail:'3×15'}],[{name:'Box Jump',detail:'3×5'},{name:'Sprint 10m',detail:'4 passages'}]]},tri:{name:'TRIPHASIQUE',obj:'Force sans salle',phases:[[{name:'Squat PDC',detail:'4×15'},{name:'Fentes',detail:'3×10/jambe'},{name:'Pompes',detail:'4×12'}],[{name:'Squat Jump',detail:'4×8'},{name:'Single Leg Bound',detail:'3×6/jambe'}],[{name:'Pogo Jumps',detail:'4×12'},{name:'Sprint 10m',detail:'5 passages'}]]},se:{name:'SHRED EXPLOSE',obj:'Perdre + Exploser',phases:[[{name:'Circuit cardio',detail:'15 min'},{name:'Squat',detail:'3×12'},{name:'Pogo Jumps',detail:'3×15'}],[{name:'HIIT Sprint',detail:'10×10m'},{name:'Back Squat',detail:'4×8 (65%)'},{name:'Box Jump',detail:'3×8'}],[{name:'Sprint 30m',detail:'6 passages'},{name:'Depth Jump',detail:'3×3'}]]},ep:{name:'EXPLOSE+',obj:'Transformation totale',phases:[[{name:'Questionnaire MENER',detail:'Identifier pilier faible'},{name:'15 engagements',detail:'4 semaines'}],[{name:'Back Squat',detail:'5×5 (80%)'},{name:'Power Clean',detail:'4×3'},{name:'Sprint 30m',detail:'5 passages'}],[{name:'Depth Jump',detail:'5×3'},{name:'Back Squat',detail:'5×3 (90%)'},{name:'Sprint 60m',detail:'4 passages'}]]}};
-function showPg(id){document.querySelectorAll('.pg').forEach(p=>p.classList.remove('on'));document.querySelectorAll('.sub-tab').forEach(t=>t.classList.remove('on'));({lib:'pgLib',prog:'pgProg',builder:'pgBuilder'})[id]&&document.getElementById(({lib:'pgLib',prog:'pgProg',builder:'pgBuilder'})[id]).classList.add('on');event.currentTarget.classList.add('on');var __v=document.getElementById('vTrain');if(__v)__v.scrollTop=0;
+function showPg(id){document.querySelectorAll('.pg').forEach(p=>p.classList.remove('on'));document.querySelectorAll('.sub-tab').forEach(t=>t.classList.remove('on'));({lib:'pgLib',prog:'pgProg',builder:'pgBuilder'})[id]&&document.getElementById(({lib:'pgLib',prog:'pgProg',builder:'pgBuilder'})[id]).classList.add('on');event.currentTarget.classList.add('on');var __v=document.getElementById('vTrain');if(__v)__v.scrollTop=0;var __ms=document.getElementById('mainScroll');if(__ms)__ms.scrollTop=0;
 // FAB chrono masqué sur Builder (chevauche les chips/CTA du convo).
 try { document.body.classList.toggle('ah-no-fab', id === 'builder'); } catch(e) {}
 // Librairie V2 : classe ah-lib-open sur body → masque le FAB timer (remplacé
@@ -21938,11 +21956,11 @@ try { document.body.classList.toggle('ah-lib-open', id === 'lib'); } catch(e) {}
 try { if (typeof _libUpdateFab === 'function') _libUpdateFab(); } catch(e) {}
 if(id!=='lib'){try{window._libCloseSheet&&window._libCloseSheet();}catch(e){}}
 if(id==='lib'){try{_libCloseDetail();}catch(e){}try{_libRenderFilterChips();}catch(e){}try{_libRender(_libCurrentFilter||'all');}catch(e){}}if(id==='prog'){try{closeProg();}catch(e){}try{updateProgrammeLocks();}catch(e){}}}
-function openCatLegacy(n,ic,k){currentCat=n;currentCatData=catData[k]||[];var t=document.getElementById('catTitle');if(t)t.textContent=ic+' '+n.toUpperCase();var lg=document.getElementById('libGrid');if(lg)lg.classList.add('hidden');var cv=document.getElementById('libCatView');if(cv)cv.classList.remove('hidden');var dv=document.getElementById('libDetailView');if(dv)dv.classList.add('hidden');currentFilter='all';renderCatEx();var __v=document.getElementById('vTrain');if(__v)__v.scrollTop=0}
+function openCatLegacy(n,ic,k){currentCat=n;currentCatData=catData[k]||[];var t=document.getElementById('catTitle');if(t)t.textContent=ic+' '+n.toUpperCase();var lg=document.getElementById('libGrid');if(lg)lg.classList.add('hidden');var cv=document.getElementById('libCatView');if(cv)cv.classList.remove('hidden');var dv=document.getElementById('libDetailView');if(dv)dv.classList.add('hidden');currentFilter='all';renderCatEx();var __v=document.getElementById('vTrain');if(__v)__v.scrollTop=0;var __ms=document.getElementById('mainScroll');if(__ms)__ms.scrollTop=0;}
 function closeCatLegacy(){var lg=document.getElementById('libGrid');if(lg)lg.classList.remove('hidden');var cv=document.getElementById('libCatView');if(cv)cv.classList.add('hidden');var dv=document.getElementById('libDetailView');if(dv)dv.classList.add('hidden')}
 function filterCat(el,lv){document.querySelectorAll('.filter-row .fc').forEach(f=>f.classList.remove('on'));el.classList.add('on');currentFilter=lv;renderCatEx()}
 function renderCatEx(){const l=document.getElementById('catExList');if(!l)return;l.innerHTML='';const d=currentFilter==='all'?currentCatData:currentCatData.filter(e=>e.diff===currentFilter);if(!d.length){l.innerHTML='<div style="text-align:center;padding:30px;color:var(--muted)">Aucun exercice.</div>';return}d.forEach(ex=>{const dl=ex.diff==='easy'?'Débutant':ex.diff==='med'?'Intermédiaire':'Avancé';l.innerHTML+=`<div class="ex-card" onclick="openDetailLegacy('${ex.name.replace(/'/g,"\\'")}')"><div class="ex-thumb"><div class="ex-thumb-play">▶</div></div><div class="ex-body"><div class="ex-name">${ex.name}</div><div class="ex-diff ${ex.diff}">${dl}</div></div></div>`})}
-function openDetailLegacy(n){const ex=Object.values(catData).flat().find(e=>e.name===n);if(!ex)return;var dn=document.getElementById('detailName');if(dn)dn.textContent=ex.name.toUpperCase();const dl=ex.diff==='easy'?'Débutant':ex.diff==='med'?'Intermédiaire':'Avancé';const d=document.getElementById('detailDiff');if(d){d.textContent=dl;d.className='detail-diff '+ex.diff;}var dd=document.getElementById('detailDesc');if(dd)dd.textContent=ex.desc;var dt=document.getElementById('detailTags');if(dt)dt.innerHTML=(ex.muscles||[]).map(m=>`<div class="tag">${m}</div>`).join('');var cv=document.getElementById('libCatView');if(cv)cv.classList.add('hidden');var dv=document.getElementById('libDetailView');if(dv)dv.classList.remove('hidden');var __v=document.getElementById('vTrain');if(__v)__v.scrollTop=0}
+function openDetailLegacy(n){const ex=Object.values(catData).flat().find(e=>e.name===n);if(!ex)return;var dn=document.getElementById('detailName');if(dn)dn.textContent=ex.name.toUpperCase();const dl=ex.diff==='easy'?'Débutant':ex.diff==='med'?'Intermédiaire':'Avancé';const d=document.getElementById('detailDiff');if(d){d.textContent=dl;d.className='detail-diff '+ex.diff;}var dd=document.getElementById('detailDesc');if(dd)dd.textContent=ex.desc;var dt=document.getElementById('detailTags');if(dt)dt.innerHTML=(ex.muscles||[]).map(m=>`<div class="tag">${m}</div>`).join('');var cv=document.getElementById('libCatView');if(cv)cv.classList.add('hidden');var dv=document.getElementById('libDetailView');if(dv)dv.classList.remove('hidden');var __v=document.getElementById('vTrain');if(__v)__v.scrollTop=0;var __ms=document.getElementById('mainScroll');if(__ms)__ms.scrollTop=0;}
 function closeDetailLegacy(){var dv=document.getElementById('libDetailView');if(dv)dv.classList.add('hidden');if(currentCat){var cv=document.getElementById('libCatView');if(cv)cv.classList.remove('hidden')}}
 function filterLib(){ renderLibrary(); }
 
@@ -22600,6 +22618,12 @@ window._libPickFilterFromSheet = function(key) {
   _libRenderFilterChips();
   window._libCloseFiltersSheet();
   var v = document.getElementById('vTrain'); if (v) v.scrollTop = 0;
+  // Fix cadrage : le vrai conteneur scrollable de l'onglet Train est
+  // #mainScroll (imbriqué dans #vTrain), pas #vTrain lui-même. Sans ce
+  // reset, un scroll résiduel de la liste Programmes/Librairie restait
+  // appliqué au nouvel écran ouvert, coupant visuellement le titre "TRAIN"
+  // en haut de page (bug remonté par capture d'écran 2026-06-13).
+  var m = document.getElementById('mainScroll'); if (m) m.scrollTop = 0;
 };
 window._libPickFilter = function(btn, key){
   var wrap = document.getElementById('libFilters');
@@ -22607,6 +22631,12 @@ window._libPickFilter = function(btn, key){
   if (btn) btn.classList.add('on');
   _libRender(key);
   var v = document.getElementById('vTrain'); if (v) v.scrollTop = 0;
+  // Fix cadrage : le vrai conteneur scrollable de l'onglet Train est
+  // #mainScroll (imbriqué dans #vTrain), pas #vTrain lui-même. Sans ce
+  // reset, un scroll résiduel de la liste Programmes/Librairie restait
+  // appliqué au nouvel écran ouvert, coupant visuellement le titre "TRAIN"
+  // en haut de page (bug remonté par capture d'écran 2026-06-13).
+  var m = document.getElementById('mainScroll'); if (m) m.scrollTop = 0;
 };
 window._libRenderFilterChips = _libRenderFilterChips;
 
@@ -22638,6 +22668,12 @@ function _libFilter(el, key) {
   el.classList.add('on');
   _libRender(key);
   var v = document.getElementById('vTrain'); if (v) v.scrollTop = 0;
+  // Fix cadrage : le vrai conteneur scrollable de l'onglet Train est
+  // #mainScroll (imbriqué dans #vTrain), pas #vTrain lui-même. Sans ce
+  // reset, un scroll résiduel de la liste Programmes/Librairie restait
+  // appliqué au nouvel écran ouvert, coupant visuellement le titre "TRAIN"
+  // en haut de page (bug remonté par capture d'écran 2026-06-13).
+  var m = document.getElementById('mainScroll'); if (m) m.scrollTop = 0;
 }
 
 function _libSearchInput() {
@@ -22737,6 +22773,12 @@ function _libOpenDetail(name, catKey) {
   detail.style.display = 'block';
   detail.scrollTop = 0;
   var v = document.getElementById('vTrain'); if (v) v.scrollTop = 0;
+  // Fix cadrage : le vrai conteneur scrollable de l'onglet Train est
+  // #mainScroll (imbriqué dans #vTrain), pas #vTrain lui-même. Sans ce
+  // reset, un scroll résiduel de la liste Programmes/Librairie restait
+  // appliqué au nouvel écran ouvert, coupant visuellement le titre "TRAIN"
+  // en haut de page (bug remonté par capture d'écran 2026-06-13).
+  var m = document.getElementById('mainScroll'); if (m) m.scrollTop = 0;
 }
 
 function _libPlayVideo() {
@@ -22799,7 +22841,7 @@ function openProg(k){
   document.getElementById('progDetail').innerHTML = '<div class="back-btn" onclick="closeProg()">← Retour Programmes</div><div style="font-family:\'Bebas Neue\',sans-serif;font-size:28px;color:var(--text);letter-spacing:2px" id="progDetailName">' + p.name + '</div><div style="font-size:12px;color:var(--muted);margin:4px 0 10px" id="progDetailObj">' + (p.obj||'') + '</div><div class="phase-tabs"><div class="phase-tab on" onclick="switchPhase(this,0)">Fondations</div><div class="phase-tab" onclick="switchPhase(this,1)">Intensification</div><div class="phase-tab" onclick="switchPhase(this,2)">Peak</div></div><div id="phaseExList"></div><button class="btn btn-gold" id="startSessionBtn" onclick="startSessionGuarded()" style="margin-top:12px">Commencer la séance 🔥</button>';
   renderPhase(p.phases[0]);
   try { updateStartSessionLock(); } catch(e) {}
-  var __v=document.getElementById('vTrain');if(__v)__v.scrollTop=0;
+  var __v=document.getElementById('vTrain');if(__v)__v.scrollTop=0;var __ms=document.getElementById('mainScroll');if(__ms)__ms.scrollTop=0;
 }
 
 // Helper : retourne la clé COURTE du programme du user ('ea','vd','mt','tri','se','ep') ou '' si pas encore attribué
@@ -35835,8 +35877,16 @@ async function fbSaveProfile() {
     } catch(_) { return true; }
   }
 
+  // updatePending = true UNIQUEMENT quand un nouveau SW a réellement pris
+  // le contrôle (controllerchange). Sans ce flag, le retry de reload posé
+  // sur visibilitychange (v213) rechargeait la page à CHAQUE retour au
+  // premier plan, même sans mise à jour — l'app repartait sur le splash
+  // dès qu'on basculait vers YouTube et revenait (bug remonté 2026-06-14).
+  var updatePending = false;
+
   function _swDoReload() {
     if (refreshing) return;
+    if (!updatePending) return; // aucun nouveau SW n'a pris le contrôle → rien à recharger
     if (!_swIsSafeToReload()) {
       console.info('[SW] Update prête, reload différé (modale/écran actif)');
       return;
@@ -35846,7 +35896,10 @@ async function fbSaveProfile() {
     window.location.reload();
   }
 
-  navigator.serviceWorker.addEventListener('controllerchange', _swDoReload);
+  navigator.serviceWorker.addEventListener('controllerchange', function(){
+    updatePending = true;
+    _swDoReload();
+  });
 
   // Enregistre le SW après le load pour ne pas concurrencer le rendering initial.
   window.addEventListener('load', function(){
