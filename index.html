@@ -4325,6 +4325,17 @@ html body #result, html body #nutriResult{
 .tim-set-cancel{flex:1;padding:13px;background:var(--ah-surface2);border:1px solid var(--ah-border2);border-radius:12px;color:var(--ah-text2);font-family:'Outfit',sans-serif;font-weight:600;font-size:14px;cursor:pointer}
 .tim-set-ok{flex:2;padding:13px;background:linear-gradient(135deg,var(--ah-gold),#A0853A);border:none;border-radius:12px;color:var(--ah-navy);font-family:'Bebas Neue',sans-serif;font-weight:700;font-size:15px;letter-spacing:.1em;cursor:pointer;box-shadow:0 6px 18px rgba(197,164,78,.30)}
 
+/* Durée personnalisée — colonnes H / MIN / SEC façon app Horloge */
+.tim-custom-cols{display:flex;align-items:center;justify-content:center;gap:6px;padding:4px 0}
+.tim-custom-col{display:flex;flex-direction:column;align-items:center;gap:4px;flex:1;max-width:96px}
+.tim-custom-input{width:100%;background:var(--ah-surface);border:1.5px solid var(--ah-border2);border-radius:12px;padding:10px 0;font-family:'Bebas Neue',sans-serif;font-size:34px;color:var(--ah-navy);outline:none;letter-spacing:1px;text-align:center}
+.tim-custom-input:focus{border-color:var(--ah-gold)}
+.tim-custom-step{width:100%;padding:7px 0;background:var(--ah-surface2);border:1px solid var(--ah-border2);border-radius:10px;color:var(--ah-text2);font-size:13px;cursor:pointer;transition:all .12s}
+.tim-custom-step:active{background:var(--ah-navy);color:var(--ah-gold);transform:scale(.96)}
+.tim-custom-lbl{font-size:9px;font-weight:800;letter-spacing:.18em;color:var(--ah-text2);text-transform:uppercase;margin-top:2px}
+.tim-custom-sep{font-family:'Bebas Neue',sans-serif;font-size:30px;color:var(--ah-text2);padding-bottom:26px}
+.tim-preset-custom{border-style:dashed}
+
 /* Banner d'installation PWA */
 .install-prompt{position:fixed;left:50%;bottom:16px;transform:translateX(-50%);width:calc(100% - 24px);max-width:420px;z-index:9500;animation:fadeUp .3s ease}
 .install-prompt-inner{position:relative;background:#243B6B;color:#fff;border-radius:14px;padding:14px 44px 14px 16px;display:flex;align-items:center;gap:12px;box-shadow:0 8px 28px rgba(20,30,60,.30);border:1px solid rgba(197,164,78,.20)}
@@ -9448,6 +9459,7 @@ window.tiResetOnEnter = function(){ window.tiShowStep(1); };
           <button class="tim-preset" onclick="tim_minutPreset(180)">3:00</button>
           <button class="tim-preset" onclick="tim_minutPreset(300)">5:00</button>
           <button class="tim-preset" onclick="tim_minutPreset(900)">15:00</button>
+          <button class="tim-preset tim-preset-custom" onclick="tim_minutOpenCustom()">⚙ Perso</button>
         </div>
 
         <div class="tim-chrono-controls">
@@ -9476,6 +9488,43 @@ window.tiResetOnEnter = function(){ window.tiShowStep(1); };
           <div class="tim-set-actions">
             <button class="tim-set-cancel" onclick="tim_minutCloseSet()">Annuler</button>
             <button class="tim-set-ok" onclick="tim_minutConfirmSet()">Valider</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- ═══ MODAL — Durée personnalisée (style app Horloge) ═══
+           Ouverte via le chip "⚙ Perso". Trois colonnes H / MIN / SEC avec
+           steppers ▲▼ + saisie directe (inputmode numeric). Démarre le timer
+           avec la même mécanique que les presets. -->
+      <div id="timMinutCustomModal" class="tim-set-modal" style="display:none">
+        <div class="tim-set-inner">
+          <div class="tim-set-title">Durée personnalisée</div>
+          <div class="tim-set-sub">Règle heures, minutes et secondes</div>
+          <div class="tim-custom-cols">
+            <div class="tim-custom-col">
+              <button type="button" class="tim-custom-step" onclick="tim_customStep('h',1)" aria-label="Plus une heure">▲</button>
+              <input type="text" id="timCustomH" class="tim-custom-input" value="0" inputmode="numeric" maxlength="2" onfocus="this.select()">
+              <button type="button" class="tim-custom-step" onclick="tim_customStep('h',-1)" aria-label="Moins une heure">▼</button>
+              <div class="tim-custom-lbl">H</div>
+            </div>
+            <div class="tim-custom-sep">:</div>
+            <div class="tim-custom-col">
+              <button type="button" class="tim-custom-step" onclick="tim_customStep('m',1)" aria-label="Plus une minute">▲</button>
+              <input type="text" id="timCustomM" class="tim-custom-input" value="5" inputmode="numeric" maxlength="2" onfocus="this.select()">
+              <button type="button" class="tim-custom-step" onclick="tim_customStep('m',-1)" aria-label="Moins une minute">▼</button>
+              <div class="tim-custom-lbl">MIN</div>
+            </div>
+            <div class="tim-custom-sep">:</div>
+            <div class="tim-custom-col">
+              <button type="button" class="tim-custom-step" onclick="tim_customStep('s',1)" aria-label="Plus une seconde">▲</button>
+              <input type="text" id="timCustomS" class="tim-custom-input" value="0" inputmode="numeric" maxlength="2" onfocus="this.select()">
+              <button type="button" class="tim-custom-step" onclick="tim_customStep('s',-1)" aria-label="Moins une seconde">▼</button>
+              <div class="tim-custom-lbl">SEC</div>
+            </div>
+          </div>
+          <div class="tim-set-actions">
+            <button class="tim-set-cancel" onclick="tim_minutCloseCustom()">Annuler</button>
+            <button class="tim-set-ok" onclick="tim_minutConfirmCustom()">▶ Démarrer</button>
           </div>
         </div>
       </div>
@@ -16729,6 +16778,53 @@ function _bfDrawChart(data) {
   var _tim_bgAudio = null;
   var _tim_bgBeepTimeout = null;
 
+  // ── COUCHE 4 : push FCM différé (serveur) ──────────────────────────────
+  // Les couches locales (TimestampTrigger / setTimeout SW / setTimeout page /
+  // audio-loop) échouent toutes quand l'app est endormie ET qu'une autre app
+  // (YouTube…) a pris le focus audio. Le push FCM transite par Google Play
+  // Services et réveille l'appareil quoi qu'il arrive — c'est le seul canal
+  // fiable en arrière-plan. On délègue à timer-alert-background (Netlify
+  // Background Function) qui dort jusqu'à endsAt puis pousse. Annulable via
+  // timer-alert-cancel (pause / reset / sonnerie au premier plan).
+  // Couche additive : sans fcmToken (user non loggé / notifs refusées) ou
+  // délai hors fenêtre (> 14 min), on skip en silence — zéro régression.
+  var _tim_fcmTimerId = null;
+  var TIM_FCM_MAX_DELAY = 14 * 60 * 1000;
+  function _tim_fcmGetToken(){
+    try { return (JSON.parse(localStorage.getItem('ah_profile') || '{}').fcmToken) || null; }
+    catch(_) { return null; }
+  }
+  function tim_fcmSchedulePush(endsAt){
+    try {
+      // Annule une éventuelle programmation précédente (re-réglage, +30s…)
+      tim_fcmCancelPush();
+      var token = _tim_fcmGetToken();
+      if (!token) return;
+      var delay = endsAt - Date.now();
+      if (delay <= 0 || delay > TIM_FCM_MAX_DELAY) return;
+      _tim_fcmTimerId = 'tm_' + Date.now().toString(36) + '_' + Math.random().toString(36).slice(2, 8);
+      fetch('/.netlify/functions/timer-alert-background', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ token: token, endsAt: endsAt, timerId: _tim_fcmTimerId, body: 'Le minuteur a sonné' })
+      }).then(function(){
+        console.log('[timer] push FCM différé programmé (' + _tim_fcmTimerId + ') pour T+' + Math.round(delay/1000) + 's');
+      }).catch(function(e){ console.warn('[timer] push FCM schedule fail:', e); });
+    } catch(e){ console.warn('[timer] fcmSchedulePush:', e); }
+  }
+  function tim_fcmCancelPush(){
+    if (!_tim_fcmTimerId) return;
+    var id = _tim_fcmTimerId;
+    _tim_fcmTimerId = null;
+    try {
+      fetch('/.netlify/functions/timer-alert-cancel', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ timerId: id })
+      }).catch(function(){});
+    } catch(e){}
+  }
+
   function tim_minutStartBgAudio(endsAt){
     try {
       if (!_tim_bgAudio) {
@@ -16862,6 +16958,10 @@ function _bfDrawChart(data) {
       } catch(e){ console.warn('[timer] SW postMessage fail:', e); }
     }
 
+    // Couche 4 : push FCM différé côté serveur (seule couche fiable quand
+    // l'app est endormie et qu'une autre app tient le focus audio).
+    tim_fcmSchedulePush(endsAt);
+
     // Couche 3 : setTimeout dans la page (fallback foreground)
     if (_tim_pageTimeout) clearTimeout(_tim_pageTimeout);
     _tim_pageTimeout = setTimeout(function(){
@@ -16879,6 +16979,8 @@ function _bfDrawChart(data) {
   }
   // Annule la notif planifiée (à la pause / reset).
   function tim_minutCancelNotif(){
+    // Couche 4 : annule le push FCM différé côté serveur
+    tim_fcmCancelPush();
     if (_tim_pageTimeout) { clearTimeout(_tim_pageTimeout); _tim_pageTimeout = null; }
     // Stoppe l'audio background (loop silencieuse + bip programmé)
     tim_minutStopBgAudio();
@@ -16981,6 +17083,12 @@ function _bfDrawChart(data) {
   function _tim_minutFinish(){
     if (_tim_minut.finishedFlag) return;
     _tim_minut.finishedFlag = true;
+    // Le timer a sonné au premier plan → annule le push FCM différé pour
+    // éviter une notification système en doublon. La fonction background
+    // attend endsAt + 1,5 s de grâce avant d'envoyer : ce cancel arrive à
+    // temps. Si l'app était en arrière-plan, le push est déjà parti (c'est
+    // le but) et ce cancel est un no-op inoffensif.
+    tim_fcmCancelPush();
     if (_tim_minut.iv) { clearInterval(_tim_minut.iv); _tim_minut.iv = null; }
     _tim_minut.running = false;
     _tim_minut.remMs = 0;
@@ -17061,6 +17169,58 @@ function _bfDrawChart(data) {
     var ov = document.getElementById('timMinutSetModal');
     if (ov) ov.style.display = 'none';
   }
+
+  // ── Durée personnalisée (chip "⚙ Perso") ────────────────────────────────
+  // Modal H / MIN / SEC façon app Horloge. Steppers ▲▼ + saisie directe.
+  // Valide → même chemin que les presets (tim_minutPreset) : pose la durée
+  // et démarre immédiatement. Aucun impact sur la logique existante.
+  function tim_minutOpenCustom(){
+    if (_tim_minut.running) {
+      tim_toast('Timer en cours — appuie sur ↺ Annuler d\'abord');
+      return;
+    }
+    var ov = document.getElementById('timMinutCustomModal');
+    if (!ov) return;
+    // Pré-remplit avec la dernière durée personnalisée utilisée (confort)
+    var last = 0;
+    try { last = parseInt(localStorage.getItem('ah_tim_custom_last'), 10) || 0; } catch(_){}
+    if (last > 0) {
+      var h = Math.floor(last/3600), m = Math.floor((last%3600)/60), s = last%60;
+      var hE = document.getElementById('timCustomH'); if (hE) hE.value = h;
+      var mE = document.getElementById('timCustomM'); if (mE) mE.value = m;
+      var sE = document.getElementById('timCustomS'); if (sE) sE.value = s;
+    }
+    ov.style.display = 'flex';
+  }
+  function tim_minutCloseCustom(){
+    var ov = document.getElementById('timMinutCustomModal');
+    if (ov) ov.style.display = 'none';
+  }
+  function tim_customStep(field, d){
+    var id = field === 'h' ? 'timCustomH' : field === 'm' ? 'timCustomM' : 'timCustomS';
+    var el = document.getElementById(id); if (!el) return;
+    var max = field === 'h' ? 23 : 59;
+    var v = (parseInt(el.value, 10) || 0) + d;
+    // Wrap circulaire comme une app Horloge (59 + 1 → 0, 0 - 1 → 59)
+    if (v > max) v = 0;
+    if (v < 0) v = max;
+    el.value = v;
+  }
+  function tim_minutConfirmCustom(){
+    var h = Math.min(23, Math.max(0, parseInt((document.getElementById('timCustomH')||{}).value, 10) || 0));
+    var m = Math.min(59, Math.max(0, parseInt((document.getElementById('timCustomM')||{}).value, 10) || 0));
+    var s = Math.min(59, Math.max(0, parseInt((document.getElementById('timCustomS')||{}).value, 10) || 0));
+    var secs = h*3600 + m*60 + s;
+    if (secs <= 0) { tim_toast('Choisis une durée supérieure à 0'); return; }
+    if (secs > 36000) secs = 36000; // même cap 10h que la modal Régler
+    try { localStorage.setItem('ah_tim_custom_last', String(secs)); } catch(_){}
+    tim_minutCloseCustom();
+    tim_minutPreset(secs); // pose la durée + démarre (chemin identique aux presets)
+  }
+  window.tim_minutOpenCustom = tim_minutOpenCustom;
+  window.tim_minutCloseCustom = tim_minutCloseCustom;
+  window.tim_customStep = tim_customStep;
+  window.tim_minutConfirmCustom = tim_minutConfirmCustom;
   // Parse une chaîne en secondes. Retourne null si non parsable.
   function tim_parseDuration(text){
     if (!text) return null;
@@ -24137,6 +24297,13 @@ window._trkVoiceMultiRel = function(btn, parentSel, fieldsCfg, exoId, exoName, c
     el = document.getElementById('timMinutSetModal');
     if (el && isVisible(el)) {
       try { window.tim_minutCloseSet && window.tim_minutCloseSet(); } catch(_){}
+      el.style.display = 'none';
+      return true;
+    }
+    // 3b) Modal durée personnalisée timer
+    el = document.getElementById('timMinutCustomModal');
+    if (el && isVisible(el)) {
+      try { window.tim_minutCloseCustom && window.tim_minutCloseCustom(); } catch(_){}
       el.style.display = 'none';
       return true;
     }
