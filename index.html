@@ -10879,7 +10879,364 @@ function titanGetSmartLecture(){
 }
 window.titanGetSmartLecture = titanGetSmartLecture;
 
+// ═══════════════════════════════════════════════════════════════════════════
+// TITAN RECO ENGINE V2 — moteur de recommandations contextuel (2026-07-07)
+// ───────────────────────────────────────────────────────────────────────────
+// Remplace la rotation aléatoire par un moteur centralisé qui lit le contexte
+// réel de l'athlète et en déduit Engagement du jour + Lecture du jour.
+//
+// ARCHITECTURE (pas de if/else éparpillés) :
+//   1. _titanBuildContext()  — construit UNE FOIS le contexte du jour :
+//      programme, phase, semaine, séance du jour + son type, jours sans
+//      séance, SAT/maillon faible, chapitres déjà recommandés.
+//   2. TITAN_RECO_RULES      — liste DÉCLARATIVE de règles triées par
+//      priorité. Chaque règle = { id, when(ctx), engagement(ctx),
+//      chapters(ctx), lecture(ctx, chap) }. La première règle dont when()
+//      est vrai gagne.
+//   3. getTitanDailyRecommendation() — API publique. Retourne
+//      { engagement, lecture, chapitre, page, chapKey, raison, priorite }.
+//      Cache journalier (même reco toute la journée, évolue le lendemain).
+//
+// ANTI-RÉPÉTITION : prof.titanChaptersShown = [{k, d}] (chapitre + date).
+// Un chapitre proposé dans les 6 derniers jours est écarté au profit du
+// suivant de la liste de la règle — sauf si la règle le force (rappel
+// pertinent, ex. maillon faible persistant). Sync Firestore automatique
+// (ah_profile ∈ FB_SYNC_KEYS).
+// ═══════════════════════════════════════════════════════════════════════════
+
+// ── Mémoire des chapitres recommandés ──
+var TITAN_CHAP_COOLDOWN_DAYS = 6;
+function _titanChaptersShown(){
+  try {
+    var prof = JSON.parse(localStorage.getItem('ah_profile') || '{}');
+    return Array.isArray(prof.titanChaptersShown) ? prof.titanChaptersShown : [];
+  } catch(e){ return []; }
+}
+function _titanMarkChapterShown(chapKey){
+  try {
+    var prof = JSON.parse(localStorage.getItem('ah_profile') || '{}');
+    if (!Array.isArray(prof.titanChaptersShown)) prof.titanChaptersShown = [];
+    prof.titanChaptersShown = prof.titanChaptersShown.filter(function(e){ return e.k !== chapKey; });
+    prof.titanChaptersShown.unshift({ k: chapKey, d: _titanTodayKey() });
+    if (prof.titanChaptersShown.length > 20) prof.titanChaptersShown.length = 20;
+    localStorage.setItem('ah_profile', JSON.stringify(prof));
+    try { if (typeof fbSaveProfile === 'function') fbSaveProfile(); } catch(e){}
+  } catch(e){}
+}
+function _titanChapterRecentlyShown(chapKey){
+  var shown = _titanChaptersShown();
+  var entry = shown.find(function(e){ return e.k === chapKey; });
+  if (!entry) return false;
+  try {
+    var then = new Date(entry.d + 'T00:00:00');
+    var days = Math.floor((Date.now() - then.getTime()) / 86400000);
+    return days < TITAN_CHAP_COOLDOWN_DAYS;
+  } catch(e){ return false; }
+}
+// Pioche le premier chapitre pas vu récemment ; si tous vus, retourne le
+// premier (rappel volontaire) avec flag rappel.
+function _titanPickChapter(list){
+  if (!list || !list.length) return null;
+  for (var i = 0; i < list.length; i++) {
+    if (BOOK_CHAPTERS[list[i]] && !_titanChapterRecentlyShown(list[i])) {
+      return { key: list[i], rappel: false };
+    }
+  }
+  return BOOK_CHAPTERS[list[0]] ? { key: list[0], rappel: true } : null;
+}
+
+// ── Détection du type de séance depuis son nom (source PROGRAMS_V2) ──
+function _titanSessionType(name){
+  if (!name) return null;
+  var n = String(name).toLowerCase();
+  if (/respiration/.test(n)) return 'respiration';
+  if (/jeûne|jeune/.test(n)) return 'mental';
+  if (/allégé|allege|récup|recup/.test(n)) return 'recup';
+  if (/mobilit/.test(n)) return 'mobilite';
+  if (/sprint|vitesse|cardio|survitesse/.test(n)) return 'vitesse';
+  if (/pliom|plio/.test(n)) return 'plio';
+  if (/isom|iso /.test(n) || /— iso/.test(n)) return 'iso';
+  if (/excentrique/.test(n)) return 'excentrique';
+  if (/explos/.test(n)) return 'explosif';
+  if (/force|squat|clean|upper|lower|haut du corps|bas du corps/.test(n)) return 'force';
+  return null;
+}
+
+// ── Contexte du jour — construit une seule fois par appel ──
+function _titanBuildContext(){
+  var ctx = { programKey: null, week: null, phaseIdx: 0, phaseWeeks: null,
+              weekOfPhase: null, isPhaseStart: false, isPhaseEnd: false,
+              isFirstWeekEver: false, todaySessionName: null, sessionType: null,
+              isRestDay: false, missedDays: null, streak: 0, satDone: false,
+              athScore: null, weakLink: null, prenom: '' };
+  ctx.programKey = _titanGetProgramKey();
+  ctx.prenom = _titanGetFirstName();
+  var prof = {};
+  try { prof = JSON.parse(localStorage.getItem('ah_profile') || '{}'); } catch(e){}
+  ctx.satDone = !!prof.satDone;
+  ctx.athScore = (prof.athScore != null) ? prof.athScore : null;
+  ctx.streak = prof.streak || 0;
+  // Jours sans séance (depuis lastSessionDay posé par _bumpSessionStreak)
+  if (prof.lastSessionDay) {
+    try {
+      var last = new Date(prof.lastSessionDay + 'T00:00:00');
+      ctx.missedDays = Math.floor((Date.now() - last.getTime()) / 86400000);
+    } catch(e){}
+  }
+  // Phase / semaine / séance du jour depuis PROGRAMS_V2 + progression
+  try {
+    if (ctx.programKey && typeof PROGRAMS_V2 !== 'undefined' && PROGRAMS_V2[ctx.programKey]) {
+      var prog = PROGRAMS_V2[ctx.programKey];
+      var st = (typeof getProgramProgress === 'function') ? getProgramProgress(ctx.programKey) : { phaseIdx: 0, week: 1 };
+      ctx.phaseIdx = Math.min(st.phaseIdx || 0, prog.phases.length - 1);
+      var phase = prog.phases[ctx.phaseIdx];
+      ctx.phaseWeeks = (phase && phase.weeks) || 1;
+      ctx.weekOfPhase = st.week || 1;
+      // Semaine absolue = somme des phases passées + semaine courante
+      var acc = 0;
+      for (var i = 0; i < ctx.phaseIdx; i++) acc += (prog.phases[i].weeks || 1);
+      ctx.week = acc + ctx.weekOfPhase;
+      ctx.isFirstWeekEver = (ctx.week === 1);
+      ctx.isPhaseStart = (ctx.weekOfPhase === 1 && !ctx.isFirstWeekEver);
+      ctx.isPhaseEnd = (ctx.weekOfPhase >= ctx.phaseWeeks && ctx.phaseWeeks > 1);
+      // Séance du jour (weekDays : 0=Lun … 6=Dim)
+      var dayIdx = (new Date().getDay() + 6) % 7;
+      var day = phase && phase.weekDays && phase.weekDays[dayIdx];
+      if (day) {
+        if (day.s === 'rest') { ctx.isRestDay = true; }
+        else if (phase.sessions && phase.sessions[day.s]) {
+          ctx.todaySessionName = phase.sessions[day.s].name || null;
+          ctx.sessionType = _titanSessionType(ctx.todaySessionName);
+        }
+      }
+    }
+  } catch(e){}
+  // Maillon faible SAT (Athletik Score engine)
+  try {
+    if (ctx.satDone && typeof ascGetUserMetrics === 'function' && typeof ascFindWeakLink === 'function') {
+      var sexe = (prof.sexe === 'femme') ? 'femme' : 'homme';
+      var weak = ascFindWeakLink(ascGetUserMetrics(), sexe);
+      if (weak && weak.key) ctx.weakLink = weak.key; // detente|squat|hipthrust|sdt|dc|sprint30|fms
+    }
+  } catch(e){}
+  return ctx;
+}
+
+// ── Chapitres pertinents par type de séance / faiblesse ──
+var TITAN_TYPE_CHAPTERS = {
+  force:       ['cours_force', 'cours_intens', 'cours_anat'],
+  plio:        ['cours_plio', 'cours_triple', 'cours_biom'],
+  explosif:    ['cours_puis', 'cours_triple', 'cours_plio'],
+  vitesse:     ['cours_puis', 'cours_biom', 'cours_triple'],
+  iso:         ['cours_force', 'cours_fond', 'cours_anat'],
+  excentrique: ['cours_force', 'cours_biom', 'cours_prev'],
+  mobilite:    ['cours_mobi', 'cours_prev', 'cours_fond'],
+  recup:       ['cours_nutri', 'cours_prev', 'cours_mobi'],
+  respiration: ['cours_nutri', 'ch_mental', 'cours_prev'],
+  mental:      ['ch_mental', 'ch_mener', 'cours_fond']
+};
+var TITAN_WEAK_CHAPTERS = {
+  detente:   { chaps: ['cours_triple', 'cours_plio', 'cours_biom'], label: 'ta détente' },
+  squat:     { chaps: ['cours_force', 'cours_intens', 'cours_anat'], label: 'ta force au squat' },
+  hipthrust: { chaps: ['cours_force', 'cours_anat', 'cours_intens'], label: 'ta force de hanches' },
+  sdt:       { chaps: ['cours_force', 'cours_anat', 'cours_intens'], label: 'ta force au soulevé' },
+  dc:        { chaps: ['cours_force', 'cours_intens', 'cours_anat'], label: 'ta force du haut' },
+  sprint30:  { chaps: ['cours_puis', 'cours_biom', 'cours_triple'], label: 'ta vitesse' },
+  fms:       { chaps: ['cours_mobi', 'cours_prev', 'cours_fond'], label: 'ta mobilité' }
+};
+var TITAN_TYPE_LABELS = {
+  force: 'Force', plio: 'Pliométrie', explosif: 'Explosivité', vitesse: 'Vitesse',
+  iso: 'Isométrie', excentrique: 'Excentrique', mobilite: 'Mobilité',
+  recup: 'Récupération', respiration: 'Respiration', mental: 'Mental'
+};
+
+// ── RÈGLES — triées par priorité décroissante. La 1re qui matche gagne. ──
+// Chaque règle : id, when(ctx), engagement(ctx) → texte, chapters(ctx) →
+// liste ordonnée de clés BOOK_CHAPTERS, lecture(ctx, chapKey) → texte qui
+// porte implicitement le POURQUOI, raison(ctx) → courte étiquette interne.
+var TITAN_RECO_RULES = [
+  {
+    id: 'discipline',
+    when: function(c){ return c.missedDays != null && c.missedDays >= 3; },
+    engagement: function(c){
+      return 'Ça fait ' + c.missedDays + ' jours sans séance. Aujourd\'hui tu ne négocies pas : tu poses ta séance, même à 70 %. C\'est la régularité qui construit, pas la perfection.';
+    },
+    chapters: function(){ return ['ch_mental', 'ch_mener', 'cours_fond']; },
+    lecture: function(c, chap){
+      if (chap === 'ch_mental') return 'Après ' + c.missedDays + ' jours d\'arrêt, le problème n\'est pas physique. Relis Le Mental — c\'est là que la reprise se joue.';
+      if (chap === 'ch_mener') return 'La méthode MENER existe exactement pour les moments où tu décroches. Relis-la et choisis UN engagement pour aujourd\'hui.';
+      return 'Les Fondations que Personne ne Voit — c\'est la discipline invisible qui te remet en route.';
+    },
+    raison: function(c){ return c.missedDays + ' jours sans séance'; }
+  },
+  {
+    id: 'faiblesse_sat',
+    when: function(c){
+      if (!c.satDone || !c.weakLink || !TITAN_WEAK_CHAPTERS[c.weakLink]) return false;
+      // Ne prend la main que si le chapitre principal n'a pas déjà été
+      // recommandé récemment — sinon on laisse les règles séance/phase parler.
+      return !_titanChapterRecentlyShown(TITAN_WEAK_CHAPTERS[c.weakLink].chaps[0]);
+    },
+    engagement: function(c){
+      var w = TITAN_WEAK_CHAPTERS[c.weakLink];
+      return 'Ton SAT a parlé : ' + w.label + ' est ton maillon faible. Aujourd\'hui, chaque exercice qui la travaille compte double. Attaque-la, ne l\'évite pas.';
+    },
+    chapters: function(c){ return TITAN_WEAK_CHAPTERS[c.weakLink].chaps; },
+    lecture: function(c, chap){
+      var w = TITAN_WEAK_CHAPTERS[c.weakLink];
+      var t = BOOK_CHAPTERS[chap] ? BOOK_CHAPTERS[chap].titre : '';
+      return 'Ton maillon faible détecté au SAT, c\'est ' + w.label + '. ' + t.replace(/^Cours \d+ — /, '').replace(/^Chapitre \d+ — /, '') + ' est exactement le cours à relire pour comprendre comment l\'attaquer.';
+    },
+    raison: function(c){ return 'maillon faible SAT : ' + c.weakLink; }
+  },
+  {
+    id: 'premiere_semaine',
+    when: function(c){ return c.isFirstWeekEver && c.programKey; },
+    engagement: function(c){
+      return 'Première semaine de ton programme. Ton seul objectif : apprendre les mouvements proprement. La charge viendra — la technique d\'abord.';
+    },
+    chapters: function(c){
+      var pr = BOOK_PROGRAM_REFS[c.programKey];
+      return pr ? [pr.chap, 'cours_perio', 'intro_8_lois'] : ['cours_perio', 'intro_8_lois'];
+    },
+    lecture: function(c, chap){
+      if (chap && chap.indexOf('prog_') === 0) return 'Tu démarres. Lis le chapitre dédié à ton programme : tu comprendras la logique derrière chaque semaine qui arrive.';
+      if (chap === 'intro_8_lois') return 'Avant tout : Les 8 Lois de la Détente Verticale. C\'est le socle de tout ce que tu vas faire.';
+      return 'La Périodisation t\'explique pourquoi ton programme est découpé en phases — et pourquoi ça marche.';
+    },
+    raison: function(){ return 'semaine 1 du programme'; }
+  },
+  {
+    id: 'debut_phase',
+    when: function(c){ return c.isPhaseStart; },
+    engagement: function(c){
+      return 'Nouvelle phase, semaine 1/' + c.phaseWeeks + '. Tout ce que tu as construit sert maintenant de base. Installe le nouveau rythme proprement dès aujourd\'hui.';
+    },
+    chapters: function(c){
+      var pr = BOOK_PROGRAM_REFS[c.programKey];
+      return ['cours_perio'].concat(pr ? [pr.chap] : []).concat(['ch_perio_av']);
+    },
+    lecture: function(c, chap){
+      if (chap === 'cours_perio') return 'Tu changes de phase — relis La Périodisation pour comprendre ce que cette nouvelle phase vient chercher dans ton corps.';
+      if (chap && chap.indexOf('prog_') === 0) return 'Nouvelle phase : le chapitre de ton programme explique exactement ce qui change et pourquoi.';
+      return 'Les Méthodes de Périodisation — le niveau au-dessus pour comprendre l\'enchaînement de tes phases.';
+    },
+    raison: function(c){ return 'début de phase ' + (c.phaseIdx + 1); }
+  },
+  {
+    id: 'fin_phase',
+    when: function(c){ return c.isPhaseEnd; },
+    engagement: function(c){
+      return 'Dernière semaine de la phase. C\'est là que tout se cristallise : intensité maximale sur chaque séance, zéro séance sautée. Finis fort.';
+    },
+    chapters: function(){ return ['cours_intens', 'cours_puis', 'ch_npi']; },
+    lecture: function(c, chap){
+      if (chap === 'cours_intens') return 'Semaine finale de phase : Les Techniques d\'Intensification sont exactement ce qu\'il te faut pour presser le citron proprement.';
+      if (chap === 'cours_puis') return 'Fin de phase = moment de convertir. Le cours Puissance t\'explique comment transformer le travail accumulé.';
+      return 'Fin de phase : calcule ton NPI pour mesurer objectivement ce que la phase t\'a apporté.';
+    },
+    raison: function(c){ return 'dernière semaine de phase'; }
+  },
+  {
+    id: 'seance_du_jour',
+    when: function(c){ return !!c.sessionType && !c.isRestDay; },
+    engagement: function(c){
+      var byType = {
+        force:       'Séance force aujourd\'hui. Chaque rep : gainage, trajectoire, intention. La barre ne ment pas — la qualité d\'exécution est ton seul objectif.',
+        plio:        'Pliométrie aujourd\'hui. L\'intention fait tout : chaque saut à 100 %, contact au sol le plus court possible. Si la vitesse baisse, la série s\'arrête.',
+        explosif:    'Séance explosive. Descente contrôlée, montée EXPLOSION. Si tu ralentis, tu arrêtes la série — la qualité prime sur le volume.',
+        vitesse:     'Vitesse aujourd\'hui. 100 % sur chaque sprint, récupération complète entre les efforts. Un sprint à 90 % ne t\'apprend rien.',
+        iso:         'Isométrie aujourd\'hui. Tenir n\'est pas subir : contraction active, position parfaite. Trembler, c\'est normal — c\'est que ça travaille.',
+        excentrique: 'Excentrique aujourd\'hui. Le tempo est la séance : ne lâche JAMAIS la descente. C\'est dans le freinage que la force se construit.',
+        mobilite:    'Mobilité aujourd\'hui. Ce n\'est pas une séance au rabais — c\'est elle qui protège toutes les autres. Amplitude propre, respiration calme.',
+        recup:       'Séance allégée aujourd\'hui. Elle est volontairement réduite — ne la saute pas et n\'en rajoute pas. Le signal nerveux se maintient, le corps récupère.',
+        respiration: 'Respiration aujourd\'hui. Lieu calme, zéro distraction. C\'est ta récupération nerveuse — aussi importante que n\'importe quelle séance.',
+        mental:      'Discipline mentale aujourd\'hui. Ce n\'est pas ton corps qu\'on teste, c\'est ta parole envers toi-même. Tiens-la.'
+      };
+      return byType[c.sessionType] || 'Séance du jour : exécution propre, intensité maîtrisée. Tu viens chercher quelque chose de précis.';
+    },
+    chapters: function(c){ return TITAN_TYPE_CHAPTERS[c.sessionType] || ['cours_fond']; },
+    lecture: function(c, chap){
+      var label = TITAN_TYPE_LABELS[c.sessionType] || 'ta séance';
+      var t = BOOK_CHAPTERS[chap] ? BOOK_CHAPTERS[chap].titre.replace(/^Cours \d+ — /, '').replace(/^Chapitre \d+ — /, '') : '';
+      return 'Avant ta séance ' + label + ' : ' + t + '. Dix minutes de lecture qui changent la qualité de ce que tu vas faire aujourd\'hui.';
+    },
+    raison: function(c){ return 'séance du jour : ' + c.sessionType; }
+  },
+  {
+    id: 'jour_repos',
+    when: function(c){ return c.isRestDay; },
+    engagement: function(c){
+      return 'Jour de repos. Le repos n\'est pas l\'absence d\'entraînement — c\'est là que ton corps encaisse et progresse. Sommeil, hydratation, vraie nourriture.';
+    },
+    chapters: function(){ return ['cours_nutri', 'cours_prev', 'ch_mental']; },
+    lecture: function(c, chap){
+      if (chap === 'cours_nutri') return 'Jour de repos = jour de construction. Nutrition et Récupération t\'explique comment transformer ce repos en progression.';
+      if (chap === 'cours_prev') return 'Profite du repos pour lire Prévention et Blessures — mieux vaut 10 minutes de lecture qu\'une semaine d\'arrêt forcé.';
+      return 'Jour off : le bon moment pour muscler l\'invisible. Relis Le Mental.';
+    },
+    raison: function(){ return 'jour de repos'; }
+  },
+  {
+    id: 'sat_manquant',
+    when: function(c){ return !c.satDone && !!c.programKey; },
+    engagement: function(c){
+      return 'Tu t\'entraînes sans point de départ mesuré. Fais ton SAT cette semaine — sans mesure, pas de progression prouvable.';
+    },
+    chapters: function(){ return ['ch_tests', 'ch_npi', 'intro_8_lois']; },
+    lecture: function(c, chap){
+      if (chap === 'ch_tests') return 'Tests et Profils Athlétiques : comprends ce que le SAT mesure et pourquoi tout ton programme s\'appuie dessus.';
+      if (chap === 'ch_npi') return 'Le NPI est ta boussole de progression. Lis comment le calculer avant ton premier bilan.';
+      return 'Les 8 Lois de la Détente Verticale — le socle, à lire avant de mesurer quoi que ce soit.';
+    },
+    raison: function(){ return 'SAT non réalisé'; }
+  }
+];
+
+// ── API PUBLIQUE — moteur central. Toutes les cartes Home passent par là. ──
+function getTitanDailyRecommendation(){
+  // Cache journalier : même reco toute la journée (stabilité demandée),
+  // nouvelle évaluation le lendemain ou si le contexte-clé change (séance
+  // faite entre-temps → missedDays/semaine bougent → clé de contexte différente).
+  var ctx = _titanBuildContext();
+  if (!ctx.programKey) return null;
+  var ctxKey = [ctx.programKey, ctx.week, ctx.phaseIdx, ctx.sessionType || (ctx.isRestDay ? 'rest' : '-'),
+                ctx.missedDays != null && ctx.missedDays >= 3 ? 'missed' : 'ok',
+                ctx.weakLink || '-', ctx.satDone ? 'sat' : 'nosat'].join('|');
+  var cached = _titanReadDailyCache();
+  if (cached && cached.__reco && cached.__reco.ctxKey === ctxKey) return cached.__reco;
+
+  // Première règle qui matche
+  var rule = null;
+  for (var i = 0; i < TITAN_RECO_RULES.length; i++) {
+    try { if (TITAN_RECO_RULES[i].when(ctx)) { rule = TITAN_RECO_RULES[i]; break; } } catch(e){}
+  }
+  if (!rule) rule = TITAN_RECO_RULES[TITAN_RECO_RULES.length - 1];
+
+  var pick = _titanPickChapter(rule.chapters(ctx));
+  var chapKey = pick ? pick.key : null;
+  var chap = chapKey ? BOOK_CHAPTERS[chapKey] : null;
+  var reco = {
+    ctxKey:     ctxKey,
+    priorite:   rule.id,
+    raison:     (rule.raison ? rule.raison(ctx) : rule.id) + (pick && pick.rappel ? ' (rappel)' : ''),
+    engagement: rule.engagement(ctx),
+    lecture:    chapKey ? rule.lecture(ctx, chapKey) : null,
+    chapKey:    chapKey,
+    chapitre:   chap ? chap.titre : null,
+    page:       chap ? chap.page : null
+  };
+  if (chapKey) _titanMarkChapterShown(chapKey);
+  _titanWriteDailyCache('__reco', reco);
+  return reco;
+}
+window.getTitanDailyRecommendation = getTitanDailyRecommendation;
+
 // Rendu des 2 cards Home : Engagement + Lecture.
+// V2 (2026-07-07) : consomme le moteur contextuel getTitanDailyRecommendation.
+// Engagement et Lecture proviennent de la MÊME analyse (plus de refs
+// contradictoires entre les deux cartes). Fallback legacy si le moteur
+// échoue — l'user voit toujours quelque chose.
 function renderTitanSmartCards(){
   var wrap = document.getElementById('titanSmartCards');
   if (!wrap) return;
@@ -10887,27 +11244,46 @@ function renderTitanSmartCards(){
   if (!_titanGetProgramKey()) { wrap.innerHTML = ''; return; }
   var firstName = _titanGetFirstName();
   var greeting = firstName ? firstName + ', ' : '';
-  var eng = titanGetSmartMessage('engagement');
-  var lec = titanGetSmartLecture();
+
+  var engMsg = null, engTitle = 'Engagement du jour';
+  var lecMsg = null, lecTitle = 'Lecture du jour', lecRef = null;
+  var reco = null;
+  try { reco = getTitanDailyRecommendation(); } catch(e){ console.warn('titan reco engine:', e); }
+  if (reco && reco.engagement) {
+    engMsg = reco.engagement;
+    if (reco.lecture && reco.chapitre) {
+      lecMsg = reco.lecture;
+      lecRef = { titre: reco.chapitre, page: reco.page };
+      // Titre de carte contextuel : "Lecture — Force", "Lecture — Mental"…
+      var shortT = reco.chapitre.replace(/^Cours \d+ — /, '').replace(/^Chapitre \d+ — /, '').replace(/^Programme /, '');
+      lecTitle = 'Lecture — ' + (shortT.length > 26 ? shortT.slice(0, 26) + '…' : shortT);
+    }
+  } else {
+    // Fallback legacy (rotation) — ne devrait servir qu'en cas d'erreur moteur
+    var eng = titanGetSmartMessage('engagement');
+    var lec = titanGetSmartLecture();
+    if (eng) engMsg = eng.message;
+    if (lec) { lecMsg = lec.message; lecRef = lec.bookRef; lecTitle = lec.title; }
+  }
+
   var html = '';
-  if (eng) {
+  if (engMsg) {
     html += '<div style="margin:14px 16px 0;padding:14px 16px;background:var(--ah-surface);border:1px solid var(--ah-border);border-left:3px solid var(--ah-gold);border-radius:14px;box-shadow:0 2px 8px rgba(20,30,60,.04)">'
          +   '<div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">'
          +     '<div style="width:24px;height:24px;border-radius:50%;background:linear-gradient(135deg,var(--ah-navy),#0F1A30);color:var(--ah-gold);display:flex;align-items:center;justify-content:center;font-family:\'Bebas Neue\',sans-serif;font-size:11px;letter-spacing:.04em">T</div>'
-         +     '<div style="font-family:\'JetBrains Mono\',monospace;font-size:10px;letter-spacing:.18em;font-weight:700;color:var(--ah-gold);text-transform:uppercase">' + eng.title + '</div>'
+         +     '<div style="font-family:\'JetBrains Mono\',monospace;font-size:10px;letter-spacing:.18em;font-weight:700;color:var(--ah-gold);text-transform:uppercase">' + engTitle + '</div>'
          +   '</div>'
-         +   '<div style="font-family:\'Outfit\',sans-serif;font-size:13px;line-height:1.5;color:var(--ah-text)">' + greeting + (greeting ? eng.message.charAt(0).toLowerCase() + eng.message.slice(1) : eng.message) + '</div>'
-         +   (eng.bookRef ? '<div style="margin-top:8px;font-size:11px;color:var(--ah-text2);font-style:italic">📖 ' + eng.bookRef.titre + ' — p.' + eng.bookRef.page + '</div>' : '')
+         +   '<div style="font-family:\'Outfit\',sans-serif;font-size:13px;line-height:1.5;color:var(--ah-text)">' + greeting + (greeting ? engMsg.charAt(0).toLowerCase() + engMsg.slice(1) : engMsg) + '</div>'
          + '</div>';
   }
-  if (lec) {
+  if (lecMsg) {
     html += '<div style="margin:10px 16px 0;padding:14px 16px;background:linear-gradient(135deg,rgba(197,164,78,.06),rgba(197,164,78,.02));border:1px solid rgba(197,164,78,.30);border-radius:14px">'
          +   '<div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">'
          +     '<div style="font-size:14px">📖</div>'
-         +     '<div style="font-family:\'JetBrains Mono\',monospace;font-size:10px;letter-spacing:.18em;font-weight:700;color:var(--ah-gold);text-transform:uppercase">' + lec.title + '</div>'
+         +     '<div style="font-family:\'JetBrains Mono\',monospace;font-size:10px;letter-spacing:.18em;font-weight:700;color:var(--ah-gold);text-transform:uppercase">' + lecTitle + '</div>'
          +   '</div>'
-         +   '<div style="font-family:\'Outfit\',sans-serif;font-size:13px;line-height:1.5;color:var(--ah-text)">' + lec.message + '</div>'
-         +   (lec.bookRef ? '<div style="margin-top:8px;font-size:11px;color:var(--ah-gold);font-weight:600">' + lec.bookRef.titre + ' — p.' + lec.bookRef.page + '</div>' : '')
+         +   '<div style="font-family:\'Outfit\',sans-serif;font-size:13px;line-height:1.5;color:var(--ah-text)">' + lecMsg + '</div>'
+         +   (lecRef ? '<div style="margin-top:8px;font-size:11px;color:var(--ah-gold);font-weight:600">' + lecRef.titre + ' — p.' + lecRef.page + '</div>' : '')
          + '</div>';
   }
   wrap.innerHTML = html;
