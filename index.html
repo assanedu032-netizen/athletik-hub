@@ -10968,7 +10968,12 @@ function _titanBuildContext(){
               weekOfPhase: null, isPhaseStart: false, isPhaseEnd: false,
               isFirstWeekEver: false, todaySessionName: null, sessionType: null,
               isRestDay: false, missedDays: null, streak: 0, satDone: false,
-              athScore: null, weakLink: null, prenom: '' };
+              athScore: null, weakLink: null, prenom: '',
+              // ── Mémoire de continuité (2026-07-07) — données déjà présentes
+              //    dans l'app, aucune nouvelle collecte :
+              yesterdaySession: null,   // { name, type } — séance terminée hier (ah_set_history)
+              doneToday: false,         // une séance a déjà été validée aujourd'hui
+              yesterdayChapKey: null }; // chapitre recommandé hier (titanChaptersShown)
   ctx.programKey = _titanGetProgramKey();
   ctx.prenom = _titanGetFirstName();
   var prof = {};
@@ -10983,6 +10988,33 @@ function _titanBuildContext(){
       ctx.missedDays = Math.floor((Date.now() - last.getTime()) / 86400000);
     } catch(e){}
   }
+  // ── Mémoire : séance d'hier + séance du jour déjà faite (ah_set_history)
+  try {
+    var yd = new Date(Date.now() - 86400000);
+    var ydKey = yd.getFullYear() + '-' + String(yd.getMonth()+1).padStart(2,'0') + '-' + String(yd.getDate()).padStart(2,'0');
+    var todayKey = _titanTodayKey();
+    var hist = JSON.parse(localStorage.getItem('ah_set_history') || '[]');
+    for (var hi = hist.length - 1; hi >= 0; hi--) {
+      var e2 = hist[hi];
+      if (!e2 || e2.type !== 'session' || !e2.date) continue;
+      var dk = String(e2.date).slice(0, 10);
+      if (dk === todayKey) { ctx.doneToday = true; }
+      else if (dk === ydKey && !ctx.yesterdaySession) {
+        ctx.yesterdaySession = { name: e2.sessName || '', type: _titanSessionType(e2.sessName || '') };
+      }
+      // Les entrées plus vieilles qu'hier ne nous intéressent plus
+      if (dk < ydKey) break;
+    }
+  } catch(e){}
+  // ── Mémoire : chapitre recommandé hier (jamais marqué "lu" — le livre est
+  //    hors app — donc on se contente d'un rappel doux si on le repropose)
+  try {
+    var shownCh = _titanChaptersShown();
+    var yd2 = new Date(Date.now() - 86400000);
+    var ydKey2 = yd2.getFullYear() + '-' + String(yd2.getMonth()+1).padStart(2,'0') + '-' + String(yd2.getDate()).padStart(2,'0');
+    var yEntry = shownCh.find(function(e3){ return e3.d === ydKey2; });
+    if (yEntry) ctx.yesterdayChapKey = yEntry.k;
+  } catch(e){}
   // Phase / semaine / séance du jour depuis PROGRAMS_V2 + progression
   try {
     if (ctx.programKey && typeof PROGRAMS_V2 !== 'undefined' && PROGRAMS_V2[ctx.programKey]) {
@@ -11193,6 +11225,60 @@ var TITAN_RECO_RULES = [
   }
 ];
 
+// ── COUCHE MÉMOIRE — préfixe de continuité (2026-07-07) ────────────────────
+// Titan fait référence au parcours récent de l'athlète. UN SEUL hook mémoire
+// par jour (le plus pertinent), pour que ça reste naturel et pas verbeux.
+// Priorité des hooks :
+//   1. Séance déjà validée aujourd'hui → féliciter + basculer sur la récup
+//   2. Séance terminée HIER → continuité ("Hier tu as terminé…")
+//   3. Streak ≥ 3 jours → reconnaissance de la régularité
+// Exclusions : la règle 'discipline' porte déjà sa propre mémoire (jours
+// manqués) → pas de préfixe pour éviter le doublon. Idem 'premiere_semaine'
+// (pas encore de passé à rappeler).
+var TITAN_TYPE_PAST_LABELS = {
+  force: 'ta séance de force', plio: 'ta séance de pliométrie',
+  explosif: 'ta séance explosive', vitesse: 'ta séance de vitesse',
+  iso: 'ta séance d\'isométrie', excentrique: 'ta séance excentrique',
+  mobilite: 'ta séance de mobilité', recup: 'ta séance de récupération',
+  respiration: 'ta séance de respiration', mental: 'ton défi mental'
+};
+function _titanContinuityPrefix(ctx, ruleId){
+  if (ruleId === 'discipline' || ruleId === 'premiere_semaine') return '';
+  try {
+    // 1. Séance du jour déjà validée
+    if (ctx.doneToday) {
+      return 'Séance du jour déjà validée — bien joué. ';
+    }
+    // 2. Séance d'hier — la plus parlante ("Titan se souvient")
+    if (ctx.yesterdaySession) {
+      var lbl = TITAN_TYPE_PAST_LABELS[ctx.yesterdaySession.type] || 'ta séance';
+      // Cas signature demandé par l'user : grosse séance hier + repos aujourd'hui
+      if (ctx.isRestDay || ctx.sessionType === 'recup') {
+        return 'Hier tu as terminé ' + lbl + '. ';
+      }
+      return 'Hier : ' + lbl + ' validée. ';
+    }
+    // 3. Streak en cours
+    if (ctx.streak >= 3) {
+      return 'Tu enchaînes ' + ctx.streak + ' jours de discipline — continue sur cette lancée. ';
+    }
+  } catch(e){}
+  return '';
+}
+// Suffixe lecture : si le chapitre choisi est CELUI recommandé hier (rappel),
+// Titan le dit explicitement au lieu de faire comme si c'était nouveau.
+function _titanContinuitySuffix(ctx, chapKey, rappel){
+  try {
+    if (chapKey && ctx.yesterdayChapKey === chapKey) {
+      return ' Je te l\'avais recommandé hier — si tu ne l\'as pas encore ouvert, c\'est le moment.';
+    }
+    if (rappel) {
+      return ' On y revient volontairement : c\'est le chapitre qui compte pour toi en ce moment.';
+    }
+  } catch(e){}
+  return '';
+}
+
 // ── API PUBLIQUE — moteur central. Toutes les cartes Home passent par là. ──
 function getTitanDailyRecommendation(){
   // Cache journalier : même reco toute la journée (stabilité demandée),
@@ -11202,7 +11288,12 @@ function getTitanDailyRecommendation(){
   if (!ctx.programKey) return null;
   var ctxKey = [ctx.programKey, ctx.week, ctx.phaseIdx, ctx.sessionType || (ctx.isRestDay ? 'rest' : '-'),
                 ctx.missedDays != null && ctx.missedDays >= 3 ? 'missed' : 'ok',
-                ctx.weakLink || '-', ctx.satDone ? 'sat' : 'nosat'].join('|');
+                ctx.weakLink || '-', ctx.satDone ? 'sat' : 'nosat',
+                // La mémoire fait partie du contexte : si l'user valide sa
+                // séance dans la journée, la reco se réévalue (doneToday).
+                ctx.doneToday ? 'done' : 'todo',
+                ctx.yesterdaySession ? (ctx.yesterdaySession.type || 'y') : '-',
+                'stk' + ctx.streak].join('|');
   var cached = _titanReadDailyCache();
   if (cached && cached.__reco && cached.__reco.ctxKey === ctxKey) return cached.__reco;
 
@@ -11216,12 +11307,15 @@ function getTitanDailyRecommendation(){
   var pick = _titanPickChapter(rule.chapters(ctx));
   var chapKey = pick ? pick.key : null;
   var chap = chapKey ? BOOK_CHAPTERS[chapKey] : null;
+  var memPrefix = _titanContinuityPrefix(ctx, rule.id);
+  var memSuffix = chapKey ? _titanContinuitySuffix(ctx, chapKey, pick.rappel) : '';
   var reco = {
     ctxKey:     ctxKey,
     priorite:   rule.id,
     raison:     (rule.raison ? rule.raison(ctx) : rule.id) + (pick && pick.rappel ? ' (rappel)' : ''),
-    engagement: rule.engagement(ctx),
-    lecture:    chapKey ? rule.lecture(ctx, chapKey) : null,
+    memoire:    memPrefix ? memPrefix.trim() : null,
+    engagement: memPrefix + rule.engagement(ctx),
+    lecture:    chapKey ? (rule.lecture(ctx, chapKey) + memSuffix) : null,
     chapKey:    chapKey,
     chapitre:   chap ? chap.titre : null,
     page:       chap ? chap.page : null
