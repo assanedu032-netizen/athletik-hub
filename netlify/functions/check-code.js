@@ -8,6 +8,15 @@
 // Codes "legacy" (3 codes fixes hérités) toujours acceptés pour rétro-compat.
 // Le secret HMAC vit UNIQUEMENT dans la variable d'env Netlify ACCESS_CODE_SECRET.
 //
+// ── Auth + persistance serveur (Phase 3 — durcissement) ──
+// Auth Firebase Bearer requise : l'uid n'est plus jamais confié au client, il
+// est lu côté serveur via verifyIdToken. Sur code valide, la fonction écrit
+// elle-même users/{uid}.accessTier (+ accessGrantedAt/accessExpiresAt) dans
+// Firestore via Admin SDK — le client ne fait plus autorité sur ce champ.
+// firestore.rules verrouille accessTier dans lockedFields() : toute écriture
+// client de ce champ est refusée, seul ce fichier (Admin SDK, bypass les
+// rules) peut le poser.
+//
 // ── Rate limiting (P4 sécurité — anti-bruteforce) ──
 // Max RL_MAX tentatives par IP toutes les RL_WINDOW_MS ms. Stocké en mémoire
 // de l'instance Lambda (warm). En cold start le compteur repart à zéro, c'est
@@ -16,6 +25,7 @@
 // passera sur Upstash Redis ou Firestore counter.
 
 const crypto = require('crypto');
+const admin = require('firebase-admin');
 
 const TIER_MAP = { B: 'BETA', V: 'VIP', M: 'MASTER' };
 
@@ -30,6 +40,63 @@ const TIER_META = {
   VIP:    { label: 'VIP',    color: '#D4AF37', valid: null, msg: 'Accès VIP — à vie. Bienvenue, athlète.' },
   MASTER: { label: 'MASTER', color: '#EF4444', valid: null, msg: 'Accès MASTER — Titan illimité + tout débloqué.' },
 };
+
+// ─── Firebase Admin (init paresseuse, même pattern que book-challenge.js) ───
+let firebaseReady = false;
+function initFirebase() {
+  if (firebaseReady) return true;
+  const sa = process.env.FIREBASE_SERVICE_ACCOUNT;
+  if (!sa) return false;
+  try {
+    if (!admin.apps.length) {
+      admin.initializeApp({ credential: admin.credential.cert(JSON.parse(sa)) });
+    }
+    firebaseReady = true;
+    return true;
+  } catch (e) {
+    console.error('[check-code] firebase init failed:', e.message);
+    return false;
+  }
+}
+
+// ─── Auth Bearer (Firebase ID token) ───────────────────────────────────────
+async function authUser(event) {
+  if (!initFirebase()) return { ok: false, code: 503, msg: 'FIREBASE_SERVICE_ACCOUNT non configurée.' };
+  const h = event.headers || {};
+  const ah = h.authorization || h.Authorization;
+  if (!ah || !ah.startsWith('Bearer ')) return { ok: false, code: 401, msg: 'Auth required' };
+  try {
+    const decoded = await admin.auth().verifyIdToken(ah.slice(7));
+    return { ok: true, uid: decoded.uid };
+  } catch (e) {
+    return { ok: false, code: 401, msg: 'Invalid token' };
+  }
+}
+
+// ─── Persiste le tier côté serveur (Admin SDK — bypass firestore.rules) ────
+async function grantAccessTier(uid, tier, meta) {
+  const grantedAtMs = Date.now();
+  const expiresAt = meta.valid ? grantedAtMs + meta.valid * 86400000 : null;
+  const db = admin.firestore();
+  await db.doc(`users/${uid}`).set({
+    accessTier: tier,
+    accessGrantedAt: admin.firestore.FieldValue.serverTimestamp(),
+    accessExpiresAt: expiresAt,
+    updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+  }, { merge: true });
+  // Trace anonymisée pour SAV (même pattern que book-challenge.js)
+  try {
+    await db.collection('accessRedemptions').add({
+      uid,
+      method: 'access_code',
+      tier,
+      redeemedAt: admin.firestore.FieldValue.serverTimestamp(),
+    });
+  } catch (e) {
+    console.warn('[check-code] accessRedemptions log failed:', e.message);
+  }
+  return expiresAt;
+}
 
 // ─── Rate limiting in-memory ────────────────────────────────────────────────
 const RL_MAX        = 5;             // 5 tentatives
@@ -108,6 +175,7 @@ function resp(statusCode, payload, extraHeaders) {
     statusCode: statusCode,
     headers: Object.assign({
       'Access-Control-Allow-Origin': '*',
+      'Access-Control-Allow-Headers': 'Content-Type, Authorization',
       'Content-Type': 'application/json',
     }, extraHeaders || {}),
     body: JSON.stringify(payload),
@@ -120,7 +188,7 @@ exports.handler = async function(event) {
       statusCode: 204,
       headers: {
         'Access-Control-Allow-Origin': '*',
-        'Access-Control-Allow-Headers': 'Content-Type',
+        'Access-Control-Allow-Headers': 'Content-Type, Authorization',
         'Access-Control-Allow-Methods': 'POST, OPTIONS',
       },
       body: '',
@@ -149,11 +217,24 @@ exports.handler = async function(event) {
   const code = ((body.code || '') + '').trim().toUpperCase();
   if (!code) return resp(400, { ok: false, error: 'missing_code' });
 
+  // Auth Firebase obligatoire — on doit savoir QUI on débloque avant de
+  // persister quoi que ce soit (le client ne fournit plus jamais l'uid).
+  const auth = await authUser(event);
+  if (!auth.ok) return resp(auth.code, { ok: false, error: 'unauthenticated', message: auth.msg });
+  const uid = auth.uid;
+
   // 1) Codes legacy fixes (toujours acceptés)
   if (LEGACY_CODES[code]) {
     const tier = LEGACY_CODES[code];
+    const meta = TIER_META[tier];
+    try {
+      await grantAccessTier(uid, tier, meta);
+    } catch (e) {
+      console.error('[check-code] Firestore write failed:', e.message);
+      return resp(500, { ok: false, error: 'storage_failed', message: 'Erreur serveur. Réessaie dans quelques instants.' });
+    }
     rateLimitReset(ip);
-    return resp(200, { ok: true, tier: tier, meta: TIER_META[tier] });
+    return resp(200, { ok: true, tier: tier, meta: meta });
   }
 
   // 2) Codes HMAC : LETTRE-RANDOM6-CHECK4
@@ -180,6 +261,14 @@ exports.handler = async function(event) {
     return resp(200, { ok: false, error: 'invalid' });
   }
 
+  const meta = TIER_META[tier];
+  try {
+    await grantAccessTier(uid, tier, meta);
+  } catch (e) {
+    console.error('[check-code] Firestore write failed:', e.message);
+    return resp(500, { ok: false, error: 'storage_failed', message: 'Erreur serveur. Réessaie dans quelques instants.' });
+  }
+
   rateLimitReset(ip);
-  return resp(200, { ok: true, tier: tier, meta: TIER_META[tier] });
+  return resp(200, { ok: true, tier: tier, meta: meta });
 };

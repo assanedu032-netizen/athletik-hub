@@ -26971,7 +26971,7 @@ function _checkBookAnswer(input) {
   return false;
 }
 
-function submitAccessCode() {
+async function submitAccessCode() {
   var codeEl = document.getElementById('accessCodeInput');
   var qEl    = document.getElementById('accessQuestionInput');
   var orderEl= document.getElementById('accessOrderInput');
@@ -26998,13 +26998,21 @@ function submitAccessCode() {
     showMsg('Format n° commande Amazon invalide. Ex : 123-1234567-1234567.', false);
     return;
   }
+  if (!window.fbUser) {
+    showMsg('Connecte-toi pour activer ton code.', false);
+    return;
+  }
 
   showMsg('Vérification du code...', true);
   if (btn) btn.disabled = true;
 
+  var idToken;
+  try { idToken = await window.fbUser.getIdToken(); }
+  catch(e) { if (btn) btn.disabled = false; showMsg('Session expirée. Reconnecte-toi.', false); return; }
+
   fetch('/.netlify/functions/check-code', {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + idToken },
     body: JSON.stringify({ code: code })
   })
   .then(function(r) { return r.json().then(function(j){ return { status: r.status, data: j }; }); })
@@ -30476,11 +30484,12 @@ function _fbCollectPayload() {
       out[ff] = isJson ? JSON.parse(raw) : raw;
     } catch(e) { /* skip clé corrompue */ }
   });
-  // Tier d'accès en string simple (pratique pour les rules)
-  try {
-    var tier = localStorage.getItem('ah_access_tier');
-    if (tier) out.accessTier = tier;
-  } catch(e) {}
+  // accessTier n'est PLUS émis ici : audit sécurité — ce champ est désormais
+  // verrouillé côté serveur (firestore.rules lockedFields()), écrit
+  // uniquement par check-code.js via Admin SDK. Le renvoyer ici ferait
+  // échouer CHAQUE sauvegarde de profil pour un user ayant un tier (diff
+  // rejetée par les rules). _fbApplyPayload() continue de le LIRE depuis
+  // Firestore pour hydrater le cache local ah_access_tier.
   // Planning (jours + heures + fuseau) — lu par la fonction planifiée
   // session-reminders.js pour envoyer un rappel push avant chaque séance.
   try {

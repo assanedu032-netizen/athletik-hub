@@ -119,6 +119,25 @@ async function moderate(text) {
 }
 
 // ---------- Rate limit (Firestore, atomique) ----------
+// ---------- Vérification d'accès (trial / hasBookAccess / tier) ----------
+// Reflète la même sémantique que window.hasValidAccess() côté client
+// (index.html), mais lue en autorité depuis Firestore : hasBookAccess et
+// trialEndsAt sont verrouillés côté serveur (firestore.rules lockedFields),
+// accessTier l'est également depuis check-code.js (Admin SDK). Si le doc
+// n'existe pas encore (edge case : appel avant le premier init-user), on
+// refuse par défaut plutôt que d'ouvrir un accès non vérifié.
+const PAID_TIERS = ['BETA', 'VIP', 'MASTER'];
+function hasValidAccess(u) {
+  if (!u) return false;
+  if (u.hasBookAccess === true) return true;
+  if (PAID_TIERS.includes(u.accessTier)) {
+    const exp = u.accessExpiresAt;
+    if (exp == null || Date.now() < exp) return true;
+  }
+  const trialEndsAt = typeof u.trialEndsAt === 'number' ? u.trialEndsAt : null;
+  return trialEndsAt != null && Date.now() < trialEndsAt;
+}
+
 async function checkQuota(uid) {
   const today = new Date().toISOString().slice(0, 10);
   const ref = admin.firestore().doc(`users/${uid}/titanQuota/${today}`);
@@ -795,6 +814,25 @@ exports.handler = async function(event) {
   }
   if (isBuilder && (!body.intent || typeof body.intent !== 'object')) {
     return { statusCode: 400, headers, body: JSON.stringify({ error: 'intent required' }) };
+  }
+
+  // Vérification d'accès (audit sécurité — durcissement) : jusqu'ici seul le
+  // client empêchait un trial expiré / non-acheteur d'ouvrir le tab Chat
+  // (switchTab('chat')). Un appel direct à cet endpoint (hors UI, avec un
+  // token Firebase valide obtenu en se connectant normalement) contournait
+  // totalement ce gate et consommait l'API Anthropic payante gratuitement.
+  // On revérifie donc ici, côté serveur, à partir de Firestore (seule
+  // source de vérité pour hasBookAccess/accessTier/trialEndsAt).
+  let access;
+  try {
+    const snap = await admin.firestore().doc(`users/${uid}`).get();
+    access = hasValidAccess(snap.exists ? snap.data() : {});
+  } catch (e) {
+    console.error('[titan] access check failed:', e.message);
+    return { statusCode: 500, headers, body: JSON.stringify({ error: 'Erreur vérification accès.' }) };
+  }
+  if (!access) {
+    return { statusCode: 403, headers, body: JSON.stringify({ error: 'Accès requis. Débloque l\'app avec ton code livre pour continuer.' }) };
   }
 
   // Rate limit (Firestore, atomique)
