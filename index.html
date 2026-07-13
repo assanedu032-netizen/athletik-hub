@@ -2278,6 +2278,13 @@ body:has(.scr.on) .tim-fab{display:none}
 .rm-titan-av { width: 28px; height: 28px; border-radius: 50%; border: 2px solid var(--gold); display: flex; align-items: center; justify-content: center; font-family: 'Bebas Neue', sans-serif; font-size: 12px; color: var(--gold); flex-shrink: 0; background: rgba(0,0,0,.3); }
 .rm-titan-txt { font-size: 12px; color: rgba(255,255,255,.75); line-height: 1.5; font-style: italic; }
 
+/* Conseil Titan — fait nutritionnel + conseil pratique, sous la recette */
+.rm-tip { display: flex; gap: 10px; padding: 12px 14px; background: var(--gold-dim); border: 1px solid var(--gold-glow); border-radius: 12px; margin-bottom: 20px; }
+.rm-tip-ic { font-size: 18px; line-height: 1.4; flex-shrink: 0; }
+.rm-tip-body { flex: 1; min-width: 0; }
+.rm-tip-title { font-family: 'Bebas Neue', sans-serif; font-size: 12px; letter-spacing: 1px; color: var(--gold); text-transform: uppercase; margin-bottom: 3px; }
+.rm-tip-txt { font-size: 12.5px; color: var(--text); line-height: 1.5; }
+
 .rm-add-btn {
   width: 100%; padding: 15px;
   background: linear-gradient(135deg, var(--gold), var(--gold2));
@@ -8885,6 +8892,14 @@ window.tiResetOnEnter = function(){ window.tiShowStep(1); };
       <div class="rm-section-title">👨‍🍳 Préparation</div>
       <div id="rmSteps"></div>
     </div>
+    <!-- Conseil Titan — fait nutritionnel + conseil pratique (généré par generateTitanNutritionTip) -->
+    <div class="rm-tip">
+      <div class="rm-tip-ic" id="rmTipIcon">✨</div>
+      <div class="rm-tip-body">
+        <div class="rm-tip-title">✨ Conseil Titan</div>
+        <div class="rm-tip-txt" id="rmTipTxt"></div>
+      </div>
+    </div>
     <!-- Boutons -->
     <button id="rmAddFavBtn" class="rm-add-btn" onclick="toggleCurrentRecipeFavorite()" style="background:linear-gradient(135deg,var(--gold),#D4B86A);color:var(--navy);margin-bottom:8px">⭐ Ajouter aux favoris (+ liste de courses)</button>
     <button class="rm-add-btn" onclick="addRecipeToJournal()" style="background:var(--surface2);color:var(--text);border:1.5px solid var(--border)">+ Ajouter au journal du jour</button>
@@ -10163,6 +10178,83 @@ function showNutriTab(el, tab) {
   } catch(e) {}
 })();
 
+// ── CONSEIL TITAN (Nutrition) ────────────────────────────────────────────
+// Petit encart sous chaque recette : un fait nutritionnel vrai sur un
+// ingrédient détecté + un conseil pratique. Pas de promesse santé, 2
+// phrases max. Conseils fixes et validés — pas de génération IA ici.
+var TITAN_NUTRI_TIPS = [
+  { keywords: ['oeuf'], emoji: '🥚',
+    fact: 'Les œufs apportent des protéines complètes.',
+    advice: 'Inclure une source de protéines dans un repas peut contribuer à la récupération après l\'entraînement.' },
+  { keywords: ['saumon'], emoji: '🐟',
+    fact: 'Le saumon est une source d\'oméga-3 et de protéines.',
+    advice: 'Varier les sources de protéines au cours de la semaine est une bonne habitude.' },
+  { keywords: ['poulet'], emoji: '🍗',
+    fact: 'Le poulet est une source de protéines maigres.',
+    advice: 'C\'est une base pratique pour construire un repas équilibré autour de l\'entraînement.' },
+  { keywords: ['thon'], emoji: '🐟',
+    fact: 'Le thon apporte des protéines pour peu de matières grasses.',
+    advice: 'Sa préparation rapide en fait une option pratique les jours chargés.' },
+  { keywords: ['riz'], emoji: '🍚',
+    fact: 'Le riz est une source de glucides qui reconstitue les réserves d\'énergie.',
+    advice: 'Il se marie bien avec une source de protéines et des légumes.' },
+  { keywords: ['avoine'], emoji: '🌾',
+    fact: 'L\'avoine apporte des glucides et des fibres à libération progressive.',
+    advice: 'Un bon choix pour un petit-déjeuner avant une séance.' },
+  { keywords: ['banane'], emoji: '🍌',
+    fact: 'La banane apporte des glucides faciles à consommer.',
+    advice: 'Elle peut être une collation pratique avant ou après une séance.' },
+  { keywords: ['brocoli'], emoji: '🥦',
+    fact: 'Le brocoli apporte notamment des fibres et de la vitamine C.',
+    advice: 'Ajouter des légumes à ses repas aide à diversifier son alimentation.' },
+  { keywords: ['epinard'], emoji: '🥬',
+    fact: 'Les épinards apportent du fer et des fibres.',
+    advice: 'Les associer à une source de vitamine C peut aider à mieux absorber le fer.' },
+  { keywords: ['yaourt grec', 'skyr', 'fromage blanc'], emoji: '🥣',
+    fact: 'Le yaourt grec est riche en protéines pour un faible volume.',
+    advice: 'C\'est une option simple pour ajouter des protéines à une collation.' },
+  { keywords: ['patate douce'], emoji: '🍠',
+    fact: 'La patate douce est une source de glucides et de fibres.',
+    advice: 'Elle peut remplacer le riz ou les pâtes pour varier ses féculents.' },
+  { keywords: ['avocat'], emoji: '🥑',
+    fact: 'L\'avocat apporte des graisses insaturées et des fibres.',
+    advice: 'Une portion modérée suffit pour l\'intégrer dans un repas équilibré.' },
+  { keywords: ['quinoa'], emoji: '🌾',
+    fact: 'Le quinoa est une source de glucides qui apporte aussi des protéines végétales.',
+    advice: 'Une bonne alternative au riz ou aux pâtes pour varier ses féculents.' },
+  { keywords: ['lentille'], emoji: '🫘',
+    fact: 'Les lentilles apportent des protéines végétales et des fibres.',
+    advice: 'Elles permettent de varier ses sources de protéines dans la semaine.' }
+];
+var TITAN_NUTRI_FALLBACK = {
+  emoji: '🍽️',
+  fact: 'Une alimentation variée aide à couvrir différents besoins nutritionnels.',
+  advice: 'Privilégie des repas équilibrés et adaptés à ton niveau d\'activité.'
+};
+// "Œufs" / "oeufs", accents : normalise avant de matcher les mots-clés.
+function _titanNutriNormalize(s) {
+  return String(s || '').toLowerCase()
+    .replace(/œ/g, 'oe').replace(/æ/g, 'ae')
+    .normalize('NFD').replace(/[̀-ͯ]/g, '');
+}
+// recipe : objet recette avec .ingredients = [{name, qty}, ...] (cf. r.ingredients
+// dans showRecipe). Renvoie le 1er tip dont un mot-clé matche un ingrédient,
+// dans l'ordre des ingrédients de la recette. Fallback générique sinon.
+function generateTitanNutritionTip(recipe) {
+  var ingredients = (recipe && recipe.ingredients) || [];
+  for (var n = 0; n < ingredients.length; n++) {
+    var name = _titanNutriNormalize(ingredients[n] && ingredients[n].name);
+    for (var t = 0; t < TITAN_NUTRI_TIPS.length; t++) {
+      var tip = TITAN_NUTRI_TIPS[t];
+      for (var k = 0; k < tip.keywords.length; k++) {
+        if (name.indexOf(tip.keywords[k]) !== -1) return tip;
+      }
+    }
+  }
+  return TITAN_NUTRI_FALLBACK;
+}
+window.generateTitanNutritionTip = generateTitanNutritionTip;
+
 // portionsOverride : passé par le plan repas pour ouvrir la modal AVEC les
 // portions du plan déjà sélectionnées (ex. pancakes × 2 dans le plan →
 // modal s'ouvre sur PORTIONS=2 avec macros et quantités d'ingrédients
@@ -10185,6 +10277,12 @@ function showRecipe(key, portionsOverride) {
   document.getElementById('rmImg').src = r.img;
   document.getElementById('rmTime').textContent = r.time;
   document.getElementById('rmTitanMsg').textContent = r.titan;
+  // Conseil Titan — fait nutritionnel + conseil pratique sous la recette
+  var tip = generateTitanNutritionTip(r);
+  var tipIcon = document.getElementById('rmTipIcon');
+  var tipTxt = document.getElementById('rmTipTxt');
+  if (tipIcon) tipIcon.textContent = tip.emoji;
+  if (tipTxt) tipTxt.textContent = tip.fact + ' ' + tip.advice;
   // Tagline (1-liner sous le hero)
   var tagline = document.getElementById('rmTagline');
   if (tagline) tagline.textContent = r.tagline || '';
@@ -30403,6 +30501,12 @@ async function fbHandleEmailAuth() {
 
 async function fbGoogleSignIn() {
   if (!window.fb) { fbShowMsg('Firebase pas encore chargé.', 'err'); return; }
+  // Posé AVANT le popup — survit à un rechargement complet de la page,
+  // ce qui arrive sur PWA iOS standalone quand signInWithPopup dégénère
+  // en navigation plein écran (cf. onFirebaseAuthChange). Sans ce flag,
+  // le retour post-connexion reroute uniquement depuis auth/splash et
+  // laisse l'user bloqué sur "welcome" après un reload de ce type.
+  try { sessionStorage.setItem('ah_auth_intent_pending', '1'); } catch(e) {}
   try {
     var cred = await window.fb.signInWithPopup(window.fb.auth, window.fb.googleProvider);
     // Check si premier login
@@ -30439,6 +30543,10 @@ async function fbGoogleSignIn() {
       }, 800);
     }
   } catch(err) {
+    // Popup annulée/échouée sans reload de page : onFirebaseAuthChange ne
+    // se redéclenchera pas pour ce flag, on le nettoie ici pour ne pas
+    // forcer un reroute inattendu sur un futur événement d'auth sans lien.
+    try { sessionStorage.removeItem('ah_auth_intent_pending'); } catch(e) {}
     console.error('Google auth error:', err);
     if (err.code === 'auth/popup-closed-by-user') {
       // L'utilisateur a fermé la popup, pas d'erreur affichée
@@ -30769,7 +30877,21 @@ function onFirebaseAuthChange(fbUser) {
         // précédent appelait switchTab('home') même quand l'user était sur
         // nutrition avec une recette ouverte → modale écrasée 2-3 s après
         // l'ouverture (bug critique remonté par l'user 2026-06-13).
-        if (curId === 'auth' || curId === 'splash') {
+        //
+        // Exception welcome + intent explicite (bug remonté 2026-07-13) :
+        // sur PWA iOS installée, signInWithPopup (Google) dégénère souvent
+        // en rechargement complet de la page (limite WebKit standalone) —
+        // fbGoogleSignIn() perd son contexte JS et ne route jamais, la page
+        // redémarre sur "welcome", et Firebase restaure la session APRÈS ce
+        // reboot. Sans le flag ah_auth_intent_pending (posé par
+        // fbGoogleSignIn juste avant le popup, survit au reload car
+        // sessionStorage), ce cas légitime était traité comme une
+        // restauration silencieuse et l'user restait bloqué sur welcome
+        // malgré un compte bien créé.
+        var pendingIntent = false;
+        try { pendingIntent = sessionStorage.getItem('ah_auth_intent_pending') === '1'; } catch(e) {}
+        if (curId === 'auth' || curId === 'splash' || (pendingIntent && curId === 'welcome')) {
+          try { sessionStorage.removeItem('ah_auth_intent_pending'); } catch(e) {}
           _routeToOnboardingStep(prof);
         }
       } catch(e) { console.warn('Auto-restore Home error:', e); }
