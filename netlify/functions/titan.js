@@ -126,8 +126,14 @@ async function moderate(text) {
 // accessTier l'est également depuis check-code.js (Admin SDK). Si le doc
 // n'existe pas encore (edge case : appel avant le premier init-user), on
 // refuse par défaut plutôt que d'ouvrir un accès non vérifié.
+// BUILDER_FOUNDER_EMAILS : miroir serveur de la même constante côté client
+// (index.html) — comptes fondateur/dev, toujours autorisés même sans trial
+// actif ni accès livre (régression corrigée : bloquait le Builder/Titan du
+// compte de test après l'ajout de cette vérification serveur).
 const PAID_TIERS = ['BETA', 'VIP', 'MASTER'];
-function hasValidAccess(u) {
+const FOUNDER_EMAILS = ['assanedu032@gmail.com'];
+function hasValidAccess(u, email) {
+  if (email && FOUNDER_EMAILS.includes(String(email).toLowerCase())) return true;
   if (!u) return false;
   if (u.hasBookAccess === true) return true;
   if (PAID_TIERS.includes(u.accessTier)) {
@@ -792,10 +798,11 @@ exports.handler = async function(event) {
   if (!authHeader || !authHeader.startsWith('Bearer ')) {
     return { statusCode: 401, headers, body: JSON.stringify({ error: 'Authentification requise.' }) };
   }
-  let uid;
+  let uid, email;
   try {
     const decoded = await admin.auth().verifyIdToken(authHeader.slice(7));
     uid = decoded.uid;
+    email = decoded.email || null;
   } catch (e) {
     return { statusCode: 401, headers, body: JSON.stringify({ error: 'Token invalide.' }) };
   }
@@ -826,7 +833,7 @@ exports.handler = async function(event) {
   let access;
   try {
     const snap = await admin.firestore().doc(`users/${uid}`).get();
-    access = hasValidAccess(snap.exists ? snap.data() : {});
+    access = hasValidAccess(snap.exists ? snap.data() : {}, email);
   } catch (e) {
     console.error('[titan] access check failed:', e.message);
     return { statusCode: 500, headers, body: JSON.stringify({ error: 'Erreur vérification accès.' }) };

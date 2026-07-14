@@ -26323,10 +26323,21 @@ function builderToggleMic() {
       }
       if (inp) { inp.value = initial + finalT + interim; _bAutoGrow(inp); }
     };
-    _builderRec.onerror = function(){ _builderListening = false; if (btn){ btn.style.background='var(--surface2)'; btn.style.color='var(--gold)'; } };
+    // Bug corrigé (2026-07-13) : onerror ne montrait RIEN à l'user (ni sur
+    // permission micro refusée, ni sur erreur réseau) — le bouton semblait
+    // juste ne rien faire. Aligné sur toggleMicRecord (chat Titan) qui,
+    // lui, affiche un toast explicite.
+    _builderRec.onerror = function(e){
+      _builderListening = false;
+      if (btn){ btn.style.background='var(--surface2)'; btn.style.color='var(--gold)'; }
+      if (typeof showToast === 'function') {
+        if (e && e.error === 'not-allowed') showToast('Autorise le micro dans les réglages du navigateur.', 'err');
+        else if (e && e.error && e.error !== 'no-speech' && e.error !== 'aborted') showToast('Erreur micro : ' + e.error, 'info');
+      }
+    };
     _builderRec.onend = function(){ _builderListening = false; if (btn){ btn.style.background='var(--surface2)'; btn.style.color='var(--gold)'; } if (inp) try { inp.focus(); } catch(e){} };
   }
-  try { _builderRec.start(); } catch(e) { try { _builderRec.abort(); } catch(_){} }
+  try { _builderRec.start(); } catch(e) { try { _builderRec.abort(); } catch(_){} if (typeof showToast === 'function') showToast('Micro déjà en cours, réessaie.', 'info'); }
 }
 window.builderToggleMic = builderToggleMic;
 
