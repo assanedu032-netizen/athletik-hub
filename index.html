@@ -1128,7 +1128,7 @@ body{background:var(--bg);color:var(--text);font-family:'Outfit',sans-serif;disp
 .yt-muscle{font-size:10px;color:var(--muted)}
 .yt-mat{font-size:10px;color:var(--muted)}
 /* ─── Exercise detail full-screen ─── */
-.yt-detail-view{position:absolute;inset:0;background:var(--bg);z-index:50;overflow-y:auto;display:none}
+.yt-detail-view{position:fixed;inset:0;background:var(--bg);z-index:500;overflow-y:auto;display:none}
 .yt-detail-video{width:100%;aspect-ratio:16/9;background:#0E1626;position:relative;overflow:hidden;display:flex;align-items:center;justify-content:center}
 .yt-detail-video iframe{width:100%;height:100%;border:none;position:absolute;inset:0}
 .yt-detail-video-placeholder{display:flex;flex-direction:column;align-items:center;gap:8px;cursor:pointer}
@@ -23599,18 +23599,9 @@ function _libOpenDetail(name, catKey) {
   if (existingIframe) existingIframe.remove();
   var videoArea = document.getElementById('ytDetailVideo');
   videoArea.style.background = item.color;
-  // Show detail — reset scroll dans le même frame puis une deuxième fois
-  // après paint pour garantir que le conteneur soit en haut même si
-  // mainScroll était scrollé bas (bug "page blanche" / contenu en bas).
   var detail = document.getElementById('libDetailView');
   detail.style.display = 'block';
   detail.scrollTop = 0;
-  var v = document.getElementById('vTrain'); if (v) v.scrollTop = 0;
-  var m = document.getElementById('mainScroll'); if (m) m.scrollTop = 0;
-  requestAnimationFrame(function() {
-    detail.scrollTop = 0;
-    var m2 = document.getElementById('mainScroll'); if (m2) m2.scrollTop = 0;
-  });
 }
 
 function _libPlayVideo() {
@@ -35597,9 +35588,31 @@ function launchSession(exos, sessName, progName, progKey, sessKey) {
   _LS.restActive = false;
   clearInterval(_LS.restInterval);
   _lsRenderEx();
-  document.getElementById('liveSession').classList.add('ls-open');
+  var lsEl = document.getElementById('liveSession');
+  lsEl.classList.add('ls-open');
   document.body.style.overflow = 'hidden';
+  _lsSwipeSetup(lsEl);
   _lsPersist();
+}
+
+// Swipe gauche/droite sur la vue live session → exercice suivant/précédent.
+// Attaché une seule fois grâce au flag data-swipe-ready.
+function _lsSwipeSetup(el) {
+  if (!el || el.dataset.swipeReady) return;
+  el.dataset.swipeReady = '1';
+  var sx = 0, sy = 0;
+  el.addEventListener('touchstart', function(e) {
+    var t = e.touches[0];
+    sx = t.clientX; sy = t.clientY;
+  }, { passive: true });
+  el.addEventListener('touchend', function(e) {
+    var t = e.changedTouches[0];
+    var dx = t.clientX - sx, dy = t.clientY - sy;
+    if (Math.abs(dx) < 60 || Math.abs(dx) < Math.abs(dy) * 1.3) return;
+    var rest = document.getElementById('lsRestOverlay');
+    if (rest && rest.classList.contains('ls-rest-active')) return;
+    if (dx < 0) _lsNextEx(); else _lsPrevEx();
+  }, { passive: true });
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
