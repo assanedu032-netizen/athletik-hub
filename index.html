@@ -23449,7 +23449,9 @@ function _libRenderFiltersSheet() {
   }).join('');
 }
 window._libPickFilterFromSheet = function(key) {
-  _libRender(key);
+  var cur = _libCurrentFilter || 'all';
+  var newKey = (cur === key) ? 'all' : key;
+  _libRender(newKey);
   _libRenderFilterChips();
   window._libCloseFiltersSheet();
   var v = document.getElementById('vTrain'); if (v) v.scrollTop = 0;
@@ -23461,10 +23463,18 @@ window._libPickFilterFromSheet = function(key) {
   var m = document.getElementById('mainScroll'); if (m) m.scrollTop = 0;
 };
 window._libPickFilter = function(btn, key){
+  var isActive = btn && btn.classList.contains('on');
   var wrap = document.getElementById('libFilters');
   if (wrap) wrap.querySelectorAll('.lib-flt-chip').forEach(function(c){ c.classList.remove('on'); });
-  if (btn) btn.classList.add('on');
-  _libRender(key);
+  if (isActive && key !== 'all') {
+    // Toggle off : revenir à Tous
+    var allBtn = wrap && wrap.querySelector('.lib-flt-chip[data-key="all"]');
+    if (allBtn) allBtn.classList.add('on');
+    _libRender('all');
+  } else {
+    if (btn) btn.classList.add('on');
+    _libRender(key);
+  }
   var v = document.getElementById('vTrain'); if (v) v.scrollTop = 0;
   // Fix cadrage : le vrai conteneur scrollable de l'onglet Train est
   // #mainScroll (imbriqué dans #vTrain), pas #vTrain lui-même. Sans ce
@@ -23499,15 +23509,17 @@ function _libRenderHead(count) {
 }
 
 function _libFilter(el, key) {
+  var isActive = el.classList.contains('on');
   document.querySelectorAll('#libChips .lib-chip').forEach(function(c){ c.classList.remove('on'); });
-  el.classList.add('on');
-  _libRender(key);
-  var v = document.getElementById('vTrain'); if (v) v.scrollTop = 0;
-  // Fix cadrage : le vrai conteneur scrollable de l'onglet Train est
-  // #mainScroll (imbriqué dans #vTrain), pas #vTrain lui-même. Sans ce
-  // reset, un scroll résiduel de la liste Programmes/Librairie restait
-  // appliqué au nouvel écran ouvert, coupant visuellement le titre "TRAIN"
-  // en haut de page (bug remonté par capture d'écran 2026-06-13).
+  if (isActive) {
+    // Désélection : revenir à "Tous"
+    var allChip = document.querySelector('#libChips .lib-chip[data-key="all"]');
+    if (allChip) allChip.classList.add('on');
+    _libRender('all');
+  } else {
+    el.classList.add('on');
+    _libRender(key);
+  }
   var m = document.getElementById('mainScroll'); if (m) m.scrollTop = 0;
 }
 
