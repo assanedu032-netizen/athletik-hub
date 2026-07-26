@@ -35611,20 +35611,29 @@ function launchSession(exos, sessName, progName, progKey, sessKey) {
   _lsPersist();
 }
 
-// Swipe gauche/droite sur la vue live session → exercice suivant/précédent.
-// Attaché une seule fois grâce au flag data-swipe-ready.
+// Swipe gauche/droite sur toute la page live session → exercice suivant/précédent.
+// Attaché une seule fois. touchmove non-passif pour bloquer le scroll vertical
+// quand le geste est clairement horizontal — sinon le scroll de #lsBody
+// consomme les événements et seule la zone vidéo répondait.
 function _lsSwipeSetup(el) {
   if (!el || el.dataset.swipeReady) return;
   el.dataset.swipeReady = '1';
-  var sx = 0, sy = 0;
-  el.addEventListener('touchstart', function(e) {
+  var body = el.querySelector('#lsBody') || el;
+  var sx = 0, sy = 0, isH = false;
+  body.addEventListener('touchstart', function(e) {
     var t = e.touches[0];
-    sx = t.clientX; sy = t.clientY;
+    sx = t.clientX; sy = t.clientY; isH = false;
   }, { passive: true });
-  el.addEventListener('touchend', function(e) {
+  body.addEventListener('touchmove', function(e) {
+    var t = e.touches[0];
+    var dx = Math.abs(t.clientX - sx), dy = Math.abs(t.clientY - sy);
+    if (dx > 8 && dx > dy * 1.2) { isH = true; e.preventDefault(); }
+  }, { passive: false });
+  body.addEventListener('touchend', function(e) {
+    if (!isH) return;
     var t = e.changedTouches[0];
     var dx = t.clientX - sx, dy = t.clientY - sy;
-    if (Math.abs(dx) < 60 || Math.abs(dx) < Math.abs(dy) * 1.3) return;
+    if (Math.abs(dx) < 50 || Math.abs(dx) < Math.abs(dy) * 1.2) return;
     var rest = document.getElementById('lsRestOverlay');
     if (rest && rest.classList.contains('ls-rest-active')) return;
     if (dx < 0) _lsNextEx(); else _lsPrevEx();
