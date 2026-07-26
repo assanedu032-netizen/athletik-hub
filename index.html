@@ -19388,10 +19388,12 @@ function _essaiRowHtml(method, idx) {
       + '</div>' + rm + '</div>';
   }
   if (method === 'temps') {
-    var cfgTemps = '[{&quot;sel&quot;:&quot;[data-key=time]&quot;,&quot;unit&quot;:&quot;sec&quot;,&quot;label&quot;:&quot;Temps&quot;}]';
+    var cfgTemps = '[{&quot;sel&quot;:&quot;[data-key=time_min]&quot;,&quot;unit&quot;:&quot;min&quot;,&quot;label&quot;:&quot;Minutes&quot;},{&quot;sel&quot;:&quot;[data-key=time_sec]&quot;,&quot;unit&quot;:&quot;sec&quot;,&quot;label&quot;:&quot;Secondes&quot;}]';
     return '<div class="tr-essai" data-idx="' + idx + '">' + num
       + '<div class="tr-essai-inputs">'
-      +   '<input class="fi tr-essai-input" data-key="time" type="number" step="0.01" inputmode="decimal" placeholder="0.00"><span class="tr-essai-unit">s</span>'
+      +   '<input class="fi tr-essai-input" data-key="time_min" type="number" inputmode="numeric" placeholder="0" style="max-width:44px;flex:0 0 44px"><span class="tr-essai-unit">min</span>'
+      +   '<span class="tr-essai-x">:</span>'
+      +   '<input class="fi tr-essai-input" data-key="time_sec" type="number" step="0.01" inputmode="decimal" placeholder="00" style="max-width:64px;flex:0 0 64px"><span class="tr-essai-unit">s</span>'
       +   '<button type="button" class="trk-chrono" data-state="idle" onclick="_trkChrono(this)" aria-label="Chronomètre">▶</button>'
       +   micRel(cfgTemps)
       + '</div>' + rm + '</div>';
@@ -19427,15 +19429,22 @@ function _essaiRowHtml(method, idx) {
 
 // Chronomètre par essai (méthode Temps). États : idle → running → stopped → idle.
 function _trkChrono(btn) {
-  var input = btn.parentElement && btn.parentElement.querySelector('.tr-essai-input[data-key="time"]');
-  if (!input) return;
+  var parent = btn.parentElement;
+  if (!parent) return;
+  var minInput = parent.querySelector('.tr-essai-input[data-key="time_min"]');
+  var secInput = parent.querySelector('.tr-essai-input[data-key="time_sec"]');
+  if (!secInput) return;
   var st = btn.dataset.state || 'idle';
   if (st === 'idle') {
     var start = Date.now();
-    input.value = '0.00';
-    input.readOnly = true;
+    if (minInput) { minInput.value = '0'; minInput.readOnly = true; }
+    secInput.value = '0.00'; secInput.readOnly = true;
     var iv = setInterval(function(){
-      input.value = ((Date.now() - start) / 1000).toFixed(2);
+      var elapsed = (Date.now() - start) / 1000;
+      var m = Math.floor(elapsed / 60);
+      var s = elapsed - m * 60;
+      if (minInput) minInput.value = String(m);
+      secInput.value = s.toFixed(2);
     }, 50);
     btn.dataset.iv = String(iv);
     btn.dataset.state = 'running';
@@ -19443,12 +19452,13 @@ function _trkChrono(btn) {
   } else if (st === 'running') {
     var ivId = parseInt(btn.dataset.iv, 10);
     if (!isNaN(ivId)) clearInterval(ivId);
-    input.readOnly = false;
+    if (minInput) minInput.readOnly = false;
+    secInput.readOnly = false;
     btn.dataset.state = 'stopped';
     btn.textContent = '↺';
   } else {
-    input.value = '';
-    input.readOnly = false;
+    if (minInput) { minInput.value = ''; minInput.readOnly = false; }
+    secInput.value = ''; secInput.readOnly = false;
     btn.dataset.state = 'idle';
     btn.textContent = '▶';
   }
@@ -19482,12 +19492,27 @@ function _collectEssais() {
   const rows = Array.prototype.slice.call(list.children);
   return rows.map(function(row) {
     const data = {};
+    var timeMin = null, timeSec = null;
     row.querySelectorAll('.tr-essai-input').forEach(function(inp) {
+      const key = inp.dataset.key;
       const v = inp.value.trim();
-      if (v !== '') data[inp.dataset.key] = parseFloat(v);
+      if (v === '') return;
+      if (key === 'time_min') { timeMin = parseFloat(v); return; }
+      if (key === 'time_sec') { timeSec = parseFloat(v); return; }
+      data[key] = parseFloat(v);
     });
+    if (timeMin !== null || timeSec !== null) {
+      data.time = (timeMin || 0) * 60 + (timeSec || 0);
+    }
     return data;
   }).filter(function(d) { return Object.keys(d).length > 0; });
+}
+function _trkFormatTime(sec) {
+  sec = +sec || 0;
+  if (sec < 60) return sec.toFixed(2) + 's';
+  var m = Math.floor(sec / 60);
+  var s = sec - m * 60;
+  return m + ':' + (s < 10 ? '0' : '') + s.toFixed(2);
 }
 
 function setRPE(el, val) {
@@ -19502,7 +19527,7 @@ function _trkBestOfEssais(method, essais) {
   if (method === 'temps') {
     var times = essais.map(function(e){ return e.time; }).filter(function(t){ return !isNaN(t); });
     if (!times.length) return '';
-    return 'Meilleur : ' + Math.min.apply(null, times).toFixed(2) + 's (' + times.length + ' essai' + (times.length > 1 ? 's' : '') + ')';
+    return 'Meilleur : ' + _trkFormatTime(Math.min.apply(null, times)) + ' (' + times.length + ' essai' + (times.length > 1 ? 's' : '') + ')';
   }
   // Pour les méthodes orientées "reps" (charge × reps et reps seuls), on
   // ajoute le CUMUL des reps sur toute la séance + le nombre de séries.
@@ -22870,21 +22895,87 @@ var _LIB_CAT_MAP = {
   recup:        {keys:['recup'],        label:'Récupération',           color:'linear-gradient(135deg,#059669,#064E3B)'}
 };
 var _LIB_VIDEO_MAP = {
-  'Counter Movement Jump':'R4fjUyP2xuo','Back Squat':'gsNoPYwWXeM',
-  'Soulevé de terre':'op9kVnSso6Q','Hip Thrust':'xDmFkJxPzeM',
-  'Développé couché':'vcBig73ojpE','Sprint 30m':'4N4MFqo2J8c',
-  'Depth Jump':'oPWZatCRCKY','Box Jump Max':'WBuKfR9lc0o',
-  'Pogo Jumps':'TFkYrGKyNSE','Power Clean':'e7ND8Wm67sg',
-  'Squat Jump':'U4s4mEQ5VqU','Approach Jump':'lSMn7mYVVm0',
-  'Ankling':'xhOs_tFmTdk','Sprint 10m':'N_YCQQ4DFRI',
-  'Planche frontale':'ASdvN_XEl_c','V-Ups':'iP2fjvG0g3w',
-  // 94 Feet — alias multiples pour matcher catData (sprint) + test SAT
+  // ── Dans les programmes (18 vidéos) ──
+  '90/90':'90CTVvOJWL8',
+  'Carioca':'j7e407pVTdY',
+  'Depth jumps':'9wBnVKu61vs',
+  'Dips isométrique':'aPj7egKUgiQ',
+  'Fente isométrique':'9fiF0JymqgA',
+  'Iso ischio':'LvqIVVWAnds',
+  'Lateral bounds':'Fy8lV_eLllU',
+  'Mobilité mouv':'eYeZnbo9EfI',
+  'Nordic hamstring':'ZmPK4ZV3KV4',
+  'Pompes pliométriques (claquées)':'XaLn_EDX9EY',
+  'Puissance de rotation':'sm28tt20dEo',
+  'Sissy squat':'J3wamKne_V0',
+  'Split jumps':'VBwap2hev0o',
+  'Sprint linéaire (10–60m)':'2_lhECRKX1M',
+  'Sprint triangle':'xgACLDpzPrc',
+  'Squat jump':'hpUIVClt-RM',
+  'Squat stato-dynamique':'SKRaBg7qmEw',
+  'Tuck jumps':'egSk6svB4Fk',
+  // ── Partiels — clé exacte catData + alias Excel ──
+  'Hip Thrust chargé':'K51qBd31fmc',
+  'Hip thrust chargé':'K51qBd31fmc',
+  'Saut survitesse (avec élastiques)':'QX6VKShRqlA',
+  'Saut survitesse (élastiques)':'QX6VKShRqlA',
+  'Single leg box jumps':'1-hDGN0d6hE',
+  'Single leg squat hold':'uynWh1b5_Ec',
+  'Transmission de force (sauts libres 100%)':'-RPLacO7Cys',
+  'Traction supination':'n7yjAsnVrtI',
+  // ── Librairie générale (24 vidéos) ──
+  'Overhead Deep Squat':'IdlSsrOdmKM',
+  'Galope 1 jambe (course)':'C7DHn6znBz4',
+  'Galope 1 jambe (marche)':'FKecTqgnk78',
+  'Frenchy Pull Up':'KmfRW766hNA',
+  'Épaule barre':'J96FTV3_UG8',
+  'Élévation pompe épaule':'KU-YweB-4Lo',
+  'Bent Knee Good Morning':'2PAlbHslyyw',
+  'Pogo Jump':'3lCKxzzcATI',
+  'Pogo Hop multidirectionnel':'axqJ4udMQ2o',
+  'Squat mobile arrière':'FzlCFC2F9jw',
+  'Position du sprinter':'IraTPrsbDoo',
+  'Montée de genoux sur place':'IZkiyLSVpRs',
+  "Croisement d'appui":'AzWIg-hW5AM',
+  'Mouvement du saut à 2 pieds (avec saut)':'GujZjs1i9ks',
+  'Mouvement saut à 2 pieds (avec saut)':'GujZjs1i9ks',
+  'Suspend Pike':'aaEh28v1Tac',
+  'Suspend Atomic Push Up':'5ZIy9NzXjD0',
+  'Mouvement des bras':'00b8bPzgmOg',
+  'Épaules mains levées':'848H_qgTExA',
+  'Balancement des bras':'Z_KNyxUkjLI',
+  'Soleus Warm Up':'_HLj4SJ94Mo',
+  'V-Up classique':'I7hbeJebnLg',
+  'Bag Swing 1 main':'gCVLbWxEAsQ',
+  'Posterior Band Distraction':'S1z20V5ez6k',
+  'Standing Hip Flexion':'MdFoh5IUCKk',
+  // ── Héritage (anciens IDs gardés pour rétrocompat) ──
+  'Counter Movement Jump':'R4fjUyP2xuo',
+  'Back Squat':'gsNoPYwWXeM',
+  'Soulevé de terre':'op9kVnSso6Q',
+  'Hip Thrust':'xDmFkJxPzeM',
+  'Développé couché':'vcBig73ojpE',
+  'Sprint 30m':'4N4MFqo2J8c',
+  'Depth Jump':'oPWZatCRCKY',
+  'Box Jump Max':'WBuKfR9lc0o',
+  'Pogo Jumps':'TFkYrGKyNSE',
+  'Power Clean':'e7ND8Wm67sg',
+  'Squat Jump':'hpUIVClt-RM',
+  'Approach Jump':'lSMn7mYVVm0',
+  'Ankling':'xhOs_tFmTdk',
+  'Sprint 10m':'N_YCQQ4DFRI',
+  'Planche frontale':'ASdvN_XEl_c',
+  'V-Ups':'iP2fjvG0g3w',
   '94 Feet Drill':'h2A4Gw6PX70',
   '94 feet test (vitesse multidirection)':'h2A4Gw6PX70',
-  'Sprint 94 Feet simulation':'h2A4Gw6PX70',
-  // Test vidéo "Programme lancé" — fallback live session
-  'Test programme':'O1Lqu3kXVFw'
+  'Sprint 94 Feet simulation':'h2A4Gw6PX70'
 };
+// Résout un nom d'exercice → URL embed YouTube complète, ou null si absent.
+function _resolveVideo(name) {
+  if (!name) return null;
+  var id = _LIB_VIDEO_MAP[name];
+  return id ? 'https://www.youtube.com/embed/' + id : null;
+}
 var _libCurrentFilter = 'all';
 var _libCurrentVideo = null;
 var _libCurrentDetail = null; // nom de l'exo affiché dans la fiche détail
@@ -23226,9 +23317,14 @@ function _libCardHtml(it) {
   // Le client veut "un bouton discret 'Voir démo' ou une icône play" :
   // le play sur la thumb fait office de bouton démo.
   var h = '';
+  var thumbClick = ytId
+    ? ' onclick="event.stopPropagation();window._libQuickDemo&&window._libQuickDemo(\'' + nm + '\',\'' + it.catKey + '\')" aria-label="Voir la démo"'
+    : '';
   h += '<div class="libx-card" data-exo="' + enc + '" onclick="' + open + '">';
-  h +=   '<div class="' + thumbCls + '"' + thumbStyle + ' onclick="event.stopPropagation();window._libQuickDemo&&window._libQuickDemo(\'' + nm + '\',\'' + it.catKey + '\')" aria-label="Voir la démo">';
-  h +=     '<div class="libx-thumb-play"><div class="libx-thumb-tri"></div></div>';
+  h +=   '<div class="' + thumbCls + '"' + thumbStyle + thumbClick + '>';
+  if (ytId) {
+    h +=   '<div class="libx-thumb-play"><div class="libx-thumb-tri"></div></div>';
+  }
   h +=   '</div>';
   h +=   '<div class="libx-body">';
   h +=     '<div class="libx-name">' + ex.name + '</div>';
@@ -31740,21 +31836,9 @@ function p3StartTimer(seconds, btn) {
   }, 1000);
 }
 
-// Mapping nom de l'exercice → URL YouTube (embed)
-// Remplacer ces URLs par tes vraies vidéos après tournage du 23 mai
-var VIDEO_LIBRARY = {
-  'Counter Movement Jump': 'https://www.youtube.com/embed/R4fjUyP2xuo',
-  'Back Squat':            'https://www.youtube.com/embed/gsNoPYwWXeM',
-  'Soulevé de terre':      'https://www.youtube.com/embed/op9kVnSso6Q',
-  'Hip Thrust':            'https://www.youtube.com/embed/xDmFkJxPzeM',
-  'Développé couché':      'https://www.youtube.com/embed/vcBig73ojpE',
-  'Sprint 30m':            'https://www.youtube.com/embed/4N4MFqo2J8c',
-  'Navette 5-10-5':        'https://www.youtube.com/embed/AzvxxqXM2Wg'
-};
-
 // Ouvre un modal vidéo par-dessus la page actuelle (pas de navigation)
 function openLibraryFromTest(exerciseName) {
-  var videoUrl = VIDEO_LIBRARY[exerciseName] || '';
+  var videoUrl = (typeof _resolveVideo === 'function' ? _resolveVideo(exerciseName) : null) || '';
 
   // Créer modal s'il n'existe pas
   var modal = document.getElementById('videoModal');
@@ -33119,10 +33203,22 @@ window.renderTestsLanding = renderTestsLanding;
 // Pas de stats inventées, pas de dashboard complexe.
 
 window._journalFilter = window._journalFilter || 'all';
+window._journalSearch = window._journalSearch || '';
 window._journalSetFilter = function(k) {
   window._journalFilter = k;
   try { renderSessionsList(); } catch(_){}
 };
+window._journalSetSearch = function(v) {
+  window._journalSearch = v;
+  try { renderSessionsList(); } catch(_){}
+};
+function _journalEntryName(e) {
+  if (e._kind === 'track')   return e.exo || '';
+  if (e._kind === 'session') return (e.sessName || '') + ' ' + (e.progName || '');
+  if (e._kind === 'test')    return (e.testType || '') + ' test';
+  if (e._kind === 'habit')   return e.habitName || '';
+  return '';
+}
 
 // ── Persistance journal ──
 // Tests SAT/SET et habitudes cochées sont loggés dans ah_set_history
@@ -33367,11 +33463,12 @@ function renderSessionsList() {
   // Filtres : Tout / Exercices / Tests / Séances (les habitudes apparaissent
   // dans "Tout" mais sans filtre dédié pour ne pas surcharger les chips).
   var f = window._journalFilter || 'all';
+  var srch = (window._journalSearch || '').trim().toLowerCase();
   var filtered = entries.filter(function(e){
-    if (f === 'all') return true;
-    if (f === 'exos') return e._kind === 'track';
-    if (f === 'tests') return e._kind === 'test';
-    if (f === 'sessions') return e._kind === 'session';
+    if (f === 'exos' && e._kind !== 'track') return false;
+    if (f === 'tests' && e._kind !== 'test') return false;
+    if (f === 'sessions' && e._kind !== 'session') return false;
+    if (srch && _journalEntryName(e).toLowerCase().indexOf(srch) === -1) return false;
     return true;
   });
   filtered.sort(function(a, b){ return new Date(b.date).getTime() - new Date(a.date).getTime(); });
@@ -33383,6 +33480,13 @@ function renderSessionsList() {
   html += (window._guideBtn ? window._guideBtn('progress', { size:26 }) : '');
   html += '</div>';
   html += '<div style="font-size:12.5px;color:var(--ah-text2);margin-bottom:16px;line-height:1.5">Ce que tu mesures, ce que tu répètes, ce que tu améliores.</div>';
+
+  // Barre de recherche
+  var srchVal = window._journalSearch || '';
+  html += '<div style="position:relative;margin-bottom:12px">';
+  html += '<span style="position:absolute;left:12px;top:50%;transform:translateY(-50%);font-size:14px;opacity:.45;pointer-events:none">🔍</span>';
+  html += '<input id="journalSearchInput" type="search" value="' + srchVal.replace(/"/g,'&quot;') + '" placeholder="Rechercher un exercice, une séance…" oninput="window._journalSetSearch(this.value)" style="width:100%;box-sizing:border-box;padding:9px 12px 9px 34px;border-radius:10px;border:1px solid var(--ah-border);background:var(--ah-surface);color:var(--ah-text);font-family:\'Outfit\',sans-serif;font-size:13px;outline:none">';
+  html += '</div>';
 
   // Filtres chips
   var filters = [['all','Tout'],['exos','Exercices'],['tests','Tests'],['sessions','Séances']];
@@ -33431,6 +33535,16 @@ function renderSessionsList() {
   });
 
   c.innerHTML = html;
+  // Restore search focus after re-render
+  var inp = document.getElementById('journalSearchInput');
+  if (inp && document.activeElement !== inp) {
+    var _hadFocus = window._journalSearchHadFocus;
+    if (_hadFocus) { inp.focus(); var len = inp.value.length; try { inp.setSelectionRange(len, len); } catch(_){} }
+  }
+  if (inp) {
+    inp.addEventListener('focus', function(){ window._journalSearchHadFocus = true; });
+    inp.addEventListener('blur',  function(){ window._journalSearchHadFocus = false; });
+  }
 }
 window.renderSessionsList = renderSessionsList;
 
@@ -36438,26 +36552,15 @@ function _lsClose() {
 }
 
 function _lsOpenVideo() {
-  // Récupère l'exo courant de la séance
   var ex = (_LS.exos && _LS.exos[_LS.idx]) || null;
   var exoName = ex ? (ex.name || 'Exercice') : 'Exercice';
-
-  // Cherche une vidéo mappée pour cet exo (priorité : ex.video inline >
-  // _LIB_VIDEO_MAP > VIDEO_LIBRARY). Si rien trouvé → fallback test sur
-  // la vidéo Athletik "Programme lancé — test" (O1Lqu3kXVFw).
   var ytId = null;
   if (ex && ex.video) ytId = ex.video;
   else if (typeof _LIB_VIDEO_MAP !== 'undefined' && _LIB_VIDEO_MAP[exoName]) ytId = _LIB_VIDEO_MAP[exoName];
-  // Fallback test : si exo sans vidéo, on montre la vidéo générique
-  // "test programme lancé" pour que l'user voie le rendu UI.
-  if (!ytId) ytId = 'O1Lqu3kXVFw';
 
-  var videoUrl = 'https://www.youtube.com/embed/' + ytId + '?autoplay=1&rel=0&modestbranding=1';
-
-  // Réutilise le videoModal existant (créé par openLibraryFromTest si absent)
+  // Crée le modal s'il n'existe pas encore
   var modal = document.getElementById('videoModal');
   if (!modal) {
-    // Crée le modal à la volée si jamais openLibraryFromTest n'a pas été appelé
     modal = document.createElement('div');
     modal.id = 'videoModal';
     modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.92);z-index:9999;display:none;flex-direction:column;align-items:center;justify-content:center;padding:20px';
@@ -36466,8 +36569,13 @@ function _lsOpenVideo() {
       +   '<div id="videoModalTitle" style="font-family:\'Bebas Neue\',sans-serif;font-size:15px;color:var(--gold);letter-spacing:1.5px"></div>'
       +   '<button onclick="closeVideoModal()" style="background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.15);color:#fff;font-size:18px;width:32px;height:32px;border-radius:50%;cursor:pointer;display:flex;align-items:center;justify-content:center;line-height:1">×</button>'
       + '</div>'
-      + '<div style="position:relative;width:100%;padding-top:56.25%;background:#000">'
+      + '<div id="videoModalContent" style="position:relative;width:100%;padding-top:56.25%;background:#000">'
       +   '<iframe id="videoModalFrame" style="position:absolute;inset:0;width:100%;height:100%;border:none" allow="accelerometer;autoplay;clipboard-write;encrypted-media;gyroscope;picture-in-picture" allowfullscreen></iframe>'
+      +   '<div id="videoModalPlaceholder" style="display:none;position:absolute;inset:0;background:linear-gradient(160deg,#243B6B,#0F1A30);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px">'
+      +     '<div style="font-size:36px">🎬</div>'
+      +     '<div style="font-family:\'Bebas Neue\',sans-serif;font-size:16px;color:var(--gold);letter-spacing:2px;text-align:center">VIDÉO BIENTÔT DISPONIBLE</div>'
+      +     '<div style="font-size:12px;color:rgba(255,255,255,.5);text-align:center;max-width:220px;line-height:1.5">La démo de cet exercice arrive prochainement.</div>'
+      +   '</div>'
       + '</div>'
       + '<div style="padding:12px 14px;background:#0F1A30;font-size:11px;color:rgba(255,255,255,.5);text-align:center">Tape sur ✕ pour fermer et reprendre ta séance</div>'
       + '</div>';
@@ -36475,11 +36583,17 @@ function _lsOpenVideo() {
     modal.addEventListener('click', function(e){ if (e.target === modal) closeVideoModal(); });
   }
 
-  // Set titre + URL puis montre
   var title = document.getElementById('videoModalTitle');
   if (title) title.textContent = exoName.toUpperCase();
   var frame = document.getElementById('videoModalFrame');
-  if (frame) frame.src = videoUrl;
+  var placeholder = document.getElementById('videoModalPlaceholder');
+  if (ytId) {
+    if (frame) { frame.style.display = ''; frame.src = 'https://www.youtube.com/embed/' + ytId + '?autoplay=1&rel=0&modestbranding=1'; }
+    if (placeholder) placeholder.style.display = 'none';
+  } else {
+    if (frame) { frame.style.display = 'none'; frame.src = ''; }
+    if (placeholder) placeholder.style.display = 'flex';
+  }
   modal.style.display = 'flex';
 }
 
