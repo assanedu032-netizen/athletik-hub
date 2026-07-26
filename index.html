@@ -1129,7 +1129,7 @@ body{background:var(--bg);color:var(--text);font-family:'Outfit',sans-serif;disp
 .yt-mat{font-size:10px;color:var(--muted)}
 /* ─── Exercise detail full-screen ─── */
 .yt-detail-view{position:fixed;inset:0;background:var(--bg);z-index:500;overflow-y:auto;display:none}
-.yt-detail-video{width:100%;aspect-ratio:16/9;background:#0E1626;position:relative;overflow:hidden;display:flex;align-items:center;justify-content:center}
+.yt-detail-video{width:100%;aspect-ratio:16/9;background:#0E1626;position:relative;overflow:hidden;display:flex;align-items:center;justify-content:center;margin-bottom:40px}
 .yt-detail-video iframe{width:100%;height:100%;border:none;position:absolute;inset:0}
 .yt-detail-video-placeholder{display:flex;flex-direction:column;align-items:center;gap:8px;cursor:pointer}
 /* Pastille SVG vidéo (placeholder fiche détail) — navy + filigrane gold,
@@ -1137,7 +1137,7 @@ body{background:var(--bg);color:var(--text);font-family:'Outfit',sans-serif;disp
 .yt-empty-pill{width:56px;height:56px;border-radius:50%;display:flex;align-items:center;justify-content:center;background:radial-gradient(circle at 30% 30%, rgba(197,164,78,.18), rgba(197,164,78,.04) 60%, transparent 70%);border:1px solid rgba(197,164,78,.30);box-shadow:inset 0 0 30px rgba(197,164,78,.10)}
 .yt-detail-play{width:60px;height:60px;border-radius:50%;background:rgba(197,164,78,.18);border:2px solid rgba(197,164,78,.5);display:flex;align-items:center;justify-content:center}
 .yt-detail-play-tri{width:0;height:0;border-top:11px solid transparent;border-bottom:11px solid transparent;border-left:18px solid var(--gold);margin-left:4px}
-.yt-detail-body{padding:16px 16px 100px}
+.yt-detail-body{padding:16px 16px 8px}
 .yt-detail-cat{font-size:9px;font-weight:800;letter-spacing:1.5px;color:var(--gold);margin-bottom:6px;text-transform:uppercase}
 .yt-detail-name{font-family:'Bebas Neue',sans-serif;font-size:28px;color:var(--text);letter-spacing:2px;line-height:1.05;margin-bottom:8px}
 .yt-detail-diff{display:inline-block;padding:4px 12px;border-radius:8px;font-size:11px;font-weight:700;margin-bottom:14px}.yt-detail-diff.easy{background:#D1FAE5;color:#065F46}.yt-detail-diff.med{background:#FEF3C7;color:#92400E}.yt-detail-diff.hard{background:#FEE2E2;color:#991B1B}
@@ -7791,14 +7791,7 @@ window.tiResetOnEnter = function(){ window.tiShowStep(1); };
 <!-- Exercise detail (full overlay inside #pgLib) -->
 <div class="yt-detail-view" id="libDetailView">
   <div class="back-btn" onclick="_libCloseDetail()" style="padding:14px 16px 0;display:flex">← Retour</div>
-  <!-- Video -->
-  <div class="yt-detail-video" id="ytDetailVideo">
-    <div class="yt-detail-video-placeholder" id="ytDetailPlaceholder" onclick="_libPlayVideo()">
-      <div class="yt-detail-play"><div class="yt-detail-play-tri"></div></div>
-      <div style="font-size:9px;color:rgba(255,255,255,.4);letter-spacing:1px;text-transform:uppercase;margin-top:4px">Voir la vidéo</div>
-    </div>
-  </div>
-  <!-- Body -->
+  <!-- Body first: category, name, info -->
   <div class="yt-detail-body">
     <div class="yt-detail-cat" id="ytDetailCat">PLIOMÉTRIE</div>
     <div class="yt-detail-name" id="ytDetailName">EXERCICE</div>
@@ -7824,6 +7817,14 @@ window.tiResetOnEnter = function(){ window.tiShowStep(1); };
     <button class="btn btn-gold" id="ytDetailTrackBtn" style="width:100%;margin-bottom:6px" onclick="_libTrackCurrent()">📊 Tracker cet exercice</button>
     <div id="ytDetailTrackHint" style="font-size:11px;color:var(--muted);text-align:center;margin-bottom:14px;line-height:1.5">Ajoute cet exercice à ton suivi pour voir ton évolution.</div>
     <button class="btn btn-outline" id="ytDetailAddBtn" style="display:none;width:100%;margin-bottom:10px" onclick="window._libDetailToggleAdd && window._libDetailToggleAdd()">+ Ajouter à ma séance</button>
+  </div>
+  <!-- Video at bottom: scroll to play -->
+  <div class="yt-detail-section" style="padding:0 22px 10px">VIDÉO DÉMO</div>
+  <div class="yt-detail-video" id="ytDetailVideo">
+    <div class="yt-detail-video-placeholder" id="ytDetailPlaceholder" onclick="_libPlayVideo()">
+      <div class="yt-detail-play"><div class="yt-detail-play-tri"></div></div>
+      <div style="font-size:9px;color:rgba(255,255,255,.4);letter-spacing:1px;text-transform:uppercase;margin-top:4px">Voir la vidéo</div>
+    </div>
   </div>
 </div>
 
