@@ -23599,17 +23599,18 @@ function _libOpenDetail(name, catKey) {
   if (existingIframe) existingIframe.remove();
   var videoArea = document.getElementById('ytDetailVideo');
   videoArea.style.background = item.color;
-  // Show detail
+  // Show detail — reset scroll dans le même frame puis une deuxième fois
+  // après paint pour garantir que le conteneur soit en haut même si
+  // mainScroll était scrollé bas (bug "page blanche" / contenu en bas).
   var detail = document.getElementById('libDetailView');
   detail.style.display = 'block';
   detail.scrollTop = 0;
   var v = document.getElementById('vTrain'); if (v) v.scrollTop = 0;
-  // Fix cadrage : le vrai conteneur scrollable de l'onglet Train est
-  // #mainScroll (imbriqué dans #vTrain), pas #vTrain lui-même. Sans ce
-  // reset, un scroll résiduel de la liste Programmes/Librairie restait
-  // appliqué au nouvel écran ouvert, coupant visuellement le titre "TRAIN"
-  // en haut de page (bug remonté par capture d'écran 2026-06-13).
   var m = document.getElementById('mainScroll'); if (m) m.scrollTop = 0;
+  requestAnimationFrame(function() {
+    detail.scrollTop = 0;
+    var m2 = document.getElementById('mainScroll'); if (m2) m2.scrollTop = 0;
+  });
 }
 
 function _libPlayVideo() {
@@ -35825,6 +35826,22 @@ function _lsRenderEx() {
 
   // Hide complete screen
   document.getElementById('lsComplete').style.display = 'none';
+
+  // Miniature vidéo dans la zone démo : thumbnail YouTube si dispo, sinon fond sombre
+  var lsVideoArea = document.getElementById('lsVideoArea');
+  if (lsVideoArea) {
+    var exN = ex ? (ex.n || ex.name || '') : '';
+    var lsYtId = (ex && ex.video) ? ex.video
+      : (typeof _LIB_VIDEO_MAP !== 'undefined' && _LIB_VIDEO_MAP[exN]) ? _LIB_VIDEO_MAP[exN] : null;
+    if (lsYtId) {
+      lsVideoArea.style.backgroundImage = 'url(https://i.ytimg.com/vi/' + lsYtId + '/mqdefault.jpg)';
+      lsVideoArea.style.backgroundSize = 'cover';
+      lsVideoArea.style.backgroundPosition = 'center';
+    } else {
+      lsVideoArea.style.backgroundImage = '';
+      lsVideoArea.style.backgroundSize = '';
+    }
+  }
 }
 
 function _lsDoneSet() {
@@ -36560,7 +36577,8 @@ function _lsClose() {
 
 function _lsOpenVideo() {
   var ex = (_LS.exos && _LS.exos[_LS.idx]) || null;
-  var exoName = ex ? (ex.name || 'Exercice') : 'Exercice';
+  // Les exos PROGRAMS_V2 utilisent ex.n (nom court) ; ex.name est le champ legacy.
+  var exoName = ex ? (ex.n || ex.name || 'Exercice') : 'Exercice';
   var ytId = null;
   if (ex && ex.video) ytId = ex.video;
   else if (typeof _LIB_VIDEO_MAP !== 'undefined' && _LIB_VIDEO_MAP[exoName]) ytId = _LIB_VIDEO_MAP[exoName];
