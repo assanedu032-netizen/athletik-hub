@@ -114,9 +114,10 @@ service cloud.firestore {
 
   // accessTier ne peut prendre que des valeurs autorisées.
   // Empêche un user de poser arbitrairement {accessTier:'GOD'} ou autre.
-  // L'upgrade BETA → VIP/MASTER reste possible côté client (UX simple),
-  // mais le tier est validé serveur par check-code.js avant d'être posé.
-  // Durcissement Phase 3 : check-code.js écrit le tier via Admin SDK.
+  // Durcissement Phase 3 (fait) : accessTier est désormais dans
+  // lockedFields() — check-code.js écrit le tier via Admin SDK, le client
+  // n'a plus aucun chemin légal pour l'écrire lui-même. Ce validateur reste
+  // en défense en profondeur si lockedFields() évolue un jour.
   function validAccessTier(d) {
     return !('accessTier' in d.keys())
         || d.accessTier == null
@@ -134,6 +135,11 @@ service cloud.firestore {
   // ─── Champs verrouillés côté serveur ───
   // Les fonctions Netlify (Admin SDK) bypassent les rules et écrivent ces
   // champs. Le client n'a aucun chemin valide pour les forger ou les modifier.
+  // accessTier/accessGrantedAt/accessExpiresAt : audit sécurité — ces champs
+  // étaient écrits par le client via le SDK normal (après validation d'un
+  // code par check-code.js), ce qui permettait de poser {accessTier:'MASTER'}
+  // depuis la console DevTools et de le faire persister sur tous les
+  // appareils. check-code.js les écrit désormais lui-même via Admin SDK.
   function lockedFields() {
     return [
       'hasBookAccess',
@@ -143,7 +149,10 @@ service cloud.firestore {
       'trialEndsAt',
       'trialStatus',
       'createdAt',
-      'bookVersionUsed'
+      'bookVersionUsed',
+      'accessTier',
+      'accessGrantedAt',
+      'accessExpiresAt'
     ];
   }
   function noLockedOnCreate(newData) {
