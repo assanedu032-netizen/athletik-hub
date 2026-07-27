@@ -21262,6 +21262,18 @@ function _renderPhaseBody(p, idx) {
   // Calendrier semaine
   h += '<div style="margin-bottom:14px">';
   h += '<div style="font-size:9px;color:var(--muted);font-weight:800;letter-spacing:1.5px;margin-bottom:8px">📅 SEMAINE TYPE — clique sur un jour pour voir la séance</div>';
+  // Séances déjà complétées pour ce programme → set des sessKeys
+  var _doneSess = (function(){
+    try {
+      var _pk2 = window._progV2State && window._progV2State.key;
+      if (!_pk2) return {};
+      var hist = JSON.parse(localStorage.getItem('ah_set_history') || '[]');
+      var done = {};
+      hist.forEach(function(e){ if (e.progKey === _pk2 && e.sessKey) done[e.sessKey] = true; });
+      return done;
+    } catch(e) { return {}; }
+  })();
+
   h += '<div style="display:grid;grid-template-columns:repeat(7,1fr);gap:5px">';
   (ph.weekDays||[]).forEach(function(day){
     var sk = day.s;
@@ -21269,6 +21281,7 @@ function _renderPhaseBody(p, idx) {
     var isRest = (sk === 'rest');
     var isMener = (sk === 'mener' || sk === 'bilan');
     var isOpt = (sk === 'opt');
+    var isDone = !isRest && !!_doneSess[sk];
     // P3 — verrouillage : séance bloquée si phase future ou ordre non respecté
     var locked = false;
     if (sess && !isRest) {
@@ -21277,16 +21290,32 @@ function _renderPhaseBody(p, idx) {
         if (_pk) locked = !_isSessionUnlocked(_pk, idx, sk);
       } catch(e) {}
     }
-    var bg = isRest ? 'var(--surface2)' : (locked ? 'var(--surface2)' : (isMener ? 'rgba(108,99,255,.10)' : (isOpt ? 'rgba(245,158,11,.10)' : 'rgba(197,164,78,.10)')));
-    var border = isRest ? 'var(--border)' : (locked ? 'var(--border)' : (isMener ? 'rgba(108,99,255,.35)' : (isOpt ? 'rgba(245,158,11,.35)' : 'rgba(197,164,78,.35)')));
-    var color = isRest ? 'var(--muted)' : (locked ? 'var(--muted)' : (isMener ? '#6C63FF' : (isOpt ? '#F59E0B' : 'var(--gold)')));
+    var bg, border, color;
+    if (isDone) {
+      bg = 'rgba(16,185,129,.13)'; border = 'rgba(16,185,129,.45)'; color = '#10B981';
+    } else if (isRest) {
+      bg = 'var(--surface2)'; border = 'var(--border)'; color = 'var(--muted)';
+    } else if (locked) {
+      bg = 'var(--surface2)'; border = 'var(--border)'; color = 'var(--muted)';
+    } else if (isMener) {
+      bg = 'rgba(108,99,255,.10)'; border = 'rgba(108,99,255,.35)'; color = '#6C63FF';
+    } else if (isOpt) {
+      bg = 'rgba(245,158,11,.10)'; border = 'rgba(245,158,11,.35)'; color = '#F59E0B';
+    } else {
+      bg = 'rgba(197,164,78,.10)'; border = 'rgba(197,164,78,.35)'; color = 'var(--gold)';
+    }
     var label = isRest ? 'Repos' : (isMener ? (sk==='bilan'?'Bilan':'MENER') : (isOpt ? 'Optionnel' : (sess ? sess.name.split('—')[0].trim() : sk.toUpperCase())));
-    if (locked) label = '🔒 ' + label;
+    if (locked && !isDone) label = '🔒 ' + label;
     var clickable = !!sess && !isRest;
     var oc = clickable ? ' onclick="_openSessionV2(\'' + sk + '\')"' : '';
-    h += '<div' + oc + ' style="background:' + bg + ';border:1px solid ' + border + ';border-radius:8px;padding:8px 4px;text-align:center;cursor:' + (clickable?'pointer':'default') + ';opacity:' + (locked?'.6':'1') + ';min-height:62px;display:flex;flex-direction:column;justify-content:space-between">';
-    h +=   '<div style="font-size:9px;font-weight:800;color:var(--muted);letter-spacing:1px">' + day.d.toUpperCase() + '</div>';
-    h +=   '<div style="font-size:10px;font-weight:700;color:' + color + ';line-height:1.15;margin-top:4px">' + label + '</div>';
+    h += '<div' + oc + ' style="background:' + bg + ';border:1px solid ' + border + ';border-radius:8px;padding:8px 4px;text-align:center;cursor:' + (clickable?'pointer':'default') + ';opacity:' + (locked&&!isDone?'.6':'1') + ';min-height:62px;display:flex;flex-direction:column;justify-content:space-between;position:relative">';
+    h +=   '<div style="font-size:9px;font-weight:800;color:' + (isDone?'rgba(16,185,129,.7)':'var(--muted)') + ';letter-spacing:1px">' + day.d.toUpperCase() + '</div>';
+    if (isDone) {
+      h += '<div style="font-size:14px;line-height:1">✓</div>';
+      h += '<div style="font-size:9px;font-weight:700;color:' + color + ';line-height:1.15">Fait</div>';
+    } else {
+      h += '<div style="font-size:10px;font-weight:700;color:' + color + ';line-height:1.15;margin-top:4px">' + label + '</div>';
+    }
     h += '</div>';
   });
   h += '</div>';
