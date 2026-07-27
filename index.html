@@ -21274,6 +21274,27 @@ function _renderPhaseBody(p, idx) {
     } catch(e) { return {}; }
   })();
 
+  // Barre de progression : nb séances principales faites / total
+  var _totalMainSess = 0, _doneMainSess = 0;
+  (ph.weekDays||[]).forEach(function(day){
+    var sk = day.s;
+    if (sk !== 'rest' && sk !== 'mener' && sk !== 'bilan') {
+      _totalMainSess++;
+      if (_doneSess[sk]) _doneMainSess++;
+    }
+  });
+  if (_totalMainSess > 0 && _doneMainSess > 0) {
+    var _pct = Math.round((_doneMainSess / _totalMainSess) * 100);
+    h += '<div style="background:var(--surface2);border-radius:10px;padding:10px 12px;margin-bottom:10px">';
+    h += '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:7px">';
+    h += '<div style="font-size:10px;font-weight:700;color:var(--text2)">Progression</div>';
+    h += '<div style="font-size:10px;font-weight:800;color:#10B981">' + _doneMainSess + ' / ' + _totalMainSess + ' séance' + (_totalMainSess > 1 ? 's' : '') + ' faite' + (_doneMainSess > 1 ? 's' : '') + '</div>';
+    h += '</div>';
+    h += '<div style="background:var(--border);border-radius:4px;height:5px;overflow:hidden">';
+    h += '<div style="background:linear-gradient(90deg,#10B981,#34D399);height:100%;width:' + _pct + '%;border-radius:4px"></div>';
+    h += '</div>';
+    h += '</div>';
+  }
   h += '<div style="display:grid;grid-template-columns:repeat(7,1fr);gap:5px">';
   (ph.weekDays||[]).forEach(function(day){
     var sk = day.s;
@@ -21308,11 +21329,12 @@ function _renderPhaseBody(p, idx) {
     if (locked && !isDone) label = '🔒 ' + label;
     var clickable = !!sess && !isRest;
     var oc = clickable ? ' onclick="_openSessionV2(\'' + sk + '\')"' : '';
-    h += '<div' + oc + ' style="background:' + bg + ';border:1px solid ' + border + ';border-radius:8px;padding:8px 4px;text-align:center;cursor:' + (clickable?'pointer':'default') + ';opacity:' + (locked&&!isDone?'.6':'1') + ';min-height:62px;display:flex;flex-direction:column;justify-content:space-between;position:relative">';
+    h += '<div' + oc + ' style="background:' + bg + ';border:1px solid ' + border + ';border-radius:8px;padding:8px 4px;text-align:center;cursor:' + (clickable?'pointer':'default') + ';opacity:' + (locked&&!isDone?'.6':'1') + ';min-height:66px;display:flex;flex-direction:column;justify-content:space-between;position:relative">';
     h +=   '<div style="font-size:9px;font-weight:800;color:' + (isDone?'rgba(16,185,129,.7)':'var(--muted)') + ';letter-spacing:1px">' + day.d.toUpperCase() + '</div>';
     if (isDone) {
-      h += '<div style="font-size:14px;line-height:1">✓</div>';
-      h += '<div style="font-size:9px;font-weight:700;color:' + color + ';line-height:1.15">Fait</div>';
+      h += '<div style="position:absolute;top:4px;right:4px;width:15px;height:15px;background:#10B981;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:8px;color:#fff;font-weight:900;line-height:1;box-shadow:0 1px 4px rgba(16,185,129,.45)">✓</div>';
+      h += '<div style="font-size:9px;font-weight:700;color:' + color + ';line-height:1.2;margin-top:2px;padding:0 2px">' + label + '</div>';
+      h += '<div style="font-size:8px;font-weight:700;color:rgba(16,185,129,.8);letter-spacing:.3px">Fait</div>';
     } else {
       h += '<div style="font-size:10px;font-weight:700;color:' + color + ';line-height:1.15;margin-top:4px">' + label + '</div>';
     }
@@ -36640,6 +36662,15 @@ function _lsClose() {
   window._bfDifficulte = null;
   // Si la séance venait du Builder, on repart sur une conversation fraîche.
   try { if (wasBuilder && typeof _builderStartConvo === 'function') _builderStartConvo(); } catch(e) {}
+  // Rafraîchit la vue programme si elle est visible (marqueurs de séances complétées)
+  try {
+    if (window._progV2State && window._progV2State.p) {
+      var _pgBody = document.getElementById('pgV2Body');
+      if (_pgBody && _pgBody.offsetParent !== null) {
+        _renderPhaseBody(window._progV2State.p, window._progV2State.phaseIdx || 0);
+      }
+    }
+  } catch(e) {}
 }
 
 function _lsOpenVideo() {
