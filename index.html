@@ -11430,60 +11430,193 @@ window.getTitanDailyRecommendation = getTitanDailyRecommendation;
 // Engagement et Lecture proviennent de la MÊME analyse (plus de refs
 // contradictoires entre les deux cartes). Fallback legacy si le moteur
 // échoue — l'user voit toujours quelque chose.
-function renderTitanSmartCards(){
+// ─── MISSION TITAN DU JOUR — helpers ─────────────────────────────────────────
+function _msnPad(n) { return n < 10 ? '0' + n : '' + n; }
+function _msnToday() {
+  var t = new Date();
+  return t.getFullYear() + '-' + _msnPad(t.getMonth()+1) + '-' + _msnPad(t.getDate());
+}
+function _msnLoad() {
+  try {
+    var s = JSON.parse(localStorage.getItem('ah_titan_mission') || 'null');
+    if (s && s.date === _msnToday()) return s;
+  } catch(e) {}
+  return { date: _msnToday(), done: {} };
+}
+function _msnSave(s) { try { localStorage.setItem('ah_titan_mission', JSON.stringify(s)); } catch(e) {} }
+
+function _msnSeanceDoneToday() {
+  try {
+    var today = _msnToday();
+    var hist = JSON.parse(localStorage.getItem('ah_set_history') || '[]');
+    return hist.some(function(e){ return e.date && e.date.slice(0,10) === today && e.type === 'session'; });
+  } catch(e) { return false; }
+}
+
+window._missionMarkDone = function(id) {
+  var s = _msnLoad(); s.done[id] = true; _msnSave(s);
+  renderTitanSmartCards();
+};
+
+window._missionCTA = function(action) {
+  if (action === 'lecture' || action === 'titan') { try { switchTab('vChat'); } catch(e) {} }
+  else if (action === 'seance') { try { launchTodaySession(); } catch(e) { try { switchTab('vTrain'); } catch(ee) {} } }
+  else if (action === 'test') { try { switchTab('vTracks'); } catch(e) {} }
+};
+
+function renderTitanSmartCards() {
   var wrap = document.getElementById('titanSmartCards');
   if (!wrap) return;
-  // Cache si pas de programme attribué (l'user n'a pas encore fait l'onboarding)
   if (!_titanGetProgramKey()) { wrap.innerHTML = ''; return; }
+
+  var pk = _titanGetProgramKey();
   var firstName = _titanGetFirstName();
-  var greeting = firstName ? firstName + ', ' : '';
-
-  var engMsg = null, engTitle = 'Engagement du jour';
-  var lecMsg = null, lecTitle = 'Lecture du jour', lecRef = null;
   var reco = null;
-  try { reco = getTitanDailyRecommendation(); } catch(e){ console.warn('titan reco engine:', e); }
-  if (reco && reco.engagement) {
-    engMsg = reco.engagement;
-    if (reco.lecture && reco.chapitre) {
-      lecMsg = reco.lecture;
-      lecRef = { titre: reco.chapitre, page: reco.page };
-      // Titre de carte contextuel : "Lecture — Force", "Lecture — Mental"…
-      var shortT = reco.chapitre.replace(/^Cours \d+ — /, '').replace(/^Chapitre \d+ — /, '').replace(/^Programme /, '');
-      lecTitle = 'Lecture — ' + (shortT.length > 26 ? shortT.slice(0, 26) + '…' : shortT);
-    }
-  } else {
-    // Fallback legacy (rotation) — ne devrait servir qu'en cas d'erreur moteur
-    var eng = titanGetSmartMessage('engagement');
-    var lec = titanGetSmartLecture();
-    if (eng) engMsg = eng.message;
-    if (lec) { lecMsg = lec.message; lecRef = lec.bookRef; lecTitle = lec.title; }
+  try { reco = getTitanDailyRecommendation(); } catch(e) { console.warn('titan reco:', e); }
+
+  // Fallback si moteur V2 KO
+  if (!reco || !reco.engagement) {
+    try {
+      var _eng = titanGetSmartMessage('engagement');
+      var _lec = titanGetSmartLecture();
+      if (_eng || _lec) {
+        reco = reco || {};
+        if (_eng) reco.engagement = _eng.message;
+        if (_lec) { reco.lecture = _lec.message; reco.chapitre = _lec.bookRef && _lec.bookRef.titre; reco.page = _lec.bookRef && _lec.bookRef.page; }
+      }
+    } catch(e) {}
   }
 
-  var html = '';
-  if (engMsg) {
-    html += '<div style="margin:14px 16px 0;padding:14px 16px;background:var(--ah-surface);border:1px solid var(--ah-border);border-left:3px solid var(--ah-gold);border-radius:14px;box-shadow:0 2px 8px rgba(20,30,60,.04)">'
-         +   '<div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">'
-         +     '<div style="width:24px;height:24px;border-radius:50%;background:linear-gradient(135deg,var(--ah-navy),#0F1A30);color:var(--ah-gold);display:flex;align-items:center;justify-content:center;font-family:\'Bebas Neue\',sans-serif;font-size:11px;letter-spacing:.04em">T</div>'
-         +     '<div style="font-family:\'JetBrains Mono\',monospace;font-size:10px;letter-spacing:.18em;font-weight:700;color:var(--ah-gold);text-transform:uppercase">' + engTitle + '</div>'
-         +   '</div>'
-         +   '<div style="font-family:\'Outfit\',sans-serif;font-size:13px;line-height:1.5;color:var(--ah-text)">' + greeting + (greeting ? engMsg.charAt(0).toLowerCase() + engMsg.slice(1) : engMsg) + '</div>'
-         + '</div>';
+  var profile = {};
+  try { profile = JSON.parse(localStorage.getItem('ah_profile') || '{}'); } catch(e) {}
+  var satDone = !!(profile.satDone || profile.satSprintTime || profile.vertJump || profile.satForce1RM);
+  var testLabel = 'SAT';
+  try { if (typeof getTestTypeLabel === 'function') testLabel = (getTestTypeLabel(pk)||{}).short || 'SAT'; } catch(e) {}
+
+  // ── Objectifs de la mission ────────────────────────────────────────────────
+  var objectives = [];
+
+  if (reco && reco.lecture) {
+    var chapSub = reco.chapitre ? (reco.chapitre + (reco.page ? ' — p.' + reco.page : '')) : null;
+    objectives.push({ id:'lecture', icon:'📖', label:'Lire le chapitre recommandé', sub:chapSub, action:'lecture' });
   }
-  if (lecMsg) {
-    html += '<div style="margin:10px 16px 0;padding:14px 16px;background:linear-gradient(135deg,rgba(197,164,78,.06),rgba(197,164,78,.02));border:1px solid rgba(197,164,78,.30);border-radius:14px">'
-         +   '<div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">'
-         +     '<div style="font-size:14px">📖</div>'
-         +     '<div style="font-family:\'JetBrains Mono\',monospace;font-size:10px;letter-spacing:.18em;font-weight:700;color:var(--ah-gold);text-transform:uppercase">' + lecTitle + '</div>'
-         +   '</div>'
-         +   '<div style="font-family:\'Outfit\',sans-serif;font-size:13px;line-height:1.5;color:var(--ah-text)">' + lecMsg + '</div>'
-         +   (lecRef ? '<div style="margin-top:8px;font-size:11px;color:var(--ah-gold);font-weight:600">' + lecRef.titre + ' — p.' + lecRef.page + '</div>' : '')
-         + '</div>';
+
+  var seanceFaite = _msnSeanceDoneToday();
+  objectives.push({ id:'seance', icon:'💪', label:'Réaliser ta séance du jour', sub: seanceFaite ? 'Séance complétée aujourd\'hui' : null, action:'seance', auto: seanceFaite });
+
+  if (!satDone) {
+    objectives.push({ id:'test', icon:'📊', label:'Compléter ton test ' + testLabel, sub:'Indispensable pour progresser', action:'test' });
   }
-  wrap.innerHTML = html;
+
+  // Question Titan toutes les 48h
+  var lastQ = 0;
+  try { lastQ = parseInt(localStorage.getItem('ah_titan_q_last')||'0',10); } catch(e) {}
+  if (Date.now() - lastQ > 172800000) {
+    objectives.push({ id:'titan', icon:'🤖', label:'Partager ta progression à Titan', sub:'Message rapide — 1 min', action:'titan' });
+  }
+
+  // ── État de complétion ────────────────────────────────────────────────────
+  var state = _msnLoad();
+  objectives.forEach(function(o) {
+    if (o.auto && !state.done[o.id]) { state.done[o.id] = true; _msnSave(state); }
+  });
+  var totalDone = 0;
+  objectives.forEach(function(o) { if (state.done[o.id]) totalDone++; });
+  var total = objectives.length || 1;
+  var pct = Math.round((totalDone / total) * 100);
+  var allDone = (totalDone >= total);
+
+  // ── Prochain objectif → CTA ──────────────────────────────────────────────
+  var nextObj = null;
+  for (var i = 0; i < objectives.length; i++) {
+    if (!state.done[objectives[i].id]) { nextObj = objectives[i]; break; }
+  }
+  var ctaMap = { lecture:'Ouvrir la lecture', seance:'Lancer la séance', test:'Faire mon ' + testLabel, titan:'Parler à Titan' };
+  var ctaLabel = allDone ? 'Mission accomplie !' : (nextObj ? (ctaMap[nextObj.action] || 'Commencer') : 'Commencer');
+
+  // ── Message Titan ────────────────────────────────────────────────────────
+  var titanMsg = '';
+  if (reco && reco.engagement) {
+    titanMsg = reco.engagement;
+    if (firstName) titanMsg = firstName + ', ' + titanMsg.charAt(0).toLowerCase() + titanMsg.slice(1);
+  }
+
+  // ── Rendu ─────────────────────────────────────────────────────────────────
+  var h = '';
+
+  // Carte principale Mission Titan
+  h += '<div style="margin:14px 16px 0;background:var(--ah-navy-deep);border:1px solid rgba(197,164,78,.28);border-radius:16px;overflow:hidden;box-shadow:0 4px 24px rgba(0,0,0,.22)">';
+
+  // En-tête
+  h += '<div style="background:linear-gradient(135deg,rgba(197,164,78,.16),rgba(197,164,78,.05));border-bottom:1px solid rgba(197,164,78,.18);padding:12px 16px;display:flex;align-items:center;justify-content:space-between">';
+  h += '<div style="display:flex;align-items:center;gap:9px">';
+  h += '<div style="width:28px;height:28px;min-width:28px;border-radius:50%;background:linear-gradient(135deg,#C5A44E,#8B6914);display:flex;align-items:center;justify-content:center;font-family:\'Bebas Neue\',sans-serif;font-size:13px;color:#fff;letter-spacing:.05em;box-shadow:0 2px 8px rgba(197,164,78,.4)">T</div>';
+  h += '<div>';
+  h += '<div style="font-family:\'JetBrains Mono\',monospace;font-size:9.5px;letter-spacing:.2em;font-weight:700;color:var(--ah-gold);text-transform:uppercase">Mission Titan</div>';
+  h += '<div style="font-size:10px;color:rgba(255,255,255,.38);font-family:\'Outfit\',sans-serif;margin-top:1px">du jour</div>';
+  h += '</div></div>';
+  if (allDone) {
+    h += '<div style="background:rgba(16,185,129,.15);border:1px solid rgba(16,185,129,.35);border-radius:20px;padding:3px 10px;font-size:10px;font-weight:700;color:#10B981;font-family:\'Outfit\',sans-serif">Accomplie ✓</div>';
+  } else {
+    h += '<div style="font-family:\'JetBrains Mono\',monospace;font-size:11px;font-weight:700;color:var(--ah-gold);opacity:.8">' + totalDone + '/' + total + '</div>';
+  }
+  h += '</div>';
+
+  // Barre de progression
+  h += '<div style="height:3px;background:rgba(255,255,255,.06)">';
+  h += '<div style="height:100%;width:' + pct + '%;background:linear-gradient(90deg,#C5A44E,#F0C060);border-radius:0 2px 2px 0"></div>';
+  h += '</div>';
+
+  // Corps
+  h += '<div style="padding:14px 16px 16px">';
+
+  // Message Titan (citation italique)
+  if (titanMsg) {
+    h += '<div style="padding:10px 12px;background:rgba(255,255,255,.025);border-left:2px solid rgba(197,164,78,.45);border-radius:0 8px 8px 0;margin-bottom:14px">';
+    h += '<div style="font-family:\'Outfit\',sans-serif;font-size:12.5px;line-height:1.55;color:rgba(255,255,255,.72);font-style:italic">' + titanMsg + '</div>';
+    h += '</div>';
+  }
+
+  // Checklist objectifs
+  objectives.forEach(function(obj) {
+    var done = !!state.done[obj.id];
+    h += '<div' + (done ? '' : ' onclick="_missionMarkDone(\'' + obj.id + '\')"') + ' style="display:flex;align-items:flex-start;gap:10px;padding:9px 10px;margin-bottom:6px;border-radius:10px;background:' + (done ? 'rgba(16,185,129,.07)' : 'rgba(255,255,255,.035)') + ';border:1px solid ' + (done ? 'rgba(16,185,129,.22)' : 'rgba(255,255,255,.07)') + ';cursor:' + (done ? 'default' : 'pointer') + '">';
+    // Checkbox circulaire
+    h += '<div style="width:20px;height:20px;min-width:20px;border-radius:50%;background:' + (done ? '#10B981' : 'rgba(255,255,255,.07)') + ';border:1.5px solid ' + (done ? '#10B981' : 'rgba(255,255,255,.18)') + ';display:flex;align-items:center;justify-content:center;margin-top:2px">';
+    if (done) h += '<div style="color:#fff;font-size:9px;font-weight:900;line-height:1">✓</div>';
+    h += '</div>';
+    // Texte
+    h += '<div style="flex:1;min-width:0">';
+    h += '<div style="font-family:\'Outfit\',sans-serif;font-size:13px;font-weight:600;color:' + (done ? 'rgba(255,255,255,.35)' : 'rgba(255,255,255,.88)') + ';' + (done ? 'text-decoration:line-through;' : '') + '">' + obj.icon + ' ' + obj.label + '</div>';
+    if (obj.sub) h += '<div style="font-size:10.5px;color:' + (done ? 'rgba(16,185,129,.7)' : 'rgba(255,255,255,.38)') + ';margin-top:2px;font-family:\'Outfit\',sans-serif">' + obj.sub + '</div>';
+    h += '</div>';
+    h += '</div>';
+  });
+
+  // Bouton CTA
+  if (allDone) {
+    h += '<div style="margin-top:10px;padding:11px;background:rgba(16,185,129,.1);border:1px solid rgba(16,185,129,.28);border-radius:10px;font-family:\'Bebas Neue\',sans-serif;font-size:15px;letter-spacing:1.5px;color:#10B981;text-align:center">' + ctaLabel + '</div>';
+  } else if (nextObj) {
+    h += '<div onclick="_missionCTA(\'' + nextObj.action + '\')" style="margin-top:10px;padding:11px;background:linear-gradient(135deg,#C5A44E,#8B6914);border-radius:10px;font-family:\'Bebas Neue\',sans-serif;font-size:15px;letter-spacing:1.5px;color:#fff;text-align:center;cursor:pointer;box-shadow:0 3px 12px rgba(197,164,78,.3)">' + ctaLabel + ' →</div>';
+  }
+
+  h += '</div></div>'; // corps + card
+
+  // Mini-carte lecture détaillée (affichée sous la mission si chapitre non encore lu)
+  if (reco && reco.lecture && reco.chapitre && !state.done.lecture) {
+    var shortT = reco.chapitre.replace(/^Cours \d+ — /, '').replace(/^Chapitre \d+ — /, '').replace(/^Programme /, '');
+    h += '<div style="margin:10px 16px 0;padding:13px 15px;background:linear-gradient(135deg,rgba(197,164,78,.07),rgba(197,164,78,.02));border:1px solid rgba(197,164,78,.22);border-radius:13px">';
+    h += '<div style="font-family:\'JetBrains Mono\',monospace;font-size:9.5px;letter-spacing:.18em;font-weight:700;color:var(--ah-gold);text-transform:uppercase;margin-bottom:6px">📖 ' + (shortT.length > 28 ? shortT.slice(0,28)+'…' : shortT) + '</div>';
+    h += '<div style="font-family:\'Outfit\',sans-serif;font-size:13px;line-height:1.5;color:var(--ah-text)">' + reco.lecture + '</div>';
+    h += '<div style="margin-top:8px;font-size:11px;color:var(--ah-gold);font-weight:600">' + reco.chapitre + (reco.page ? ' — p.' + reco.page : '') + '</div>';
+    h += '</div>';
+  }
+
+  wrap.innerHTML = h;
 }
 window.renderTitanSmartCards = renderTitanSmartCards;
 
-// Auto-rendu au chargement de la home (ne casse rien si pas appelé)
+// Auto-rendu au chargement de la home
 if (document.readyState === 'loading') {
   document.addEventListener('DOMContentLoaded', function(){ try { renderTitanSmartCards(); } catch(e){} });
 } else {
@@ -36513,6 +36646,8 @@ function _lsFinalizeSession(feedback) {
 
   _lsClearPersist();
   try { renderResumeSessionBanner(); } catch(e) {}
+  // Rafraîchit la Mission Titan : auto-coche la séance et met à jour la barre de progression
+  try { renderTitanSmartCards(); } catch(e) {}
 }
 
 function _lsShowComplete() {
