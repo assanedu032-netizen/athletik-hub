@@ -23814,6 +23814,14 @@ function _libPlayVideo() {
   iframe.allow = 'accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture';
   iframe.allowFullscreen = true;
   document.getElementById('ytDetailVideo').appendChild(iframe);
+  // Scroll automatique vers la vidéo dans la fiche
+  setTimeout(function() {
+    var videoEl = document.getElementById('ytDetailVideo');
+    var detail = document.getElementById('libDetailView');
+    if (videoEl && detail) {
+      detail.scrollTo({ top: videoEl.offsetTop - 60, behavior: 'smooth' });
+    }
+  }, 120);
 }
 
 function _libCloseDetail() {
