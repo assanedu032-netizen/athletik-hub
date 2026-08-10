@@ -31208,8 +31208,14 @@ function onFirebaseAuthChange(fbUser) {
         // malgré un compte bien créé.
         var pendingIntent = false;
         try { pendingIntent = sessionStorage.getItem('ah_auth_intent_pending') === '1'; } catch(e) {}
-        if (curId === 'auth' || curId === 'splash' || (pendingIntent && curId === 'welcome')) {
-          try { sessionStorage.removeItem('ah_auth_intent_pending'); } catch(e) {}
+        try { sessionStorage.removeItem('ah_auth_intent_pending'); } catch(e) {}
+        // Route depuis auth/splash (flow standard) ou welcome quand le profil
+        // Firestore est complet (cache effacé → localStorage vide → app affiche
+        // welcome → Firebase restaure la session → Firestore charge le profil
+        // complet → on doit renvoyer vers Home sans forcer un re-onboarding).
+        var _shouldRoute = (curId === 'auth' || curId === 'splash' || pendingIntent)
+          || (curId === 'welcome' && _isOnboardingComplete(prof));
+        if (_shouldRoute) {
           _routeToOnboardingStep(prof);
         }
       } catch(e) { console.warn('Auto-restore Home error:', e); }
