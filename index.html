@@ -31209,12 +31209,15 @@ function onFirebaseAuthChange(fbUser) {
         var pendingIntent = false;
         try { pendingIntent = sessionStorage.getItem('ah_auth_intent_pending') === '1'; } catch(e) {}
         try { sessionStorage.removeItem('ah_auth_intent_pending'); } catch(e) {}
-        // Route depuis auth/splash (flow standard) ou welcome quand le profil
-        // Firestore est complet (cache effacé → localStorage vide → app affiche
-        // welcome → Firebase restaure la session → Firestore charge le profil
-        // complet → on doit renvoyer vers Home sans forcer un re-onboarding).
-        var _shouldRoute = (curId === 'auth' || curId === 'splash' || pendingIntent)
-          || (curId === 'welcome' && _isOnboardingComplete(prof));
+        // Route depuis n'importe quel écran d'onboarding passif (boot) quand
+        // Firestore confirme le profil complet. Cas typique : cache effacé →
+        // localStorage vide → boot route vers titanIntro/welcome → Firestore
+        // charge un profil 100% complet → on renvoie vers Home directement.
+        // On ne route PAS si l'user est déjà sur une view (curId=null) — il
+        // a navigué, on respecte son intent.
+        var _onboardingScreens = ['splash','auth','welcome','titanIntro','obQ1','profil1','profil4','profil3','thinking','result'];
+        var _onPassiveScreen = _onboardingScreens.indexOf(curId) > -1;
+        var _shouldRoute = pendingIntent || _onPassiveScreen;
         if (_shouldRoute) {
           _routeToOnboardingStep(prof);
         }
