@@ -11454,7 +11454,7 @@ function _msnSeanceDoneToday() {
 }
 
 window._missionMarkDone = function(id) {
-  var s = _msnLoad(); s.done[id] = true; _msnSave(s);
+  var s = _msnLoad(); s.done[id] = !s.done[id]; _msnSave(s);
   renderTitanSmartCards();
 };
 
@@ -11580,7 +11580,7 @@ function renderTitanSmartCards() {
   // Checklist objectifs
   objectives.forEach(function(obj) {
     var done = !!state.done[obj.id];
-    h += '<div' + (done ? '' : ' onclick="_missionMarkDone(\'' + obj.id + '\')"') + ' style="display:flex;align-items:flex-start;gap:10px;padding:9px 10px;margin-bottom:6px;border-radius:10px;background:' + (done ? 'rgba(16,185,129,.07)' : 'rgba(255,255,255,.035)') + ';border:1px solid ' + (done ? 'rgba(16,185,129,.22)' : 'rgba(255,255,255,.07)') + ';cursor:' + (done ? 'default' : 'pointer') + '">';
+    h += '<div onclick="_missionMarkDone(\'' + obj.id + '\')" style="display:flex;align-items:flex-start;gap:10px;padding:9px 10px;margin-bottom:6px;border-radius:10px;background:' + (done ? 'rgba(16,185,129,.07)' : 'rgba(255,255,255,.035)') + ';border:1px solid ' + (done ? 'rgba(16,185,129,.22)' : 'rgba(255,255,255,.07)') + ';cursor:pointer">';
     // Checkbox circulaire
     h += '<div style="width:20px;height:20px;min-width:20px;border-radius:50%;background:' + (done ? '#10B981' : 'rgba(255,255,255,.07)') + ';border:1.5px solid ' + (done ? '#10B981' : 'rgba(255,255,255,.18)') + ';display:flex;align-items:center;justify-content:center;margin-top:2px">';
     if (done) h += '<div style="color:#fff;font-size:9px;font-weight:900;line-height:1">✓</div>';
@@ -30663,12 +30663,14 @@ function _isOnboardingComplete(profile) {
   //   profil1 → identité (prenom, age, sexe) + assignation programme (programKey)
   //   profil4 → nutrition (objNutri, poids, taille)
   //   profil3 → tests physiques (satDone)
+  // objNutri et nutriObj sont des alias du même champ (renommage historique).
+  var hasNutriObj = !!(p.objNutri || p.nutriObj);
   return !!(
        p.prenom
     && p.age
     && p.sexe
     && p.programKey
-    && p.objNutri
+    && hasNutriObj
     && p.poids
     && p.taille
     && p.satDone
@@ -30702,8 +30704,8 @@ function _nextOnboardingScreen(profile, opts) {
   // 3) Profil 1/3 — Programme : identité + assignation
   if (!p.prenom || !p.age || !p.sexe || !p.programKey) return 'profil1';
 
-  // 4) Profil 2/3 — Nutrition
-  if (!p.objNutri || !p.poids || !p.taille) return 'profil4';
+  // 4) Profil 2/3 — Nutrition (objNutri et nutriObj sont des alias)
+  if (!(p.objNutri || p.nutriObj) || !p.poids || !p.taille) return 'profil4';
 
   // 5) Profil 3/3 — Tests physiques
   if (!p.satDone) return 'profil3';
@@ -30942,6 +30944,16 @@ function _fbApplyPayload(data) {
     } catch(e) {}
   });
   try { if (data.accessTier) localStorage.setItem('ah_access_tier', data.accessTier); } catch(e) {}
+  // Normalise l'alias nutriObj → objNutri dans le profil local (renommage
+  // historique : les anciens profils Firestore ont nutriObj, le code actuel
+  // utilise objNutri partout).
+  try {
+    var _np = JSON.parse(localStorage.getItem('ah_profile') || '{}');
+    if (_np.nutriObj && !_np.objNutri) {
+      _np.objNutri = _np.nutriObj;
+      localStorage.setItem('ah_profile', JSON.stringify(_np));
+    }
+  } catch(e) {}
   // Flags dérivés — ah_onboarding_done = source de vérité unique calculée
   // par _isOnboardingComplete (ne pose plus à tort sur programKey seul).
   try {
