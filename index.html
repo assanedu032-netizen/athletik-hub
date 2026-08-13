@@ -4345,10 +4345,10 @@ html body #result, html body #nutriResult{
 
 /* Banner d'installation PWA */
 .install-prompt{position:fixed;left:50%;bottom:16px;transform:translateX(-50%);width:calc(100% - 24px);max-width:420px;z-index:9500;animation:fadeUp .3s ease}
-.install-prompt-inner{position:relative;background:#243B6B;color:#fff;border-radius:14px;padding:14px 44px 14px 16px;display:flex;align-items:center;gap:12px;box-shadow:0 8px 28px rgba(20,30,60,.30);border:1px solid rgba(197,164,78,.20)}
+.install-prompt-inner{position:relative;background:#1B2A4A;color:#fff;border-radius:14px;padding:14px 44px 14px 16px;display:flex;align-items:center;gap:12px;box-shadow:0 8px 28px rgba(20,30,60,.40);border:1px solid rgba(197,164,78,.25)}
 .install-prompt-ic{font-size:26px;flex-shrink:0;line-height:1}
 .install-prompt-txt{flex:1;min-width:0}
-.install-prompt-title{font-family:'Bebas Neue',sans-serif;font-size:15px;letter-spacing:.06em;line-height:1}
+.install-prompt-title{font-family:'Bebas Neue',sans-serif;font-size:16px;letter-spacing:.08em;line-height:1.1}
 .install-prompt-sub{font-family:'Outfit',sans-serif;font-size:11px;color:rgba(255,255,255,.7);margin-top:3px;line-height:1.4}
 .install-prompt-cta{background:#C5A44E;color:#243B6B;border:none;border-radius:10px;padding:9px 14px;font-family:'Bebas Neue',sans-serif;font-size:13px;letter-spacing:.06em;cursor:pointer;flex-shrink:0;box-shadow:0 4px 10px rgba(197,164,78,.30)}
 .install-prompt-cta:active{transform:scale(.96)}
@@ -5683,10 +5683,10 @@ body.ah-lib-open .tim-fab{display:none!important}
   <div class="install-prompt-inner">
     <div class="install-prompt-ic">📲</div>
     <div class="install-prompt-txt">
-      <div class="install-prompt-title">Installer Athletik Hub</div>
-      <div class="install-prompt-sub" id="installPromptSub">Ajoute l'app à ton écran d'accueil pour un accès rapide.</div>
+      <div class="install-prompt-title">Installe l'app sur ton téléphone</div>
+      <div class="install-prompt-sub" id="installPromptSub">Accès rapide depuis ton écran d'accueil</div>
     </div>
-    <button class="install-prompt-cta" id="installPromptBtn" onclick="window._installPromptGo()">Installer</button>
+    <button class="install-prompt-cta" id="installPromptBtn" onclick="window._installPromptGo()">VOIR LE TUTO</button>
     <button class="install-prompt-close" onclick="window._installPromptDismiss()" aria-label="Fermer">×</button>
   </div>
 </div>
@@ -37125,22 +37125,15 @@ async function fbSaveProfile() {
 })();
 
 // ═══════════════════════════════════════
-// PWA INSTALL PROMPT — invite à installer sur l'écran d'accueil
+// PWA INSTALL PROMPT — bannière "Installe l'app" → /download.html
 // ───────────────────────────────────────
-// Comportement :
-//   - Android Chrome / Edge : capture beforeinstallprompt, montre notre
-//     bannière custom, sur click déclenche le prompt natif via .prompt()
-//   - iOS Safari : pas de beforeinstallprompt → on détecte iOS et on
-//     affiche une instruction "Tap Partager → Sur l'écran d'accueil"
-//   - Si déjà installé (display-mode standalone OU navigator.standalone)
-//     → on n'affiche jamais
-//   - Si l'user a fermé la bannière (×) → on respecte 14 jours avant
-//     de la remontrer (localStorage ah_install_dismissed_at)
+// Affiché 3s après le chargement si l'app n'est PAS en mode standalone
+// (= pas encore installée sur l'écran d'accueil).
+// Bouton "VOIR LE TUTO" → ouvre /download.html (guide OS par OS).
+// Croix → dismiss permanent (localStorage ah_install_dismissed).
 // ═══════════════════════════════════════
 (function initInstallPrompt(){
-  var DISMISS_KEY = 'ah_install_dismissed_at';
-  var DISMISS_MS  = 14 * 24 * 60 * 60 * 1000; // 14 jours
-  var deferred = null;
+  var DISMISS_KEY = 'ah_install_dismissed';
 
   function isStandalone(){
     try {
@@ -37149,25 +37142,12 @@ async function fbSaveProfile() {
     } catch(e){}
     return false;
   }
-  function wasRecentlyDismissed(){
-    try {
-      var t = parseInt(localStorage.getItem(DISMISS_KEY) || '0', 10);
-      return t && (Date.now() - t) < DISMISS_MS;
-    } catch(e){ return false; }
+  function isDismissed(){
+    try { return !!localStorage.getItem(DISMISS_KEY); } catch(e){ return false; }
   }
-  function isIOS(){
-    var ua = navigator.userAgent || '';
-    return /iphone|ipad|ipod/i.test(ua) && !/MSStream/.test(ua);
-  }
-  function showBanner(label, subLabel){
+  function showBanner(){
     var el = document.getElementById('installPrompt');
-    if (!el) return;
-    var btn = document.getElementById('installPromptBtn');
-    var sub = document.getElementById('installPromptSub');
-    if (btn) btn.style.display = label ? '' : 'none';
-    if (btn && label) btn.textContent = label;
-    if (sub && subLabel) sub.textContent = subLabel;
-    el.style.display = 'block';
+    if (el) el.style.display = 'block';
   }
   function hideBanner(){
     var el = document.getElementById('installPrompt');
@@ -37175,104 +37155,27 @@ async function fbSaveProfile() {
   }
 
   window._installPromptDismiss = function(){
-    try { localStorage.setItem(DISMISS_KEY, String(Date.now())); } catch(e){}
+    try { localStorage.setItem(DISMISS_KEY, '1'); } catch(e){}
     hideBanner();
   };
   window._installPromptGo = function(){
-    if (deferred) {
-      // Android Chrome / Edge — déclenche le prompt natif
-      try {
-        deferred.prompt();
-        deferred.userChoice.then(function(choice){
-          if (choice && choice.outcome === 'accepted') {
-            try { showToast && showToast('✓ Installation en cours…', 'ok'); } catch(_){}
-          }
-          deferred = null;
-          hideBanner();
-        }).catch(function(){ hideBanner(); });
-      } catch(e){ hideBanner(); }
-      return;
-    }
-    if (isIOS()) {
-      // iOS Safari — pas d'API d'install, on affiche l'instruction
-      try {
-        showToast && showToast('Touche le bouton Partager 📤 puis "Sur l\'écran d\'accueil".', 'info', 8000);
-      } catch(_){
-        alert('Sur iPhone : touche le bouton Partager (carré avec flèche) puis "Sur l\'écran d\'accueil".');
-      }
-      return;
-    }
-    // Android sans beforeinstallprompt encore reçu : on guide vers le menu
-    try {
-      showToast && showToast('Touche le menu ⋮ du navigateur puis "Installer l\'application" ou "Ajouter à l\'écran d\'accueil".', 'info', 9000);
-    } catch(_){
-      alert('Touche le menu du navigateur (⋮) puis choisis "Installer l\'application" ou "Ajouter à l\'écran d\'accueil".');
-    }
+    window.open('/download.html', '_blank');
   };
 
-  // Stratégie d'affichage du banner — corrige le bug remonté par l'user :
-  // "j'appuie, donc demande si je veux installer, ensuite j'installe".
-  //
-  // Comportement précédent : on affichait la bannière 4s après le load,
-  // même si Chrome n'avait pas encore fait fire beforeinstallprompt
-  // (heuristique Chrome = >30s d'engagement avant que l'API d'install
-  // ne soit dispo). Conséquence : l'utilisateur cliquait "INSTALLER" et
-  // tombait sur un toast disant "va dans le menu du navigateur" → UX
-  // dégradée par rapport au prompt natif attendu.
-  //
-  // Nouveau comportement :
-  //   - iOS Safari → banner après 4s avec instructions Partager → Écran
-  //     d'accueil (iOS n'a pas d'API d'install, donc c'est le seul flow).
-  //   - Android / desktop Chrome → banner UNIQUEMENT quand
-  //     beforeinstallprompt s'est déclenché → le clic ouvre TOUJOURS le
-  //     prompt natif. Si Chrome ne déclenche jamais (utilisateur encore
-  //     en pleine évaluation), pas de banner du tout — plus propre que
-  //     d'afficher un faux bouton qui ne fait rien d'utile.
-  //   - Fallback : si après 60s rien n'est arrivé sur Android, on montre
-  //     un banner discret "ajouter via le menu ⋮" (vrai instructionnel,
-  //     pas un faux bouton d'install).
-  function showWithNativePrompt() {
-    if (isStandalone() || wasRecentlyDismissed()) return;
-    showBanner('Installer', "Ajoute l'app à ton écran d'accueil pour un accès rapide.");
-  }
-  function showIosOrFallback(){
-    if (isStandalone()) return;
-    if (wasRecentlyDismissed()) return;
-    if (isIOS()) {
-      showBanner('Installer', 'iPhone : Partager 📤 → "Sur l\'écran d\'accueil".');
-      return;
-    }
-    // Android sans beforeinstallprompt après 60s : on propose le chemin
-    // manuel (menu ⋮ → Installer) avec un libellé honnête au lieu d'un
-    // bouton "INSTALLER" qui ne fera pas apparaître le prompt natif.
-    if (!deferred) {
-      showBanner('Voir comment installer', "Menu ⋮ du navigateur → Installer l'application.");
-    }
-  }
-
-  window.addEventListener('beforeinstallprompt', function(e){
-    e.preventDefault();
-    deferred = e;
-    // Chrome est prêt à proposer l'install natif — on peut afficher le
-    // banner avec un bouton qui marche vraiment.
-    showWithNativePrompt();
-  });
-
   window.addEventListener('appinstalled', function(){
-    deferred = null;
+    try { localStorage.setItem(DISMISS_KEY, '1'); } catch(_){}
     hideBanner();
-    try { localStorage.setItem(DISMISS_KEY, '0'); } catch(_){}
   });
 
-  // iOS / fallback Android : on attend plus longtemps que les 4s
-  // d'origine — laisse à Chrome le temps de déclencher beforeinstallprompt
-  // si l'utilisateur reste sur la page.
+  function maybeShow(){
+    if (isStandalone() || isDismissed()) return;
+    showBanner();
+  }
+
   if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', function(){
-      setTimeout(showIosOrFallback, isIOS() ? 4000 : 60000);
-    });
+    document.addEventListener('DOMContentLoaded', function(){ setTimeout(maybeShow, 3000); });
   } else {
-    setTimeout(showIosOrFallback, isIOS() ? 4000 : 60000);
+    setTimeout(maybeShow, 3000);
   }
 })();
 </script>
