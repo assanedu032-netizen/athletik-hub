@@ -30664,7 +30664,11 @@ function _isOnboardingComplete(profile) {
   //   profil4 → nutrition (objNutri, poids, taille)
   //   profil3 → tests physiques (satDone)
   // objNutri et nutriObj sont des alias du même champ (renommage historique).
+  // satDone est dérivé de satDone OU de toute donnée de test physique présente
+  // (vertJump, satSprintTime, satForce1RM) — fallback pour les profils Firestore
+  // anciens où satDone:true n'était pas écrit explicitement.
   var hasNutriObj = !!(p.objNutri || p.nutriObj);
+  var hasSatData  = !!(p.satDone || p.vertJump || p.satSprintTime || p.satForce1RM || p.satDetente);
   return !!(
        p.prenom
     && p.age
@@ -30673,7 +30677,7 @@ function _isOnboardingComplete(profile) {
     && hasNutriObj
     && p.poids
     && p.taille
-    && p.satDone
+    && hasSatData
   );
 }
 
@@ -30708,7 +30712,10 @@ function _nextOnboardingScreen(profile, opts) {
   if (!(p.objNutri || p.nutriObj) || !p.poids || !p.taille) return 'profil4';
 
   // 5) Profil 3/3 — Tests physiques
-  if (!p.satDone) return 'profil3';
+  // Dérive satDone depuis n'importe quelle donnée de test physique présente
+  // (fallback pour les profils Firestore anciens sans satDone:true explicite).
+  var hasSatData = !!(p.satDone || p.vertJump || p.satSprintTime || p.satForce1RM || p.satDetente);
+  if (!hasSatData) return 'profil3';
 
   // 6) Tout fait → analyse Titan + révélation programme + home
   return 'home';
@@ -30944,15 +30951,19 @@ function _fbApplyPayload(data) {
     } catch(e) {}
   });
   try { if (data.accessTier) localStorage.setItem('ah_access_tier', data.accessTier); } catch(e) {}
-  // Normalise l'alias nutriObj → objNutri dans le profil local (renommage
-  // historique : les anciens profils Firestore ont nutriObj, le code actuel
-  // utilise objNutri partout).
+  // Normalise alias et champs dérivés dans le profil local.
   try {
     var _np = JSON.parse(localStorage.getItem('ah_profile') || '{}');
-    if (_np.nutriObj && !_np.objNutri) {
-      _np.objNutri = _np.nutriObj;
-      localStorage.setItem('ah_profile', JSON.stringify(_np));
+    var _changed = false;
+    // nutriObj → objNutri (renommage historique)
+    if (_np.nutriObj && !_np.objNutri) { _np.objNutri = _np.nutriObj; _changed = true; }
+    // satDone dérivé : si des données de test physique sont présentes mais
+    // satDone n'est pas explicitement true, on le dérive pour éviter que le
+    // test soit redemandé à chaque login sur les anciens profils Firestore.
+    if (!_np.satDone && (_np.vertJump || _np.satSprintTime || _np.satForce1RM || _np.satDetente)) {
+      _np.satDone = true; _changed = true;
     }
+    if (_changed) localStorage.setItem('ah_profile', JSON.stringify(_np));
   } catch(e) {}
   // Flags dérivés — ah_onboarding_done = source de vérité unique calculée
   // par _isOnboardingComplete (ne pose plus à tort sur programKey seul).
@@ -35242,6 +35253,18 @@ function obSubmitSAT(){
     OB.satFMS        = parseInt(p3Values['p3FMS'])          || null;
   }
   OB.satDone = true; OB.profilePct = 80;
+  // Persiste immédiatement satDone + données de test dans ah_profile
+  // (ne pas attendre obFinish — si l'app se réinitialise entre profil3 et
+  // profil4, satDone serait perdu et le test redemandé à chaque login).
+  try {
+    var _obp = JSON.parse(localStorage.getItem('ah_profile') || '{}');
+    _obp.satDone = true;
+    if (OB.satDetente) _obp.satDetente = OB.satDetente;
+    if (OB.satForce)   _obp.satForce   = OB.satForce;
+    if (OB.satVitesse) _obp.satVitesse = OB.satVitesse;
+    localStorage.setItem('ah_profile', JSON.stringify(_obp));
+  } catch(e) {}
+  try { _persistOnboarding(); } catch(e) {}
 
   // Lancé depuis Tracks > Tests (carte PDC) OU mode découverte :
   // on persiste les valeurs dans le profil sans enchaîner sur profil4.
