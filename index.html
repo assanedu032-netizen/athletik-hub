@@ -4984,8 +4984,16 @@ body.ah-lib-open .tim-fab{display:none!important}
 /* Message de sécurité : reste présent, volontairement moins fort que le formulaire. */
 .ea-fb-note{margin-top:9px;font-family:'Outfit',sans-serif;font-size:11px;line-height:1.45;color:var(--muted)}
 .ea-fb-note.warn{color:var(--text2);background:var(--gold-dim);border-left:3px solid var(--gold);border-radius:0 8px 8px 0;padding:9px 11px}
+/* Barre d'action collée en bas de la zone scrollable : le CTA reste toujours
+   entièrement visible, safe-area comprise (avant, il pouvait être coupé par
+   le bord de l'écran / la barre de gestes). Le padding bas du body est
+   neutralisé ici — scope au seul modal de bilan — pour éviter un espace mort
+   sous le bouton une fois arrivé en fin de scroll. */
+#eaFeedbackOverlay .ea-ov-body{padding-bottom:0}
+.ea-fb-actions{position:sticky;bottom:0;z-index:2;margin-top:6px;padding:12px 0 calc(12px + env(safe-area-inset-bottom,0px));background:var(--bg,#FAF8F4)}
+.ea-fb-actions::before{content:'';position:absolute;left:0;right:0;top:-16px;height:16px;background:linear-gradient(to top,var(--bg,#FAF8F4),transparent);pointer-events:none}
 /* CTA principal — navy plein, états normal / pressé / désactivé. */
-.ea-fb-cta{width:100%;margin-top:16px;padding:16px 14px;min-height:52px;background:var(--navy);border:0;border-radius:12px;font-family:'Bebas Neue',sans-serif;font-size:17px;letter-spacing:.12em;color:#FFF;cursor:pointer;transition:transform .1s,background .15s;-webkit-tap-highlight-color:transparent}
+.ea-fb-cta{width:100%;margin-top:0;padding:16px 14px;min-height:52px;background:var(--navy);border:0;border-radius:12px;font-family:'Bebas Neue',sans-serif;font-size:17px;letter-spacing:.12em;color:#FFF;cursor:pointer;transition:transform .1s,background .15s;-webkit-tap-highlight-color:transparent}
 .ea-fb-cta:active:not(:disabled){transform:scale(.98);background:#1B2A4A}
 .ea-fb-cta:disabled{background:var(--surface2);color:var(--muted);cursor:not-allowed}
 /* Confirmation d'enregistrement affichée sur l'écran de fin de séance. */
@@ -36948,7 +36956,9 @@ function _eaFeedbackHtml() {
             btn('completion','abandon','Abandonnée')
           ], ' ea-fb-scale--trio')
     +   '</div>'
-    +   '<button id="eaFbValidate" class="ea-fb-cta" type="button" disabled onclick="window._eaFbValidate()">ENREGISTRER MON BILAN</button>'
+    +   '<div class="ea-fb-actions">'
+    +     '<button id="eaFbValidate" class="ea-fb-cta" type="button" disabled onclick="window._eaFbValidate()">ENREGISTRER MON BILAN</button>'
+    +   '</div>'
     + '</div>'
     + '</div>';
 }
