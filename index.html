@@ -30967,9 +30967,14 @@ function _fbApplyPayload(data) {
   } catch(e) {}
   // Flags dérivés — ah_onboarding_done = source de vérité unique calculée
   // par _isOnboardingComplete (ne pose plus à tort sur programKey seul).
+  // On lit depuis localStorage (profil déjà normalisé : nutriObj→objNutri,
+  // satDone dérivé depuis satForce…) plutôt que depuis data.profile brut
+  // pour ne pas supprimer ah_onboarding_done à cause d'anciens alias Firestore.
   try {
     if (typeof _syncOnboardingDoneFlag === 'function') {
-      _syncOnboardingDoneFlag(data.profile);
+      var _syncProf = {};
+      try { _syncProf = JSON.parse(localStorage.getItem('ah_profile') || '{}'); } catch(e2) {}
+      _syncOnboardingDoneFlag(_syncProf);
     }
   } catch(e) {}
   // Restaure le planning (jours + heures) — synchronisé entre appareils.
