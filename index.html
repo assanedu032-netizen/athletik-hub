@@ -29984,6 +29984,17 @@ function obCalcProg() {
     localStorage.setItem('ah_profile', JSON.stringify(p));
   } catch(e) { console.warn('Save profile1 error:', e); }
   try { _persistOnboarding(); } catch(e) {}
+  // Persiste programKey + profil dans Firestore immédiatement, sans attendre
+  // obFinish(). Si l'utilisateur ferme l'app avant profil4, fbLoadFirestoreToLocal
+  // retrouvera programKey dans Firestore et n'effacera pas le profil local.
+  if (window.fb && window.fbUser) {
+    try {
+      var _calcProgProfile = {};
+      try { _calcProgProfile = JSON.parse(localStorage.getItem('ah_profile') || '{}'); } catch(e) {}
+      var _cpRef = window.fb.doc(window.fb.db, 'users', window.fbUser.uid);
+      window.fb.setDoc(_cpRef, { profile: _calcProgProfile, updatedAt: window.fb.serverTimestamp() }, { merge: true }).catch(function(err){ console.warn('obCalcProg Firestore:', err); });
+    } catch(e2) {}
+  }
 
   // En mode découverte : retour Home avec toast révélation programme
   if (isDiscoveryMode()) {
@@ -30942,6 +30953,12 @@ function _fbCollectPayload() {
 
 function _fbApplyPayload(data) {
   if (!data || typeof data !== 'object') return;
+  // Sauvegarde les champs critiques du profil LOCAL avant l'écrasement Firestore.
+  // Si Firestore a un profil incomplet (programKey absent car obCalcProg n'avait
+  // pas encore synchronisé lors du boot précédent), on réinjecte ces champs après
+  // pour éviter de replonger l'utilisateur dans l'onboarding complet.
+  var _localBefore = {};
+  try { _localBefore = JSON.parse(localStorage.getItem('ah_profile') || '{}'); } catch(e) {}
   FB_SYNC_KEYS.forEach(function(entry) {
     var sk = entry[0], ff = entry[1], isJson = entry[2];
     if (data[ff] == null) return;
@@ -30950,6 +30967,24 @@ function _fbApplyPayload(data) {
       localStorage.setItem(sk, v);
     } catch(e) {}
   });
+  // Réinjecte les champs critiques locaux si Firestore ne les avait pas.
+  // Couvre le cas : user a terminé profil1 (programKey dans localStorage) mais
+  // fermé l'app avant obFinish() — Firestore n'avait pas encore programKey.
+  try {
+    var _afterApply = JSON.parse(localStorage.getItem('ah_profile') || '{}');
+    var _criticalFields = ['programKey','program','programObj','prenom','name','age','sexe','objectif',
+                          'sit','cont','mat','satDone','satSkipped','satForce','satDetente',
+                          'vertJump','satSprintTime','satForce1RM','objNutri','nutriObj','poids','taille'];
+    var _fbPatched = false;
+    _criticalFields.forEach(function(k) {
+      if (_localBefore[k] !== undefined && _localBefore[k] !== null && _localBefore[k] !== '' &&
+          (_afterApply[k] === undefined || _afterApply[k] === null || _afterApply[k] === '')) {
+        _afterApply[k] = _localBefore[k];
+        _fbPatched = true;
+      }
+    });
+    if (_fbPatched) localStorage.setItem('ah_profile', JSON.stringify(_afterApply));
+  } catch(e) {}
   try { if (data.accessTier) localStorage.setItem('ah_access_tier', data.accessTier); } catch(e) {}
   // Normalise alias et champs dérivés dans le profil local.
   try {
