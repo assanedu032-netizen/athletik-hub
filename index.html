@@ -4964,12 +4964,33 @@ body.ah-lib-open .tim-fab{display:none!important}
 /* ── Feedback fin de séance Elite Athlète ───────────────────────────
    Affiché dans le panneau de complétion live, juste avant les CTA finaux. */
 .ea-fb{margin-top:16px;padding:14px;background:var(--surface);border:1px solid var(--border);border-radius:14px}
-.ea-fb-q{font-family:'Outfit',sans-serif;font-size:12.5px;color:var(--text);font-weight:700;margin:8px 0 6px;letter-spacing:.01em}
+/* Sous-titre du header — pose le contexte sans surcharger. */
+.ea-fb-lede{font-family:'Outfit',sans-serif;font-size:12.5px;color:var(--text2);margin-top:5px;line-height:1.35}
+.ea-fb-q{font-family:'Outfit',sans-serif;font-size:13px;color:var(--text);font-weight:700;margin:18px 0 8px;letter-spacing:.01em}
 .ea-fb-q:first-child{margin-top:0}
-.ea-fb-scale{display:flex;gap:5px;flex-wrap:wrap}
-.ea-fb-btn{flex:1;min-width:0;padding:8px 4px;background:var(--surface2);border:1.5px solid var(--border);border-radius:8px;font-size:11.5px;font-weight:700;color:var(--text2);cursor:pointer;font-family:inherit;transition:transform .1s,background .15s,border-color .15s}
+.ea-fb-n{color:var(--gold);font-weight:800;margin-right:6px}
+.ea-fb-scale{display:flex;gap:6px;flex-wrap:wrap}
+/* Échelle 1→10 : grille fixe (jamais de débordement horizontal sur petit écran). */
+.ea-fb-scale--num{display:grid;grid-template-columns:repeat(10,1fr);gap:4px}
+/* Trio de choix : 3 colonnes, cible tactile confortable (≥46px). */
+.ea-fb-scale--trio{display:grid;grid-template-columns:repeat(3,1fr);gap:7px}
+.ea-fb-btn{flex:1;min-width:0;padding:8px 4px;background:var(--surface2);border:1.5px solid var(--border);border-radius:8px;font-size:11.5px;font-weight:700;color:var(--text2);cursor:pointer;font-family:inherit;transition:transform .1s,background .15s,border-color .15s;-webkit-tap-highlight-color:transparent}
+.ea-fb-scale--num .ea-fb-btn{padding:0;height:42px;font-size:13.5px;border-radius:9px;display:flex;align-items:center;justify-content:center}
+.ea-fb-scale--trio .ea-fb-btn{min-height:46px;padding:10px 6px;font-size:13px;border-radius:10px}
 .ea-fb-btn:active{transform:scale(.95)}
-.ea-fb-btn.on{background:var(--navy);border-color:var(--navy);color:var(--gold)}
+.ea-fb-btn.on{background:var(--navy);border-color:var(--navy);color:var(--gold);box-shadow:0 2px 8px rgba(36,59,107,.22)}
+/* Repères de l'échelle : lève l'ambiguïté 1 = très facile / 10 = maximale. */
+.ea-fb-ends{display:flex;justify-content:space-between;margin-top:7px;font-family:'Outfit',sans-serif;font-size:10.5px;color:var(--muted);font-weight:600}
+/* Message de sécurité : reste présent, volontairement moins fort que le formulaire. */
+.ea-fb-note{margin-top:9px;font-family:'Outfit',sans-serif;font-size:11px;line-height:1.45;color:var(--muted)}
+.ea-fb-note.warn{color:var(--text2);background:var(--gold-dim);border-left:3px solid var(--gold);border-radius:0 8px 8px 0;padding:9px 11px}
+/* CTA principal — navy plein, états normal / pressé / désactivé. */
+.ea-fb-cta{width:100%;margin-top:16px;padding:16px 14px;min-height:52px;background:var(--navy);border:0;border-radius:12px;font-family:'Bebas Neue',sans-serif;font-size:17px;letter-spacing:.12em;color:#FFF;cursor:pointer;transition:transform .1s,background .15s;-webkit-tap-highlight-color:transparent}
+.ea-fb-cta:active:not(:disabled){transform:scale(.98);background:#1B2A4A}
+.ea-fb-cta:disabled{background:var(--surface2);color:var(--muted);cursor:not-allowed}
+/* Confirmation d'enregistrement affichée sur l'écran de fin de séance. */
+.ea-fb-saved{margin-top:12px;font-family:'Outfit',sans-serif;font-size:13px;font-weight:800;color:var(--ah-gold)}
+.ea-fb-saved span{display:block;margin-top:4px;font-size:12px;font-weight:500;color:var(--ah-text2);line-height:1.45}
 @keyframes libxSheetUp{from{transform:translateY(40px);opacity:0}to{transform:translateY(0);opacity:1}}
 .libx-sheet-grab{width:42px;height:4px;border-radius:2px;background:var(--border2,#D8D3C6);margin:2px auto 12px}
 .libx-sheet-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
@@ -36711,10 +36732,18 @@ function _lsFinalizeSession(feedback) {
   }
   var complete = document.getElementById('lsComplete');
   if (complete) complete.style.display = 'flex';
+  feedback = feedback || {};
   var titanMsg = _seFbTitanMsg(feedback);
-  var msg = 'Tu viens de terminer <strong>' + (_LS.sessName || 'cette séance') + '</strong>.<br>'
-          + '<span style="display:inline-block;margin-top:6px;font-size:11px;color:var(--ah-gold);letter-spacing:1px;font-weight:700">SCORE ' + feedback.sessionQualityScore + '% — ' + feedback.titanStatus.toUpperCase() + '</span><br>'
-          + '<span style="display:inline-block;margin-top:8px;font-size:13px;color:var(--ah-text2);line-height:1.4;font-style:italic">"' + titanMsg + '"</span>';
+  // La ligne SCORE n'est affichée que si le feedback la porte. Les chemins
+  // "feedback passé" (_eaCloseFeedback(true)) n'ont ni score ni statut : lire
+  // feedback.titanStatus.toUpperCase() levait un TypeError qui interrompait
+  // TOUTE la finalisation — séance jamais écrite dans ah_set_history, streak
+  // et progression programme jamais incrémentés.
+  var msg = 'Tu viens de terminer <strong>' + (_LS.sessName || 'cette séance') + '</strong>.<br>';
+  if (feedback.sessionQualityScore != null && feedback.titanStatus) {
+    msg += '<span style="display:inline-block;margin-top:6px;font-size:11px;color:var(--ah-gold);letter-spacing:1px;font-weight:700">SCORE ' + feedback.sessionQualityScore + '% — ' + String(feedback.titanStatus).toUpperCase() + '</span><br>';
+  }
+  msg += '<span style="display:inline-block;margin-top:8px;font-size:13px;color:var(--ah-text2);line-height:1.4;font-style:italic">"' + titanMsg + '"</span>';
   var msgEl = document.getElementById('lsCompleteMsg');
   if (msgEl) msgEl.innerHTML = msg;
   if (body) body.scrollTop = 0;
@@ -36804,14 +36833,31 @@ window._eaFbPick = function(field, value) {
   groups.forEach(function(b){
     b.classList.toggle('on', b.getAttribute('data-value') === String(value));
   });
+  // Douleur "gênante" → on renforce le message de sécurité déjà présent
+  // (pas de nouvelle fonctionnalité : simple accent visuel sur le même texte).
+  if (field === 'pain') {
+    var note = document.getElementById('eaFbPainNote');
+    if (note) note.classList.toggle('warn', String(value) === 'genante');
+  }
   // Active le bouton Valider quand les 5 sont remplies
   var allOk = ['difficulty','fatigue','pain','technique','completion'].every(function(k){ return window._eaFbState[k] != null; });
   var btn = document.getElementById('eaFbValidate');
-  if (btn) { btn.disabled = !allOk; btn.style.opacity = allOk ? '1' : '.55'; }
+  // L'opacité est désormais gérée par .ea-fb-cta:disabled (CSS) — on remet la
+  // valeur inline à vide pour ne pas écraser l'état visuel du design system.
+  if (btn) { btn.disabled = !allOk; btn.style.opacity = ''; }
 };
 window._eaFbValidate = function() {
   var st = window._eaFbState || {};
   if (st.difficulty == null) return;
+  // Score qualité de séance — réutilise l'échelle et le vocabulaire déjà en
+  // place (_seFbStatusFromScore) pour que l'écran de fin affiche la même chose
+  // que le flow standard. On se base sur l'exécution et l'avancement : la
+  // difficulté et la fatigue décrivent le ressenti, pas la qualité du travail.
+  var _TECH  = { mauvaise: 40, correcte: 70, bonne: 95 };
+  var _COMPL = { complete: 100, partielle: 65, abandon: 30 };
+  var _score = Math.round(
+      ((_TECH[st.technique]   != null ? _TECH[st.technique]   : 70)
+     + (_COMPL[st.completion] != null ? _COMPL[st.completion] : 65)) / 2);
   var payload = {
     sessionId: _LS.eaSessionId,
     phaseName: _LS.eaPhaseName,
@@ -36821,6 +36867,8 @@ window._eaFbValidate = function() {
     pain: st.pain,
     technique: st.technique,
     completion: st.completion,
+    sessionQualityScore: _score,
+    titanStatus: _seFbStatusFromScore(_score),
     completedAt: new Date().toISOString()
   };
   try { _eaSaveFeedback(payload); } catch(e) {}
@@ -36831,51 +36879,76 @@ window._eaFbValidate = function() {
   }
   window._eaCloseFeedback(false);
   _lsFinalizeSession(payload);
+  // Confirmation explicite que le bilan est bien enregistré. On s'appuie
+  // uniquement sur les compteurs déjà existants (streak mis à jour par
+  // _recordSessionCompletion) — aucun nouveau système de gamification.
+  try {
+    var el = document.getElementById('lsCompleteMsg');
+    if (el) {
+      var extra = '';
+      try {
+        var _pf = JSON.parse(localStorage.getItem('ah_profile') || '{}');
+        if (_pf.streak > 1) extra = ' Série de ' + _pf.streak + ' jours 🔥';
+      } catch(e) {}
+      el.insertAdjacentHTML('beforeend',
+        '<div class="ea-fb-saved">BILAN ENREGISTRÉ ✓'
+      +   '<span>Ta séance a été ajoutée à ton journal de progression.' + extra + '</span>'
+      + '</div>');
+    }
+  } catch(e) {}
 };
 
 function _eaFeedbackHtml() {
   function btn(field, value, label) {
     return '<button type="button" class="ea-fb-btn" data-value="' + value + '" onclick="window._eaFbPick(\'' + field + '\',\'' + value + '\')">' + label + '</button>';
   }
-  function scale(field, items) {
-    return '<div class="ea-fb-scale" data-field="' + field + '">' + items.join('') + '</div>';
+  // mod = classe de disposition ('' = flex legacy, --num = échelle 1→10,
+  // --trio = 3 choix). Le sélecteur .ea-fb-scale[data-field] utilisé par
+  // _eaFbPick reste intact : on ne fait qu'AJOUTER un modificateur.
+  function scale(field, items, mod) {
+    return '<div class="ea-fb-scale' + (mod || '') + '" data-field="' + field + '">' + items.join('') + '</div>';
+  }
+  function q(num, label) {
+    return '<div class="ea-fb-q"><span class="ea-fb-n">' + num + '</span>' + label + '</div>';
   }
   var diff = [];
   for (var i = 1; i <= 10; i++) diff.push(btn('difficulty', i, String(i)));
-  return '<div class="ea-ov-card" role="dialog">'
+  return '<div class="ea-ov-card" role="dialog" aria-labelledby="eaFbTitle">'
     + '<div class="ea-ov-head">'
     +   '<div>'
     +     '<div class="ea-ov-eyebrow">Séance terminée</div>'
-    +     '<div class="ea-ov-title">Comment tu te sens ?</div>'
+    +     '<div class="ea-ov-title" id="eaFbTitle">Ton bilan de séance</div>'
+    +     '<div class="ea-fb-lede">Comment s\'est passée ta séance ?</div>'
     +   '</div>'
     +   '<button class="ea-ov-close" onclick="window._eaCloseFeedback(true)" aria-label="Passer">×</button>'
     + '</div>'
     + '<div class="ea-ov-body">'
     +   '<div class="ea-fb">'
-    +     '<div class="ea-fb-q">1. Difficulté ressentie</div>' + scale('difficulty', diff)
-    +     '<div class="ea-fb-q">2. Fatigue</div>' + scale('fatigue', [
+    +     q(1, 'Difficulté ressentie') + scale('difficulty', diff, ' ea-fb-scale--num')
+    +     '<div class="ea-fb-ends"><span>1 · Très facile</span><span>10 · Maximale</span></div>'
+    +     q(2, 'Fatigue après la séance') + scale('fatigue', [
             btn('fatigue','basse','Basse'),
             btn('fatigue','normale','Normale'),
             btn('fatigue','elevee','Élevée')
-          ])
-    +     '<div class="ea-fb-q">3. Douleur</div>' + scale('pain', [
-            btn('pain','non','Non'),
+          ], ' ea-fb-scale--trio')
+    +     q(3, 'Douleur') + scale('pain', [
+            btn('pain','non','Aucune'),
             btn('pain','legere','Légère'),
             btn('pain','genante','Gênante')
-          ])
-    +     '<div class="ea-fb-q">4. Qualité technique ressentie</div>' + scale('technique', [
+          ], ' ea-fb-scale--trio')
+    +     '<div class="ea-fb-note" id="eaFbPainNote">Une douleur inhabituelle ou persistante ? Arrête l\'exercice concerné et consulte un professionnel.</div>'
+    +     q(4, 'Qualité d\'exécution') + scale('technique', [
             btn('technique','mauvaise','Mauvaise'),
             btn('technique','correcte','Correcte'),
             btn('technique','bonne','Bonne')
-          ])
-    +     '<div class="ea-fb-q">5. Séance</div>' + scale('completion', [
+          ], ' ea-fb-scale--trio')
+    +     q(5, 'Avancement de la séance') + scale('completion', [
             btn('completion','complete','Complète'),
             btn('completion','partielle','Partielle'),
             btn('completion','abandon','Abandonnée')
-          ])
+          ], ' ea-fb-scale--trio')
     +   '</div>'
-    +   '<button id="eaFbValidate" type="button" disabled style="opacity:.55;width:100%;margin-top:14px;padding:14px;background:linear-gradient(135deg,var(--gold),#A0853A);border:0;border-radius:12px;font-family:\'Bebas Neue\',sans-serif;font-size:15px;letter-spacing:.12em;color:var(--navy);cursor:pointer" onclick="window._eaFbValidate()">VALIDER MON RESSENTI</button>'
-    +   '<div style="text-align:center;margin-top:10px;font-size:11px;color:var(--muted);line-height:1.5">Si tu ressens une douleur inhabituelle ou persistante, arrête l\'exercice concerné et consulte un professionnel.</div>'
+    +   '<button id="eaFbValidate" class="ea-fb-cta" type="button" disabled onclick="window._eaFbValidate()">ENREGISTRER MON BILAN</button>'
     + '</div>'
     + '</div>';
 }
