@@ -30668,7 +30668,7 @@ function _isOnboardingComplete(profile) {
   // (vertJump, satSprintTime, satForce1RM) — fallback pour les profils Firestore
   // anciens où satDone:true n'était pas écrit explicitement.
   var hasNutriObj = !!(p.objNutri || p.nutriObj);
-  var hasSatData  = !!(p.satDone || p.vertJump || p.satSprintTime || p.satForce1RM || p.satDetente);
+  var hasSatData  = !!(p.satDone || p.vertJump || p.satSprintTime || p.satForce1RM || p.satForce || p.satDetente);
   return !!(
        p.prenom
     && p.age
@@ -30714,7 +30714,7 @@ function _nextOnboardingScreen(profile, opts) {
   // 5) Profil 3/3 — Tests physiques
   // Dérive satDone depuis n'importe quelle donnée de test physique présente
   // (fallback pour les profils Firestore anciens sans satDone:true explicite).
-  var hasSatData = !!(p.satDone || p.vertJump || p.satSprintTime || p.satForce1RM || p.satDetente);
+  var hasSatData = !!(p.satDone || p.vertJump || p.satSprintTime || p.satForce1RM || p.satForce || p.satDetente);
   if (!hasSatData) return 'profil3';
 
   // 6) Tout fait → analyse Titan + révélation programme + home
@@ -30960,7 +30960,7 @@ function _fbApplyPayload(data) {
     // satDone dérivé : si des données de test physique sont présentes mais
     // satDone n'est pas explicitement true, on le dérive pour éviter que le
     // test soit redemandé à chaque login sur les anciens profils Firestore.
-    if (!_np.satDone && (_np.vertJump || _np.satSprintTime || _np.satForce1RM || _np.satDetente)) {
+    if (!_np.satDone && (_np.vertJump || _np.satSprintTime || _np.satForce1RM || _np.satForce || _np.satDetente)) {
       _np.satDone = true; _changed = true;
     }
     if (_changed) localStorage.setItem('ah_profile', JSON.stringify(_np));
@@ -35296,7 +35296,10 @@ function obSubmitSAT(){
     return;
   }
 
-  // Sinon : flow normal → Profil 4 Nutrition
+  // Sinon : flow normal → Profil 4 Nutrition (si pas encore fait)
+  var _ep2 = {}; try { _ep2 = JSON.parse(localStorage.getItem('ah_profile') || '{}'); } catch(e) {}
+  var _nutriDone = !!(_ep2.objNutri || _ep2.nutriObj) && !!_ep2.poids && !!_ep2.taille;
+  if (_nutriDone) { obFinish(); return; }
   go('profil4');
   setTimeout(initProfil4, 100);
 }
@@ -35590,7 +35593,8 @@ function obFinish(){
     localStorage.setItem('ah_profile',JSON.stringify(p));
 
     // Détecter si TOUTES les étapes du profil sont complètes
-    var allStepsDone = !!(p.programKey && p.age && p.sexe && p.prenom && p.satDone && p.poids && p.taille && p.objNutri);
+    var _hasSatDone = !!(p.satDone || p.satForce || p.satDetente || p.vertJump || p.satSprintTime || p.satForce1RM);
+    var allStepsDone = !!(p.programKey && p.age && p.sexe && p.prenom && _hasSatDone && p.poids && p.taille && p.objNutri);
     if (allStepsDone) {
       localStorage.setItem('ah_onboarding_done','1');
       localStorage.removeItem('ah_discovery_mode');
