@@ -31,6 +31,8 @@ console.log('\n=== 1. MARKUP DU MODAL ===\n');
 ok('titre "Ton bilan de séance"', out.includes('Ton bilan de séance'));
 ok('sous-titre présent', out.includes("Comment s'est passée ta séance ?"));
 ok('eyebrow "Séance terminée" conservé', out.includes('Séance terminée'));
+ok('micro-copy "30 secondes" sur la MÊME ligne que l\'accroche',
+   /Comment s'est passée ta séance \?\s*<em>30 secondes\.<\/em>/.test(out));
 ok('repère bas d\'échelle "1 · Très facile"', out.includes('1 · Très facile'));
 ok('repère haut d\'échelle "10 · Maximale"', out.includes('10 · Maximale'));
 ok('douleur renommée "Aucune"', out.includes('>Aucune<'));
