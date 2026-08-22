@@ -8391,6 +8391,14 @@ window.tiResetOnEnter = function(){ window.tiShowStep(1); };
     <div class="si-right">→</div>
   </div>
 
+  <!-- Ancrage comportemental (brique 3). Distinct du planning : le planning
+       dit QUAND tu t'entraînes, l'ancrage dit ce qui arrive JUSTE AVANT.
+       C'est ce moment-là qui sert de déclencheur naturel. -->
+  <div class="setting-item" onclick="window.openAnchorModal && window.openAnchorModal()">
+    <div class="si-left"><div class="si-icon">🔗</div><div><div class="si-text">Mon déclencheur</div><div class="si-sub" id="settingAnchorSub">Le moment qui précède tes séances</div></div></div>
+    <div class="si-right">→</div>
+  </div>
+
   <div class="setting-item" onclick="restartOnboarding()">
     <div class="si-left"><div class="si-icon">🔄</div><div><div class="si-text">Refaire le questionnaire</div><div class="si-sub">Modifier objectif et programme</div></div></div>
     <div class="si-right">→</div>
@@ -9125,6 +9133,42 @@ window.tiResetOnEnter = function(){ window.tiShowStep(1); };
         <span>📕</span><span>L'ACHETER SUR AMAZON</span><span style="opacity:.7">→</span>
       </button>
     </div>
+  </div>
+</div>
+
+<!-- ═══ ANCRAGE COMPORTEMENTAL (brique 3) ═══
+     Deux questions, jamais imposées : l'utilisateur y vient depuis Réglages.
+     Rien n'est obligatoire, tout est modifiable, et un profil sans ces
+     champs continue de fonctionner à l'identique. -->
+<div id="anchorModal" style="display:none;position:fixed;inset:0;background:rgba(6,12,24,.92);backdrop-filter:blur(8px);z-index:9500;align-items:center;justify-content:center;padding:20px">
+  <div style="max-width:420px;width:100%;background:var(--surface);border:1px solid var(--border);border-radius:18px;padding:22px 20px;max-height:90vh;overflow-y:auto">
+    <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px;margin-bottom:6px">
+      <div>
+        <div style="font-family:'JetBrains Mono',monospace;font-size:9.5px;letter-spacing:.2em;text-transform:uppercase;font-weight:800;color:var(--gold)">Déclencheur</div>
+        <div style="font-family:'Bebas Neue',sans-serif;font-size:22px;letter-spacing:.04em;color:var(--text);line-height:1.05;margin-top:3px">TON MOMENT NATUREL</div>
+      </div>
+      <button onclick="window.closeAnchorModal()" style="background:transparent;border:0;color:var(--muted);font-size:22px;cursor:pointer;padding:4px 8px;line-height:1">×</button>
+    </div>
+    <div style="font-family:'Outfit',sans-serif;font-size:12.5px;color:var(--text2);line-height:1.45;margin-bottom:16px">Sert à te rappeler ta séance au bon moment. Tu peux le changer ou le laisser vide.</div>
+
+    <div style="font-family:'Outfit',sans-serif;font-size:13px;font-weight:700;color:var(--text);margin-bottom:8px">Qu'est-ce que tu fais juste avant de t'entraîner, en général ?</div>
+    <div id="anchorMomentWrap" style="display:grid;gap:7px;margin-bottom:18px"></div>
+
+    <div style="font-family:'Outfit',sans-serif;font-size:13px;font-weight:700;color:var(--text);margin-bottom:8px">À quelle heure ça arrive, à peu près ?</div>
+    <input id="anchorTimeInput" type="time" style="width:100%;padding:12px 14px;background:var(--surface2);border:1.5px solid var(--border);border-radius:10px;font-family:'Outfit',sans-serif;font-size:15px;color:var(--text);outline:none;box-sizing:border-box">
+
+    <div style="margin-top:18px;padding-top:14px;border-top:1px solid var(--border)">
+      <div style="font-family:'Outfit',sans-serif;font-size:13px;font-weight:700;color:var(--text);margin-bottom:4px">Heures de silence</div>
+      <div style="font-family:'Outfit',sans-serif;font-size:11.5px;color:var(--muted);line-height:1.4;margin-bottom:8px">Aucune notification pendant cette plage.</div>
+      <div style="display:flex;align-items:center;gap:10px">
+        <input id="anchorQuietStart" type="time" style="flex:1;padding:10px 12px;background:var(--surface2);border:1.5px solid var(--border);border-radius:10px;font-family:'Outfit',sans-serif;font-size:14px;color:var(--text);outline:none;box-sizing:border-box">
+        <span style="font-size:12px;color:var(--muted)">→</span>
+        <input id="anchorQuietEnd" type="time" style="flex:1;padding:10px 12px;background:var(--surface2);border:1.5px solid var(--border);border-radius:10px;font-family:'Outfit',sans-serif;font-size:14px;color:var(--text);outline:none;box-sizing:border-box">
+      </div>
+    </div>
+
+    <button onclick="window._ahSaveAnchor()" style="width:100%;margin-top:20px;padding:15px;min-height:50px;background:#1B2A4A;border:0;border-radius:12px;font-family:'Bebas Neue',sans-serif;font-size:16px;letter-spacing:.12em;color:#FFF;cursor:pointer">ENREGISTRER</button>
+    <button onclick="window._ahClearAnchor()" style="width:100%;margin-top:8px;padding:10px;background:transparent;border:0;color:var(--muted);font-family:'Outfit',sans-serif;font-size:12px;cursor:pointer;text-decoration:underline;text-underline-offset:3px">Effacer mon déclencheur</button>
   </div>
 </div>
 
@@ -15465,6 +15509,9 @@ function switchTab(tab){
   if (tab === 'moi') {
     try { renderProfileCard(); } catch(e) {}
     try { apiKeyRestore(); fbRefreshAccountSection(window.fbUser); renderBadges(); refreshAccessTierUI(); renderProgression(); renderMoiPlanning(); renderHistory(); if (typeof window._renderGuidesList === 'function') window._renderGuidesList(); } catch(e) {}
+    // Ancrage (brique 3) — try/catch séparé : le sous-titre est cosmétique,
+    // il ne doit pas pouvoir empêcher le rendu du reste des Réglages.
+    try { if (typeof window._ahRefreshAnchorSub === 'function') window._ahRefreshAnchorSub(); } catch(e) {}
   }
   // Refresh Athletik Score on Home
   if (tab === 'home') {
@@ -29071,6 +29118,153 @@ function _ahNextStepLabel(next, stats) {
   return null;
 }
 window._ahNextStepLabel = _ahNextStepLabel;
+
+// ═══════════════════════════════════════════════════════════════════════════
+// ANCRAGE COMPORTEMENTAL  —  brique 3
+// ───────────────────────────────────────────────────────────────────────────
+// Le planning (trainingDays / trainingTimes) dit QUAND l'athlète s'entraîne.
+// L'ancrage dit ce qui arrive JUSTE AVANT — l'habitude déjà existante sur
+// laquelle accrocher la séance. Deux notions distinctes, volontairement pas
+// fusionnées : le planning reste la source des rappels actuels, l'ancrage
+// servira de déclencheur préférentiel à la brique 6.
+//
+// MIGRATION DOUCE : tous ces champs sont optionnels. _ahReadAnchor renvoie
+// toujours un objet exploitable, et absolument rien dans l'app ne dépend de
+// leur présence. Un profil existant se comporte exactement comme avant.
+//
+// NOMMAGE : le brief nomme les champs anchor_moment / anchor_time /
+// quiet_hours. On garde le camelCase du reste de ah_profile (nutriObj,
+// trialStartedAt, notifPrefs…) pour ne pas introduire deux conventions.
+// `notifications_enabled` n'est PAS recréé : ah_notif_on existe déjà et fait
+// exactement ce travail — le dupliquer créerait deux vérités.
+// ═══════════════════════════════════════════════════════════════════════════
+
+var AH_ANCHORS = [
+  { id:'travail', label:'Je rentre du travail / des cours' },
+  { id:'reveil',  label:'Je me réveille' },
+  { id:'repas',   label:'Je finis de manger' },
+  { id:'maison',  label:'Je pose mon sac chez moi' },
+  { id:'autre',   label:'Autre' }
+];
+
+window._ahReadAnchor = function() {
+  var p = _ahSafeParse('ah_profile', {});
+  var q = p.quietHours && typeof p.quietHours === 'object' ? p.quietHours : {};
+  return {
+    moment: p.anchorMoment || null,
+    time:   p.anchorTime   || null,
+    quietStart: q.start || null,
+    quietEnd:   q.end   || null,
+    isSet: !!(p.anchorMoment || p.anchorTime)
+  };
+};
+
+function _ahAnchorLabel(id) {
+  for (var i = 0; i < AH_ANCHORS.length; i++) if (AH_ANCHORS[i].id === id) return AH_ANCHORS[i].label;
+  return null;
+}
+window._ahAnchorLabel = _ahAnchorLabel;
+
+// Vrai si `hhmm` tombe dans la plage de silence. Gère le passage à minuit
+// (22:00 → 07:00). Sans plage définie, rien n'est silencieux.
+window._ahIsQuietHour = function(hhmm, anchor) {
+  try {
+    var a = anchor || window._ahReadAnchor();
+    if (!a.quietStart || !a.quietEnd || !hhmm) return false;
+    var toMin = function(s){ var p = String(s).split(':'); return (+p[0]) * 60 + (+p[1] || 0); };
+    var t = toMin(hhmm), s = toMin(a.quietStart), e = toMin(a.quietEnd);
+    if (isNaN(t) || isNaN(s) || isNaN(e)) return false;
+    return (s <= e) ? (t >= s && t < e)      // plage dans la même journée
+                    : (t >= s || t < e);      // plage à cheval sur minuit
+  } catch(e) { return false; }
+};
+
+var _ahAnchorDraft = null;   // sélection en cours dans le modal
+
+window.openAnchorModal = function() {
+  var m = document.getElementById('anchorModal');
+  if (!m) return;
+  var a = window._ahReadAnchor();
+  _ahAnchorDraft = a.moment;
+  _ahRenderAnchorOptions();
+  var t = document.getElementById('anchorTimeInput');
+  if (t) t.value = a.time || '';
+  var qs = document.getElementById('anchorQuietStart');
+  var qe = document.getElementById('anchorQuietEnd');
+  // Valeurs proposées par défaut UNIQUEMENT si rien n'a jamais été choisi.
+  // On ne réécrit jamais un choix existant.
+  if (qs) qs.value = a.quietStart || '22:00';
+  if (qe) qe.value = a.quietEnd   || '07:00';
+  m.style.display = 'flex';
+  document.body.style.overflow = 'hidden';
+};
+
+window.closeAnchorModal = function() {
+  var m = document.getElementById('anchorModal');
+  if (m) m.style.display = 'none';
+  document.body.style.overflow = '';
+};
+
+function _ahRenderAnchorOptions() {
+  var wrap = document.getElementById('anchorMomentWrap');
+  if (!wrap) return;
+  var h = '';
+  AH_ANCHORS.forEach(function(o){
+    var on = _ahAnchorDraft === o.id;
+    h += '<button type="button" onclick="window._ahPickAnchor(\'' + o.id + '\')" '
+      +  'style="display:block;width:100%;text-align:left;min-height:46px;padding:12px 14px;border-radius:10px;cursor:pointer;'
+      +  'font-family:\'Outfit\',sans-serif;font-size:13.5px;font-weight:600;transition:background .15s,border-color .15s;'
+      +  (on ? 'background:var(--navy);border:1.5px solid var(--navy);color:var(--gold)'
+            : 'background:var(--surface2);border:1.5px solid var(--border);color:var(--text2)') + '">'
+      +  escapeHtml(o.label) + '</button>';
+  });
+  wrap.innerHTML = h;
+}
+
+window._ahPickAnchor = function(id) {
+  _ahAnchorDraft = (_ahAnchorDraft === id) ? null : id;   // re-tap = désélection
+  _ahRenderAnchorOptions();
+};
+
+window._ahSaveAnchor = function() {
+  try {
+    var p = _ahSafeParse('ah_profile', {});
+    var t  = (document.getElementById('anchorTimeInput')  || {}).value || '';
+    var qs = (document.getElementById('anchorQuietStart') || {}).value || '';
+    var qe = (document.getElementById('anchorQuietEnd')   || {}).value || '';
+    p.anchorMoment = _ahAnchorDraft || null;
+    p.anchorTime   = /^\d{2}:\d{2}$/.test(t) ? t : null;
+    p.quietHours   = (/^\d{2}:\d{2}$/.test(qs) && /^\d{2}:\d{2}$/.test(qe))
+                     ? { start: qs, end: qe } : null;
+    localStorage.setItem('ah_profile', JSON.stringify(p));
+    try { if (typeof fbSaveProfile === 'function') fbSaveProfile(); } catch(e) {}
+    window.closeAnchorModal();
+    try { window._ahRefreshAnchorSub(); } catch(e) {}
+    if (typeof showToast === 'function') showToast('Déclencheur enregistré.', 'ok');
+  } catch(e) { console.warn('[anchor save]', e); }
+};
+
+window._ahClearAnchor = function() {
+  try {
+    var p = _ahSafeParse('ah_profile', {});
+    p.anchorMoment = null; p.anchorTime = null; p.quietHours = null;
+    localStorage.setItem('ah_profile', JSON.stringify(p));
+    try { if (typeof fbSaveProfile === 'function') fbSaveProfile(); } catch(e) {}
+    _ahAnchorDraft = null;
+    window.closeAnchorModal();
+    try { window._ahRefreshAnchorSub(); } catch(e) {}
+  } catch(e) { console.warn('[anchor clear]', e); }
+};
+
+// Sous-titre du réglage : reflète l'état réel, sans jamais inventer.
+window._ahRefreshAnchorSub = function() {
+  var el = document.getElementById('settingAnchorSub');
+  if (!el) return;
+  var a = window._ahReadAnchor();
+  if (!a.isSet) { el.textContent = 'Le moment qui précède tes séances'; return; }
+  var lbl = _ahAnchorLabel(a.moment);
+  el.textContent = (lbl ? lbl : 'Déclencheur défini') + (a.time ? ' · ' + a.time : '');
+};
 
 // Sélection. Étape 1 : le signal le plus fort, point.
 // Étape 5 (récompense variable) remplacera CE SEUL corps de fonction pour
