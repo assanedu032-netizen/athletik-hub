@@ -27842,7 +27842,10 @@ function _renderBookActivationStep() {
       '<div class="prem-title" style="font-size:28px">Ton numéro de commande Amazon</div>'
       + '<div class="prem-sub">Une seule étape pour vérifier que tu as bien le livre. Aucune donnée bancaire n\'est demandée.</div>'
       + '<label class="prem-input-label">N° commande Amazon</label>'
-      + '<input id="bookActOrderInput" class="prem-input" type="text" placeholder="123-1234567-1234567" value="' + (state.amazonOrder || '') + '" autocomplete="off" inputmode="text" style="letter-spacing:.06em">'
+      // inputmode="numeric" → pavé numérique : plus de tiret à taper, donc plus
+      // de clavier qui le remplace par un espace (bug remonté : "402 2927431").
+      // Les tirets sont posés automatiquement par _bookActFormatOrder.
+      + '<input id="bookActOrderInput" class="prem-input" type="text" placeholder="123-1234567-1234567" value="' + (state.amazonOrder || '') + '" autocomplete="off" inputmode="numeric" maxlength="19" oninput="window._bookActFormatOrder(this)" style="letter-spacing:.06em">'
       + '<div class="prem-input-hint">Format Amazon : 3 chiffres - 7 chiffres - 7 chiffres.</div>'
       + '<div class="prem-trust">'
       +   '<div class="prem-trust-ic">🔒</div>'
@@ -27886,15 +27889,40 @@ function _bookActMsg(text, kind) {
   el.style.display = '';
 }
 
+// Normalisation canonique d'un n° de commande : on ne garde que les
+// alphanumériques, en majuscules. MÊME règle côté serveur (hashOrder) pour que
+// "402-2927431-7905104", "402 2927431 7905104" et "4022927431 7905104"
+// produisent la même empreinte — sinon un même achat pouvait activer plusieurs
+// comptes en variant simplement la ponctuation.
+window._bookActCompactOrder = function(v) {
+  return String(v || '').replace(/[^0-9A-Za-z]/g, '').toUpperCase();
+};
+
+// Formate pendant la frappe : 402 → 402-2927431 → 402-2927431-7905104.
+// L'utilisateur n'a que les chiffres à taper.
+window._bookActFormatOrder = function(el) {
+  if (!el) return;
+  var atEnd = el.selectionStart >= (el.value || '').length;
+  var raw = window._bookActCompactOrder(el.value).slice(0, 17);
+  var out = raw;
+  if (raw.length > 10)     out = raw.slice(0, 3) + '-' + raw.slice(3, 10) + '-' + raw.slice(10);
+  else if (raw.length > 3) out = raw.slice(0, 3) + '-' + raw.slice(3);
+  el.value = out;
+  if (atEnd) { try { el.setSelectionRange(out.length, out.length); } catch(e) {} }
+};
+
 window._bookActivationNext = async function() {
   var input = document.getElementById('bookActOrderInput');
   var order = (input && input.value || '').trim();
   if (!order) { _bookActMsg('Saisis ton numéro de commande Amazon.', 'err'); return; }
-  // Format souple : on valide en regex large pour ne pas bloquer un user qui
-  // copie/colle avec ou sans tirets. Le serveur fait l'autorité.
-  var compact = order.replace(/\s+/g, '');
-  if (!/^[0-9A-Z\-]{8,30}$/i.test(compact)) {
-    _bookActMsg('Format de commande invalide. Ex : 123-1234567-1234567.', 'err');
+  // Un n° de commande Amazon fait 17 caractères (3 + 7 + 7). L'ancienne regex
+  // {8,30} laissait passer un numéro tronqué — l'utilisateur validait un
+  // numéro incomplet sans jamais comprendre pourquoi ça échouait ensuite.
+  var compact = window._bookActCompactOrder(order);
+  if (compact.length !== 17) {
+    _bookActMsg(compact.length < 17
+      ? 'Il manque des chiffres : un n° Amazon en compte 17 (' + compact.length + ' saisis). Ex : 123-1234567-1234567.'
+      : 'Trop de chiffres : un n° Amazon en compte 17. Ex : 123-1234567-1234567.', 'err');
     return;
   }
   window._bookActivation.amazonOrder = order;
