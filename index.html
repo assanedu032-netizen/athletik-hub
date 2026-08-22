@@ -1206,7 +1206,7 @@ body{background:var(--bg);color:var(--text);font-family:'Outfit',sans-serif;disp
 .msg-blocked{align-self:center;padding:8px 16px;background:#FEF0F0;border:1px solid #FECACA;border-radius:12px;font-size:11px;font-weight:700;color:#DC2626;text-align:center;max-width:90%;animation:msgIn .3s ease both}
 
 /* ═══ INPUT BAR ═══ */
-.chat-input{display:flex;gap:8px;padding:12px 14px;background:var(--surface);border-top:1px solid var(--border);flex-shrink:0;align-items:flex-end}
+.chat-input{position:relative;display:flex;gap:8px;padding:12px 14px;background:var(--surface);border-top:1px solid var(--border);flex-shrink:0;align-items:flex-end}
 .ci-field{flex:1;padding:10px 14px;background:var(--surface2);border:1.5px solid var(--border);border-radius:20px;font-family:'Outfit',sans-serif;font-size:14px;font-weight:500;color:var(--text);outline:none;resize:none;max-height:100px;min-height:40px;line-height:1.4;transition:border-color .2s}
 .ci-field:focus{border-color:var(--gold)}
 .ci-field::placeholder{color:var(--muted);opacity:.6}
@@ -1227,6 +1227,15 @@ body{background:var(--bg);color:var(--text);font-family:'Outfit',sans-serif;disp
 .ci-preview-rm{width:28px;height:28px;border-radius:50%;background:var(--surface2);border:1px solid var(--border);color:var(--muted);font-size:16px;line-height:1;cursor:pointer;flex-shrink:0;display:flex;align-items:center;justify-content:center;padding:0}
 /* Vignette dans la bulle du message envoyé. */
 .msg-photo{display:block;max-width:190px;width:100%;border-radius:10px;margin-bottom:7px;border:1px solid rgba(255,255,255,.18)}
+/* Choix appareil photo / galerie. Un menu explicite plutôt que de se fier au
+   sélecteur natif : selon le navigateur et l'OS, il propose l'appareil photo
+   ou non, et l'utilisateur ne comprend pas pourquoi. */
+.ci-sheet{display:none;position:absolute;left:14px;bottom:100%;margin-bottom:8px;z-index:30;background:var(--surface);border:1px solid var(--border);border-radius:14px;box-shadow:0 10px 30px rgba(10,16,30,.22);overflow:hidden;min-width:210px}
+.ci-sheet.on{display:block}
+.ci-sheet button{display:flex;align-items:center;gap:10px;width:100%;padding:13px 15px;background:none;border:0;border-bottom:1px solid var(--border);font-family:'Outfit',sans-serif;font-size:13.5px;font-weight:600;color:var(--text);cursor:pointer;text-align:left;min-height:46px}
+.ci-sheet button:last-child{border-bottom:0}
+.ci-sheet button:active{background:var(--surface2)}
+.ci-sheet .cis-ic{font-size:17px;line-height:1;flex-shrink:0}
 .ci-mic.rec{background:var(--ah-navy);border-color:var(--ah-gold);color:var(--ah-gold);animation:ci-mic-pulse 1.6s ease-in-out infinite}
 .ci-mic.rec:hover{background:var(--ah-navy2)}
 .ci-mic.unsupported{display:none}
@@ -8139,9 +8148,16 @@ window.tiResetOnEnter = function(){ window.tiShowStep(1); };
 
   <!-- Input -->
   <div class="chat-input">
-    <!-- capture omis volontairement : laisse le choix entre appareil photo et
-         galerie, pour pouvoir envoyer une capture d'écran déjà prise. -->
-    <input type="file" id="ciPhotoInput" accept="image/png,image/jpeg,image/webp" style="display:none" onchange="window._titanOnPhoto(this)">
+    <!-- Deux entrées distinctes : `capture` force l'appareil photo mais retire
+         l'accès à la galerie, on ne peut donc pas couvrir les deux cas avec un
+         seul input. accept="image/*" (et non une liste de types) est requis
+         pour que les photos iPhone au format HEIC restent sélectionnables. -->
+    <input type="file" id="ciPhotoInput" accept="image/*" style="display:none" onchange="window._titanOnPhoto(this)">
+    <input type="file" id="ciCameraInput" accept="image/*" capture="environment" style="display:none" onchange="window._titanOnPhoto(this)">
+    <div class="ci-sheet" id="ciPhotoSheet">
+      <button type="button" onclick="window._titanFromCamera()"><span class="cis-ic">📷</span>Prendre une photo</button>
+      <button type="button" onclick="window._titanFromGallery()"><span class="cis-ic">🖼️</span>Choisir dans la galerie</button>
+    </div>
     <button class="ci-photo" id="photoBtn" onclick="window._titanPickPhoto()" aria-label="Envoyer une photo à Titan" title="Envoyer une photo">
       <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor"><path d="M4 5h3l1.5-2h7L17 5h3a2 2 0 0 1 2 2v11a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2zm8 4a4.5 4.5 0 1 0 0 9 4.5 4.5 0 0 0 0-9zm0 2a2.5 2.5 0 1 1 0 5 2.5 2.5 0 0 1 0-5z"/></svg>
     </button>
@@ -24833,10 +24849,36 @@ window._titanPendingPhoto = null;   // { data, media_type, dataUrl }
 var TITAN_PHOTO_MAX_PX = 1024;
 var TITAN_PHOTO_MAX_B64 = 1400000;  // ~1,4 Mo de base64, large sous la limite API
 
+// Ouvre le choix appareil photo / galerie. Deux inputs distincts sont
+// nécessaires : l'attribut `capture` force l'appareil photo mais supprime
+// l'accès à la galerie, un seul input ne peut donc pas couvrir les deux.
 window._titanPickPhoto = function() {
-  var el = document.getElementById('ciPhotoInput');
-  if (el) { el.value = ''; el.click(); }
+  var sheet = document.getElementById('ciPhotoSheet');
+  if (sheet) sheet.classList.toggle('on');
 };
+window._titanCloseSheet = function() {
+  var sheet = document.getElementById('ciPhotoSheet');
+  if (sheet) sheet.classList.remove('on');
+};
+function _titanOpenInput(id) {
+  window._titanCloseSheet();
+  var el = document.getElementById(id);
+  // .click() doit rester dans le geste utilisateur (le tap sur le bouton du
+  // menu en est un) : pas de setTimeout ici, iOS bloquerait l'ouverture.
+  if (el) { el.value = ''; el.click(); }
+}
+window._titanFromCamera  = function() { _titanOpenInput('ciCameraInput'); };
+window._titanFromGallery = function() { _titanOpenInput('ciPhotoInput'); };
+
+// Referme le menu si on tape ailleurs.
+document.addEventListener('click', function(e) {
+  var sheet = document.getElementById('ciPhotoSheet');
+  if (!sheet || !sheet.classList.contains('on')) return;
+  if (sheet.contains(e.target)) return;
+  var btn = document.getElementById('photoBtn');
+  if (btn && btn.contains(e.target)) return;
+  sheet.classList.remove('on');
+});
 
 window._titanClearPhoto = function() {
   window._titanPendingPhoto = null;
@@ -24844,8 +24886,10 @@ window._titanClearPhoto = function() {
   var b = document.getElementById('photoBtn');
   if (p) p.classList.remove('on');
   if (b) b.classList.remove('on');
-  var i = document.getElementById('ciPhotoInput');
-  if (i) i.value = '';
+  ['ciPhotoInput', 'ciCameraInput'].forEach(function(id) {
+    var i = document.getElementById(id);
+    if (i) i.value = '';
+  });
 };
 
 // Redimensionne + ré-encode en JPEG. Retourne { data (base64 nu), media_type, dataUrl }.
