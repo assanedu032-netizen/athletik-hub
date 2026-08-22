@@ -1237,6 +1237,12 @@ body{background:var(--bg);color:var(--text);font-family:'Outfit',sans-serif;disp
 @keyframes lsCelebIn{from{opacity:0;transform:translateY(10px) scale(.97)}to{opacity:1;transform:none}}
 /* Accessibilité : aucune animation n'était filtrée dans le projet jusqu'ici.
    On respecte le réglage système pour cette brique. */
+/* Anticipation : discrète, sous la célébration. Elle informe, elle n'appelle
+   pas à l'action — le bouton de retour reste le seul CTA de l'écran. */
+.ls-nextstep{display:none;width:100%;max-width:320px;margin:0 auto 16px;padding:10px 12px;border-radius:10px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.10);text-align:center}
+.ls-nextstep.on{display:block}
+.ls-nextstep-kicker{font-family:'JetBrains Mono',monospace;font-size:8.5px;letter-spacing:.2em;text-transform:uppercase;font-weight:800;color:var(--ah-muted,#8a93a8)}
+.ls-nextstep-txt{font-family:'Outfit',sans-serif;font-size:12.5px;font-weight:600;color:var(--ah-text2,#A8B4CC);line-height:1.4;margin-top:3px}
 @media (prefers-reduced-motion: reduce){
   .ls-celebrate.on{animation:none}
 }
@@ -9243,6 +9249,9 @@ window.tiResetOnEnter = function(){ window.tiShowStep(1); };
       <!-- Célébration post-séance : rempli par _ahRenderCelebration(), vide
            si le moteur ne produit rien. Jamais bloquant. -->
       <div class="ls-celebrate" id="lsCelebrate"></div>
+      <!-- Anticipation (brique 2) : ce qui arrive ensuite. Vide si le
+           programme ne permet pas de le déterminer — jamais inventé. -->
+      <div class="ls-nextstep" id="lsNextStep"></div>
       <div class="ls-complete-sub" id="lsCompleteMsg">Tu viens de terminer cette séance.<br>Récupère bien — tu l'as mérité.</div>
       <button class="btn btn-gold" onclick="_lsClose()" style="width:100%;max-width:280px">← Retour au programme</button>
     </div>
@@ -28265,8 +28274,20 @@ function renderJourneyCard() {
   if (!wrap) return;
   var p = {};
   try { p = JSON.parse(localStorage.getItem('ah_profile') || '{}'); } catch(e) {}
-  // Onboarding complet → on cache la carte (pas utile post-déblocage).
-  if (_isOnboardingComplete(p)) { wrap.innerHTML = ''; return; }
+  // Onboarding complet → la carte d'onboarding n'a plus lieu d'être, mais
+  // l'emplacement est repris par la Progression Loop (brique 2). Isolé en
+  // try/catch : si elle échoue, on retombe sur le comportement d'origine
+  // (emplacement vide) sans rien casser sur Home.
+  if (_isOnboardingComplete(p)) {
+    try {
+      if (typeof window._ahRenderProgressionLoop === 'function') {
+        window._ahRenderProgressionLoop();
+        return;
+      }
+    } catch(e) { console.warn('[progression loop]', e); }
+    wrap.innerHTML = '';
+    return;
+  }
   // Pas d'objectif → l'utilisateur est encore avant obQ1, on cache aussi
   // (la bannière discovery du onboarding initial prend le relais).
   if (!p.objectif) { wrap.innerHTML = ''; return; }
@@ -28866,6 +28887,190 @@ window._ahRenderCelebration = function(opts) {
   } catch(e) {}
   return fb;
 };
+
+// ═══════════════════════════════════════════════════════════════════════════
+// PROGRESSION LOOP  —  brique 2
+// ───────────────────────────────────────────────────────────────────────────
+// Trois questions, jamais plus : où j'en suis, ce que j'ai accompli, ce qui
+// arrive ensuite. Aucun nouvel écran : on remplit #journeyCardWrap, un
+// emplacement Home qui existe déjà et que renderJourneyCard() laisse VIDE une
+// fois l'onboarding terminé. Le rendu est déjà déclenché par renderUserData().
+//
+// Règle identique à la brique 1 : si une donnée n'existe pas, on n'affiche pas
+// la ligne. Jamais d'estimation, jamais de valeur par défaut inventée.
+// ═══════════════════════════════════════════════════════════════════════════
+
+// Prochaine séance réelle du programme. Null si indéterminable.
+window._ahNextStep = function(progKey) {
+  try {
+    var prof = _ahSafeParse('ah_profile', {});
+    progKey = progKey || prof.programKey;
+    if (!progKey || typeof PROGRAMS_V2 === 'undefined' || !PROGRAMS_V2[progKey]) return null;
+    var prog = PROGRAMS_V2[progKey];
+    var st = (typeof getProgramProgress === 'function') ? getProgramProgress(progKey) : null;
+    if (!st) return null;
+    var phase = prog.phases && prog.phases[st.phaseIdx];
+    if (!phase) return null;
+
+    var required = (typeof _requiredSessionKeys === 'function') ? _requiredSessionKeys(phase) : [];
+    var remaining = required.filter(function(k){ return !st.doneThisWeek[k]; });
+    var nextKey = remaining[0] || null;
+    var sess = nextKey && phase.sessions ? phase.sessions[nextKey] : null;
+
+    return {
+      phaseIdx:   st.phaseIdx,
+      week:       st.week,
+      totalWeeks: phase.weeks || null,
+      sessKey:    nextKey,
+      sessName:   sess && sess.name ? sess.name : null,
+      exoCount:   sess && Array.isArray(sess.exos) ? sess.exos.length : null,
+      remainingThisWeek: remaining.length,
+      weekComplete: remaining.length === 0
+    };
+  } catch(e) { return null; }
+};
+
+// Semaines écoulées depuis le dernier test. Null si aucun test passé.
+// `now` optionnel : même convention que le moteur de feedback, pour pouvoir
+// rejouer la fonction sur un historique daté. En production, personne ne le
+// passe — on prend la date du jour.
+window._ahWeeksSinceTest = function(now) {
+  try {
+    var prof = _ahSafeParse('ah_profile', {});
+    if (!prof.satCompletedAt) return null;
+    var d = _ahDaysBetween(prof.satCompletedAt, now || new Date().toISOString());
+    return d == null ? null : Math.floor(d / 7);
+  } catch(e) { return null; }
+};
+
+// Ce que l'athlète a réellement accompli. Chaque champ peut être null.
+window._ahJourneyStats = function(now) {
+  try {
+    var prof = _ahSafeParse('ah_profile', {});
+    var sessions = _ahSessionHistory();
+    // Records : nombre d'exercices distincts pour lesquels au moins 2 entrées
+    // existent ET la dernière est la meilleure. Compté sur données réelles.
+    var track = _ahSafeParse('ah_track_history', []);
+    var byExo = {};
+    if (Array.isArray(track)) {
+      track.forEach(function(e){
+        var n = e && (e.exerciseName || e.exo);
+        if (!n) return;
+        var v = _ahTrackValue(e);
+        if (v == null) return;
+        (byExo[n] = byExo[n] || []).push({ v: v, lower: e.method === 'temps' });
+      });
+    }
+    var prCount = 0;
+    Object.keys(byExo).forEach(function(n){
+      var arr = byExo[n];
+      if (arr.length < 2) return;
+      var last = arr[arr.length - 1];
+      var prev = arr.slice(0, -1).map(function(x){ return x.v; });
+      var best = last.lower ? Math.min.apply(null, prev) : Math.max.apply(null, prev);
+      if (last.lower ? (last.v < best) : (last.v > best)) prCount++;
+    });
+    return {
+      sessionsTotal: sessions.length,
+      phasesDone:    prof.phasesDone || 0,
+      programsDone:  prof.programsDone || 0,
+      prCount:       prCount,
+      athScore:      prof.athScore != null ? prof.athScore : null,
+      vertJump:      prof.vertJump != null ? prof.vertJump : null,
+      weeksSinceTest: window._ahWeeksSinceTest(now)
+    };
+  } catch(e) { return null; }
+};
+
+// ── Jalons — affichés UNE SEULE FOIS ───────────────────────────────────
+// Stockés dans ah_milestones_shown (ajouté à FB_SYNC_KEYS → suit l'utilisateur
+// d'un appareil à l'autre). Un jalon déjà vu ne réapparaît jamais.
+var AH_MILESTONES = [
+  { id:'first_session', test: function(s){ return s.sessionsTotal >= 1; },  label:'Première séance enregistrée.' },
+  { id:'sessions_10',   test: function(s){ return s.sessionsTotal >= 10; }, label:'10 séances au compteur.' },
+  { id:'sessions_50',   test: function(s){ return s.sessionsTotal >= 50; }, label:'50 séances au compteur.' },
+  { id:'first_pr',      test: function(s){ return s.prCount >= 1; },        label:'Premier record personnel.' },
+  { id:'first_phase',   test: function(s){ return s.phasesDone >= 1; },     label:'Première phase terminée.' },
+  { id:'first_program', test: function(s){ return s.programsDone >= 1; },   label:'Premier programme terminé.' }
+];
+
+window._ahCheckMilestones = function() {
+  try {
+    var stats = window._ahJourneyStats();
+    if (!stats) return [];
+    var shown = _ahSafeParse('ah_milestones_shown', []);
+    if (!Array.isArray(shown)) shown = [];
+    var fresh = AH_MILESTONES.filter(function(m){
+      if (shown.indexOf(m.id) > -1) return false;
+      try { return !!m.test(stats); } catch(e) { return false; }
+    });
+    if (fresh.length) {
+      fresh.forEach(function(m){ shown.push(m.id); });
+      localStorage.setItem('ah_milestones_shown', JSON.stringify(shown));
+      try { if (typeof fbSaveProfile === 'function') fbSaveProfile(); } catch(e) {}
+    }
+    return fresh;
+  } catch(e) { return []; }
+};
+
+// Carte Home. Remplit #journeyCardWrap, laissé vide par renderJourneyCard
+// une fois l'onboarding terminé. Ne rend rien si aucune donnée exploitable.
+window._ahRenderProgressionLoop = function() {
+  var wrap = document.getElementById('journeyCardWrap');
+  if (!wrap) return;
+  var stats = window._ahJourneyStats();
+  if (!stats || !stats.sessionsTotal) { wrap.innerHTML = ''; return; }
+  var next = window._ahNextStep();
+
+  var h = '<div style="background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:14px 15px;margin:12px 16px">';
+
+  // 1. Où j'en suis
+  if (next && next.totalWeeks) {
+    h += '<div style="font-family:\'JetBrains Mono\',monospace;font-size:9.5px;letter-spacing:.2em;text-transform:uppercase;font-weight:800;color:var(--gold)">Phase ' + (next.phaseIdx + 1) + '</div>';
+    h += '<div style="font-family:\'Bebas Neue\',sans-serif;font-size:22px;letter-spacing:.04em;color:var(--text);line-height:1.05;margin-top:2px">Semaine ' + next.week + '/' + next.totalWeeks + '</div>';
+  }
+
+  // 2. Ce que j'ai accompli — uniquement les chiffres réellement disponibles
+  var bits = [];
+  bits.push(stats.sessionsTotal + ' séance' + (stats.sessionsTotal > 1 ? 's' : ''));
+  if (stats.prCount > 0)    bits.push(stats.prCount + ' record' + (stats.prCount > 1 ? 's' : ''));
+  if (stats.phasesDone > 0) bits.push(stats.phasesDone + ' phase' + (stats.phasesDone > 1 ? 's' : '') + ' terminée' + (stats.phasesDone > 1 ? 's' : ''));
+  h += '<div style="font-family:\'Outfit\',sans-serif;font-size:12.5px;color:var(--text2);margin-top:8px;line-height:1.45">' + bits.join(' · ') + '</div>';
+
+  // 3. Ce qui arrive ensuite
+  var nextLine = _ahNextStepLabel(next, stats);
+  if (nextLine) {
+    h += '<div style="margin-top:10px;padding-top:10px;border-top:1px dashed var(--border)">';
+    h += '<div style="font-family:\'JetBrains Mono\',monospace;font-size:9px;letter-spacing:.18em;text-transform:uppercase;font-weight:800;color:var(--muted)">Prochaine étape</div>';
+    h += '<div style="font-family:\'Outfit\',sans-serif;font-size:13px;font-weight:600;color:var(--text);margin-top:3px;line-height:1.4">' + escapeHtml(nextLine) + '</div>';
+    h += '</div>';
+  }
+  h += '</div>';
+  wrap.innerHTML = h;
+};
+
+// Formule la prochaine étape à partir de données réelles uniquement.
+// Renvoie null plutôt que d'inventer quoi que ce soit.
+function _ahNextStepLabel(next, stats) {
+  if (stats && stats.weeksSinceTest != null && stats.weeksSinceTest >= 4) {
+    return stats.weeksSinceTest + ' semaines depuis ton dernier test. Il est temps de le refaire.';
+  }
+  if (!next) return null;
+  if (next.weekComplete) {
+    if (next.totalWeeks && next.week >= next.totalWeeks) return 'Dernière semaine de la phase terminée.';
+    return 'Semaine terminée. La suivante commence.';
+  }
+  if (next.sessName) {
+    var s = 'Séance : ' + next.sessName;
+    if (next.exoCount) s += ' — ' + next.exoCount + ' exercices';
+    return s;
+  }
+  if (next.remainingThisWeek > 0) {
+    return next.remainingThisWeek + ' séance' + (next.remainingThisWeek > 1 ? 's' : '') + ' avant la fin de la semaine.';
+  }
+  return null;
+}
+window._ahNextStepLabel = _ahNextStepLabel;
 
 // Sélection. Étape 1 : le signal le plus fort, point.
 // Étape 5 (récompense variable) remplacera CE SEUL corps de fonction pour
@@ -31625,7 +31830,10 @@ var FB_SYNC_KEYS = [
   // Journal de tracking exercices (Suivi > Exercices > Enregistrer)
   // Auparavant uniquement dans ah_v8 legacy → pas de sync Firestore →
   // entrées perdues au changement de device et parfois localement.
-  ['ah_track_history',             'trackHistory',        true]
+  ['ah_track_history',             'trackHistory',        true],
+  // Jalons déjà annoncés (brique 2) — synchronisé pour qu'un jalon ne soit
+  // pas rejoué en changeant d'appareil.
+  ['ah_milestones_shown',          'milestonesShown',     true]
 ];
 
 function _fbCollectPayload() {
@@ -37468,6 +37676,29 @@ function _lsFinalizeSession(feedback) {
       phaseIdxBefore: _phaseBefore
     });
   } catch(e) { console.warn('[celebration]', e); }
+
+  // ── Anticipation + jalons (brique 2) ──
+  // Même isolation : couche secondaire, jamais bloquante.
+  try {
+    var _nsEl = document.getElementById('lsNextStep');
+    if (_nsEl) {
+      var _label = _ahNextStepLabel(window._ahNextStep(_LS.progKey), window._ahJourneyStats());
+      if (_label) {
+        _nsEl.innerHTML = '<div class="ls-nextstep-kicker">Prochaine étape</div>'
+                        + '<div class="ls-nextstep-txt">' + escapeHtml(_label) + '</div>';
+        _nsEl.className = 'ls-nextstep on';
+      } else {
+        _nsEl.className = 'ls-nextstep'; _nsEl.innerHTML = '';
+      }
+    }
+    // Jalons : annoncés une seule fois, en toast, sans interrompre l'écran.
+    var _ms = window._ahCheckMilestones();
+    if (_ms && _ms.length) {
+      setTimeout(function(){
+        try { showToast('◆ ' + _ms[0].label, 'ok'); } catch(e) {}
+      }, 2400);
+    }
+  } catch(e) { console.warn('[next step]', e); }
 
   if (_rec.weekDone && _LS.progKey) {
     setTimeout(function() {
