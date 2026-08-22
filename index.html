@@ -9030,7 +9030,10 @@ window.tiResetOnEnter = function(){ window.tiShowStep(1); };
            BETA de LEGACY_CODES — n'importe qui recopiait l'exemple et obtenait
            14 jours d'accès. On montre désormais le FORMAT, pas un code valide. -->
       <input id="accessCodeInput" type="text" placeholder="Ex : B-XXXXXX-XXXX" style="width:100%;margin-top:6px;padding:12px 14px;background:#243B6B;border:1.5px solid #243B6B;border-radius:10px;font-family:'Outfit',sans-serif;font-size:14px;color:#fff;letter-spacing:1px;text-transform:uppercase;outline:none;box-sizing:border-box">
-      <div style="font-size:10px;color:#8a93a8;line-height:1.5;margin-top:4px">Le code se trouve dans l'Avant-Propos du livre.</div>
+      <!-- Le livre ne contient AUCUN code : les acheteurs activent avec leur
+           n° de commande Amazon (openBookActivation). Les codes sont attribués
+           à la main par Alassane (bêta-testeurs, VIP, partenaires). -->
+      <div style="font-size:10px;color:#8a93a8;line-height:1.5;margin-top:4px">Code attribué personnellement (bêta-testeur, VIP, partenaire). Il ne se trouve pas dans le livre.</div>
     </div>
 
     <div style="margin-bottom:14px">
@@ -9045,7 +9048,7 @@ window.tiResetOnEnter = function(){ window.tiShowStep(1); };
          doit passer par l'assistant openBookActivation, qui lui le vérifie
          réellement (haché, usage unique) — d'où le lien ci-dessous. -->
     <div style="margin-bottom:18px;padding:11px 13px;background:rgba(212,175,55,.07);border:1px solid rgba(212,175,55,.22);border-radius:10px">
-      <div style="font-size:11px;color:#c9d1e0;line-height:1.55">Tu as acheté le livre sur Amazon mais tu n'as pas de code ?</div>
+      <div style="font-size:11px;color:#c9d1e0;line-height:1.55">Tu as acheté le livre ? Pas besoin de code — active avec ton n° de commande.</div>
       <button onclick="closeAccessCode();setTimeout(function(){try{window.openBookActivation();}catch(e){}},220)" style="margin-top:8px;background:none;border:0;padding:0;color:#D4AF37;font-family:'Outfit',sans-serif;font-size:12px;font-weight:800;cursor:pointer;text-decoration:underline;text-underline-offset:3px">Activer avec mon n° de commande →</button>
     </div>
 
@@ -27591,7 +27594,7 @@ async function submitAccessCode() {
       if (data.error === 'server_not_configured') {
         showMsg('Service indisponible. Réessaie plus tard.', false);
       } else {
-        showMsg('Code invalide. Vérifie sur le rabat du livre.', false);
+        showMsg('Code invalide. Vérifie le code qui t\'a été communiqué.', false);
       }
       return;
     }
@@ -27774,7 +27777,7 @@ window._showAccessRequired = function() {
   var ov = document.getElementById('premiumOverlay');
   if (!ov) {
     // Fallback si le popup n'est pas dans le DOM (cas legacy / cache stale)
-    if (typeof showToast === 'function') showToast('⏰ Ton essai de 3 jours est terminé. Saisis ton code livre pour continuer.', 'info');
+    if (typeof showToast === 'function') showToast('⏰ Ton essai de 3 jours est terminé. Active ton accès pour continuer.', 'info');
     setTimeout(function() { try { openAccessCode(); } catch(e) {} }, 700);
     return;
   }
@@ -28146,7 +28149,7 @@ function renderTrialBanner() {
         '<div style="display:flex;align-items:center;justify-content:space-between;gap:10px">' +
           '<div style="flex:1;min-width:0">' +
             '<div style="font-size:11px;letter-spacing:1.5px;font-weight:800;color:#EF4444;text-transform:uppercase">Essai expiré</div>' +
-            '<div style="font-size:13px;color:var(--text);font-weight:600;margin-top:2px">Accès bloqué. Saisis ton code livre.</div>' +
+            '<div style="font-size:13px;color:var(--text);font-weight:600;margin-top:2px">Accès bloqué. Active ton accès livre.</div>' +
           '</div>' +
           '<button onclick="openAccessCode()" style="background:#EF4444;color:#fff;border:0;padding:8px 14px;border-radius:10px;font-family:\'Outfit\',sans-serif;font-size:12px;font-weight:800;cursor:pointer;white-space:nowrap;letter-spacing:.3px">📕 Débloquer</button>' +
         '</div>' +
