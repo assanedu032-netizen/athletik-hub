@@ -144,18 +144,34 @@ function hasValidAccess(u, email) {
   return trialEndsAt != null && Date.now() < trialEndsAt;
 }
 
-async function checkQuota(uid) {
+// Quota journalier par niveau d'accès.
+// Avant, RATE_LIMIT=20 s'appliquait à tout le monde — y compris MASTER, dont
+// le message d'accueil promet pourtant « Titan illimité ». VIP et MASTER
+// étaient donc rigoureusement identiques et la promesse n'était pas tenue.
+// On ne passe PAS en illimité : un quota borné reste indispensable, la clé
+// Anthropic est facturée à l'usage et un code MASTER qui fuiterait pourrait
+// vider le budget. 200/jour est hors d'atteinte pour un humain (un message
+// toutes les 4 minutes, 14 h d'affilée) tout en plafonnant le risque.
+const TIER_QUOTA = { MASTER: 200, VIP: 60, BETA: 20 };
+function quotaFor(userData, email) {
+  if (email && FOUNDER_EMAILS.includes(String(email).toLowerCase())) return TIER_QUOTA.MASTER;
+  const tier = userData && userData.accessTier;
+  return (tier && TIER_QUOTA[tier]) || RATE_LIMIT;
+}
+
+async function checkQuota(uid, limit) {
+  const max = limit || RATE_LIMIT;
   const today = new Date().toISOString().slice(0, 10);
   const ref = admin.firestore().doc(`users/${uid}/titanQuota/${today}`);
   return admin.firestore().runTransaction(async tx => {
     const snap = await tx.get(ref);
     const count = snap.exists ? (snap.data().count || 0) : 0;
-    if (count >= RATE_LIMIT) return { allowed: false, used: count };
+    if (count >= max) return { allowed: false, used: count, max: max };
     tx.set(ref, {
       count: count + 1,
       updatedAt: admin.firestore.FieldValue.serverTimestamp(),
     }, { merge: true });
-    return { allowed: true, used: count + 1 };
+    return { allowed: true, used: count + 1, max: max };
   });
 }
 
@@ -831,9 +847,11 @@ exports.handler = async function(event) {
   // On revérifie donc ici, côté serveur, à partir de Firestore (seule
   // source de vérité pour hasBookAccess/accessTier/trialEndsAt).
   let access;
+  let userData = {};
   try {
     const snap = await admin.firestore().doc(`users/${uid}`).get();
-    access = hasValidAccess(snap.exists ? snap.data() : {}, email);
+    userData = snap.exists ? snap.data() : {};
+    access = hasValidAccess(userData, email);
   } catch (e) {
     console.error('[titan] access check failed:', e.message);
     return { statusCode: 500, headers, body: JSON.stringify({ error: 'Erreur vérification accès.' }) };
@@ -842,16 +860,17 @@ exports.handler = async function(event) {
     return { statusCode: 403, headers, body: JSON.stringify({ error: 'Accès requis. Débloque l\'app avec ton code livre pour continuer.' }) };
   }
 
-  // Rate limit (Firestore, atomique)
+  // Rate limit (Firestore, atomique) — plafond selon le niveau d'accès.
+  // Le doc utilisateur est déjà chargé ci-dessus : aucune lecture en plus.
   let quota;
   try {
-    quota = await checkQuota(uid);
+    quota = await checkQuota(uid, quotaFor(userData, email));
   } catch (e) {
     console.error('[titan] quota error:', e.message);
     return { statusCode: 500, headers, body: JSON.stringify({ error: 'Erreur quota.' }) };
   }
   if (!quota.allowed) {
-    return { statusCode: 429, headers, body: JSON.stringify({ error: 'Limite journalière atteinte (20 messages/jour). Reviens demain.' }) };
+    return { statusCode: 429, headers, body: JSON.stringify({ error: 'Limite journalière atteinte (' + quota.max + ' messages/jour). Reviens demain.' }) };
   }
 
   // Couche 2a : filtre regex sur le dernier message utilisateur.

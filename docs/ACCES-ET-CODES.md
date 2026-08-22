@@ -111,13 +111,17 @@ Le fichier source `bookChallengesSeed.json` est volontairement hors dépôt.
 | Séances, tests, nutrition, Titan | ✅ | ✅ | ✅ |
 | Durée | **14 jours** | À vie | À vie |
 | Workout Builder débloqué d'office | ❌ | ✅ | ✅ |
-| Quota Titan | 20 msg/jour | 20 msg/jour | 20 msg/jour |
+| Quota Titan | 20 msg/jour | **60 msg/jour** | **200 msg/jour** |
 
-> **⚠️ Écart à connaître.** Le message affiché pour MASTER dit « Titan illimité
-> + tout débloqué ». **Le code ne fait pas ça** : `RATE_LIMIT = 20` dans
-> `titan.js` s'applique à tout le monde, MASTER compris. Aujourd'hui VIP et
-> MASTER sont **fonctionnellement identiques**. Soit on corrige le message,
-> soit on implémente le quota illimité — dis-moi lequel tu veux.
+Essai gratuit et accès livre : 20 messages/jour, comme BETA.
+
+> **Résolu.** MASTER promettait un « Titan illimité » que le code n'appliquait
+> pas — `RATE_LIMIT = 20` valait pour tout le monde, et VIP/MASTER étaient
+> identiques. `TIER_QUOTA` dans `titan.js` différencie désormais les niveaux.
+> Pas d'illimité pour autant : la clé Anthropic est facturée à l'usage, et un
+> code MASTER qui fuiterait pourrait vider le budget. 200/jour est hors
+> d'atteinte pour un humain (un message toutes les 4 minutes, 14 h d'affilée)
+> tout en plafonnant le risque. Les messages affichés annoncent ces chiffres.
 
 ### Format d'un code
 
@@ -175,8 +179,8 @@ remet à zéro dès qu'un code correct est saisi.
 **Ce que ça te donne :** accès complet à tout, **sans essai actif, sans code,
 sans accès livre**. Y compris le Workout Builder et Titan.
 
-**Ce que ça ne change pas :** le quota Titan de 20 messages/jour s'applique
-aussi à toi.
+**Ton quota Titan :** 200 messages/jour, comme MASTER (`quotaFor()` traite
+l'email fondateur avant de regarder `accessTier`).
 
 > Les deux listes doivent rester identiques. Si tu ajoutes un email à l'une
 > sans l'autre, l'app te laissera entrer mais Titan te refusera — ou l'inverse.
@@ -307,8 +311,8 @@ Aucune ne doit apparaître dans le code. Site config → Environment variables.
 
 ## 12. Points ouverts
 
-1. **MASTER n'apporte rien de plus que VIP.** Le message promet un Titan
-   illimité qui n'existe pas dans le code.
+1. ~~MASTER n'apporte rien de plus que VIP.~~ **Réglé** — quotas Titan
+   différenciés (200 / 60 / 20) et messages alignés sur la réalité.
 2. **`ONANDULU78` donne MASTER à vie**, sans limite de diffusion et sans moyen
    de révocation autre qu'un redéploiement.
 3. **Aucune traçabilité par code.** On sait *qu'un* code a été utilisé
