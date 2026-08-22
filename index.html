@@ -17240,12 +17240,14 @@ function _bfDrawChart(data) {
   function tim_sndRest(){ tim_vib([40]); }
   function tim_sndReprise(){ tim_vib([30,20,50]); }
 
-  function tim_toast(msg){
+  // ms optionnel (défaut 2000, comportement historique inchangé). Les messages
+  // d'alerte du minuteur ont besoin de rester lisibles plus longtemps.
+  function tim_toast(msg, ms){
     var el = document.getElementById('timToast');
     if (!el) return;
     el.textContent = msg; el.classList.add('on');
     clearTimeout(tim_toastT);
-    tim_toastT = setTimeout(function(){ el.classList.remove('on'); }, 2000);
+    tim_toastT = setTimeout(function(){ el.classList.remove('on'); }, ms || 2000);
   }
 
   // ── UTILS ──
@@ -17536,22 +17538,102 @@ function _bfDrawChart(data) {
     try { return (JSON.parse(localStorage.getItem('ah_profile') || '{}').fcmToken) || null; }
     catch(_) { return null; }
   }
+  // ── BUG HISTORIQUE : le timer ne sonnait jamais app fermée ──────────────
+  // tim_minutStart appelle Notification.requestPermission() quand la
+  // permission est 'default'. L'utilisateur accepte → permission 'granted'.
+  // MAIS _registerFCMToken() n'était appelé QUE depuis le toggle Réglages >
+  // Notifications (et au boot si ah_notif_on était déjà posé). Un utilisateur
+  // qui accorde la permission DEPUIS LE TIMER n'obtenait donc jamais de
+  // fcmToken : tim_fcmSchedulePush sortait en silence sur `if (!token) return`
+  // et la couche 4 — la SEULE qui survit à l'app endormie — n'était jamais
+  // armée. Le toast annonçait pourtant "tu seras prévenu même si tu quittes
+  // l'app". D'où : permission accordée, aucune alerte, et un diagnostic
+  // impossible côté utilisateur.
+  // Fix : on enregistre le token à la volée au premier timer si la permission
+  // est accordée mais que le token manque.
+  function _tim_fcmEnsureToken(){
+    var tok = _tim_fcmGetToken();
+    if (tok) return Promise.resolve(tok);
+    if (typeof Notification === 'undefined' || Notification.permission !== 'granted') {
+      return Promise.resolve(null);
+    }
+    if (typeof window._registerFCMToken !== 'function') return Promise.resolve(null);
+    return window._registerFCMToken()
+      .then(function(t){ return t || null; })
+      .catch(function(){ return null; });
+  }
+  // État réel de la couche push, pour ne plus promettre une alerte qui ne
+  // partira pas. Consommé par le toast de démarrage (_tim_announceAlert).
+  var _tim_alertState = null;   // 'push' | 'local'
+  var _tim_alertReason = '';
+  var _tim_alertAnnounced = false;
+  var _tim_alertAnnounceTimer = null;
+  function _tim_setAlertState(state, reason){
+    _tim_alertState = state;
+    _tim_alertReason = reason || '';
+    try { window._timAlertState = { state: state, reason: reason || '' }; } catch(_) {}
+    if (typeof _tim_announceAlert === 'function') _tim_announceAlert();
+  }
+  // Un seul toast par timer, et il dit la VÉRITÉ sur ce qui est armé.
+  // 'push' = le serveur enverra la notif quoi qu'il arrive.
+  // 'local' = seules les couches locales tournent → elles meurent si l'OS
+  // endort la PWA, donc on demande explicitement de garder l'app ouverte.
+  function _tim_announceAlert(){
+    if (_tim_alertAnnounced || !_tim_alertState) return;
+    _tim_alertAnnounced = true;
+    if (_tim_alertAnnounceTimer) { clearTimeout(_tim_alertAnnounceTimer); _tim_alertAnnounceTimer = null; }
+    try {
+      if (_tim_alertState === 'push') {
+        tim_toast('🔔 Alerte armée — ton téléphone sonnera même app fermée', 3500);
+      } else {
+        tim_toast('⚠️ Garde l\'app ouverte — ' + (_tim_alertReason || 'alerte arrière-plan indisponible'), 6000);
+      }
+    } catch(_) {}
+  }
   function tim_fcmSchedulePush(endsAt){
     try {
       // Annule une éventuelle programmation précédente (re-réglage, +30s…)
       tim_fcmCancelPush();
-      var token = _tim_fcmGetToken();
-      if (!token) return;
       var delay = endsAt - Date.now();
-      if (delay <= 0 || delay > TIM_FCM_MAX_DELAY) return;
-      _tim_fcmTimerId = 'tm_' + Date.now().toString(36) + '_' + Math.random().toString(36).slice(2, 8);
-      fetch('/.netlify/functions/timer-alert-background', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ token: token, endsAt: endsAt, timerId: _tim_fcmTimerId, body: 'Le minuteur a sonné' })
-      }).then(function(){
-        console.log('[timer] push FCM différé programmé (' + _tim_fcmTimerId + ') pour T+' + Math.round(delay/1000) + 's');
-      }).catch(function(e){ console.warn('[timer] push FCM schedule fail:', e); });
+      if (delay <= 0) return;
+      if (delay > TIM_FCM_MAX_DELAY) {
+        _tim_setAlertState('local', 'Timer trop long pour l\'alerte serveur (max ' +
+          Math.round(TIM_FCM_MAX_DELAY / 60000) + ' min)');
+        return;
+      }
+      var id = 'tm_' + Date.now().toString(36) + '_' + Math.random().toString(36).slice(2, 8);
+      _tim_fcmTimerId = id;
+      // L'enregistrement du token peut prendre 1-3 s : on revalide ensuite que
+      // ce timer est toujours celui en cours (l'user a pu pause/reset entre-temps).
+      _tim_fcmEnsureToken().then(function(token){
+        if (_tim_fcmTimerId !== id) return;           // annulé pendant l'attente
+        if (!token) {
+          _tim_setAlertState('local', (typeof Notification !== 'undefined' &&
+            Notification.permission === 'granted')
+              ? 'Push indisponible sur cet appareil'
+              : 'Notifications non autorisées');
+          return;
+        }
+        if (endsAt - Date.now() <= 0) return;
+        fetch('/.netlify/functions/timer-alert-background', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ token: token, endsAt: endsAt, timerId: id, body: 'Le minuteur a sonné' })
+        }).then(function(r){
+          if (_tim_fcmTimerId !== id) return;
+          // 202 = background function acceptée. 422 = hors fenêtre. Autre = KO.
+          if (r && (r.status === 202 || r.ok)) {
+            _tim_setAlertState('push', '');
+            console.log('[timer] push FCM différé armé (' + id + ') pour T+' + Math.round(delay/1000) + 's');
+          } else {
+            _tim_setAlertState('local', 'Serveur d\'alerte indisponible (' + (r && r.status) + ')');
+          }
+        }).catch(function(e){
+          if (_tim_fcmTimerId !== id) return;
+          _tim_setAlertState('local', 'Pas de réseau pour armer l\'alerte');
+          console.warn('[timer] push FCM schedule fail:', e);
+        });
+      });
     } catch(e){ console.warn('[timer] fcmSchedulePush:', e); }
   }
   function tim_fcmCancelPush(){
@@ -17776,18 +17858,16 @@ function _bfDrawChart(data) {
       var b = document.getElementById('timMinutBtn'); if (b) b.textContent = '⏸';
       _tim_minutRender();
       _tim_minutPersist();
+      // Reset de l'état d'alerte : tim_fcmSchedulePush le renseignera de façon
+      // asynchrone (le temps d'obtenir le token + de joindre le serveur).
+      _tim_alertState = null; _tim_alertReason = ''; _tim_alertAnnounced = false;
       tim_minutScheduleNotif(_tim_minut.endMs);
-      // Toast UX clair selon l'état des permissions notif. Pas de jargon
-      // technique — message court, sportif, mobile-first.
-      try {
-        if (typeof Notification === 'undefined') {
-          tim_toast('Alertes arrière-plan indisponibles sur ce navigateur', 4000);
-        } else if (Notification.permission === 'granted') {
-          tim_toast('🔔 Alerte activée — tu seras prévenu même si tu quittes l\'app', 3500);
-        } else {
-          tim_toast('Alertes arrière-plan désactivées — garde l\'app ouverte ou active les notifications', 5000);
-        }
-      } catch(_) {}
+      // Si aucune réponse au bout de 4 s (réseau lent), on annonce l'état
+      // dégradé plutôt que de laisser l'utilisateur sans information.
+      if (_tim_alertAnnounceTimer) clearTimeout(_tim_alertAnnounceTimer);
+      _tim_alertAnnounceTimer = setTimeout(function(){
+        if (!_tim_alertState) _tim_setAlertState('local', 'Alerte serveur non confirmée');
+      }, 4000);
     };
 
     // Si permission jamais demandée, on demande maintenant (le user vient
