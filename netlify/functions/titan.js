@@ -130,6 +130,52 @@ async function moderate(text) {
 // (index.html) — comptes fondateur/dev, toujours autorisés même sans trial
 // actif ni accès livre (régression corrigée : bloquait le Builder/Titan du
 // compte de test après l'ajout de cette vérification serveur).
+// ---------- Contenu multimodal (photos envoyées à Titan) ----------
+// Le client peut joindre une image : content devient un tableau de blocs
+// [{type:'image',source:{type:'base64',...}}, {type:'text',text:'…'}].
+const IMG_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
+const IMG_MAX_B64 = 1600000;  // ~1,6 Mo de base64 (~1,2 Mo réels)
+const IMG_MAX_PER_MSG = 1;
+
+// Extrait le texte d'un content, qu'il soit chaîne ou tableau de blocs.
+function extractText(content) {
+  if (typeof content === 'string') return content;
+  if (!Array.isArray(content)) return '';
+  return content.filter(b => b && b.type === 'text').map(b => b.text || '').join(' ');
+}
+
+// Nettoie les messages avant de les transmettre à Anthropic : on ne laisse
+// passer que des blocs text/image conformes. Le client est déjà censé
+// compresser, mais rien ne l'y oblige — un appel direct à l'endpoint avec une
+// image de 20 Mo ferait exploser le coût et la latence.
+function sanitizeMessages(messages) {
+  return messages.map(m => {
+    if (!m || typeof m !== 'object') return null;
+    const role = m.role === 'assistant' ? 'assistant' : 'user';
+    if (typeof m.content === 'string') return { role, content: m.content };
+    if (!Array.isArray(m.content)) return null;
+    let images = 0;
+    const blocks = [];
+    for (const b of m.content) {
+      if (!b || typeof b !== 'object') continue;
+      if (b.type === 'text' && typeof b.text === 'string') {
+        blocks.push({ type: 'text', text: b.text.slice(0, 8000) });
+      } else if (b.type === 'image' && b.source && b.source.type === 'base64') {
+        if (images >= IMG_MAX_PER_MSG) continue;
+        const mt = String(b.source.media_type || '');
+        const data = String(b.source.data || '');
+        if (!IMG_TYPES.includes(mt)) continue;
+        if (!data || data.length > IMG_MAX_B64) continue;
+        if (!/^[A-Za-z0-9+/=\s]+$/.test(data)) continue;
+        images++;
+        blocks.push({ type: 'image', source: { type: 'base64', media_type: mt, data } });
+      }
+    }
+    if (!blocks.length) return null;
+    return { role, content: blocks };
+  }).filter(Boolean);
+}
+
 const PAID_TIERS = ['BETA', 'VIP', 'MASTER'];
 const FOUNDER_EMAILS = ['assanedu032@gmail.com'];
 function hasValidAccess(u, email) {
@@ -881,7 +927,10 @@ exports.handler = async function(event) {
     lastText = [it.objectif, it.exos, it.phrase].filter(Boolean).join(' ');
   } else {
     const lastUserMsg = [...messages].reverse().find(m => m.role === 'user');
-    lastText = lastUserMsg ? String(lastUserMsg.content || '') : '';
+    // content peut être une chaîne OU un tableau de blocs (photo + texte).
+    // Sans ce traitement, String([{…}]) donnait "[object Object]" et TOUTE la
+    // modération passait à côté du message dès qu'une image était jointe.
+    lastText = lastUserMsg ? extractText(lastUserMsg.content) : '';
   }
   const injection = detectInjection(lastText);
   if (injection) {
@@ -965,7 +1014,7 @@ exports.handler = async function(event) {
         model: MODEL,
         max_tokens: MAX_TOKENS,
         system: systemBlocks,
-        messages: messages.slice(-10),
+        messages: sanitizeMessages(messages.slice(-10)),
       }),
     });
 
