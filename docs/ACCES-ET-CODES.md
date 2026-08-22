@@ -148,19 +148,23 @@ ACCESS_CODE_SECRET="<le secret Netlify>" node scripts/gen-codes.js master 10
 Le secret doit être **exactement** celui défini sur Netlify. S'il diffère, les
 codes générés seront rejetés à la validation.
 
-### Les 3 codes historiques
+### Les codes historiques
 
-Toujours acceptés, en dur dans `check-code.js` :
+Il n'en reste qu'un, en dur dans `check-code.js` :
 
-| Code | Niveau |
-|------|--------|
-| `AL-88ND89` | BETA |
-| `KEVIN-JEAN2478` | VIP |
-| `ONANDULU78` | MASTER |
+| Code | Niveau | État |
+|------|--------|------|
+| `KEVIN-JEAN2478` | VIP | encore actif |
+| ~~`AL-88ND89`~~ | BETA | **retiré** — était affiché comme exemple dans l'app, donc public de fait |
+| ~~`ONANDULU78`~~ | MASTER | **retiré** — MASTER à vie non révocable, et MASTER vaut maintenant 200 msg Titan/jour |
 
-> Ces trois codes sont **permanents et non révocables** sans modifier le code
-> source et redéployer. `ONANDULU78` donne un accès MASTER à vie à quiconque le
-> connaît. Si tu l'as diffusé largement, il faut le retirer de `LEGACY_CODES`.
+Retirer un code ne révoque **pas** les accès déjà accordés : `grantAccessTier`
+a écrit `accessTier` dans Firestore, qui reste la source de vérité. Les
+personnes ayant déjà utilisé ces codes gardent leur accès.
+
+> Il reste à retirer `KEVIN-JEAN2478` une fois les bêta-testeurs actuels
+> activés. Ensuite, ne distribuer que des codes HMAC (`scripts/gen-codes.js`) :
+> eux sont révocables en bloc, en changeant `ACCESS_CODE_SECRET`.
 
 ### Protection anti-force-brute
 5 tentatives par IP / 15 minutes, puis **blocage 1 heure**. Le compteur se
@@ -313,8 +317,8 @@ Aucune ne doit apparaître dans le code. Site config → Environment variables.
 
 1. ~~MASTER n'apporte rien de plus que VIP.~~ **Réglé** — quotas Titan
    différenciés (200 / 60 / 20) et messages alignés sur la réalité.
-2. **`ONANDULU78` donne MASTER à vie**, sans limite de diffusion et sans moyen
-   de révocation autre qu'un redéploiement.
+2. ~~`ONANDULU78` donne MASTER à vie.~~ **Réglé** — retiré de `LEGACY_CODES`,
+   comme `AL-88ND89`. Reste `KEVIN-JEAN2478`, à retirer après les bêta-testeurs.
 3. **Aucune traçabilité par code.** On sait *qu'un* code a été utilisé
    (collection `accessRedemptions`) mais pas *lequel* — impossible de savoir si
    un code a fuité et circule.

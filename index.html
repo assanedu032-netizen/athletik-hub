@@ -27486,7 +27486,10 @@ window._builderSaveFeedback = _builderSaveFeedback;
 // Format : LETTRE-RANDOM6-CHECK4 (B/V/M = BETA/VIP/MASTER)
 // Génération : scripts/gen-codes.js avec ACCESS_CODE_SECRET (env Netlify).
 // Validation : POST /.netlify/functions/check-code → { ok, tier, meta }
-// 3 codes legacy (AL-88ND89, KEVIN-JEAN2478, ONANDULU78) toujours acceptés serveur-side.
+// 1 seul code legacy encore accepté serveur-side (KEVIN-JEAN2478, VIP).
+// AL-88ND89 et ONANDULU78 ont été retirés : le premier était affiché comme
+// exemple dans l'app (donc public), le second donnait MASTER à vie sans
+// révocation possible. Cf. LEGACY_CODES dans check-code.js.
 var ACCESS_TIER_META = {
   BETA:   { label:'BETA',   color:'#10B981', valid: 14,   msg:'Accès BETA — 14 jours d\'essai.' },
   VIP:    { label:'VIP',    color:'#D4AF37', valid: null, msg:'Accès VIP — à vie, Builder débloqué, Titan 60 messages/jour.' },
