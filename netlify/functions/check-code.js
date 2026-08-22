@@ -29,10 +29,20 @@ const admin = require('firebase-admin');
 
 const TIER_MAP = { B: 'BETA', V: 'VIP', M: 'MASTER' };
 
+// Codes historiques en dur. Deux ont été RETIRÉS :
+//   'AL-88ND89' (BETA)   — était affiché comme exemple dans le champ de saisie
+//                          de l'app. Public de fait : n'importe qui recopiait
+//                          l'exemple et obtenait 14 jours.
+//   'ONANDULU78' (MASTER)— MASTER à vie, non révocable, et MASTER vaut
+//                          désormais 200 messages Titan/jour. Robinet ouvert
+//                          que personne ne pouvait fermer.
+// Retirer un code ne révoque PAS les accès déjà accordés : grantAccessTier a
+// écrit accessTier dans Firestore, qui reste la source de vérité.
+// TODO : retirer aussi KEVIN-JEAN2478 une fois les bêta-testeurs actuels
+// activés, et ne plus distribuer que des codes HMAC (scripts/gen-codes.js),
+// eux révocables en changeant ACCESS_CODE_SECRET.
 const LEGACY_CODES = {
-  'AL-88ND89':      'BETA',
   'KEVIN-JEAN2478': 'VIP',
-  'ONANDULU78':     'MASTER',
 };
 
 const TIER_META = {
