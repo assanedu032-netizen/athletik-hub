@@ -1227,6 +1227,19 @@ body{background:var(--bg);color:var(--text);font-family:'Outfit',sans-serif;disp
 .ci-preview-rm{width:28px;height:28px;border-radius:50%;background:var(--surface2);border:1px solid var(--border);color:var(--muted);font-size:16px;line-height:1;cursor:pointer;flex-shrink:0;display:flex;align-items:center;justify-content:center;padding:0}
 /* Vignette dans la bulle du message envoyé. */
 .msg-photo{display:block;max-width:190px;width:100%;border-radius:10px;margin-bottom:7px;border:1px solid rgba(255,255,255,.18)}
+/* ── Célébration post-séance (brique 1) ──
+   Bandeau court affiché en haut de l'écran de fin. Aucun bouton, aucun
+   blocage : il apparaît, il informe, il reste. L'animation dure ~1,1 s. */
+.ls-celebrate{display:none;width:100%;max-width:320px;margin:0 auto 14px;padding:12px 14px;border-radius:12px;background:linear-gradient(135deg,rgba(197,164,78,.14),rgba(197,164,78,.05));border:1px solid rgba(197,164,78,.34);text-align:center}
+.ls-celebrate.on{display:block;animation:lsCelebIn .55s cubic-bezier(.2,.8,.3,1) both}
+.ls-celebrate-kicker{font-family:'JetBrains Mono',monospace;font-size:9.5px;letter-spacing:.2em;text-transform:uppercase;font-weight:800;color:var(--ah-gold)}
+.ls-celebrate-msg{font-family:'Outfit',sans-serif;font-size:14px;font-weight:600;color:var(--ah-text,#EDF0F7);line-height:1.4;margin-top:5px}
+@keyframes lsCelebIn{from{opacity:0;transform:translateY(10px) scale(.97)}to{opacity:1;transform:none}}
+/* Accessibilité : aucune animation n'était filtrée dans le projet jusqu'ici.
+   On respecte le réglage système pour cette brique. */
+@media (prefers-reduced-motion: reduce){
+  .ls-celebrate.on{animation:none}
+}
 /* Choix appareil photo / galerie. Un menu explicite plutôt que de se fier au
    sélecteur natif : selon le navigateur et l'OS, il propose l'appareil photo
    ou non, et l'utilisateur ne comprend pas pourquoi. */
@@ -9227,6 +9240,9 @@ window.tiResetOnEnter = function(){ window.tiShowStep(1); };
     <div class="ls-complete" id="lsComplete" style="display:none">
       <div class="ls-complete-icon">🔥</div>
       <div class="ls-complete-title">SÉANCE TERMINÉE</div>
+      <!-- Célébration post-séance : rempli par _ahRenderCelebration(), vide
+           si le moteur ne produit rien. Jamais bloquant. -->
+      <div class="ls-celebrate" id="lsCelebrate"></div>
       <div class="ls-complete-sub" id="lsCompleteMsg">Tu viens de terminer cette séance.<br>Récupère bien — tu l'as mérité.</div>
       <button class="btn btn-gold" onclick="_lsClose()" style="width:100%;max-width:280px">← Retour au programme</button>
     </div>
@@ -28562,6 +28578,303 @@ function _bumpSessionStreak() {
   } catch(e) {}
 }
 
+// ═══════════════════════════════════════════════════════════════════════════
+// MOTEUR DE FEEDBACK POST-SÉANCE  —  brique 1
+// ───────────────────────────────────────────────────────────────────────────
+// Répond à une seule question : « qu'est-ce que cette séance a changé dans mon
+// parcours ? ». Module PUR et isolé — il ne lit que des données déjà écrites
+// par le reste de l'app, n'écrit rien, et ne connaît pas le DOM. Tout ce qui
+// touche à l'affichage vit dans _ahRenderCelebration().
+//
+// RÈGLE ABSOLUE : aucune donnée inventée. Chaque type de feedback n'est
+// produit QUE si les données réelles existent. Sans données, on descend
+// jusqu'au fallback G (compteur de séances), toujours vrai.
+//
+// Le moteur renvoie TOUS les candidats valides, triés par force du signal.
+// L'étape 5 (récompense variable) n'aura qu'à changer la sélection dans
+// _ahPickFeedback() — le moteur lui-même n'aura pas à bouger.
+//
+// LIMITE CONNUE : ah_set_history ne stocke aucune donnée d'exercice (ni
+// charge, ni reps, ni temps). Les types A (record), C (comparaison) et D
+// (progression par exercice) dépendent donc de ah_track_history, alimenté
+// manuellement via l'onglet Suivi. Pour un utilisateur qui ne tracke pas,
+// seuls B, D-score, F et G peuvent se déclencher. C'est volontaire : plutôt
+// un fallback honnête qu'un chiffre fabriqué.
+// ═══════════════════════════════════════════════════════════════════════════
+
+function _ahSafeParse(key, fallback) {
+  try { var v = JSON.parse(localStorage.getItem(key) || 'null'); return v == null ? fallback : v; }
+  catch(e) { return fallback; }
+}
+
+// Sessions de ah_set_history, du plus ancien au plus récent.
+function _ahSessionHistory() {
+  var h = _ahSafeParse('ah_set_history', []);
+  if (!Array.isArray(h)) return [];
+  return h.filter(function(e){ return e && e.type === 'session' && e.date; });
+}
+
+function _ahSameDay(a, b) {
+  return String(a).slice(0, 10) === String(b).slice(0, 10);
+}
+function _ahDaysBetween(isoA, isoB) {
+  var a = new Date(String(isoA).slice(0, 10) + 'T00:00:00Z').getTime();
+  var b = new Date(String(isoB).slice(0, 10) + 'T00:00:00Z').getTime();
+  if (isNaN(a) || isNaN(b)) return null;
+  return Math.round(Math.abs(b - a) / 86400000);
+}
+
+// ── F : étape de parcours ──────────────────────────────────────────────
+// Signal le plus fort : l'utilisateur vient de franchir un palier structurel
+// du programme. Ne s'appuie que sur ce que _recordSessionCompletion a renvoyé
+// et sur programProgress, jamais sur une estimation.
+function _ahFeedbackStage(ctx) {
+  var out = [];
+  if (ctx.rec && ctx.rec.programDone) {
+    out.push({ type: 'F', weight: 100, message: 'Programme ' + (ctx.progName || '') + ' terminé.' });
+    return out;
+  }
+  var st = ctx.progressState;
+  if (!st || !ctx.prog) return out;
+  var phase = ctx.prog.phases && ctx.prog.phases[st.phaseIdx];
+  if (!phase) return out;
+  if (ctx.rec && ctx.rec.weekDone) {
+    // st a déjà été avancé par _advanceProgramProgress : si week === 1 et que
+    // l'index de phase a bougé, c'est une phase entière qui vient de tomber.
+    if (st.week === 1 && st.phaseIdx > (ctx.phaseIdxBefore != null ? ctx.phaseIdxBefore : st.phaseIdx)) {
+      out.push({ type: 'F', weight: 95, message: 'Phase ' + ctx.phaseIdxBefore + ' terminée.' });
+    } else {
+      var total = phase.weeks || null;
+      out.push({ type: 'F', weight: 80,
+        message: total ? ('Semaine ' + Math.max(1, st.week - 1) + '/' + total + ' terminée.')
+                       : 'Semaine terminée.' });
+    }
+  }
+  return out;
+}
+
+// ── A : record personnel ───────────────────────────────────────────────
+// Source unique : ah_track_history. On ne considère qu'une entrée du JOUR,
+// et on ne parle de record que si la valeur dépasse strictement toutes les
+// précédentes du même exercice ET qu'il existe au moins un point de
+// comparaison — un « record » au premier essai n'en est pas un.
+function _ahFeedbackRecord(ctx) {
+  var out = [];
+  var hist = ctx.trackHistory;
+  if (!Array.isArray(hist) || hist.length < 2) return out;
+  var today = ctx.today;   // injecté par _ahBuildSessionFeedback (testable)
+  var todays = hist.filter(function(e){ return e && (e.date === today); });
+  todays.forEach(function(e) {
+    var name = e.exerciseName || e.exo;
+    if (!name) return;
+    var val = _ahTrackValue(e);
+    if (val == null) return;
+    var lower = e.method === 'temps';   // pour le temps, plus bas = meilleur
+    var past = hist.filter(function(o){
+      return o && o !== e && (o.exerciseName || o.exo) === name && o.date !== today;
+    }).map(_ahTrackValue).filter(function(v){ return v != null; });
+    if (!past.length) return;
+    var best = lower ? Math.min.apply(null, past) : Math.max.apply(null, past);
+    var isRecord = lower ? (val < best) : (val > best);
+    if (!isRecord) return;
+    out.push({ type: 'A', weight: 90,
+      message: 'Nouveau record : ' + name + ' — ' + _ahFmtVal(val, e) + '.',
+      data: { exercise: name, value: val, previous: best } });
+  });
+  return out;
+}
+
+// Valeur comparable d'une entrée de tracking. Renvoie null si non exploitable.
+function _ahTrackValue(e) {
+  if (!e) return null;
+  var es = e.essais;
+  if (!Array.isArray(es) || !es.length) return null;
+  var nums;
+  if (e.method === 'temps') {
+    nums = es.map(function(x){ return Number(x.time); }).filter(function(n){ return !isNaN(n) && n > 0; });
+    return nums.length ? Math.min.apply(null, nums) : null;
+  }
+  if (e.method === 'charge') {
+    nums = es.map(function(x){ return Number(x.load); }).filter(function(n){ return !isNaN(n) && n > 0; });
+    return nums.length ? Math.max.apply(null, nums) : null;
+  }
+  // distance / hauteur / reps : on prend le meilleur essai numérique dispo
+  nums = es.map(function(x){
+    return Number(x.dist != null ? x.dist : (x.height != null ? x.height : x.reps));
+  }).filter(function(n){ return !isNaN(n) && n > 0; });
+  return nums.length ? Math.max.apply(null, nums) : null;
+}
+
+function _ahFmtVal(v, e) {
+  var m = e && e.method;
+  if (m === 'temps')    return v + ' s';
+  if (m === 'charge')   return v + ' kg';
+  if (m === 'distance') return v + ' m';
+  if (m === 'hauteur')  return v + ' cm';
+  return String(v);
+}
+
+// ── B : jalon de régularité ────────────────────────────────────────────
+// Uniquement des seuils atteints exactement aujourd'hui, pour ne pas répéter
+// le même jalon à chaque séance suivante.
+function _ahFeedbackRegularity(ctx) {
+  var out = [];
+  var sessions = ctx.sessions;
+  var n = sessions.length;
+  if (!n) return out;
+  var last = sessions[n - 1].date;
+
+  var TOTALS = [10, 25, 50, 100, 200];
+  if (TOTALS.indexOf(n) > -1) {
+    out.push({ type: 'B', weight: 85, message: n + 'e séance au total. Nouveau repère enregistré.' });
+  }
+
+  // Séances du mois en cours
+  var ym = String(last).slice(0, 7);
+  var month = sessions.filter(function(s){ return String(s.date).slice(0, 7) === ym; }).length;
+  if (month === 10 || month === 20) {
+    out.push({ type: 'B', weight: 70, message: month + 'e séance ce mois. Nouveau repère enregistré.' });
+  }
+
+  // Séances de la semaine calendaire en cours
+  var week = sessions.filter(function(s){
+    var d = _ahDaysBetween(s.date, last);
+    return d != null && d <= 6;
+  }).length;
+  if (week === 3 || week === 4 || week === 5) {
+    out.push({ type: 'B', weight: 60, message: week + 'e séance en 7 jours.' });
+  }
+  return out;
+}
+
+// ── D : progression mesurée ────────────────────────────────────────────
+// Le score de fin de séance est déjà stocké dans ah_set_history
+// (sessionEndFeedback.sessionQualityScore) : donnée réelle, disponible pour
+// tout le monde, sans dépendre du tracking manuel.
+function _ahFeedbackProgress(ctx) {
+  var out = [];
+  var s = ctx.sessions;
+  if (s.length < 2) return out;
+  var cur = s[s.length - 1], prev = s[s.length - 2];
+  var a = cur.sessionEndFeedback && cur.sessionEndFeedback.sessionQualityScore;
+  var b = prev.sessionEndFeedback && prev.sessionEndFeedback.sessionQualityScore;
+  if (typeof a !== 'number' || typeof b !== 'number') return out;
+  var delta = a - b;
+  if (delta > 0) {
+    out.push({ type: 'D', weight: 65,
+      message: '+' + delta + ' points de qualité par rapport à ta dernière séance.',
+      data: { current: a, previous: b, delta: delta } });
+  }
+  return out;
+}
+
+// ── C : comparaison temporelle ─────────────────────────────────────────
+// « La même séance, il y a N jours ». N'utilise que des dates réelles.
+function _ahFeedbackTemporal(ctx) {
+  var out = [];
+  var s = ctx.sessions;
+  if (s.length < 2) return out;
+  var cur = s[s.length - 1];
+  if (!cur.sessName) return out;
+  var earlier = null;
+  for (var i = s.length - 2; i >= 0; i--) {
+    if (s[i].sessName === cur.sessName && !_ahSameDay(s[i].date, cur.date)) { earlier = s[i]; break; }
+  }
+  if (!earlier) return out;
+  var days = _ahDaysBetween(earlier.date, cur.date);
+  if (days == null || days < 7) return out;   // en dessous d'une semaine, sans intérêt
+  out.push({ type: 'C', weight: 55,
+    message: 'Dernière fois sur ' + cur.sessName + ' : il y a ' + days + ' jours.',
+    data: { days: days } });
+  return out;
+}
+
+// ── G : fallback, toujours vrai ────────────────────────────────────────
+function _ahFeedbackFallback(ctx) {
+  var n = ctx.sessions.length;
+  if (n <= 1) return [{ type: 'G', weight: 10, message: 'Séance 1. Ton point de départ est enregistré.' }];
+  if (n === 2) return [{ type: 'G', weight: 10, message: '2 séances. Ton historique commence à se construire.' }];
+  return [{ type: 'G', weight: 10, message: 'Séance ' + n + '. Historique à jour.' }];
+}
+
+// Construit le contexte puis collecte tous les candidats valides.
+// Retourne { candidates: [...], best: {...} }. Ne lève jamais.
+window._ahBuildSessionFeedback = function(opts) {
+  opts = opts || {};
+  try {
+    var prof = _ahSafeParse('ah_profile', {});
+    var progKey = opts.progKey || prof.programKey || '';
+    var ctx = {
+      progKey:  progKey,
+      progName: opts.progName || prof.program || '',
+      prog:     (typeof PROGRAMS_V2 !== 'undefined' && PROGRAMS_V2[progKey]) || null,
+      progressState: (typeof getProgramProgress === 'function' && progKey) ? getProgramProgress(progKey) : null,
+      phaseIdxBefore: opts.phaseIdxBefore,
+      rec:      opts.rec || {},
+      profile:  prof,
+      sessions: _ahSessionHistory(),
+      trackHistory: _ahSafeParse('ah_track_history', []),
+      // opts.now permet de rejouer le moteur sur un historique daté (tests).
+      // En production, personne ne le passe : on prend la date du jour.
+      today: String(opts.now || new Date().toISOString()).slice(0, 10)
+    };
+    var candidates = []
+      .concat(_ahFeedbackStage(ctx))
+      .concat(_ahFeedbackRecord(ctx))
+      .concat(_ahFeedbackRegularity(ctx))
+      .concat(_ahFeedbackProgress(ctx))
+      .concat(_ahFeedbackTemporal(ctx))
+      .concat(_ahFeedbackFallback(ctx));
+    candidates.sort(function(a, b){ return b.weight - a.weight; });
+    return { candidates: candidates, best: _ahPickFeedback(candidates) };
+  } catch(e) {
+    console.warn('[feedback engine]', e);
+    return { candidates: [], best: null };
+  }
+};
+
+// Rendu de la célébration. Seul endroit du module qui touche au DOM.
+// Ne bloque rien : pas de modal, pas de bouton, pas de setTimeout qui
+// retarderait l'affichage de l'écran de fin.
+var _AH_KICKER = {
+  A: 'Record personnel', B: 'Jalon', C: 'Repère',
+  D: 'Progression',      F: 'Étape franchie', G: 'Enregistré'
+};
+window._ahRenderCelebration = function(opts) {
+  var el = document.getElementById('lsCelebrate');
+  if (!el) return null;
+  var res = window._ahBuildSessionFeedback(opts);
+  var fb = res && res.best;
+  if (!fb) { el.className = 'ls-celebrate'; el.innerHTML = ''; return null; }
+
+  el.innerHTML = '<div class="ls-celebrate-kicker">' + (_AH_KICKER[fb.type] || 'Enregistré') + '</div>'
+               + '<div class="ls-celebrate-msg">' + escapeHtml(fb.message) + '</div>';
+  el.className = 'ls-celebrate on';
+
+  // Haptique — try/catch, et seulement pour les signaux forts. Un buzz à
+  // chaque séance banale deviendrait du bruit.
+  try {
+    if (navigator.vibrate && (fb.type === 'A' || fb.type === 'F')) navigator.vibrate([28, 60, 28]);
+  } catch(e) {}
+
+  // Mémorise le type affiché : l'étape 5 s'en servira pour éviter deux fois
+  // le même type d'affilée quand plusieurs candidats sont valides.
+  try {
+    var p = JSON.parse(localStorage.getItem('ah_profile') || '{}');
+    p.lastFeedbackType = fb.type;
+    localStorage.setItem('ah_profile', JSON.stringify(p));
+  } catch(e) {}
+  return fb;
+};
+
+// Sélection. Étape 1 : le signal le plus fort, point.
+// Étape 5 (récompense variable) remplacera CE SEUL corps de fonction pour
+// alterner entre candidats réellement valides — le reste du moteur ne bouge pas.
+function _ahPickFeedback(candidates) {
+  return (candidates && candidates.length) ? candidates[0] : null;
+}
+window._ahPickFeedback = _ahPickFeedback;
+
 // ═══ SAT SELF-ASSESSMENT (étape 2/3 onboarding) ═══
 function pickSATSelf(el, level) {
   // Highlight chosen option
@@ -37126,6 +37439,15 @@ function _lsFinalizeSession(feedback) {
   // Complétion centralisée — sessionsDone + streak + history + program
   // progress + program completion, tous bumpés dans le même ordre par
   // _recordSessionCompletion (helper unique partagé avec exitLiveV2).
+  // Index de phase AVANT l'avancement, pour que le moteur de feedback puisse
+  // distinguer « semaine terminée » de « phase terminée ». Lecture seule.
+  var _phaseBefore;
+  try {
+    if (_LS.progKey && typeof getProgramProgress === 'function') {
+      _phaseBefore = getProgramProgress(_LS.progKey).phaseIdx;
+    }
+  } catch(e) {}
+
   var _rec = _recordSessionCompletion({
     progKey:  _LS.progKey,
     sessKey:  _LS.sessKey,
@@ -37134,6 +37456,19 @@ function _lsFinalizeSession(feedback) {
     feedback: feedback,
     builder:  !!_LS.builderMeta
   });
+  // ── Célébration post-séance (brique 1) ──
+  // Couche SECONDAIRE : entièrement isolée en try/catch, exécutée APRÈS
+  // _recordSessionCompletion. Si elle échoue, la séance reste enregistrée,
+  // le streak incrémenté et la progression avancée — rien n'est perdu.
+  try {
+    _ahRenderCelebration({
+      progKey: _LS.progKey,
+      progName: _LS.progName,
+      rec: _rec,
+      phaseIdxBefore: _phaseBefore
+    });
+  } catch(e) { console.warn('[celebration]', e); }
+
   if (_rec.weekDone && _LS.progKey) {
     setTimeout(function() {
       try {
