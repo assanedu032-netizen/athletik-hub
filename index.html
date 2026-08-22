@@ -5819,7 +5819,7 @@ body.ah-lib-open .tim-fab{display:none!important}
       <div style="display:flex;justify-content:center;gap:8px;align-items:center">
         <button onclick="welcomeLogin()" style="background:none;border:none;color:rgba(255,255,255,.7);font-family:'Outfit',sans-serif;font-size:13px;text-decoration:underline;text-underline-offset:3px;cursor:pointer;padding:6px 8px">J'ai déjà un compte</button>
         <span style="color:rgba(255,255,255,.3)">·</span>
-        <button onclick="openAccessCode()" style="background:none;border:none;color:var(--ah-gold);font-family:'Outfit',sans-serif;font-size:13px;cursor:pointer;padding:6px 8px">J'ai le livre</button>
+        <button onclick="window.openBookActivation && window.openBookActivation()" style="background:none;border:none;color:var(--ah-gold);font-family:'Outfit',sans-serif;font-size:13px;cursor:pointer;padding:6px 8px">J'ai le livre</button>
       </div>
     </div>
 
@@ -6129,7 +6129,7 @@ window.tiResetOnEnter = function(){ window.tiShowStep(1); };
       <div id="forgotPwdWrap" style="display:none;text-align:center;margin-top:4px;font-size:12px;position:relative;z-index:5">
         <a href="javascript:void(0)" role="button" onclick="fbForgotPassword();return false;" ontouchend="fbForgotPassword();return false;" style="color:var(--muted);text-decoration:underline;text-underline-offset:3px;display:inline-block;padding:6px 10px;cursor:pointer">Mot de passe oublié ?</a>
       </div>
-      <button onclick="openAccessCode()" style="width:100%;padding:12px;margin-top:14px;background:rgba(197,164,78,.08);border:1.5px solid rgba(197,164,78,.35);border-radius:12px;font-family:'Outfit',sans-serif;font-size:12px;font-weight:700;color:var(--gold);cursor:pointer;letter-spacing:.3px">📕 J'ai le livre — Saisir mon code</button>
+      <button onclick="window.openBookActivation && window.openBookActivation()" style="width:100%;padding:12px;margin-top:14px;background:rgba(197,164,78,.08);border:1.5px solid rgba(197,164,78,.35);border-radius:12px;font-family:'Outfit',sans-serif;font-size:12px;font-weight:700;color:var(--gold);cursor:pointer;letter-spacing:.3px">📕 J'ai le livre — Activer mon accès</button>
     </div>
   </div>
 </div>
@@ -8262,15 +8262,29 @@ window.tiResetOnEnter = function(){ window.tiShowStep(1); };
   <div class="sec-title">⚙️ PARAMÈTRES</div>
 
   <!-- Accès post-livre -->
-  <div class="setting-item" onclick="openAccessCode()" id="accessCodeItem">
+  <!-- Deux portes distinctes, chacune sur le bon parcours :
+       - "J'ai le livre" → openBookActivation (n° Amazon vérifié serveur)
+       - "J'ai un code"  → openAccessCode (code BETA/VIP/MASTER) -->
+  <div class="setting-item" onclick="window.openBookActivation && window.openBookActivation()" id="accessCodeItem">
     <div class="si-left">
       <div class="si-icon">📕</div>
       <div>
         <div class="si-text">J'ai le livre</div>
-        <div class="si-sub" id="accessCodeSub">Saisis ton code pour débloquer ton accès</div>
+        <div class="si-sub" id="accessCodeSub">Active ton accès avec ton n° de commande Amazon</div>
       </div>
     </div>
     <div id="accessTierBadge" style="font-size:10px;font-weight:800;letter-spacing:1px;padding:4px 10px;border-radius:12px;background:transparent;color:var(--muted);text-transform:uppercase">—</div>
+  </div>
+
+  <div class="setting-item" onclick="openAccessCode()">
+    <div class="si-left">
+      <div class="si-icon">🔑</div>
+      <div>
+        <div class="si-text">J'ai un code d'accès</div>
+        <div class="si-sub">Code BETA, VIP ou MASTER</div>
+      </div>
+    </div>
+    <div class="si-right">→</div>
   </div>
 
   <div class="setting-item" onclick="toggleDark()">
@@ -9004,15 +9018,18 @@ window.tiResetOnEnter = function(){ window.tiShowStep(1); };
     <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:14px">
       <div>
         <div style="font-size:42px;line-height:1">📕</div>
-        <div style="font-family:'Bebas Neue',sans-serif;font-size:22px;letter-spacing:2px;color:#fff;margin-top:6px">J'AI LE LIVRE</div>
-        <div style="font-size:11px;color:#8a93a8;line-height:1.5;margin-top:4px">Débloque ton accès Athletik Hub en validant ton achat.</div>
+        <div style="font-family:'Bebas Neue',sans-serif;font-size:22px;letter-spacing:2px;color:#fff;margin-top:6px">J'AI UN CODE D'ACCÈS</div>
+        <div style="font-size:11px;color:#8a93a8;line-height:1.5;margin-top:4px">Saisis ton code BETA, VIP ou MASTER.</div>
       </div>
       <button onclick="closeAccessCode()" style="background:transparent;border:0;color:#8a93a8;font-size:22px;cursor:pointer;padding:4px 8px">×</button>
     </div>
 
     <div style="margin-bottom:14px">
       <label style="font-size:10px;font-weight:800;letter-spacing:1.5px;color:#D4AF37;text-transform:uppercase">Code d'accès</label>
-      <input id="accessCodeInput" type="text" placeholder="Ex : AL-88ND89" style="width:100%;margin-top:6px;padding:12px 14px;background:#243B6B;border:1.5px solid #243B6B;border-radius:10px;font-family:'Outfit',sans-serif;font-size:14px;color:#fff;letter-spacing:1px;text-transform:uppercase;outline:none;box-sizing:border-box">
+      <!-- FUITE CORRIGÉE : l'exemple affichait AL-88ND89, qui est un VRAI code
+           BETA de LEGACY_CODES — n'importe qui recopiait l'exemple et obtenait
+           14 jours d'accès. On montre désormais le FORMAT, pas un code valide. -->
+      <input id="accessCodeInput" type="text" placeholder="Ex : B-XXXXXX-XXXX" style="width:100%;margin-top:6px;padding:12px 14px;background:#243B6B;border:1.5px solid #243B6B;border-radius:10px;font-family:'Outfit',sans-serif;font-size:14px;color:#fff;letter-spacing:1px;text-transform:uppercase;outline:none;box-sizing:border-box">
       <div style="font-size:10px;color:#8a93a8;line-height:1.5;margin-top:4px">Le code se trouve dans l'Avant-Propos du livre.</div>
     </div>
 
@@ -9022,10 +9039,14 @@ window.tiResetOnEnter = function(){ window.tiShowStep(1); };
       <input id="accessQuestionInput" type="text" placeholder="Ta réponse..." style="width:100%;padding:12px 14px;background:#243B6B;border:1.5px solid #243B6B;border-radius:10px;font-family:'Outfit',sans-serif;font-size:14px;color:#fff;outline:none;box-sizing:border-box">
     </div>
 
-    <div style="margin-bottom:18px">
-      <label style="font-size:10px;font-weight:800;letter-spacing:1.5px;color:#D4AF37;text-transform:uppercase">N° commande Amazon (optionnel)</label>
-      <input id="accessOrderInput" type="text" placeholder="123-1234567-1234567" style="width:100%;margin-top:6px;padding:12px 14px;background:#243B6B;border:1.5px solid #243B6B;border-radius:10px;font-family:'Outfit',sans-serif;font-size:14px;color:#fff;outline:none;box-sizing:border-box">
-      <div style="font-size:10px;color:#8a93a8;line-height:1.5;margin-top:4px">Format : 3 chiffres - 7 chiffres - 7 chiffres</div>
+    <!-- Le champ "N° commande Amazon" a été RETIRÉ d'ici : il n'était jamais
+         transmis au serveur (submitAccessCode n'envoie que { code }), donc
+         purement décoratif. Un acheteur qui n'a que son numéro de commande
+         doit passer par l'assistant openBookActivation, qui lui le vérifie
+         réellement (haché, usage unique) — d'où le lien ci-dessous. -->
+    <div style="margin-bottom:18px;padding:11px 13px;background:rgba(212,175,55,.07);border:1px solid rgba(212,175,55,.22);border-radius:10px">
+      <div style="font-size:11px;color:#c9d1e0;line-height:1.55">Tu as acheté le livre sur Amazon mais tu n'as pas de code ?</div>
+      <button onclick="closeAccessCode();setTimeout(function(){try{window.openBookActivation();}catch(e){}},220)" style="margin-top:8px;background:none;border:0;padding:0;color:#D4AF37;font-family:'Outfit',sans-serif;font-size:12px;font-weight:800;cursor:pointer;text-decoration:underline;text-underline-offset:3px">Activer avec mon n° de commande →</button>
     </div>
 
     <div id="accessCodeMsg" style="font-size:12px;line-height:1.5;margin-bottom:12px;display:none"></div>
@@ -27525,7 +27546,9 @@ async function submitAccessCode() {
 
   var code  = (codeEl.value || '').trim().toUpperCase();
   var ans   = (qEl.value || '').trim();
-  var order = (orderEl.value || '').trim();
+  // Champ retiré du DOM (il n'était jamais envoyé au serveur) — on garde la
+  // lecture défensive pour ne rien casser si une vieille page reste en cache.
+  var order = (orderEl && orderEl.value || '').trim();
 
   function showMsg(text, ok) {
     msg.style.display = '';
@@ -27824,6 +27847,11 @@ function _renderBookActivationStep() {
       + '</div>'
       + '<div id="bookActMsg" style="display:none;font-size:12.5px;line-height:1.5;margin-top:14px;padding:11px 13px;border-radius:12px"></div>'
       + '<button class="prem-cta-primary" style="margin-top:22px" onclick="window._bookActivationNext()">VALIDER MON LIVRE</button>'
+      // Porte de secours : un lecteur qui possède un code imprimé (ou reçu)
+      // plutôt qu'un n° de commande ne doit pas se retrouver bloqué ici.
+      + '<div style="text-align:center;margin-top:14px">'
+      +   '<button onclick="window.closeBookActivation();setTimeout(function(){try{openAccessCode();}catch(e){}},220)" style="background:none;border:0;padding:6px 10px;color:var(--ah-muted,#8a93a8);font-family:\'Outfit\',sans-serif;font-size:12px;cursor:pointer;text-decoration:underline;text-underline-offset:3px">J\'ai un code d\'accès à la place</button>'
+      + '</div>'
       + '<button class="prem-cta-secondary" onclick="window.openAmazonBook()">📕 Pas encore le livre — Acheter sur Amazon</button>';
     setTimeout(function(){ var i = document.getElementById('bookActOrderInput'); if (i) i.focus(); }, 50);
     return;
