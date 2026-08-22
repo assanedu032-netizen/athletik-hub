@@ -1215,6 +1215,18 @@ body{background:var(--bg);color:var(--text);font-family:'Outfit',sans-serif;disp
    État recording = navy + pulse + carré stop au lieu du micro. */
 .ci-mic{width:40px;height:40px;border-radius:50%;background:var(--ah-surface);border:1.5px solid var(--ah-border2);color:var(--ah-text2);display:flex;align-items:center;justify-content:center;cursor:pointer;transition:all .15s;flex-shrink:0}
 .ci-mic:hover{border-color:var(--ah-gold);color:var(--ah-gold)}
+/* ── Envoi de photo à Titan ── */
+.ci-photo{width:40px;height:40px;border-radius:50%;background:var(--ah-surface);border:1.5px solid var(--ah-border2);color:var(--ah-text2);display:flex;align-items:center;justify-content:center;cursor:pointer;transition:all .15s;flex-shrink:0;padding:0}
+.ci-photo:hover{border-color:var(--ah-gold);color:var(--ah-gold)}
+.ci-photo.on{background:var(--ah-navy);border-color:var(--ah-gold);color:var(--ah-gold)}
+/* Aperçu au-dessus du champ, tant que la photo n'est pas envoyée. */
+.ci-preview{display:none;align-items:center;gap:10px;padding:8px 14px;background:var(--surface);border-top:1px solid var(--border)}
+.ci-preview.on{display:flex}
+.ci-preview img{width:46px;height:46px;object-fit:cover;border-radius:8px;border:1.5px solid var(--ah-gold);flex-shrink:0}
+.ci-preview-txt{flex:1;min-width:0;font-family:'Outfit',sans-serif;font-size:11.5px;color:var(--text2);line-height:1.35}
+.ci-preview-rm{width:28px;height:28px;border-radius:50%;background:var(--surface2);border:1px solid var(--border);color:var(--muted);font-size:16px;line-height:1;cursor:pointer;flex-shrink:0;display:flex;align-items:center;justify-content:center;padding:0}
+/* Vignette dans la bulle du message envoyé. */
+.msg-photo{display:block;max-width:190px;width:100%;border-radius:10px;margin-bottom:7px;border:1px solid rgba(255,255,255,.18)}
 .ci-mic.rec{background:var(--ah-navy);border-color:var(--ah-gold);color:var(--ah-gold);animation:ci-mic-pulse 1.6s ease-in-out infinite}
 .ci-mic.rec:hover{background:var(--ah-navy2)}
 .ci-mic.unsupported{display:none}
@@ -8118,8 +8130,21 @@ window.tiResetOnEnter = function(){ window.tiShowStep(1); };
     </div>
   </div>
 
+  <!-- Aperçu de la photo en attente d'envoi -->
+  <div class="ci-preview" id="ciPreview">
+    <img id="ciPreviewImg" alt="Photo à envoyer">
+    <div class="ci-preview-txt" id="ciPreviewTxt">Photo prête. Ajoute une question si tu veux.</div>
+    <button class="ci-preview-rm" onclick="window._titanClearPhoto()" aria-label="Retirer la photo">×</button>
+  </div>
+
   <!-- Input -->
   <div class="chat-input">
+    <!-- capture omis volontairement : laisse le choix entre appareil photo et
+         galerie, pour pouvoir envoyer une capture d'écran déjà prise. -->
+    <input type="file" id="ciPhotoInput" accept="image/png,image/jpeg,image/webp" style="display:none" onchange="window._titanOnPhoto(this)">
+    <button class="ci-photo" id="photoBtn" onclick="window._titanPickPhoto()" aria-label="Envoyer une photo à Titan" title="Envoyer une photo">
+      <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor"><path d="M4 5h3l1.5-2h7L17 5h3a2 2 0 0 1 2 2v11a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2zm8 4a4.5 4.5 0 1 0 0 9 4.5 4.5 0 0 0 0-9zm0 2a2.5 2.5 0 1 1 0 5 2.5 2.5 0 0 1 0-5z"/></svg>
+    </button>
     <button class="ci-mic" id="micBtn" onclick="toggleMicRecord()" aria-label="Parler à Titan" title="Parler à Titan">
       <svg id="micIconIdle" viewBox="0 0 24 24" width="20" height="20" fill="currentColor"><path d="M12 14c1.66 0 3-1.34 3-3V5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3zm5-3c0 2.76-2.24 5-5 5s-5-2.24-5-5H5c0 3.53 2.61 6.43 6 6.92V21h2v-3.08c3.39-.49 6-3.39 6-6.92h-2z"/></svg>
       <svg id="micIconRec" viewBox="0 0 24 24" width="18" height="18" fill="currentColor" style="display:none"><rect x="6" y="6" width="12" height="12" rx="2"/></svg>
@@ -24530,9 +24555,39 @@ function checkKeywordFilter(text) {
 
 // LAYER 2 (modération OpenAI), LAYER 3 (system prompt), LAYER 4 (Constitutional AI) : tout côté serveur.
 
-async function callAnthropicAPI(userMessage) {
-  conversationHistory.push({ role: 'user', content: userMessage });
-  persistTitanChat();
+async function callAnthropicAPI(userMessage, photo) {
+  // Avec photo : contenu en blocs (image d'abord, comme recommandé par
+  // Anthropic quand le texte commente l'image). L'index du message est retenu
+  // pour pouvoir retirer le base64 de l'historique juste après la réponse.
+  var photoIdx = -1;
+  if (photo && photo.data) {
+    conversationHistory.push({
+      role: 'user',
+      content: [
+        { type: 'image', source: { type: 'base64', media_type: photo.media_type, data: photo.data } },
+        { type: 'text', text: userMessage || 'Regarde cette image et dis-moi ce que tu en penses.' }
+      ]
+    });
+    photoIdx = conversationHistory.length - 1;
+    // On NE persiste pas encore : le base64 ne doit jamais toucher localStorage.
+  } else {
+    conversationHistory.push({ role: 'user', content: userMessage });
+    persistTitanChat();
+  }
+
+  // Remplace le bloc image par un marqueur texte, puis persiste. Appelé après
+  // la réponse (ou en cas d'échec) — l'historique reste léger et lisible.
+  function _stripPhoto() {
+    if (photoIdx < 0) return;
+    var m = conversationHistory[photoIdx];
+    if (m && Array.isArray(m.content)) {
+      var t = m.content.filter(function(b){ return b.type === 'text'; })
+                       .map(function(b){ return b.text; }).join(' ');
+      conversationHistory[photoIdx] = { role: 'user', content: '[photo envoyée] ' + t };
+    }
+    photoIdx = -1;
+    persistTitanChat();
+  }
 
   // Source de vérité = ah_profile (localStorage, synchro Firestore).
   // window.user n'est qu'un mirror in-memory, pas toujours à jour après login fresh.
@@ -24567,7 +24622,7 @@ async function callAnthropicAPI(userMessage) {
     try { idToken = await window.fbUser.getIdToken(); } catch(e) { console.warn('[Titan] getIdToken failed', e); }
   }
   if (!idToken) {
-    conversationHistory.pop();
+    conversationHistory.pop(); photoIdx = -1; persistTitanChat();
     return "Connecte-toi pour parler à Titan.";
   }
 
@@ -24587,26 +24642,28 @@ async function callAnthropicAPI(userMessage) {
     var data = await resp.json();
 
     if (resp.status === 429) {
-      conversationHistory.pop();
+      conversationHistory.pop(); photoIdx = -1; persistTitanChat();
       return data.error || 'Limite journalière atteinte. Reviens demain.';
     }
 
     if (data.reply) {
+      _stripPhoto();
       conversationHistory.push({ role: 'assistant', content: data.reply });
       persistTitanChat();
       return data.reply;
     }
 
     if (data.error) {
-      conversationHistory.pop();
+      conversationHistory.pop(); photoIdx = -1; persistTitanChat();
       // Fallback to demo mode if server not configured yet
       if (data.error.includes('not configured') || data.error.includes('non configurée')) return getDemoResponse(userMessage);
       return data.error;
     }
 
+    _stripPhoto();
     return "Erreur de connexion. Réessaie.";
   } catch (error) {
-    conversationHistory.pop();
+    conversationHistory.pop(); photoIdx = -1; persistTitanChat();
     console.error('[Titan proxy] Error:', error);
     // Fallback to demo mode when running locally / no functions
     return getDemoResponse(userMessage);
@@ -24704,17 +24761,25 @@ function getTimeStr() {
   return now.getHours().toString().padStart(2,'0') + ':' + now.getMinutes().toString().padStart(2,'0');
 }
 
-function addMessage(text, type) {
+// imgDataUrl : vignette de la photo jointe (messages user uniquement).
+function addMessage(text, type, imgDataUrl) {
   const body = document.getElementById('chatBody');
   const msg = document.createElement('div');
   msg.className = 'msg ' + type;
+  // Défensif : après restauration, un content peut être un tableau de blocs.
+  if (Array.isArray(text)) {
+    text = text.filter(function(b){ return b && b.type === 'text'; })
+               .map(function(b){ return b.text; }).join(' ');
+  }
 
   if (type === 'titan') {
     msg.innerHTML = '<div class="msg-titan-label"><div class="mtl-av"></div><div class="mtl-name">Titan</div></div>'
       + '<div class="msg-bubble">' + text + '</div>'
       + '<div class="msg-time">' + getTimeStr() + '</div>';
   } else if (type === 'user') {
-    msg.innerHTML = '<div class="msg-bubble">' + escapeHtml(text) + '</div>'
+    var photoHtml = imgDataUrl
+      ? '<img class="msg-photo" src="' + imgDataUrl + '" alt="Photo envoyée">' : '';
+    msg.innerHTML = '<div class="msg-bubble">' + photoHtml + escapeHtml(text || '') + '</div>'
       + '<div class="msg-time">' + getTimeStr() + '</div>';
   }
 
@@ -24751,16 +24816,109 @@ function escapeHtml(text) {
   return div.innerHTML;
 }
 
+// ══════════════════════════════════════════════════════════════════════
+// PHOTOS ENVOYÉES À TITAN
+// ─────────────────────────────────────────────────────────────────────
+// L'API Anthropic accepte des blocs image en base64. Deux contraintes
+// dictent tout le reste :
+//   1. COÛT — une image ~1 mégapixel consomme ~1600 tokens. On redimensionne
+//      donc à 1024 px max sur le grand côté et on encode en JPEG qualité .78.
+//   2. STOCKAGE — conversationHistory est persisté dans localStorage
+//      (ah_titan_chat, 40 messages). Y laisser du base64 saturerait le quota
+//      en quelques photos et casserait tout le chat. La photo n'est donc
+//      envoyée QUE pour le tour en cours : juste après, le bloc image est
+//      remplacé dans l'historique par un marqueur texte.
+// ══════════════════════════════════════════════════════════════════════
+window._titanPendingPhoto = null;   // { data, media_type, dataUrl }
+var TITAN_PHOTO_MAX_PX = 1024;
+var TITAN_PHOTO_MAX_B64 = 1400000;  // ~1,4 Mo de base64, large sous la limite API
+
+window._titanPickPhoto = function() {
+  var el = document.getElementById('ciPhotoInput');
+  if (el) { el.value = ''; el.click(); }
+};
+
+window._titanClearPhoto = function() {
+  window._titanPendingPhoto = null;
+  var p = document.getElementById('ciPreview');
+  var b = document.getElementById('photoBtn');
+  if (p) p.classList.remove('on');
+  if (b) b.classList.remove('on');
+  var i = document.getElementById('ciPhotoInput');
+  if (i) i.value = '';
+};
+
+// Redimensionne + ré-encode en JPEG. Retourne { data (base64 nu), media_type, dataUrl }.
+function _titanCompressPhoto(file) {
+  return new Promise(function(resolve, reject) {
+    var reader = new FileReader();
+    reader.onerror = function(){ reject(new Error('lecture impossible')); };
+    reader.onload = function() {
+      var img = new Image();
+      img.onerror = function(){ reject(new Error('image illisible')); };
+      img.onload = function() {
+        try {
+          var w = img.naturalWidth, h = img.naturalHeight;
+          var scale = Math.min(1, TITAN_PHOTO_MAX_PX / Math.max(w, h));
+          var cw = Math.max(1, Math.round(w * scale));
+          var ch = Math.max(1, Math.round(h * scale));
+          var cv = document.createElement('canvas');
+          cv.width = cw; cv.height = ch;
+          var cx = cv.getContext('2d');
+          cx.fillStyle = '#fff'; cx.fillRect(0, 0, cw, ch); // évite le noir sur PNG transparent
+          cx.drawImage(img, 0, 0, cw, ch);
+          var q = 0.78, url = cv.toDataURL('image/jpeg', q);
+          // Si c'est encore trop lourd, on baisse la qualité par paliers.
+          while (url.length > TITAN_PHOTO_MAX_B64 && q > 0.4) {
+            q -= 0.12; url = cv.toDataURL('image/jpeg', q);
+          }
+          resolve({ data: url.split(',')[1], media_type: 'image/jpeg', dataUrl: url });
+        } catch (e) { reject(e); }
+      };
+      img.src = reader.result;
+    };
+    reader.readAsDataURL(file);
+  });
+}
+
+window._titanOnPhoto = async function(input) {
+  var file = input && input.files && input.files[0];
+  if (!file) return;
+  if (!/^image\//.test(file.type)) {
+    if (typeof showToast === 'function') showToast('Choisis une image.', 'info');
+    return;
+  }
+  var txt = document.getElementById('ciPreviewTxt');
+  var prev = document.getElementById('ciPreview');
+  if (prev) prev.classList.add('on');
+  if (txt) txt.textContent = 'Préparation de la photo…';
+  try {
+    var photo = await _titanCompressPhoto(file);
+    window._titanPendingPhoto = photo;
+    var im = document.getElementById('ciPreviewImg');
+    if (im) im.src = photo.dataUrl;
+    if (txt) txt.textContent = 'Photo prête. Ajoute une question si tu veux.';
+    var b = document.getElementById('photoBtn'); if (b) b.classList.add('on');
+  } catch (e) {
+    console.warn('[titan photo]', e);
+    window._titanClearPhoto();
+    if (typeof showToast === 'function') showToast('Impossible de lire cette image.', 'info');
+  }
+};
+
 // ── SEND MESSAGE FLOW ──
 async function sendMessage() {
   const input = document.getElementById('chatInput');
   const text = input.value.trim();
-  if (!text) return;
+  const photo = window._titanPendingPhoto;
+  // Une photo seule suffit — on donne alors une consigne par défaut à Titan.
+  if (!text && !photo) return;
 
   // Add user message
-  addMessage(text, 'user');
+  addMessage(text, 'user', photo ? photo.dataUrl : null);
   input.value = '';
   autoResize(input);
+  window._titanClearPhoto();
 
   // Layer 1 — filtre mots-clés côté client (rapide, gratuit, défense en profondeur).
   // Layers 2/3/4 (modération OpenAI + system prompt + Constitutional AI) : serveur.
@@ -24771,7 +24929,7 @@ async function sendMessage() {
   }
 
   showTyping(true);
-  const reply = await callAnthropicAPI(text);
+  const reply = await callAnthropicAPI(text, photo);
 
   // Simulate typing delay
   const delay = Math.min(reply.length * 15, 2000);
