@@ -918,6 +918,9 @@ body{background:var(--bg);color:var(--text);font-family:'Outfit',sans-serif;disp
 .test-video-wrap iframe,.test-video-wrap .tvw-ph{position:absolute;inset:0;width:100%;height:100%;border:0}
 .test-video-wrap .tvw-ph{display:flex;align-items:center;justify-content:center;flex-direction:column;background:linear-gradient(135deg,#243B6B,#243B6B);color:rgba(255,255,255,.5);font-size:12px;letter-spacing:1px;font-weight:600;cursor:pointer;text-align:center;padding:12px}
 .test-video-wrap .tvw-ph-play{font-size:38px;color:var(--gold);margin-bottom:6px}
+/* Vidéo au format portrait (YouTube Short) : 9:16 centré, sinon le player
+   se retrouve écrasé entre deux bandes noires dans le conteneur 16:9. */
+.test-video-wrap.tvw-vertical{padding-top:0;height:420px;max-width:236px;margin-left:auto;margin-right:auto}
 
 /* ═══ PAGE HEADER ═══ */
 .pg-head{padding:20px 22px 0}
@@ -4345,10 +4348,10 @@ html body #result, html body #nutriResult{
 
 /* Banner d'installation PWA */
 .install-prompt{position:fixed;left:50%;bottom:16px;transform:translateX(-50%);width:calc(100% - 24px);max-width:420px;z-index:9500;animation:fadeUp .3s ease}
-.install-prompt-inner{position:relative;background:#243B6B;color:#fff;border-radius:14px;padding:14px 44px 14px 16px;display:flex;align-items:center;gap:12px;box-shadow:0 8px 28px rgba(20,30,60,.30);border:1px solid rgba(197,164,78,.20)}
+.install-prompt-inner{position:relative;background:#1B2A4A;color:#fff;border-radius:14px;padding:14px 44px 14px 16px;display:flex;align-items:center;gap:12px;box-shadow:0 8px 28px rgba(20,30,60,.40);border:1px solid rgba(197,164,78,.25)}
 .install-prompt-ic{font-size:26px;flex-shrink:0;line-height:1}
 .install-prompt-txt{flex:1;min-width:0}
-.install-prompt-title{font-family:'Bebas Neue',sans-serif;font-size:15px;letter-spacing:.06em;line-height:1}
+.install-prompt-title{font-family:'Bebas Neue',sans-serif;font-size:16px;letter-spacing:.08em;line-height:1.1}
 .install-prompt-sub{font-family:'Outfit',sans-serif;font-size:11px;color:rgba(255,255,255,.7);margin-top:3px;line-height:1.4}
 .install-prompt-cta{background:#C5A44E;color:#243B6B;border:none;border-radius:10px;padding:9px 14px;font-family:'Bebas Neue',sans-serif;font-size:13px;letter-spacing:.06em;cursor:pointer;flex-shrink:0;box-shadow:0 4px 10px rgba(197,164,78,.30)}
 .install-prompt-cta:active{transform:scale(.96)}
@@ -4963,13 +4966,49 @@ body.ah-lib-open .tim-fab{display:none!important}
 
 /* ── Feedback fin de séance Elite Athlète ───────────────────────────
    Affiché dans le panneau de complétion live, juste avant les CTA finaux. */
-.ea-fb{margin-top:16px;padding:14px;background:var(--surface);border:1px solid var(--border);border-radius:14px}
-.ea-fb-q{font-family:'Outfit',sans-serif;font-size:12.5px;color:var(--text);font-weight:700;margin:8px 0 6px;letter-spacing:.01em}
+.ea-fb{margin-top:12px;padding:13px;background:var(--surface);border:1px solid var(--border);border-radius:14px}
+/* Header resserré pour ce modal : gagne ~6px sans tasser le titre. */
+#eaFeedbackOverlay .ea-ov-head{padding:16px 18px 10px}
+#eaFeedbackOverlay .ea-ov-body{padding-top:12px}
+/* Sous-titre du header — pose le contexte sans surcharger. */
+.ea-fb-lede{font-family:'Outfit',sans-serif;font-size:12.5px;color:var(--text2);margin-top:5px;line-height:1.35}
+.ea-fb-lede em{font-style:normal;color:var(--muted)}
+.ea-fb-q{font-family:'Outfit',sans-serif;font-size:13px;color:var(--text);font-weight:700;margin:14px 0 7px;letter-spacing:.01em}
 .ea-fb-q:first-child{margin-top:0}
-.ea-fb-scale{display:flex;gap:5px;flex-wrap:wrap}
-.ea-fb-btn{flex:1;min-width:0;padding:8px 4px;background:var(--surface2);border:1.5px solid var(--border);border-radius:8px;font-size:11.5px;font-weight:700;color:var(--text2);cursor:pointer;font-family:inherit;transition:transform .1s,background .15s,border-color .15s}
+.ea-fb-n{color:var(--gold);font-weight:800;margin-right:6px}
+.ea-fb-scale{display:flex;gap:6px;flex-wrap:wrap}
+/* Échelle 1→10 : grille fixe (jamais de débordement horizontal sur petit écran). */
+.ea-fb-scale--num{display:grid;grid-template-columns:repeat(10,1fr);gap:4px}
+/* Trio de choix : 3 colonnes, cible tactile confortable (44px = plancher
+   recommandé sur mobile — on ne descend pas en dessous). */
+.ea-fb-scale--trio{display:grid;grid-template-columns:repeat(3,1fr);gap:6px}
+.ea-fb-btn{flex:1;min-width:0;padding:8px 4px;background:var(--surface2);border:1.5px solid var(--border);border-radius:8px;font-size:11.5px;font-weight:700;color:var(--text2);cursor:pointer;font-family:inherit;transition:transform .1s,background .15s,border-color .15s;-webkit-tap-highlight-color:transparent}
+.ea-fb-scale--num .ea-fb-btn{padding:0;height:40px;font-size:13.5px;border-radius:9px;display:flex;align-items:center;justify-content:center}
+.ea-fb-scale--trio .ea-fb-btn{min-height:44px;padding:9px 6px;font-size:13px;border-radius:10px}
 .ea-fb-btn:active{transform:scale(.95)}
-.ea-fb-btn.on{background:var(--navy);border-color:var(--navy);color:var(--gold)}
+.ea-fb-btn.on{background:var(--navy);border-color:var(--navy);color:var(--gold);box-shadow:0 2px 8px rgba(36,59,107,.22)}
+/* Repères de l'échelle : lève l'ambiguïté 1 = très facile / 10 = maximale. */
+.ea-fb-ends{display:flex;justify-content:space-between;margin-top:6px;font-family:'Outfit',sans-serif;font-size:10.5px;color:var(--muted);font-weight:600}
+/* Message de sécurité : reste présent, volontairement moins fort que le formulaire. */
+.ea-fb-note{margin-top:8px;font-family:'Outfit',sans-serif;font-size:11px;line-height:1.4;color:var(--muted)}
+.ea-fb-note.warn{color:var(--text2);background:var(--gold-dim);border-left:3px solid var(--gold);border-radius:0 8px 8px 0;padding:9px 11px}
+/* Barre d'action collée en bas de la zone scrollable : le CTA reste toujours
+   entièrement visible, safe-area comprise (avant, il pouvait être coupé par
+   le bord de l'écran / la barre de gestes). Le padding bas du body est
+   neutralisé ici — scope au seul modal de bilan — pour éviter un espace mort
+   sous le bouton une fois arrivé en fin de scroll. */
+#eaFeedbackOverlay .ea-ov-body{padding-bottom:0}
+.ea-fb-actions{position:sticky;bottom:0;z-index:2;margin-top:4px;padding:10px 0 calc(10px + env(safe-area-inset-bottom,0px));background:var(--bg,#FAF8F4)}
+.ea-fb-actions::before{content:'';position:absolute;left:0;right:0;top:-16px;height:16px;background:linear-gradient(to top,var(--bg,#FAF8F4),transparent);pointer-events:none}
+/* CTA principal — Navy Athletik Hub #1B2A4A plein + texte blanc : doit se lire
+   immédiatement comme l'action principale de l'écran. Le gris de l'état
+   désactivé ne doit jamais pouvoir être confondu avec l'état actif. */
+.ea-fb-cta{width:100%;margin-top:0;padding:15px 14px;min-height:50px;background:#1B2A4A;border:0;border-radius:12px;font-family:'Bebas Neue',sans-serif;font-size:17px;letter-spacing:.12em;color:#FFF;cursor:pointer;box-shadow:0 4px 14px rgba(27,42,74,.26);transition:transform .1s,background .15s,box-shadow .15s;-webkit-tap-highlight-color:transparent}
+.ea-fb-cta:active:not(:disabled){transform:scale(.98);background:#132039;box-shadow:0 2px 8px rgba(27,42,74,.3)}
+.ea-fb-cta:disabled{background:var(--surface2);color:var(--muted);cursor:not-allowed;box-shadow:none}
+/* Confirmation d'enregistrement affichée sur l'écran de fin de séance. */
+.ea-fb-saved{margin-top:12px;font-family:'Outfit',sans-serif;font-size:13px;font-weight:800;color:var(--ah-gold)}
+.ea-fb-saved span{display:block;margin-top:4px;font-size:12px;font-weight:500;color:var(--ah-text2);line-height:1.45}
 @keyframes libxSheetUp{from{transform:translateY(40px);opacity:0}to{transform:translateY(0);opacity:1}}
 .libx-sheet-grab{width:42px;height:4px;border-radius:2px;background:var(--border2,#D8D3C6);margin:2px auto 12px}
 .libx-sheet-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
@@ -5683,10 +5722,10 @@ body.ah-lib-open .tim-fab{display:none!important}
   <div class="install-prompt-inner">
     <div class="install-prompt-ic">📲</div>
     <div class="install-prompt-txt">
-      <div class="install-prompt-title">Installer Athletik Hub</div>
-      <div class="install-prompt-sub" id="installPromptSub">Ajoute l'app à ton écran d'accueil pour un accès rapide.</div>
+      <div class="install-prompt-title">Installe l'app sur ton téléphone</div>
+      <div class="install-prompt-sub" id="installPromptSub">Accès rapide depuis ton écran d'accueil</div>
     </div>
-    <button class="install-prompt-cta" id="installPromptBtn" onclick="window._installPromptGo()">Installer</button>
+    <button class="install-prompt-cta" id="installPromptBtn" onclick="window._installPromptGo()">VOIR LE TUTO</button>
     <button class="install-prompt-close" onclick="window._installPromptDismiss()" aria-label="Fermer">×</button>
   </div>
 </div>
@@ -5780,7 +5819,7 @@ body.ah-lib-open .tim-fab{display:none!important}
       <div style="display:flex;justify-content:center;gap:8px;align-items:center">
         <button onclick="welcomeLogin()" style="background:none;border:none;color:rgba(255,255,255,.7);font-family:'Outfit',sans-serif;font-size:13px;text-decoration:underline;text-underline-offset:3px;cursor:pointer;padding:6px 8px">J'ai déjà un compte</button>
         <span style="color:rgba(255,255,255,.3)">·</span>
-        <button onclick="openAccessCode()" style="background:none;border:none;color:var(--ah-gold);font-family:'Outfit',sans-serif;font-size:13px;cursor:pointer;padding:6px 8px">J'ai le livre</button>
+        <button onclick="window.openBookActivation && window.openBookActivation()" style="background:none;border:none;color:var(--ah-gold);font-family:'Outfit',sans-serif;font-size:13px;cursor:pointer;padding:6px 8px">J'ai le livre</button>
       </div>
     </div>
 
@@ -6090,7 +6129,7 @@ window.tiResetOnEnter = function(){ window.tiShowStep(1); };
       <div id="forgotPwdWrap" style="display:none;text-align:center;margin-top:4px;font-size:12px;position:relative;z-index:5">
         <a href="javascript:void(0)" role="button" onclick="fbForgotPassword();return false;" ontouchend="fbForgotPassword();return false;" style="color:var(--muted);text-decoration:underline;text-underline-offset:3px;display:inline-block;padding:6px 10px;cursor:pointer">Mot de passe oublié ?</a>
       </div>
-      <button onclick="openAccessCode()" style="width:100%;padding:12px;margin-top:14px;background:rgba(197,164,78,.08);border:1.5px solid rgba(197,164,78,.35);border-radius:12px;font-family:'Outfit',sans-serif;font-size:12px;font-weight:700;color:var(--gold);cursor:pointer;letter-spacing:.3px">📕 J'ai le livre — Saisir mon code</button>
+      <button onclick="window.openBookActivation && window.openBookActivation()" style="width:100%;padding:12px;margin-top:14px;background:rgba(197,164,78,.08);border:1.5px solid rgba(197,164,78,.35);border-radius:12px;font-family:'Outfit',sans-serif;font-size:12px;font-weight:700;color:var(--gold);cursor:pointer;letter-spacing:.3px">📕 J'ai le livre — Activer mon accès</button>
     </div>
   </div>
 </div>
@@ -8223,15 +8262,29 @@ window.tiResetOnEnter = function(){ window.tiShowStep(1); };
   <div class="sec-title">⚙️ PARAMÈTRES</div>
 
   <!-- Accès post-livre -->
-  <div class="setting-item" onclick="openAccessCode()" id="accessCodeItem">
+  <!-- Deux portes distinctes, chacune sur le bon parcours :
+       - "J'ai le livre" → openBookActivation (n° Amazon vérifié serveur)
+       - "J'ai un code"  → openAccessCode (code BETA/VIP/MASTER) -->
+  <div class="setting-item" onclick="window.openBookActivation && window.openBookActivation()" id="accessCodeItem">
     <div class="si-left">
       <div class="si-icon">📕</div>
       <div>
         <div class="si-text">J'ai le livre</div>
-        <div class="si-sub" id="accessCodeSub">Saisis ton code pour débloquer ton accès</div>
+        <div class="si-sub" id="accessCodeSub">Active ton accès avec ton n° de commande Amazon</div>
       </div>
     </div>
     <div id="accessTierBadge" style="font-size:10px;font-weight:800;letter-spacing:1px;padding:4px 10px;border-radius:12px;background:transparent;color:var(--muted);text-transform:uppercase">—</div>
+  </div>
+
+  <div class="setting-item" onclick="openAccessCode()">
+    <div class="si-left">
+      <div class="si-icon">🔑</div>
+      <div>
+        <div class="si-text">J'ai un code d'accès</div>
+        <div class="si-sub">Code BETA, VIP ou MASTER</div>
+      </div>
+    </div>
+    <div class="si-right">→</div>
   </div>
 
   <div class="setting-item" onclick="toggleDark()">
@@ -8965,16 +9018,22 @@ window.tiResetOnEnter = function(){ window.tiShowStep(1); };
     <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:14px">
       <div>
         <div style="font-size:42px;line-height:1">📕</div>
-        <div style="font-family:'Bebas Neue',sans-serif;font-size:22px;letter-spacing:2px;color:#fff;margin-top:6px">J'AI LE LIVRE</div>
-        <div style="font-size:11px;color:#8a93a8;line-height:1.5;margin-top:4px">Débloque ton accès Athletik Hub en validant ton achat.</div>
+        <div style="font-family:'Bebas Neue',sans-serif;font-size:22px;letter-spacing:2px;color:#fff;margin-top:6px">J'AI UN CODE D'ACCÈS</div>
+        <div style="font-size:11px;color:#8a93a8;line-height:1.5;margin-top:4px">Saisis ton code BETA, VIP ou MASTER.</div>
       </div>
       <button onclick="closeAccessCode()" style="background:transparent;border:0;color:#8a93a8;font-size:22px;cursor:pointer;padding:4px 8px">×</button>
     </div>
 
     <div style="margin-bottom:14px">
       <label style="font-size:10px;font-weight:800;letter-spacing:1.5px;color:#D4AF37;text-transform:uppercase">Code d'accès</label>
-      <input id="accessCodeInput" type="text" placeholder="Ex : AL-88ND89" style="width:100%;margin-top:6px;padding:12px 14px;background:#243B6B;border:1.5px solid #243B6B;border-radius:10px;font-family:'Outfit',sans-serif;font-size:14px;color:#fff;letter-spacing:1px;text-transform:uppercase;outline:none;box-sizing:border-box">
-      <div style="font-size:10px;color:#8a93a8;line-height:1.5;margin-top:4px">Le code se trouve dans l'Avant-Propos du livre.</div>
+      <!-- FUITE CORRIGÉE : l'exemple affichait AL-88ND89, qui est un VRAI code
+           BETA de LEGACY_CODES — n'importe qui recopiait l'exemple et obtenait
+           14 jours d'accès. On montre désormais le FORMAT, pas un code valide. -->
+      <input id="accessCodeInput" type="text" placeholder="Ex : B-XXXXXX-XXXX" style="width:100%;margin-top:6px;padding:12px 14px;background:#243B6B;border:1.5px solid #243B6B;border-radius:10px;font-family:'Outfit',sans-serif;font-size:14px;color:#fff;letter-spacing:1px;text-transform:uppercase;outline:none;box-sizing:border-box">
+      <!-- Le livre ne contient AUCUN code : les acheteurs activent avec leur
+           n° de commande Amazon (openBookActivation). Les codes sont attribués
+           à la main par Alassane (bêta-testeurs, VIP, partenaires). -->
+      <div style="font-size:10px;color:#8a93a8;line-height:1.5;margin-top:4px">Code attribué personnellement (bêta-testeur, VIP, partenaire). Il ne se trouve pas dans le livre.</div>
     </div>
 
     <div style="margin-bottom:14px">
@@ -8983,10 +9042,14 @@ window.tiResetOnEnter = function(){ window.tiShowStep(1); };
       <input id="accessQuestionInput" type="text" placeholder="Ta réponse..." style="width:100%;padding:12px 14px;background:#243B6B;border:1.5px solid #243B6B;border-radius:10px;font-family:'Outfit',sans-serif;font-size:14px;color:#fff;outline:none;box-sizing:border-box">
     </div>
 
-    <div style="margin-bottom:18px">
-      <label style="font-size:10px;font-weight:800;letter-spacing:1.5px;color:#D4AF37;text-transform:uppercase">N° commande Amazon (optionnel)</label>
-      <input id="accessOrderInput" type="text" placeholder="123-1234567-1234567" style="width:100%;margin-top:6px;padding:12px 14px;background:#243B6B;border:1.5px solid #243B6B;border-radius:10px;font-family:'Outfit',sans-serif;font-size:14px;color:#fff;outline:none;box-sizing:border-box">
-      <div style="font-size:10px;color:#8a93a8;line-height:1.5;margin-top:4px">Format : 3 chiffres - 7 chiffres - 7 chiffres</div>
+    <!-- Le champ "N° commande Amazon" a été RETIRÉ d'ici : il n'était jamais
+         transmis au serveur (submitAccessCode n'envoie que { code }), donc
+         purement décoratif. Un acheteur qui n'a que son numéro de commande
+         doit passer par l'assistant openBookActivation, qui lui le vérifie
+         réellement (haché, usage unique) — d'où le lien ci-dessous. -->
+    <div style="margin-bottom:18px;padding:11px 13px;background:rgba(212,175,55,.07);border:1px solid rgba(212,175,55,.22);border-radius:10px">
+      <div style="font-size:11px;color:#c9d1e0;line-height:1.55">Tu as acheté le livre ? Pas besoin de code — active avec ton n° de commande.</div>
+      <button onclick="closeAccessCode();setTimeout(function(){try{window.openBookActivation();}catch(e){}},220)" style="margin-top:8px;background:none;border:0;padding:0;color:#D4AF37;font-family:'Outfit',sans-serif;font-size:12px;font-weight:800;cursor:pointer;text-decoration:underline;text-underline-offset:3px">Activer avec mon n° de commande →</button>
     </div>
 
     <div id="accessCodeMsg" style="font-size:12px;line-height:1.5;margin-bottom:12px;display:none"></div>
@@ -14120,7 +14183,8 @@ var satExercices = [
     id: 'jump', name: 'Détente Verticale', emoji: '🦘',
     desc: 'Mesure ta hauteur bras levés, puis saute le plus haut possible.',
     libraryName: 'Counter Movement Jump',
-    video: 'https://www.youtube.com/embed/R4fjUyP2xuo',
+    // Tuto officiel Athletik Hub — mesure de la détente à partir de la planche.
+    video: 'https://www.youtube.com/embed/ssnc9sZaAhk',
     fields: [
       {id:'satReach', label:'Taille bras levés', unit:'cm', placeholder:'230'},
       {id:'satJump', label:'Hauteur max atteinte', unit:'cm', placeholder:'290'}
@@ -17200,12 +17264,14 @@ function _bfDrawChart(data) {
   function tim_sndRest(){ tim_vib([40]); }
   function tim_sndReprise(){ tim_vib([30,20,50]); }
 
-  function tim_toast(msg){
+  // ms optionnel (défaut 2000, comportement historique inchangé). Les messages
+  // d'alerte du minuteur ont besoin de rester lisibles plus longtemps.
+  function tim_toast(msg, ms){
     var el = document.getElementById('timToast');
     if (!el) return;
     el.textContent = msg; el.classList.add('on');
     clearTimeout(tim_toastT);
-    tim_toastT = setTimeout(function(){ el.classList.remove('on'); }, 2000);
+    tim_toastT = setTimeout(function(){ el.classList.remove('on'); }, ms || 2000);
   }
 
   // ── UTILS ──
@@ -17496,22 +17562,102 @@ function _bfDrawChart(data) {
     try { return (JSON.parse(localStorage.getItem('ah_profile') || '{}').fcmToken) || null; }
     catch(_) { return null; }
   }
+  // ── BUG HISTORIQUE : le timer ne sonnait jamais app fermée ──────────────
+  // tim_minutStart appelle Notification.requestPermission() quand la
+  // permission est 'default'. L'utilisateur accepte → permission 'granted'.
+  // MAIS _registerFCMToken() n'était appelé QUE depuis le toggle Réglages >
+  // Notifications (et au boot si ah_notif_on était déjà posé). Un utilisateur
+  // qui accorde la permission DEPUIS LE TIMER n'obtenait donc jamais de
+  // fcmToken : tim_fcmSchedulePush sortait en silence sur `if (!token) return`
+  // et la couche 4 — la SEULE qui survit à l'app endormie — n'était jamais
+  // armée. Le toast annonçait pourtant "tu seras prévenu même si tu quittes
+  // l'app". D'où : permission accordée, aucune alerte, et un diagnostic
+  // impossible côté utilisateur.
+  // Fix : on enregistre le token à la volée au premier timer si la permission
+  // est accordée mais que le token manque.
+  function _tim_fcmEnsureToken(){
+    var tok = _tim_fcmGetToken();
+    if (tok) return Promise.resolve(tok);
+    if (typeof Notification === 'undefined' || Notification.permission !== 'granted') {
+      return Promise.resolve(null);
+    }
+    if (typeof window._registerFCMToken !== 'function') return Promise.resolve(null);
+    return window._registerFCMToken()
+      .then(function(t){ return t || null; })
+      .catch(function(){ return null; });
+  }
+  // État réel de la couche push, pour ne plus promettre une alerte qui ne
+  // partira pas. Consommé par le toast de démarrage (_tim_announceAlert).
+  var _tim_alertState = null;   // 'push' | 'local'
+  var _tim_alertReason = '';
+  var _tim_alertAnnounced = false;
+  var _tim_alertAnnounceTimer = null;
+  function _tim_setAlertState(state, reason){
+    _tim_alertState = state;
+    _tim_alertReason = reason || '';
+    try { window._timAlertState = { state: state, reason: reason || '' }; } catch(_) {}
+    if (typeof _tim_announceAlert === 'function') _tim_announceAlert();
+  }
+  // Un seul toast par timer, et il dit la VÉRITÉ sur ce qui est armé.
+  // 'push' = le serveur enverra la notif quoi qu'il arrive.
+  // 'local' = seules les couches locales tournent → elles meurent si l'OS
+  // endort la PWA, donc on demande explicitement de garder l'app ouverte.
+  function _tim_announceAlert(){
+    if (_tim_alertAnnounced || !_tim_alertState) return;
+    _tim_alertAnnounced = true;
+    if (_tim_alertAnnounceTimer) { clearTimeout(_tim_alertAnnounceTimer); _tim_alertAnnounceTimer = null; }
+    try {
+      if (_tim_alertState === 'push') {
+        tim_toast('🔔 Alerte armée — ton téléphone sonnera même app fermée', 3500);
+      } else {
+        tim_toast('⚠️ Garde l\'app ouverte — ' + (_tim_alertReason || 'alerte arrière-plan indisponible'), 6000);
+      }
+    } catch(_) {}
+  }
   function tim_fcmSchedulePush(endsAt){
     try {
       // Annule une éventuelle programmation précédente (re-réglage, +30s…)
       tim_fcmCancelPush();
-      var token = _tim_fcmGetToken();
-      if (!token) return;
       var delay = endsAt - Date.now();
-      if (delay <= 0 || delay > TIM_FCM_MAX_DELAY) return;
-      _tim_fcmTimerId = 'tm_' + Date.now().toString(36) + '_' + Math.random().toString(36).slice(2, 8);
-      fetch('/.netlify/functions/timer-alert-background', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ token: token, endsAt: endsAt, timerId: _tim_fcmTimerId, body: 'Le minuteur a sonné' })
-      }).then(function(){
-        console.log('[timer] push FCM différé programmé (' + _tim_fcmTimerId + ') pour T+' + Math.round(delay/1000) + 's');
-      }).catch(function(e){ console.warn('[timer] push FCM schedule fail:', e); });
+      if (delay <= 0) return;
+      if (delay > TIM_FCM_MAX_DELAY) {
+        _tim_setAlertState('local', 'Timer trop long pour l\'alerte serveur (max ' +
+          Math.round(TIM_FCM_MAX_DELAY / 60000) + ' min)');
+        return;
+      }
+      var id = 'tm_' + Date.now().toString(36) + '_' + Math.random().toString(36).slice(2, 8);
+      _tim_fcmTimerId = id;
+      // L'enregistrement du token peut prendre 1-3 s : on revalide ensuite que
+      // ce timer est toujours celui en cours (l'user a pu pause/reset entre-temps).
+      _tim_fcmEnsureToken().then(function(token){
+        if (_tim_fcmTimerId !== id) return;           // annulé pendant l'attente
+        if (!token) {
+          _tim_setAlertState('local', (typeof Notification !== 'undefined' &&
+            Notification.permission === 'granted')
+              ? 'Push indisponible sur cet appareil'
+              : 'Notifications non autorisées');
+          return;
+        }
+        if (endsAt - Date.now() <= 0) return;
+        fetch('/.netlify/functions/timer-alert-background', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ token: token, endsAt: endsAt, timerId: id, body: 'Le minuteur a sonné' })
+        }).then(function(r){
+          if (_tim_fcmTimerId !== id) return;
+          // 202 = background function acceptée. 422 = hors fenêtre. Autre = KO.
+          if (r && (r.status === 202 || r.ok)) {
+            _tim_setAlertState('push', '');
+            console.log('[timer] push FCM différé armé (' + id + ') pour T+' + Math.round(delay/1000) + 's');
+          } else {
+            _tim_setAlertState('local', 'Serveur d\'alerte indisponible (' + (r && r.status) + ')');
+          }
+        }).catch(function(e){
+          if (_tim_fcmTimerId !== id) return;
+          _tim_setAlertState('local', 'Pas de réseau pour armer l\'alerte');
+          console.warn('[timer] push FCM schedule fail:', e);
+        });
+      });
     } catch(e){ console.warn('[timer] fcmSchedulePush:', e); }
   }
   function tim_fcmCancelPush(){
@@ -17736,18 +17882,16 @@ function _bfDrawChart(data) {
       var b = document.getElementById('timMinutBtn'); if (b) b.textContent = '⏸';
       _tim_minutRender();
       _tim_minutPersist();
+      // Reset de l'état d'alerte : tim_fcmSchedulePush le renseignera de façon
+      // asynchrone (le temps d'obtenir le token + de joindre le serveur).
+      _tim_alertState = null; _tim_alertReason = ''; _tim_alertAnnounced = false;
       tim_minutScheduleNotif(_tim_minut.endMs);
-      // Toast UX clair selon l'état des permissions notif. Pas de jargon
-      // technique — message court, sportif, mobile-first.
-      try {
-        if (typeof Notification === 'undefined') {
-          tim_toast('Alertes arrière-plan indisponibles sur ce navigateur', 4000);
-        } else if (Notification.permission === 'granted') {
-          tim_toast('🔔 Alerte activée — tu seras prévenu même si tu quittes l\'app', 3500);
-        } else {
-          tim_toast('Alertes arrière-plan désactivées — garde l\'app ouverte ou active les notifications', 5000);
-        }
-      } catch(_) {}
+      // Si aucune réponse au bout de 4 s (réseau lent), on annonce l'état
+      // dégradé plutôt que de laisser l'utilisateur sans information.
+      if (_tim_alertAnnounceTimer) clearTimeout(_tim_alertAnnounceTimer);
+      _tim_alertAnnounceTimer = setTimeout(function(){
+        if (!_tim_alertState) _tim_setAlertState('local', 'Alerte serveur non confirmée');
+      }, 4000);
     };
 
     // Si permission jamais demandée, on demande maintenant (le user vient
@@ -19196,8 +19340,11 @@ document.addEventListener('input', function(e) {
 // ── Vidéos YouTube par test (placeholders éditables) ──
 // IDs publics utilisés comme placeholders en attendant le tournage final.
 // Remplace par les vraies vidéos une fois disponibles.
+// `vertical: true` → format portrait (Short) : le conteneur passe en 9:16
+// centré au lieu du 16:9 par défaut, sinon la vidéo s'affiche minuscule
+// entre deux grosses bandes noires.
 var SAT_TEST_VIDEOS = {
-  detente: { yt: 'R4fjUyP2xuo', label: 'Démo — Test de détente verticale' },
+  detente: { yt: 'ssnc9sZaAhk', vertical: true, label: 'Tester sa détente verticale à partir de la planche' },
   force:   { yt: 'gsNoPYwWXeM', label: 'Démo — Tests de force (Squat / SDT / HT / DC)' },
   sprint:  { yt: '4N4MFqo2J8c', label: 'Démo — Test de sprint (départ, technique)' },
   ttest:   { yt: 'Cy7HUcZ5HxI', label: 'Démo — Agilité T-Test' },
@@ -19210,7 +19357,8 @@ function renderTestVideos() {
     if (!wrap) return;
     var v = SAT_TEST_VIDEOS[key];
     if (v.yt) {
-      wrap.innerHTML = '<iframe src="https://www.youtube.com/embed/' + v.yt + '" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope" allowfullscreen></iframe>';
+      wrap.classList.toggle('tvw-vertical', !!v.vertical);
+      wrap.innerHTML = '<iframe src="https://www.youtube.com/embed/' + v.yt + '" title="' + (v.label || '') + '" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope" allowfullscreen></iframe>';
     } else {
       wrap.innerHTML = '<div class="tvw-ph"><div class="tvw-ph-play">▶</div><div>' + v.label + '</div><div style="font-size:10px;color:rgba(255,255,255,.35);margin-top:6px">Vidéo à venir</div></div>';
     }
@@ -20082,7 +20230,7 @@ window._trkBackToSession = function() {
 // SÉANCE LIVE — Supprimée (feedback utilisateur 2026-05-16)
 // ══════════════════════════════════
 
-const catData={echauf:[{"name":"Activation neuromusculaire","diff":"easy","muscles":["Full body","Cardio"],"desc":"Squats au poids du corps","mat":"Aucun"},{"name":"Montée en charge progressive","diff":"med","muscles":["Full body","Cardio"],"desc":"Jusqu'à charge de travail — Matériel : Barre","mat":"Barre"},{"name":"Skipping / Talons-fesses","diff":"easy","muscles":["Full body","Cardio"],"desc":"Échauffement","mat":"Aucun"},{"name":"Squats sautés légers","diff":"easy","muscles":["Full body","Cardio"],"desc":"Activation pré-plio","mat":"Aucun"},{"name":"Échauffement dynamique général","diff":"easy","muscles":["Full body","Cardio"],"desc":"Cardio léger + articulations","mat":"Aucun"},{"name":"Échauffement dynamique haut du corps","diff":"easy","muscles":["Full body","Cardio"],"desc":"Rotations épaules","mat":"Aucun"}],mobi:[{"name":"90/90 (rotation hanches)","diff":"easy","muscles":["Mobilité","Coordination"],"desc":"Rotation hanches","mat":"Aucun"},{"name":"Carioca","diff":"easy","muscles":["Mobilité","Coordination"],"desc":"Coordination latérale","mat":"Aucun"},{"name":"Cat Cow","diff":"easy","muscles":["Mobilité","Coordination"],"desc":"Mobilité & Coordination","mat":"Aucun"},{"name":"Circuit Athlétique complet (Micro 2)","diff":"med","muscles":["Mobilité","Coordination"],"desc":"12-15 mn — vitesse et puissance — Matériel : 4 cônes","mat":"4 cônes"},{"name":"Fente 3D","diff":"med","muscles":["Mobilité","Coordination"],"desc":"Mobilité & Coordination","mat":"Aucun"},{"name":"Fente surélevée proprio 1","diff":"med","muscles":["Mobilité","Coordination"],"desc":"Mobilité & Coordination","mat":"Aucun"},{"name":"Marche arrière","diff":"easy","muscles":["Mobilité","Coordination"],"desc":"Coordination + proprioception","mat":"Aucun"},{"name":"Mobilité mouv (rotations complètes)","diff":"easy","muscles":["Mobilité","Coordination"],"desc":"Amplitude complète","mat":"Aucun"},{"name":"Proprio 1 et Proprio 2","diff":"med","muscles":["Mobilité","Coordination"],"desc":"6 min continues","mat":"Aucun"}],proprio:[{"name":"Marche en arrière en colline","diff":"easy","muscles":["Équilibre","Chevilles"],"desc":"10mn minimum — Matériel : Colline","mat":"Colline"},{"name":"Planche avant-bras tap épaules","diff":"med","muscles":["Équilibre","Chevilles"],"desc":"Instabilité contrôlée","mat":"Aucun"},{"name":"Sauts unipodaux multidirectionnels","diff":"hard","muscles":["Équilibre","Chevilles"],"desc":"Coordination","mat":"Aucun"},{"name":"Sauts unipodaux stabilisés","diff":"med","muscles":["Équilibre","Chevilles"],"desc":"Atterrissage contrôlé","mat":"Aucun"},{"name":"T-hold (équilibre en T sur une jambe)","diff":"med","muscles":["Équilibre","Chevilles"],"desc":"20-30s par jambe","mat":"Aucun"},{"name":"Équilibre sur une jambe yeux fermés","diff":"med","muscles":["Équilibre","Chevilles"],"desc":"20-30s par jambe","mat":"Aucun"},{"name":"Équilibre sur une jambe yeux ouverts","diff":"easy","muscles":["Équilibre","Chevilles"],"desc":"30s par jambe","mat":"Aucun"},{"name":"Équilibre unipodal sur surface instable","diff":"hard","muscles":["Équilibre","Chevilles"],"desc":"Matériel : Surface instable","mat":"Surface instable"},{"name":"Équilibre yeux fermés + perturbations","diff":"hard","muscles":["Équilibre","Chevilles"],"desc":"Réactivité","mat":"Aucun"}],plio:[{"name":"Box jump record hauteur","diff":"hard","muscles":["Quadriceps","Fessiers"],"desc":"Phase 4 peak performance — Matériel : Box — [Explosif]","mat":"Box","tag":"Explosif"},{"name":"Box jumps","diff":"med","muscles":["Quadriceps","Fessiers"],"desc":"Explosivité maximale — Matériel : Box","mat":"Box"},{"name":"Box jumps (Transmission Force)","diff":"med","muscles":["Quadriceps","Fessiers"],"desc":"Matériel : Box — [Transmission Force]","mat":"Box","tag":"Transmission Force"},{"name":"Box squat jumps (assis-debout)","diff":"med","muscles":["Quadriceps","Fessiers"],"desc":"Explosion maximale — Matériel : Box/chaise","mat":"Box/chaise"},{"name":"Broad jumps (bonds en avant)","diff":"med","muscles":["Quadriceps","Fessiers"],"desc":"Distance maximale","mat":"Aucun"},{"name":"Broad jumps maximaux (Transmission Force)","diff":"med","muscles":["Quadriceps","Fessiers"],"desc":"[Transmission Force]","mat":"Aucun","tag":"Transmission Force"},{"name":"Calf jumps (sauts mollets)","diff":"med","muscles":["Quadriceps","Fessiers"],"desc":"Rebonds explosifs","mat":"Aucun"},{"name":"Depth jump rebond immédiat","diff":"hard","muscles":["Quadriceps","Fessiers"],"desc":"Réactivité maximale — temps contact minimal — Matériel : Box — [Explosif]","mat":"Box","tag":"Explosif"},{"name":"Depth jumps","diff":"hard","muscles":["Quadriceps","Fessiers"],"desc":"Hauteur adaptée — Matériel : Box","mat":"Box"},{"name":"Dunks (avec ou sans ballon)","diff":"hard","muscles":["Quadriceps","Fessiers"],"desc":"Matériel : Panier de basket","mat":"Panier de basket"},{"name":"Fente sautée alternée","diff":"med","muscles":["Quadriceps","Fessiers"],"desc":"Pliométrie","mat":"Aucun"},{"name":"Hurdle hops (sauts de haies)","diff":"hard","muscles":["Quadriceps","Fessiers"],"desc":"Hauteur progressive — Matériel : Haies","mat":"Haies"},{"name":"Lateral bounds (bonds latéraux)","diff":"med","muscles":["Quadriceps","Fessiers"],"desc":"Alternance G/D","mat":"Aucun"},{"name":"Pogo hop 1 jambe avec métronome","diff":"med","muscles":["Quadriceps","Fessiers"],"desc":"2 séries progressives — Matériel : Métronome","mat":"Métronome"},{"name":"Pogo hop 2 jambes avec métronome","diff":"easy","muscles":["Quadriceps","Fessiers"],"desc":"2 séries progressives — Matériel : Métronome","mat":"Métronome"},{"name":"Pogo hop multi avec métronome","diff":"hard","muscles":["Quadriceps","Fessiers"],"desc":"2 séries progressives — Matériel : Métronome","mat":"Métronome"},{"name":"Saut survitesse (avec élastiques)","diff":"hard","muscles":["Quadriceps","Fessiers"],"desc":"Vitesse maximale — Matériel : Élastiques — [Survitesse]","mat":"Élastiques","tag":"Survitesse"},{"name":"Sauts de tête","diff":"med","muscles":["Quadriceps","Fessiers"],"desc":"Football/soccer","mat":"Aucun"},{"name":"Sauts verticaux maximaux","diff":"med","muscles":["Quadriceps","Fessiers"],"desc":"Pliométrie","mat":"Aucun"},{"name":"Single leg box jump avancé","diff":"hard","muscles":["Quadriceps","Fessiers"],"desc":"Unilatéral peak — Phase 4 — Matériel : Box — [Explosif]","mat":"Box","tag":"Explosif"},{"name":"Single leg box jumps","diff":"hard","muscles":["Quadriceps","Fessiers"],"desc":"Unilatéral — Matériel : Box","mat":"Box"},{"name":"Split jumps","diff":"med","muscles":["Quadriceps","Fessiers"],"desc":"Alternance jambes","mat":"Aucun"},{"name":"Tap Boum","diff":"med","muscles":["Quadriceps","Fessiers"],"desc":"Pliométrie","mat":"Aucun"},{"name":"Technique approche + saut","diff":"easy","muscles":["Quadriceps","Fessiers"],"desc":"Timing et coordination","mat":"Aucun"},{"name":"Technique atterrissage","diff":"easy","muscles":["Quadriceps","Fessiers"],"desc":"Maîtriser l'atterrissage","mat":"Aucun"},{"name":"Transmission de force (sauts libres 100%)","diff":"easy","muscles":["Quadriceps","Fessiers"],"desc":"6-12mn à 100% intensité — [Transmission Force]","mat":"Aucun","tag":"Transmission Force"},{"name":"Tuck jumps","diff":"med","muscles":["Quadriceps","Fessiers"],"desc":"Genoux à la poitrine","mat":"Aucun"}],force_pdc:[{"name":"Bring Sally Up (pompes)","diff":"med","muscles":["Quadriceps","Fessiers"],"desc":"Suivre la chanson — [Challenge]","mat":"Aucun","tag":"Challenge"},{"name":"Burpees","diff":"med","muscles":["Quadriceps","Fessiers"],"desc":"Full body","mat":"Aucun"},{"name":"Burpees avec tuck jump","diff":"hard","muscles":["Quadriceps","Fessiers"],"desc":"Force — Poids du corps","mat":"Aucun"},{"name":"Dips excentrique","diff":"med","muscles":["Quadriceps","Fessiers"],"desc":"Matériel : Parallèles — [Excentrique]","mat":"Parallèles","tag":"Excentrique"},{"name":"Dips explosif","diff":"hard","muscles":["Quadriceps","Fessiers"],"desc":"Matériel : Parallèles — [Explosif]","mat":"Parallèles","tag":"Explosif"},{"name":"Dips isométrique","diff":"med","muscles":["Quadriceps","Fessiers"],"desc":"Matériel : Parallèles — [Isométrique]","mat":"Parallèles","tag":"Isométrique"},{"name":"Dips sur chaise/banc","diff":"easy","muscles":["Quadriceps","Fessiers"],"desc":"Matériel : Chaise/banc","mat":"Chaise/banc"},{"name":"Fente avant isométrique","diff":"easy","muscles":["Quadriceps","Fessiers"],"desc":"39s par jambe — [Isométrique]","mat":"Aucun","tag":"Isométrique"},{"name":"Fente bulgare PDC","diff":"med","muscles":["Quadriceps","Fessiers"],"desc":"Force — Poids du corps","mat":"Aucun"},{"name":"Fente bulgare stato-dynamique","diff":"hard","muscles":["Quadriceps","Fessiers"],"desc":"Isométrie 6s + explosion — [Stato-dynamique]","mat":"Aucun","tag":"Stato-dynamique"},{"name":"Fente excentrique","diff":"med","muscles":["Quadriceps","Fessiers"],"desc":"5s desc + 3s mont — [Excentrique]","mat":"Aucun","tag":"Excentrique"},{"name":"Fente isométrique","diff":"easy","muscles":["Quadriceps","Fessiers"],"desc":"30s par jambe — [Isométrique]","mat":"Aucun","tag":"Isométrique"},{"name":"Glute bridge","diff":"easy","muscles":["Quadriceps","Fessiers"],"desc":"Fessiers","mat":"Aucun"},{"name":"Glute bridge unilatéral","diff":"med","muscles":["Quadriceps","Fessiers"],"desc":"Contraction glute en haut","mat":"Aucun"},{"name":"Handstand hold (contre mur)","diff":"hard","muscles":["Quadriceps","Fessiers"],"desc":"Maintien inversé — Matériel : Mur","mat":"Mur"},{"name":"Handstand progression","diff":"hard","muscles":["Quadriceps","Fessiers"],"desc":"Matériel : Mur","mat":"Mur"},{"name":"Hip Thrust PDC","diff":"med","muscles":["Quadriceps","Fessiers"],"desc":"Force — Poids du corps","mat":"Aucun"},{"name":"Hip hinge RDL poids du corps","diff":"easy","muscles":["Quadriceps","Fessiers"],"desc":"Focus ischio-jambiers — dos droit","mat":"Aucun"},{"name":"Hip thrust unilatéral PDC","diff":"med","muscles":["Quadriceps","Fessiers"],"desc":"Force — Poids du corps","mat":"Aucun"},{"name":"Iso ischio (isométrie ischio-jambiers)","diff":"med","muscles":["Quadriceps","Fessiers"],"desc":"39s — [Isométrique]","mat":"Aucun","tag":"Isométrique"},{"name":"Isométrie & Stabilité complet (Micro 7)","diff":"med","muscles":["Quadriceps","Fessiers"],"desc":"12-15 mn — 3 circuits enchaînés — [Isométrique]","mat":"Aucun","tag":"Isométrique"},{"name":"Nordic hamstring","diff":"hard","muscles":["Quadriceps","Fessiers"],"desc":"Contrôle excentrique — Matériel : Barre/partenaire","mat":"Barre/partenaire"},{"name":"Nordic hamstring excentrique","diff":"hard","muscles":["Quadriceps","Fessiers"],"desc":"Matériel : Barre/partenaire — [Excentrique]","mat":"Barre/partenaire","tag":"Excentrique"},{"name":"Pike push-ups","diff":"med","muscles":["Quadriceps","Fessiers"],"desc":"Épaules","mat":"Aucun"},{"name":"Pike push-ups explosifs","diff":"hard","muscles":["Quadriceps","Fessiers"],"desc":"[Explosif]","mat":"Aucun","tag":"Explosif"},{"name":"Pompe isométrique (position basse)","diff":"med","muscles":["Quadriceps","Fessiers"],"desc":"[Isométrique]","mat":"Aucun","tag":"Isométrique"},{"name":"Pompe isométrique position basse","diff":"med","muscles":["Quadriceps","Fessiers"],"desc":"Pectoraux contractés — [Isométrique]","mat":"Aucun","tag":"Isométrique"},{"name":"Pompes (standard)","diff":"easy","muscles":["Quadriceps","Fessiers"],"desc":"Force — Poids du corps","mat":"Aucun"},{"name":"Pompes archer","diff":"hard","muscles":["Quadriceps","Fessiers"],"desc":"Unilatéral","mat":"Aucun"},{"name":"Pompes claquées","diff":"hard","muscles":["Quadriceps","Fessiers"],"desc":"[Explosif]","mat":"Aucun","tag":"Explosif"},{"name":"Pompes diamant","diff":"med","muscles":["Quadriceps","Fessiers"],"desc":"Triceps focus","mat":"Aucun"},{"name":"Pompes déclinées","diff":"med","muscles":["Quadriceps","Fessiers"],"desc":"Pieds surélevés — Matériel : Banc","mat":"Banc"},{"name":"Pompes excentrique","diff":"med","muscles":["Quadriceps","Fessiers"],"desc":"5s desc + 3s mont — [Excentrique]","mat":"Aucun","tag":"Excentrique"},{"name":"Pompes hindou","diff":"med","muscles":["Quadriceps","Fessiers"],"desc":"Épaules dynamiques","mat":"Aucun"},{"name":"Pompes inclinées","diff":"easy","muscles":["Quadriceps","Fessiers"],"desc":"Matériel : Banc","mat":"Banc"},{"name":"Pseudo planche push-ups","diff":"hard","muscles":["Quadriceps","Fessiers"],"desc":"Force — Poids du corps","mat":"Aucun"},{"name":"Reverse nordic","diff":"hard","muscles":["Quadriceps","Fessiers"],"desc":"Quadriceps — Matériel : Barre/partenaire","mat":"Barre/partenaire"},{"name":"Reverse nordic excentrique","diff":"hard","muscles":["Quadriceps","Fessiers"],"desc":"Matériel : Barre/partenaire — [Excentrique]","mat":"Barre/partenaire","tag":"Excentrique"},{"name":"Single leg squat excentrique (pistol)","diff":"hard","muscles":["Quadriceps","Fessiers"],"desc":"Unilatéral — [Excentrique]","mat":"Aucun","tag":"Excentrique"},{"name":"Single leg squat hold","diff":"med","muscles":["Quadriceps","Fessiers"],"desc":"20-30s par jambe — [Isométrique]","mat":"Aucun","tag":"Isométrique"},{"name":"Sissy squat","diff":"hard","muscles":["Quadriceps","Fessiers"],"desc":"Force — Poids du corps","mat":"Aucun"},{"name":"Split stance isométrique","diff":"med","muscles":["Quadriceps","Fessiers"],"desc":"[Isométrique]","mat":"Aucun","tag":"Isométrique"},{"name":"Squat au poids du corps","diff":"easy","muscles":["Quadriceps","Fessiers"],"desc":"Force — Poids du corps","mat":"Aucun"},{"name":"Squat excentrique","diff":"med","muscles":["Quadriceps","Fessiers"],"desc":"5s desc + 3s mont — [Excentrique]","mat":"Aucun","tag":"Excentrique"},{"name":"Squat isométrique (90°)","diff":"easy","muscles":["Quadriceps","Fessiers"],"desc":"30-45s — [Isométrique]","mat":"Aucun","tag":"Isométrique"},{"name":"Squat jump","diff":"med","muscles":["Quadriceps","Fessiers"],"desc":"[Explosif]","mat":"Aucun","tag":"Explosif"},{"name":"Squat stato-dynamique","diff":"hard","muscles":["Quadriceps","Fessiers"],"desc":"Maintien 6s puis explosion — [Stato-dynamique]","mat":"Aucun","tag":"Stato-dynamique"},{"name":"Step-down excentrique","diff":"med","muscles":["Quadriceps","Fessiers"],"desc":"Matériel : Marche — [Excentrique]","mat":"Marche","tag":"Excentrique"},{"name":"Sumo squat isométrique","diff":"easy","muscles":["Quadriceps","Fessiers"],"desc":"39s — [Isométrique]","mat":"Aucun","tag":"Isométrique"},{"name":"Traction excentrique","diff":"hard","muscles":["Quadriceps","Fessiers"],"desc":"Matériel : Barre — [Excentrique]","mat":"Barre","tag":"Excentrique"},{"name":"Traction explosive","diff":"hard","muscles":["Quadriceps","Fessiers"],"desc":"Matériel : Barre — [Explosif]","mat":"Barre","tag":"Explosif"},{"name":"Traction supination","diff":"med","muscles":["Quadriceps","Fessiers"],"desc":"Matériel : Barre","mat":"Barre"},{"name":"Wall sit (dos au mur)","diff":"easy","muscles":["Quadriceps","Fessiers"],"desc":"Matériel : Mur — [Isométrique]","mat":"Mur","tag":"Isométrique"}],force_charge:[{"name":"Battle ropes","diff":"med","muscles":["Quadriceps","Dos"],"desc":"Intensité maximale — Matériel : Battle ropes","mat":"Battle ropes"},{"name":"Clean pull","diff":"hard","muscles":["Quadriceps","Dos"],"desc":"Matériel : Barre + poids","mat":"Barre + poids"},{"name":"Curl biceps haltères","diff":"easy","muscles":["Quadriceps","Dos"],"desc":"Matériel : Haltères","mat":"Haltères"},{"name":"Dips lestés","diff":"hard","muscles":["Quadriceps","Dos"],"desc":"Matériel : Parallèles + lest","mat":"Parallèles + lest"},{"name":"Développé couché","diff":"med","muscles":["Quadriceps","Dos"],"desc":"Charge modérée-lourde — Matériel : Barre + poids","mat":"Barre + poids"},{"name":"Développé incliné haltères","diff":"med","muscles":["Quadriceps","Dos"],"desc":"Matériel : Haltères + banc incliné","mat":"Haltères + banc incliné"},{"name":"Développé militaire","diff":"med","muscles":["Quadriceps","Dos"],"desc":"Épaules — Matériel : Barre + poids","mat":"Barre + poids"},{"name":"Face pulls","diff":"easy","muscles":["Quadriceps","Dos"],"desc":"Rotateurs externes — Matériel : Câble/élastique","mat":"Câble/élastique"},{"name":"Fente avant isométrique lestée","diff":"med","muscles":["Quadriceps","Fessiers"],"desc":"Maintien 30-45s / jambe — Matériel : Haltères — [Isométrique]","mat":"Haltères","tag":"Isométrique"},{"name":"Fente bulgare avec charge","diff":"med","muscles":["Quadriceps","Dos"],"desc":"Matériel : Haltères","mat":"Haltères"},{"name":"Front squat","diff":"hard","muscles":["Quadriceps","Dos"],"desc":"Charge modérée — Matériel : Barre + poids","mat":"Barre + poids"},{"name":"Goblet squat","diff":"easy","muscles":["Quadriceps","Dos"],"desc":"Tempo contrôlé — Matériel : Kettlebell/haltère","mat":"Kettlebell/haltère"},{"name":"Hip Thrust chargé","diff":"med","muscles":["Quadriceps","Dos"],"desc":"Matériel : Barre + poids","mat":"Barre + poids"},{"name":"Leg curl","diff":"easy","muscles":["Quadriceps","Dos"],"desc":"Matériel : Machine","mat":"Machine"},{"name":"Leg extension","diff":"easy","muscles":["Quadriceps","Dos"],"desc":"Contraction maximale — Matériel : Machine","mat":"Machine"},{"name":"Leg press","diff":"easy","muscles":["Quadriceps","Dos"],"desc":"Matériel : Machine","mat":"Machine"},{"name":"Medicine ball slams","diff":"med","muscles":["Quadriceps","Dos"],"desc":"Puissance — Matériel : Medicine ball","mat":"Medicine ball"},{"name":"Power clean","diff":"hard","muscles":["Quadriceps","Dos"],"desc":"Technique + puissance — Matériel : Barre + poids","mat":"Barre + poids"},{"name":"Power clean (ou clean pull)","diff":"hard","muscles":["Quadriceps","Dos"],"desc":"Charge légère, explosivité max — Matériel : Barre + poids","mat":"Barre + poids"},{"name":"Power clean ou hang clean","diff":"hard","muscles":["Quadriceps","Dos"],"desc":"Technique + puissance maximale — Matériel : Barre + poids","mat":"Barre + poids"},{"name":"Romanian deadlift","diff":"med","muscles":["Quadriceps","Dos"],"desc":"Focus ischio-jambiers — Matériel : Barre + poids","mat":"Barre + poids"},{"name":"Rowing barre","diff":"med","muscles":["Quadriceps","Dos"],"desc":"Dos — Matériel : Barre + poids","mat":"Barre + poids"},{"name":"Rowing haltères","diff":"easy","muscles":["Quadriceps","Dos"],"desc":"Matériel : Haltères","mat":"Haltères"},{"name":"Soulevé de terre","diff":"hard","muscles":["Quadriceps","Dos"],"desc":"Dernière série à l'échec — Matériel : Barre + poids","mat":"Barre + poids"},{"name":"Soulevé de terre tempo excentrique","diff":"hard","muscles":["Quadriceps","Dos"],"desc":"Contrôle de la descente — Matériel : Barre + poids — [Excentrique]","mat":"Barre + poids","tag":"Excentrique"},{"name":"Squat jump avec charge","diff":"hard","muscles":["Quadriceps","Dos"],"desc":"20-30% 1RM — Matériel : Gilet lesté — [Explosif]","mat":"Gilet lesté","tag":"Explosif"},{"name":"Squat jump avec gilet lesté","diff":"hard","muscles":["Quadriceps","Dos"],"desc":"30% 1RM — phase peak — Matériel : Gilet lesté — [Explosif]","mat":"Gilet lesté","tag":"Explosif"},{"name":"Squat jump explosif (50-60% 1RM barre)","diff":"hard","muscles":["Quadriceps","Dos"],"desc":"Circuit peak performance — Matériel : Barre + poids — [Explosif]","mat":"Barre + poids","tag":"Explosif"},{"name":"Squat à la barre","diff":"med","muscles":["Quadriceps","Dos"],"desc":"Dernière série à l'échec — Matériel : Barre + poids","mat":"Barre + poids"},{"name":"Squat à la barre explosive","diff":"hard","muscles":["Quadriceps","Dos"],"desc":"60-85% 1RM — Matériel : Barre + poids — [Explosif]","mat":"Barre + poids","tag":"Explosif"},{"name":"Step-ups explosifs","diff":"med","muscles":["Quadriceps","Dos"],"desc":"Matériel : Box + haltères — [Explosif]","mat":"Box + haltères","tag":"Explosif"},{"name":"Tractions lestées","diff":"hard","muscles":["Quadriceps","Dos"],"desc":"Matériel : Barre + lest","mat":"Barre + lest"},{"name":"Élévations frontales","diff":"easy","muscles":["Quadriceps","Dos"],"desc":"Deltoïdes antérieurs — Matériel : Haltères/bouteilles","mat":"Haltères/bouteilles"},{"name":"Élévations latérales","diff":"easy","muscles":["Quadriceps","Dos"],"desc":"Deltoïdes — Matériel : Haltères/bouteilles","mat":"Haltères/bouteilles"}],gainage:[{"name":"Barre levé genoux","diff":"med","muscles":["Core","Abdos"],"desc":"Contrôle du mouvement — Matériel : Barre","mat":"Barre"},{"name":"Dead bug","diff":"med","muscles":["Core","Abdos"],"desc":"Coordination","mat":"Aucun"},{"name":"Gainage latéral dynamique","diff":"med","muscles":["Core","Abdos"],"desc":"Obliques","mat":"Aucun"},{"name":"Hollow body hold","diff":"med","muscles":["Core","Abdos"],"desc":"Abdos + lombaires","mat":"Aucun"},{"name":"L-sit (ou progression)","diff":"hard","muscles":["Core","Abdos"],"desc":"Maintien maximum — Matériel : Barre/chaise","mat":"Barre/chaise"},{"name":"Mountain climbers","diff":"med","muscles":["Core","Abdos"],"desc":"30s","mat":"Aucun"},{"name":"Pallof press","diff":"med","muscles":["Core","Abdos"],"desc":"Matériel : Câble/élastique — [Anti-rotation]","mat":"Câble/élastique","tag":"Anti-rotation"},{"name":"Planche avec variations","diff":"hard","muscles":["Core","Abdos"],"desc":"Bras levé, jambe levée","mat":"Aucun"},{"name":"Planche dynamique (tap épaules)","diff":"med","muscles":["Core","Abdos"],"desc":"Gainage & Core","mat":"Aucun"},{"name":"Planche latérale","diff":"med","muscles":["Core","Abdos"],"desc":"30-45s par côté","mat":"Aucun"},{"name":"Planche sur coudes","diff":"easy","muscles":["Core","Abdos"],"desc":"Gainage actif","mat":"Aucun"},{"name":"Planche sur mains","diff":"med","muscles":["Core","Abdos"],"desc":"Gainage & Core","mat":"Aucun"},{"name":"Rocking Dead Bug","diff":"med","muscles":["Core","Abdos"],"desc":"Gainage & Core","mat":"Aucun"},{"name":"Russian twists","diff":"med","muscles":["Core","Abdos"],"desc":"Avec charge — Matériel : Charge optionnelle","mat":"Charge optionnelle"},{"name":"Shoulder taps en planche","diff":"med","muscles":["Core","Abdos"],"desc":"Gainage & Core","mat":"Aucun"},{"name":"Superman hold","diff":"easy","muscles":["Core","Abdos"],"desc":"30s maintien","mat":"Aucun"}],rotation:[{"name":"Double squat dynamique","diff":"med","muscles":["Obliques","Core"],"desc":"Puissance de rotation","mat":"Aucun"},{"name":"Puissance de rotation (1)","diff":"med","muscles":["Obliques","Core"],"desc":"Puissance de rotation","mat":"Aucun"},{"name":"Rotation buste explosive debout","diff":"med","muscles":["Obliques","Core"],"desc":"Puissance de rotation","mat":"Aucun"},{"name":"Rotation buste unipodal","diff":"hard","muscles":["Obliques","Core"],"desc":"Équilibre + rotation","mat":"Aucun"},{"name":"Rotation explosive du buste en position planche","diff":"hard","muscles":["Obliques","Core"],"desc":"Puissance de rotation","mat":"Aucun"},{"name":"Single leg rotation","diff":"hard","muscles":["Obliques","Core"],"desc":"Puissance de rotation","mat":"Aucun"},{"name":"Wood chops","diff":"med","muscles":["Obliques","Core"],"desc":"Diagonal rotation — Matériel : Élastiques","mat":"Élastiques"}],pied:[{"name":"Calf raise excentrique","diff":"med","muscles":["Mollets","Chevilles"],"desc":"[Excentrique]","mat":"Aucun","tag":"Excentrique"},{"name":"Calf raise hold (maintien pointes)","diff":"med","muscles":["Mollets","Chevilles"],"desc":"[Isométrique]","mat":"Aucun","tag":"Isométrique"},{"name":"Calf raise isométrique hold","diff":"med","muscles":["Mollets","Chevilles"],"desc":"Maintien sur les pointes — [Isométrique]","mat":"Aucun","tag":"Isométrique"},{"name":"Calf raises debout","diff":"easy","muscles":["Mollets","Chevilles"],"desc":"Travail du pied","mat":"Aucun"},{"name":"Dorsiflexion résistée / tibial antérieur","diff":"easy","muscles":["Mollets","Chevilles"],"desc":"Relever pointes vers soi — Matériel : Aucun/élastique","mat":"Aucun/élastique"},{"name":"Marche sur les talons","diff":"easy","muscles":["Mollets","Chevilles"],"desc":"Activation tibial","mat":"Aucun"},{"name":"Marche sur pointe de pieds","diff":"easy","muscles":["Mollets","Chevilles"],"desc":"Travail du pied","mat":"Aucun"},{"name":"Relevé de pointe unipodal (calf raises)","diff":"med","muscles":["Mollets","Chevilles"],"desc":"Amplitude complète","mat":"Aucun"},{"name":"Toe taps","diff":"easy","muscles":["Mollets","Chevilles"],"desc":"Travail du pied","mat":"Aucun"},{"name":"Élévation orteils","diff":"easy","muscles":["Mollets","Chevilles"],"desc":"Focus orteils","mat":"Aucun"},{"name":"Footwork Tipping Base","diff":"med","muscles":["Quadriceps","Mollets","Coordination"],"desc":"Drill footwork — appuis rapides en base position","mat":"Aucun"},{"name":"Footwork Double Simultané","diff":"hard","muscles":["Quadriceps","Mollets","Coordination"],"desc":"Drill footwork double appui simultané — vitesse d'exécution","mat":"Aucun"},{"name":"Lateral Double Tap","diff":"med","muscles":["Adducteurs","Mollets","Coordination"],"desc":"Double appui simultané latéral — vitesse et agilité","mat":"Aucun"}],sprint:[{"name":"94 feet test (vitesse multidirection)","diff":"hard","muscles":["Quadriceps","Ischio-jambiers"],"desc":"Matériel : Cônes — [Test]","mat":"Cônes","tag":"Test"},{"name":"Course à pied (aérobie)","diff":"easy","muscles":["Quadriceps","Ischio-jambiers"],"desc":"60% Vmax, 35mn — [Cardio]","mat":"Aucun","tag":"Cardio"},{"name":"Fartlek","diff":"med","muscles":["Quadriceps","Ischio-jambiers"],"desc":"Jeu de vitesse libre — [Cardio]","mat":"Aucun","tag":"Cardio"},{"name":"High knees (sprint sur place)","diff":"easy","muscles":["Quadriceps","Ischio-jambiers"],"desc":"Sprint & Vitesse","mat":"Aucun"},{"name":"Intervalles longs (2mn/1mn)","diff":"med","muscles":["Quadriceps","Ischio-jambiers"],"desc":"[Cardio]","mat":"Aucun","tag":"Cardio"},{"name":"Sprint 10-20m","diff":"med","muscles":["Quadriceps","Ischio-jambiers"],"desc":"Vitesse maximale","mat":"Aucun"},{"name":"Sprint 20m","diff":"med","muscles":["Quadriceps","Ischio-jambiers"],"desc":"Sprint & Vitesse","mat":"Aucun"},{"name":"Sprint 30-40m","diff":"med","muscles":["Quadriceps","Ischio-jambiers"],"desc":"Sprint & Vitesse","mat":"Aucun"},{"name":"Sprint 60m","diff":"hard","muscles":["Quadriceps","Ischio-jambiers"],"desc":"Sprint & Vitesse","mat":"Aucun"},{"name":"Sprint 94 Feet simulation","diff":"hard","muscles":["Quadriceps","Ischio-jambiers"],"desc":"Préparation Super Explosif Test — Matériel : Cônes — [Test]","mat":"Cônes","tag":"Test"},{"name":"Sprint Cardio complet (Micro 8)","diff":"med","muscles":["Quadriceps","Ischio-jambiers"],"desc":"10-20 mn selon niveau — [Cardio]","mat":"Aucun","tag":"Cardio"},{"name":"Sprint en côte","diff":"hard","muscles":["Quadriceps","Ischio-jambiers"],"desc":"Puissance maximale — Matériel : Colline","mat":"Colline"},{"name":"Sprint fractionné 15s (100% Vmax)","diff":"hard","muscles":["Quadriceps","Ischio-jambiers"],"desc":"[HIIT]","mat":"Aucun","tag":"HIIT"},{"name":"Sprint intervals (10s sprint + 30s jogging)","diff":"med","muscles":["Quadriceps","Ischio-jambiers"],"desc":"8 cycles — [Cardio]","mat":"Aucun","tag":"Cardio"},{"name":"Sprint triangle","diff":"med","muscles":["Quadriceps","Ischio-jambiers"],"desc":"Matériel : Cônes","mat":"Cônes"},{"name":"Vitesse 4 cônes","diff":"med","muscles":["Quadriceps","Ischio-jambiers"],"desc":"Matériel : 4 cônes","mat":"4 cônes"},{"name":"Gamme athlétique","diff":"med","muscles":["Quadriceps","Ischio-jambiers"],"desc":"Drills de coordination technique de course","mat":"Aucun"}],recup:[{"name":"Engagement MENER hebdomadaire","diff":"easy","muscles":["Récupération","Mental"],"desc":"1 à 3 engagements par semaine sur le pilier faible — [Mental]","mat":"Aucun","tag":"Mental"},{"name":"Foam rolling / Pistolet massage","diff":"easy","muscles":["Récupération","Mental"],"desc":"Matériel : Foam roller","mat":"Foam roller"},{"name":"Foam rolling corps complet post-séance","diff":"easy","muscles":["Récupération","Mental"],"desc":"15 mn après séance intensive — Matériel : Foam roller","mat":"Foam roller"},{"name":"Jeûne progressif","diff":"easy","muscles":["Récupération","Mental"],"desc":"4h → 36h progressif — [Mental/Jeûne]","mat":"Aucun","tag":"Mental/Jeûne"},{"name":"La Visualisation","diff":"easy","muscles":["Récupération","Mental"],"desc":"[Mental]","mat":"Aucun","tag":"Mental"},{"name":"RDV partenaire de résultats (bilan hebdo MENER)","diff":"easy","muscles":["Récupération","Mental"],"desc":"Accountability externe — non négociable — [Mental]","mat":"Aucun","tag":"Mental"},{"name":"Respiration contrôlée (Micro 3)","diff":"easy","muscles":["Récupération","Mental"],"desc":"8-10mn — [Mental]","mat":"Aucun","tag":"Mental"},{"name":"Retour au calme + marche","diff":"easy","muscles":["Récupération","Mental"],"desc":"Récupération","mat":"Aucun"},{"name":"Rock Back Breathing","diff":"easy","muscles":["Récupération","Mental"],"desc":"2 à 5mn","mat":"Aucun"},{"name":"Étirements complets bas du corps","diff":"easy","muscles":["Récupération","Mental"],"desc":"Focus bas du corps","mat":"Aucun"},{"name":"Étirements légers","diff":"easy","muscles":["Récupération","Mental"],"desc":"5-10 min","mat":"Aucun"},{"name":"Étirements statiques pré-test","diff":"easy","muscles":["Récupération","Mental"],"desc":"Préparation Super Explosif Test","mat":"Aucun"}],};
+const catData={echauf:[{"name":"Activation neuromusculaire","diff":"easy","muscles":["Full body","Cardio"],"desc":"Squats au poids du corps","mat":"Aucun"},{"name":"Montée en charge progressive","diff":"med","muscles":["Full body","Cardio"],"desc":"Jusqu'à charge de travail — Matériel : Barre","mat":"Barre"},{"name":"Skipping / Talons-fesses","diff":"easy","muscles":["Full body","Cardio"],"desc":"Échauffement","mat":"Aucun"},{"name":"Squats sautés légers","diff":"easy","muscles":["Full body","Cardio"],"desc":"Activation pré-plio","mat":"Aucun"},{"name":"Échauffement dynamique général","diff":"easy","muscles":["Full body","Cardio"],"desc":"Cardio léger + articulations","mat":"Aucun"},{"name":"Échauffement dynamique haut du corps","diff":"easy","muscles":["Full body","Cardio"],"desc":"Rotations épaules","mat":"Aucun"}],mobi:[{"name":"90/90 (rotation hanches)","diff":"easy","muscles":["Mobilité","Coordination"],"desc":"Rotation hanches","mat":"Aucun"},{"name":"Carioca","diff":"easy","muscles":["Mobilité","Coordination"],"desc":"Coordination latérale","mat":"Aucun"},{"name":"Cat Cow","diff":"easy","muscles":["Mobilité","Coordination"],"desc":"Mobilité & Coordination","mat":"Aucun"},{"name":"Circuit Athlétique complet (Micro 2)","diff":"med","muscles":["Mobilité","Coordination"],"desc":"12-15 mn — vitesse et puissance — Matériel : 4 cônes","mat":"4 cônes"},{"name":"Fente 3D","diff":"med","muscles":["Mobilité","Coordination"],"desc":"Mobilité & Coordination","mat":"Aucun"},{"name":"Fente surélevée proprio 1","diff":"med","muscles":["Mobilité","Coordination"],"desc":"Mobilité & Coordination","mat":"Aucun"},{"name":"Marche arrière","diff":"easy","muscles":["Mobilité","Coordination"],"desc":"Coordination + proprioception","mat":"Aucun"},{"name":"Mobilité mouv (rotations complètes)","diff":"easy","muscles":["Mobilité","Coordination"],"desc":"Amplitude complète","mat":"Aucun"},{"name":"Proprio 1 et Proprio 2","diff":"med","muscles":["Mobilité","Coordination"],"desc":"6 min continues","mat":"Aucun"}],proprio:[{"name":"Marche en arrière en colline","diff":"easy","muscles":["Équilibre","Chevilles"],"desc":"10mn minimum — Matériel : Colline","mat":"Colline"},{"name":"Planche avant-bras tap épaules","diff":"med","muscles":["Équilibre","Chevilles"],"desc":"Instabilité contrôlée","mat":"Aucun"},{"name":"Sauts unipodaux multidirectionnels","diff":"hard","muscles":["Équilibre","Chevilles"],"desc":"Coordination","mat":"Aucun"},{"name":"Sauts unipodaux stabilisés","diff":"med","muscles":["Équilibre","Chevilles"],"desc":"Atterrissage contrôlé","mat":"Aucun"},{"name":"T-hold (équilibre en T sur une jambe)","diff":"med","muscles":["Équilibre","Chevilles"],"desc":"20-30s par jambe","mat":"Aucun"},{"name":"Équilibre sur une jambe yeux fermés","diff":"med","muscles":["Équilibre","Chevilles"],"desc":"20-30s par jambe","mat":"Aucun"},{"name":"Équilibre sur une jambe yeux ouverts","diff":"easy","muscles":["Équilibre","Chevilles"],"desc":"30s par jambe","mat":"Aucun"},{"name":"Équilibre unipodal sur surface instable","diff":"hard","muscles":["Équilibre","Chevilles"],"desc":"Matériel : Surface instable","mat":"Surface instable"},{"name":"Équilibre yeux fermés + perturbations","diff":"hard","muscles":["Équilibre","Chevilles"],"desc":"Réactivité","mat":"Aucun"}],plio:[{"name":"Tester sa détente verticale à partir de la planche","diff":"easy","muscles":["Détente","Protocole de test"],"desc":"Protocole de mesure — repère ta taille bras levés contre la planche, saute et touche le point le plus haut. Détente = hauteur max − taille bras levés. 3 à 5 essais, garde le meilleur.","mat":"Planche ou mur gradué","tag":"Test"},{"name":"Box jump record hauteur","diff":"hard","muscles":["Quadriceps","Fessiers"],"desc":"Phase 4 peak performance — Matériel : Box — [Explosif]","mat":"Box","tag":"Explosif"},{"name":"Box jumps","diff":"med","muscles":["Quadriceps","Fessiers"],"desc":"Explosivité maximale — Matériel : Box","mat":"Box"},{"name":"Box jumps (Transmission Force)","diff":"med","muscles":["Quadriceps","Fessiers"],"desc":"Matériel : Box — [Transmission Force]","mat":"Box","tag":"Transmission Force"},{"name":"Box squat jumps (assis-debout)","diff":"med","muscles":["Quadriceps","Fessiers"],"desc":"Explosion maximale — Matériel : Box/chaise","mat":"Box/chaise"},{"name":"Broad jumps (bonds en avant)","diff":"med","muscles":["Quadriceps","Fessiers"],"desc":"Distance maximale","mat":"Aucun"},{"name":"Broad jumps maximaux (Transmission Force)","diff":"med","muscles":["Quadriceps","Fessiers"],"desc":"[Transmission Force]","mat":"Aucun","tag":"Transmission Force"},{"name":"Calf jumps (sauts mollets)","diff":"med","muscles":["Quadriceps","Fessiers"],"desc":"Rebonds explosifs","mat":"Aucun"},{"name":"Depth jump rebond immédiat","diff":"hard","muscles":["Quadriceps","Fessiers"],"desc":"Réactivité maximale — temps contact minimal — Matériel : Box — [Explosif]","mat":"Box","tag":"Explosif"},{"name":"Depth jumps","diff":"hard","muscles":["Quadriceps","Fessiers"],"desc":"Hauteur adaptée — Matériel : Box","mat":"Box"},{"name":"Dunks (avec ou sans ballon)","diff":"hard","muscles":["Quadriceps","Fessiers"],"desc":"Matériel : Panier de basket","mat":"Panier de basket"},{"name":"Fente sautée alternée","diff":"med","muscles":["Quadriceps","Fessiers"],"desc":"Pliométrie","mat":"Aucun"},{"name":"Hurdle hops (sauts de haies)","diff":"hard","muscles":["Quadriceps","Fessiers"],"desc":"Hauteur progressive — Matériel : Haies","mat":"Haies"},{"name":"Lateral bounds (bonds latéraux)","diff":"med","muscles":["Quadriceps","Fessiers"],"desc":"Alternance G/D","mat":"Aucun"},{"name":"Pogo hop 1 jambe avec métronome","diff":"med","muscles":["Quadriceps","Fessiers"],"desc":"2 séries progressives — Matériel : Métronome","mat":"Métronome"},{"name":"Pogo hop 2 jambes avec métronome","diff":"easy","muscles":["Quadriceps","Fessiers"],"desc":"2 séries progressives — Matériel : Métronome","mat":"Métronome"},{"name":"Pogo hop multi avec métronome","diff":"hard","muscles":["Quadriceps","Fessiers"],"desc":"2 séries progressives — Matériel : Métronome","mat":"Métronome"},{"name":"Saut survitesse (avec élastiques)","diff":"hard","muscles":["Quadriceps","Fessiers"],"desc":"Vitesse maximale — Matériel : Élastiques — [Survitesse]","mat":"Élastiques","tag":"Survitesse"},{"name":"Sauts de tête","diff":"med","muscles":["Quadriceps","Fessiers"],"desc":"Football/soccer","mat":"Aucun"},{"name":"Sauts verticaux maximaux","diff":"med","muscles":["Quadriceps","Fessiers"],"desc":"Pliométrie","mat":"Aucun"},{"name":"Single leg box jump avancé","diff":"hard","muscles":["Quadriceps","Fessiers"],"desc":"Unilatéral peak — Phase 4 — Matériel : Box — [Explosif]","mat":"Box","tag":"Explosif"},{"name":"Single leg box jumps","diff":"hard","muscles":["Quadriceps","Fessiers"],"desc":"Unilatéral — Matériel : Box","mat":"Box"},{"name":"Split jumps","diff":"med","muscles":["Quadriceps","Fessiers"],"desc":"Alternance jambes","mat":"Aucun"},{"name":"Tap Boum","diff":"med","muscles":["Quadriceps","Fessiers"],"desc":"Pliométrie","mat":"Aucun"},{"name":"Technique approche + saut","diff":"easy","muscles":["Quadriceps","Fessiers"],"desc":"Timing et coordination","mat":"Aucun"},{"name":"Technique atterrissage","diff":"easy","muscles":["Quadriceps","Fessiers"],"desc":"Maîtriser l'atterrissage","mat":"Aucun"},{"name":"Transmission de force (sauts libres 100%)","diff":"easy","muscles":["Quadriceps","Fessiers"],"desc":"6-12mn à 100% intensité — [Transmission Force]","mat":"Aucun","tag":"Transmission Force"},{"name":"Tuck jumps","diff":"med","muscles":["Quadriceps","Fessiers"],"desc":"Genoux à la poitrine","mat":"Aucun"}],force_pdc:[{"name":"Bring Sally Up (pompes)","diff":"med","muscles":["Quadriceps","Fessiers"],"desc":"Suivre la chanson — [Challenge]","mat":"Aucun","tag":"Challenge"},{"name":"Burpees","diff":"med","muscles":["Quadriceps","Fessiers"],"desc":"Full body","mat":"Aucun"},{"name":"Burpees avec tuck jump","diff":"hard","muscles":["Quadriceps","Fessiers"],"desc":"Force — Poids du corps","mat":"Aucun"},{"name":"Dips excentrique","diff":"med","muscles":["Quadriceps","Fessiers"],"desc":"Matériel : Parallèles — [Excentrique]","mat":"Parallèles","tag":"Excentrique"},{"name":"Dips explosif","diff":"hard","muscles":["Quadriceps","Fessiers"],"desc":"Matériel : Parallèles — [Explosif]","mat":"Parallèles","tag":"Explosif"},{"name":"Dips isométrique","diff":"med","muscles":["Quadriceps","Fessiers"],"desc":"Matériel : Parallèles — [Isométrique]","mat":"Parallèles","tag":"Isométrique"},{"name":"Dips sur chaise/banc","diff":"easy","muscles":["Quadriceps","Fessiers"],"desc":"Matériel : Chaise/banc","mat":"Chaise/banc"},{"name":"Fente avant isométrique","diff":"easy","muscles":["Quadriceps","Fessiers"],"desc":"39s par jambe — [Isométrique]","mat":"Aucun","tag":"Isométrique"},{"name":"Fente bulgare PDC","diff":"med","muscles":["Quadriceps","Fessiers"],"desc":"Force — Poids du corps","mat":"Aucun"},{"name":"Fente bulgare stato-dynamique","diff":"hard","muscles":["Quadriceps","Fessiers"],"desc":"Isométrie 6s + explosion — [Stato-dynamique]","mat":"Aucun","tag":"Stato-dynamique"},{"name":"Fente excentrique","diff":"med","muscles":["Quadriceps","Fessiers"],"desc":"5s desc + 3s mont — [Excentrique]","mat":"Aucun","tag":"Excentrique"},{"name":"Fente isométrique","diff":"easy","muscles":["Quadriceps","Fessiers"],"desc":"30s par jambe — [Isométrique]","mat":"Aucun","tag":"Isométrique"},{"name":"Glute bridge","diff":"easy","muscles":["Quadriceps","Fessiers"],"desc":"Fessiers","mat":"Aucun"},{"name":"Glute bridge unilatéral","diff":"med","muscles":["Quadriceps","Fessiers"],"desc":"Contraction glute en haut","mat":"Aucun"},{"name":"Handstand hold (contre mur)","diff":"hard","muscles":["Quadriceps","Fessiers"],"desc":"Maintien inversé — Matériel : Mur","mat":"Mur"},{"name":"Handstand progression","diff":"hard","muscles":["Quadriceps","Fessiers"],"desc":"Matériel : Mur","mat":"Mur"},{"name":"Hip Thrust PDC","diff":"med","muscles":["Quadriceps","Fessiers"],"desc":"Force — Poids du corps","mat":"Aucun"},{"name":"Hip hinge RDL poids du corps","diff":"easy","muscles":["Quadriceps","Fessiers"],"desc":"Focus ischio-jambiers — dos droit","mat":"Aucun"},{"name":"Hip thrust unilatéral PDC","diff":"med","muscles":["Quadriceps","Fessiers"],"desc":"Force — Poids du corps","mat":"Aucun"},{"name":"Iso ischio (isométrie ischio-jambiers)","diff":"med","muscles":["Quadriceps","Fessiers"],"desc":"39s — [Isométrique]","mat":"Aucun","tag":"Isométrique"},{"name":"Isométrie & Stabilité complet (Micro 7)","diff":"med","muscles":["Quadriceps","Fessiers"],"desc":"12-15 mn — 3 circuits enchaînés — [Isométrique]","mat":"Aucun","tag":"Isométrique"},{"name":"Nordic hamstring","diff":"hard","muscles":["Quadriceps","Fessiers"],"desc":"Contrôle excentrique — Matériel : Barre/partenaire","mat":"Barre/partenaire"},{"name":"Nordic hamstring excentrique","diff":"hard","muscles":["Quadriceps","Fessiers"],"desc":"Matériel : Barre/partenaire — [Excentrique]","mat":"Barre/partenaire","tag":"Excentrique"},{"name":"Pike push-ups","diff":"med","muscles":["Quadriceps","Fessiers"],"desc":"Épaules","mat":"Aucun"},{"name":"Pike push-ups explosifs","diff":"hard","muscles":["Quadriceps","Fessiers"],"desc":"[Explosif]","mat":"Aucun","tag":"Explosif"},{"name":"Pompe isométrique (position basse)","diff":"med","muscles":["Quadriceps","Fessiers"],"desc":"[Isométrique]","mat":"Aucun","tag":"Isométrique"},{"name":"Pompe isométrique position basse","diff":"med","muscles":["Quadriceps","Fessiers"],"desc":"Pectoraux contractés — [Isométrique]","mat":"Aucun","tag":"Isométrique"},{"name":"Pompes (standard)","diff":"easy","muscles":["Quadriceps","Fessiers"],"desc":"Force — Poids du corps","mat":"Aucun"},{"name":"Pompes archer","diff":"hard","muscles":["Quadriceps","Fessiers"],"desc":"Unilatéral","mat":"Aucun"},{"name":"Pompes claquées","diff":"hard","muscles":["Quadriceps","Fessiers"],"desc":"[Explosif]","mat":"Aucun","tag":"Explosif"},{"name":"Pompes diamant","diff":"med","muscles":["Quadriceps","Fessiers"],"desc":"Triceps focus","mat":"Aucun"},{"name":"Pompes déclinées","diff":"med","muscles":["Quadriceps","Fessiers"],"desc":"Pieds surélevés — Matériel : Banc","mat":"Banc"},{"name":"Pompes excentrique","diff":"med","muscles":["Quadriceps","Fessiers"],"desc":"5s desc + 3s mont — [Excentrique]","mat":"Aucun","tag":"Excentrique"},{"name":"Pompes hindou","diff":"med","muscles":["Quadriceps","Fessiers"],"desc":"Épaules dynamiques","mat":"Aucun"},{"name":"Pompes inclinées","diff":"easy","muscles":["Quadriceps","Fessiers"],"desc":"Matériel : Banc","mat":"Banc"},{"name":"Pseudo planche push-ups","diff":"hard","muscles":["Quadriceps","Fessiers"],"desc":"Force — Poids du corps","mat":"Aucun"},{"name":"Reverse nordic","diff":"hard","muscles":["Quadriceps","Fessiers"],"desc":"Quadriceps — Matériel : Barre/partenaire","mat":"Barre/partenaire"},{"name":"Reverse nordic excentrique","diff":"hard","muscles":["Quadriceps","Fessiers"],"desc":"Matériel : Barre/partenaire — [Excentrique]","mat":"Barre/partenaire","tag":"Excentrique"},{"name":"Single leg squat excentrique (pistol)","diff":"hard","muscles":["Quadriceps","Fessiers"],"desc":"Unilatéral — [Excentrique]","mat":"Aucun","tag":"Excentrique"},{"name":"Single leg squat hold","diff":"med","muscles":["Quadriceps","Fessiers"],"desc":"20-30s par jambe — [Isométrique]","mat":"Aucun","tag":"Isométrique"},{"name":"Sissy squat","diff":"hard","muscles":["Quadriceps","Fessiers"],"desc":"Force — Poids du corps","mat":"Aucun"},{"name":"Split stance isométrique","diff":"med","muscles":["Quadriceps","Fessiers"],"desc":"[Isométrique]","mat":"Aucun","tag":"Isométrique"},{"name":"Squat au poids du corps","diff":"easy","muscles":["Quadriceps","Fessiers"],"desc":"Force — Poids du corps","mat":"Aucun"},{"name":"Squat excentrique","diff":"med","muscles":["Quadriceps","Fessiers"],"desc":"5s desc + 3s mont — [Excentrique]","mat":"Aucun","tag":"Excentrique"},{"name":"Squat isométrique (90°)","diff":"easy","muscles":["Quadriceps","Fessiers"],"desc":"30-45s — [Isométrique]","mat":"Aucun","tag":"Isométrique"},{"name":"Squat jump","diff":"med","muscles":["Quadriceps","Fessiers"],"desc":"[Explosif]","mat":"Aucun","tag":"Explosif"},{"name":"Squat stato-dynamique","diff":"hard","muscles":["Quadriceps","Fessiers"],"desc":"Maintien 6s puis explosion — [Stato-dynamique]","mat":"Aucun","tag":"Stato-dynamique"},{"name":"Step-down excentrique","diff":"med","muscles":["Quadriceps","Fessiers"],"desc":"Matériel : Marche — [Excentrique]","mat":"Marche","tag":"Excentrique"},{"name":"Sumo squat isométrique","diff":"easy","muscles":["Quadriceps","Fessiers"],"desc":"39s — [Isométrique]","mat":"Aucun","tag":"Isométrique"},{"name":"Traction excentrique","diff":"hard","muscles":["Quadriceps","Fessiers"],"desc":"Matériel : Barre — [Excentrique]","mat":"Barre","tag":"Excentrique"},{"name":"Traction explosive","diff":"hard","muscles":["Quadriceps","Fessiers"],"desc":"Matériel : Barre — [Explosif]","mat":"Barre","tag":"Explosif"},{"name":"Traction supination","diff":"med","muscles":["Quadriceps","Fessiers"],"desc":"Matériel : Barre","mat":"Barre"},{"name":"Wall sit (dos au mur)","diff":"easy","muscles":["Quadriceps","Fessiers"],"desc":"Matériel : Mur — [Isométrique]","mat":"Mur","tag":"Isométrique"}],force_charge:[{"name":"Battle ropes","diff":"med","muscles":["Quadriceps","Dos"],"desc":"Intensité maximale — Matériel : Battle ropes","mat":"Battle ropes"},{"name":"Clean pull","diff":"hard","muscles":["Quadriceps","Dos"],"desc":"Matériel : Barre + poids","mat":"Barre + poids"},{"name":"Curl biceps haltères","diff":"easy","muscles":["Quadriceps","Dos"],"desc":"Matériel : Haltères","mat":"Haltères"},{"name":"Dips lestés","diff":"hard","muscles":["Quadriceps","Dos"],"desc":"Matériel : Parallèles + lest","mat":"Parallèles + lest"},{"name":"Développé couché","diff":"med","muscles":["Quadriceps","Dos"],"desc":"Charge modérée-lourde — Matériel : Barre + poids","mat":"Barre + poids"},{"name":"Développé incliné haltères","diff":"med","muscles":["Quadriceps","Dos"],"desc":"Matériel : Haltères + banc incliné","mat":"Haltères + banc incliné"},{"name":"Développé militaire","diff":"med","muscles":["Quadriceps","Dos"],"desc":"Épaules — Matériel : Barre + poids","mat":"Barre + poids"},{"name":"Face pulls","diff":"easy","muscles":["Quadriceps","Dos"],"desc":"Rotateurs externes — Matériel : Câble/élastique","mat":"Câble/élastique"},{"name":"Fente avant isométrique lestée","diff":"med","muscles":["Quadriceps","Fessiers"],"desc":"Maintien 30-45s / jambe — Matériel : Haltères — [Isométrique]","mat":"Haltères","tag":"Isométrique"},{"name":"Fente bulgare avec charge","diff":"med","muscles":["Quadriceps","Dos"],"desc":"Matériel : Haltères","mat":"Haltères"},{"name":"Front squat","diff":"hard","muscles":["Quadriceps","Dos"],"desc":"Charge modérée — Matériel : Barre + poids","mat":"Barre + poids"},{"name":"Goblet squat","diff":"easy","muscles":["Quadriceps","Dos"],"desc":"Tempo contrôlé — Matériel : Kettlebell/haltère","mat":"Kettlebell/haltère"},{"name":"Hip Thrust chargé","diff":"med","muscles":["Quadriceps","Dos"],"desc":"Matériel : Barre + poids","mat":"Barre + poids"},{"name":"Leg curl","diff":"easy","muscles":["Quadriceps","Dos"],"desc":"Matériel : Machine","mat":"Machine"},{"name":"Leg extension","diff":"easy","muscles":["Quadriceps","Dos"],"desc":"Contraction maximale — Matériel : Machine","mat":"Machine"},{"name":"Leg press","diff":"easy","muscles":["Quadriceps","Dos"],"desc":"Matériel : Machine","mat":"Machine"},{"name":"Medicine ball slams","diff":"med","muscles":["Quadriceps","Dos"],"desc":"Puissance — Matériel : Medicine ball","mat":"Medicine ball"},{"name":"Power clean","diff":"hard","muscles":["Quadriceps","Dos"],"desc":"Technique + puissance — Matériel : Barre + poids","mat":"Barre + poids"},{"name":"Power clean (ou clean pull)","diff":"hard","muscles":["Quadriceps","Dos"],"desc":"Charge légère, explosivité max — Matériel : Barre + poids","mat":"Barre + poids"},{"name":"Power clean ou hang clean","diff":"hard","muscles":["Quadriceps","Dos"],"desc":"Technique + puissance maximale — Matériel : Barre + poids","mat":"Barre + poids"},{"name":"Romanian deadlift","diff":"med","muscles":["Quadriceps","Dos"],"desc":"Focus ischio-jambiers — Matériel : Barre + poids","mat":"Barre + poids"},{"name":"Rowing barre","diff":"med","muscles":["Quadriceps","Dos"],"desc":"Dos — Matériel : Barre + poids","mat":"Barre + poids"},{"name":"Rowing haltères","diff":"easy","muscles":["Quadriceps","Dos"],"desc":"Matériel : Haltères","mat":"Haltères"},{"name":"Soulevé de terre","diff":"hard","muscles":["Quadriceps","Dos"],"desc":"Dernière série à l'échec — Matériel : Barre + poids","mat":"Barre + poids"},{"name":"Soulevé de terre tempo excentrique","diff":"hard","muscles":["Quadriceps","Dos"],"desc":"Contrôle de la descente — Matériel : Barre + poids — [Excentrique]","mat":"Barre + poids","tag":"Excentrique"},{"name":"Squat jump avec charge","diff":"hard","muscles":["Quadriceps","Dos"],"desc":"20-30% 1RM — Matériel : Gilet lesté — [Explosif]","mat":"Gilet lesté","tag":"Explosif"},{"name":"Squat jump avec gilet lesté","diff":"hard","muscles":["Quadriceps","Dos"],"desc":"30% 1RM — phase peak — Matériel : Gilet lesté — [Explosif]","mat":"Gilet lesté","tag":"Explosif"},{"name":"Squat jump explosif (50-60% 1RM barre)","diff":"hard","muscles":["Quadriceps","Dos"],"desc":"Circuit peak performance — Matériel : Barre + poids — [Explosif]","mat":"Barre + poids","tag":"Explosif"},{"name":"Squat à la barre","diff":"med","muscles":["Quadriceps","Dos"],"desc":"Dernière série à l'échec — Matériel : Barre + poids","mat":"Barre + poids"},{"name":"Squat à la barre explosive","diff":"hard","muscles":["Quadriceps","Dos"],"desc":"60-85% 1RM — Matériel : Barre + poids — [Explosif]","mat":"Barre + poids","tag":"Explosif"},{"name":"Step-ups explosifs","diff":"med","muscles":["Quadriceps","Dos"],"desc":"Matériel : Box + haltères — [Explosif]","mat":"Box + haltères","tag":"Explosif"},{"name":"Tractions lestées","diff":"hard","muscles":["Quadriceps","Dos"],"desc":"Matériel : Barre + lest","mat":"Barre + lest"},{"name":"Élévations frontales","diff":"easy","muscles":["Quadriceps","Dos"],"desc":"Deltoïdes antérieurs — Matériel : Haltères/bouteilles","mat":"Haltères/bouteilles"},{"name":"Élévations latérales","diff":"easy","muscles":["Quadriceps","Dos"],"desc":"Deltoïdes — Matériel : Haltères/bouteilles","mat":"Haltères/bouteilles"}],gainage:[{"name":"Barre levé genoux","diff":"med","muscles":["Core","Abdos"],"desc":"Contrôle du mouvement — Matériel : Barre","mat":"Barre"},{"name":"Dead bug","diff":"med","muscles":["Core","Abdos"],"desc":"Coordination","mat":"Aucun"},{"name":"Gainage latéral dynamique","diff":"med","muscles":["Core","Abdos"],"desc":"Obliques","mat":"Aucun"},{"name":"Hollow body hold","diff":"med","muscles":["Core","Abdos"],"desc":"Abdos + lombaires","mat":"Aucun"},{"name":"L-sit (ou progression)","diff":"hard","muscles":["Core","Abdos"],"desc":"Maintien maximum — Matériel : Barre/chaise","mat":"Barre/chaise"},{"name":"Mountain climbers","diff":"med","muscles":["Core","Abdos"],"desc":"30s","mat":"Aucun"},{"name":"Pallof press","diff":"med","muscles":["Core","Abdos"],"desc":"Matériel : Câble/élastique — [Anti-rotation]","mat":"Câble/élastique","tag":"Anti-rotation"},{"name":"Planche avec variations","diff":"hard","muscles":["Core","Abdos"],"desc":"Bras levé, jambe levée","mat":"Aucun"},{"name":"Planche dynamique (tap épaules)","diff":"med","muscles":["Core","Abdos"],"desc":"Gainage & Core","mat":"Aucun"},{"name":"Planche latérale","diff":"med","muscles":["Core","Abdos"],"desc":"30-45s par côté","mat":"Aucun"},{"name":"Planche sur coudes","diff":"easy","muscles":["Core","Abdos"],"desc":"Gainage actif","mat":"Aucun"},{"name":"Planche sur mains","diff":"med","muscles":["Core","Abdos"],"desc":"Gainage & Core","mat":"Aucun"},{"name":"Rocking Dead Bug","diff":"med","muscles":["Core","Abdos"],"desc":"Gainage & Core","mat":"Aucun"},{"name":"Russian twists","diff":"med","muscles":["Core","Abdos"],"desc":"Avec charge — Matériel : Charge optionnelle","mat":"Charge optionnelle"},{"name":"Shoulder taps en planche","diff":"med","muscles":["Core","Abdos"],"desc":"Gainage & Core","mat":"Aucun"},{"name":"Superman hold","diff":"easy","muscles":["Core","Abdos"],"desc":"30s maintien","mat":"Aucun"}],rotation:[{"name":"Double squat dynamique","diff":"med","muscles":["Obliques","Core"],"desc":"Puissance de rotation","mat":"Aucun"},{"name":"Puissance de rotation (1)","diff":"med","muscles":["Obliques","Core"],"desc":"Puissance de rotation","mat":"Aucun"},{"name":"Rotation buste explosive debout","diff":"med","muscles":["Obliques","Core"],"desc":"Puissance de rotation","mat":"Aucun"},{"name":"Rotation buste unipodal","diff":"hard","muscles":["Obliques","Core"],"desc":"Équilibre + rotation","mat":"Aucun"},{"name":"Rotation explosive du buste en position planche","diff":"hard","muscles":["Obliques","Core"],"desc":"Puissance de rotation","mat":"Aucun"},{"name":"Single leg rotation","diff":"hard","muscles":["Obliques","Core"],"desc":"Puissance de rotation","mat":"Aucun"},{"name":"Wood chops","diff":"med","muscles":["Obliques","Core"],"desc":"Diagonal rotation — Matériel : Élastiques","mat":"Élastiques"}],pied:[{"name":"Calf raise excentrique","diff":"med","muscles":["Mollets","Chevilles"],"desc":"[Excentrique]","mat":"Aucun","tag":"Excentrique"},{"name":"Calf raise hold (maintien pointes)","diff":"med","muscles":["Mollets","Chevilles"],"desc":"[Isométrique]","mat":"Aucun","tag":"Isométrique"},{"name":"Calf raise isométrique hold","diff":"med","muscles":["Mollets","Chevilles"],"desc":"Maintien sur les pointes — [Isométrique]","mat":"Aucun","tag":"Isométrique"},{"name":"Calf raises debout","diff":"easy","muscles":["Mollets","Chevilles"],"desc":"Travail du pied","mat":"Aucun"},{"name":"Dorsiflexion résistée / tibial antérieur","diff":"easy","muscles":["Mollets","Chevilles"],"desc":"Relever pointes vers soi — Matériel : Aucun/élastique","mat":"Aucun/élastique"},{"name":"Marche sur les talons","diff":"easy","muscles":["Mollets","Chevilles"],"desc":"Activation tibial","mat":"Aucun"},{"name":"Marche sur pointe de pieds","diff":"easy","muscles":["Mollets","Chevilles"],"desc":"Travail du pied","mat":"Aucun"},{"name":"Relevé de pointe unipodal (calf raises)","diff":"med","muscles":["Mollets","Chevilles"],"desc":"Amplitude complète","mat":"Aucun"},{"name":"Toe taps","diff":"easy","muscles":["Mollets","Chevilles"],"desc":"Travail du pied","mat":"Aucun"},{"name":"Élévation orteils","diff":"easy","muscles":["Mollets","Chevilles"],"desc":"Focus orteils","mat":"Aucun"},{"name":"Footwork Tipping Base","diff":"med","muscles":["Quadriceps","Mollets","Coordination"],"desc":"Drill footwork — appuis rapides en base position","mat":"Aucun"},{"name":"Footwork Double Simultané","diff":"hard","muscles":["Quadriceps","Mollets","Coordination"],"desc":"Drill footwork double appui simultané — vitesse d'exécution","mat":"Aucun"},{"name":"Lateral Double Tap","diff":"med","muscles":["Adducteurs","Mollets","Coordination"],"desc":"Double appui simultané latéral — vitesse et agilité","mat":"Aucun"}],sprint:[{"name":"94 feet test (vitesse multidirection)","diff":"hard","muscles":["Quadriceps","Ischio-jambiers"],"desc":"Matériel : Cônes — [Test]","mat":"Cônes","tag":"Test"},{"name":"Course à pied (aérobie)","diff":"easy","muscles":["Quadriceps","Ischio-jambiers"],"desc":"60% Vmax, 35mn — [Cardio]","mat":"Aucun","tag":"Cardio"},{"name":"Fartlek","diff":"med","muscles":["Quadriceps","Ischio-jambiers"],"desc":"Jeu de vitesse libre — [Cardio]","mat":"Aucun","tag":"Cardio"},{"name":"High knees (sprint sur place)","diff":"easy","muscles":["Quadriceps","Ischio-jambiers"],"desc":"Sprint & Vitesse","mat":"Aucun"},{"name":"Intervalles longs (2mn/1mn)","diff":"med","muscles":["Quadriceps","Ischio-jambiers"],"desc":"[Cardio]","mat":"Aucun","tag":"Cardio"},{"name":"Sprint 10-20m","diff":"med","muscles":["Quadriceps","Ischio-jambiers"],"desc":"Vitesse maximale","mat":"Aucun"},{"name":"Sprint 20m","diff":"med","muscles":["Quadriceps","Ischio-jambiers"],"desc":"Sprint & Vitesse","mat":"Aucun"},{"name":"Sprint 30-40m","diff":"med","muscles":["Quadriceps","Ischio-jambiers"],"desc":"Sprint & Vitesse","mat":"Aucun"},{"name":"Sprint 60m","diff":"hard","muscles":["Quadriceps","Ischio-jambiers"],"desc":"Sprint & Vitesse","mat":"Aucun"},{"name":"Sprint 94 Feet simulation","diff":"hard","muscles":["Quadriceps","Ischio-jambiers"],"desc":"Préparation Super Explosif Test — Matériel : Cônes — [Test]","mat":"Cônes","tag":"Test"},{"name":"Sprint Cardio complet (Micro 8)","diff":"med","muscles":["Quadriceps","Ischio-jambiers"],"desc":"10-20 mn selon niveau — [Cardio]","mat":"Aucun","tag":"Cardio"},{"name":"Sprint en côte","diff":"hard","muscles":["Quadriceps","Ischio-jambiers"],"desc":"Puissance maximale — Matériel : Colline","mat":"Colline"},{"name":"Sprint fractionné 15s (100% Vmax)","diff":"hard","muscles":["Quadriceps","Ischio-jambiers"],"desc":"[HIIT]","mat":"Aucun","tag":"HIIT"},{"name":"Sprint intervals (10s sprint + 30s jogging)","diff":"med","muscles":["Quadriceps","Ischio-jambiers"],"desc":"8 cycles — [Cardio]","mat":"Aucun","tag":"Cardio"},{"name":"Sprint triangle","diff":"med","muscles":["Quadriceps","Ischio-jambiers"],"desc":"Matériel : Cônes","mat":"Cônes"},{"name":"Vitesse 4 cônes","diff":"med","muscles":["Quadriceps","Ischio-jambiers"],"desc":"Matériel : 4 cônes","mat":"4 cônes"},{"name":"Gamme athlétique","diff":"med","muscles":["Quadriceps","Ischio-jambiers"],"desc":"Drills de coordination technique de course","mat":"Aucun"}],recup:[{"name":"Engagement MENER hebdomadaire","diff":"easy","muscles":["Récupération","Mental"],"desc":"1 à 3 engagements par semaine sur le pilier faible — [Mental]","mat":"Aucun","tag":"Mental"},{"name":"Foam rolling / Pistolet massage","diff":"easy","muscles":["Récupération","Mental"],"desc":"Matériel : Foam roller","mat":"Foam roller"},{"name":"Foam rolling corps complet post-séance","diff":"easy","muscles":["Récupération","Mental"],"desc":"15 mn après séance intensive — Matériel : Foam roller","mat":"Foam roller"},{"name":"Jeûne progressif","diff":"easy","muscles":["Récupération","Mental"],"desc":"4h → 36h progressif — [Mental/Jeûne]","mat":"Aucun","tag":"Mental/Jeûne"},{"name":"La Visualisation","diff":"easy","muscles":["Récupération","Mental"],"desc":"[Mental]","mat":"Aucun","tag":"Mental"},{"name":"RDV partenaire de résultats (bilan hebdo MENER)","diff":"easy","muscles":["Récupération","Mental"],"desc":"Accountability externe — non négociable — [Mental]","mat":"Aucun","tag":"Mental"},{"name":"Respiration contrôlée (Micro 3)","diff":"easy","muscles":["Récupération","Mental"],"desc":"8-10mn — [Mental]","mat":"Aucun","tag":"Mental"},{"name":"Retour au calme + marche","diff":"easy","muscles":["Récupération","Mental"],"desc":"Récupération","mat":"Aucun"},{"name":"Rock Back Breathing","diff":"easy","muscles":["Récupération","Mental"],"desc":"2 à 5mn","mat":"Aucun"},{"name":"Étirements complets bas du corps","diff":"easy","muscles":["Récupération","Mental"],"desc":"Focus bas du corps","mat":"Aucun"},{"name":"Étirements légers","diff":"easy","muscles":["Récupération","Mental"],"desc":"5-10 min","mat":"Aucun"},{"name":"Étirements statiques pré-test","diff":"easy","muscles":["Récupération","Mental"],"desc":"Préparation Super Explosif Test","mat":"Aucun"}],};
 // ════════════════════════════════════════════════════════════════════════════
 // PROGRAMS_V2 — Données complètes extraites des PDFs (Les Secrets de la Détente
 // Verticale). Format : 1 entrée par programme avec phases, sessions, exercices.
@@ -23145,7 +23293,12 @@ var _LIB_VIDEO_MAP = {
   'Posterior Band Distraction':'S1z20V5ez6k',
   'Standing Hip Flexion':'MdFoh5IUCKk',
   // ── Héritage (anciens IDs gardés pour rétrocompat) ──
-  'Counter Movement Jump':'R4fjUyP2xuo',
+  // Tuto officiel Athletik Hub — mesure de la détente à partir de la planche.
+  // 'Counter Movement Jump' est le libraryName du test détente côté SAT ET SET
+  // (satExercices, SAT_TESTS, SET_TESTS) : le bouton "Voir la démonstration
+  // vidéo" des deux parcours de test résout vers cette entrée.
+  'Counter Movement Jump':'ssnc9sZaAhk',
+  'Tester sa détente verticale à partir de la planche':'ssnc9sZaAhk',
   'Back Squat':'gsNoPYwWXeM',
   'Soulevé de terre':'op9kVnSso6Q',
   'Hip Thrust':'xDmFkJxPzeM',
@@ -27396,7 +27549,9 @@ async function submitAccessCode() {
 
   var code  = (codeEl.value || '').trim().toUpperCase();
   var ans   = (qEl.value || '').trim();
-  var order = (orderEl.value || '').trim();
+  // Champ retiré du DOM (il n'était jamais envoyé au serveur) — on garde la
+  // lecture défensive pour ne rien casser si une vieille page reste en cache.
+  var order = (orderEl && orderEl.value || '').trim();
 
   function showMsg(text, ok) {
     msg.style.display = '';
@@ -27439,7 +27594,7 @@ async function submitAccessCode() {
       if (data.error === 'server_not_configured') {
         showMsg('Service indisponible. Réessaie plus tard.', false);
       } else {
-        showMsg('Code invalide. Vérifie sur le rabat du livre.', false);
+        showMsg('Code invalide. Vérifie le code qui t\'a été communiqué.', false);
       }
       return;
     }
@@ -27622,7 +27777,7 @@ window._showAccessRequired = function() {
   var ov = document.getElementById('premiumOverlay');
   if (!ov) {
     // Fallback si le popup n'est pas dans le DOM (cas legacy / cache stale)
-    if (typeof showToast === 'function') showToast('⏰ Ton essai de 3 jours est terminé. Saisis ton code livre pour continuer.', 'info');
+    if (typeof showToast === 'function') showToast('⏰ Ton essai de 3 jours est terminé. Active ton accès pour continuer.', 'info');
     setTimeout(function() { try { openAccessCode(); } catch(e) {} }, 700);
     return;
   }
@@ -27695,6 +27850,11 @@ function _renderBookActivationStep() {
       + '</div>'
       + '<div id="bookActMsg" style="display:none;font-size:12.5px;line-height:1.5;margin-top:14px;padding:11px 13px;border-radius:12px"></div>'
       + '<button class="prem-cta-primary" style="margin-top:22px" onclick="window._bookActivationNext()">VALIDER MON LIVRE</button>'
+      // Porte de secours : un lecteur qui possède un code imprimé (ou reçu)
+      // plutôt qu'un n° de commande ne doit pas se retrouver bloqué ici.
+      + '<div style="text-align:center;margin-top:14px">'
+      +   '<button onclick="window.closeBookActivation();setTimeout(function(){try{openAccessCode();}catch(e){}},220)" style="background:none;border:0;padding:6px 10px;color:var(--ah-muted,#8a93a8);font-family:\'Outfit\',sans-serif;font-size:12px;cursor:pointer;text-decoration:underline;text-underline-offset:3px">J\'ai un code d\'accès à la place</button>'
+      + '</div>'
       + '<button class="prem-cta-secondary" onclick="window.openAmazonBook()">📕 Pas encore le livre — Acheter sur Amazon</button>';
     setTimeout(function(){ var i = document.getElementById('bookActOrderInput'); if (i) i.focus(); }, 50);
     return;
@@ -27989,7 +28149,7 @@ function renderTrialBanner() {
         '<div style="display:flex;align-items:center;justify-content:space-between;gap:10px">' +
           '<div style="flex:1;min-width:0">' +
             '<div style="font-size:11px;letter-spacing:1.5px;font-weight:800;color:#EF4444;text-transform:uppercase">Essai expiré</div>' +
-            '<div style="font-size:13px;color:var(--text);font-weight:600;margin-top:2px">Accès bloqué. Saisis ton code livre.</div>' +
+            '<div style="font-size:13px;color:var(--text);font-weight:600;margin-top:2px">Accès bloqué. Active ton accès livre.</div>' +
           '</div>' +
           '<button onclick="openAccessCode()" style="background:#EF4444;color:#fff;border:0;padding:8px 14px;border-radius:10px;font-family:\'Outfit\',sans-serif;font-size:12px;font-weight:800;cursor:pointer;white-space:nowrap;letter-spacing:.3px">📕 Débloquer</button>' +
         '</div>' +
@@ -29241,6 +29401,8 @@ var AH_GUIDES = [
   { id:'welcome',  title:'Bienvenue sur Athletik Hub',  ytId:'PLACEHOLDER_WELCOME',  emoji:'👋' },
   { id:'profile',  title:'Démarrer ton profil',          ytId:'PLACEHOLDER_PROFILE',  emoji:'⚙️' },
   { id:'tests',    title:'Faire tes tests physiques',    ytId:'PLACEHOLDER_TESTS',    emoji:'📐' },
+  // Première vidéo réellement tournée : mesure de la détente à la planche.
+  { id:'detente',  title:'Tester sa détente verticale à partir de la planche', ytId:'ssnc9sZaAhk', emoji:'🦘' },
   { id:'session',  title:'Lancer ta séance du jour',     ytId:'PLACEHOLDER_SESSION',  emoji:'🔥' },
   { id:'track',    title:'Tracker un exercice',          ytId:'PLACEHOLDER_TRACK',    emoji:'📊' },
   { id:'progress', title:'Lire ta progression',          ytId:'PLACEHOLDER_PROGRESS', emoji:'📈' },
@@ -29984,6 +30146,17 @@ function obCalcProg() {
     localStorage.setItem('ah_profile', JSON.stringify(p));
   } catch(e) { console.warn('Save profile1 error:', e); }
   try { _persistOnboarding(); } catch(e) {}
+  // Persiste programKey + profil dans Firestore immédiatement, sans attendre
+  // obFinish(). Si l'utilisateur ferme l'app avant profil4, fbLoadFirestoreToLocal
+  // retrouvera programKey dans Firestore et n'effacera pas le profil local.
+  if (window.fb && window.fbUser) {
+    try {
+      var _calcProgProfile = {};
+      try { _calcProgProfile = JSON.parse(localStorage.getItem('ah_profile') || '{}'); } catch(e) {}
+      var _cpRef = window.fb.doc(window.fb.db, 'users', window.fbUser.uid);
+      window.fb.setDoc(_cpRef, { profile: _calcProgProfile, updatedAt: window.fb.serverTimestamp() }, { merge: true }).catch(function(err){ console.warn('obCalcProg Firestore:', err); });
+    } catch(e2) {}
+  }
 
   // En mode découverte : retour Home avec toast révélation programme
   if (isDiscoveryMode()) {
@@ -30664,7 +30837,11 @@ function _isOnboardingComplete(profile) {
   //   profil4 → nutrition (objNutri, poids, taille)
   //   profil3 → tests physiques (satDone)
   // objNutri et nutriObj sont des alias du même champ (renommage historique).
+  // satDone est dérivé de satDone OU de toute donnée de test physique présente
+  // (vertJump, satSprintTime, satForce1RM) — fallback pour les profils Firestore
+  // anciens où satDone:true n'était pas écrit explicitement.
   var hasNutriObj = !!(p.objNutri || p.nutriObj);
+  var hasSatData  = !!(p.satDone || p.satSkipped || p.vertJump || p.satSprintTime || p.satForce1RM || p.satForce || p.satDetente);
   return !!(
        p.prenom
     && p.age
@@ -30673,7 +30850,7 @@ function _isOnboardingComplete(profile) {
     && hasNutriObj
     && p.poids
     && p.taille
-    && p.satDone
+    && hasSatData
   );
 }
 
@@ -30708,7 +30885,10 @@ function _nextOnboardingScreen(profile, opts) {
   if (!(p.objNutri || p.nutriObj) || !p.poids || !p.taille) return 'profil4';
 
   // 5) Profil 3/3 — Tests physiques
-  if (!p.satDone) return 'profil3';
+  // Dérive satDone depuis n'importe quelle donnée de test physique présente
+  // (fallback pour les profils Firestore anciens sans satDone:true explicite).
+  var hasSatData = !!(p.satDone || p.satSkipped || p.vertJump || p.satSprintTime || p.satForce1RM || p.satForce || p.satDetente);
+  if (!hasSatData) return 'profil3';
 
   // 6) Tout fait → analyse Titan + révélation programme + home
   return 'home';
@@ -30935,6 +31115,12 @@ function _fbCollectPayload() {
 
 function _fbApplyPayload(data) {
   if (!data || typeof data !== 'object') return;
+  // Sauvegarde les champs critiques du profil LOCAL avant l'écrasement Firestore.
+  // Si Firestore a un profil incomplet (programKey absent car obCalcProg n'avait
+  // pas encore synchronisé lors du boot précédent), on réinjecte ces champs après
+  // pour éviter de replonger l'utilisateur dans l'onboarding complet.
+  var _localBefore = {};
+  try { _localBefore = JSON.parse(localStorage.getItem('ah_profile') || '{}'); } catch(e) {}
   FB_SYNC_KEYS.forEach(function(entry) {
     var sk = entry[0], ff = entry[1], isJson = entry[2];
     if (data[ff] == null) return;
@@ -30943,22 +31129,49 @@ function _fbApplyPayload(data) {
       localStorage.setItem(sk, v);
     } catch(e) {}
   });
+  // Réinjecte les champs critiques locaux si Firestore ne les avait pas.
+  // Couvre le cas : user a terminé profil1 (programKey dans localStorage) mais
+  // fermé l'app avant obFinish() — Firestore n'avait pas encore programKey.
+  try {
+    var _afterApply = JSON.parse(localStorage.getItem('ah_profile') || '{}');
+    var _criticalFields = ['programKey','program','programObj','prenom','name','age','sexe','objectif',
+                          'sit','cont','mat','satDone','satSkipped','satForce','satDetente',
+                          'vertJump','satSprintTime','satForce1RM','objNutri','nutriObj','poids','taille'];
+    var _fbPatched = false;
+    _criticalFields.forEach(function(k) {
+      if (_localBefore[k] !== undefined && _localBefore[k] !== null && _localBefore[k] !== '' &&
+          (_afterApply[k] === undefined || _afterApply[k] === null || _afterApply[k] === '')) {
+        _afterApply[k] = _localBefore[k];
+        _fbPatched = true;
+      }
+    });
+    if (_fbPatched) localStorage.setItem('ah_profile', JSON.stringify(_afterApply));
+  } catch(e) {}
   try { if (data.accessTier) localStorage.setItem('ah_access_tier', data.accessTier); } catch(e) {}
-  // Normalise l'alias nutriObj → objNutri dans le profil local (renommage
-  // historique : les anciens profils Firestore ont nutriObj, le code actuel
-  // utilise objNutri partout).
+  // Normalise alias et champs dérivés dans le profil local.
   try {
     var _np = JSON.parse(localStorage.getItem('ah_profile') || '{}');
-    if (_np.nutriObj && !_np.objNutri) {
-      _np.objNutri = _np.nutriObj;
-      localStorage.setItem('ah_profile', JSON.stringify(_np));
+    var _changed = false;
+    // nutriObj → objNutri (renommage historique)
+    if (_np.nutriObj && !_np.objNutri) { _np.objNutri = _np.nutriObj; _changed = true; }
+    // satDone dérivé : si des données de test physique sont présentes mais
+    // satDone n'est pas explicitement true, on le dérive pour éviter que le
+    // test soit redemandé à chaque login sur les anciens profils Firestore.
+    if (!_np.satDone && (_np.vertJump || _np.satSprintTime || _np.satForce1RM || _np.satForce || _np.satDetente || _np.satSkipped)) {
+      _np.satDone = true; _changed = true;
     }
+    if (_changed) localStorage.setItem('ah_profile', JSON.stringify(_np));
   } catch(e) {}
   // Flags dérivés — ah_onboarding_done = source de vérité unique calculée
   // par _isOnboardingComplete (ne pose plus à tort sur programKey seul).
+  // On lit depuis localStorage (profil déjà normalisé : nutriObj→objNutri,
+  // satDone dérivé depuis satForce…) plutôt que depuis data.profile brut
+  // pour ne pas supprimer ah_onboarding_done à cause d'anciens alias Firestore.
   try {
     if (typeof _syncOnboardingDoneFlag === 'function') {
-      _syncOnboardingDoneFlag(data.profile);
+      var _syncProf = {};
+      try { _syncProf = JSON.parse(localStorage.getItem('ah_profile') || '{}'); } catch(e2) {}
+      _syncOnboardingDoneFlag(_syncProf);
     }
   } catch(e) {}
   // Restaure le planning (jours + heures) — synchronisé entre appareils.
@@ -35242,6 +35455,18 @@ function obSubmitSAT(){
     OB.satFMS        = parseInt(p3Values['p3FMS'])          || null;
   }
   OB.satDone = true; OB.profilePct = 80;
+  // Persiste immédiatement satDone + données de test dans ah_profile
+  // (ne pas attendre obFinish — si l'app se réinitialise entre profil3 et
+  // profil4, satDone serait perdu et le test redemandé à chaque login).
+  try {
+    var _obp = JSON.parse(localStorage.getItem('ah_profile') || '{}');
+    _obp.satDone = true;
+    if (OB.satDetente) _obp.satDetente = OB.satDetente;
+    if (OB.satForce)   _obp.satForce   = OB.satForce;
+    if (OB.satVitesse) _obp.satVitesse = OB.satVitesse;
+    localStorage.setItem('ah_profile', JSON.stringify(_obp));
+  } catch(e) {}
+  try { _persistOnboarding(); } catch(e) {}
 
   // Lancé depuis Tracks > Tests (carte PDC) OU mode découverte :
   // on persiste les valeurs dans le profil sans enchaîner sur profil4.
@@ -35273,12 +35498,22 @@ function obSubmitSAT(){
     return;
   }
 
-  // Sinon : flow normal → Profil 4 Nutrition
+  // Sinon : flow normal → Profil 4 Nutrition (si pas encore fait)
+  var _ep2 = {}; try { _ep2 = JSON.parse(localStorage.getItem('ah_profile') || '{}'); } catch(e) {}
+  var _nutriDone = !!(_ep2.objNutri || _ep2.nutriObj) && !!_ep2.poids && !!_ep2.taille;
+  if (_nutriDone) { obFinish(); return; }
   go('profil4');
   setTimeout(initProfil4, 100);
 }
 function obSkipSAT(){
   OB.satDone=false;OB.profilePct=66;
+  // Persiste le skip immédiatement : sans satSkipped, _isOnboardingComplete
+  // retourne false à chaque boot et re-demande les tests indéfiniment.
+  try {
+    var _sp = JSON.parse(localStorage.getItem('ah_profile') || '{}');
+    _sp.satSkipped = true; _sp.satDone = false;
+    localStorage.setItem('ah_profile', JSON.stringify(_sp));
+  } catch(e) {}
   if (window._satFromTracks) {
     _satReturnToTracks();
     return;
@@ -35567,7 +35802,8 @@ function obFinish(){
     localStorage.setItem('ah_profile',JSON.stringify(p));
 
     // Détecter si TOUTES les étapes du profil sont complètes
-    var allStepsDone = !!(p.programKey && p.age && p.sexe && p.prenom && p.satDone && p.poids && p.taille && p.objNutri);
+    var _hasSatDone = !!(p.satDone || p.satSkipped || p.satForce || p.satDetente || p.vertJump || p.satSprintTime || p.satForce1RM);
+    var allStepsDone = !!(p.programKey && p.age && p.sexe && p.prenom && _hasSatDone && p.poids && p.taille && (p.objNutri || p.nutriObj));
     if (allStepsDone) {
       localStorage.setItem('ah_onboarding_done','1');
       localStorage.removeItem('ah_discovery_mode');
@@ -36637,10 +36873,18 @@ function _lsFinalizeSession(feedback) {
   }
   var complete = document.getElementById('lsComplete');
   if (complete) complete.style.display = 'flex';
+  feedback = feedback || {};
   var titanMsg = _seFbTitanMsg(feedback);
-  var msg = 'Tu viens de terminer <strong>' + (_LS.sessName || 'cette séance') + '</strong>.<br>'
-          + '<span style="display:inline-block;margin-top:6px;font-size:11px;color:var(--ah-gold);letter-spacing:1px;font-weight:700">SCORE ' + feedback.sessionQualityScore + '% — ' + feedback.titanStatus.toUpperCase() + '</span><br>'
-          + '<span style="display:inline-block;margin-top:8px;font-size:13px;color:var(--ah-text2);line-height:1.4;font-style:italic">"' + titanMsg + '"</span>';
+  // La ligne SCORE n'est affichée que si le feedback la porte. Les chemins
+  // "feedback passé" (_eaCloseFeedback(true)) n'ont ni score ni statut : lire
+  // feedback.titanStatus.toUpperCase() levait un TypeError qui interrompait
+  // TOUTE la finalisation — séance jamais écrite dans ah_set_history, streak
+  // et progression programme jamais incrémentés.
+  var msg = 'Tu viens de terminer <strong>' + (_LS.sessName || 'cette séance') + '</strong>.<br>';
+  if (feedback.sessionQualityScore != null && feedback.titanStatus) {
+    msg += '<span style="display:inline-block;margin-top:6px;font-size:11px;color:var(--ah-gold);letter-spacing:1px;font-weight:700">SCORE ' + feedback.sessionQualityScore + '% — ' + String(feedback.titanStatus).toUpperCase() + '</span><br>';
+  }
+  msg += '<span style="display:inline-block;margin-top:8px;font-size:13px;color:var(--ah-text2);line-height:1.4;font-style:italic">"' + titanMsg + '"</span>';
   var msgEl = document.getElementById('lsCompleteMsg');
   if (msgEl) msgEl.innerHTML = msg;
   if (body) body.scrollTop = 0;
@@ -36730,14 +36974,31 @@ window._eaFbPick = function(field, value) {
   groups.forEach(function(b){
     b.classList.toggle('on', b.getAttribute('data-value') === String(value));
   });
+  // Douleur "gênante" → on renforce le message de sécurité déjà présent
+  // (pas de nouvelle fonctionnalité : simple accent visuel sur le même texte).
+  if (field === 'pain') {
+    var note = document.getElementById('eaFbPainNote');
+    if (note) note.classList.toggle('warn', String(value) === 'genante');
+  }
   // Active le bouton Valider quand les 5 sont remplies
   var allOk = ['difficulty','fatigue','pain','technique','completion'].every(function(k){ return window._eaFbState[k] != null; });
   var btn = document.getElementById('eaFbValidate');
-  if (btn) { btn.disabled = !allOk; btn.style.opacity = allOk ? '1' : '.55'; }
+  // L'opacité est désormais gérée par .ea-fb-cta:disabled (CSS) — on remet la
+  // valeur inline à vide pour ne pas écraser l'état visuel du design system.
+  if (btn) { btn.disabled = !allOk; btn.style.opacity = ''; }
 };
 window._eaFbValidate = function() {
   var st = window._eaFbState || {};
   if (st.difficulty == null) return;
+  // Score qualité de séance — réutilise l'échelle et le vocabulaire déjà en
+  // place (_seFbStatusFromScore) pour que l'écran de fin affiche la même chose
+  // que le flow standard. On se base sur l'exécution et l'avancement : la
+  // difficulté et la fatigue décrivent le ressenti, pas la qualité du travail.
+  var _TECH  = { mauvaise: 40, correcte: 70, bonne: 95 };
+  var _COMPL = { complete: 100, partielle: 65, abandon: 30 };
+  var _score = Math.round(
+      ((_TECH[st.technique]   != null ? _TECH[st.technique]   : 70)
+     + (_COMPL[st.completion] != null ? _COMPL[st.completion] : 65)) / 2);
   var payload = {
     sessionId: _LS.eaSessionId,
     phaseName: _LS.eaPhaseName,
@@ -36747,6 +37008,8 @@ window._eaFbValidate = function() {
     pain: st.pain,
     technique: st.technique,
     completion: st.completion,
+    sessionQualityScore: _score,
+    titanStatus: _seFbStatusFromScore(_score),
     completedAt: new Date().toISOString()
   };
   try { _eaSaveFeedback(payload); } catch(e) {}
@@ -36757,51 +37020,78 @@ window._eaFbValidate = function() {
   }
   window._eaCloseFeedback(false);
   _lsFinalizeSession(payload);
+  // Confirmation explicite que le bilan est bien enregistré. On s'appuie
+  // uniquement sur les compteurs déjà existants (streak mis à jour par
+  // _recordSessionCompletion) — aucun nouveau système de gamification.
+  try {
+    var el = document.getElementById('lsCompleteMsg');
+    if (el) {
+      var extra = '';
+      try {
+        var _pf = JSON.parse(localStorage.getItem('ah_profile') || '{}');
+        if (_pf.streak > 1) extra = ' Série de ' + _pf.streak + ' jours 🔥';
+      } catch(e) {}
+      el.insertAdjacentHTML('beforeend',
+        '<div class="ea-fb-saved">BILAN ENREGISTRÉ ✓'
+      +   '<span>Ta séance a été ajoutée à ton journal de progression.' + extra + '</span>'
+      + '</div>');
+    }
+  } catch(e) {}
 };
 
 function _eaFeedbackHtml() {
   function btn(field, value, label) {
     return '<button type="button" class="ea-fb-btn" data-value="' + value + '" onclick="window._eaFbPick(\'' + field + '\',\'' + value + '\')">' + label + '</button>';
   }
-  function scale(field, items) {
-    return '<div class="ea-fb-scale" data-field="' + field + '">' + items.join('') + '</div>';
+  // mod = classe de disposition ('' = flex legacy, --num = échelle 1→10,
+  // --trio = 3 choix). Le sélecteur .ea-fb-scale[data-field] utilisé par
+  // _eaFbPick reste intact : on ne fait qu'AJOUTER un modificateur.
+  function scale(field, items, mod) {
+    return '<div class="ea-fb-scale' + (mod || '') + '" data-field="' + field + '">' + items.join('') + '</div>';
+  }
+  function q(num, label) {
+    return '<div class="ea-fb-q"><span class="ea-fb-n">' + num + '</span>' + label + '</div>';
   }
   var diff = [];
   for (var i = 1; i <= 10; i++) diff.push(btn('difficulty', i, String(i)));
-  return '<div class="ea-ov-card" role="dialog">'
+  return '<div class="ea-ov-card" role="dialog" aria-labelledby="eaFbTitle">'
     + '<div class="ea-ov-head">'
     +   '<div>'
     +     '<div class="ea-ov-eyebrow">Séance terminée</div>'
-    +     '<div class="ea-ov-title">Comment tu te sens ?</div>'
+    +     '<div class="ea-ov-title" id="eaFbTitle">Ton bilan de séance</div>'
+    +     '<div class="ea-fb-lede">Comment s\'est passée ta séance ? <em>30 secondes.</em></div>'
     +   '</div>'
     +   '<button class="ea-ov-close" onclick="window._eaCloseFeedback(true)" aria-label="Passer">×</button>'
     + '</div>'
     + '<div class="ea-ov-body">'
     +   '<div class="ea-fb">'
-    +     '<div class="ea-fb-q">1. Difficulté ressentie</div>' + scale('difficulty', diff)
-    +     '<div class="ea-fb-q">2. Fatigue</div>' + scale('fatigue', [
+    +     q(1, 'Difficulté ressentie') + scale('difficulty', diff, ' ea-fb-scale--num')
+    +     '<div class="ea-fb-ends"><span>1 · Très facile</span><span>10 · Maximale</span></div>'
+    +     q(2, 'Fatigue après la séance') + scale('fatigue', [
             btn('fatigue','basse','Basse'),
             btn('fatigue','normale','Normale'),
             btn('fatigue','elevee','Élevée')
-          ])
-    +     '<div class="ea-fb-q">3. Douleur</div>' + scale('pain', [
-            btn('pain','non','Non'),
+          ], ' ea-fb-scale--trio')
+    +     q(3, 'Douleur') + scale('pain', [
+            btn('pain','non','Aucune'),
             btn('pain','legere','Légère'),
             btn('pain','genante','Gênante')
-          ])
-    +     '<div class="ea-fb-q">4. Qualité technique ressentie</div>' + scale('technique', [
+          ], ' ea-fb-scale--trio')
+    +     '<div class="ea-fb-note" id="eaFbPainNote">Une douleur inhabituelle ou persistante ? Arrête l\'exercice concerné et consulte un professionnel.</div>'
+    +     q(4, 'Qualité d\'exécution') + scale('technique', [
             btn('technique','mauvaise','Mauvaise'),
             btn('technique','correcte','Correcte'),
             btn('technique','bonne','Bonne')
-          ])
-    +     '<div class="ea-fb-q">5. Séance</div>' + scale('completion', [
+          ], ' ea-fb-scale--trio')
+    +     q(5, 'Avancement de la séance') + scale('completion', [
             btn('completion','complete','Complète'),
             btn('completion','partielle','Partielle'),
             btn('completion','abandon','Abandonnée')
-          ])
+          ], ' ea-fb-scale--trio')
     +   '</div>'
-    +   '<button id="eaFbValidate" type="button" disabled style="opacity:.55;width:100%;margin-top:14px;padding:14px;background:linear-gradient(135deg,var(--gold),#A0853A);border:0;border-radius:12px;font-family:\'Bebas Neue\',sans-serif;font-size:15px;letter-spacing:.12em;color:var(--navy);cursor:pointer" onclick="window._eaFbValidate()">VALIDER MON RESSENTI</button>'
-    +   '<div style="text-align:center;margin-top:10px;font-size:11px;color:var(--muted);line-height:1.5">Si tu ressens une douleur inhabituelle ou persistante, arrête l\'exercice concerné et consulte un professionnel.</div>'
+    +   '<div class="ea-fb-actions">'
+    +     '<button id="eaFbValidate" class="ea-fb-cta" type="button" disabled onclick="window._eaFbValidate()">ENREGISTRER MON BILAN</button>'
+    +   '</div>'
     + '</div>'
     + '</div>';
 }
@@ -37125,22 +37415,15 @@ async function fbSaveProfile() {
 })();
 
 // ═══════════════════════════════════════
-// PWA INSTALL PROMPT — invite à installer sur l'écran d'accueil
+// PWA INSTALL PROMPT — bannière "Installe l'app" → /download.html
 // ───────────────────────────────────────
-// Comportement :
-//   - Android Chrome / Edge : capture beforeinstallprompt, montre notre
-//     bannière custom, sur click déclenche le prompt natif via .prompt()
-//   - iOS Safari : pas de beforeinstallprompt → on détecte iOS et on
-//     affiche une instruction "Tap Partager → Sur l'écran d'accueil"
-//   - Si déjà installé (display-mode standalone OU navigator.standalone)
-//     → on n'affiche jamais
-//   - Si l'user a fermé la bannière (×) → on respecte 14 jours avant
-//     de la remontrer (localStorage ah_install_dismissed_at)
+// Affiché 3s après le chargement si l'app n'est PAS en mode standalone
+// (= pas encore installée sur l'écran d'accueil).
+// Bouton "VOIR LE TUTO" → ouvre /download.html (guide OS par OS).
+// Croix → dismiss permanent (localStorage ah_install_dismissed).
 // ═══════════════════════════════════════
 (function initInstallPrompt(){
-  var DISMISS_KEY = 'ah_install_dismissed_at';
-  var DISMISS_MS  = 14 * 24 * 60 * 60 * 1000; // 14 jours
-  var deferred = null;
+  var DISMISS_KEY = 'ah_install_dismissed';
 
   function isStandalone(){
     try {
@@ -37149,25 +37432,12 @@ async function fbSaveProfile() {
     } catch(e){}
     return false;
   }
-  function wasRecentlyDismissed(){
-    try {
-      var t = parseInt(localStorage.getItem(DISMISS_KEY) || '0', 10);
-      return t && (Date.now() - t) < DISMISS_MS;
-    } catch(e){ return false; }
+  function isDismissed(){
+    try { return !!localStorage.getItem(DISMISS_KEY); } catch(e){ return false; }
   }
-  function isIOS(){
-    var ua = navigator.userAgent || '';
-    return /iphone|ipad|ipod/i.test(ua) && !/MSStream/.test(ua);
-  }
-  function showBanner(label, subLabel){
+  function showBanner(){
     var el = document.getElementById('installPrompt');
-    if (!el) return;
-    var btn = document.getElementById('installPromptBtn');
-    var sub = document.getElementById('installPromptSub');
-    if (btn) btn.style.display = label ? '' : 'none';
-    if (btn && label) btn.textContent = label;
-    if (sub && subLabel) sub.textContent = subLabel;
-    el.style.display = 'block';
+    if (el) el.style.display = 'block';
   }
   function hideBanner(){
     var el = document.getElementById('installPrompt');
@@ -37175,104 +37445,27 @@ async function fbSaveProfile() {
   }
 
   window._installPromptDismiss = function(){
-    try { localStorage.setItem(DISMISS_KEY, String(Date.now())); } catch(e){}
+    try { localStorage.setItem(DISMISS_KEY, '1'); } catch(e){}
     hideBanner();
   };
   window._installPromptGo = function(){
-    if (deferred) {
-      // Android Chrome / Edge — déclenche le prompt natif
-      try {
-        deferred.prompt();
-        deferred.userChoice.then(function(choice){
-          if (choice && choice.outcome === 'accepted') {
-            try { showToast && showToast('✓ Installation en cours…', 'ok'); } catch(_){}
-          }
-          deferred = null;
-          hideBanner();
-        }).catch(function(){ hideBanner(); });
-      } catch(e){ hideBanner(); }
-      return;
-    }
-    if (isIOS()) {
-      // iOS Safari — pas d'API d'install, on affiche l'instruction
-      try {
-        showToast && showToast('Touche le bouton Partager 📤 puis "Sur l\'écran d\'accueil".', 'info', 8000);
-      } catch(_){
-        alert('Sur iPhone : touche le bouton Partager (carré avec flèche) puis "Sur l\'écran d\'accueil".');
-      }
-      return;
-    }
-    // Android sans beforeinstallprompt encore reçu : on guide vers le menu
-    try {
-      showToast && showToast('Touche le menu ⋮ du navigateur puis "Installer l\'application" ou "Ajouter à l\'écran d\'accueil".', 'info', 9000);
-    } catch(_){
-      alert('Touche le menu du navigateur (⋮) puis choisis "Installer l\'application" ou "Ajouter à l\'écran d\'accueil".');
-    }
+    window.open('/download.html', '_blank');
   };
 
-  // Stratégie d'affichage du banner — corrige le bug remonté par l'user :
-  // "j'appuie, donc demande si je veux installer, ensuite j'installe".
-  //
-  // Comportement précédent : on affichait la bannière 4s après le load,
-  // même si Chrome n'avait pas encore fait fire beforeinstallprompt
-  // (heuristique Chrome = >30s d'engagement avant que l'API d'install
-  // ne soit dispo). Conséquence : l'utilisateur cliquait "INSTALLER" et
-  // tombait sur un toast disant "va dans le menu du navigateur" → UX
-  // dégradée par rapport au prompt natif attendu.
-  //
-  // Nouveau comportement :
-  //   - iOS Safari → banner après 4s avec instructions Partager → Écran
-  //     d'accueil (iOS n'a pas d'API d'install, donc c'est le seul flow).
-  //   - Android / desktop Chrome → banner UNIQUEMENT quand
-  //     beforeinstallprompt s'est déclenché → le clic ouvre TOUJOURS le
-  //     prompt natif. Si Chrome ne déclenche jamais (utilisateur encore
-  //     en pleine évaluation), pas de banner du tout — plus propre que
-  //     d'afficher un faux bouton qui ne fait rien d'utile.
-  //   - Fallback : si après 60s rien n'est arrivé sur Android, on montre
-  //     un banner discret "ajouter via le menu ⋮" (vrai instructionnel,
-  //     pas un faux bouton d'install).
-  function showWithNativePrompt() {
-    if (isStandalone() || wasRecentlyDismissed()) return;
-    showBanner('Installer', "Ajoute l'app à ton écran d'accueil pour un accès rapide.");
-  }
-  function showIosOrFallback(){
-    if (isStandalone()) return;
-    if (wasRecentlyDismissed()) return;
-    if (isIOS()) {
-      showBanner('Installer', 'iPhone : Partager 📤 → "Sur l\'écran d\'accueil".');
-      return;
-    }
-    // Android sans beforeinstallprompt après 60s : on propose le chemin
-    // manuel (menu ⋮ → Installer) avec un libellé honnête au lieu d'un
-    // bouton "INSTALLER" qui ne fera pas apparaître le prompt natif.
-    if (!deferred) {
-      showBanner('Voir comment installer', "Menu ⋮ du navigateur → Installer l'application.");
-    }
-  }
-
-  window.addEventListener('beforeinstallprompt', function(e){
-    e.preventDefault();
-    deferred = e;
-    // Chrome est prêt à proposer l'install natif — on peut afficher le
-    // banner avec un bouton qui marche vraiment.
-    showWithNativePrompt();
-  });
-
   window.addEventListener('appinstalled', function(){
-    deferred = null;
+    try { localStorage.setItem(DISMISS_KEY, '1'); } catch(_){}
     hideBanner();
-    try { localStorage.setItem(DISMISS_KEY, '0'); } catch(_){}
   });
 
-  // iOS / fallback Android : on attend plus longtemps que les 4s
-  // d'origine — laisse à Chrome le temps de déclencher beforeinstallprompt
-  // si l'utilisateur reste sur la page.
+  function maybeShow(){
+    if (isStandalone() || isDismissed()) return;
+    showBanner();
+  }
+
   if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', function(){
-      setTimeout(showIosOrFallback, isIOS() ? 4000 : 60000);
-    });
+    document.addEventListener('DOMContentLoaded', function(){ setTimeout(maybeShow, 3000); });
   } else {
-    setTimeout(showIosOrFallback, isIOS() ? 4000 : 60000);
+    setTimeout(maybeShow, 3000);
   }
 })();
 </script>
