@@ -241,6 +241,16 @@ Réglages → « J'ai un code ».
 → Le plus simple : lui envoyer un code VIP. L'activation Amazon peut échouer si
 son numéro de commande a déjà servi ou s'il se trompe de question.
 
+**Rejouer le parcours livre / libérer un n° de commande**
+Un numéro Amazon n'est consommé **qu'après** l'écriture Firestore réussie — une
+mauvaise réponse ou une panne serveur ne le brûle pas. Pour le libérer malgré
+tout (retest, ou client qui s'est trompé de compte) :
+1. Firebase → Firestore → `users/{uid}` → `hasBookAccess` à `false`
+2. Netlify → Blobs → store `book-access` → supprimer l'entrée du numéro
+
+La clé est un HMAC illisible, mais la valeur stockée contient `{uid, at}` :
+on retrouve la bonne entrée par l'uid ou par la date.
+
 **Retirer un accès à quelqu'un**
 → Dans la console Firebase : `users/{uid}` → mettre `accessTier` à `null` et
 `hasBookAccess` à `false`. C'est le seul moyen, car les codes ne sont pas
@@ -250,6 +260,12 @@ stockés individuellement.
 → Changer `ACCESS_CODE_SECRET` sur Netlify. Tous les codes HMAC déjà distribués
 deviennent invalides d'un coup. Les 3 codes historiques survivent (ils ne
 dépendent pas du secret) et les accès déjà accordés restent en place.
+
+> ⚠️ **Ne change ce secret qu'en connaissance de cause.** Il ne sert pas qu'aux
+> codes : les numéros de commande Amazon déjà consommés sont hachés avec lui.
+> Le modifier change tous les hachages, donc **tous les numéros redeviennent
+> réutilisables** — chacun pourrait resservir pour activer un second compte.
+> À poser une fois, puis à ne plus toucher.
 
 **Retirer un code historique**
 → Supprimer la ligne dans `LEGACY_CODES` (`check-code.js`), commiter, déployer.
@@ -262,7 +278,7 @@ Aucune ne doit apparaître dans le code. Site config → Environment variables.
 
 | Variable | Sert à | Si elle manque |
 |---|---|---|
-| `ACCESS_CODE_SECRET` | Signer et vérifier les codes | Codes HMAC rejetés (503) |
+| `ACCESS_CODE_SECRET` | Signer les codes **et** hacher les n° Amazon | Codes rejetés **et activation livre HS** |
 | `FIREBASE_SERVICE_ACCOUNT` | Écrire les accès, envoyer les push | Aucune activation possible |
 | `ANTHROPIC_API_KEY` | Titan | Titan hors service |
 | `FIREBASE_VAPID_KEY` | Notifications push | Timer muet en arrière-plan |
@@ -279,6 +295,7 @@ Aucune ne doit apparaître dans le code. Site config → Environment variables.
 
 | Symptôme | Cause probable |
 |---|---|
+| **« Service indisponible. Réessaie plus tard. »** à l'étape 1 de l'activation livre | **`ACCESS_CODE_SECRET` absente sur Netlify.** Diagnostic sûr : si c'était `FIREBASE_SERVICE_ACCOUNT`, le message serait « FIREBASE_SERVICE_ACCOUNT non configurée » (cette réponse-là porte un champ `message`, l'autre non — d'où le texte générique). |
 | « Code invalide » sur un code fraîchement généré | `ACCESS_CODE_SECRET` différent entre ta machine et Netlify |
 | « Trop de tentatives » | 5 essais ratés — attendre 1 h ou changer de réseau |
 | Activation livre refusée sur un vrai achat | Numéro de commande déjà utilisé, ou plus de 10 min sur la question |
