@@ -25,7 +25,7 @@ module.exports = {
     {
       id: 'preface_ami_ans',
       section: 'Préface',
-      questionText: 'Dans la Préface (signée Loïc), quel nombre complète cette phrase : "Je connais Alassane depuis plus de ___ ans" ?',
+      questionText: 'Dans la Préface, quel nombre complète cette phrase : "Je connais Alassane depuis plus de ___ ans" ?',
       accepted: ['10', '10 ans'],
       difficulty: 'easy'
     },
@@ -88,7 +88,7 @@ module.exports = {
     {
       id: 'forme_bpjeps',
       section: 'Comment je me suis formé',
-      questionText: 'Quel est l\'équivalent français de la certification ISSA mentionné dans le livre ?',
+      questionText: 'Quel est l\'équivalent français de sa certification américaine, mentionné dans le livre ?',
       accepted: ['bpjeps'],
       difficulty: 'medium'
     },
@@ -123,14 +123,14 @@ module.exports = {
     {
       id: 'dv_detente_debut',
       section: 'Pourquoi la détente verticale ?',
-      questionText: 'De combien de cm de détente Alassane est-il parti ? "je suis passé de ___ cm à 88 cm"',
+      questionText: 'De combien de cm de détente Alassane est-il parti ? "je suis passé de ___ cm à …"',
       accepted: ['56', '56 cm'],
       difficulty: 'hard'
     },
     {
       id: 'dv_detente_fin',
       section: 'Pourquoi la détente verticale ?',
-      questionText: 'Combien de cm de détente Alassane a-t-il atteints ? "passé de 56 cm à ___ cm de détente verticale"',
+      questionText: 'Combien de cm de détente Alassane a-t-il atteints ? "passé de … à ___ cm de détente verticale"',
       accepted: ['88', '88 cm'],
       difficulty: 'hard'
     },

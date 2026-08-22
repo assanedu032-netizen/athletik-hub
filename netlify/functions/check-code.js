@@ -37,8 +37,8 @@ const LEGACY_CODES = {
 
 const TIER_META = {
   BETA:   { label: 'BETA',   color: '#10B981', valid: 14,   msg: 'Accès BETA — 14 jours d\'essai.' },
-  VIP:    { label: 'VIP',    color: '#D4AF37', valid: null, msg: 'Accès VIP — à vie. Bienvenue, athlète.' },
-  MASTER: { label: 'MASTER', color: '#EF4444', valid: null, msg: 'Accès MASTER — Titan illimité + tout débloqué.' },
+  VIP:    { label: 'VIP',    color: '#D4AF37', valid: null, msg: 'Accès VIP — à vie, Builder débloqué, Titan 60 messages/jour.' },
+  MASTER: { label: 'MASTER', color: '#EF4444', valid: null, msg: 'Accès MASTER — à vie, tout débloqué, Titan 200 messages/jour.' },
 };
 
 // ─── Firebase Admin (init paresseuse, même pattern que book-challenge.js) ───
