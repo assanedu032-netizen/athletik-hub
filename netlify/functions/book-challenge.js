@@ -170,9 +170,18 @@ function findChallenge(id) {
 // ─── Used Amazon orders : Netlify Blobs ────────────────────────────────────
 // Store global ; clé = hash hex du numéro Amazon (HMAC-SHA256 avec ACCESS_CODE_SECRET).
 // Le contenu est juste un JSON { uid, at, method } pour les logs SAV.
+// Normalisation canonique : on ne retient que les alphanumériques, en
+// majuscules. Avant, seuls les espaces étaient retirés — "402-2927431-7905104"
+// et "402 2927431 7905104" donnaient donc DEUX empreintes différentes, et le
+// même achat pouvait activer deux comptes en variant la ponctuation.
+// Même règle côté client (window._bookActCompactOrder).
+// Changement sûr : aucune activation n'avait pu aboutir avant que
+// ACCESS_CODE_SECRET soit posée, donc le store `book-access` était vide.
+function normalizeOrder(orderRaw) {
+  return String(orderRaw || '').replace(/[^0-9A-Za-z]/g, '').toUpperCase();
+}
 function hashOrder(orderRaw, secret) {
-  const normalized = String(orderRaw || '').replace(/\s+/g, '').toUpperCase();
-  return crypto.createHmac('sha256', secret).update(`amzn:${normalized}`).digest('hex');
+  return crypto.createHmac('sha256', secret).update(`amzn:${normalizeOrder(orderRaw)}`).digest('hex');
 }
 async function isOrderUsed(orderHash) {
   try {
@@ -268,6 +277,12 @@ exports.handler = async function (event) {
 
     if (!sessionId || !answer || !orderRaw) {
       return resp(400, { ok: false, error: 'missing_fields', message: 'Numéro de commande Amazon et réponse requis.' });
+    }
+    // Le serveur ne fait plus confiance au format validé côté client : un n°
+    // Amazon fait 17 caractères (3 + 7 + 7). Sans ce contrôle, "1" suffisait à
+    // consommer une activation dès lors que la réponse au livre était connue.
+    if (normalizeOrder(orderRaw).length !== 17) {
+      return resp(400, { ok: false, error: 'order_format', message: 'Numéro de commande incomplet. Format attendu : 123-1234567-1234567.' });
     }
 
     const session = verifySession(sessionId, secret);
