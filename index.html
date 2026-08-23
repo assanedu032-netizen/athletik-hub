@@ -7109,6 +7109,11 @@ window.tiResetOnEnter = function(){ window.tiShowStep(1); };
     <!-- Bannière reprendre tests — affichée si ah_sat_inprogress existe -->
     <div id="resumeTestsBanner" style="display:none"></div>
 
+    <!-- Rappel préférences d'entraînement — proactif mais jamais bloquant.
+         Rempli par renderPlanningPrompt(). Règles d'apparition dans
+         _ahPlanningPromptState(). -->
+    <div id="planningPromptBanner" style="display:none"></div>
+
     <!-- ═══ MON PARCOURS — guide onboarding visible jusqu'à completion ═══
          Affiche les 3 étapes restantes avec leur état (✓ done / ⏳ next / 🔒 lock)
          + CTA "Continuer mon profil". Rempli par renderJourneyCard() en JS,
@@ -15202,6 +15207,7 @@ document.addEventListener('DOMContentLoaded', function() {
     try { renderTrialBanner(); } catch(e) {}
     try { renderResumeSessionBanner(); } catch(e) {}
     try { renderResumeTestsBanner(); } catch(e) {}
+    try { renderPlanningPrompt(); } catch(e) {}
     try { renderJourneyCard(); } catch(e) {}
   };
 
@@ -29350,6 +29356,122 @@ window._ahDoMicro = function(kind) {
   try { if (typeof renderUserData === 'function') renderUserData(); } catch(e) {}
 };
 
+// ═══════════════════════════════════════════════════════════════════════════
+// RAPPEL DES PRÉFÉRENCES D'ENTRAÎNEMENT
+// ───────────────────────────────────────────────────────────────────────────
+// Le planning (jours + heures) est ce que lit session-reminders.js pour
+// envoyer les rappels avant séance. Sans lui, aucun rappel ne peut partir.
+//
+// TOUT EXISTE DÉJÀ côté configuration : openPlanModal() gère les jours, les
+// heures, et connaît même le nombre de séances attendu par le programme
+// (_getWeekPlan().sessionCount). On n'ajoute donc AUCUNE UI de saisie — juste
+// le déclencheur proactif qui manquait.
+//
+// RÈGLES D'APPARITION — proactif sans être insistant :
+//   - jamais si le planning est déjà configuré ;
+//   - pas avant PROMPT_MIN_AGE_DAYS : l'utilisateur découvre d'abord l'app ;
+//   - après un refus, silence pendant PROMPT_COOLDOWN_DAYS ;
+//   - au bout de PROMPT_MAX_DISMISS refus, on arrête définitivement. Trois
+//     "non" valent une réponse : l'entrée reste dans Réglages pour qui
+//     changerait d'avis.
+// ═══════════════════════════════════════════════════════════════════════════
+var PROMPT_MIN_AGE_DAYS   = 2;
+var PROMPT_COOLDOWN_DAYS  = 7;
+var PROMPT_MAX_DISMISS    = 3;
+
+window._ahPlanningPromptState = function(nowIso) {
+  try {
+    var p = _ahSafeParse('ah_profile', {});
+    var now = nowIso || new Date().toISOString();
+
+    // Planning déjà configuré → plus rien à demander.
+    var configured = false;
+    try {
+      configured = (typeof trainingDays !== 'undefined' && trainingDays.size > 0);
+    } catch(e) {}
+    if (configured) return { show: false, reason: 'configured' };
+
+    // Âge du compte : trialStartedAt est posé à la création (obCalcProg) et
+    // resynchronisé par init-user. Sans lui, on ne sollicite pas — mieux vaut
+    // ne rien afficher que de harceler un compte dont on ignore l'âge.
+    var started = p.trialStartedAt ? new Date(p.trialStartedAt).toISOString() : null;
+    if (!started) return { show: false, reason: 'no_age' };
+    var ageDays = _ahDaysBetween(started, now);
+    if (ageDays == null || ageDays < PROMPT_MIN_AGE_DAYS) return { show: false, reason: 'too_early' };
+
+    var dismissals = p.planPromptDismissals || 0;
+    if (dismissals >= PROMPT_MAX_DISMISS) return { show: false, reason: 'refused' };
+
+    if (p.planPromptLastAt) {
+      var since = _ahDaysBetween(p.planPromptLastAt, now);
+      if (since != null && since < PROMPT_COOLDOWN_DAYS) return { show: false, reason: 'cooldown' };
+    }
+
+    // Nombre de séances attendu par le programme — donnée réelle, jamais
+    // inventée. Absente si aucun programme n'est encore attribué.
+    var need = 0;
+    try {
+      if (typeof _getWeekPlan === 'function') need = _getWeekPlan().sessionCount || 0;
+    } catch(e) {}
+
+    return { show: true, ageDays: ageDays, need: need, dismissals: dismissals,
+             prenom: p.prenom || p.name || '' };
+  } catch(e) { return { show: false, reason: 'error' }; }
+};
+
+window.renderPlanningPrompt = function() {
+  var el = document.getElementById('planningPromptBanner');
+  if (!el) return;
+  var st = window._ahPlanningPromptState();
+  if (!st || !st.show) { el.style.display = 'none'; el.innerHTML = ''; return; }
+
+  // Le bénéfice AVANT la demande : l'utilisateur doit comprendre ce que ça
+  // lui apporte, pas ce que l'app attend de lui.
+  var line = st.need > 0
+    ? 'Ton programme demande <strong>' + st.need + ' séances par semaine</strong>. Dis-moi quels jours et à quelle heure — je te rappelle chacune d\'elles.'
+    : 'Dis-moi quels jours tu t\'entraînes et à quelle heure — je te rappelle chaque séance.';
+
+  el.style.display = '';
+  el.innerHTML =
+    '<div style="background:linear-gradient(135deg,rgba(197,164,78,.10),rgba(197,164,78,.03));border:1px solid rgba(197,164,78,.30);border-radius:12px;padding:13px 14px;margin:12px 16px;position:relative">'
+    + '<button onclick="window._ahDismissPlanningPrompt()" aria-label="Plus tard" '
+    +   'style="position:absolute;top:8px;right:8px;background:none;border:0;color:var(--muted);font-size:17px;line-height:1;cursor:pointer;padding:4px 7px">×</button>'
+    + '<div style="font-family:\'JetBrains Mono\',monospace;font-size:9.5px;letter-spacing:.2em;text-transform:uppercase;font-weight:800;color:var(--gold)">Tes horaires</div>'
+    + '<div style="font-family:\'Outfit\',sans-serif;font-size:13.5px;font-weight:700;color:var(--text);margin-top:4px;padding-right:22px">'
+    +   (st.prenom ? escapeHtml(st.prenom) + ', il est temps de caler tes séances' : 'Cale tes séances dans ta semaine')
+    + '</div>'
+    + '<div style="font-family:\'Outfit\',sans-serif;font-size:12.5px;color:var(--text2);line-height:1.45;margin-top:4px">' + line + '</div>'
+    + '<button onclick="window._ahOpenPlanningFromPrompt()" '
+    +   'style="width:100%;margin-top:11px;padding:12px;min-height:44px;background:#1B2A4A;border:0;border-radius:10px;'
+    +   'font-family:\'Bebas Neue\',sans-serif;font-size:15px;letter-spacing:.1em;color:#FFF;cursor:pointer">CONFIGURER MES HORAIRES</button>'
+    + '</div>';
+};
+
+// Refus : on note la date ET on incrémente. Le cooldown repart de zéro.
+window._ahDismissPlanningPrompt = function() {
+  try {
+    var p = _ahSafeParse('ah_profile', {});
+    p.planPromptDismissals = (p.planPromptDismissals || 0) + 1;
+    p.planPromptLastAt = new Date().toISOString();
+    localStorage.setItem('ah_profile', JSON.stringify(p));
+    try { if (typeof fbSaveProfile === 'function') fbSaveProfile(); } catch(e) {}
+  } catch(e) {}
+  var el = document.getElementById('planningPromptBanner');
+  if (el) { el.style.display = 'none'; el.innerHTML = ''; }
+};
+
+// Ouvre le modal existant. On note la date sans incrémenter le compteur de
+// refus : ouvrir n'est pas refuser. Si l'utilisateur abandonne en cours de
+// route, le cooldown normal s'applique.
+window._ahOpenPlanningFromPrompt = function() {
+  try {
+    var p = _ahSafeParse('ah_profile', {});
+    p.planPromptLastAt = new Date().toISOString();
+    localStorage.setItem('ah_profile', JSON.stringify(p));
+  } catch(e) {}
+  try { openPlanModal(); } catch(e) { console.warn('[planning prompt]', e); }
+};
+
 var AH_ANCHORS = [
   { id:'travail', label:'Je rentre du travail / des cours' },
   { id:'reveil',  label:'Je me réveille' },
@@ -30513,6 +30635,9 @@ function confirmPlan() {
   closePlanModal();
   try { renderHomeAgenda(); } catch(e) {}
   try { renderMoiPlanning(); } catch(e) {}
+  // Planning configure : le rappel disparait immediatement, sans attendre un
+  // re-rendu de Home.
+  try { if (typeof renderPlanningPrompt === 'function') renderPlanningPrompt(); } catch(e) {}
   if (typeof showToast === 'function') showToast('Planning enregistr\u00e9 \uD83D\uDCAA', 'success');
 }
 window.confirmPlan = confirmPlan;
