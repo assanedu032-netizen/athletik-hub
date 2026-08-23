@@ -33008,6 +33008,10 @@ var ALL_TESTS = {
   },
   feet94: {
     id: 'feet94', name: '94 Feet Drill', emoji: '🏀',
+    // libraryName manquait : sans lui, renderSETStep n'affichait aucun bouton
+    // "Voir la démonstration vidéo" alors que la vidéo était déjà mappée dans
+    // _LIB_VIDEO_MAP. C'était le seul test du SET dans ce cas.
+    libraryName: '94 Feet Drill',
     desc: 'Aller-retour sur la longueur d\'un terrain de basket (28.65m) pendant 3 minutes à intensité max. Compte le nombre d\'allers-retours.',
     fields: [{id:'p3Feet94', label:'Allers-retours', unit:'AR', placeholder:'17'}],
     hint: 'Endurance lactique + capacité de répétition de sprint. Au-dessus de 17 AR, t\'es très bon.',
@@ -33599,6 +33603,9 @@ var SET_TESTS = [
     id: 'feet94',
     name: '94 Feet Drill',
     emoji: '🏀',
+    // Idem que la définition jumelle : la vidéo existait déjà côté librairie,
+    // seul le lien depuis le test manquait.
+    libraryName: '94 Feet Drill',
     desc: 'Aller-retour sur la longueur d\u2019un terrain de basket (28.65m) pendant 3 minutes à intensité max. Compte le nombre d\u2019allers-retours complets.',
     hint: 'Capacité anaérobie + endurance lactique. Au-dessus de 17 AR = très bon.',
     fields: [{id:'set_feet94', label:'Allers-retours', unit:'AR', placeholder:'17'}],
