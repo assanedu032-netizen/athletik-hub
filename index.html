@@ -1227,6 +1227,25 @@ body{background:var(--bg);color:var(--text);font-family:'Outfit',sans-serif;disp
 .ci-preview-rm{width:28px;height:28px;border-radius:50%;background:var(--surface2);border:1px solid var(--border);color:var(--muted);font-size:16px;line-height:1;cursor:pointer;flex-shrink:0;display:flex;align-items:center;justify-content:center;padding:0}
 /* Vignette dans la bulle du message envoyé. */
 .msg-photo{display:block;max-width:190px;width:100%;border-radius:10px;margin-bottom:7px;border:1px solid rgba(255,255,255,.18)}
+/* ── Célébration post-séance (brique 1) ──
+   Bandeau court affiché en haut de l'écran de fin. Aucun bouton, aucun
+   blocage : il apparaît, il informe, il reste. L'animation dure ~1,1 s. */
+.ls-celebrate{display:none;width:100%;max-width:320px;margin:0 auto 14px;padding:12px 14px;border-radius:12px;background:linear-gradient(135deg,rgba(197,164,78,.14),rgba(197,164,78,.05));border:1px solid rgba(197,164,78,.34);text-align:center}
+.ls-celebrate.on{display:block;animation:lsCelebIn .55s cubic-bezier(.2,.8,.3,1) both}
+.ls-celebrate-kicker{font-family:'JetBrains Mono',monospace;font-size:9.5px;letter-spacing:.2em;text-transform:uppercase;font-weight:800;color:var(--ah-gold)}
+.ls-celebrate-msg{font-family:'Outfit',sans-serif;font-size:14px;font-weight:600;color:var(--ah-text,#EDF0F7);line-height:1.4;margin-top:5px}
+@keyframes lsCelebIn{from{opacity:0;transform:translateY(10px) scale(.97)}to{opacity:1;transform:none}}
+/* Accessibilité : aucune animation n'était filtrée dans le projet jusqu'ici.
+   On respecte le réglage système pour cette brique. */
+/* Anticipation : discrète, sous la célébration. Elle informe, elle n'appelle
+   pas à l'action — le bouton de retour reste le seul CTA de l'écran. */
+.ls-nextstep{display:none;width:100%;max-width:320px;margin:0 auto 16px;padding:10px 12px;border-radius:10px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.10);text-align:center}
+.ls-nextstep.on{display:block}
+.ls-nextstep-kicker{font-family:'JetBrains Mono',monospace;font-size:8.5px;letter-spacing:.2em;text-transform:uppercase;font-weight:800;color:var(--ah-muted,#8a93a8)}
+.ls-nextstep-txt{font-family:'Outfit',sans-serif;font-size:12.5px;font-weight:600;color:var(--ah-text2,#A8B4CC);line-height:1.4;margin-top:3px}
+@media (prefers-reduced-motion: reduce){
+  .ls-celebrate.on{animation:none}
+}
 /* Choix appareil photo / galerie. Un menu explicite plutôt que de se fier au
    sélecteur natif : selon le navigateur et l'OS, il propose l'appareil photo
    ou non, et l'utilisateur ne comprend pas pourquoi. */
@@ -8372,6 +8391,14 @@ window.tiResetOnEnter = function(){ window.tiShowStep(1); };
     <div class="si-right">→</div>
   </div>
 
+  <!-- Ancrage comportemental (brique 3). Distinct du planning : le planning
+       dit QUAND tu t'entraînes, l'ancrage dit ce qui arrive JUSTE AVANT.
+       C'est ce moment-là qui sert de déclencheur naturel. -->
+  <div class="setting-item" onclick="window.openAnchorModal && window.openAnchorModal()">
+    <div class="si-left"><div class="si-icon">🔗</div><div><div class="si-text">Mon déclencheur</div><div class="si-sub" id="settingAnchorSub">Le moment qui précède tes séances</div></div></div>
+    <div class="si-right">→</div>
+  </div>
+
   <div class="setting-item" onclick="restartOnboarding()">
     <div class="si-left"><div class="si-icon">🔄</div><div><div class="si-text">Refaire le questionnaire</div><div class="si-sub">Modifier objectif et programme</div></div></div>
     <div class="si-right">→</div>
@@ -9109,6 +9136,59 @@ window.tiResetOnEnter = function(){ window.tiShowStep(1); };
   </div>
 </div>
 
+<!-- ═══ MICRO-ACTIONS (brique 4) ═══
+     Les jours sans séance. Jamais présenté comme un équivalent : le libellé
+     dit explicitement que ça ne remplace pas une séance. -->
+<div id="microModal" style="display:none;position:fixed;inset:0;background:rgba(6,12,24,.92);backdrop-filter:blur(8px);z-index:9500;align-items:flex-end;justify-content:center">
+  <div style="max-width:460px;width:100%;background:var(--surface);border-radius:20px 20px 0 0;padding:20px 18px calc(20px + env(safe-area-inset-bottom,0px));max-height:82vh;overflow-y:auto">
+    <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px;margin-bottom:4px">
+      <div>
+        <div style="font-family:'JetBrains Mono',monospace;font-size:9.5px;letter-spacing:.2em;text-transform:uppercase;font-weight:800;color:var(--gold)">Pas le temps</div>
+        <div style="font-family:'Bebas Neue',sans-serif;font-size:22px;letter-spacing:.04em;color:var(--text);line-height:1.05;margin-top:3px">GARDE LE FIL</div>
+      </div>
+      <button onclick="window.closeMicroActions()" style="background:transparent;border:0;color:var(--muted);font-size:22px;cursor:pointer;padding:4px 8px;line-height:1">×</button>
+    </div>
+    <div style="font-family:'Outfit',sans-serif;font-size:12.5px;color:var(--text2);line-height:1.45;margin-bottom:14px">Ça ne remplace pas une séance. Ça maintient ta présence.</div>
+    <div id="microList"></div>
+  </div>
+</div>
+
+<!-- ═══ ANCRAGE COMPORTEMENTAL (brique 3) ═══
+     Deux questions, jamais imposées : l'utilisateur y vient depuis Réglages.
+     Rien n'est obligatoire, tout est modifiable, et un profil sans ces
+     champs continue de fonctionner à l'identique. -->
+<div id="anchorModal" style="display:none;position:fixed;inset:0;background:rgba(6,12,24,.92);backdrop-filter:blur(8px);z-index:9500;align-items:center;justify-content:center;padding:20px">
+  <div style="max-width:420px;width:100%;background:var(--surface);border:1px solid var(--border);border-radius:18px;padding:22px 20px;max-height:90vh;overflow-y:auto">
+    <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px;margin-bottom:6px">
+      <div>
+        <div style="font-family:'JetBrains Mono',monospace;font-size:9.5px;letter-spacing:.2em;text-transform:uppercase;font-weight:800;color:var(--gold)">Déclencheur</div>
+        <div style="font-family:'Bebas Neue',sans-serif;font-size:22px;letter-spacing:.04em;color:var(--text);line-height:1.05;margin-top:3px">TON MOMENT NATUREL</div>
+      </div>
+      <button onclick="window.closeAnchorModal()" style="background:transparent;border:0;color:var(--muted);font-size:22px;cursor:pointer;padding:4px 8px;line-height:1">×</button>
+    </div>
+    <div style="font-family:'Outfit',sans-serif;font-size:12.5px;color:var(--text2);line-height:1.45;margin-bottom:16px">Sert à te rappeler ta séance au bon moment. Tu peux le changer ou le laisser vide.</div>
+
+    <div style="font-family:'Outfit',sans-serif;font-size:13px;font-weight:700;color:var(--text);margin-bottom:8px">Qu'est-ce que tu fais juste avant de t'entraîner, en général ?</div>
+    <div id="anchorMomentWrap" style="display:grid;gap:7px;margin-bottom:18px"></div>
+
+    <div style="font-family:'Outfit',sans-serif;font-size:13px;font-weight:700;color:var(--text);margin-bottom:8px">À quelle heure ça arrive, à peu près ?</div>
+    <input id="anchorTimeInput" type="time" style="width:100%;padding:12px 14px;background:var(--surface2);border:1.5px solid var(--border);border-radius:10px;font-family:'Outfit',sans-serif;font-size:15px;color:var(--text);outline:none;box-sizing:border-box">
+
+    <div style="margin-top:18px;padding-top:14px;border-top:1px solid var(--border)">
+      <div style="font-family:'Outfit',sans-serif;font-size:13px;font-weight:700;color:var(--text);margin-bottom:4px">Heures de silence</div>
+      <div style="font-family:'Outfit',sans-serif;font-size:11.5px;color:var(--muted);line-height:1.4;margin-bottom:8px">Aucune notification pendant cette plage.</div>
+      <div style="display:flex;align-items:center;gap:10px">
+        <input id="anchorQuietStart" type="time" style="flex:1;padding:10px 12px;background:var(--surface2);border:1.5px solid var(--border);border-radius:10px;font-family:'Outfit',sans-serif;font-size:14px;color:var(--text);outline:none;box-sizing:border-box">
+        <span style="font-size:12px;color:var(--muted)">→</span>
+        <input id="anchorQuietEnd" type="time" style="flex:1;padding:10px 12px;background:var(--surface2);border:1.5px solid var(--border);border-radius:10px;font-family:'Outfit',sans-serif;font-size:14px;color:var(--text);outline:none;box-sizing:border-box">
+      </div>
+    </div>
+
+    <button onclick="window._ahSaveAnchor()" style="width:100%;margin-top:20px;padding:15px;min-height:50px;background:#1B2A4A;border:0;border-radius:12px;font-family:'Bebas Neue',sans-serif;font-size:16px;letter-spacing:.12em;color:#FFF;cursor:pointer">ENREGISTRER</button>
+    <button onclick="window._ahClearAnchor()" style="width:100%;margin-top:8px;padding:10px;background:transparent;border:0;color:var(--muted);font-family:'Outfit',sans-serif;font-size:12px;cursor:pointer;text-decoration:underline;text-underline-offset:3px">Effacer mon déclencheur</button>
+  </div>
+</div>
+
 <!-- MODAL MON PLANNING (hors .view — ouvrable depuis Home et Moi) -->
 <div id="planModal" style="display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,.85);z-index:600;overflow-y:auto">
   <div style="background:var(--bg);min-height:100%;padding:24px;box-sizing:border-box">
@@ -9227,6 +9307,12 @@ window.tiResetOnEnter = function(){ window.tiShowStep(1); };
     <div class="ls-complete" id="lsComplete" style="display:none">
       <div class="ls-complete-icon">🔥</div>
       <div class="ls-complete-title">SÉANCE TERMINÉE</div>
+      <!-- Célébration post-séance : rempli par _ahRenderCelebration(), vide
+           si le moteur ne produit rien. Jamais bloquant. -->
+      <div class="ls-celebrate" id="lsCelebrate"></div>
+      <!-- Anticipation (brique 2) : ce qui arrive ensuite. Vide si le
+           programme ne permet pas de le déterminer — jamais inventé. -->
+      <div class="ls-nextstep" id="lsNextStep"></div>
       <div class="ls-complete-sub" id="lsCompleteMsg">Tu viens de terminer cette séance.<br>Récupère bien — tu l'as mérité.</div>
       <button class="btn btn-gold" onclick="_lsClose()" style="width:100%;max-width:280px">← Retour au programme</button>
     </div>
@@ -15440,6 +15526,9 @@ function switchTab(tab){
   if (tab === 'moi') {
     try { renderProfileCard(); } catch(e) {}
     try { apiKeyRestore(); fbRefreshAccountSection(window.fbUser); renderBadges(); refreshAccessTierUI(); renderProgression(); renderMoiPlanning(); renderHistory(); if (typeof window._renderGuidesList === 'function') window._renderGuidesList(); } catch(e) {}
+    // Ancrage (brique 3) — try/catch séparé : le sous-titre est cosmétique,
+    // il ne doit pas pouvoir empêcher le rendu du reste des Réglages.
+    try { if (typeof window._ahRefreshAnchorSub === 'function') window._ahRefreshAnchorSub(); } catch(e) {}
   }
   // Refresh Athletik Score on Home
   if (tab === 'home') {
@@ -28249,8 +28338,20 @@ function renderJourneyCard() {
   if (!wrap) return;
   var p = {};
   try { p = JSON.parse(localStorage.getItem('ah_profile') || '{}'); } catch(e) {}
-  // Onboarding complet → on cache la carte (pas utile post-déblocage).
-  if (_isOnboardingComplete(p)) { wrap.innerHTML = ''; return; }
+  // Onboarding complet → la carte d'onboarding n'a plus lieu d'être, mais
+  // l'emplacement est repris par la Progression Loop (brique 2). Isolé en
+  // try/catch : si elle échoue, on retombe sur le comportement d'origine
+  // (emplacement vide) sans rien casser sur Home.
+  if (_isOnboardingComplete(p)) {
+    try {
+      if (typeof window._ahRenderProgressionLoop === 'function') {
+        window._ahRenderProgressionLoop();
+        return;
+      }
+    } catch(e) { console.warn('[progression loop]', e); }
+    wrap.innerHTML = '';
+    return;
+  }
   // Pas d'objectif → l'utilisateur est encore avant obQ1, on cache aussi
   // (la bannière discovery du onboarding initial prend le relais).
   if (!p.objectif) { wrap.innerHTML = ''; return; }
@@ -28540,27 +28641,870 @@ function _recordSessionCompletion(opts) {
 // Met à jour profile.streak (jours consécutifs avec ≥ 1 séance terminée).
 // Règle : J = J-1 → streak+1 ; même jour → no-op ; gap > 1 jour → reset à 1.
 // Appelé depuis _recordSessionCompletion uniquement.
-function _bumpSessionStreak() {
+// profile.streak GARDE sa sémantique d'origine : jours consécutifs. Elle est
+// lue à 14 endroits (badges streak7/streak30, contexte Titan, carte Home,
+// export feedback…) — la changer casserait tout. Les jokers viennent PAR-DESSUS :
+// ils empêchent une remise à 1, ils ne redéfinissent pas le compteur.
+var AH_JOKERS_PER_MONTH = 2;
+
+// Solde de jokers, avec recharge paresseuse le 1er du mois. Ne persiste rien :
+// l'appelant décide quand écrire.
+function _ahJokersAvailable(profile, todayKey) {
+  var month = String(todayKey).slice(0, 7);   // YYYY-MM
+  if (profile.jokersMonth !== month) return { left: AH_JOKERS_PER_MONTH, month: month, recharged: true };
+  var left = typeof profile.streakJokers === 'number' ? profile.streakJokers : AH_JOKERS_PER_MONTH;
+  return { left: Math.max(0, Math.min(AH_JOKERS_PER_MONTH, left)), month: month, recharged: false };
+}
+window._ahJokersAvailable = _ahJokersAvailable;
+
+// todayIso optionnel — même convention de testabilité que les briques 1 à 3.
+function _bumpSessionStreak(todayIso) {
   try {
     var profile = JSON.parse(localStorage.getItem('ah_profile') || '{}');
-    var todayKey = new Date().toISOString().slice(0, 10);
+    var todayKey = String(todayIso || new Date().toISOString()).slice(0, 10);
     var lastKey  = profile.lastSessionDay || null;
-    if (lastKey === todayKey) return; // déjà une séance aujourd'hui
+    if (lastKey === todayKey) return; // déjà une activité aujourd'hui
     var streak = profile.streak || 0;
+    var jokersUsed = 0;
+    var jk = _ahJokersAvailable(profile, todayKey);
     if (lastKey) {
       var lastTs  = new Date(lastKey + 'T00:00:00Z').getTime();
       var todayTs = new Date(todayKey + 'T00:00:00Z').getTime();
       var dayGap  = Math.round((todayTs - lastTs) / 86400000);
-      streak = (dayGap === 1) ? streak + 1 : 1; // 1 = aujourd'hui compte
+      if (dayGap === 1) {
+        streak = streak + 1;
+      } else if (dayGap > 1) {
+        // Jours réellement manqués. On ne « punit » pas : si le solde de
+        // jokers du mois les couvre, la série continue.
+        var missed = dayGap - 1;
+        if (missed <= jk.left) {
+          jk.left -= missed;
+          jokersUsed = missed;
+          streak = streak + 1;
+        } else {
+          // Série interrompue : on archive le meilleur, on repart à 1.
+          // Aucun message de perte — cf. §13 du brief.
+          if (streak > (profile.bestStreak || 0)) profile.bestStreak = streak;
+          streak = 1;
+        }
+      }
     } else {
       streak = 1;
     }
+    if (streak > (profile.bestStreak || 0)) profile.bestStreak = streak;
     profile.streak = streak;
     profile.lastSessionDay = todayKey;
+    profile.streakJokers = jk.left;
+    profile.jokersMonth  = jk.month;
     localStorage.setItem('ah_profile', JSON.stringify(profile));
     try { if (typeof fbSaveProfile === 'function') fbSaveProfile(); } catch(e) {}
+    if (jokersUsed) {
+      try {
+        if (typeof showToast === 'function') {
+          showToast('Série préservée — ' + jk.left + ' joker' + (jk.left > 1 ? 's' : '') + ' restant' + (jk.left > 1 ? 's' : '') + ' ce mois.', 'ok');
+        }
+      } catch(e) {}
+    }
   } catch(e) {}
 }
+
+// ═══════════════════════════════════════════════════════════════════════════
+// MOTEUR DE FEEDBACK POST-SÉANCE  —  brique 1
+// ───────────────────────────────────────────────────────────────────────────
+// Répond à une seule question : « qu'est-ce que cette séance a changé dans mon
+// parcours ? ». Module PUR et isolé — il ne lit que des données déjà écrites
+// par le reste de l'app, n'écrit rien, et ne connaît pas le DOM. Tout ce qui
+// touche à l'affichage vit dans _ahRenderCelebration().
+//
+// RÈGLE ABSOLUE : aucune donnée inventée. Chaque type de feedback n'est
+// produit QUE si les données réelles existent. Sans données, on descend
+// jusqu'au fallback G (compteur de séances), toujours vrai.
+//
+// Le moteur renvoie TOUS les candidats valides, triés par force du signal.
+// L'étape 5 (récompense variable) n'aura qu'à changer la sélection dans
+// _ahPickFeedback() — le moteur lui-même n'aura pas à bouger.
+//
+// LIMITE CONNUE : ah_set_history ne stocke aucune donnée d'exercice (ni
+// charge, ni reps, ni temps). Les types A (record), C (comparaison) et D
+// (progression par exercice) dépendent donc de ah_track_history, alimenté
+// manuellement via l'onglet Suivi. Pour un utilisateur qui ne tracke pas,
+// seuls B, D-score, F et G peuvent se déclencher. C'est volontaire : plutôt
+// un fallback honnête qu'un chiffre fabriqué.
+// ═══════════════════════════════════════════════════════════════════════════
+
+function _ahSafeParse(key, fallback) {
+  try { var v = JSON.parse(localStorage.getItem(key) || 'null'); return v == null ? fallback : v; }
+  catch(e) { return fallback; }
+}
+
+// Sessions de ah_set_history, du plus ancien au plus récent.
+function _ahSessionHistory() {
+  var h = _ahSafeParse('ah_set_history', []);
+  if (!Array.isArray(h)) return [];
+  return h.filter(function(e){ return e && e.type === 'session' && e.date; });
+}
+
+function _ahSameDay(a, b) {
+  return String(a).slice(0, 10) === String(b).slice(0, 10);
+}
+function _ahDaysBetween(isoA, isoB) {
+  var a = new Date(String(isoA).slice(0, 10) + 'T00:00:00Z').getTime();
+  var b = new Date(String(isoB).slice(0, 10) + 'T00:00:00Z').getTime();
+  if (isNaN(a) || isNaN(b)) return null;
+  return Math.round(Math.abs(b - a) / 86400000);
+}
+
+// ── F : étape de parcours ──────────────────────────────────────────────
+// Signal le plus fort : l'utilisateur vient de franchir un palier structurel
+// du programme. Ne s'appuie que sur ce que _recordSessionCompletion a renvoyé
+// et sur programProgress, jamais sur une estimation.
+function _ahFeedbackStage(ctx) {
+  var out = [];
+  if (ctx.rec && ctx.rec.programDone) {
+    out.push({ type: 'F', weight: 100, message: 'Programme ' + (ctx.progName || '') + ' terminé.' });
+    return out;
+  }
+  var st = ctx.progressState;
+  if (!st || !ctx.prog) return out;
+  var phase = ctx.prog.phases && ctx.prog.phases[st.phaseIdx];
+  if (!phase) return out;
+  if (ctx.rec && ctx.rec.weekDone) {
+    // st a déjà été avancé par _advanceProgramProgress : si week === 1 et que
+    // l'index de phase a bougé, c'est une phase entière qui vient de tomber.
+    if (st.week === 1 && st.phaseIdx > (ctx.phaseIdxBefore != null ? ctx.phaseIdxBefore : st.phaseIdx)) {
+      out.push({ type: 'F', weight: 95, message: 'Phase ' + ctx.phaseIdxBefore + ' terminée.' });
+    } else {
+      var total = phase.weeks || null;
+      out.push({ type: 'F', weight: 80,
+        message: total ? ('Semaine ' + Math.max(1, st.week - 1) + '/' + total + ' terminée.')
+                       : 'Semaine terminée.' });
+    }
+  }
+  return out;
+}
+
+// ── A : record personnel ───────────────────────────────────────────────
+// Source unique : ah_track_history. On ne considère qu'une entrée du JOUR,
+// et on ne parle de record que si la valeur dépasse strictement toutes les
+// précédentes du même exercice ET qu'il existe au moins un point de
+// comparaison — un « record » au premier essai n'en est pas un.
+function _ahFeedbackRecord(ctx) {
+  var out = [];
+  var hist = ctx.trackHistory;
+  if (!Array.isArray(hist) || hist.length < 2) return out;
+  var today = ctx.today;   // injecté par _ahBuildSessionFeedback (testable)
+  var todays = hist.filter(function(e){ return e && (e.date === today); });
+  todays.forEach(function(e) {
+    var name = e.exerciseName || e.exo;
+    if (!name) return;
+    var val = _ahTrackValue(e);
+    if (val == null) return;
+    var lower = e.method === 'temps';   // pour le temps, plus bas = meilleur
+    var past = hist.filter(function(o){
+      return o && o !== e && (o.exerciseName || o.exo) === name && o.date !== today;
+    }).map(_ahTrackValue).filter(function(v){ return v != null; });
+    if (!past.length) return;
+    var best = lower ? Math.min.apply(null, past) : Math.max.apply(null, past);
+    var isRecord = lower ? (val < best) : (val > best);
+    if (!isRecord) return;
+    out.push({ type: 'A', weight: 90,
+      message: 'Nouveau record : ' + name + ' — ' + _ahFmtVal(val, e) + '.',
+      data: { exercise: name, value: val, previous: best } });
+  });
+  return out;
+}
+
+// Valeur comparable d'une entrée de tracking. Renvoie null si non exploitable.
+function _ahTrackValue(e) {
+  if (!e) return null;
+  var es = e.essais;
+  if (!Array.isArray(es) || !es.length) return null;
+  var nums;
+  if (e.method === 'temps') {
+    nums = es.map(function(x){ return Number(x.time); }).filter(function(n){ return !isNaN(n) && n > 0; });
+    return nums.length ? Math.min.apply(null, nums) : null;
+  }
+  if (e.method === 'charge') {
+    nums = es.map(function(x){ return Number(x.load); }).filter(function(n){ return !isNaN(n) && n > 0; });
+    return nums.length ? Math.max.apply(null, nums) : null;
+  }
+  // distance / hauteur / reps : on prend le meilleur essai numérique dispo
+  nums = es.map(function(x){
+    return Number(x.dist != null ? x.dist : (x.height != null ? x.height : x.reps));
+  }).filter(function(n){ return !isNaN(n) && n > 0; });
+  return nums.length ? Math.max.apply(null, nums) : null;
+}
+
+function _ahFmtVal(v, e) {
+  var m = e && e.method;
+  if (m === 'temps')    return v + ' s';
+  if (m === 'charge')   return v + ' kg';
+  if (m === 'distance') return v + ' m';
+  if (m === 'hauteur')  return v + ' cm';
+  return String(v);
+}
+
+// ── B : jalon de régularité ────────────────────────────────────────────
+// Uniquement des seuils atteints exactement aujourd'hui, pour ne pas répéter
+// le même jalon à chaque séance suivante.
+function _ahFeedbackRegularity(ctx) {
+  var out = [];
+  var sessions = ctx.sessions;
+  var n = sessions.length;
+  if (!n) return out;
+  var last = sessions[n - 1].date;
+
+  var TOTALS = [10, 25, 50, 100, 200];
+  if (TOTALS.indexOf(n) > -1) {
+    out.push({ type: 'B', weight: 85, message: n + 'e séance au total. Nouveau repère enregistré.' });
+  }
+
+  // Séances du mois en cours
+  var ym = String(last).slice(0, 7);
+  var month = sessions.filter(function(s){ return String(s.date).slice(0, 7) === ym; }).length;
+  if (month === 10 || month === 20) {
+    out.push({ type: 'B', weight: 70, message: month + 'e séance ce mois. Nouveau repère enregistré.' });
+  }
+
+  // Séances de la semaine calendaire en cours
+  var week = sessions.filter(function(s){
+    var d = _ahDaysBetween(s.date, last);
+    return d != null && d <= 6;
+  }).length;
+  if (week === 3 || week === 4 || week === 5) {
+    out.push({ type: 'B', weight: 60, message: week + 'e séance en 7 jours.' });
+  }
+  return out;
+}
+
+// ── D : progression mesurée ────────────────────────────────────────────
+// Le score de fin de séance est déjà stocké dans ah_set_history
+// (sessionEndFeedback.sessionQualityScore) : donnée réelle, disponible pour
+// tout le monde, sans dépendre du tracking manuel.
+function _ahFeedbackProgress(ctx) {
+  var out = [];
+  var s = ctx.sessions;
+  if (s.length < 2) return out;
+  var cur = s[s.length - 1], prev = s[s.length - 2];
+  var a = cur.sessionEndFeedback && cur.sessionEndFeedback.sessionQualityScore;
+  var b = prev.sessionEndFeedback && prev.sessionEndFeedback.sessionQualityScore;
+  if (typeof a !== 'number' || typeof b !== 'number') return out;
+  var delta = a - b;
+  if (delta > 0) {
+    out.push({ type: 'D', weight: 65,
+      message: '+' + delta + ' points de qualité par rapport à ta dernière séance.',
+      data: { current: a, previous: b, delta: delta } });
+  }
+  return out;
+}
+
+// ── C : comparaison temporelle ─────────────────────────────────────────
+// « La même séance, il y a N jours ». N'utilise que des dates réelles.
+function _ahFeedbackTemporal(ctx) {
+  var out = [];
+  var s = ctx.sessions;
+  if (s.length < 2) return out;
+  var cur = s[s.length - 1];
+  if (!cur.sessName) return out;
+  var earlier = null;
+  for (var i = s.length - 2; i >= 0; i--) {
+    if (s[i].sessName === cur.sessName && !_ahSameDay(s[i].date, cur.date)) { earlier = s[i]; break; }
+  }
+  if (!earlier) return out;
+  var days = _ahDaysBetween(earlier.date, cur.date);
+  if (days == null || days < 7) return out;   // en dessous d'une semaine, sans intérêt
+  out.push({ type: 'C', weight: 55,
+    message: 'Dernière fois sur ' + cur.sessName + ' : il y a ' + days + ' jours.',
+    data: { days: days } });
+  return out;
+}
+
+// ── G : fallback, toujours vrai ────────────────────────────────────────
+function _ahFeedbackFallback(ctx) {
+  var n = ctx.sessions.length;
+  if (n <= 1) return [{ type: 'G', weight: 10, message: 'Séance 1. Ton point de départ est enregistré.' }];
+  if (n === 2) return [{ type: 'G', weight: 10, message: '2 séances. Ton historique commence à se construire.' }];
+  return [{ type: 'G', weight: 10, message: 'Séance ' + n + '. Historique à jour.' }];
+}
+
+// Construit le contexte puis collecte tous les candidats valides.
+// Retourne { candidates: [...], best: {...} }. Ne lève jamais.
+window._ahBuildSessionFeedback = function(opts) {
+  opts = opts || {};
+  try {
+    var prof = _ahSafeParse('ah_profile', {});
+    var progKey = opts.progKey || prof.programKey || '';
+    var ctx = {
+      progKey:  progKey,
+      progName: opts.progName || prof.program || '',
+      prog:     (typeof PROGRAMS_V2 !== 'undefined' && PROGRAMS_V2[progKey]) || null,
+      progressState: (typeof getProgramProgress === 'function' && progKey) ? getProgramProgress(progKey) : null,
+      phaseIdxBefore: opts.phaseIdxBefore,
+      rec:      opts.rec || {},
+      profile:  prof,
+      sessions: _ahSessionHistory(),
+      trackHistory: _ahSafeParse('ah_track_history', []),
+      // opts.now permet de rejouer le moteur sur un historique daté (tests).
+      // En production, personne ne le passe : on prend la date du jour.
+      today: String(opts.now || new Date().toISOString()).slice(0, 10)
+    };
+    var candidates = []
+      .concat(_ahFeedbackStage(ctx))
+      .concat(_ahFeedbackRecord(ctx))
+      .concat(_ahFeedbackRegularity(ctx))
+      .concat(_ahFeedbackProgress(ctx))
+      .concat(_ahFeedbackTemporal(ctx))
+      .concat(_ahFeedbackFallback(ctx));
+    candidates.sort(function(a, b){ return b.weight - a.weight; });
+    // opts.lastType permet de rejouer la sélection dans les tests. En
+    // production, _ahPickFeedback lit lastFeedbackType dans le profil.
+    return { candidates: candidates, best: _ahPickFeedback(candidates, opts.lastType) };
+  } catch(e) {
+    console.warn('[feedback engine]', e);
+    return { candidates: [], best: null };
+  }
+};
+
+// Rendu de la célébration. Seul endroit du module qui touche au DOM.
+// Ne bloque rien : pas de modal, pas de bouton, pas de setTimeout qui
+// retarderait l'affichage de l'écran de fin.
+var _AH_KICKER = {
+  A: 'Record personnel', B: 'Jalon', C: 'Repère',
+  D: 'Progression',      F: 'Étape franchie', G: 'Enregistré'
+};
+window._ahRenderCelebration = function(opts) {
+  var el = document.getElementById('lsCelebrate');
+  if (!el) return null;
+  var res = window._ahBuildSessionFeedback(opts);
+  var fb = res && res.best;
+  if (!fb) { el.className = 'ls-celebrate'; el.innerHTML = ''; return null; }
+
+  el.innerHTML = '<div class="ls-celebrate-kicker">' + (_AH_KICKER[fb.type] || 'Enregistré') + '</div>'
+               + '<div class="ls-celebrate-msg">' + escapeHtml(fb.message) + '</div>';
+  el.className = 'ls-celebrate on';
+
+  // Haptique — try/catch, et seulement pour les signaux forts. Un buzz à
+  // chaque séance banale deviendrait du bruit.
+  try {
+    if (navigator.vibrate && (fb.type === 'A' || fb.type === 'F')) navigator.vibrate([28, 60, 28]);
+  } catch(e) {}
+
+  // Mémorise le type affiché : l'étape 5 s'en servira pour éviter deux fois
+  // le même type d'affilée quand plusieurs candidats sont valides.
+  try {
+    var p = JSON.parse(localStorage.getItem('ah_profile') || '{}');
+    p.lastFeedbackType = fb.type;
+    localStorage.setItem('ah_profile', JSON.stringify(p));
+  } catch(e) {}
+  return fb;
+};
+
+// ═══════════════════════════════════════════════════════════════════════════
+// PROGRESSION LOOP  —  brique 2
+// ───────────────────────────────────────────────────────────────────────────
+// Trois questions, jamais plus : où j'en suis, ce que j'ai accompli, ce qui
+// arrive ensuite. Aucun nouvel écran : on remplit #journeyCardWrap, un
+// emplacement Home qui existe déjà et que renderJourneyCard() laisse VIDE une
+// fois l'onboarding terminé. Le rendu est déjà déclenché par renderUserData().
+//
+// Règle identique à la brique 1 : si une donnée n'existe pas, on n'affiche pas
+// la ligne. Jamais d'estimation, jamais de valeur par défaut inventée.
+// ═══════════════════════════════════════════════════════════════════════════
+
+// Prochaine séance réelle du programme. Null si indéterminable.
+window._ahNextStep = function(progKey) {
+  try {
+    var prof = _ahSafeParse('ah_profile', {});
+    progKey = progKey || prof.programKey;
+    if (!progKey || typeof PROGRAMS_V2 === 'undefined' || !PROGRAMS_V2[progKey]) return null;
+    var prog = PROGRAMS_V2[progKey];
+    var st = (typeof getProgramProgress === 'function') ? getProgramProgress(progKey) : null;
+    if (!st) return null;
+    var phase = prog.phases && prog.phases[st.phaseIdx];
+    if (!phase) return null;
+
+    var required = (typeof _requiredSessionKeys === 'function') ? _requiredSessionKeys(phase) : [];
+    var remaining = required.filter(function(k){ return !st.doneThisWeek[k]; });
+    var nextKey = remaining[0] || null;
+    var sess = nextKey && phase.sessions ? phase.sessions[nextKey] : null;
+
+    return {
+      phaseIdx:   st.phaseIdx,
+      week:       st.week,
+      totalWeeks: phase.weeks || null,
+      sessKey:    nextKey,
+      sessName:   sess && sess.name ? sess.name : null,
+      exoCount:   sess && Array.isArray(sess.exos) ? sess.exos.length : null,
+      remainingThisWeek: remaining.length,
+      weekComplete: remaining.length === 0
+    };
+  } catch(e) { return null; }
+};
+
+// Semaines écoulées depuis le dernier test. Null si aucun test passé.
+// `now` optionnel : même convention que le moteur de feedback, pour pouvoir
+// rejouer la fonction sur un historique daté. En production, personne ne le
+// passe — on prend la date du jour.
+window._ahWeeksSinceTest = function(now) {
+  try {
+    var prof = _ahSafeParse('ah_profile', {});
+    if (!prof.satCompletedAt) return null;
+    var d = _ahDaysBetween(prof.satCompletedAt, now || new Date().toISOString());
+    return d == null ? null : Math.floor(d / 7);
+  } catch(e) { return null; }
+};
+
+// Ce que l'athlète a réellement accompli. Chaque champ peut être null.
+window._ahJourneyStats = function(now) {
+  try {
+    var prof = _ahSafeParse('ah_profile', {});
+    var sessions = _ahSessionHistory();
+    // Records : nombre d'exercices distincts pour lesquels au moins 2 entrées
+    // existent ET la dernière est la meilleure. Compté sur données réelles.
+    var track = _ahSafeParse('ah_track_history', []);
+    var byExo = {};
+    if (Array.isArray(track)) {
+      track.forEach(function(e){
+        var n = e && (e.exerciseName || e.exo);
+        if (!n) return;
+        var v = _ahTrackValue(e);
+        if (v == null) return;
+        (byExo[n] = byExo[n] || []).push({ v: v, lower: e.method === 'temps' });
+      });
+    }
+    var prCount = 0;
+    Object.keys(byExo).forEach(function(n){
+      var arr = byExo[n];
+      if (arr.length < 2) return;
+      var last = arr[arr.length - 1];
+      var prev = arr.slice(0, -1).map(function(x){ return x.v; });
+      var best = last.lower ? Math.min.apply(null, prev) : Math.max.apply(null, prev);
+      if (last.lower ? (last.v < best) : (last.v > best)) prCount++;
+    });
+    return {
+      sessionsTotal: sessions.length,
+      phasesDone:    prof.phasesDone || 0,
+      programsDone:  prof.programsDone || 0,
+      prCount:       prCount,
+      athScore:      prof.athScore != null ? prof.athScore : null,
+      vertJump:      prof.vertJump != null ? prof.vertJump : null,
+      weeksSinceTest: window._ahWeeksSinceTest(now)
+    };
+  } catch(e) { return null; }
+};
+
+// ── Jalons — affichés UNE SEULE FOIS ───────────────────────────────────
+// Stockés dans ah_milestones_shown (ajouté à FB_SYNC_KEYS → suit l'utilisateur
+// d'un appareil à l'autre). Un jalon déjà vu ne réapparaît jamais.
+var AH_MILESTONES = [
+  { id:'first_session', test: function(s){ return s.sessionsTotal >= 1; },  label:'Première séance enregistrée.' },
+  { id:'sessions_10',   test: function(s){ return s.sessionsTotal >= 10; }, label:'10 séances au compteur.' },
+  { id:'sessions_50',   test: function(s){ return s.sessionsTotal >= 50; }, label:'50 séances au compteur.' },
+  { id:'first_pr',      test: function(s){ return s.prCount >= 1; },        label:'Premier record personnel.' },
+  { id:'first_phase',   test: function(s){ return s.phasesDone >= 1; },     label:'Première phase terminée.' },
+  { id:'first_program', test: function(s){ return s.programsDone >= 1; },   label:'Premier programme terminé.' }
+];
+
+window._ahCheckMilestones = function() {
+  try {
+    var stats = window._ahJourneyStats();
+    if (!stats) return [];
+    var shown = _ahSafeParse('ah_milestones_shown', []);
+    if (!Array.isArray(shown)) shown = [];
+    var fresh = AH_MILESTONES.filter(function(m){
+      if (shown.indexOf(m.id) > -1) return false;
+      try { return !!m.test(stats); } catch(e) { return false; }
+    });
+    if (fresh.length) {
+      fresh.forEach(function(m){ shown.push(m.id); });
+      localStorage.setItem('ah_milestones_shown', JSON.stringify(shown));
+      try { if (typeof fbSaveProfile === 'function') fbSaveProfile(); } catch(e) {}
+    }
+    return fresh;
+  } catch(e) { return []; }
+};
+
+// Carte Home. Remplit #journeyCardWrap, laissé vide par renderJourneyCard
+// une fois l'onboarding terminé. Ne rend rien si aucune donnée exploitable.
+window._ahRenderProgressionLoop = function() {
+  var wrap = document.getElementById('journeyCardWrap');
+  if (!wrap) return;
+  var stats = window._ahJourneyStats();
+  if (!stats || !stats.sessionsTotal) { wrap.innerHTML = ''; return; }
+  var next = window._ahNextStep();
+
+  var h = '<div style="background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:14px 15px;margin:12px 16px">';
+
+  // 1. Où j'en suis
+  if (next && next.totalWeeks) {
+    h += '<div style="font-family:\'JetBrains Mono\',monospace;font-size:9.5px;letter-spacing:.2em;text-transform:uppercase;font-weight:800;color:var(--gold)">Phase ' + (next.phaseIdx + 1) + '</div>';
+    h += '<div style="font-family:\'Bebas Neue\',sans-serif;font-size:22px;letter-spacing:.04em;color:var(--text);line-height:1.05;margin-top:2px">Semaine ' + next.week + '/' + next.totalWeeks + '</div>';
+  }
+
+  // 2. Ce que j'ai accompli — uniquement les chiffres réellement disponibles.
+  // Unité de présence : semaines, pas jours consécutifs (§13 du brief).
+  var bits = [];
+  bits.push(stats.sessionsTotal + ' séance' + (stats.sessionsTotal > 1 ? 's' : ''));
+  var _sk = (typeof window._ahStreakInfo === 'function') ? window._ahStreakInfo() : null;
+  if (_sk && _sk.weeksPresent > 0) bits.push(_sk.weeksPresent + ' semaine' + (_sk.weeksPresent > 1 ? 's' : '') + ' de présence');
+  if (stats.prCount > 0)    bits.push(stats.prCount + ' record' + (stats.prCount > 1 ? 's' : ''));
+  if (stats.phasesDone > 0) bits.push(stats.phasesDone + ' phase' + (stats.phasesDone > 1 ? 's' : '') + ' terminée' + (stats.phasesDone > 1 ? 's' : ''));
+  h += '<div style="font-family:\'Outfit\',sans-serif;font-size:12.5px;color:var(--text2);margin-top:8px;line-height:1.45">' + bits.join(' · ') + '</div>';
+  // Meilleure série : affichée seulement si elle dépasse la série en cours —
+  // c'est un repère personnel, jamais un reproche sur une série perdue.
+  if (_sk && _sk.best > 1 && _sk.best > _sk.current) {
+    h += '<div style="font-family:\'Outfit\',sans-serif;font-size:11.5px;color:var(--muted);margin-top:4px">Meilleure série : ' + _sk.best + ' jours</div>';
+  }
+
+  // 3. Ce qui arrive ensuite
+  var nextLine = _ahNextStepLabel(next, stats);
+  if (nextLine) {
+    h += '<div style="margin-top:10px;padding-top:10px;border-top:1px dashed var(--border)">';
+    h += '<div style="font-family:\'JetBrains Mono\',monospace;font-size:9px;letter-spacing:.18em;text-transform:uppercase;font-weight:800;color:var(--muted)">Prochaine étape</div>';
+    h += '<div style="font-family:\'Outfit\',sans-serif;font-size:13px;font-weight:600;color:var(--text);margin-top:3px;line-height:1.4">' + escapeHtml(nextLine) + '</div>';
+    h += '</div>';
+  }
+  // Porte de sortie sans culpabilité, uniquement si rien n'a été fait aujourd'hui.
+  try {
+    var _today = new Date().toISOString().slice(0, 10);
+    if (!_sk || _sk.lastDay !== _today) {
+      h += '<div style="text-align:center;margin-top:10px">'
+        +   '<button type="button" onclick="window.openMicroActions && window.openMicroActions()" '
+        +   'style="background:none;border:0;padding:6px 8px;font-family:\'Outfit\',sans-serif;font-size:12px;color:var(--gold);cursor:pointer;text-decoration:underline;text-underline-offset:3px">'
+        +   'Pas le temps aujourd\'hui ?</button></div>';
+    }
+  } catch(e) {}
+  h += '</div>';
+  wrap.innerHTML = h;
+};
+
+// Formule la prochaine étape à partir de données réelles uniquement.
+// Renvoie null plutôt que d'inventer quoi que ce soit.
+function _ahNextStepLabel(next, stats) {
+  if (stats && stats.weeksSinceTest != null && stats.weeksSinceTest >= 4) {
+    return stats.weeksSinceTest + ' semaines depuis ton dernier test. Il est temps de le refaire.';
+  }
+  if (!next) return null;
+  if (next.weekComplete) {
+    if (next.totalWeeks && next.week >= next.totalWeeks) return 'Dernière semaine de la phase terminée.';
+    return 'Semaine terminée. La suivante commence.';
+  }
+  if (next.sessName) {
+    var s = 'Séance : ' + next.sessName;
+    if (next.exoCount) s += ' — ' + next.exoCount + ' exercices';
+    return s;
+  }
+  if (next.remainingThisWeek > 0) {
+    return next.remainingThisWeek + ' séance' + (next.remainingThisWeek > 1 ? 's' : '') + ' avant la fin de la semaine.';
+  }
+  return null;
+}
+window._ahNextStepLabel = _ahNextStepLabel;
+
+// ═══════════════════════════════════════════════════════════════════════════
+// ANCRAGE COMPORTEMENTAL  —  brique 3
+// ───────────────────────────────────────────────────────────────────────────
+// Le planning (trainingDays / trainingTimes) dit QUAND l'athlète s'entraîne.
+// L'ancrage dit ce qui arrive JUSTE AVANT — l'habitude déjà existante sur
+// laquelle accrocher la séance. Deux notions distinctes, volontairement pas
+// fusionnées : le planning reste la source des rappels actuels, l'ancrage
+// servira de déclencheur préférentiel à la brique 6.
+//
+// MIGRATION DOUCE : tous ces champs sont optionnels. _ahReadAnchor renvoie
+// toujours un objet exploitable, et absolument rien dans l'app ne dépend de
+// leur présence. Un profil existant se comporte exactement comme avant.
+//
+// NOMMAGE : le brief nomme les champs anchor_moment / anchor_time /
+// quiet_hours. On garde le camelCase du reste de ah_profile (nutriObj,
+// trialStartedAt, notifPrefs…) pour ne pas introduire deux conventions.
+// `notifications_enabled` n'est PAS recréé : ah_notif_on existe déjà et fait
+// exactement ce travail — le dupliquer créerait deux vérités.
+// ═══════════════════════════════════════════════════════════════════════════
+
+// ═══════════════════════════════════════════════════════════════════════════
+// MICRO-ACTIONS + PRÉSENCE  —  brique 4
+// ───────────────────────────────────────────────────────────────────────────
+// Une micro-action préserve la continuité comportementale les jours sans
+// séance. Elle n'est JAMAIS présentée comme équivalente à une séance :
+// - elle est écrite avec type:'micro' dans ah_set_history, donc invisible
+//   pour _badgeState (qui ne compte que type==='session') et pour toutes les
+//   statistiques de séances ;
+// - elle alimente uniquement la série et les semaines de présence.
+// ═══════════════════════════════════════════════════════════════════════════
+
+var AH_MICRO_ACTIONS = [
+  { id:'sauts',    icon:'🦘', label:'10 sauts',            hint:'2 minutes' },
+  { id:'mobilite', icon:'🧘', label:'Mobilité',            hint:'5 minutes' },
+  { id:'forme',    icon:'📋', label:'Noter ma forme du jour', hint:'30 secondes' }
+];
+
+// Enregistre une micro-action et fait vivre la série. Retourne true si écrit.
+window._ahRecordMicroAction = function(kind, todayIso) {
+  try {
+    var valid = AH_MICRO_ACTIONS.some(function(a){ return a.id === kind; });
+    if (!valid) return false;
+    var hist = _ahSafeParse('ah_set_history', []);
+    if (!Array.isArray(hist)) hist = [];
+    hist.push({ type: 'micro', kind: kind, date: String(todayIso || new Date().toISOString()) });
+    localStorage.setItem('ah_set_history', JSON.stringify(hist));
+    try { _bumpSessionStreak(todayIso); } catch(e) {}
+    try { if (typeof fbSaveProfile === 'function') fbSaveProfile(); } catch(e) {}
+    return true;
+  } catch(e) { console.warn('[micro]', e); return false; }
+};
+
+// Semaines de présence : nombre de semaines DISTINCTES comportant au moins
+// une activité (séance ou micro-action). Unité préférée aux "jours
+// consécutifs" — elle valorise la régularité sans punir un jour manqué.
+window._ahWeeksPresent = function() {
+  try {
+    var hist = _ahSafeParse('ah_set_history', []);
+    if (!Array.isArray(hist)) return 0;
+    var weeks = {};
+    hist.forEach(function(e){
+      if (!e || !e.date || (e.type !== 'session' && e.type !== 'micro')) return;
+      var d = new Date(String(e.date).slice(0, 10) + 'T00:00:00Z');
+      if (isNaN(d.getTime())) return;
+      // Clé de semaine ISO : on ramène au lundi de la semaine concernée.
+      var day = (d.getUTCDay() + 6) % 7;          // 0 = lundi
+      d.setUTCDate(d.getUTCDate() - day);
+      weeks[d.toISOString().slice(0, 10)] = true;
+    });
+    return Object.keys(weeks).length;
+  } catch(e) { return 0; }
+};
+
+// État complet de la série, pour l'affichage. Ne calcule rien d'inventé.
+window._ahStreakInfo = function(todayIso) {
+  try {
+    var p = _ahSafeParse('ah_profile', {});
+    var todayKey = String(todayIso || new Date().toISOString()).slice(0, 10);
+    var jk = _ahJokersAvailable(p, todayKey);
+    return {
+      current: p.streak || 0,
+      best: p.bestStreak || p.streak || 0,
+      jokersLeft: jk.left,
+      weeksPresent: window._ahWeeksPresent(),
+      lastDay: p.lastSessionDay || null
+    };
+  } catch(e) { return null; }
+};
+
+window.openMicroActions = function() {
+  var m = document.getElementById('microModal');
+  if (!m) return;
+  var wrap = document.getElementById('microList');
+  if (wrap) {
+    var h = '';
+    AH_MICRO_ACTIONS.forEach(function(a){
+      h += '<button type="button" onclick="window._ahDoMicro(\'' + a.id + '\')" '
+        +  'style="display:flex;align-items:center;gap:12px;width:100%;text-align:left;min-height:56px;padding:13px 14px;margin-bottom:8px;'
+        +  'background:var(--surface2);border:1.5px solid var(--border);border-radius:12px;cursor:pointer">'
+        +  '<span style="font-size:20px;line-height:1;flex-shrink:0">' + a.icon + '</span>'
+        +  '<span style="flex:1;min-width:0">'
+        +    '<span style="display:block;font-family:\'Outfit\',sans-serif;font-size:14px;font-weight:700;color:var(--text)">' + escapeHtml(a.label) + '</span>'
+        +    '<span style="display:block;font-family:\'Outfit\',sans-serif;font-size:11.5px;color:var(--muted);margin-top:1px">' + escapeHtml(a.hint) + '</span>'
+        +  '</span></button>';
+    });
+    wrap.innerHTML = h;
+  }
+  m.style.display = 'flex';
+  document.body.style.overflow = 'hidden';
+};
+window.closeMicroActions = function() {
+  var m = document.getElementById('microModal');
+  if (m) m.style.display = 'none';
+  document.body.style.overflow = '';
+};
+window._ahDoMicro = function(kind) {
+  var okDone = window._ahRecordMicroAction(kind);
+  window.closeMicroActions();
+  if (!okDone) return;
+  try {
+    var info = window._ahStreakInfo();
+    var msg = 'Micro-action enregistrée.';
+    if (info && info.weeksPresent) msg += ' ' + info.weeksPresent + ' semaine' + (info.weeksPresent > 1 ? 's' : '') + ' de présence.';
+    if (typeof showToast === 'function') showToast(msg, 'ok');
+  } catch(e) {}
+  try { if (typeof renderUserData === 'function') renderUserData(); } catch(e) {}
+};
+
+var AH_ANCHORS = [
+  { id:'travail', label:'Je rentre du travail / des cours' },
+  { id:'reveil',  label:'Je me réveille' },
+  { id:'repas',   label:'Je finis de manger' },
+  { id:'maison',  label:'Je pose mon sac chez moi' },
+  { id:'autre',   label:'Autre' }
+];
+
+window._ahReadAnchor = function() {
+  var p = _ahSafeParse('ah_profile', {});
+  var q = p.quietHours && typeof p.quietHours === 'object' ? p.quietHours : {};
+  return {
+    moment: p.anchorMoment || null,
+    time:   p.anchorTime   || null,
+    quietStart: q.start || null,
+    quietEnd:   q.end   || null,
+    isSet: !!(p.anchorMoment || p.anchorTime)
+  };
+};
+
+function _ahAnchorLabel(id) {
+  for (var i = 0; i < AH_ANCHORS.length; i++) if (AH_ANCHORS[i].id === id) return AH_ANCHORS[i].label;
+  return null;
+}
+window._ahAnchorLabel = _ahAnchorLabel;
+
+// Vrai si `hhmm` tombe dans la plage de silence. Gère le passage à minuit
+// (22:00 → 07:00). Sans plage définie, rien n'est silencieux.
+window._ahIsQuietHour = function(hhmm, anchor) {
+  try {
+    var a = anchor || window._ahReadAnchor();
+    if (!a.quietStart || !a.quietEnd || !hhmm) return false;
+    var toMin = function(s){ var p = String(s).split(':'); return (+p[0]) * 60 + (+p[1] || 0); };
+    var t = toMin(hhmm), s = toMin(a.quietStart), e = toMin(a.quietEnd);
+    if (isNaN(t) || isNaN(s) || isNaN(e)) return false;
+    return (s <= e) ? (t >= s && t < e)      // plage dans la même journée
+                    : (t >= s || t < e);      // plage à cheval sur minuit
+  } catch(e) { return false; }
+};
+
+var _ahAnchorDraft = null;   // sélection en cours dans le modal
+
+window.openAnchorModal = function() {
+  var m = document.getElementById('anchorModal');
+  if (!m) return;
+  var a = window._ahReadAnchor();
+  _ahAnchorDraft = a.moment;
+  _ahRenderAnchorOptions();
+  var t = document.getElementById('anchorTimeInput');
+  if (t) t.value = a.time || '';
+  var qs = document.getElementById('anchorQuietStart');
+  var qe = document.getElementById('anchorQuietEnd');
+  // Valeurs proposées par défaut UNIQUEMENT si rien n'a jamais été choisi.
+  // On ne réécrit jamais un choix existant.
+  if (qs) qs.value = a.quietStart || '22:00';
+  if (qe) qe.value = a.quietEnd   || '07:00';
+  m.style.display = 'flex';
+  document.body.style.overflow = 'hidden';
+};
+
+window.closeAnchorModal = function() {
+  var m = document.getElementById('anchorModal');
+  if (m) m.style.display = 'none';
+  document.body.style.overflow = '';
+};
+
+function _ahRenderAnchorOptions() {
+  var wrap = document.getElementById('anchorMomentWrap');
+  if (!wrap) return;
+  var h = '';
+  AH_ANCHORS.forEach(function(o){
+    var on = _ahAnchorDraft === o.id;
+    h += '<button type="button" onclick="window._ahPickAnchor(\'' + o.id + '\')" '
+      +  'style="display:block;width:100%;text-align:left;min-height:46px;padding:12px 14px;border-radius:10px;cursor:pointer;'
+      +  'font-family:\'Outfit\',sans-serif;font-size:13.5px;font-weight:600;transition:background .15s,border-color .15s;'
+      +  (on ? 'background:var(--navy);border:1.5px solid var(--navy);color:var(--gold)'
+            : 'background:var(--surface2);border:1.5px solid var(--border);color:var(--text2)') + '">'
+      +  escapeHtml(o.label) + '</button>';
+  });
+  wrap.innerHTML = h;
+}
+
+window._ahPickAnchor = function(id) {
+  _ahAnchorDraft = (_ahAnchorDraft === id) ? null : id;   // re-tap = désélection
+  _ahRenderAnchorOptions();
+};
+
+window._ahSaveAnchor = function() {
+  try {
+    var p = _ahSafeParse('ah_profile', {});
+    var t  = (document.getElementById('anchorTimeInput')  || {}).value || '';
+    var qs = (document.getElementById('anchorQuietStart') || {}).value || '';
+    var qe = (document.getElementById('anchorQuietEnd')   || {}).value || '';
+    p.anchorMoment = _ahAnchorDraft || null;
+    p.anchorTime   = /^\d{2}:\d{2}$/.test(t) ? t : null;
+    p.quietHours   = (/^\d{2}:\d{2}$/.test(qs) && /^\d{2}:\d{2}$/.test(qe))
+                     ? { start: qs, end: qe } : null;
+    localStorage.setItem('ah_profile', JSON.stringify(p));
+    try { if (typeof fbSaveProfile === 'function') fbSaveProfile(); } catch(e) {}
+    window.closeAnchorModal();
+    try { window._ahRefreshAnchorSub(); } catch(e) {}
+    if (typeof showToast === 'function') showToast('Déclencheur enregistré.', 'ok');
+  } catch(e) { console.warn('[anchor save]', e); }
+};
+
+window._ahClearAnchor = function() {
+  try {
+    var p = _ahSafeParse('ah_profile', {});
+    p.anchorMoment = null; p.anchorTime = null; p.quietHours = null;
+    localStorage.setItem('ah_profile', JSON.stringify(p));
+    try { if (typeof fbSaveProfile === 'function') fbSaveProfile(); } catch(e) {}
+    _ahAnchorDraft = null;
+    window.closeAnchorModal();
+    try { window._ahRefreshAnchorSub(); } catch(e) {}
+  } catch(e) { console.warn('[anchor clear]', e); }
+};
+
+// Sous-titre du réglage : reflète l'état réel, sans jamais inventer.
+window._ahRefreshAnchorSub = function() {
+  var el = document.getElementById('settingAnchorSub');
+  if (!el) return;
+  var a = window._ahReadAnchor();
+  if (!a.isSet) { el.textContent = 'Le moment qui précède tes séances'; return; }
+  var lbl = _ahAnchorLabel(a.moment);
+  el.textContent = (lbl ? lbl : 'Déclencheur défini') + (a.time ? ' · ' + a.time : '');
+};
+
+// ═══════════════════════════════════════════════════════════════════════════
+// RÉCOMPENSE VARIABLE  —  brique 5
+// ───────────────────────────────────────────────────────────────────────────
+// La variabilité vient EXCLUSIVEMENT des événements réellement survenus. Il
+// n'y a aucun Math.random ici, et il ne doit jamais y en avoir : le brief
+// l'interdit explicitement (§7). Ce qui change d'une séance à l'autre, c'est
+// ce que l'athlète a réellement fait — pas un tirage.
+//
+// Deux garde-fous :
+//
+// 1. UN SIGNAL FORT N'EST JAMAIS MASQUÉ. Au-dessus du seuil, on annonce le
+//    meilleur candidat, point. Un record personnel ou une phase terminée est
+//    l'information la plus importante du moment : la « variété » n'a pas à
+//    passer devant. C'est la différence entre remarquer quelque chose et
+//    piocher une phrase.
+//
+// 2. EN DESSOUS, on évite de répéter le type de la séance précédente — mais
+//    uniquement entre candidats de pertinence COMPARABLE. On ne descend
+//    jamais vers un signal nettement plus faible juste pour varier, et le
+//    fallback G n'est retenu que s'il ne reste rien d'autre.
+// ═══════════════════════════════════════════════════════════════════════════
+var AH_STRONG_SIGNAL = 85;   // F programme/phase, A record, B jalon total
+var AH_COMPARABLE_GAP = 20;  // écart de poids en deçà duquel deux signaux se valent
+
+function _ahPickFeedback(candidates, lastType) {
+  if (!candidates || !candidates.length) return null;
+  var top = candidates[0];
+  // Garde-fou 1 : l'information prime sur la variété.
+  if (top.weight >= AH_STRONG_SIGNAL) return top;
+
+  var last = lastType;
+  if (last === undefined) {
+    try { last = _ahSafeParse('ah_profile', {}).lastFeedbackType || null; } catch(e) { last = null; }
+  }
+  if (!last) return top;
+
+  // Garde-fou 2 : uniquement entre candidats comparables.
+  var band = candidates.filter(function(c){ return (top.weight - c.weight) <= AH_COMPARABLE_GAP; });
+  var real = band.filter(function(c){ return c.type !== 'G'; });
+  var pool = real.length ? real : band;
+  if (pool.length < 2) return top;
+
+  var alt = pool.filter(function(c){ return c.type !== last; });
+  // alt est déjà trié par poids décroissant (candidates l'est) : on prend le
+  // meilleur des types non répétés. Si tout est du même type, on assume la
+  // répétition plutôt que d'inventer autre chose.
+  return alt.length ? alt[0] : top;
+}
+window._ahPickFeedback = _ahPickFeedback;
 
 // ═══ SAT SELF-ASSESSMENT (étape 2/3 onboarding) ═══
 function pickSATSelf(el, level) {
@@ -31312,7 +32256,10 @@ var FB_SYNC_KEYS = [
   // Journal de tracking exercices (Suivi > Exercices > Enregistrer)
   // Auparavant uniquement dans ah_v8 legacy → pas de sync Firestore →
   // entrées perdues au changement de device et parfois localement.
-  ['ah_track_history',             'trackHistory',        true]
+  ['ah_track_history',             'trackHistory',        true],
+  // Jalons déjà annoncés (brique 2) — synchronisé pour qu'un jalon ne soit
+  // pas rejoué en changeant d'appareil.
+  ['ah_milestones_shown',          'milestonesShown',     true]
 ];
 
 function _fbCollectPayload() {
@@ -37126,6 +38073,15 @@ function _lsFinalizeSession(feedback) {
   // Complétion centralisée — sessionsDone + streak + history + program
   // progress + program completion, tous bumpés dans le même ordre par
   // _recordSessionCompletion (helper unique partagé avec exitLiveV2).
+  // Index de phase AVANT l'avancement, pour que le moteur de feedback puisse
+  // distinguer « semaine terminée » de « phase terminée ». Lecture seule.
+  var _phaseBefore;
+  try {
+    if (_LS.progKey && typeof getProgramProgress === 'function') {
+      _phaseBefore = getProgramProgress(_LS.progKey).phaseIdx;
+    }
+  } catch(e) {}
+
   var _rec = _recordSessionCompletion({
     progKey:  _LS.progKey,
     sessKey:  _LS.sessKey,
@@ -37134,6 +38090,42 @@ function _lsFinalizeSession(feedback) {
     feedback: feedback,
     builder:  !!_LS.builderMeta
   });
+  // ── Célébration post-séance (brique 1) ──
+  // Couche SECONDAIRE : entièrement isolée en try/catch, exécutée APRÈS
+  // _recordSessionCompletion. Si elle échoue, la séance reste enregistrée,
+  // le streak incrémenté et la progression avancée — rien n'est perdu.
+  try {
+    _ahRenderCelebration({
+      progKey: _LS.progKey,
+      progName: _LS.progName,
+      rec: _rec,
+      phaseIdxBefore: _phaseBefore
+    });
+  } catch(e) { console.warn('[celebration]', e); }
+
+  // ── Anticipation + jalons (brique 2) ──
+  // Même isolation : couche secondaire, jamais bloquante.
+  try {
+    var _nsEl = document.getElementById('lsNextStep');
+    if (_nsEl) {
+      var _label = _ahNextStepLabel(window._ahNextStep(_LS.progKey), window._ahJourneyStats());
+      if (_label) {
+        _nsEl.innerHTML = '<div class="ls-nextstep-kicker">Prochaine étape</div>'
+                        + '<div class="ls-nextstep-txt">' + escapeHtml(_label) + '</div>';
+        _nsEl.className = 'ls-nextstep on';
+      } else {
+        _nsEl.className = 'ls-nextstep'; _nsEl.innerHTML = '';
+      }
+    }
+    // Jalons : annoncés une seule fois, en toast, sans interrompre l'écran.
+    var _ms = window._ahCheckMilestones();
+    if (_ms && _ms.length) {
+      setTimeout(function(){
+        try { showToast('◆ ' + _ms[0].label, 'ok'); } catch(e) {}
+      }, 2400);
+    }
+  } catch(e) { console.warn('[next step]', e); }
+
   if (_rec.weekDone && _LS.progKey) {
     setTimeout(function() {
       try {
