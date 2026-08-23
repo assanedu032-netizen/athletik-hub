@@ -28956,7 +28956,9 @@ window._ahBuildSessionFeedback = function(opts) {
       .concat(_ahFeedbackTemporal(ctx))
       .concat(_ahFeedbackFallback(ctx));
     candidates.sort(function(a, b){ return b.weight - a.weight; });
-    return { candidates: candidates, best: _ahPickFeedback(candidates) };
+    // opts.lastType permet de rejouer la sélection dans les tests. En
+    // production, _ahPickFeedback lit lastFeedbackType dans le profil.
+    return { candidates: candidates, best: _ahPickFeedback(candidates, opts.lastType) };
   } catch(e) {
     console.warn('[feedback engine]', e);
     return { candidates: [], best: null };
@@ -29454,11 +29456,53 @@ window._ahRefreshAnchorSub = function() {
   el.textContent = (lbl ? lbl : 'Déclencheur défini') + (a.time ? ' · ' + a.time : '');
 };
 
-// Sélection. Étape 1 : le signal le plus fort, point.
-// Étape 5 (récompense variable) remplacera CE SEUL corps de fonction pour
-// alterner entre candidats réellement valides — le reste du moteur ne bouge pas.
-function _ahPickFeedback(candidates) {
-  return (candidates && candidates.length) ? candidates[0] : null;
+// ═══════════════════════════════════════════════════════════════════════════
+// RÉCOMPENSE VARIABLE  —  brique 5
+// ───────────────────────────────────────────────────────────────────────────
+// La variabilité vient EXCLUSIVEMENT des événements réellement survenus. Il
+// n'y a aucun Math.random ici, et il ne doit jamais y en avoir : le brief
+// l'interdit explicitement (§7). Ce qui change d'une séance à l'autre, c'est
+// ce que l'athlète a réellement fait — pas un tirage.
+//
+// Deux garde-fous :
+//
+// 1. UN SIGNAL FORT N'EST JAMAIS MASQUÉ. Au-dessus du seuil, on annonce le
+//    meilleur candidat, point. Un record personnel ou une phase terminée est
+//    l'information la plus importante du moment : la « variété » n'a pas à
+//    passer devant. C'est la différence entre remarquer quelque chose et
+//    piocher une phrase.
+//
+// 2. EN DESSOUS, on évite de répéter le type de la séance précédente — mais
+//    uniquement entre candidats de pertinence COMPARABLE. On ne descend
+//    jamais vers un signal nettement plus faible juste pour varier, et le
+//    fallback G n'est retenu que s'il ne reste rien d'autre.
+// ═══════════════════════════════════════════════════════════════════════════
+var AH_STRONG_SIGNAL = 85;   // F programme/phase, A record, B jalon total
+var AH_COMPARABLE_GAP = 20;  // écart de poids en deçà duquel deux signaux se valent
+
+function _ahPickFeedback(candidates, lastType) {
+  if (!candidates || !candidates.length) return null;
+  var top = candidates[0];
+  // Garde-fou 1 : l'information prime sur la variété.
+  if (top.weight >= AH_STRONG_SIGNAL) return top;
+
+  var last = lastType;
+  if (last === undefined) {
+    try { last = _ahSafeParse('ah_profile', {}).lastFeedbackType || null; } catch(e) { last = null; }
+  }
+  if (!last) return top;
+
+  // Garde-fou 2 : uniquement entre candidats comparables.
+  var band = candidates.filter(function(c){ return (top.weight - c.weight) <= AH_COMPARABLE_GAP; });
+  var real = band.filter(function(c){ return c.type !== 'G'; });
+  var pool = real.length ? real : band;
+  if (pool.length < 2) return top;
+
+  var alt = pool.filter(function(c){ return c.type !== last; });
+  // alt est déjà trié par poids décroissant (candidates l'est) : on prend le
+  // meilleur des types non répétés. Si tout est du même type, on assume la
+  // répétition plutôt que d'inventer autre chose.
+  return alt.length ? alt[0] : top;
 }
 window._ahPickFeedback = _ahPickFeedback;
 

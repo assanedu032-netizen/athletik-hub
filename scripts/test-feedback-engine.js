@@ -21,7 +21,9 @@ const NAMES = ['_ahSafeParse','_ahSessionHistory','_ahSameDay','_ahDaysBetween',
   '_ahFeedbackStage','_ahFeedbackRecord','_ahTrackValue','_ahFmtVal',
   '_ahFeedbackRegularity','_ahFeedbackProgress','_ahFeedbackTemporal',
   '_ahFeedbackFallback','_ahPickFeedback'];
-const src = NAMES.map(n => grab('function ' + n + '(')).join('\n')
+// Constantes de la sélection (brique 5) — _ahPickFeedback les utilise.
+const src = 'var AH_STRONG_SIGNAL = 85; var AH_COMPARABLE_GAP = 20;\n'
+  + NAMES.map(n => grab('function ' + n + '(')).join('\n')
   + '\n' + grab('window._ahBuildSessionFeedback = function(');
 
 function build(store, programs, progressState) {
