@@ -147,6 +147,39 @@ console.log('\n=== CE QUE J\'AI ACCOMPLI ===\n');
   ok('phases lues du profil', s.phasesDone === 1);
 }
 
+console.log('\n=== TEST JAMAIS PASSÉ (cas remonté par l\'utilisateur) ===\n');
+{
+  // Un athlète qui s'entraîne sans avoir fait son SAT : la progression doit
+  // s'afficher quand même, et l'étape suivante doit pointer sur le test.
+  const api = build({ ah_set_history: JSON.stringify([sess(2), sess(0)]),
+                      ah_profile: JSON.stringify({ programKey:'vd' }) }, PROG);
+  const s = api._ahJourneyStats();
+  ok('satDone dérivé à false', s.satDone === false, String(s.satDone));
+  ok('les séances sont bien comptées malgré l\'absence de test', s.sessionsTotal === 2);
+  ok('prochaine étape = faire le test',
+     /Fais ton test physique/.test(api.nextLabel(api._ahNextStep(), s)), api.nextLabel(api._ahNextStep(), s));
+}
+{
+  // Test déjà fait → on ne redemande pas
+  const api = build({ ah_set_history: JSON.stringify([sess(0)]),
+                      ah_profile: JSON.stringify({ programKey:'vd', satDone:true, satCompletedAt: iso(5) }) }, PROG);
+  const s = api._ahJourneyStats();
+  ok('satDone dérivé à true', s.satDone === true);
+  ok('aucun rappel de test', !/Fais ton test physique/.test(api.nextLabel(api._ahNextStep(), s) || ''));
+}
+{
+  // satSkipped compte comme fait — l'athlète a choisi de passer
+  const api = build({ ah_set_history: JSON.stringify([sess(0)]),
+                      ah_profile: JSON.stringify({ programKey:'vd', satSkipped:true }) }, PROG);
+  ok('satSkipped compte comme fait', api._ahJourneyStats().satDone === true);
+}
+{
+  // Aucune séance → pas de rappel de test (rien à mesurer encore)
+  const api = build({ ah_set_history: '[]', ah_profile: JSON.stringify({ programKey:'vd' }) }, PROG);
+  const s = api._ahJourneyStats();
+  ok('sans séance, aucun rappel de test', !/Fais ton test physique/.test(api.nextLabel(api._ahNextStep(), s) || ''));
+}
+
 console.log('\n=== JALONS — UNE SEULE FOIS ===\n');
 {
   const store = { ah_set_history: JSON.stringify([sess(0)]), ah_profile: '{}' };

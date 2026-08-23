@@ -28338,11 +28338,22 @@ function renderJourneyCard() {
   if (!wrap) return;
   var p = {};
   try { p = JSON.parse(localStorage.getItem('ah_profile') || '{}'); } catch(e) {}
-  // Onboarding complet → la carte d'onboarding n'a plus lieu d'être, mais
-  // l'emplacement est repris par la Progression Loop (brique 2). Isolé en
-  // try/catch : si elle échoue, on retombe sur le comportement d'origine
-  // (emplacement vide) sans rien casser sur Home.
-  if (_isOnboardingComplete(p)) {
+  // La Progression Loop (brique 2) prend l'emplacement dès qu'il y a AU MOINS
+  // UNE SÉANCE, sans attendre que l'onboarding soit complet.
+  //
+  // Pourquoi : la condition initiale était _isOnboardingComplete(), qui exige
+  // le SAT. Un athlète qui s'entraîne régulièrement mais n'a jamais fait son
+  // test n'aurait donc JAMAIS vu sa progression — précisément celui à qui elle
+  // sert le plus. Le rappel de test reste assuré par la ligne "prochaine
+  // étape" de la carte, qui bascule sur le SAT quand il manque.
+  //
+  // Avant la première séance, la carte d'onboarding garde sa place : le guide
+  // de configuration est alors plus utile qu'un historique vide.
+  var _hasSessions = false;
+  try {
+    if (typeof _ahSessionHistory === 'function') _hasSessions = _ahSessionHistory().length > 0;
+  } catch(e) {}
+  if (_hasSessions || _isOnboardingComplete(p)) {
     try {
       if (typeof window._ahRenderProgressionLoop === 'function') {
         window._ahRenderProgressionLoop();
@@ -29088,6 +29099,10 @@ window._ahJourneyStats = function(now) {
       prCount:       prCount,
       athScore:      prof.athScore != null ? prof.athScore : null,
       vertJump:      prof.vertJump != null ? prof.vertJump : null,
+      // Dérivé comme partout ailleurs dans l'app : satSkipped compte comme
+      // "fait" (l'athlète a explicitement choisi de passer).
+      satDone:       !!(prof.satDone || prof.satSkipped || prof.vertJump ||
+                        prof.satSprintTime || prof.satForce1RM || prof.satForce || prof.satDetente),
       weeksSinceTest: window._ahWeeksSinceTest(now)
     };
   } catch(e) { return null; }
@@ -29181,6 +29196,12 @@ window._ahRenderProgressionLoop = function() {
 // Formule la prochaine étape à partir de données réelles uniquement.
 // Renvoie null plutôt que d'inventer quoi que ce soit.
 function _ahNextStepLabel(next, stats) {
+  // Test jamais passé alors que l'athlète s'entraîne déjà : c'est l'étape la
+  // plus utile, elle passe devant la prochaine séance. Condition sur une
+  // donnée réelle (satDone absent ET au moins une séance enregistrée).
+  if (stats && stats.satDone === false && stats.sessionsTotal > 0) {
+    return 'Fais ton test physique — sans point de départ mesuré, pas de progression chiffrée.';
+  }
   if (stats && stats.weeksSinceTest != null && stats.weeksSinceTest >= 4) {
     return stats.weeksSinceTest + ' semaines depuis ton dernier test. Il est temps de le refaire.';
   }
