@@ -736,6 +736,111 @@ function parseWorkoutJson(text) {
   }
 }
 
+// ────────────────────────────────────────────────────────────────────────────
+// ÉTAT DE L'ATHLÈTE — rendu textuel de ctx.athleteState
+// Le client envoie un état structuré construit depuis ses données réelles.
+// On le rend en texte compact, et surtout : on déclare EXPLICITEMENT ce qui
+// manque. Sans cette déclaration, le modèle comble les trous — c'est
+// exactement ce qu'on veut empêcher.
+// ────────────────────────────────────────────────────────────────────────────
+function fmtVal(e, v) {
+  if (v == null) return '?';
+  if (e.method === 'temps')    return v + ' s';
+  if (e.method === 'charge')   return v + ' kg';
+  if (e.method === 'distance') return v + ' m';
+  if (e.method === 'hauteur')  return v + ' cm';
+  return String(v);
+}
+
+function buildAthleteState(st) {
+  if (!st || typeof st !== 'object') {
+    return `DONNÉES D'ENTRAÎNEMENT
+Aucune donnée d'entraînement n'a pu être chargée pour cette conversation.
+Dis-le si l'athlète pose une question qui en dépend. N'invente rien.`;
+  }
+  const L = [];
+  L.push('DONNÉES D\'ENTRAÎNEMENT RÉELLES (enregistrées dans l\'app)');
+
+  if (st.program) {
+    const p = st.program;
+    L.push(`\nProgramme : ${p.name || p.key || '?'} — phase ${p.phase}, semaine ${p.week}${p.totalWeeks ? '/' + p.totalWeeks : ''}`);
+    if (p.nextSession) L.push(`Prochaine séance prévue : ${p.nextSession}${p.nextSessionExos ? ' (' + p.nextSessionExos + ' exercices)' : ''}`);
+    if (p.remainingThisWeek != null) L.push(`Séances restantes cette semaine : ${p.remainingThisWeek}`);
+  }
+
+  const a = st.adherence || {};
+  L.push(`\nAssiduité : ${a.sessionsTotal || 0} séances au total · ${a.last7Days || 0} sur 7 jours · ${a.last30Days || 0} sur 30 jours`);
+  if (a.streak != null) L.push(`Série en cours : ${a.streak} jours${a.bestStreak ? ' (meilleure : ' + a.bestStreak + ')' : ''}`);
+
+  if (Array.isArray(st.recentSessions) && st.recentSessions.length) {
+    L.push('\nSÉANCES RÉCENTES (de la plus récente à la plus ancienne)');
+    st.recentSessions.forEach((s, i) => {
+      let line = `${i + 1}. ${s.name} — il y a ${s.daysAgo == null ? '?' : s.daysAgo} jour(s)`;
+      if (s.score != null) line += ` — score de séance ${s.score}/100`;
+      L.push(line);
+      const f = s.feedback;
+      if (f) {
+        const bits = [];
+        if (f.productivity != null) bits.push(`productivité ${f.productivity}`);
+        if (f.intensity != null)    bits.push(`intensité ${f.intensity}`);
+        if (f.focus != null)        bits.push(`focus ${f.focus}`);
+        if (f.difficulty != null)   bits.push(`difficulté ressentie ${f.difficulty}/10`);
+        if (f.fatigue)              bits.push(`fatigue ${f.fatigue}`);
+        if (f.pain)                 bits.push(`douleur ${f.pain}`);
+        if (f.technique)            bits.push(`exécution ${f.technique}`);
+        if (f.completion)           bits.push(`avancement ${f.completion}`);
+        if (bits.length) L.push(`   ressenti : ${bits.join(', ')}`);
+        if (f.difficultExercises && f.difficultExercises.length) L.push(`   exercices difficiles : ${f.difficultExercises.join(', ')}`);
+        if (f.note) L.push(`   note libre : "${f.note}"`);
+      }
+    });
+  }
+
+  if (Array.isArray(st.exercises) && st.exercises.length) {
+    L.push('\nPERFORMANCES PAR EXERCICE (données trackées par l\'athlète)');
+    st.exercises.forEach(e => {
+      let line = `- ${e.name} : ${e.sessions} séance(s), dernière ${fmtVal(e, e.last)}`;
+      if (e.sessions >= 2) line += ` (départ ${fmtVal(e, e.first)}, record ${fmtVal(e, e.best)}`;
+      if (e.sessions >= 2 && e.deltaPct != null) line += `, évolution ${e.deltaPct > 0 ? '+' : ''}${e.deltaPct} %`;
+      if (e.sessions >= 2) line += ')';
+      if (e.isPR) line += ' — RECORD à la dernière séance';
+      if (e.rpeLast != null) line += ` — RPE ${e.rpeLast}${e.rpeAvg != null ? ' (moyenne ' + e.rpeAvg + ')' : ''}`;
+      if (e.daysAgo != null) line += ` — il y a ${e.daysAgo} j`;
+      L.push(line);
+    });
+  }
+
+  if (st.tests) {
+    const t = st.tests;
+    const bits = [];
+    if (t.athScore != null) bits.push(`score ${t.athScore}/100`);
+    if (t.vertJump != null) bits.push(`détente ${t.vertJump} cm`);
+    if (t.sprint != null)   bits.push(`sprint ${t.sprint} s`);
+    if (t.tTest != null)    bits.push(`T-Test ${t.tTest} s`);
+    if (t.force1RM != null) bits.push(`force 1RM ${t.force1RM} kg`);
+    if (bits.length) L.push(`\nTESTS PHYSIQUES : ${bits.join(' · ')}`);
+    if (t.weeksSince != null) L.push(`Dernier test il y a ${t.weeksSince} semaine(s)`);
+  }
+
+  if (Array.isArray(st.trends) && st.trends.length) {
+    L.push('\nCONSTATS CALCULÉS SUR CES DONNÉES');
+    st.trends.forEach(x => L.push(`- ${x}`));
+  }
+
+  if (Array.isArray(st.missing) && st.missing.length) {
+    L.push('\nDONNÉES NON DISPONIBLES — ne rien inventer à leur sujet :');
+    st.missing.forEach(m => L.push(`- ${m}`));
+  }
+
+  L.push(`\nRÈGLE : ces chiffres sont les SEULS dont tu disposes. Tu peux les
+interpréter, les comparer et en tirer des conseils de coach. Tu ne dois jamais
+citer une performance, une charge, un RPE ou un résultat de test qui ne figure
+pas ci-dessus. Si l'athlète pose une question qui demande une donnée absente,
+dis simplement que tu ne l'as pas enregistrée et propose comment l'obtenir.`);
+
+  return L.join('\n');
+}
+
 function buildAthleteContext(ctx) {
   ctx = ctx || {};
   return `PROFIL ATHLÈTE
@@ -998,6 +1103,9 @@ exports.handler = async function(event) {
   const systemBlocks = [
     { type: 'text', text: STATIC_SYSTEM, cache_control: { type: 'ephemeral' } },
     { type: 'text', text: buildAthleteContext(ctx) },
+    // Bloc séparé du profil : il change à chaque séance, alors que le profil
+    // est stable. Le garder à part évite d'invalider le cache du prompt.
+    { type: 'text', text: buildAthleteState(ctx && ctx.athleteState) },
   ];
   if (ragBlock) systemBlocks.push({ type: 'text', text: ragBlock });
 
