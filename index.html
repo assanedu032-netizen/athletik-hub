@@ -1227,6 +1227,23 @@ body{background:var(--bg);color:var(--text);font-family:'Outfit',sans-serif;disp
 .ci-preview-rm{width:28px;height:28px;border-radius:50%;background:var(--surface2);border:1px solid var(--border);color:var(--muted);font-size:16px;line-height:1;cursor:pointer;flex-shrink:0;display:flex;align-items:center;justify-content:center;padding:0}
 /* Vignette dans la bulle du message envoyé. */
 .msg-photo{display:block;max-width:190px;width:100%;border-radius:10px;margin-bottom:7px;border:1px solid rgba(255,255,255,.18)}
+/* ── Saisie de charge en séance ──
+   Repliée par défaut : un athlète au poids du corps ne doit pas la voir.
+   Cibles tactiles ≥44px, pavé numérique, et rien d'obligatoire. */
+.ls-log{margin:10px 0 0;text-align:center}
+.ls-log-toggle{background:none;border:0;padding:8px 12px;font-family:'Outfit',sans-serif;font-size:12.5px;font-weight:600;color:rgba(255,255,255,.55);cursor:pointer;-webkit-tap-highlight-color:transparent}
+.ls-log-toggle:active{color:var(--ah-gold)}
+.ls-log-row{display:none;align-items:center;justify-content:center;gap:7px;margin-top:6px}
+.ls-log-row.on{display:flex}
+.ls-log-row input{width:78px;min-height:44px;padding:10px 8px;background:rgba(255,255,255,.07);border:1.5px solid rgba(255,255,255,.16);border-radius:10px;font-family:'Outfit',sans-serif;font-size:15px;font-weight:700;color:#fff;text-align:center;outline:none;box-sizing:border-box}
+.ls-log-row input:focus{border-color:var(--ah-gold)}
+.ls-log-row input::placeholder{color:rgba(255,255,255,.35);font-weight:500}
+.ls-log-x{color:rgba(255,255,255,.4);font-size:14px}
+.ls-log-ok{min-height:44px;padding:10px 16px;background:var(--ah-gold);border:0;border-radius:10px;font-family:'Bebas Neue',sans-serif;font-size:15px;letter-spacing:.1em;color:#1B2A4A;cursor:pointer}
+.ls-log-ok:active{transform:scale(.97)}
+.ls-log-done{display:none;margin-top:7px;font-family:'Outfit',sans-serif;font-size:12px;font-weight:600;color:#10B981}
+.ls-log-done.on{display:block}
+
 /* ── Célébration post-séance (brique 1) ──
    Bandeau court affiché en haut de l'écran de fin. Aucun bouton, aucun
    blocage : il apparaît, il informe, il reste. L'animation dure ~1,1 s. */
@@ -9272,6 +9289,20 @@ window.tiResetOnEnter = function(){ window.tiShowStep(1); };
         <div class="ls-metric-v" id="lsMetRest">1'</div>
         <div class="ls-metric-l">Repos</div>
       </div>
+    </div>
+
+    <!-- Saisie de la charge — repliée par défaut, jamais obligatoire.
+         Écrit dans ah_track_history au format exact du tracker : records,
+         progression et contexte Titan en profitent sans code en plus. -->
+    <div class="ls-log">
+      <button type="button" class="ls-log-toggle" id="lsLogToggle" onclick="window._lsToggleLog()">＋ Noter ma charge</button>
+      <div class="ls-log-row" id="lsLogRow">
+        <input type="number" inputmode="decimal" id="lsLogLoad" placeholder="kg" step="0.5" min="0">
+        <span class="ls-log-x">×</span>
+        <input type="number" inputmode="numeric" id="lsLogReps" placeholder="reps" step="1" min="0">
+        <button type="button" class="ls-log-ok" onclick="window._lsSaveLog()">OK</button>
+      </div>
+      <div class="ls-log-done" id="lsLogDone"></div>
     </div>
 
     <!-- Rest timer overlay -->
@@ -37800,10 +37831,116 @@ window._lsCloseTechniqueHelp = function() {
   if (ov) ov.classList.remove('on');
 };
 
+// ═══════════════════════════════════════════════════════════════════════════
+// SAISIE DE CHARGE EN SÉANCE
+// ───────────────────────────────────────────────────────────────────────────
+// Jusqu'ici, ah_set_history ne stockait AUCUNE performance d'exercice : ni
+// charge, ni reps, ni RPE. Titan ne pouvait donc rien dire sur la progression
+// d'un squat, sauf si l'athlète allait tout ressaisir dans Suivi > Exercices.
+//
+// On écrit ici dans ah_track_history, avec EXACTEMENT le format produit par
+// saveTrack(). Conséquence : la détection de records, _trkRenderProgression,
+// la carte de progression et le contexte Titan fonctionnent immédiatement,
+// sans une ligne de code supplémentaire côté lecture.
+//
+// Toujours optionnel : replié par défaut, aucune validation bloquante, et une
+// séance sans saisie se termine exactement comme avant.
+// ═══════════════════════════════════════════════════════════════════════════
+window._lsToggleLog = function() {
+  var row = document.getElementById('lsLogRow');
+  var btn = document.getElementById('lsLogToggle');
+  if (!row) return;
+  var open = row.classList.toggle('on');
+  if (btn) btn.textContent = open ? '− Masquer' : '＋ Noter ma charge';
+  if (open) { var l = document.getElementById('lsLogLoad'); if (l) setTimeout(function(){ l.focus(); }, 60); }
+};
+
+window._lsSaveLog = function() {
+  try {
+    var ex = _LS.exos[_LS.idx];
+    if (!ex || !ex.n) return;
+    var loadEl = document.getElementById('lsLogLoad');
+    var repsEl = document.getElementById('lsLogReps');
+    var load = parseFloat((loadEl && loadEl.value) || '');
+    var reps = parseInt((repsEl && repsEl.value) || '', 10);
+    if (!(load > 0) && !(reps > 0)) {
+      if (typeof showToast === 'function') showToast('Entre au moins une charge ou des reps.', 'info');
+      return;
+    }
+    // Nom propre : on retire la partie descriptive après le tiret long, pour
+    // que "Squat — 4×5 lourd" et "Squat" soient bien le MÊME exercice dans
+    // l'historique. Sans ça, aucune progression ne serait jamais détectée.
+    var name = String(ex.n).split('—')[0].trim() || String(ex.n).trim();
+
+    var nowIso = new Date().toISOString();
+    var essai = {};
+    if (load > 0) essai.load = load;
+    if (reps > 0) essai.reps = reps;
+
+    var hist = [];
+    try { hist = JSON.parse(localStorage.getItem('ah_track_history') || '[]'); } catch(e) {}
+    if (!Array.isArray(hist)) hist = [];
+
+    // Même exercice, même jour, même séance → on complète l'entrée existante
+    // plutôt que d'en créer une par série.
+    var today = nowIso.slice(0, 10);
+    var existing = null;
+    for (var i = hist.length - 1; i >= 0; i--) {
+      var h = hist[i];
+      if (h && h.source === 'live_session' && h.date === today
+          && (h.exerciseName === name || h.exo === name)) { existing = h; break; }
+    }
+    if (existing) {
+      existing.essais = (existing.essais || []).concat([essai]);
+      existing.createdAt = Date.now();
+    } else {
+      hist.push({
+        userId: (window.fbUser && window.fbUser.uid) || null,
+        exerciseName: name, exo: name,
+        trackingMethod: 'charge', method: 'charge',
+        values: essai, essais: [essai],
+        rpe: 0,
+        date: today, createdAt: Date.now(),
+        source: 'live_session',
+        sessName: _LS.sessName || '', progKey: _LS.progKey || ''
+      });
+    }
+    if (hist.length > 1000) hist = hist.slice(-1000);
+    localStorage.setItem('ah_track_history', JSON.stringify(hist));
+    try { window.trackHistory = hist; } catch(e) {}
+    try { if (typeof fbSaveProfile === 'function') fbSaveProfile(); } catch(e) {}
+
+    // Retour visuel, puis on referme pour ne pas encombrer l'écran.
+    var done = document.getElementById('lsLogDone');
+    if (done) {
+      var txt = '✓ ' + name + ' — ' + (load > 0 ? load + ' kg' : '') +
+                (load > 0 && reps > 0 ? ' × ' : '') + (reps > 0 ? reps + ' reps' : '') + ' enregistré';
+      done.textContent = txt;
+      done.classList.add('on');
+    }
+    if (loadEl) loadEl.value = ''; if (repsEl) repsEl.value = '';
+    try { if (navigator.vibrate) navigator.vibrate(25); } catch(e) {}
+  } catch(e) { console.warn('[ls log]', e); }
+};
+
+// Remet la zone de saisie à zéro au changement d'exercice.
+function _lsResetLog() {
+  var row = document.getElementById('lsLogRow');
+  var btn = document.getElementById('lsLogToggle');
+  var done = document.getElementById('lsLogDone');
+  if (row) row.classList.remove('on');
+  if (btn) btn.textContent = '＋ Noter ma charge';
+  if (done) { done.classList.remove('on'); done.textContent = ''; }
+  ['lsLogLoad', 'lsLogReps'].forEach(function(id) {
+    var el = document.getElementById(id); if (el) el.value = '';
+  });
+}
+
 function _lsRenderEx() {
   var ex = _LS.exos[_LS.idx];
   if (!ex) return;
   var total = _LS.exos.length;
+  try { _lsResetLog(); } catch(e) {}
 
   // Header
   document.getElementById('lsProgName').textContent = _LS.progName;
