@@ -24727,6 +24727,19 @@ async function callAnthropicAPI(userMessage, photo) {
     accessTier: prof.accessTier || (function(){ try { return localStorage.getItem('ah_access_tier'); } catch(e) { return null; } })(),
   };
 
+  // ── État réel de l'athlète (séances, exercices, tests, tendances) ──
+  // C'est CE bloc qui manquait : sans lui, Titan n'avait que 14 champs
+  // statiques et répondait, à juste titre, qu'il n'avait pas accès aux
+  // données de séance. Construit depuis le localStorage déjà synchronisé :
+  // aucune lecture Firestore supplémentaire par message.
+  // Isolé en try/catch — si la construction échoue, Titan répond quand même,
+  // simplement sans historique.
+  try {
+    if (typeof window._ahBuildAthleteState === 'function') {
+      ctx.athleteState = window._ahBuildAthleteState();
+    }
+  } catch(e) { console.warn('[titan ctx]', e); }
+
   // Auth Firebase obligatoire côté serveur. On envoie un ID token frais.
   var idToken = null;
   if (window.fbUser && typeof window.fbUser.getIdToken === 'function') {
@@ -29354,6 +29367,252 @@ window._ahDoMicro = function(kind) {
     if (typeof showToast === 'function') showToast(msg, 'ok');
   } catch(e) {}
   try { if (typeof renderUserData === 'function') renderUserData(); } catch(e) {}
+};
+
+// ═══════════════════════════════════════════════════════════════════════════
+// ATHLETE STATE  —  la couche qui manquait à Titan
+// ───────────────────────────────────────────────────────────────────────────
+// AUDIT : callAnthropicAPI envoyait 14 champs STATIQUES (prénom, programme,
+// semaine, phase, streak, score SAT…) et aucun historique. Quand Titan
+// répondait « je n'ai pas accès à tes données de séance », il disait la
+// vérité : elles ne lui étaient jamais transmises.
+//
+// Cette fonction construit l'état réel de l'athlète à partir des données déjà
+// présentes en local (elles-mêmes synchronisées depuis Firestore). Aucune
+// lecture Firestore supplémentaire n'est faite : le coût par message Titan
+// reste identique, seule la taille du prompt augmente.
+//
+// RÈGLE ABSOLUE : tout champ absent vaut null ET est listé dans `missing`.
+// Le serveur rend ces manques explicitement, pour que Titan dise « je n'ai
+// pas cette donnée » au lieu d'inventer.
+//
+// BORNES : 5 séances récentes, 6 exercices. Le prompt doit rester lisible et
+// bon marché — un historique complet n'apporterait rien de plus au raisonnement.
+// ═══════════════════════════════════════════════════════════════════════════
+var AS_MAX_SESSIONS = 5;
+var AS_MAX_EXOS     = 6;
+
+function _asRound(n, d) {
+  var f = Math.pow(10, d || 1);
+  return Math.round(n * f) / f;
+}
+
+// Regroupe ah_track_history par exercice et calcule la progression réelle.
+function _asExerciseHistory(track, todayIso) {
+  if (!Array.isArray(track) || !track.length) return [];
+  var by = {};
+  track.forEach(function(e) {
+    var n = e && (e.exerciseName || e.exo);
+    if (!n) return;
+    var v = _ahTrackValue(e);
+    if (v == null) return;
+    (by[n] = by[n] || []).push({
+      v: v, date: e.date || null, rpe: (typeof e.rpe === 'number' && e.rpe > 0) ? e.rpe : null,
+      method: e.method || null
+    });
+  });
+  var out = [];
+  Object.keys(by).forEach(function(name) {
+    var arr = by[name].filter(function(x){ return x.date; })
+                      .sort(function(a, b){ return String(a.date).localeCompare(String(b.date)); });
+    if (!arr.length) return;
+    var lower = arr[arr.length - 1].method === 'temps';   // temps : plus bas = mieux
+    var vals = arr.map(function(x){ return x.v; });
+    var first = vals[0], last = vals[vals.length - 1];
+    var best = lower ? Math.min.apply(null, vals) : Math.max.apply(null, vals);
+    var rpes = arr.map(function(x){ return x.rpe; }).filter(function(r){ return r != null; });
+    // Moyenne des RPE PRÉCÉDENTS, la dernière valeur exclue. L'inclure
+    // amortirait mécaniquement l'écart qu'on cherche justement à mesurer :
+    // avec 7, 7 puis 9, la moyenne globale vaut 7,7 et masque la hausse.
+    var rpePrev = rpes.length >= 2
+      ? _asRound(rpes.slice(0, -1).reduce(function(a, b){ return a + b; }, 0) / (rpes.length - 1), 1)
+      : null;
+    // PR = la dernière valeur bat strictement toutes les précédentes.
+    var isPR = false;
+    if (arr.length >= 2) {
+      var prev = vals.slice(0, -1);
+      var prevBest = lower ? Math.min.apply(null, prev) : Math.max.apply(null, prev);
+      isPR = lower ? (last < prevBest) : (last > prevBest);
+    }
+    out.push({
+      name: name,
+      method: arr[arr.length - 1].method,
+      lowerIsBetter: lower,
+      sessions: arr.length,
+      first: first, last: last, best: best,
+      delta: arr.length >= 2 ? _asRound(last - first, 1) : null,
+      deltaPct: (arr.length >= 2 && first) ? _asRound(((last - first) / first) * 100, 1) : null,
+      lastDate: arr[arr.length - 1].date,
+      daysAgo: _ahDaysBetween(arr[arr.length - 1].date, todayIso),
+      isPR: isPR,
+      rpeLast: rpes.length ? rpes[rpes.length - 1] : null,
+      rpeAvg: rpes.length ? _asRound(rpes.reduce(function(a, b){ return a + b; }, 0) / rpes.length, 1) : null,
+      rpePrevAvg: rpePrev
+    });
+  });
+  // Les plus récemment travaillés d'abord — ce sont ceux qui comptent.
+  out.sort(function(a, b){ return String(b.lastDate).localeCompare(String(a.lastDate)); });
+  return out.slice(0, AS_MAX_EXOS);
+}
+
+// Résumé exploitable d'un feedback de fin de séance, quel que soit son format
+// (flow standard : productivity/intensity/focus ; flow EA : difficulty/
+// fatigue/pain/technique/completion).
+function _asSessionFeedback(fb) {
+  if (!fb || typeof fb !== 'object') return null;
+  var o = {};
+  ['productivity','intensity','focus','sessionQualityScore','difficulty','fatigue','pain','technique','completion','titanStatus']
+    .forEach(function(k){ if (fb[k] != null && fb[k] !== '') o[k] = fb[k]; });
+  if (Array.isArray(fb.difficulties) && fb.difficulties.length) o.difficulties = fb.difficulties.slice(0, 4);
+  if (Array.isArray(fb.difficultExercises) && fb.difficultExercises.length) o.difficultExercises = fb.difficultExercises.slice(0, 4);
+  if (fb.note) o.note = String(fb.note).slice(0, 200);
+  return Object.keys(o).length ? o : null;
+}
+
+// Tendances : uniquement des constats calculés sur des données réelles.
+// Chaque entrée est une phrase factuelle que Titan pourra interpréter — pas
+// une interprétation déjà faite. Le raisonnement de coach reste au modèle.
+function _asTrends(sessions, exos, todayIso) {
+  var t = [];
+
+  // Qualité de séance : moyenne des 3 dernières contre les 3 précédentes.
+  var scored = sessions.filter(function(s){ return typeof s.score === 'number'; });
+  if (scored.length >= 4) {
+    var recent = scored.slice(0, 3);
+    var older  = scored.slice(3, 6);
+    if (older.length >= 2) {
+      var avg = function(a){ return a.reduce(function(x, y){ return x + y.score; }, 0) / a.length; };
+      var d = _asRound(avg(recent) - avg(older), 1);
+      if (Math.abs(d) >= 5) {
+        t.push('Score de séance ' + (d > 0 ? 'en hausse de +' : 'en baisse de ') + d
+             + ' points sur les 3 dernières séances par rapport aux précédentes.');
+      }
+    }
+  }
+
+  // Progression et stagnation par exercice — seulement avec assez de points.
+  exos.forEach(function(e) {
+    if (e.sessions < 2) return;
+    if (e.isPR) {
+      t.push('Record personnel sur ' + e.name + ' à la dernière séance : ' + e.last + '.');
+    } else if (e.sessions >= 3 && e.delta === 0) {
+      t.push('Aucune évolution sur ' + e.name + ' depuis ' + e.sessions + ' séances (' + e.last + ').');
+    }
+    if (e.rpePrevAvg != null && e.rpeLast != null && e.rpeLast - e.rpePrevAvg >= 1.5) {
+      t.push('RPE en hausse sur ' + e.name + ' : ' + e.rpeLast + ' à la dernière séance contre '
+           + e.rpePrevAvg + ' en moyenne avant.');
+    }
+  });
+
+  // Coupure : uniquement un constat de durée, sans jugement.
+  if (sessions.length && sessions[0].daysAgo != null && sessions[0].daysAgo >= 7) {
+    t.push('Dernière séance il y a ' + sessions[0].daysAgo + ' jours.');
+  }
+  return t.slice(0, 6);
+}
+
+window._ahBuildAthleteState = function(opts) {
+  opts = opts || {};
+  try {
+    var today = String(opts.now || new Date().toISOString());
+    var prof = _ahSafeParse('ah_profile', {});
+    var sessionsRaw = _ahSessionHistory();
+    var track = _ahSafeParse('ah_track_history', []);
+    var missing = [];
+
+    // ── Séances récentes (plus récente d'abord) ──
+    var sessions = sessionsRaw.slice().reverse().slice(0, AS_MAX_SESSIONS).map(function(s) {
+      var fb = _asSessionFeedback(s.sessionEndFeedback);
+      return {
+        name: s.sessName || 'Séance',
+        program: s.progName || null,
+        date: String(s.date).slice(0, 10),
+        daysAgo: _ahDaysBetween(s.date, today),
+        score: (s.sessionEndFeedback && typeof s.sessionEndFeedback.sessionQualityScore === 'number')
+               ? s.sessionEndFeedback.sessionQualityScore : null,
+        feedback: fb
+      };
+    });
+    if (!sessions.length) missing.push('aucune séance enregistrée');
+
+    // ── Exercices ──
+    var exos = _asExerciseHistory(track, today);
+    if (!exos.length) {
+      missing.push('aucune performance d\'exercice enregistrée (l\'athlète n\'a rien tracké dans Suivi > Exercices)');
+    }
+
+    // ── Programme ──
+    var next = (typeof window._ahNextStep === 'function') ? window._ahNextStep() : null;
+    if (!next) missing.push('programme ou progression non déterminables');
+
+    // ── Tests ──
+    var tests = null;
+    var hasTest = prof.athScore != null || prof.vertJump != null || prof.satSprintTime != null
+               || prof.satTTest != null || prof.satForce1RM != null;
+    if (hasTest) {
+      tests = {
+        athScore:   prof.athScore != null ? prof.athScore : null,
+        vertJump:   prof.vertJump != null ? prof.vertJump : null,
+        sprint:     prof.satSprintTime != null ? prof.satSprintTime : null,
+        tTest:      prof.satTTest != null ? prof.satTTest : null,
+        force1RM:   prof.satForce1RM != null ? prof.satForce1RM : null,
+        lastTestAt: prof.satCompletedAt || null,
+        weeksSince: (typeof window._ahWeeksSinceTest === 'function') ? window._ahWeeksSinceTest(today) : null
+      };
+    } else {
+      missing.push('aucun test physique (SAT/SET) enregistré');
+    }
+
+    // ── Assiduité ──
+    var streakInfo = (typeof window._ahStreakInfo === 'function') ? window._ahStreakInfo(today) : null;
+    var last7 = sessionsRaw.filter(function(s){ var d = _ahDaysBetween(s.date, today); return d != null && d <= 7; }).length;
+    var last30 = sessionsRaw.filter(function(s){ var d = _ahDaysBetween(s.date, today); return d != null && d <= 30; }).length;
+
+    return {
+      generatedAt: today,
+      program: next ? {
+        name: prof.program || null, key: prof.programKey || null,
+        phase: next.phaseIdx + 1, week: next.week, totalWeeks: next.totalWeeks,
+        nextSession: next.sessName, nextSessionExos: next.exoCount,
+        remainingThisWeek: next.remainingThisWeek
+      } : null,
+      lastSession: sessions[0] || null,
+      recentSessions: sessions,
+      exercises: exos,
+      tests: tests,
+      adherence: {
+        sessionsTotal: sessionsRaw.length,
+        last7Days: last7, last30Days: last30,
+        streak: streakInfo ? streakInfo.current : (prof.streak || 0),
+        bestStreak: streakInfo ? streakInfo.best : (prof.bestStreak || null),
+        weeksPresent: streakInfo ? streakInfo.weeksPresent : null,
+        phasesDone: prof.phasesDone || 0,
+        programsDone: prof.programsDone || 0
+      },
+      trends: _asTrends(sessions, exos, today),
+      missing: missing
+    };
+  } catch(e) {
+    console.warn('[athlete state]', e);
+    return null;
+  }
+};
+
+// Debug développeur (§17) — chaîne complète, invisible pour l'utilisateur.
+window._titanDebugContext = function() {
+  var st = window._ahBuildAthleteState();
+  var out = {
+    authenticatedUid: (window.fbUser && window.fbUser.uid) ? window.fbUser.uid.slice(0, 8) + '…' : null,
+    sessionsLoaded:   st ? st.recentSessions.length : 0,
+    exercisesLoaded:  st ? st.exercises.length : 0,
+    testsLoaded:      st && st.tests ? Object.keys(st.tests).filter(function(k){ return st.tests[k] != null; }).length : 0,
+    programLoaded:    !!(st && st.program),
+    missing:          st ? st.missing : ['état non construit'],
+    approxChars:      st ? JSON.stringify(st).length : 0
+  };
+  console.log('[Titan debug]', out);
+  console.log('[Titan debug] athleteState =', st);
+  return out;
 };
 
 // ═══════════════════════════════════════════════════════════════════════════
