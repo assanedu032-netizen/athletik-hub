@@ -24701,7 +24701,6 @@ async function callAnthropicAPI(userMessage, photo) {
   // Avec photo : contenu en blocs (image d'abord, comme recommandé par
   // Anthropic quand le texte commente l'image). L'index du message est retenu
   // pour pouvoir retirer le base64 de l'historique juste après la réponse.
-  var photoIdx = -1;
   if (photo && photo.data) {
     conversationHistory.push({
       role: 'user',
@@ -24710,26 +24709,15 @@ async function callAnthropicAPI(userMessage, photo) {
         { type: 'text', text: userMessage || 'Regarde cette image et dis-moi ce que tu en penses.' }
       ]
     });
-    photoIdx = conversationHistory.length - 1;
-    // On NE persiste pas encore : le base64 ne doit jamais toucher localStorage.
   } else {
     conversationHistory.push({ role: 'user', content: userMessage });
-    persistTitanChat();
   }
+  // L'image RESTE en memoire : sans ca, a la question suivante ("tu as recu
+  // ca ?"), Titan ne la voyait plus et repondait qu'il ne recoit pas les
+  // images. C'est persistTitanChat qui retire le base64 avant l'ecriture
+  // disque — localStorage ne le voit jamais.
+  persistTitanChat();
 
-  // Remplace le bloc image par un marqueur texte, puis persiste. Appelé après
-  // la réponse (ou en cas d'échec) — l'historique reste léger et lisible.
-  function _stripPhoto() {
-    if (photoIdx < 0) return;
-    var m = conversationHistory[photoIdx];
-    if (m && Array.isArray(m.content)) {
-      var t = m.content.filter(function(b){ return b.type === 'text'; })
-                       .map(function(b){ return b.text; }).join(' ');
-      conversationHistory[photoIdx] = { role: 'user', content: '[photo envoyée] ' + t };
-    }
-    photoIdx = -1;
-    persistTitanChat();
-  }
 
   // Source de vérité = ah_profile (localStorage, synchro Firestore).
   // window.user n'est qu'un mirror in-memory, pas toujours à jour après login fresh.
@@ -24777,7 +24765,7 @@ async function callAnthropicAPI(userMessage, photo) {
     try { idToken = await window.fbUser.getIdToken(); } catch(e) { console.warn('[Titan] getIdToken failed', e); }
   }
   if (!idToken) {
-    conversationHistory.pop(); photoIdx = -1; persistTitanChat();
+    conversationHistory.pop(); persistTitanChat();
     return "Connecte-toi pour parler à Titan.";
   }
 
@@ -24789,7 +24777,7 @@ async function callAnthropicAPI(userMessage, photo) {
         'Authorization': 'Bearer ' + idToken,
       },
       body: JSON.stringify({
-        messages: conversationHistory.slice(-10),
+        messages: _titanTrimImages(conversationHistory.slice(-10)),
         ctx: ctx,
       }),
     });
@@ -24797,28 +24785,26 @@ async function callAnthropicAPI(userMessage, photo) {
     var data = await resp.json();
 
     if (resp.status === 429) {
-      conversationHistory.pop(); photoIdx = -1; persistTitanChat();
+      conversationHistory.pop(); persistTitanChat();
       return data.error || 'Limite journalière atteinte. Reviens demain.';
     }
 
     if (data.reply) {
-      _stripPhoto();
       conversationHistory.push({ role: 'assistant', content: data.reply });
       persistTitanChat();
       return data.reply;
     }
 
     if (data.error) {
-      conversationHistory.pop(); photoIdx = -1; persistTitanChat();
+      conversationHistory.pop(); persistTitanChat();
       // Fallback to demo mode if server not configured yet
       if (data.error.includes('not configured') || data.error.includes('non configurée')) return getDemoResponse(userMessage);
       return data.error;
     }
 
-    _stripPhoto();
     return "Erreur de connexion. Réessaie.";
   } catch (error) {
-    conversationHistory.pop(); photoIdx = -1; persistTitanChat();
+    conversationHistory.pop(); persistTitanChat();
     console.error('[Titan proxy] Error:', error);
     // Fallback to demo mode when running locally / no functions
     return getDemoResponse(userMessage);
@@ -24826,9 +24812,35 @@ async function callAnthropicAPI(userMessage, photo) {
 }
 
 // ── PERSISTANCE CHAT (localStorage) ──
+// Retire le base64 d'un message. L'image reste en mémoire pour la
+// conversation en cours ; le disque et les envois anciens ne la voient jamais.
+function _titanStripImages(m) {
+  if (!m || !Array.isArray(m.content)) return m;
+  var txt = m.content.filter(function(b){ return b && b.type === 'text'; })
+                     .map(function(b){ return b.text; }).join(' ');
+  return { role: m.role, content: '[photo envoyée précédemment] ' + txt };
+}
+
+// Ne conserve l'image que dans le message le PLUS RÉCENT qui en porte une.
+// Sans ça, une conversation avec trois photos les renverrait toutes à chaque
+// message : coût et latence multipliés pour aucun gain de compréhension.
+function _titanTrimImages(msgs) {
+  if (!Array.isArray(msgs)) return msgs;
+  var lastImg = -1;
+  for (var i = msgs.length - 1; i >= 0; i--) {
+    var c = msgs[i] && msgs[i].content;
+    if (Array.isArray(c) && c.some(function(b){ return b && b.type === 'image'; })) { lastImg = i; break; }
+  }
+  return msgs.map(function(m, i) {
+    return (i === lastImg) ? m : _titanStripImages(m);
+  });
+}
+
 function persistTitanChat() {
   try {
-    var tail = conversationHistory.slice(-40); // garde max 40 messages
+    // Le base64 ne doit JAMAIS toucher localStorage : quota de 5 Mo, saturé
+    // en quelques photos, et c'est tout le chat qui serait alors perdu.
+    var tail = conversationHistory.slice(-40).map(_titanStripImages);
     localStorage.setItem('ah_titan_chat', JSON.stringify(tail));
   } catch(e) {}
 }
