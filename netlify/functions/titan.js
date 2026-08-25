@@ -760,6 +760,7 @@ function parseWorkoutJson(text) {
 function fmtVal(e, v) {
   if (v == null) return '?';
   if (e.method === 'temps')    return v + ' s';
+  if (e.method === 'duree')    return v + ' s tenu';
   if (e.method === 'charge')   return v + ' kg';
   if (e.method === 'distance') return v + ' m';
   if (e.method === 'hauteur')  return v + ' cm';

@@ -2497,237 +2497,404 @@ body.test-mode #testSkipBar{display:flex}
 #testOffBtn{background:rgba(255,255,255,.15);color:#fff;border:0;border-radius:6px;width:32px;font-size:14px;cursor:pointer;font-weight:800}
 #testOffBtn:active{opacity:.7}
 
-/* ═══ LIVE SESSION SCREEN (V1) ═══ */
+/* ════════════════════════════════════════════════════════════════════════════
+   LIVE SESSION SCREEN (V2) — refonte 2026-08
+   ----------------------------------------------------------------------------
+   RÈGLE 1 — ZÉRO SCROLL : header + barre d'action sont hors du flux scrollable.
+   La seule zone qui peut se comprimer est #lsStage. Budget 375×667 respecté
+   sur les 8 modes (voir scripts/test-live-screen.js).
+   RÈGLE 2 — 3 SECONDES : un élément = un travail. Aucun champ vide n'est rendu
+   (le DOM du bloc n'existe pas), aucun tag "CLASSIQUE", aucune durée sous REPS.
+
+   Tokens locaux : l'écran live a sa propre palette (fond quasi-noir) pour se
+   distinguer du reste de l'app. Ils sont scopés à #liveSession — le thème
+   global (light par défaut) ne peut plus produire du texte quasi-noir sur
+   fond quasi-noir, bug qui rendait le titre illisible avant cette refonte.
+   ════════════════════════════════════════════════════════════════════════════ */
 #liveSession {
+  --lv-bg:#080D18; --lv-surface:#101827; --lv-border:rgba(212,168,67,.18);
+  --lv-gold:#D4A843; --lv-gold-hot:#F0C24E; --lv-gold-dim:rgba(212,168,67,.35);
+  --lv-txt:#FFFFFF; --lv-txt2:rgba(255,255,255,.62); --lv-txt3:rgba(255,255,255,.38);
+  --lv-ok:#22C55E; --lv-rest:#4A9EDB;
+
   position: fixed; inset: 0; z-index: 9999;
-  background: #080C18;
+  background: var(--lv-bg);
+  color: var(--lv-txt);
   display: flex; flex-direction: column;
   font-family: 'Outfit', sans-serif;
+  overflow: hidden;
+  padding-top: env(safe-area-inset-top);
+  padding-bottom: env(safe-area-inset-bottom);
   transform: translateY(100%);
   transition: transform .35s cubic-bezier(.4,0,.2,1);
 }
 #liveSession.ls-open { transform: translateY(0); }
 
+/* ── Header : 1 ligne, jamais tronquée, 52px ── */
 .ls-header {
-  display: flex; align-items: center; justify-content: space-between;
-  padding: 14px 16px 10px;
-  background: #080C18;
-  border-bottom: 1px solid rgba(255,255,255,.06);
-  flex-shrink: 0;
+  display: flex; align-items: center; gap: 10px;
+  padding: 8px 12px; flex-shrink: 0;
+  background: var(--lv-bg);
 }
 .ls-header-left { display: flex; flex-direction: column; flex: 1; min-width: 0; }
-.ls-header-prog { font-size: 10px; color: var(--gold); font-weight: 800; letter-spacing: 1.5px; text-transform: uppercase; }
-.ls-header-sess { font-size: 12px; color: var(--text2); margin-top: 1px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.ls-header-counter { font-family: 'Bebas Neue', sans-serif; font-size: 20px; color: var(--text); letter-spacing: 1px; margin: 0 12px; }
+.ls-header-prog {
+  font-family: 'Bebas Neue', sans-serif; font-size: 15px; line-height: 1.05;
+  color: var(--lv-gold); letter-spacing: .08em; text-transform: uppercase;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+/* Le nom de séance est volontairement en 2 lignes max plutôt que tronqué :
+   "Jour 6 — LOWER : Isométrique avancé + P…" ne disait plus rien. */
+.ls-header-sess {
+  font-size: 11px; color: var(--lv-txt2); line-height: 1.25; margin-top: 1px;
+  display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;
+  overflow: hidden;
+}
 .ls-close-btn {
-  width: 36px; height: 36px; border-radius: 50%;
+  width: 36px; height: 36px; border-radius: 50%; flex-shrink: 0;
   background: rgba(255,255,255,.07); border: none; cursor: pointer;
-  color: var(--text); font-size: 18px; display: flex; align-items: center; justify-content: center;
-  flex-shrink: 0;
+  color: var(--lv-txt); font-size: 17px;
+  display: flex; align-items: center; justify-content: center;
+}
+.ls-close-btn:active { background: rgba(255,255,255,.14); }
+
+/* ── Barre de progression de séance (3px) ── */
+.ls-topbar { height: 3px; background: rgba(255,255,255,.08); flex-shrink: 0; }
+.ls-topbar-fill {
+  height: 100%; background: var(--lv-gold);
+  transition: width .35s cubic-bezier(.4,0,.2,1);
 }
 
-.ls-body { flex: 1; overflow-y: auto; display: flex; flex-direction: column; }
-
-.ls-ex-info { padding: 14px 16px 8px; }
-.ls-cat-badge {
-  display: inline-block; padding: 3px 10px; border-radius: 20px;
-  font-size: 9px; font-weight: 800; letter-spacing: 1.5px; text-transform: uppercase;
-  background: rgba(197,164,78,.15); color: var(--gold); border: 1px solid rgba(197,164,78,.3);
-  margin-bottom: 8px;
+/* ── Corps ── */
+.ls-body {
+  flex: 1; min-height: 0; position: relative;
+  display: flex; flex-direction: column;
 }
+.ls-stage {
+  flex: 1; min-height: 0;
+  display: flex; flex-direction: column;
+  padding: 10px 16px 0;
+  overflow: hidden;
+}
+
+/* ── Tags : affichés seulement si INHABITUELS (jamais "CLASSIQUE") ── */
+.ls-tags { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 6px; flex-shrink: 0; }
+.ls-tags:empty { display: none; }
+.ls-tag {
+  padding: 3px 9px; border-radius: 999px;
+  font-family: 'JetBrains Mono', monospace; font-size: 9px; font-weight: 800;
+  letter-spacing: .14em; text-transform: uppercase;
+  background: rgba(212,168,67,.14); border: 1px solid var(--lv-border);
+  color: var(--lv-gold);
+}
+.ls-tag.ls-tag-side { background: rgba(74,158,219,.16); border-color: rgba(74,158,219,.4); color: var(--lv-rest); }
+
+/* ── Nom de l'exercice : casse normale, body font, 2 lignes max ── */
 .ls-ex-name {
-  font-family: 'Bebas Neue', sans-serif; font-size: 30px; color: var(--text);
-  letter-spacing: 1.5px; line-height: 1.05; margin-bottom: 4px;
+  font-family: 'Outfit', sans-serif; font-weight: 600;
+  font-size: 21px; line-height: 1.22; color: var(--lv-txt);
+  letter-spacing: -.01em; flex-shrink: 0;
+  display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
 }
-.ls-ex-sub { font-size: 11px; color: var(--text2); line-height: 1.5; }
+.ls-ex-precision {
+  font-size: 12.5px; color: var(--lv-txt2); line-height: 1.35; margin-top: 3px;
+  flex-shrink: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.ls-ex-precision:empty { display: none; }
 
+/* ── Vidéo : le bloc n'existe pas quand l'exercice n'a pas de vidéo.
+   61 exos sur 710 en ont une — l'écran par défaut est donc SANS vidéo. ── */
 .ls-video-wrap {
-  position: relative; width: 100%; aspect-ratio: 16/9;
-  background: #0E1626; overflow: hidden; flex-shrink: 0;
-}
-.ls-video-placeholder {
-  width: 100%; height: 100%;
-  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px;
+  position: relative; width: 100%; aspect-ratio: 16/9; max-height: 168px;
+  margin: 10px 0 0; border-radius: 12px; overflow: hidden; flex-shrink: 0;
+  background: var(--lv-surface) center/cover no-repeat;
+  border: 1px solid rgba(255,255,255,.06);
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer;
 }
 .ls-play-circle {
-  width: 60px; height: 60px; border-radius: 50%;
-  background: rgba(197,164,78,.18); border: 2px solid rgba(197,164,78,.5);
-  display: flex; align-items: center; justify-content: center; cursor: pointer;
+  width: 54px; height: 54px; border-radius: 50%;
+  background: rgba(8,13,24,.62); border: 2px solid var(--lv-gold);
+  display: flex; align-items: center; justify-content: center;
   transition: transform .15s;
 }
-.ls-play-circle:active { transform: scale(.92); }
-.ls-play-icon { width: 0; height: 0; border-top: 11px solid transparent; border-bottom: 11px solid transparent; border-left: 18px solid var(--gold); margin-left: 4px; }
-.ls-video-label { font-size: 9px; color: rgba(255,255,255,.35); letter-spacing: 1px; text-transform: uppercase; }
+.ls-video-wrap:active .ls-play-circle { transform: scale(.92); }
+.ls-play-icon {
+  width: 0; height: 0; margin-left: 4px;
+  border-top: 10px solid transparent; border-bottom: 10px solid transparent;
+  border-left: 16px solid var(--lv-gold);
+}
+/* Un seul lien secondaire, et il dit ce qu'il fait. */
+.ls-video-link {
+  margin-top: 8px; flex-shrink: 0; align-self: flex-start;
+  background: none; border: 0; padding: 6px 0;
+  font-family: 'Outfit', sans-serif; font-size: 12px; font-weight: 600;
+  color: var(--lv-txt2); cursor: pointer;
+  text-decoration: underline; text-underline-offset: 3px;
+  text-decoration-color: rgba(255,255,255,.22);
+}
+.ls-video-link:active { color: var(--lv-gold); }
 
-.ls-video-btn {
-  width: calc(100% - 32px); margin: 10px 16px 0;
-  padding: 11px; border-radius: 10px;
-  background: rgba(197,164,78,.09); border: 1.5px solid rgba(197,164,78,.25);
-  color: var(--gold); font-size: 11px; font-weight: 700; letter-spacing: 1px;
-  text-transform: uppercase; cursor: pointer; text-align: center;
+/* ══ ZONE MODE — le seul bloc qui change d'un mode à l'autre ══ */
+.ls-mode {
+  flex: 1; min-height: 0;
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  gap: 8px; text-align: center; padding: 8px 0;
 }
-.ls-video-hint {
-  margin: 4px 16px 0; font-size: 11px; color: rgba(255,255,255,.45);
-  text-align: center; font-style: italic;
+.ls-mode-kicker {
+  font-family: 'JetBrains Mono', monospace; font-size: 10px; font-weight: 800;
+  letter-spacing: .18em; text-transform: uppercase; color: var(--lv-txt2);
 }
-
-/* Carte "À faire maintenant" — couche interface séance (vs vidéo démo).
-   Sépare clairement la technique des reps, indique série/round + instruction. */
-.ls-now-card {
-  margin: 14px 16px 4px; padding: 14px;
-  background: linear-gradient(165deg, rgba(197,164,78,.08), rgba(197,164,78,.02));
-  border: 1px solid rgba(197,164,78,.30); border-radius: 14px;
-  position: relative;
+.ls-mode-kicker b { color: var(--lv-gold); font-weight: 800; }
+.ls-mode-consigne {
+  font-size: 12.5px; color: var(--lv-txt2); line-height: 1.4; max-width: 300px;
 }
-.ls-now-card::before {
-  content: "À FAIRE MAINTENANT";
-  position: absolute; top: -8px; left: 14px;
-  font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: .18em;
-  color: var(--gold); background: var(--navy); padding: 2px 8px; border-radius: 4px;
-  font-weight: 800;
-}
-.ls-now-row {
-  display: flex; align-items: center; justify-content: space-between;
-  gap: 10px; margin-bottom: 8px;
-}
-.ls-now-tech {
-  display: inline-block; padding: 4px 10px;
-  background: rgba(197,164,78,.18); border: 1px solid rgba(197,164,78,.4);
-  border-radius: 999px; font-family: 'JetBrains Mono', monospace;
-  font-size: 10px; letter-spacing: .12em; font-weight: 800;
-  color: var(--gold); text-transform: uppercase;
-}
-.ls-now-help {
-  background: transparent; border: 0; color: rgba(255,255,255,.55);
-  font-family: 'Outfit', sans-serif; font-size: 11px; font-weight: 600;
-  cursor: pointer; padding: 4px 6px; text-decoration: underline;
-  text-underline-offset: 3px; text-decoration-color: rgba(255,255,255,.25);
-}
-.ls-now-help:hover { color: var(--gold); text-decoration-color: var(--gold); }
-.ls-now-todo {
-  font-family: 'Bebas Neue', sans-serif; font-size: 26px; letter-spacing: .04em;
-  color: #fff; line-height: 1; margin-bottom: 4px;
-}
-.ls-now-set {
-  font-family: 'Outfit', sans-serif; font-size: 12px; font-weight: 700;
-  color: rgba(255,255,255,.7); letter-spacing: .04em; margin-bottom: 8px;
-}
-.ls-now-instr {
-  font-family: 'Outfit', sans-serif; font-size: 12.5px;
-  color: rgba(255,255,255,.82); line-height: 1.5;
-  padding-top: 8px; border-top: 1px dashed rgba(255,255,255,.10);
+.ls-mode-hint { font-size: 11px; color: var(--lv-txt3); }
+.ls-tempo {
+  font-family: 'JetBrains Mono', monospace; font-size: 11px; letter-spacing: .1em;
+  color: var(--lv-txt3);
 }
 
-/* Bottom sheet "Comment faire ?" — explication courte de la technique. */
+/* La donnée principale : la SEULE chose dorée et énorme de l'écran. */
+.ls-big {
+  font-family: 'Bebas Neue', sans-serif; color: var(--lv-gold-hot);
+  font-size: 68px; line-height: .92; letter-spacing: .03em;
+  font-variant-numeric: tabular-nums;
+}
+.ls-big.ls-big-sm { font-size: 52px; }
+.ls-big-unit {
+  font-family: 'JetBrains Mono', monospace; font-size: 11px; font-weight: 800;
+  letter-spacing: .2em; color: var(--lv-txt2); text-transform: uppercase;
+  margin-top: -2px;
+}
+.ls-big-horizon { font-size: 12px; color: var(--lv-txt3); margin-top: 2px; }
+
+/* Le timer EST la barre : un seul élément porte donnée + progression. */
+.ls-timerbar {
+  width: 100%; max-width: 300px; height: 6px; border-radius: 6px;
+  background: rgba(255,255,255,.09); overflow: hidden;
+}
+.ls-timerbar-fill {
+  height: 100%; width: 100%; border-radius: 6px;
+  background: var(--lv-gold-hot); transition: width 1s linear;
+}
+.ls-timerbar-fill.ls-run { background: var(--lv-gold-hot); }
+
+/* ── Mode B : steppers charge / reps / RPE ── */
+.ls-steppers { display: flex; gap: 8px; width: 100%; max-width: 320px; }
+.ls-stepper {
+  flex: 1; background: var(--lv-surface); border: 1px solid rgba(255,255,255,.08);
+  border-radius: 14px; padding: 8px 4px 6px; text-align: center;
+}
+.ls-stepper-l {
+  font-family: 'JetBrains Mono', monospace; font-size: 9px; font-weight: 800;
+  letter-spacing: .16em; color: var(--lv-txt2); text-transform: uppercase;
+}
+.ls-stepper-row { display: flex; align-items: center; justify-content: space-between; gap: 2px; margin-top: 2px; }
+.ls-stepper-btn {
+  width: 34px; height: 34px; flex-shrink: 0; border-radius: 10px;
+  background: rgba(255,255,255,.07); border: 0; color: var(--lv-txt);
+  font-size: 19px; line-height: 1; cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+}
+.ls-stepper-btn:active { background: var(--lv-gold-dim); }
+.ls-stepper-v {
+  flex: 1; min-width: 0;
+  font-family: 'Bebas Neue', sans-serif; font-size: 28px; line-height: 1;
+  color: var(--lv-txt); letter-spacing: .04em; font-variant-numeric: tabular-nums;
+}
+.ls-stepper.ls-pr .ls-stepper-v { color: var(--lv-gold-hot); }
+.ls-prflag {
+  font-family: 'JetBrains Mono', monospace; font-size: 9.5px; font-weight: 800;
+  letter-spacing: .16em; color: var(--lv-gold-hot); text-transform: uppercase;
+}
+/* RPE : 10 pastilles tactiles, pas un select. */
+.ls-rpe { display: flex; gap: 3px; width: 100%; max-width: 320px; justify-content: center; }
+.ls-rpe-dot {
+  flex: 1; max-width: 30px; height: 30px; border-radius: 8px;
+  background: rgba(255,255,255,.06); border: 1px solid rgba(255,255,255,.08);
+  color: var(--lv-txt2); font-size: 11px; font-weight: 700; cursor: pointer;
+  display: flex; align-items: center; justify-content: center; padding: 0;
+}
+.ls-rpe-dot.on { background: var(--lv-gold); border-color: var(--lv-gold); color: #0B1220; font-weight: 800; }
+
+/* ── Mode D : sprint ── */
+.ls-sprint-btns { display: flex; gap: 10px; width: 100%; max-width: 320px; }
+.ls-sprint-btn {
+  flex: 1; min-height: 56px; border-radius: 14px; border: 1.5px solid var(--lv-border);
+  background: var(--lv-surface); color: var(--lv-txt);
+  font-family: 'Bebas Neue', sans-serif; font-size: 18px; letter-spacing: .1em; cursor: pointer;
+}
+.ls-sprint-btn.ls-armed { background: var(--lv-gold); border-color: var(--lv-gold); color: #0B1220; }
+.ls-sprint-btn:disabled { opacity: .35; }
+.ls-splits {
+  display: flex; gap: 6px; flex-wrap: wrap; justify-content: center;
+  font-family: 'JetBrains Mono', monospace; font-size: 10.5px; color: var(--lv-txt3);
+}
+
+/* ── Mode F : complexe (sous-mouvements enchaînés) ── */
+.ls-steps { display: flex; flex-direction: column; gap: 6px; width: 100%; max-width: 320px; }
+.ls-step {
+  display: flex; align-items: center; gap: 9px; text-align: left;
+  padding: 9px 11px; border-radius: 11px;
+  background: rgba(255,255,255,.03); border: 1px solid rgba(255,255,255,.07);
+}
+.ls-step.on { background: rgba(212,168,67,.12); border-color: var(--lv-gold); }
+.ls-step.done { opacity: .42; }
+.ls-step-i {
+  width: 22px; height: 22px; flex-shrink: 0; border-radius: 50%;
+  background: rgba(255,255,255,.08); color: var(--lv-txt2);
+  font-family: 'JetBrains Mono', monospace; font-size: 10px; font-weight: 800;
+  display: flex; align-items: center; justify-content: center;
+}
+.ls-step.on .ls-step-i { background: var(--lv-gold); color: #0B1220; }
+.ls-step-n { flex: 1; min-width: 0; font-size: 13px; font-weight: 600; color: var(--lv-txt); line-height: 1.25; }
+.ls-step-v {
+  font-family: 'Bebas Neue', sans-serif; font-size: 17px; letter-spacing: .04em;
+  color: var(--lv-gold); flex-shrink: 0;
+}
+
+/* ── Saisie libre repliée (modes A / C / D) — jamais obligatoire ── */
+.ls-log { flex-shrink: 0; text-align: center; margin-top: 2px; }
+.ls-log-row { display: none; align-items: center; justify-content: center; gap: 7px; margin-top: 5px; }
+.ls-log-row.on { display: flex; }
+
+/* ══ FOOTER : carte de séance en tirets + barre d'action. Jamais scrollable. ══ */
+.ls-footer { flex-shrink: 0; padding: 6px 12px 8px; background: var(--lv-bg); }
+.ls-dashes { display: flex; gap: 3px; margin-bottom: 8px; }
+.ls-dash {
+  flex: 1; height: 4px; border-radius: 4px; background: rgba(255,255,255,.11);
+  transition: background .3s;
+}
+.ls-dash.done { background: var(--lv-gold); }
+.ls-dash.current { background: var(--lv-gold-hot); box-shadow: 0 0 8px rgba(240,194,78,.5); }
+.ls-actions { display: flex; align-items: stretch; gap: 8px; }
+.ls-nav-btn {
+  width: 56px; min-height: 56px; flex-shrink: 0; border-radius: 14px; border: 0;
+  background: rgba(255,255,255,.06); color: var(--lv-txt2);
+  font-size: 20px; cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+}
+.ls-nav-btn:active { background: rgba(255,255,255,.12); }
+.ls-nav-btn:disabled { opacity: .25; }
+.ls-btn-done {
+  flex: 1; min-height: 56px; border-radius: 14px; border: 0;
+  background: var(--lv-gold); color: #0B1220; cursor: pointer;
+  font-family: 'Bebas Neue', sans-serif; font-size: 19px; letter-spacing: .08em;
+  padding: 0 10px; line-height: 1.05;
+  display: flex; align-items: center; justify-content: center; text-align: center;
+}
+.ls-btn-done:active { background: var(--lv-gold-hot); }
+.ls-btn-done.ls-btn-run { background: var(--lv-gold-hot); }
+/* Le nom du prochain exercice, jamais tronqué par "…" : 2 lignes max. */
+.ls-nextline {
+  margin-top: 7px; display: flex; align-items: baseline; gap: 6px;
+  font-size: 11px; color: var(--lv-txt3); line-height: 1.3;
+}
+.ls-nextline:empty { display: none; }
+.ls-nextline-l {
+  font-family: 'JetBrains Mono', monospace; font-size: 8.5px; font-weight: 800;
+  letter-spacing: .18em; text-transform: uppercase; flex-shrink: 0;
+}
+.ls-nextline-n {
+  color: var(--lv-txt2); min-width: 0;
+  display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
+}
+
+/* ══ ÉTAT REPOS — plein écran, BLEU. L'or est interdit ici. ══ */
+.ls-rest-overlay {
+  position: absolute; inset: 0; z-index: 5;
+  background: var(--lv-bg);
+  display: none; flex-direction: column; align-items: center; justify-content: center;
+  gap: 12px; padding: 20px 18px;
+}
+.ls-rest-overlay.ls-rest-active { display: flex; }
+.ls-rest-title {
+  font-family: 'JetBrains Mono', monospace; font-size: 11px; font-weight: 800;
+  letter-spacing: .24em; text-transform: uppercase; color: var(--lv-rest);
+}
+.ls-rest-countdown {
+  font-family: 'Bebas Neue', sans-serif; font-size: 78px; line-height: .92;
+  color: var(--lv-rest); letter-spacing: .05em; font-variant-numeric: tabular-nums;
+}
+.ls-rest-bar-wrap {
+  width: 100%; max-width: 300px; height: 6px; border-radius: 6px;
+  background: rgba(74,158,219,.18); overflow: hidden;
+}
+.ls-rest-bar { height: 100%; background: var(--lv-rest); border-radius: 6px; transition: width .9s linear; }
+.ls-rest-adj { display: flex; gap: 10px; }
+.ls-rest-btn {
+  min-width: 92px; min-height: 56px; border-radius: 14px; border: 1px solid rgba(74,158,219,.35);
+  background: rgba(74,158,219,.10); color: var(--lv-rest);
+  font-family: 'Bebas Neue', sans-serif; font-size: 17px; letter-spacing: .08em; cursor: pointer;
+}
+.ls-rest-btn:active { background: rgba(74,158,219,.22); }
+/* Le prochain exercice affiché EN ENTIER : c'est le moment de se préparer. */
+.ls-rest-next {
+  width: 100%; max-width: 320px; padding-top: 12px; margin-top: 4px;
+  border-top: 1px solid rgba(255,255,255,.09); text-align: center;
+}
+.ls-rest-next-l {
+  font-family: 'JetBrains Mono', monospace; font-size: 9px; font-weight: 800;
+  letter-spacing: .2em; text-transform: uppercase; color: var(--lv-txt3);
+}
+.ls-rest-next-n { font-size: 15px; font-weight: 600; color: var(--lv-txt); line-height: 1.3; margin-top: 4px; }
+.ls-rest-next-m { font-size: 12px; color: var(--lv-txt2); margin-top: 3px; }
+.ls-rest-skip {
+  background: none; border: 0; padding: 10px 16px; min-height: 44px;
+  font-family: 'Outfit', sans-serif; font-size: 13px; font-weight: 700;
+  color: var(--lv-txt2); cursor: pointer;
+  text-decoration: underline; text-underline-offset: 3px;
+}
+.ls-rest-skip:active { color: var(--lv-rest); }
+
+/* Bottom-sheet "Comment faire ?" — conservé, non modifié fonctionnellement. */
 .ls-th-ov {
-  position: fixed; inset: 0; background: rgba(6,12,24,.78);
-  backdrop-filter: blur(6px); z-index: 9700; display: none;
-  align-items: flex-end; justify-content: center; opacity: 0;
-  transition: opacity .2s ease;
+  position: fixed; inset: 0; z-index: 10000; background: rgba(6,10,20,.72);
+  display: none; align-items: flex-end; justify-content: center;
+  opacity: 0; transition: opacity .2s;
 }
 .ls-th-ov.on { display: flex; opacity: 1; }
 .ls-th-sheet {
-  width: 100%; max-width: 480px; background: var(--bg, #FAF8F4);
-  border-radius: 22px 22px 0 0; padding: 12px 18px calc(20px + env(safe-area-inset-bottom,0px));
-  box-shadow: 0 -16px 50px rgba(10,16,30,.4);
-  animation: libxSheetUp .22s ease;
+  width: 100%; max-width: 430px; background: var(--lv-surface, #101827);
+  border-radius: 20px 20px 0 0; padding: 10px 20px 26px;
+  border-top: 1px solid rgba(212,168,67,.25);
+  animation: lsThUp .26s cubic-bezier(.2,.8,.3,1) both;
 }
-.ls-th-grab { width: 42px; height: 4px; border-radius: 2px; background: var(--border2, #D8D3C6); margin: 2px auto 14px; }
+@keyframes lsThUp { from { transform: translateY(40px); } to { transform: translateY(0); } }
+.ls-th-grab { width: 42px; height: 4px; border-radius: 2px; background: rgba(255,255,255,.2); margin: 2px auto 14px; }
 .ls-th-eyebrow {
-  font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: .22em;
-  color: var(--gold); text-transform: uppercase; font-weight: 800; margin-bottom: 4px;
+  font-family: 'JetBrains Mono', monospace; font-size: 9px; font-weight: 800;
+  letter-spacing: .2em; text-transform: uppercase; color: #D4A843;
 }
-.ls-th-title {
-  font-family: 'Bebas Neue', sans-serif; font-size: 24px; letter-spacing: .04em;
-  color: var(--text); line-height: 1; margin-bottom: 12px;
-}
-.ls-th-text {
-  font-family: 'Outfit', sans-serif; font-size: 13.5px; color: var(--text2);
-  line-height: 1.55; margin-bottom: 16px;
-}
+.ls-th-title { font-family: 'Outfit', sans-serif; font-size: 19px; font-weight: 700; color: #fff; margin-top: 5px; }
+.ls-th-text { font-size: 13.5px; color: rgba(255,255,255,.7); line-height: 1.55; margin-top: 9px; }
 .ls-th-cta {
-  width: 100%; padding: 13px; background: linear-gradient(135deg, var(--gold), #A0853A);
-  border: 0; border-radius: 12px; font-family: 'Bebas Neue', sans-serif;
-  font-size: 15px; letter-spacing: .12em; color: var(--navy); cursor: pointer;
-  box-shadow: 0 6px 18px rgba(197,164,78,.32);
+  width: 100%; min-height: 52px; margin-top: 18px; border: 0; border-radius: 14px;
+  background: #D4A843; color: #0B1220; cursor: pointer;
+  font-family: 'Bebas Neue', sans-serif; font-size: 18px; letter-spacing: .08em;
 }
 
-.ls-metrics {
-  display: grid; grid-template-columns: 1fr 1fr 1fr;
-  gap: 8px; padding: 12px 16px;
+/* Focus clavier visible (critère §11). */
+#liveSession button:focus-visible,
+#liveSession input:focus-visible {
+  outline: 2px solid var(--lv-gold-hot); outline-offset: 2px;
 }
-.ls-metric {
-  background: rgba(255,255,255,.04); border: 1px solid rgba(255,255,255,.07);
-  border-radius: 12px; padding: 12px 8px; text-align: center;
+@media (prefers-reduced-motion: reduce) {
+  #liveSession, #liveSession * { transition-duration: .01ms !important; animation-duration: .01ms !important; }
 }
-.ls-metric-v { font-family: 'Bebas Neue', sans-serif; font-size: 26px; color: var(--text); letter-spacing: 1px; line-height: 1; }
-.ls-metric-l { font-size: 8px; color: var(--muted); font-weight: 700; letter-spacing: 1px; text-transform: uppercase; margin-top: 4px; }
-
-/* Rest timer */
-.ls-rest-overlay {
-  margin: 0 16px 10px;
-  background: linear-gradient(135deg, rgba(197,164,78,.08), rgba(197,164,78,.04));
-  border: 1.5px solid rgba(197,164,78,.2);
-  border-radius: 16px; padding: 20px 16px 16px;
-  text-align: center; display: none;
+/* Très petits écrans (SE 1re gén., 320×568) : on comprime, on ne scrolle pas. */
+@media (max-height: 600px) {
+  .ls-video-wrap { max-height: 116px; }
+  .ls-big { font-size: 54px; }
+  .ls-rest-countdown { font-size: 62px; }
+  .ls-ex-name { font-size: 19px; -webkit-line-clamp: 2; }
 }
-.ls-rest-overlay.ls-rest-active { display: block; }
-.ls-rest-title { font-size: 9px; font-weight: 800; letter-spacing: 2px; color: var(--gold); text-transform: uppercase; margin-bottom: 10px; }
-.ls-rest-countdown { font-family: 'Bebas Neue', sans-serif; font-size: 72px; color: var(--gold); letter-spacing: 4px; line-height: 1; margin-bottom: 12px; text-shadow: 0 0 40px rgba(197,164,78,.3); }
-.ls-rest-bar-wrap { height: 4px; background: rgba(197,164,78,.15); border-radius: 4px; margin-bottom: 14px; overflow: hidden; }
-.ls-rest-bar { height: 100%; background: var(--gold); border-radius: 4px; transition: width .9s linear; }
-.ls-rest-btns { display: flex; gap: 8px; justify-content: center; }
-.ls-rest-btn {
-  padding: 8px 16px; border-radius: 10px; border: none; cursor: pointer;
-  font-size: 11px; font-weight: 700; letter-spacing: .5px;
-}
-.ls-rest-btn-skip { background: var(--gold); color: var(--navy); }
-.ls-rest-btn-plus { background: rgba(255,255,255,.07); color: var(--text); }
-.ls-rest-btn-minus { background: rgba(255,255,255,.07); color: var(--text); }
-
-/* Action buttons row */
-.ls-actions {
-  display: flex; gap: 10px; padding: 4px 16px 12px;
-}
-.ls-btn-prev, .ls-btn-done, .ls-btn-next {
-  flex: 1; padding: 13px 8px; border-radius: 12px; border: none;
-  cursor: pointer; font-size: 12px; font-weight: 700; letter-spacing: .5px;
-}
-.ls-btn-prev { background: rgba(255,255,255,.06); color: var(--text2); }
-.ls-btn-done { background: var(--gold); color: var(--navy); flex: 2; }
-.ls-btn-next { background: rgba(255,255,255,.06); color: var(--text2); }
-
-/* Next exercise preview */
-.ls-next-preview {
-  display: flex; align-items: center; gap: 12px;
-  margin: 0 16px 14px;
-  padding: 12px 14px; border-radius: 12px;
-  background: rgba(255,255,255,.03); border: 1px solid rgba(255,255,255,.06);
-}
-.ls-next-thumb {
-  width: 48px; height: 36px; border-radius: 8px;
-  background: rgba(197,164,78,.1); flex-shrink: 0;
-  display: flex; align-items: center; justify-content: center;
-  font-size: 16px;
-}
-.ls-next-label { font-size: 9px; color: var(--muted); letter-spacing: 1px; font-weight: 700; margin-bottom: 3px; }
-.ls-next-name { font-size: 12px; color: var(--text); font-weight: 700; line-height: 1.3; }
-
-/* Bottom progress bar */
-.ls-progress-wrap { padding: 0 16px 28px; flex-shrink: 0; }
-.ls-progress-label { font-size: 9px; color: var(--muted); font-weight: 700; letter-spacing: 1px; margin-bottom: 6px; }
-.ls-progress-segs { display: flex; gap: 3px; }
-.ls-seg {
-  flex: 1; height: 4px; border-radius: 4px;
-  background: rgba(255,255,255,.1); transition: background .3s;
-}
-.ls-seg.done { background: var(--gold); }
-.ls-seg.current { background: rgba(197,164,78,.55); }
 
 /* Session complete */
 .ls-complete {
-  flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center;
-  padding: 32px 24px; text-align: center;
+  flex: 1; min-height: 0; display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  padding: 32px 24px; text-align: center; overflow-y: auto;
 }
 .ls-complete-icon { font-size: 64px; margin-bottom: 20px; }
 .ls-complete-title { font-family: 'Bebas Neue', sans-serif; font-size: 38px; color: var(--gold); letter-spacing: 2px; margin-bottom: 8px; }
@@ -3275,28 +3442,11 @@ html body #thinking{
 }
 #pgProg #progList > div:active{ transform:scale(.97) !important; }
 
-/* ── Live Session — dark immersif ── */
-#liveSession{
-  background:var(--ah-navy-deep) !important;
-  color:#fff !important;
-}
-.ls-timer-num{
-  font-family:var(--ah-font-display) !important;
-  font-size:72px !important;
-  color:var(--ah-gold) !important;
-  letter-spacing:.04em !important;
-  line-height:.9 !important;
-}
-.ls-exo-name{
-  font-family:var(--ah-font-display) !important;
-  font-size:28px !important;
-  color:#fff !important;
-  letter-spacing:.06em !important;
-}
-.ls-header{
-  background:transparent !important;
-  border-bottom:1px solid rgba(255,255,255,.06) !important;
-}
+/* ── Live Session — la palette de l'écran live est définie avec l'écran
+   lui-même (tokens --lv-* scopés à #liveSession). Les overrides globaux qui
+   vivaient ici forçaient le navy clair et ciblaient .ls-timer-num /
+   .ls-exo-name, deux classes absentes du DOM : le correctif de contraste
+   écrit ici n'a jamais rien corrigé. Supprimé. ── */
 .ls-complete-title{
   font-family:var(--ah-font-display) !important;
   font-size:42px !important;
@@ -9239,104 +9389,75 @@ window.tiResetOnEnter = function(){ window.tiShowStep(1); };
 
 <!-- ═══ LIVE SESSION SCREEN ═══ -->
 <div id="liveSession">
-  <!-- Header -->
+  <!-- ═══ HEADER — sticky, jamais dans le flux scrollable ═══ -->
   <div class="ls-header">
     <div class="ls-header-left">
       <div class="ls-header-prog" id="lsProgName">PROGRAMME</div>
-      <div class="ls-header-sess" id="lsSessName">SÉANCE</div>
+      <div class="ls-header-sess" id="lsSessName">Séance</div>
     </div>
-    <div class="ls-header-counter" id="lsCounter">1/10</div>
-    <button class="ls-close-btn" onclick="_lsClose()">✕</button>
+    <button class="ls-close-btn" onclick="_lsClose()" aria-label="Quitter la séance">✕</button>
   </div>
+  <div class="ls-topbar"><div class="ls-topbar-fill" id="lsTopBar" style="width:0%"></div></div>
 
-  <!-- Scrollable body -->
+  <!-- ═══ CORPS ═══
+       #lsStage, #lsRestOverlay, #lsFooter et #lsComplete sont des enfants
+       DIRECTS de #lsBody : _lsFinalizeSession masque tous les enfants sauf
+       #lsComplete, et _lsClose les restaure. Ne pas les imbriquer. -->
   <div class="ls-body" id="lsBody">
 
-    <!-- Exercise info -->
-    <div class="ls-ex-info">
-      <div class="ls-cat-badge" id="lsCatBadge">PLIOMÉTRIE</div>
-      <div class="ls-ex-name" id="lsExName">BROAD JUMPS</div>
-      <div class="ls-ex-sub" id="lsExSub">Bonds en avant — explosivité maximale</div>
-    </div>
+    <div class="ls-stage" id="lsStage">
+      <!-- Tags : uniquement si INHABITUELS (circuit, round, échec, côté…). -->
+      <div class="ls-tags" id="lsTags"></div>
+      <div class="ls-ex-name" id="lsExName">Exercice</div>
+      <div class="ls-ex-precision" id="lsExPrecision"></div>
 
-    <!-- Video placeholder -->
-    <div class="ls-video-wrap">
-      <div class="ls-video-placeholder" id="lsVideoArea">
-        <div class="ls-play-circle" onclick="_lsOpenVideo()">
-          <div class="ls-play-icon"></div>
+      <!-- Vidéo : le bloc est retiré du DOM quand l'exercice n'en a pas. -->
+      <div class="ls-video-wrap" id="lsVideoWrap" style="display:none"
+           onclick="_lsOpenVideo()" role="button" tabindex="0" aria-label="Voir la démonstration">
+        <div class="ls-play-circle"><div class="ls-play-icon"></div></div>
+      </div>
+      <button type="button" class="ls-video-link" id="lsVideoLink" style="display:none"
+              onclick="_lsOpenVideo()">ⓘ&nbsp; Voir la démonstration</button>
+
+      <!-- LA ZONE MODE — seul bloc qui change entre les 8 modes. -->
+      <div class="ls-mode" id="lsMode"></div>
+
+      <!-- Saisie libre (modes chrono / reps PDC / distance). Repliée, jamais
+           obligatoire. Écrit dans ah_track_history au format du tracker. -->
+      <div class="ls-log" id="lsLog" style="display:none">
+        <button type="button" class="ls-video-link" id="lsLogToggle" onclick="window._lsToggleLog()">＋ Noter ma charge</button>
+        <div class="ls-log-row" id="lsLogRow">
+          <input type="number" inputmode="decimal" id="lsLogLoad" placeholder="kg" step="0.5" min="0">
+          <span class="ls-log-x">×</span>
+          <input type="number" inputmode="numeric" id="lsLogReps" placeholder="reps" step="1" min="0">
+          <button type="button" class="ls-log-ok" onclick="window._lsSaveLog()">OK</button>
         </div>
-        <div class="ls-video-label">Vidéo démo</div>
-      </div>
-    </div>
-    <div class="ls-video-btn" onclick="_lsOpenVideo()">▶ VOIR LA VIDÉO DÉMO</div>
-    <div class="ls-video-hint">Regarde le mouvement, puis lance ta série.</div>
-
-    <!-- Carte "À faire maintenant" — sépare clairement la technique des reps.
-         Rempli par _lsRenderEx() avec : Technique · Reps · Série/Round · Instruction. -->
-    <div class="ls-now-card" id="lsNowCard"></div>
-
-    <!-- Metrics: Sets / Reps / Rest -->
-    <div class="ls-metrics">
-      <div class="ls-metric">
-        <div class="ls-metric-v" id="lsMetSets">3</div>
-        <div class="ls-metric-l">Séries</div>
-      </div>
-      <div class="ls-metric">
-        <div class="ls-metric-v" id="lsMetReps">12</div>
-        <div class="ls-metric-l">Reps</div>
-      </div>
-      <div class="ls-metric">
-        <div class="ls-metric-v" id="lsMetRest">1'</div>
-        <div class="ls-metric-l">Repos</div>
+        <div class="ls-log-done" id="lsLogDone"></div>
       </div>
     </div>
 
-    <!-- Saisie de la charge — repliée par défaut, jamais obligatoire.
-         Écrit dans ah_track_history au format exact du tracker : records,
-         progression et contexte Titan en profitent sans code en plus. -->
-    <div class="ls-log">
-      <button type="button" class="ls-log-toggle" id="lsLogToggle" onclick="window._lsToggleLog()">＋ Noter ma charge</button>
-      <div class="ls-log-row" id="lsLogRow">
-        <input type="number" inputmode="decimal" id="lsLogLoad" placeholder="kg" step="0.5" min="0">
-        <span class="ls-log-x">×</span>
-        <input type="number" inputmode="numeric" id="lsLogReps" placeholder="reps" step="1" min="0">
-        <button type="button" class="ls-log-ok" onclick="window._lsSaveLog()">OK</button>
-      </div>
-      <div class="ls-log-done" id="lsLogDone"></div>
-    </div>
-
-    <!-- Rest timer overlay -->
+    <!-- ═══ ÉTAT REPOS — plein écran, bleu. Jamais d'or ici. ═══ -->
     <div class="ls-rest-overlay" id="lsRestOverlay">
-      <div class="ls-rest-title">⏱ TEMPS DE REPOS</div>
+      <div class="ls-rest-title">Repos</div>
       <div class="ls-rest-countdown" id="lsRestCountdown">01:00</div>
       <div class="ls-rest-bar-wrap"><div class="ls-rest-bar" id="lsRestBar" style="width:100%"></div></div>
-      <div class="ls-rest-btns">
-        <button class="ls-rest-btn ls-rest-btn-minus" onclick="_lsAdjustRest(-30)">−30s</button>
-        <button class="ls-rest-btn ls-rest-btn-skip" onclick="_lsSkipRest()">Continuer →</button>
-        <button class="ls-rest-btn ls-rest-btn-plus" onclick="_lsAdjustRest(30)">+30s</button>
+      <div class="ls-rest-adj">
+        <button class="ls-rest-btn" onclick="_lsAdjustRest(-15)">− 15 s</button>
+        <button class="ls-rest-btn" onclick="_lsAdjustRest(15)">+ 15 s</button>
       </div>
+      <div class="ls-rest-next" id="lsRestNext"></div>
+      <button class="ls-rest-skip" onclick="_lsSkipRest()">Passer le repos</button>
     </div>
 
-    <!-- Action buttons -->
-    <div class="ls-actions">
-      <button class="ls-btn-prev" onclick="_lsPrevEx()">← Préc</button>
-      <button class="ls-btn-done" id="lsBtnDone" onclick="_lsDoneSet()">✓ SÉRIE TERMINÉE</button>
-      <button class="ls-btn-next" onclick="_lsNextEx()">Suiv →</button>
-    </div>
-
-    <!-- Next exercise preview -->
-    <div class="ls-next-preview" id="lsNextPreview">
-      <div class="ls-next-thumb">→</div>
-      <div>
-        <div class="ls-next-label">PROCHAIN EXERCICE</div>
-        <div class="ls-next-name" id="lsNextName">Lateral Bounds</div>
+    <!-- ═══ FOOTER — carte de séance + barre d'action. Jamais scrollable. ═══ -->
+    <div class="ls-footer" id="lsFooter">
+      <div class="ls-dashes" id="lsDashes"></div>
+      <div class="ls-actions">
+        <button class="ls-nav-btn" id="lsPrevBtn" onclick="_lsPrevEx()" aria-label="Exercice précédent">‹</button>
+        <button class="ls-btn-done" id="lsBtnDone" onclick="window._lsPrimaryAction()">Valider</button>
+        <button class="ls-nav-btn" id="lsNextBtn" onclick="_lsNextEx()" aria-label="Exercice suivant">›</button>
       </div>
-    </div>
-
-    <!-- Progress bar -->
-    <div class="ls-progress-wrap">
-      <div class="ls-progress-label" id="lsProgressLabel">EXERCICE 1 SUR 10</div>
-      <div class="ls-progress-segs" id="lsProgressSegs"></div>
+      <div class="ls-nextline" id="lsNextLine"></div>
     </div>
 
     <!-- Session complete (hidden until end) -->
@@ -28897,6 +29018,13 @@ function _ahTrackValue(e) {
     nums = es.map(function(x){ return Number(x.time); }).filter(function(n){ return !isNaN(n) && n > 0; });
     return nums.length ? Math.min.apply(null, nums) : null;
   }
+  // 'duree' : temps TENU (isométrie, gainage, à l'échec). Plus c'est long,
+  // mieux c'est — donc surtout pas la sémantique de 'temps' (chrono, où le
+  // plus court gagne), qui ferait passer un record pour une régression.
+  if (e.method === 'duree') {
+    nums = es.map(function(x){ return Number(x.secs); }).filter(function(n){ return !isNaN(n) && n > 0; });
+    return nums.length ? Math.max.apply(null, nums) : null;
+  }
   if (e.method === 'charge') {
     nums = es.map(function(x){ return Number(x.load); }).filter(function(n){ return !isNaN(n) && n > 0; });
     return nums.length ? Math.max.apply(null, nums) : null;
@@ -37495,16 +37623,6 @@ var _LS = {
   restSec: 0, restTotal: 0, restInterval: null, restActive: false
 };
 
-// Nombre de séries d'un exercice, parsé depuis ex.s.
-// "4" → 4 | "3-4" → 4 (max) | "8 cycles" → 8 | "Var.*" → 3 (défaut) | "-" → 1
-function _lsSetCount(ex) {
-  if (!ex || !ex.s || ex.s === '-') return 1;
-  var nums = (String(ex.s).match(/\d+/g) || []).map(Number);
-  if (nums.length) return Math.max.apply(null, nums);
-  if (/var/i.test(String(ex.s))) return 3;
-  return 1;
-}
-
 // Persistance de la séance live — permet de reprendre après fermeture app
 // Clé : ah_live_session  | Forme : { exos, idx, progName, sessName, ts }
 // Expiration : 24h (au-delà on drop, on ne veut pas proposer une vieille séance)
@@ -37546,6 +37664,8 @@ window.resumeLiveSession = function() {
   _LS.sessName = d.sessName || '';
   _LS.builderMeta = d.builderMeta || null;
   _LS.restActive = false;
+  _LS.side = null; _LS.mb = null; _LS.sp = null; _LS.cx = 0; _LS.cxExo = null; _LS.iv = null;
+  _LS.circuitMap = null; _LS.circuitMapLen = -1;
   clearInterval(_LS.restInterval);
   _lsRenderEx();
   document.getElementById('liveSession').classList.add('ls-open');
@@ -37644,20 +37764,29 @@ window.dismissResumeTests = function() {
   try { renderResumeTestsBanner(); } catch(e) {}
 };
 
-// Parse rest string like "1 mn", "2 mn 30", "45 s", "-" → seconds
+// Repos prescrit, en secondes. "1 mn" → 60 | "2 mn 30" → 150 | "45 s" → 45
+// "-" → 0 : dans les programmes, un tiret veut dire ENCHAÎNER (circuits,
+// bi-sets, échauffements). Retourner 60 imposait à 232 lignes sur 710 une
+// récupération que le livre ne prescrit pas — l'app modifiait la méthode.
 function _lsParseRest(str) {
-  if (!str || str === '-') return 60;
+  if (str == null) return 0;
   var s = (str + '').toLowerCase().trim();
+  if (!s || s === '-' || s === '–' || s === '—') return 0;
   var mn = 0, sec = 0;
   var mMatch = s.match(/(\d+)\s*mn/);
   if (mMatch) mn = parseInt(mMatch[1]);
   var sMatch = s.match(/(\d+)\s*s(?:ec|$|\s)/);
   if (sMatch) sec = parseInt(sMatch[1]);
-  if (!mMatch && !sMatch) {
-    var d = parseInt(s); if (!isNaN(d)) return d;
+  // "2 mn 30" : les secondes suivent les minutes sans unité. Sans ce cas,
+  // le repos tombait à 120 s au lieu de 150.
+  if (mMatch && !sMatch) {
+    var tail = s.slice(s.indexOf(mMatch[0]) + mMatch[0].length).match(/(\d+)/);
+    if (tail) sec = parseInt(tail[1]);
   }
-  var total = mn * 60 + sec;
-  return total > 0 ? total : 60;
+  if (!mMatch && !sMatch) {
+    var d = parseInt(s); if (!isNaN(d)) return Math.max(0, d);
+  }
+  return mn * 60 + sec;
 }
 
 // Infer category from exercise name
@@ -37690,6 +37819,8 @@ function launchSession(exos, sessName, progName, progKey, sessKey) {
   _LS.progKey = progKey || (window._progV2State && window._progV2State.key) || '';
   _LS.sessKey = sessKey || (window._progV2State && window._progV2State.sessionKey) || '';
   _LS.restActive = false;
+  _LS.side = null; _LS.mb = null; _LS.sp = null; _LS.cx = 0; _LS.cxExo = null; _LS.iv = null;
+  _LS.circuitMap = null; _LS.circuitMapLen = -1;
   clearInterval(_LS.restInterval);
   _lsRenderEx();
   var lsEl = document.getElementById('liveSession');
@@ -37948,169 +38079,937 @@ function _lsResetLog() {
   });
 }
 
+// ═══════════════════════════════════════════════════════════════════════════
+// NORMALISATION DES EXERCICES — couche de lecture, aucune donnée réécrite
+// ───────────────────────────────────────────────────────────────────────────
+// PROGRAMS_V2 stocke 5 chaînes par exercice : e(n, s, r, rest, note).
+// Aucun champ `metrique`, `charge`, `valeur` ou `circuit` n'existe en base.
+// Plutôt que de réécrire 710 lignes de prescription (interdit : le contenu
+// vient du livre), on dérive le modèle d'affichage À LA LECTURE.
+//
+// Conséquence : les 5 points d'entrée de launchSession (programmes V2, SOT
+// Elite Athlète, Workout Builder, séance perso Librairie, reprise de séance)
+// bénéficient tous du même rendu, sans migration de données.
+// ═══════════════════════════════════════════════════════════════════════════
+
+// Les 8 modes d'affichage. Le doc de refonte en prévoyait 5 ; l'audit des
+// 710 lignes réelles en a révélé 3 de plus (complexe / intervalle /
+// validation) qui, sans mode dédié, retombaient dans le gabarit séries-reps.
+var LS_MODES = ['duree','duree_par_cote','echec','reps','reps_par_cote',
+                'distance','bloc_libre','complexe','intervalle','validation'];
+
+function _lsHasSide(str) { return /\/\s*(jambe|jbe|c[oô]t[eé]|bras|main|pied|[eé]paule)/i.test(str || ''); }
+
+// Analyse la prescription (ex.r) en valeur exploitable.
+// "30-60 s" → {min:30,max:60,unite:'s'} | "12 reps (6/côté)" → {min:12,perSide:6}
+// "15 s → 90 s" → {min:15,max:90,progressif:true} | "10 mn minimum" → {floor:true}
+function _lsParseValeur(raw) {
+  var r = String(raw == null ? '' : raw).trim();
+  if (!r || r === '-') return null;
+  var perSide = null;
+  var paren = r.match(/\(([^)]*)\)/);
+  var body = r;
+  if (paren) {
+    var pm = paren[1].match(/(\d+(?:[.,]\d+)?)\s*\/\s*(?:jambe|jbe|c[oô]t[eé]|bras)/i);
+    if (pm) perSide = parseFloat(pm[1].replace(',', '.'));
+    body = r.replace(paren[0], ' ');
+  }
+  var side = _lsHasSide(r);
+  body = body.replace(/\/\s*(jambe|jbe|c[oô]t[eé]|bras|main|pied|[eé]paule)s?/ig, ' ');
+  var unite = null;
+  if (/\b(mn|min|minutes?)\b/i.test(body)) unite = 'mn';
+  else if (/\b(s|sec|secondes?)\b/i.test(body)) unite = 's';
+  else if (/\breps?\b|r[ée]p[ée]titions?/i.test(body)) unite = 'reps';
+  else if (/\b(m|m[eè]tres?)\b/i.test(body)) unite = 'm';
+  else if (/\bh\b|heures?/i.test(body)) unite = 'h';
+  var nums = (body.match(/\d+(?:[.,]\d+)?/g) || []).map(function(x){ return parseFloat(x.replace(',', '.')); });
+  if (!nums.length) return { unite: unite, txt: r, perSide: perSide, side: side, min: null, max: null };
+  var min = nums[0], max = nums.length > 1 ? nums[nums.length - 1] : null;
+  if (max != null && max < min) { var t = min; min = max; max = t; }
+  return {
+    min: min, max: max, unite: unite, perSide: perSide, side: side,
+    progressif: /→|->/.test(r),
+    floor: /minimum|min\b|au moins/i.test(r) && unite !== null,
+    txt: r
+  };
+}
+
+// Durée en secondes portée par une valeur (null si ce n'est pas une durée).
+function _lsValeurSeconds(v, useMax) {
+  if (!v || (v.unite !== 's' && v.unite !== 'mn')) return null;
+  var n = useMax && v.max != null ? v.max : v.min;
+  if (n == null) return null;
+  return Math.round(v.unite === 'mn' ? n * 60 : n);
+}
+
+// Détecte le mode d'affichage. AUCUN `if` sur le nom d'un exercice précis :
+// on ne lit que la forme de la prescription.
+function _lsDetectMetrique(ex) {
+  if (!ex) return 'bloc_libre';
+  if (ex.metrique && LS_MODES.indexOf(ex.metrique) > -1) return ex.metrique;
+  var r = String(ex.r || '').trim();
+  var n = String(ex.n || '');
+  var s = String(ex.s || '').trim();
+  var low = r.toLowerCase();
+
+  // Bilans, pesées, photos, jeûne : ce ne sont pas des séries.
+  if (/^(check|discussion|bilan|noter records|variable|1 mesure|1 photo|suivre la chanson)$/i.test(r)) return 'validation';
+  if (/^\d+\s*h$/i.test(r)) return 'validation';
+  // Fractionné / cycles : effort et récup à l'intérieur d'une même ligne.
+  if (/cycle/i.test(low) || /cycles?/i.test(s) || /fractionn[eé]/i.test(n)) return 'intervalle';
+  // Complexe : une ligne = plusieurs sous-mouvements enchaînés (triphasique).
+  if (/encha[îi]ner/i.test(low) && !/reps?|\bs\b|\bmn\b/i.test(low)) return 'complexe';
+  if ((n.split('→').length - 1) >= 2) return 'complexe';
+  // Échec / challenge : chrono montant, le score EST la performance.
+  if (/[ée]chec/i.test(low + ' ' + n) || /\bmax\b/i.test(low)) return 'echec';
+  if (_lsDetectTechnique(ex) === 'challenge') return 'echec';
+  // Distance : mètres, jamais confondus avec "mn".
+  if (/\d+\s*m\b/i.test(low) && !/\bmn\b/i.test(low)) return 'distance';
+
+  var isTime = /\d/.test(low) && /\b(s|sec|secondes?|mn|min|minutes?)\b/i.test(low) && !/reps?/i.test(low);
+  if (isTime) {
+    // Bloc de temps plutôt que série chronométrée dans deux cas :
+    //  - aucune série n'est prescrite (échauffements, étirements) ;
+    //  - la durée dépasse 3 minutes (course 35 mn, marche 10 mn minimum) —
+    //    personne ne "tient une série" de dix minutes, c'est un bloc.
+    if (/\b(mn|min|minutes?)\b/i.test(low)) {
+      if (s === '-' || s === '') return 'bloc_libre';
+      var mv = _lsParseValeur(r);
+      if (mv && mv.min != null && mv.min >= 3) return 'bloc_libre';
+    }
+    return _lsHasSide(r) ? 'duree_par_cote' : 'duree';
+  }
+  if (/reps?\b|r[ée]p[ée]titions?/i.test(low)) return _lsHasSide(r) ? 'reps_par_cote' : 'reps';
+  if (!r || r === '-') return 'bloc_libre';
+  return 'validation';
+}
+
+// Est-ce un exercice qui se charge (barre, haltères, %1RM) ?
+// Il n'existe aucune donnée fiable : catData.mat ne couvre que 32 % des noms
+// de PROGRAMS_V2. On reste conservateur — un faux négatif laisse simplement
+// la saisie libre repliée, un faux positif afficherait un champ kg absurde.
+function _lsHasCharge(ex) {
+  if (!ex) return false;
+  if (ex.charge === true || ex.charge === false) return ex.charge;
+  var hay = ((ex.n || '') + ' ' + (ex.note || '') + ' ' + (ex.mat || '')).toLowerCase();
+  if (/poids du corps|sans mat[ée]riel|pdc\b/.test(hay)) return false;
+  return /barre|halt[èe]re|kettlebell|kb\b|1rm|%\s*rm|\bkg\b|charg[ée]|lest|machine|poulie|presse|tirage|rowing|d[ée]velopp[ée]|soulev[ée] de terre|\bsdt\b|power clean|\bclean\b|hip thrust|back squat|front squat|squat barre|goblet/.test(hay);
+}
+
+// Résout "Var.*" depuis la table de progression DU PROGRAMME concerné.
+// Le nombre de séries dépend de la semaine — et chaque programme a sa propre
+// courbe : TRIPHASIQUE monte (2 → 5-6), VERTICAL DUNK et ELITE ATHLÈTE
+// descendent (5 → 3). Appliquer une table unique corromprait la prescription.
+// Renvoie null quand la table ne porte pas de nombre de séries (EXPLOSE+
+// phase 1 = "PDC", semaines de Transmission Force = "—") : dans ce cas on
+// n'affiche AUCUN total plutôt que d'inventer une valeur ou d'afficher "Var.*".
+function _lsResolveVarSeries(progKey, phaseIdx, week) {
+  try {
+    if (!progKey || typeof PROGRAMS_V2 === 'undefined') return null;
+    var prog = PROGRAMS_V2[progKey]; if (!prog || !prog.phases) return null;
+    var phase = prog.phases[phaseIdx || 0]; if (!phase || !phase.progression) return null;
+    var absOffset = 0;
+    for (var i = 0; i < (phaseIdx || 0); i++) absOffset += (prog.phases[i].weeks || 0);
+    var wRel = week || 1, wAbs = absOffset + wRel;
+    var rows = phase.progression, row = null;
+    for (var pass = 0; pass < 2 && !row; pass++) {
+      var target = pass === 0 ? wRel : wAbs;
+      for (var j = 0; j < rows.length; j++) {
+        var m = String(rows[j].w || '').match(/(\d+)(?:\s*[-–]\s*(\d+))?/);
+        if (!m) continue;
+        var lo = parseInt(m[1], 10), hi = m[2] ? parseInt(m[2], 10) : lo;
+        if (target >= lo && target <= hi) { row = rows[j]; break; }
+      }
+    }
+    if (!row) return null;
+    var sm = String(row.v || '').match(/(\d+)(?:\s*[-–]\s*(\d+))?\s*s[ée]ries?/i);
+    if (!sm) return null;
+    var lo2 = parseInt(sm[1], 10), hi2 = sm[2] ? parseInt(sm[2], 10) : lo2;
+    return { n: hi2, label: sm[2] ? (lo2 + '-' + hi2) : String(lo2) };
+  } catch (e) { return null; }
+}
+
+// Contexte programme courant : sert à résoudre Var.* et rien d'autre.
+function _lsProgContext() {
+  var key = (_LS && _LS.progKey) || '';
+  var st = { phaseIdx: 0, week: 1 };
+  try { if (key && typeof getProgramProgress === 'function') st = getProgramProgress(key) || st; } catch (e) {}
+  return { progKey: key, phaseIdx: st.phaseIdx || 0, week: st.week || 1 };
+}
+
+// Nombre de séries. "4" → 4 | "3-4" → 4 | "8 cycles" → 8 | "-" → 1
+// "Var.*" → résolu par la semaine, ou null (aucun total affiché).
+function _lsSetCount(ex) {
+  var r = _lsSeriesInfo(ex);
+  return r.n == null ? 1 : r.n;
+}
+function _lsSeriesInfo(ex) {
+  if (!ex || !ex.s || ex.s === '-') return { n: 1, label: null, unique: true };
+  var s = String(ex.s);
+  if (/var/i.test(s)) {
+    var c = _lsProgContext();
+    var v = _lsResolveVarSeries(c.progKey, c.phaseIdx, c.week);
+    if (v) return { n: v.n, label: v.label, resolved: true };
+    return { n: null, label: null, unresolved: true };   // jamais "Var.*" à l'écran
+  }
+  var nums = (s.match(/\d+/g) || []).map(Number);
+  if (nums.length) {
+    var mx = Math.max.apply(null, nums);
+    var mn = Math.min.apply(null, nums);
+    return { n: mx, label: mn !== mx ? (mn + '-' + mx) : String(mx) };
+  }
+  return { n: 1, label: null, unique: true };
+}
+
+// Circuits : PROGRAMS_V2 ne porte aucun marqueur d'enchaînement. On les
+// déduit d'une suite d'exercices dont le repos prescrit est "-" (= enchaîner),
+// close par le premier exercice qui porte un vrai repos. Les blocs de temps
+// (échauffement, étirements) et les bilans sont exclus : sans ça, un
+// échauffement suivi du premier exercice formerait un faux circuit.
+function _lsCircuitMap(exos) {
+  var map = [], run = [], i;
+  function flush(endIdx) {
+    if (run.length >= 2) {
+      for (var k = 0; k < run.length; k++) {
+        map[run[k]] = { position: k + 1, total: run.length };
+      }
+    }
+    run = [];
+  }
+  for (i = 0; i < (exos || []).length; i++) {
+    var ex = exos[i];
+    var m = _lsDetectMetrique(ex);
+    if (m === 'bloc_libre' || m === 'validation') { flush(i); continue; }
+    run.push(i);
+    var rest = String(ex.rest == null ? '-' : ex.rest).trim();
+    if (rest && rest !== '-') flush(i);   // repos réel → fin du tour
+  }
+  flush(i);
+  return map;
+}
+
+// Sous-mouvements d'un complexe : "Squat iso 30 s → Squat exc 5 reps → …"
+function _lsComplexSteps(ex) {
+  var parts = String((ex && ex.n) || '').split(/\s*→\s*|\s*->\s*/);
+  if (parts.length < 2) return null;
+  return parts.map(function (p) {
+    var t = p.trim();
+    var m = t.match(/^(.*?)\s*(\d+(?:[.,]\d+)?\s*(?:s|sec|mn|min|reps?)(?:\s*\/\s*\w+)?)\s*$/i);
+    return m ? { nom: m[1].trim(), valeur: m[2].trim() } : { nom: t, valeur: '' };
+  });
+}
+
+// Modèle d'affichage complet d'un exercice. Fonction PURE : aucune lecture
+// du DOM, aucune écriture. C'est elle que testent les 710 cas de
+// scripts/test-live-screen.js.
+function _lsNormalizeExo(ex, idx, exos, circuitMap) {
+  ex = ex || {};
+  var nomBrut = String(ex.n || '').trim();
+  var nom = nomBrut.split('—')[0].trim() || nomBrut;
+  // La précision ne répète JAMAIS le titre : "Échauffement dynamique —
+  // Mobilité complète" affichait "Mobilité complète" en badge, en titre ET
+  // en sous-titre. Une information affichée trois fois n'en est plus une.
+  var precision = String(ex.note || '').trim();
+  if (!precision && nomBrut.indexOf('—') > -1) precision = nomBrut.split('—').slice(1).join(' — ').trim();
+  var nl = nom.toLowerCase(), pl = precision.toLowerCase();
+  if (precision && (nl.indexOf(pl) > -1 || pl.indexOf(nl) > -1)) precision = '';
+
+  var metrique = _lsDetectMetrique(ex);
+  var valeur = _lsParseValeur(ex.r);
+  var series = _lsSeriesInfo(ex);
+  var repos = _lsParseRest(ex.rest);
+  var tech = _lsDetectTechnique(ex);
+  var circuit = (circuitMap && circuitMap[idx]) || null;
+  var vid = ex.video || (typeof _LIB_VIDEO_MAP !== 'undefined' ? (_LIB_VIDEO_MAP[nomBrut] || _LIB_VIDEO_MAP[nom]) : null) || null;
+
+  return {
+    idx: idx,
+    nom: nom,
+    precision: precision,
+    metrique: metrique,
+    valeur: valeur,
+    charge: metrique === 'reps' || metrique === 'reps_par_cote' ? _lsHasCharge(ex) : false,
+    series: series,
+    repos: repos,
+    technique: tech,
+    circuit: circuit,
+    videoId: vid,
+    consigne: tech === 'classique' ? '' : _lsTechniqueInstruction(tech),
+    raw: ex
+  };
+}
+
+window._lsNormalizeExo = _lsNormalizeExo;
+window._lsDetectMetrique = _lsDetectMetrique;
+window._lsParseValeur = _lsParseValeur;
+window._lsSeriesInfo = _lsSeriesInfo;
+window._lsCircuitMap = _lsCircuitMap;
+window._lsResolveVarSeries = _lsResolveVarSeries;
+
+// ═══════════════════════════════════════════════════════════════════════════
+// MOTEUR DE CHRONO PARTAGÉ (modes chrono / échec / distance / bloc / cycles)
+// ═══════════════════════════════════════════════════════════════════════════
+function _lsEsc(s) {
+  return String(s == null ? '' : s)
+    .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+}
+function _lsTimerStop() {
+  if (_LS.tmr && _LS.tmr.id) { clearInterval(_LS.tmr.id); _LS.tmr.id = null; }
+  if (_LS.tmr) _LS.tmr.running = false;
+}
+function _lsTimerReset() {
+  _lsTimerStop();
+  _LS.tmr = { id: null, running: false, dir: 'down', sec: 0, total: 0, onEnd: null, beeped: false };
+}
+function _lsTimerPaint() {
+  var t = _LS.tmr; if (!t) return;
+  // Tant qu'aucun chrono n'a démarré, la zone affiche la durée PRESCRITE
+  // (30 s, 05:00…). La repeindre avec t.sec = 0 remplaçait l'objectif par
+  // un 00:00 qui ne veut rien dire avant le départ.
+  if (!t.total && !t.running) return;
+  var v = document.getElementById('lsBigVal');
+  if (v) v.textContent = _lsFmt(Math.max(0, t.sec));
+  var f = document.getElementById('lsTimerFill');
+  if (f && t.total > 0) f.style.width = (t.dir === 'down'
+      ? Math.max(0, Math.min(100, (t.sec / t.total) * 100))
+      : Math.max(0, Math.min(100, ((t.total - t.sec) / t.total) * 100))) + '%';
+}
+function _lsTimerStart(sec, dir, onEnd) {
+  _lsTimerStop();
+  _LS.tmr = { id: null, running: true, dir: dir || 'down', sec: sec, total: sec, onEnd: onEnd || null, beeped: false };
+  try { if (typeof window.tim_beepUnlock === 'function') window.tim_beepUnlock(); } catch (e) {}
+  _lsTimerPaint();
+  _LS.tmr.id = setInterval(function () {
+    var t = _LS.tmr; if (!t || !t.running) return;
+    t.sec += (t.dir === 'down' ? -1 : 1);
+    // Bip + vibration à 3 s de la fin, puis à 0.
+    if (t.dir === 'down' && t.sec === 3 && !t.beeped) {
+      t.beeped = true;
+      try { if (typeof window.tim_sndTick === 'function') window.tim_sndTick(); } catch (e) {}
+      try { if (navigator.vibrate) navigator.vibrate(60); } catch (e) {}
+    }
+    _lsTimerPaint();
+    if (t.dir === 'down' && t.sec <= 0) {
+      _lsTimerStop();
+      try { if (typeof window.tim_sndFinish === 'function') window.tim_sndFinish(); } catch (e) {}
+      try { if (navigator.vibrate) navigator.vibrate([200, 80, 200]); } catch (e) {}
+      var cb = t.onEnd; if (cb) cb();
+    }
+  }, 1000);
+}
+function _lsTimerToggle() {
+  var t = _LS.tmr; if (!t) return;
+  t.running = !t.running;
+  _lsPaintPrimary();
+}
+
+// Dernière performance connue sur un exercice (pré-remplissage du mode CHARGE).
+function _lsLastPerf(nom) {
+  try {
+    var hist = JSON.parse(localStorage.getItem('ah_track_history') || '[]');
+    if (!Array.isArray(hist)) return null;
+    for (var i = hist.length - 1; i >= 0; i--) {
+      var h = hist[i];
+      if (!h || (h.exerciseName !== nom && h.exo !== nom)) continue;
+      var es = h.essais || [];
+      for (var j = es.length - 1; j >= 0; j--) {
+        if (es[j] && (es[j].load > 0 || es[j].reps > 0)) {
+          return { load: es[j].load || 0, reps: es[j].reps || 0, rpe: h.rpe || 0, date: h.date || '' };
+        }
+      }
+    }
+  } catch (e) {}
+  return null;
+}
+// Meilleure charge jamais enregistrée (détection de record au mode CHARGE).
+function _lsBestLoad(nom) {
+  var best = 0;
+  try {
+    var hist = JSON.parse(localStorage.getItem('ah_track_history') || '[]');
+    if (!Array.isArray(hist)) return 0;
+    hist.forEach(function (h) {
+      if (!h || (h.exerciseName !== nom && h.exo !== nom)) return;
+      (h.essais || []).forEach(function (e) { if (e && e.load > best) best = e.load; });
+    });
+  } catch (e) {}
+  return best;
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// RENDU DE LA ZONE MODE
+// ═══════════════════════════════════════════════════════════════════════════
+function _lsKicker(vm) {
+  var s = vm.series;
+  var unit = vm.circuit ? 'Tour' : (vm.metrique === 'distance' ? 'Sprint' : 'Série');
+  if (s.n == null) return '<div class="ls-mode-kicker">' + unit + ' <b>' + _LS.setNum + '</b></div>';
+  if (s.n <= 1) return '';
+  return '<div class="ls-mode-kicker">' + unit + ' <b>' + _LS.setNum + '</b> / ' + (s.label || s.n) + '</div>';
+}
+function _lsSideTag() {
+  if (!_LS.side) return '';
+  return '<div class="ls-mode-kicker" style="color:var(--lv-rest)">Côté <b style="color:var(--lv-rest)">'
+       + (_LS.side === 'G' ? 'gauche' : 'droit') + '</b></div>';
+}
+function _lsTimerBlock(sec) {
+  return '<div class="ls-big" id="lsBigVal">' + _lsFmt(sec) + '</div>'
+       + '<div class="ls-timerbar"><div class="ls-timerbar-fill" id="lsTimerFill"></div></div>';
+}
+
+function _lsRenderMode(vm) {
+  var zone = document.getElementById('lsMode');
+  var logBox = document.getElementById('lsLog');
+  if (!zone) return;
+  var v = vm.valeur, h = '';
+  var showLog = false;
+
+  switch (vm.metrique) {
+
+    // ── MODE A — CHRONO (durée, durée par côté) ──
+    case 'duree':
+    case 'duree_par_cote': {
+      var sec = _lsValeurSeconds(v, false) || 30;
+      h = _lsKicker(vm) + (vm.metrique === 'duree_par_cote' ? _lsSideTag() : '')
+        + _lsTimerBlock(_LS.tmr && _LS.tmr.total ? _LS.tmr.sec : sec);
+      if (v && v.max != null && v.max !== v.min) {
+        h += '<div class="ls-big-horizon">objectif de la phase : ' + v.max + ' ' + (v.unite || 's') + '</div>';
+      }
+      if (vm.consigne) h += '<div class="ls-mode-consigne">' + _lsEsc(vm.consigne) + '</div>';
+      showLog = true;
+      break;
+    }
+
+    // ── MODE A variante ÉCHEC — chrono montant, le temps tenu EST la perf ──
+    case 'echec': {
+      h = _lsKicker(vm)
+        + '<div class="ls-big" id="lsBigVal">00:00</div>'
+        + '<div class="ls-timerbar"><div class="ls-timerbar-fill" id="lsTimerFill" style="width:0%"></div></div>'
+        + '<div class="ls-mode-consigne">Va jusqu\'au bout. Le temps tenu est ton record.</div>';
+      showLog = true;
+      break;
+    }
+
+    // ── MODE B — CHARGE : reps / kg / RPE, validation en 1 tap ──
+    case 'reps':
+    case 'reps_par_cote': {
+      if (vm.charge) {
+        var last = _lsLastPerf(vm.nom);
+        if (!_LS.mb || _LS.mb.exo !== vm.nom) {
+          _LS.mb = {
+            exo: vm.nom,
+            reps: (last && last.reps) || (v && v.min) || 8,
+            load: (last && last.load) || 0,
+            rpe: (last && last.rpe) || 0,
+            best: _lsBestLoad(vm.nom)
+          };
+        }
+        var mb = _LS.mb;
+        var objectif = v && v.min != null ? (' · objectif ' + (v.max != null && v.max !== v.min ? v.min + '-' + v.max : v.min) + ' reps') : '';
+        h = '<div class="ls-mode-kicker">' + (vm.series.n > 1
+              ? 'Série <b>' + _LS.setNum + '</b> / ' + (vm.series.label || vm.series.n)
+              : 'Série <b>' + _LS.setNum + '</b>') + objectif + '</div>'
+          + '<div class="ls-steppers">'
+          +   _lsStepperHtml('reps', 'Reps', mb.reps, 1)
+          +   _lsStepperHtml('load', 'Kg', mb.load, 2.5)
+          + '</div>'
+          + '<div class="ls-stepper-l" style="margin-top:2px">RPE ressenti</div>'
+          + '<div class="ls-rpe" id="lsRpe">' + _lsRpeHtml(mb.rpe) + '</div>';
+        if (mb.best > 0 && mb.load > mb.best) h += '<div class="ls-prflag">🔥 Nouveau record</div>';
+        else if (last) h += '<div class="ls-mode-hint">Dernière fois : ' + (last.load > 0 ? last.load + ' kg × ' : '') + last.reps + ' reps</div>';
+        break;
+      }
+      // ── MODE C — REPS POIDS DU CORPS : l'objectif est présumé atteint ──
+      var big = v && v.min != null ? (v.max != null && v.max !== v.min ? v.min + '-' + v.max : String(v.min)) : (vm.valeur ? vm.valeur.txt : '—');
+      h = _lsKicker(vm)
+        + '<div class="ls-big ls-big-sm">' + _lsEsc(big) + '</div>'
+        + '<div class="ls-big-unit">reps' + (v && v.perSide ? ' · ' + v.perSide + ' par côté' : (v && v.side ? ' par côté' : '')) + '</div>'
+        + (vm.consigne ? '<div class="ls-mode-consigne">' + _lsEsc(vm.consigne) + '</div>' : '');
+      showLog = true;
+      break;
+    }
+
+    // ── MODE D — DISTANCE / SPRINT : chrono manuel au centième ──
+    case 'distance': {
+      if (!_LS.sp || _LS.sp.exo !== vm.nom) _LS.sp = { exo: vm.nom, splits: [], t0: 0, running: false, last: 0 };
+      var dist = v && v.min != null ? (v.min + ' ' + (v.unite || 'm')) : (v ? v.txt : '');
+      h = '<div class="ls-mode-kicker">Sprint <b>' + _LS.setNum + '</b>'
+        + (vm.series.n > 1 ? ' / ' + (vm.series.label || vm.series.n) : '')
+        + (dist ? ' · ' + _lsEsc(dist) : '') + '</div>'
+        + '<div class="ls-big" id="lsSprintVal">' + _lsFmtCs(_LS.sp.last) + '</div>'
+        + '<div class="ls-sprint-btns">'
+        +   '<button type="button" class="ls-sprint-btn' + (_LS.sp.running ? '' : ' ls-armed') + '" id="lsSprintGo" onclick="window._lsSprintStart()">Départ</button>'
+        +   '<button type="button" class="ls-sprint-btn' + (_LS.sp.running ? ' ls-armed' : '') + '" id="lsSprintStop" onclick="window._lsSprintStop()"' + (_LS.sp.running ? '' : ' disabled') + '>Arrivée</button>'
+        + '</div>';
+      if (_LS.sp.splits.length) {
+        h += '<div class="ls-splits">' + _LS.sp.splits.map(function (s, i) {
+          return '<span>' + (i + 1) + ' · ' + _lsFmtCs(s) + '</span>';
+        }).join('') + '</div>';
+      }
+      break;
+    }
+
+    // ── MODE E — BLOC LIBRE : un temps, aucune saisie, toujours passable ──
+    case 'bloc_libre': {
+      var bsec = _lsValeurSeconds(v, false) || 0;
+      h = (bsec ? _lsTimerBlock(_LS.tmr && _LS.tmr.total ? _LS.tmr.sec : bsec)
+                : '<div class="ls-big ls-big-sm">' + _lsEsc(v ? v.txt : '—') + '</div>')
+        + '<div class="ls-mode-consigne">'
+        + _lsEsc(v && v.floor ? 'Au moins ' + v.min + ' ' + (v.unite === 'mn' ? 'minutes' : 'secondes') + '.'
+               : (v && v.max != null && v.max !== v.min ? 'Entre ' + v.min + ' et ' + v.max + ' ' + (v.unite === 'mn' ? 'minutes' : 'secondes') + '.'
+               : 'Prends le temps qu\'il te faut.'))
+        + '</div>'
+        + '<button type="button" class="ls-video-link" onclick="window._lsSkipBlock()">Passer ce bloc</button>';
+      break;
+    }
+
+    // ── MODE F — COMPLEXE : sous-mouvements enchaînés sans pause ──
+    case 'complexe': {
+      var steps = _lsComplexSteps(vm.raw) || [{ nom: vm.nom, valeur: v ? v.txt : '' }];
+      if (_LS.cx == null || _LS.cxExo !== vm.nom) { _LS.cx = 0; _LS.cxExo = vm.nom; }
+      h = _lsKicker(vm) + '<div class="ls-steps">' + steps.map(function (s, i) {
+        var cls = i < _LS.cx ? ' done' : (i === _LS.cx ? ' on' : '');
+        return '<div class="ls-step' + cls + '">'
+             + '<div class="ls-step-i">' + (i + 1) + '</div>'
+             + '<div class="ls-step-n">' + _lsEsc(s.nom) + '</div>'
+             + (s.valeur ? '<div class="ls-step-v">' + _lsEsc(s.valeur) + '</div>' : '')
+             + '</div>';
+      }).join('') + '</div>'
+      + '<div class="ls-mode-consigne">Enchaîne sans pause entre les trois.</div>';
+      break;
+    }
+
+    // ── MODE G — INTERVALLE : effort / récup répétés dans la même ligne ──
+    case 'intervalle': {
+      var cy = _lsIntervalSpec(vm);
+      if (!_LS.iv || _LS.iv.exo !== vm.nom) _LS.iv = { exo: vm.nom, cycle: 1, phase: 'work' };
+      h = '<div class="ls-mode-kicker">Cycle <b>' + _LS.iv.cycle + '</b> / ' + cy.cycles + '</div>'
+        + '<div class="ls-mode-kicker" style="color:' + (_LS.iv.phase === 'work' ? 'var(--lv-gold)' : 'var(--lv-rest)') + '">'
+        +   (_LS.iv.phase === 'work' ? 'Effort' : 'Récup') + '</div>'
+        + _lsTimerBlock(_LS.tmr && _LS.tmr.total ? _LS.tmr.sec : (_LS.iv.phase === 'work' ? cy.work : cy.rest))
+        + (cy.desc && vm.nom.indexOf(cy.desc) < 0
+             ? '<div class="ls-mode-consigne">' + _lsEsc(cy.desc) + '</div>' : '');
+      break;
+    }
+
+    // ── MODE H — VALIDATION : bilans, pesées, photos, jeûne. Pas une série. ──
+    default: {
+      h = '<div class="ls-big ls-big-sm">' + _lsEsc((v && v.txt) || 'À faire') + '</div>'
+        + '<div class="ls-mode-consigne">' + _lsEsc(vm.precision || 'Coche quand c\'est fait.') + '</div>'
+        + '<button type="button" class="ls-video-link" onclick="window._lsSkipBlock()">Passer</button>';
+      break;
+    }
+  }
+
+  zone.innerHTML = h;
+  if (logBox) logBox.style.display = showLog ? '' : 'none';
+  _lsTimerPaint();
+}
+
+function _lsStepperHtml(key, label, val, step) {
+  return '<div class="ls-stepper' + (key === 'load' && _LS.mb && _LS.mb.best > 0 && _LS.mb.load > _LS.mb.best ? ' ls-pr' : '') + '">'
+    + '<div class="ls-stepper-l">' + label + '</div>'
+    + '<div class="ls-stepper-row">'
+    +   '<button type="button" class="ls-stepper-btn" onclick="window._lsStep(\'' + key + '\',-' + step + ')" aria-label="Moins">−</button>'
+    +   '<div class="ls-stepper-v" id="lsStep_' + key + '">' + (val || 0) + '</div>'
+    +   '<button type="button" class="ls-stepper-btn" onclick="window._lsStep(\'' + key + '\',' + step + ')" aria-label="Plus">+</button>'
+    + '</div></div>';
+}
+function _lsRpeHtml(cur) {
+  var h = '';
+  for (var i = 1; i <= 10; i++) {
+    h += '<button type="button" class="ls-rpe-dot' + (i === cur ? ' on' : '') + '" onclick="window._lsSetRpe(' + i + ')">' + i + '</button>';
+  }
+  return h;
+}
+window._lsStep = function (key, delta) {
+  if (!_LS.mb) return;
+  var v = (_LS.mb[key] || 0) + delta;
+  _LS.mb[key] = Math.max(0, Math.round(v * 100) / 100);
+  var el = document.getElementById('lsStep_' + key);
+  if (el) el.textContent = _LS.mb[key];
+  try { if (navigator.vibrate) navigator.vibrate(8); } catch (e) {}
+  if (key === 'load') _lsRenderMode(_LS.vm);
+};
+window._lsSetRpe = function (n) {
+  if (!_LS.mb) return;
+  _LS.mb.rpe = (_LS.mb.rpe === n ? 0 : n);
+  var box = document.getElementById('lsRpe');
+  if (box) box.innerHTML = _lsRpeHtml(_LS.mb.rpe);
+};
+
+// Spécification d'un intervalle, lue dans le libellé (aucune donnée inventée).
+function _lsIntervalSpec(vm) {
+  var n = String(vm.raw.n || ''), s = String(vm.raw.s || '');
+  var cyc = (s.match(/(\d+)\s*cycles?/i) || n.match(/(\d+)\s*cycles?/i));
+  var cycles = cyc ? parseInt(cyc[1], 10) : (vm.series.n || 8);
+  var times = (n.match(/(\d+)\s*(s|mn)\b/gi) || []).map(function (x) {
+    var m = x.match(/(\d+)\s*(s|mn)/i);
+    return parseInt(m[1], 10) * (/mn/i.test(m[2]) ? 60 : 1);
+  });
+  return {
+    cycles: cycles,
+    work: times[0] || 30,
+    rest: times.length > 1 ? times.slice(1).reduce(function (a, b) { return a + b; }, 0) : 30,
+    desc: n.replace(/^[^:]*:\s*/, '') || 'Alterne effort et récup.'
+  };
+}
+function _lsFmtCs(ms) {
+  if (!ms) return '00.00';
+  var s = Math.floor(ms / 1000), cs = Math.floor((ms % 1000) / 10);
+  return (s < 10 ? '0' : '') + s + '.' + (cs < 10 ? '0' : '') + cs;
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// RENDU DE L'ÉCRAN
+// ═══════════════════════════════════════════════════════════════════════════
 function _lsRenderEx() {
   var ex = _LS.exos[_LS.idx];
   if (!ex) return;
   var total = _LS.exos.length;
-  try { _lsResetLog(); } catch(e) {}
+  try { _lsResetLog(); } catch (e) {}
+  _lsTimerReset();
 
-  // Header
-  document.getElementById('lsProgName').textContent = _LS.progName;
-  document.getElementById('lsSessName').textContent = _LS.sessName;
-  document.getElementById('lsCounter').textContent = (_LS.idx + 1) + '/' + total;
+  if (!_LS.circuitMap || _LS.circuitMapLen !== total) {
+    _LS.circuitMap = _lsCircuitMap(_LS.exos);
+    _LS.circuitMapLen = total;
+  }
+  var vm = _lsNormalizeExo(ex, _LS.idx, _LS.exos, _LS.circuitMap);
+  _LS.vm = vm;
+  if (vm.metrique === 'duree_par_cote') { if (!_LS.side) _LS.side = 'G'; }
+  else { _LS.side = null; }
 
-  // Category + name
-  document.getElementById('lsCatBadge').textContent = _lsCategory(ex.n);
-  document.getElementById('lsExName').textContent = (ex.n || '').toUpperCase();
+  // ── Header ──
+  document.getElementById('lsProgName').textContent = _LS.progName || '';
+  document.getElementById('lsSessName').textContent = _LS.sessName || '';
+  var bar = document.getElementById('lsTopBar');
+  if (bar) bar.style.width = Math.round((_LS.idx / total) * 100) + '%';
 
-  // Sub (note if exists, or reps description)
-  var sub = ex.note || '';
-  if (!sub && ex.n.indexOf('—') !== -1) sub = ex.n.split('—').slice(1).join('—').trim();
-  document.getElementById('lsExSub').textContent = sub;
+  // ── Tags : seulement ce qui est INHABITUEL. Jamais "CLASSIQUE". ──
+  var tags = [];
+  if (vm.circuit) {
+    tags.push('Circuit');
+    if (vm.series.n > 1) tags.push('Tour ' + _LS.setNum + '/' + (vm.series.label || vm.series.n));
+  } else if (vm.technique !== 'classique') {
+    tags.push(_lsTechniqueLabel(vm.technique));
+  }
+  if (vm.metrique === 'echec') tags.push('À l\'échec');
+  var tagsEl = document.getElementById('lsTags');
+  tagsEl.innerHTML = tags.map(function (t) { return '<span class="ls-tag">' + _lsEsc(t) + '</span>'; }).join('');
 
-  // Metrics — Séries affiche la série courante / total quand l'exo en a plusieurs
-  var totalSets = _lsSetCount(ex);
-  if (_LS.setNum > totalSets) _LS.setNum = totalSets;
-  if (_LS.setNum < 1) _LS.setNum = 1;
-  document.getElementById('lsMetSets').textContent = totalSets > 1
-    ? (_LS.setNum + '/' + totalSets)
-    : (ex.s && ex.s !== '-' ? ex.s : '—');
-  // Reps : on STRIPPE le mot "cluster" / "circuit" déjà mélangé pour ne
-  // garder QUE le nombre/durée. La technique est affichée séparément
-  // dans la carte "À faire maintenant" (client demande explicitement de
-  // ne plus mélanger reps et technique).
-  var repsRaw = ex.r && ex.r !== '-' ? ex.r : '—';
-  var repsClean = String(repsRaw).replace(/\s*(?:cluster|circuit|superset|bi-?set|challenge)\s*$/i, '').trim();
-  if (!repsClean) repsClean = repsRaw;
-  document.getElementById('lsMetReps').textContent = repsClean;
-  // Rest display: short format
-  var restSec = _lsParseRest(ex.rest);
-  var rm = Math.floor(restSec / 60), rs = restSec % 60;
-  document.getElementById('lsMetRest').textContent = (rm > 0 ? rm + "'" : '') + (rs > 0 ? rs + '"' : (rm > 0 ? '' : '—'));
+  // ── Nom : casse normale, 2 lignes max, jamais en display font ──
+  var titre = vm.nom, sousTitre = vm.precision || '';
+  if (vm.metrique === 'complexe') {
+    var cSteps = _lsComplexSteps(ex) || [];
+    if (cSteps.length) {
+      if (_LS.cx == null || _LS.cx >= cSteps.length) _LS.cx = 0;
+      titre = cSteps[_LS.cx].nom;
+      sousTitre = 'Enchaînement ' + (_LS.cx + 1) + ' / ' + cSteps.length + ' — sans pause';
+    }
+  }
+  document.getElementById('lsExName').textContent = titre;
+  document.getElementById('lsExPrecision').textContent = sousTitre;
 
-  // Hide rest overlay
+  // ── Vidéo : le bloc disparaît quand il n'y en a pas (91 % des exercices) ──
+  var vw = document.getElementById('lsVideoWrap'), vl = document.getElementById('lsVideoLink');
+  if (vm.videoId) {
+    vw.style.display = '';
+    vw.style.backgroundImage = 'url(https://i.ytimg.com/vi/' + vm.videoId + '/mqdefault.jpg)';
+    vl.style.display = '';
+  } else {
+    vw.style.display = 'none';
+    vw.style.backgroundImage = '';
+    vl.style.display = 'none';
+  }
+
+  // ── Zone mode ──
+  _lsRenderMode(vm);
+
+  // ── Footer : carte en tirets + action + prochain exercice ──
+  var dashes = '';
+  for (var i = 0; i < total; i++) {
+    dashes += '<div class="ls-dash' + (i < _LS.idx ? ' done' : (i === _LS.idx ? ' current' : '')) + '"></div>';
+  }
+  document.getElementById('lsDashes').innerHTML = dashes;
+  var prevBtn = document.getElementById('lsPrevBtn'), nextBtn = document.getElementById('lsNextBtn');
+  if (prevBtn) prevBtn.disabled = (_LS.idx === 0);
+  if (nextBtn) nextBtn.disabled = (_LS.idx >= total - 1);
+  _lsPaintPrimary();
+
+  // Le prochain exercice est nommé en entier — jamais tronqué par "…".
+  var nl = document.getElementById('lsNextLine');
+  if (nl) {
+    if (_LS.idx < total - 1) {
+      var nx = _lsNormalizeExo(_LS.exos[_LS.idx + 1], _LS.idx + 1, _LS.exos, _LS.circuitMap);
+      nl.innerHTML = '<span class="ls-nextline-l">Ensuite</span><span class="ls-nextline-n">'
+        + _lsEsc(nx.nom) + '</span>';
+    } else {
+      nl.innerHTML = '<span class="ls-nextline-l">Ensuite</span><span class="ls-nextline-n">Fin de séance</span>';
+    }
+  }
+
   document.getElementById('lsRestOverlay').classList.remove('ls-rest-active');
   clearInterval(_LS.restInterval);
   _LS.restActive = false;
-
-  // ── Carte "À faire maintenant" ───────────────────────────────────────
-  // Sortie de la technique des reps. Affiche : technique + reps + série
-  // ou round courant + instruction courte. C'est la couche "interface
-  // séance" demandée par le client (vs la couche "vidéo démo" du player).
-  var tech = _lsDetectTechnique(ex);
-  var techLbl = _lsTechniqueLabel(tech);
-  var instruction = _lsTechniqueInstruction(tech);
-  var isCircuit = tech === 'circuit';
-  var setOrRoundLine = '';
-  if (totalSets > 1) {
-    setOrRoundLine = (isCircuit ? 'Round ' : 'Série ') + _LS.setNum + ' / ' + totalSets;
-  } else if (ex.s && ex.s !== '-') {
-    setOrRoundLine = (isCircuit ? 'Round' : 'Série') + ' unique';
-  }
-  var nowCard = document.getElementById('lsNowCard');
-  if (nowCard) {
-    nowCard.innerHTML =
-        '<div class="ls-now-row">'
-      +   '<span class="ls-now-tech">' + techLbl + '</span>'
-      +   '<button type="button" class="ls-now-help" onclick="window._lsShowTechniqueHelp()" aria-label="Comment faire ?">? Comment faire</button>'
-      + '</div>'
-      + '<div class="ls-now-todo">' + repsClean + (repsClean.match(/^[0-9]/) ? ' reps' : '') + '</div>'
-      + (setOrRoundLine ? '<div class="ls-now-set">' + setOrRoundLine + '</div>' : '')
-      + '<div class="ls-now-instr">' + instruction + '</div>';
-  }
-
-  // Done button label — reflète la série/round en cours, contexte technique
-  var isLast = (_LS.idx === total - 1);
-  var isLastSet = (_LS.setNum >= totalSets);
-  var btnLabel;
-  var unit = isCircuit ? 'ROUND' : 'SÉRIE';
-  if (isLast && isLastSet) btnLabel = '✓ TERMINER LA SÉANCE';
-  else if (totalSets > 1 && !isLastSet) btnLabel = '✓ VALIDER ' + unit + ' ' + _LS.setNum + ' / ' + totalSets;
-  else if (tech === 'cluster' && totalSets > 1) btnLabel = '✓ VALIDER SÉRIE COMPLÈTE';
-  else if (tech === 'challenge') btnLabel = '✓ CHALLENGE TERMINÉ';
-  else btnLabel = '✓ EXERCICE SUIVANT →';
-  document.getElementById('lsBtnDone').textContent = btnLabel;
-
-  // Next preview
-  var nextEl = document.getElementById('lsNextPreview');
-  var nextNameEl = document.getElementById('lsNextName');
-  if (!isLast) {
-    var nx = _LS.exos[_LS.idx + 1];
-    nextNameEl.textContent = (nx && nx.n) ? nx.n.split('—')[0].trim() : '';
-    nextEl.style.display = 'flex';
-  } else {
-    nextEl.style.display = 'none';
-  }
-
-  // Progress bar
-  var segsEl = document.getElementById('lsProgressSegs');
-  var segHtml = '';
-  for (var i = 0; i < total; i++) {
-    var cls = i < _LS.idx ? 'ls-seg done' : (i === _LS.idx ? 'ls-seg current' : 'ls-seg');
-    segHtml += '<div class="' + cls + '"></div>';
-  }
-  segsEl.innerHTML = segHtml;
-  document.getElementById('lsProgressLabel').textContent = 'EXERCICE ' + (_LS.idx + 1) + ' SUR ' + total;
-
-  // Scroll body top
-  var body = document.getElementById('lsBody');
-  if (body) body.scrollTop = 0;
-
-  // Hide complete screen
   document.getElementById('lsComplete').style.display = 'none';
-
-  // Miniature vidéo dans la zone démo : thumbnail YouTube si dispo, sinon fond sombre
-  var lsVideoArea = document.getElementById('lsVideoArea');
-  if (lsVideoArea) {
-    var exN = ex ? (ex.n || ex.name || '') : '';
-    var lsYtId = (ex && ex.video) ? ex.video
-      : (typeof _LIB_VIDEO_MAP !== 'undefined' && _LIB_VIDEO_MAP[exN]) ? _LIB_VIDEO_MAP[exN] : null;
-    if (lsYtId) {
-      lsVideoArea.style.backgroundImage = 'url(https://i.ytimg.com/vi/' + lsYtId + '/mqdefault.jpg)';
-      lsVideoArea.style.backgroundSize = 'cover';
-      lsVideoArea.style.backgroundPosition = 'center';
-    } else {
-      lsVideoArea.style.backgroundImage = '';
-      lsVideoArea.style.backgroundSize = '';
-    }
-  }
 }
 
+// Libellé du bouton principal — il annonce exactement ce que le tap va faire.
+function _lsPrimaryLabel(vm) {
+  var t = _LS.tmr || {};
+  var isLast = (_LS.idx === _LS.exos.length - 1);
+  var isLastSet = (_LS.setNum >= (vm.series.n || 1));
+  var endsSession = isLast && isLastSet;
+  switch (vm.metrique) {
+    case 'duree': case 'duree_par_cote': case 'bloc_libre': case 'intervalle':
+      if (!t.total) return '▶ Démarrer';
+      return t.running ? '❚❚ Pause' : '▶ Reprendre';
+    case 'echec':
+      return t.total ? 'J\'ai lâché' : '▶ Démarrer';
+    case 'distance':
+      return endsSession ? '✓ Terminer la séance' : '✓ Valider le sprint';
+    case 'complexe': {
+      var steps = _lsComplexSteps(vm.raw) || [1];
+      if (_LS.cx < steps.length - 1) return '→ Étape suivante';
+      return endsSession ? '✓ Terminer la séance' : '✓ Valider le tour';
+    }
+    case 'validation':
+      return endsSession ? '✓ Terminer la séance' : '✓ Fait';
+    default:
+      if (endsSession) return '✓ Terminer la séance';
+      if (vm.charge) return '✓ Valider la série';
+      return '✓ Fait';
+  }
+}
+function _lsPaintPrimary() {
+  var btn = document.getElementById('lsBtnDone');
+  if (!btn || !_LS.vm) return;
+  btn.textContent = _lsPrimaryLabel(_LS.vm);
+  btn.classList.toggle('ls-btn-run', !!(_LS.tmr && _LS.tmr.running));
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// ACTION PRINCIPALE — un seul bouton, un seul comportement par mode
+// ═══════════════════════════════════════════════════════════════════════════
+window._lsPrimaryAction = function () {
+  var vm = _LS.vm; if (!vm) return;
+  var t = _LS.tmr || {};
+  switch (vm.metrique) {
+
+    case 'duree':
+    case 'duree_par_cote': {
+      if (!t.total) {
+        var sec = _lsValeurSeconds(vm.valeur, false) || 30;
+        _lsTimerStart(sec, 'down', function () { _lsAfterTimedSet(vm); });
+      } else { _lsTimerToggle(); return; }
+      _lsPaintPrimary();
+      return;
+    }
+
+    case 'bloc_libre': {
+      if (!t.total) {
+        var bs = _lsValeurSeconds(vm.valeur, false);
+        if (!bs) { _lsNextEx(); return; }
+        _lsTimerStart(bs, 'down', function () { _lsNextEx(); });
+      } else { _lsTimerToggle(); return; }
+      _lsPaintPrimary();
+      return;
+    }
+
+    case 'intervalle': {
+      if (!t.total) { _lsIntervalStep(vm, true); } else { _lsTimerToggle(); }
+      _lsPaintPrimary();
+      return;
+    }
+
+    case 'echec': {
+      if (!t.total) { _lsTimerStart(0, 'up', null); _lsPaintPrimary(); return; }
+      var held = _LS.tmr.sec;
+      _lsTimerStop();
+      // Le temps tenu EST la performance : on l'enregistre comme un record
+      // potentiel, au même endroit que les charges (ah_track_history).
+      _lsQuickLog(vm.nom, { secs: held }, 'duree');
+      if (typeof showToast === 'function') showToast('⏱ ' + _lsFmt(held) + ' tenu — enregistré', 'ok');
+      _lsDoneSet();
+      return;
+    }
+
+    case 'distance': {
+      if (_LS.sp && _LS.sp.last > 0) {
+        _LS.sp.splits.push(_LS.sp.last);
+        _lsQuickLog(vm.nom, { time: Math.round(_LS.sp.last) / 1000 }, 'temps');
+        _LS.sp.last = 0;
+      }
+      _lsDoneSet();
+      return;
+    }
+
+    case 'complexe': {
+      var steps = _lsComplexSteps(vm.raw) || [1];
+      if (_LS.cx < steps.length - 1) {
+        _LS.cx++;
+        var nEl = document.getElementById('lsExName'), pEl = document.getElementById('lsExPrecision');
+        if (nEl) nEl.textContent = steps[_LS.cx].nom;
+        if (pEl) pEl.textContent = 'Enchaînement ' + (_LS.cx + 1) + ' / ' + steps.length + ' — sans pause';
+        _lsRenderMode(vm); _lsPaintPrimary(); return;
+      }
+      _LS.cx = 0;
+      _lsDoneSet();
+      return;
+    }
+
+    case 'validation': {
+      _lsNextEx();
+      return;
+    }
+
+    default: {   // reps / reps_par_cote
+      if (vm.charge && _LS.mb) {
+        if (_LS.mb.load > 0 || _LS.mb.reps > 0) {
+          var essai = {};
+          if (_LS.mb.load > 0) essai.load = _LS.mb.load;
+          if (_LS.mb.reps > 0) essai.reps = _LS.mb.reps;
+          var isPR = _LS.mb.best > 0 && _LS.mb.load > _LS.mb.best;
+          _lsQuickLog(vm.nom, essai, 'charge', _LS.mb.rpe);
+          if (isPR) {
+            _LS.mb.best = _LS.mb.load;
+            if (typeof showToast === 'function') showToast('🔥 Record : ' + _LS.mb.load + ' kg sur ' + vm.nom, 'ok');
+            try { if (navigator.vibrate) navigator.vibrate([120, 60, 120]); } catch (e) {}
+          }
+        }
+      }
+      _lsDoneSet();
+      return;
+    }
+  }
+};
+
+// Fin d'une série chronométrée : côté gauche → côté droit, sinon repos.
+function _lsAfterTimedSet(vm) {
+  if (vm.metrique === 'duree_par_cote' && _LS.side === 'G') {
+    _LS.side = 'D';
+    _lsTimerReset();
+    _lsRenderMode(vm);
+    _lsPaintPrimary();
+    if (typeof showToast === 'function') showToast('Change de côté', 'info');
+    return;
+  }
+  var sec = _lsValeurSeconds(vm.valeur, false) || 0;
+  if (sec > 0) _lsQuickLog(vm.nom, { secs: sec }, 'duree');
+  _lsDoneSet();
+}
+
+// Enchaînement effort / récup d'un intervalle.
+function _lsIntervalStep(vm, first) {
+  var cy = _lsIntervalSpec(vm);
+  if (first) { _LS.iv = { exo: vm.nom, cycle: 1, phase: 'work' }; }
+  var dur = _LS.iv.phase === 'work' ? cy.work : cy.rest;
+  _lsRenderMode(vm);
+  _lsTimerStart(dur, 'down', function () {
+    if (_LS.iv.phase === 'work') { _LS.iv.phase = 'rest'; }
+    else {
+      _LS.iv.phase = 'work';
+      _LS.iv.cycle++;
+      if (_LS.iv.cycle > cy.cycles) { _LS.iv = null; _lsDoneSet(); return; }
+    }
+    _lsIntervalStep(vm, false);
+  });
+  _lsPaintPrimary();
+}
+
+// Chrono manuel de sprint, au centième.
+window._lsSprintStart = function () {
+  if (!_LS.sp) return;
+  _LS.sp.running = true; _LS.sp.t0 = Date.now(); _LS.sp.last = 0;
+  try { if (navigator.vibrate) navigator.vibrate(40); } catch (e) {}
+  if (_LS.sp.raf) clearInterval(_LS.sp.raf);
+  _LS.sp.raf = setInterval(function () {
+    var el = document.getElementById('lsSprintVal');
+    if (el) el.textContent = _lsFmtCs(Date.now() - _LS.sp.t0);
+  }, 40);
+  _lsRenderMode(_LS.vm);
+};
+window._lsSprintStop = function () {
+  if (!_LS.sp || !_LS.sp.running) return;
+  clearInterval(_LS.sp.raf); _LS.sp.raf = null;
+  _LS.sp.last = Date.now() - _LS.sp.t0;
+  _LS.sp.running = false;
+  try { if (navigator.vibrate) navigator.vibrate(60); } catch (e) {}
+  _lsRenderMode(_LS.vm);
+  _lsPaintPrimary();
+};
+window._lsSkipBlock = function () { _lsTimerStop(); _lsNextEx(); };
+
+// Écriture d'une performance — même clé, même format que le tracker manuel,
+// donc records / progression / contexte Titan en profitent sans code en plus.
+function _lsQuickLog(nom, essai, method, rpe) {
+  try {
+    if (!nom || !essai) return;
+    var today = new Date().toISOString().slice(0, 10);
+    var hist = [];
+    try { hist = JSON.parse(localStorage.getItem('ah_track_history') || '[]'); } catch (e) {}
+    if (!Array.isArray(hist)) hist = [];
+    var found = null;
+    for (var i = hist.length - 1; i >= 0; i--) {
+      var h = hist[i];
+      if (h && h.source === 'live_session' && h.date === today && h.method === method
+          && (h.exerciseName === nom || h.exo === nom)) { found = h; break; }
+    }
+    if (found) {
+      found.essais = (found.essais || []).concat([essai]);
+      if (rpe > 0) found.rpe = rpe;
+      found.createdAt = Date.now();
+    } else {
+      hist.push({
+        userId: (window.fbUser && window.fbUser.uid) || null,
+        exerciseName: nom, exo: nom,
+        trackingMethod: method, method: method,
+        values: essai, essais: [essai],
+        rpe: rpe > 0 ? rpe : 0,
+        date: today, createdAt: Date.now(),
+        source: 'live_session',
+        sessName: _LS.sessName || '', progKey: _LS.progKey || ''
+      });
+    }
+    if (hist.length > 1000) hist = hist.slice(-1000);
+    localStorage.setItem('ah_track_history', JSON.stringify(hist));
+    try { window.trackHistory = hist; } catch (e) {}
+    try { if (typeof fbSaveProfile === 'function') fbSaveProfile(); } catch (e) {}
+  } catch (e) { console.warn('[ls quicklog]', e); }
+}
+window._lsQuickLog = _lsQuickLog;
+
+// ═══════════════════════════════════════════════════════════════════════════
+// PROGRESSION SÉRIE → REPOS → SUITE
+// ═══════════════════════════════════════════════════════════════════════════
 function _lsDoneSet() {
-  var ex = _LS.exos[_LS.idx];
-  var totalSets = _lsSetCount(ex);
+  var vm = _LS.vm || _lsNormalizeExo(_LS.exos[_LS.idx], _LS.idx, _LS.exos, _LS.circuitMap);
+  var totalSets = vm.series.n || 1;
   var isLastExo = (_LS.idx === _LS.exos.length - 1);
   var isLastSet = (_LS.setNum >= totalSets);
+  _lsTimerStop();
 
-  // Dernière série du dernier exercice → séance terminée
   if (isLastExo && isLastSet) { _lsShowComplete(); return; }
 
-  // Action différée après le repos : série suivante ou exercice suivant
   _LS._pendingAction = isLastSet ? 'nextEx' : 'nextSet';
-  var restSec = _lsParseRest(ex ? ex.rest : null);
+  var restSec = vm.repos;
   if (restSec > 0) {
-    // Label de repos contextuel : "Mini-repos cluster", "Repos circuit",
-    // "Transition", etc. selon la technique et si on enchaîne sur le
-    // prochain exo (vs entre 2 séries du même exo).
     try {
       var tEl = document.querySelector('#lsRestOverlay .ls-rest-title');
-      if (tEl) {
-        var tech = _lsDetectTechnique(ex);
-        tEl.textContent = _lsRestLabel(tech, isLastSet);
-      }
-    } catch(_){}
+      if (tEl) tEl.textContent = _lsRestLabel(vm.circuit ? 'circuit' : vm.technique, isLastSet).replace(/^⏱\s*/, '');
+    } catch (_) {}
     _lsStartRest(restSec);
   } else {
+    // repos "-" = enchaînement direct, tel que prescrit. On n'invente plus
+    // 60 secondes de récupération là où le programme dit d'enchaîner.
     _lsApplyPending();
   }
 }
 
-// Applique l'action en attente (fin de repos ou repos sauté).
 function _lsApplyPending() {
   var act = _LS._pendingAction;
   _LS._pendingAction = null;
   if (act === 'nextSet') {
     _LS.setNum++;
+    _LS.side = null;
     _lsRenderEx();
     _lsPersist();
   } else {
@@ -38128,36 +39027,55 @@ function _lsStartRest(sec) {
   var countdown = document.getElementById('lsRestCountdown');
   var bar = document.getElementById('lsRestBar');
 
+  // Ce qui arrive ENSUITE, en entier : c'est le moment où l'athlète se prépare.
+  try {
+    var nextEl = document.getElementById('lsRestNext');
+    if (nextEl) {
+      var isNextEx = (_LS._pendingAction === 'nextEx');
+      var ni = isNextEx ? _LS.idx + 1 : _LS.idx;
+      var nx = _LS.exos[ni];
+      if (nx) {
+        var nvm = _lsNormalizeExo(nx, ni, _LS.exos, _LS.circuitMap);
+        var meta = [];
+        if (isNextEx && nvm.series.n > 1) meta.push((nvm.series.label || nvm.series.n) + ' séries');
+        if (nvm.valeur && nvm.valeur.txt) meta.push(nvm.valeur.txt);
+        nextEl.innerHTML = '<div class="ls-rest-next-l">Ensuite</div>'
+          + '<div class="ls-rest-next-n">' + _lsEsc(isNextEx ? nvm.nom : nvm.nom) + '</div>'
+          + '<div class="ls-rest-next-m">'
+          + _lsEsc(isNextEx ? meta.join(' · ') : ('Série ' + (_LS.setNum + 1) + (nvm.series.n > 1 ? ' / ' + (nvm.series.label || nvm.series.n) : '') + (meta.length ? ' · ' + meta.join(' · ') : '')))
+          + '</div>';
+      } else { nextEl.innerHTML = ''; }
+    }
+  } catch (_) {}
+
   overlay.classList.add('ls-rest-active');
   countdown.textContent = _lsFmt(sec);
   bar.style.width = '100%';
   bar.style.transition = 'none';
 
-  // Unlock audio sur la fenêtre user (clic du bouton qui a déclenché le rest)
-  try { if (typeof window.tim_beepUnlock === 'function') window.tim_beepUnlock(); } catch(e){}
-
-  // Programme une notification système au moment où le rest finit, pour que
-  // l'user soit alerté même s'il est parti sur une autre app (YouTube...).
+  try { if (typeof window.tim_beepUnlock === 'function') window.tim_beepUnlock(); } catch (e) {}
   try {
     if (typeof window.tim_minutScheduleNotif === 'function') {
       window.tim_minutScheduleNotif(Date.now() + sec * 1000);
     }
-  } catch(e){}
+  } catch (e) {}
 
-  setTimeout(function() {
+  setTimeout(function () {
     bar.style.transition = 'width ' + (sec > 1 ? (sec - 1) : 1) + 's linear';
     bar.style.width = '0%';
   }, 50);
 
-  _LS.restInterval = setInterval(function() {
+  _LS.restInterval = setInterval(function () {
     _LS.restSec--;
-    countdown.textContent = _lsFmt(_LS.restSec);
+    countdown.textContent = _lsFmt(Math.max(0, _LS.restSec));
+    if (_LS.restSec === 3) {
+      try { if (typeof window.tim_sndTick === 'function') window.tim_sndTick(); } catch (e) {}
+    }
     if (_LS.restSec <= 0) {
       clearInterval(_LS.restInterval);
       _LS.restActive = false;
       overlay.classList.remove('ls-rest-active');
-      // Son partagé timer + vibration → fin de récup, on enchaîne
-      try { if (typeof window.tim_sndFinish === 'function') window.tim_sndFinish(); } catch(e){}
+      try { if (typeof window.tim_sndFinish === 'function') window.tim_sndFinish(); } catch (e) {}
       _lsApplyPending();
     }
   }, 1000);
@@ -38167,21 +39085,37 @@ function _lsSkipRest() {
   clearInterval(_LS.restInterval);
   _LS.restActive = false;
   document.getElementById('lsRestOverlay').classList.remove('ls-rest-active');
-  // Annule la notif planifiée si on skip avant la fin
-  try { if (typeof window.tim_minutCancelNotif === 'function') window.tim_minutCancelNotif(); } catch(e){}
+  try { if (typeof window.tim_minutCancelNotif === 'function') window.tim_minutCancelNotif(); } catch (e) {}
   _lsApplyPending();
 }
 
 function _lsAdjustRest(delta) {
   if (!_LS.restActive) return;
   _LS.restSec = Math.max(5, _LS.restSec + delta);
+  _LS.restTotal = Math.max(_LS.restTotal, _LS.restSec);
   document.getElementById('lsRestCountdown').textContent = _lsFmt(_LS.restSec);
+  var bar = document.getElementById('lsRestBar');
+  if (bar) {
+    bar.style.transition = 'none';
+    bar.style.width = '100%';
+    setTimeout(function () {
+      bar.style.transition = 'width ' + Math.max(1, _LS.restSec - 1) + 's linear';
+      bar.style.width = '0%';
+    }, 30);
+  }
+  try {
+    if (typeof window.tim_minutScheduleNotif === 'function') {
+      window.tim_minutScheduleNotif(Date.now() + _LS.restSec * 1000);
+    }
+  } catch (e) {}
 }
 
 function _lsNextEx() {
   clearInterval(_LS.restInterval);
+  _lsTimerStop();
   _LS.restActive = false;
   _LS._pendingAction = null;
+  _LS.side = null; _LS.cx = 0; _LS.cxExo = null; _LS.iv = null; _LS.mb = null; _LS.sp = null;
   if (_LS.idx < _LS.exos.length - 1) {
     _LS.idx++;
     _LS.setNum = 1;
@@ -38194,8 +39128,10 @@ function _lsNextEx() {
 
 function _lsPrevEx() {
   clearInterval(_LS.restInterval);
+  _lsTimerStop();
   _LS.restActive = false;
   _LS._pendingAction = null;
+  _LS.side = null; _LS.cx = 0; _LS.cxExo = null; _LS.iv = null; _LS.mb = null; _LS.sp = null;
   if (_LS.idx > 0) {
     _LS.idx--;
     _LS.setNum = 1;
@@ -38456,9 +39392,20 @@ function _seFbStatusFromScore(score) {
   if (score >= 30) return 'Séance faible';
   return 'Séance ratée ou incomplète';
 }
+// fb peut arriver incomplet : _eaCloseFeedback(true) finalise la séance avec
+// { skipped:true } quand l'athlète refuse le questionnaire. Lire
+// fb.difficulties.indexOf sur un objet sans ce champ levait un TypeError qui
+// interrompait TOUTE la finalisation — séance jamais écrite dans
+// ah_set_history, streak et progression programme jamais incrémentés, et
+// l'exception avalée par le try/catch appelant. Aucun champ n'est obligatoire.
 function _seFbTitanMsg(fb) {
-  if (fb.difficulties.indexOf('pain') >= 0) return 'Tu as signalé une gêne. Ne force pas bêtement. On surveille ça et on adapte si nécessaire.';
-  if (fb.difficulties.indexOf('tech') >= 0) return 'Tu as identifié un problème technique. C\'est une bonne chose. Titan va en tenir compte pour t\'aider à mieux exécuter les prochains exercices.';
+  fb = fb || {};
+  var diff = Array.isArray(fb.difficulties) ? fb.difficulties : [];
+  if (fb.skipped && fb.sessionQualityScore == null) {
+    return 'Séance validée. Tu n\'as pas voulu détailler — pas grave, l\'essentiel c\'est que le travail soit fait.';
+  }
+  if (diff.indexOf('pain') >= 0) return 'Tu as signalé une gêne. Ne force pas bêtement. On surveille ça et on adapte si nécessaire.';
+  if (diff.indexOf('tech') >= 0) return 'Tu as identifié un problème technique. C\'est une bonne chose. Titan va en tenir compte pour t\'aider à mieux exécuter les prochains exercices.';
   if (fb.sessionQualityScore >= 90) return 'Grosse séance. Productivité, intensité et focus sont alignés. C\'est comme ça qu\'on construit un athlète.';
   if (fb.intensity < 55) return 'Tu as terminé, c\'est bien. Mais l\'intensité était trop basse pour créer une vraie adaptation. La prochaine fois, tu viens pour progresser, pas juste cocher une case.';
   if (fb.focus < 55) return 'Ton corps était là, mais ton mental n\'était pas verrouillé. La qualité d\'une séance dépend aussi de ton attention.';
@@ -38715,6 +39662,8 @@ function _lsFinalizeSession(feedback) {
 
 function _lsShowComplete() {
   clearInterval(_LS.restInterval);
+  try { _lsTimerStop(); } catch (e) {}
+  try { if (_LS.sp && _LS.sp.raf) { clearInterval(_LS.sp.raf); _LS.sp.raf = null; } } catch (e) {}
   _LS.restActive = false;
   var ov = document.getElementById('lsRestOverlay');
   if (ov) ov.classList.remove('ls-rest-active');
@@ -38884,6 +39833,9 @@ function _eaFeedbackHtml() {
 
 function _lsClose() {
   clearInterval(_LS.restInterval);
+  try { _lsTimerStop(); } catch (e) {}
+  try { if (_LS.sp && _LS.sp.raf) { clearInterval(_LS.sp.raf); _LS.sp.raf = null; } } catch (e) {}
+  _LS.side = null; _LS.mb = null; _LS.sp = null; _LS.cx = 0; _LS.cxExo = null; _LS.iv = null;
   _LS.restActive = false;
   document.getElementById('liveSession').classList.remove('ls-open');
   document.body.style.overflow = '';

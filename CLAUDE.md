@@ -14,9 +14,15 @@ The app is the digital companion of the book *Les Secrets de la Détente Vertica
 
 - **Hosting**: Netlify (`netlify.toml` SPA-rewrites everything to `/index.html`). No build command; the file is served as-is. Production URL: `athletikhub.netlify.app`.
 - **PWA**: two Service Workers —
-  - `sw.js` (cache-first for local assets, network-first for externals) + `manifest.json`. Cache name is `athletik-v2` — bump it when shipping CSS/HTML that must invalidate.
+  - `sw.js` (cache-first for local assets, network-first for externals) + `manifest.json`. Cache name is `athletik-v256` — bump it when shipping CSS/HTML that must invalidate.
   - `firebase-messaging-sw.js` (root) — receives background push notifications (FCM).
-- **No tests, no linter, no build**. Validate changes by opening `index.html` in a browser (mobile-first, Android Chrome is the target). Before committing, sanity-check JS syntax by parsing the non-module `<script>` blocks with `node -e` (see Coding conventions).
+- **No linter, no build**. Validate changes by opening `index.html` in a browser (mobile-first, Android Chrome is the target). Before committing, sanity-check JS syntax by parsing the non-module `<script>` blocks with `node -e` (see Coding conventions).
+- **Tests**: `for f in scripts/test-*.js; do node "$f"; done` — 13 suites, ~460 assertions, pure
+  Node, zéro dépendance : chaque suite extrait les **vraies** fonctions d'`index.html` par
+  équilibrage d'accolades et les rejoue contre des mocks. `scripts/test-live-layout.js` est la
+  seule exception : elle ouvre un vrai Chromium (Playwright, hors `package.json`) pour mesurer la
+  mise en page de l'écran séance en 375×667. Un test doit échouer sur le commit précédent — sinon
+  il ne prouve rien.
 - The previous-turn summary often contains the user's outstanding tasks — read it before starting new work.
 
 ### Netlify environment variables (required)
@@ -84,7 +90,46 @@ completedPrograms, fcmToken, accessTier`.
 - **Access codes (post-book)** : `ACCESS_TIER_META` (client, BETA/VIP/MASTER metadata). Validation serveur via `check-code.js` — HMAC-signés (`LETTER-RANDOM6-CHECK4`) + 3 codes legacy fixes. Generate codes : `scripts/gen-codes.js`.
 - **Firestore Rules** : `firestore.rules` interdit toute écriture client sur `hasBookAccess`, `accessMethod`, `bookAccessVerifiedAt`, `trialStartedAt`, `trialEndsAt`, `trialStatus`, `createdAt`, `bookVersionUsed` (helpers `lockedFields()` + `noLockedDiff()` + `noLockedOnCreate()`). Collections `accessRedemptions`, `bookChallenges`, `accessCodes`, `usedAmazonOrders`, `activationAttempts`, `security_logs` : `read/write: false` (serveur Admin SDK uniquement).
 - **Tests SAT/SET/PDC**: the test type depends on the programme. `PROGRAM_TESTS` maps each programme to its test ids. `getTestTypeLabel(progKey?)` returns `{short, long, icon, desc}` (SAT for vd/ea/ep, SET for se, PDC for mt/tri) — used for dynamic labels. `getActiveSatExercices()` filters the legacy `satExercices` array (Tracks tab) by `programKey`.
-- **Live session**: `launchSession(exos, sessName, progName, progKey)` opens `#liveSession` (full-screen overlay). State lives in `window._LS` (incl. `progKey`). Persisted to `ah_live_session` (24h TTL) — Home shows a "Reprendre" banner via `renderResumeSessionBanner()`. `_lsShowComplete()` logs the session to `ah_set_history` and calls `_checkProgramCompletion()` (80% of expected sessions → `programsDone++`).
+- **Live session** (refonte 2026-08): `launchSession(exos, sessName, progName, progKey, sessKey)` opens
+  `#liveSession`. State in `window._LS`. Persisted to `ah_live_session` (24h TTL) — Home shows a
+  "Reprendre" banner via `renderResumeSessionBanner()`.
+  - **Layout, non négociable**: `#liveSession` = header + barre de progression + `#lsBody`.
+    `#lsBody` a **4 enfants directs** : `#lsStage` (zone qui se comprime, `min-height:0`),
+    `#lsRestOverlay` (état repos plein écran), `#lsFooter` (tirets + barre d'action, `flex-shrink:0`)
+    et `#lsComplete`. `_lsFinalizeSession()` masque tous les enfants sauf `#lsComplete` et
+    `_lsClose()` les restaure — **ne jamais imbriquer ces 4 blocs**, ça casserait la fin de séance.
+  - **Tokens `--lv-*` scopés à `#liveSession`** (fond `#080D18`, or `#D4A843`, repos `#4A9EDB`).
+    L'écran n'utilise plus `--text` / `--gold` globaux : en thème light ils produisaient du texte
+    quasi-noir sur fond quasi-noir.
+  - **Normalisation à la lecture, jamais de réécriture des données**. `PROGRAMS_V2` stocke
+    `e(n, s, r, rest, note)` — 5 chaînes, aucun champ `metrique`. `_lsNormalizeExo(ex, idx, exos,
+    circuitMap)` (fonction pure) en dérive le modèle d'affichage. Helpers : `_lsDetectMetrique`,
+    `_lsParseValeur`, `_lsSeriesInfo`, `_lsResolveVarSeries`, `_lsCircuitMap`, `_lsComplexSteps`,
+    `_lsHasCharge`.
+  - **8 modes** rendus par `_lsRenderMode(vm)` dans `#lsMode` : `duree`, `duree_par_cote`, `echec`
+    (chrono montant), `reps` / `reps_par_cote` (mode charge si `_lsHasCharge`, sinon 1-tap PDC),
+    `distance` (chrono manuel au centième), `bloc_libre`, `complexe` (sous-mouvements enchaînés),
+    `intervalle` (cycles effort/récup), `validation` (bilans, pesées, jeûne). Le document de
+    refonte n'en prévoyait que 5 ; les 3 derniers couvrent 46 lignes réelles.
+  - **Un seul bouton** : `_lsPrimaryAction()` dispatche par mode, `_lsPrimaryLabel()` annonce
+    exactement ce que le tap va faire. Chrono partagé : `_lsTimerStart/Stop/Toggle/Paint`.
+  - **`Var.*`** est résolu par `_lsResolveVarSeries(progKey, phaseIdx, week)` depuis
+    `phase.progression[].v` — **chaque programme a sa propre courbe** (TRI monte 2→5-6, VD/EA
+    descendent 5→3). Quand la table ne porte pas de séries (EXPLOSE+ phase 1 = `PDC`, semaines
+    Transmission Force = `—`), on n'affiche **aucun total** — jamais `Var.*`, jamais de valeur inventée.
+  - **`rest: '-'` vaut 0 seconde** (= enchaîner). 232 lignes sur 710 sont concernées ; l'ancien
+    `_lsParseRest` retournait 60 et imposait une récup que le livre ne prescrit pas.
+  - **Circuits déduits** d'une suite d'exercices à `rest:'-'`, close par un vrai repos
+    (`_lsCircuitMap`) — `PROGRAMS_V2` ne porte aucun marqueur d'enchaînement.
+  - **Performances écrites dans `ah_track_history`** au format du tracker (`_lsQuickLog` +
+    `_lsSaveLog`) : charges (`method:'charge'`), temps tenus (`method:'duree'`, plus long = mieux),
+    sprints (`method:'temps'`, plus court = mieux). Records et contexte Titan en profitent sans
+    code de lecture en plus.
+  - `_lsShowComplete()` → `_seFbOpen` / `_eaOpenFeedback` → `_lsFinalizeSession` →
+    `_recordSessionCompletion` (80% des séances attendues → `programsDone++`).
+  - **Tests** : `scripts/test-live-screen.js` (95, les 710 exercices normalisés) et
+    `scripts/test-live-layout.js` (133, vrai Chromium en 375×667 et 320×568 — Playwright n'est
+    volontairement pas dans `package.json`, `npm i -D playwright --no-save`).
 - **Workout Builder**: `pgBuilder` page (3e sous-onglet de `vTrain`, à côté de Programmes/Librairie). Locked until `programsDone >= 2` (`BUILDER_UNLOCK_PROGRAMS`) OR VIP/MASTER tier OR compte fondateur (`BUILDER_FOUNDER_EMAILS` / `_builderIsDev()`). `_builderCheckUnlock()`. **Piloté par Titan** : l'utilisateur exprime une intention (objectif/durée/matériel/état via chips + phrase libre/vocal `builderToggleMic`), `builderGenerate()` POST `/.netlify/functions/titan` avec `mode:'builder'` + la librairie compacte (`_builderLibraryPayload`) → Titan renvoie une séance **JSON structurée** (blocs échauffement→principal→secondaire→finisher→retour au calme) programmée selon la méthode Athletic Hub (`BUILDER_SYSTEM` côté serveur). `_builderReconcile()` rattache vidéos/catégories depuis `catData`. `builderStartGenerated()` lance via `launchSession` (marquée `_LS.builderMeta`). En fin de séance, `_lsShowComplete` injecte un panneau de ressenti (`_builderInjectFeedback`) et **sauvegarde dans Firestore `users/{uid}/builderSessions`** (cloud, pas localStorage) — `_builderSaveSession`/`_builderSaveFeedback`.
 - **Progression**: `renderProgression()` fills `#progressionCard` in the Moi tab — current score, 8-week sessions bar graph, personal records. Helper `_progressionWeeklySessions(8)`.
 - **Habits**: `activeHabits` array, persisted to `ah_active_habits` via `_persistActiveHabits()`. `checkHabit()` resets the streak on a day gap. `renderActiveHabits()` renders Home + Moi.
@@ -117,7 +162,8 @@ completedPrograms, fcmToken, accessTier`.
 
 ## État du projet (mai 2026)
 
-- ✅ **Fait**: 6 programmes complets, auth (email + Google + reset), onboarding scoring,
+- ✅ **Fait**: écran séance live refondu (8 modes, zéro scroll vérifié au navigateur),
+  6 programmes complets, auth (email + Google + reset), onboarding scoring,
   trial 3 jours + gate, codes d'accès HMAC, Titan AI proxy, FCM push notifications,
   page Progression, sync Firestore étendue, Habits (sync + streak), Workout Builder verrouillé,
   library filtrée par programme, labels SAT/SET/PDC dynamiques, "Refaire le questionnaire".
