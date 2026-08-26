@@ -39,10 +39,12 @@ const FNS = ['_lsHasSide', '_lsParseValeur', '_lsValeurSeconds', '_lsDetectMetri
              '_lsHasCharge', '_lsResolveVarSeries', '_lsProgContext', '_lsSetCount',
              '_lsSeriesInfo', '_lsCircuitMap', '_lsComplexSteps', '_lsNormalizeExo',
              '_lsParseRest', '_lsDetectTechnique', '_lsTechniqueLabel',
-             '_lsTechniqueInstruction', '_lsCoachingCue', '_lsObjectifTxt', '_lsScoreLabel'];
+             '_lsTechniqueInstruction', '_lsCoachingCue', '_lsObjectifTxt', '_lsScoreLabel',
+             '_lsFindVideo', '_lsVideoKey'];
 // Les constantes de l'écran live sont extraites telles quelles : les
 // hardcoder ici ferait diverger le test du code qu'il prétend vérifier.
-const CONSTS = ['LS_MODES', 'LS_TAG_TECHNIQUES', 'LS_JARGON', 'LS_RPE_STEPS', 'LS_RPE_WORDS']
+const CONSTS = ['LS_MODES', 'LS_TAG_TECHNIQUES', 'LS_JARGON', 'LS_RPE_STEPS', 'LS_RPE_WORDS',
+                '_lsVideoIndex']
   .map(n => {
     const i = html.indexOf('\nvar ' + n + ' = ');
     if (i < 0) throw new Error('constante introuvable: ' + n);
@@ -61,7 +63,7 @@ function api(profile, progKey) {
   return new Function('PROGRAMS_V2', '_LIB_VIDEO_MAP', 'localStorage', '_LS',
     'getProgramProgress', 'console',
     SRC + '\nreturn {' + FNS.map(n => n.slice(1) + ':' + n).join(',') + ', LS_MODES:LS_MODES, _LS:_LS};')(
-      PV, {}, localStorage, _LS,
+      PV, VIDEO_MAP, localStorage, _LS,
       function (k) {
         try {
           const pp = JSON.parse(store.ah_profile || '{}').programProgress || {};
@@ -74,6 +76,13 @@ function api(profile, progKey) {
 const R = [];
 const ok = (l, c, d) => { R.push(c); console.log((c ? '  PASS  ' : '  FAIL  ') + l + (d && !c ? '  → ' + d : '')); };
 
+// La vraie table de vidéos, pour vérifier la résolution.
+const VIDEO_MAP = (function () {
+  const i = html.indexOf('{', html.indexOf('var _LIB_VIDEO_MAP = {'));
+  let d = 0, j = i;
+  for (; j < html.length; j++) { if (html[j] === '{') d++; else if (html[j] === '}') { d--; if (!d) { j++; break; } } }
+  return new Function('return ' + html.slice(i, j))();
+})();
 const A = api();
 const LS_MODES_LIST = A.LS_MODES;
 const allExos = [];
@@ -82,10 +91,10 @@ Object.keys(PV).forEach(k => (PV[k].phases || []).forEach((ph, pi) =>
     (ph.sessions[sk].exos || []).forEach(e => allExos.push({ prog: k, phase: pi, sess: sk, ex: e })))));
 
 console.log('\n=== COUVERTURE DES 6 PROGRAMMES ===\n');
-// 824 après la mise en conformité de SHRED EXPLOSE, TRIPHASIQUE et EXPLOSE+.
-// Leurs séances sont régénérées depuis data/*.js : les programmes prescrivent
-// 112 exercices de plus que ce que l'application affichait.
-ok('les 824 lignes d\'exercices sont chargées', allExos.length === 824, String(allExos.length));
+// 826 après la mise en conformité de SHRED EXPLOSE, TRIPHASIQUE et EXPLOSE+
+// (régénérées depuis data/*.js) puis l'ajout des deux challenges manquants
+// d'ELITE ATHLETE. 114 exercices prescrits ont été rétablis au total.
+ok('les 826 lignes d\'exercices sont chargées', allExos.length === 826, String(allExos.length));
 {
   const bad = allExos.filter(x => A.LS_MODES.indexOf(A.lsDetectMetrique(x.ex)) < 0);
   ok('chaque exercice tombe dans un mode connu', bad.length === 0,
@@ -101,6 +110,24 @@ ok('les 824 lignes d\'exercices sont chargées', allExos.length === 824, String(
   // les enchaînements triphasiques comme trois exercices distincts en
   // circuit, ce qui est plus juste qu'une ligne "A → B → C". Le mode reste
   // en place pour le Workout Builder et les séances perso.
+  // Le livre fait tourner trois challenges sur les jours 1 / 3 / 5. Sans les
+  // trois, deux séances sur trois n'ont aucun score à noter — donc aucune
+  // mesure de progression sur ces jours-là.
+  ok('la rotation des challenges est complète dans les deux programmes',
+     tally.score === 4, String(tally.score));
+  {
+    const noms = allExos.filter(x => A.lsDetectMetrique(x.ex) === 'score')
+                        .map(x => A.lsNormalizeExo(x.ex, 0, [], []).nom).sort();
+    ok('  Bring Sally Up, Pompes max 2 mn et Burpees max 3 mn',
+       noms.filter(n => /sally/i.test(n)).length === 2
+       && noms.some(n => /pompes max/i.test(n)) && noms.some(n => /burpees max/i.test(n)),
+       noms.join(' | '));
+    ok('  le titre nomme le mouvement, pas "Challenge"',
+       noms.every(n => n !== 'Challenge' && n.length > 8), noms.join(' | '));
+    ok('  chacun sait quoi compter',
+       A.lsScoreLabel('Challenge — Burpees max en 3 mn') === 'Burpees réalisés'
+       && A.lsScoreLabel('Challenge — Pompes max en 2 mn') === 'Pompes réalisées');
+  }
   ok('les familles intervalle et validation sont détectées',
      tally.intervalle > 0 && tally.validation > 0,
      JSON.stringify({ i: tally.intervalle, v: tally.validation }));
@@ -425,8 +452,21 @@ console.log('\n=== NON-RÉGRESSION ===\n');
   ok('le swipe entre exercices est préservé', /_lsSwipeSetup/.test(html));
   ok('aucune clé API introduite', !/sk-ant|AIzaSy[0-9A-Za-z_-]{20}/.test(
      block(html, '<div id="liveSession">', '<!-- /liveSession -->')));
+  // Une seule affectation : la déclaration. Rien n'écrit dans la table.
   ok('_LIB_VIDEO_MAP est consommée, pas modifiée',
-     (html.match(/_LIB_VIDEO_MAP\s*=/g) || []).length === 1);
+     (html.match(/^\s*var _LIB_VIDEO_MAP = \{/gm) || []).length === 1
+     && !/_LIB_VIDEO_MAP\s*\[[^\]]+\]\s*=/.test(html));
+  // Un écart de casse ou un suffixe entre parenthèses ratait des vidéos qui
+  // existent. Le résolveur tolère les deux, sans toucher à la table.
+  ok('la casse ne fait plus rater une vidéo',
+     !!A.lsFindVideo('Power clean') && A.lsFindVideo('Power clean') === VIDEO_MAP['Power Clean'],
+     String(A.lsFindVideo('Power clean')));
+  ok('un suffixe entre parenthèses non plus',
+     !!A.lsFindVideo('Saut survitesse'));
+  ok('un préfixe de circuit non plus',
+     A.lsFindVideo('3) Depth jump') === A.lsFindVideo('Depth Jump'));
+  ok('un exercice sans vidéo n\'en invente pas une',
+     A.lsFindVideo('Exercice qui n\'existe pas') === null);
 }
 
 const failed = R.filter(x => !x).length;

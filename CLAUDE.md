@@ -14,7 +14,7 @@ The app is the digital companion of the book *Les Secrets de la Détente Vertica
 
 - **Hosting**: Netlify (`netlify.toml` SPA-rewrites everything to `/index.html`). No build command; the file is served as-is. Production URL: `athletikhub.netlify.app`.
 - **PWA**: two Service Workers —
-  - `sw.js` (cache-first for local assets, network-first for externals) + `manifest.json`. Cache name is `athletik-v263` — bump it when shipping CSS/HTML that must invalidate.
+  - `sw.js` (cache-first for local assets, network-first for externals) + `manifest.json`. Cache name is `athletik-v264` — bump it when shipping CSS/HTML that must invalidate.
   - `firebase-messaging-sw.js` (root) — receives background push notifications (FCM).
 - **No linter, no build**. Validate changes by opening `index.html` in a browser (mobile-first, Android Chrome is the target). Before committing, sanity-check JS syntax by parsing the non-module `<script>` blocks with `node -e` (see Coding conventions).
 - **Tests**: `for f in scripts/test-*.js; do node "$f"; done` — 14 suites, ~480 assertions, pure
@@ -79,11 +79,15 @@ completedPrograms, fcmToken, accessTier`.
 - **Programme attribution**: `calcProgramFromTallyAnswers(objectif, sit, cont, mat)` replicates the Tally form Pd5KB5 scoring. `programKey` is **only set after `obCalcProg()`** runs (post sit/cont/mat) — until then the home séance card shows "À DÉTERMINER" (see `renderUserData()`).
 - **Conformité des données** : les séances de `se`, `tri` et `ep` sont **régénérées depuis
   `data/*-program.js`** (transcriptions des PDF, qui font autorité sur séries / valeurs / repos /
-  enchaînements). `vd` était déjà conforme. Audit croisé : `42 séances conformes sur 42
-  comparables`, 559 exercices source = 559 affichés. Les séances sans contrepartie source
-  (`opt`, `mener`, `bilan`) sont laissées telles quelles ; `ea` et `mt` ont une granularité de
-  séance différente et restent à cadrer. **Ne pas modifier une prescription à la main** : corriger
-  le fichier source puis régénérer.
+  enchaînements). `vd` était déjà conforme. `ea` aussi — son fichier source déplie 85 séances
+  semaine par semaine, mais les **23 signatures distinctes se ramènent aux modèles de la semaine 1
+  de chaque phase**, qui sont exactement les séances de l'app ; et l'app est *meilleure* que sa
+  source, puisqu'elle garde `Var.*` et le résout par semaine au lieu de figer un nombre. `mt` de
+  même : l'app déplie les paliers de jeûne que la source paramètre à part.
+  Audit croisé final : **710 exercices source = 710 affichés**, 0 écart de séries, 0 écart réel de
+  repos ou de valeur. Les séances sans contrepartie source (`opt`, `mener`, `bilan`) sont laissées
+  telles quelles. **Ne pas modifier une prescription à la main** : corriger le fichier source puis
+  régénérer.
 - **PROGRAMS_V2**: holds the rich data (phases → weekDays → sessions → exos) for **all 6 programmes** — `vd` (Vertical Dunk), `ea` (Elite Athlète), `se` (Shred Explose), `tri` (Triphasique), `mt` (Microtraining), `ep` (Explose+). All complete, no stubs. `renderProgramV2(key)` renders the V2 UI; `openProg(k)` enforces the lock (a user can only open their attributed programme).
 - **Premium access system (3 voies)** — gated par `hasValidAccess()` qui retourne `true` si :
   1. `ah_profile.hasBookAccess === true` (validé serveur, **source de vérité = Firestore users/{uid}.hasBookAccess**)
@@ -134,6 +138,10 @@ completedPrograms, fcmToken, accessTier`.
   - **Préfixes `1)` `2)` retirés à l'affichage** — position dans le circuit, pas partie du nom.
   - **Mode `score`** pour les challenges du livre (Bring Sally Up, Pompes max 2 mn, Burpees max
     3 mn) : gros stepper + « Dernière fois ». Sans score saisi, ces séances n'ont aucune mesure.
+    La rotation J1/J3/J5 est complète dans SHRED **et** dans ELITE ATHLETE.
+  - **Résolution vidéo tolérante** (`_lsFindVideo`) : la casse, un suffixe entre parenthèses ou
+    un préfixe de circuit ne font plus rater une vidéo qui existe. `_LIB_VIDEO_MAP` reste en
+    lecture seule — on l'indexe, on ne l'écrit jamais.
   - **RPE : 5 pastilles `2·4·6·8·10` de ≥ 44 px**, optionnel, avec libellé contextuel
     (`LS_RPE_WORDS`). Dix pastilles faisaient 33 px.
   - **Titre / sous-titre / consigne sont trois textes distincts** : le sous-titre vient du nom
@@ -167,7 +175,7 @@ completedPrograms, fcmToken, accessTier`.
     La saisie vit **dans** le mode reps, plus derrière un lien replié.
   - `_lsShowComplete()` → `_seFbOpen` / `_eaOpenFeedback` → `_lsFinalizeSession` →
     `_recordSessionCompletion` (80% des séances attendues → `programsDone++`).
-  - **Tests** : `scripts/test-live-screen.js` (132, les 710 exercices normalisés),
+  - **Tests** : `scripts/test-live-screen.js` (140, les 710 exercices normalisés),
     `scripts/test-live-log.js` (38, le chemin d'écriture jusqu'au prompt Titan) et
     `scripts/test-live-layout.js` (183, vrai Chromium en 375×667 et 320×568 : zéro scroll,
     contraste AA calculé, parcours complet, et les 10 acquis de la V1 rejoués un par un —
