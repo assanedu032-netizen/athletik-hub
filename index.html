@@ -20867,8 +20867,8 @@ var PROGRAMS_V2 = (function(){
           weekDays: [d('Lun','j1'),d('Mar','j2'),d('Mer','j3'),d('Jeu','j4'),d('Ven','j5'),d('Sam','j6'),d('Dim','rest')],
           sessions: {
             j1: { name:'Jour 1 — UPPER : Challenge + Circuit Cluster + Épaules', exos: [
-              e('Bring Sally Up — pompes — Chanson Flower de Moby','1','Suivre la chanson','-'),
-              e('1) Pompes diamant — cluster','4','2-3 reps','2 mn après les 4'),
+              e('Bring Sally Up — Chanson « Flower » de Moby','1','Suivre la chanson','-','Rotation des challenges : Bring Sally Up → Pompes max 2 mn → Burpees max 3 mn (J1/J3/J5).'),
+              e('1) Pompes diamant','4','2-3 reps','2 mn après les 4'),
               e('2) Dips sur chaise / banc','4','2-3 reps cluster','-'),
               e('3) Pompes déclinées — pieds surélevés','4','2-3 reps cluster','-'),
               e('4) Pike push-ups — pompes en V','4','2-3 reps cluster','-'),
@@ -20892,6 +20892,7 @@ var PROGRAMS_V2 = (function(){
             ]},
             j3: { name:'Jour 3 — UPPER : Focus épaules + Proprioception', exos: [
               e('Échauffement dynamique haut du corps','-','5-10 mn','-'),
+              e('Pompes max en 2 mn','1','Max reps en 2 mn','-','Rotation des challenges : Bring Sally Up → Pompes max 2 mn → Burpees max 3 mn (J1/J3/J5).'),
               e('Pike push-ups','4','8-12 reps','1 mn'),
               e('Handstand hold — poirier contre mur','4','20-40 s','1 mn 30'),
               e('Pompes hindou — Épaules dynamiques','3','8-10 reps','1 mn'),
@@ -20908,6 +20909,7 @@ var PROGRAMS_V2 = (function(){
             ]},
             j5: { name:'Jour 5 — UPPER : Focus épaules + Sprint haute intensité', exos: [
               e('Échauffement dynamique haut du corps','-','5-10 mn','-'),
+              e('Burpees max en 3 mn','1','Max reps en 3 mn','-','Rotation des challenges : Bring Sally Up → Pompes max 2 mn → Burpees max 3 mn (J1/J3/J5).'),
               e('Pike push-ups — Progression vs Jour 3','4','10-15 reps','1 mn'),
               e('Pseudo planche push-ups — Force épaules','4','5-8 reps','1 mn 30'),
               e('Pompes archer — Unilatéral','3','6-8 reps / côté','1 mn'),
@@ -21462,9 +21464,9 @@ var PROGRAMS_V2 = (function(){
               e('── MICRO 2 : Circuit Athlétique (12-15 mn) ──','-','-','-'),
               e('Vitesse 4 cônes — sprints en carré ou losange','3 tours','4 reps','Récup intégrée'),
               e('Sprint triangle — changements de direction','3 tours','4 reps','Récup intégrée'),
-              e('Puissance rotation — lancer imaginaire ou medicine ball','3 tours','4 reps','Récup intégrée'),
+              e('Puissance rotation — lancer imaginaire ou medicine ball','3 tours','4 reps / côté','Récup intégrée'),
               e('Double squat dynamique — enchaîner 2 squats rapides','3 tours','4 reps','Récup intégrée'),
-              e('Fente surélevée proprioception 1 — pied sur bord','3 tours','4 reps','Récup intégrée'),
+              e('Fente surélevée proprioception 1 — pied sur bord','3 tours','4 reps / jambe','Récup intégrée'),
               e('Fente 3D — avant, latéral, croisé','3 tours','4 reps','Récup intégrée')
             ]},
             m34:{ name:'MICRO 3 (Respiration) + MICRO 4 (Mobilité & Renfort)', exos:[
@@ -21489,13 +21491,13 @@ var PROGRAMS_V2 = (function(){
               e('Superman — allongé ventre, lever bras + jambes','3 tours','7 reps','49 s'),
               e('Rocking Deadbug — dos plat, bras/jambes opposés','3 tours','7 reps','49 s'),
               e('── MICRO 6 : Pliométrie Intensive (15-18 mn) ──','-','-','-'),
-              e('Échauffement pliométrique — sauts sur place 30 s','-','2 mn','-'),
+              e('Échauffement pliométrique — sauts sur place 30 s','-','5-8 mn','-'),
               e('Sprint 20 m — vitesse maximale','3 tours','7 reps (aller-retour)','Récup intégrée'),
               e('Tap Boum — toucher sol rapidement puis exploser','3 tours','7 reps','Récup intégrée'),
               e('Tuck jump — genoux à la poitrine','3 tours','7 reps','Récup intégrée'),
-              e('Lateral bound — bond latéral explosif','3 tours','7 reps','Récup intégrée'),
+              e('Lateral bound — bond latéral explosif','3 tours','7 reps / côté','Récup intégrée'),
               e('Depth jump — descendre boîte, exploser immédiat','3 tours','7 reps','Récup intégrée'),
-              e('Proprio 1 + Proprio 2 + Transmission Force','3 tours','7 reps','Récup intégrée')
+              e('Proprio 1 + Proprio 2 + Transmission Force','-','6 mn','Récup intégrée')
             ]},
             m78:{ name:'MICRO 7 (Isométrie & Stabilité) + MICRO 8 (Sprint Cardio)', exos:[
               e('── MICRO 7 : Isométrie & Stabilité (12-15 mn) ──','-','-','-'),
@@ -38428,6 +38430,31 @@ function _lsResolveVarSeries(progKey, phaseIdx, week) {
   } catch (e) { return null; }
 }
 
+// Résolution vidéo tolérante. _LIB_VIDEO_MAP est consommée telle quelle —
+// on ne la modifie pas — mais un simple écart de casse ou un suffixe entre
+// parenthèses suffisait à rater une vidéo qui existe : "Power clean" ne
+// trouvait pas "Power Clean", "Depth jump" ne trouvait pas "Depth Jump".
+var _lsVideoIndex = null;
+function _lsFindVideo(name) {
+  if (!name || typeof _LIB_VIDEO_MAP === 'undefined') return null;
+  if (_LIB_VIDEO_MAP[name]) return _LIB_VIDEO_MAP[name];
+  if (!_lsVideoIndex) {
+    _lsVideoIndex = {};
+    Object.keys(_LIB_VIDEO_MAP).forEach(function (k) {
+      var n = _lsVideoKey(k);
+      if (n && !_lsVideoIndex[n]) _lsVideoIndex[n] = _LIB_VIDEO_MAP[k];
+      // "Saut survitesse (élastiques)" doit aussi répondre à "Saut survitesse"
+      var base = _lsVideoKey(k.replace(/\s*\([^)]*\)\s*$/, ''));
+      if (base && base !== n && !_lsVideoIndex[base]) _lsVideoIndex[base] = _LIB_VIDEO_MAP[k];
+    });
+  }
+  return _lsVideoIndex[_lsVideoKey(name)] || null;
+}
+function _lsVideoKey(t) {
+  return String(t || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+    .replace(/^\s*(?:\d+|[ab])\s*[\)\.]\s*/i, '').replace(/[^a-z0-9]+/g, ' ').trim();
+}
+
 // Contexte programme courant : sert à résoudre Var.* et rien d'autre.
 function _lsProgContext() {
   var key = (_LS && _LS.progKey) || '';
@@ -38548,7 +38575,7 @@ function _lsNormalizeExo(ex, idx, exos, circuitMap) {
   var repos = _lsParseRest(ex.rest);
   var tech = _lsDetectTechnique(ex);
   var circuit = (circuitMap && circuitMap[idx]) || null;
-  var vid = ex.video || (typeof _LIB_VIDEO_MAP !== 'undefined' ? (_LIB_VIDEO_MAP[nomBrut] || _LIB_VIDEO_MAP[nom]) : null) || null;
+  var vid = ex.video || _lsFindVideo(nomBrut) || _lsFindVideo(nom) || null;
 
   return {
     idx: idx,
