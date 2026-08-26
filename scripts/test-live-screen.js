@@ -276,8 +276,33 @@ console.log('\n=== RÈGLE 2 — CHAQUE ÉLÉMENT FAIT UN SEUL TRAVAIL ===\n');
   ok('plus de paraphrase du bouton vidéo', dom.indexOf('Regarde le mouvement') < 0);
   ok('un seul lien vidéo secondaire', (dom.match(/_lsOpenVideo\(\)/g) || []).length === 2);
   ok('le nom de l\'exercice n\'est plus mis en capitales', js.indexOf('toUpperCase') < 0);
+  // Un tag ne s'affiche que s'il change la MANIÈRE d'exécuter la série.
+  // "Classique" ne dit rien, et "Isométrie" sur 1 exercice sur 5 créait une
+  // hiérarchie fantôme : soit un tag informe, soit il n'existe pas.
   ok('le tag "Classique" n\'est jamais rendu',
-     /technique !== 'classique'/.test(js));
+     /LS_TAG_TECHNIQUES\.indexOf\(vm\.technique\) > -1/.test(js)
+     && !/LS_TAG_TECHNIQUES = \[[^\]]*classique/.test(html));
+  ok('seules les techniques d\'enchaînement portent un tag',
+     /LS_TAG_TECHNIQUES = \['circuit', 'bi-set', 'superset', 'cluster'\]/.test(html));
+  ok('une seule barre de progression : les tirets',
+     html.indexOf('ls-topbar') < 0 && /id="lsDashes"/.test(html));
+  ok('plus de lien "Noter ma charge"', html.indexOf('Noter ma charge') < 0);
+  ok('le champ kg n\'existe que si l\'exercice se charge',
+     /vm\.charge \? _lsStepperHtml\('load'/.test(html));
+  ok('plus d\'objectif contradictoire sous le chrono',
+     html.indexOf('objectif de la phase') < 0 && /minimum · pousse jusqu/.test(html));
+  ok('le score de fin de séance est explicité',
+     /function _seFbScoreDetail\(/.test(html) && /exercices sur/.test(html));
+  ok('le message de fin n\'est plus présenté comme une citation de Titan',
+     !/font-style:italic">"' \+ titanMsg/.test(html));
+  ok('l\'écart titre → donnée est plafonné',
+     /\.ls-mode::before\s*\{[^}]*flex:\s*0 1 64px/.test(html));
+  ok('l\'écran de fin lit les tokens de l\'écran live, pas le thème global',
+     /\.ls-celebrate-msg\{[^}]*color:#FFFFFF/.test(html)
+     && /\.ls-nextstep-txt\{[^}]*color:#FFFFFF/.test(html)
+     && !/\.ls-complete-sub \{[^}]*var\(--text2\)/.test(html));
+  ok('le fond de l\'écran live est un navy, pas du noir',
+     /--lv-bg:#0B1120/.test(html) && /--lv-surface:#16203A/.test(html));
   ok('le repos est bleu, jamais or',
      /\.ls-rest-countdown\s*\{[^}]*var\(--lv-rest\)/.test(html));
   ok('la donnée principale est le seul élément doré et énorme',
@@ -295,9 +320,13 @@ console.log('\n=== NON-RÉGRESSION ===\n');
 {
   ok('#lsComplete reste un enfant direct de #lsBody (masquage de fin de séance)',
      /id="lsBody"[\s\S]*?id="lsComplete"[\s\S]*?<\/div><!-- \/ls-body -->/.test(html));
-  ok('la saisie de charge écrit toujours au format du tracker',
+  ok('la saisie de perf écrit toujours au format du tracker',
      /trackingMethod: method/.test(html) && /source: 'live_session'/.test(html));
-  ok('borne à 1000 entrées conservée', (html.match(/hist\.length > 1000/g) || []).length === 2);
+  // Un seul chemin d'écriture depuis la refonte : _lsQuickLog.
+  ok('borne à 1000 entrées conservée', (html.match(/hist\.length > 1000/g) || []).length === 1);
+  ok('un seul chemin d\'écriture des performances',
+     (html.match(/function _lsQuickLog\(/g) || []).length === 1
+     && html.indexOf('_lsSaveLog') < 0);
   ok('la reprise de séance est préservée', /window\.resumeLiveSession = function/.test(html));
   ok('le repos programme toujours une notification système',
      /tim_minutScheduleNotif\(Date\.now\(\) \+ sec \* 1000\)/.test(html));

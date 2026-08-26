@@ -95,6 +95,11 @@ const REAL = [
 
   const R = [];
   const ok = (l, c, d) => { R.push(c); console.log((c ? '  PASS  ' : '  FAIL  ') + l + (d && !c ? '  → ' + d : '')); };
+  // La séance de la capture d'écran de référence.
+  const PV_J6 = await page.evaluate(() => {
+    const S = PROGRAMS_V2.se.phases[0].sessions.j6;
+    return { name: S.name, exos: S.exos };
+  });
 
   async function open(exos, sess, prog, progKey) {
     await page.evaluate(([exos, sess, prog, progKey]) => {
@@ -197,6 +202,90 @@ const REAL = [
     ok('le prochain exercice est nommé en entier',
        r.next.indexOf('Squat excentrique') > -1 && r.next.indexOf('…') < 0, r.next.replace(/\n/g, ' | '));
     ok('l\'écran de repos ne scrolle pas', r.overflow <= 1, String(r.overflow));
+  }
+
+  console.log('\n=== CONTRASTE — AUCUN TEXTE ILLISIBLE (AA, 4.5:1) ===\n');
+  {
+    // Le thème par défaut de l'app est LIGHT : tout token global lu depuis
+    // l'écran live y devient sombre sur fond navy. C'est exactement ce qui
+    // rendait "Semaine 1/8 terminée" invisible sur l'écran de fin.
+    await page.evaluate(() => { try { localStorage.setItem('ah_theme', 'light'); } catch (e) {}
+      document.documentElement.removeAttribute('data-theme'); });
+    await open([{ n: 'Squat jump', s: '1', r: '10 reps', rest: '-' }], 'Jour test', 'PROGRAMME TEST', 'se');
+    await page.evaluate(() => {
+      window._lsFinalizeSession({ sessionQualityScore: 80, titanStatus: 'Bonne séance',
+                                  difficulties: [], intensity: 75, focus: 80,
+                                  exosDone: 9, exosTotal: 12 });
+      // Les deux blocs de la capture : ce sont eux qui étaient invisibles.
+      const c = document.getElementById('lsCelebrate');
+      c.className = 'ls-celebrate on';
+      c.innerHTML = '<div class="ls-celebrate-kicker">Étape franchie</div>'
+                  + '<div class="ls-celebrate-msg">Semaine 1/8 terminée.</div>';
+      const n = document.getElementById('lsNextStep');
+      n.className = 'ls-nextstep on';
+      n.innerHTML = '<div class="ls-nextstep-kicker">Prochaine étape</div>'
+                  + '<div class="ls-nextstep-txt">10 semaines depuis ton dernier test. Il est temps de le refaire.</div>';
+    });
+    await page.waitForTimeout(300);
+    await shot(path.join(OUT, 'fin-contraste.png'));
+
+    const contrasts = await page.evaluate(() => {
+      const lum = (c) => {
+        const m = c.match(/[\d.]+/g).map(Number);
+        const f = v => { v /= 255; return v <= 0.03928 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4); };
+        return 0.2126 * f(m[0]) + 0.7152 * f(m[1]) + 0.0722 * f(m[2]);
+      };
+      const bgOf = (el) => {
+        let n = el;
+        while (n) {
+          const b = getComputedStyle(n).backgroundColor;
+          const m = b.match(/[\d.]+/g);
+          if (m && (m.length < 4 || Number(m[3]) > 0.85)) return b;
+          n = n.parentElement;
+        }
+        return 'rgb(11,17,32)';
+      };
+      const out = [];
+      document.querySelectorAll('#liveSession *').forEach(el => {
+        const txt = (el.childNodes.length && Array.from(el.childNodes)
+          .filter(n => n.nodeType === 3).map(n => n.textContent.trim()).join('')) || '';
+        if (!txt) return;
+        const st = getComputedStyle(el);
+        if (st.display === 'none' || st.visibility === 'hidden' || Number(st.opacity) < 0.9) return;
+        if (!el.getClientRects().length) return;
+        const L1 = lum(st.color), L2 = lum(bgOf(el));
+        const r = (Math.max(L1, L2) + 0.05) / (Math.min(L1, L2) + 0.05);
+        out.push({ t: txt.slice(0, 44), r: Math.round(r * 10) / 10, cls: el.className || el.id, c: st.color });
+      });
+      return out;
+    });
+    const bad = contrasts.filter(x => x.r < 4.5);
+    ok('écran de fin : tout le texte est au-dessus de 4.5:1',
+       bad.length === 0, bad.map(b => b.t + ' [' + b.cls + '] ' + b.r + ':1 ' + b.c).join(' | '));
+    const celeb = contrasts.find(x => /Semaine 1\/8/.test(x.t));
+    const next = contrasts.find(x => /10 semaines depuis/.test(x.t));
+    ok('"Semaine 1/8 terminée" est lisible', celeb && celeb.r >= 4.5,
+       celeb ? celeb.r + ':1 (' + celeb.c + ')' : 'introuvable');
+    ok('le rappel de re-test est lisible', next && next.r >= 4.5,
+       next ? next.r + ':1 (' + next.c + ')' : 'introuvable');
+
+    await page.evaluate(() => { window._lsClose(); });
+    await page.waitForTimeout(150);
+  }
+
+  console.log('\n=== IDENTITÉ — LE FOND EST NAVY, PAS NOIR ===\n');
+  {
+    await open([{ n: 'Squat jump', s: '1', r: '10 reps', rest: '-' }], 'Jour test', 'PROGRAMME TEST', 'se');
+    const col = await page.evaluate(() => {
+      const rgb = (s) => s.match(/[\d.]+/g).map(Number);
+      return { live: rgb(getComputedStyle(document.getElementById('liveSession')).backgroundColor),
+               footer: rgb(getComputedStyle(document.getElementById('lsFooter')).backgroundColor) };
+    });
+    // Navy = le bleu domine nettement le rouge, et le fond n'est pas noir.
+    ok('le fond de l\'écran live est un navy, pas du noir',
+       col.live[2] - col.live[0] >= 12 && col.live[2] >= 24, 'rgb(' + col.live.join(',') + ')');
+    ok('le footer partage le même navy',
+       col.footer[2] - col.footer[0] >= 12, 'rgb(' + col.footer.join(',') + ')');
   }
 
   console.log('\n=== 320 × 568 (iPhone SE 1re génération) ===\n');
@@ -312,10 +401,13 @@ const REAL = [
     const before = await page.evaluate(() => ({
       kg: document.getElementById('lsStep_load').textContent,
       reps: document.getElementById('lsStep_reps').textContent,
-      rpe: window._LS.mb.rpe
+      rpe: window._LS.mb.rpe,
+      inputs: document.querySelectorAll('#lsMode input').length,
+      target: Math.round(document.querySelector('.ls-stepper-btn').getBoundingClientRect().height)
     }));
     ok('les steppers ajustent sans ouvrir le clavier',
-       before.kg === '5' && before.reps === '5' && before.rpe === 8, JSON.stringify(before));
+       before.kg === '5' && before.reps === '5' && before.rpe === 8 && before.inputs === 0,
+       JSON.stringify(before));
     await page.click('#lsBtnDone');
     await page.waitForTimeout(200);
     const hist = await page.evaluate(() => JSON.parse(localStorage.getItem('ah_track_history') || '[]'));
@@ -324,6 +416,55 @@ const REAL = [
        && hist[0].method === 'charge' && hist[0].essais[0].load === 5
        && hist[0].essais[0].reps === 5 && hist[0].rpe === 8 && hist[0].source === 'live_session',
        JSON.stringify(hist[0] || null));
+  }
+
+  console.log('\n=== SAISIE DE PERF SUR UN EXERCICE SANS CHARGE ===\n');
+  {
+    await page.evaluate(() => { try { localStorage.removeItem('ah_track_history'); } catch (e) {} });
+    await open([{ n: 'Toe taps — Coordination tibial', s: '3', r: '20 reps', rest: '30 s' }],
+               'Jour test', 'PROGRAMME TEST', 'se');
+    const m = await page.evaluate(() => ({
+      txt: document.getElementById('lsStage').innerText,
+      steppers: document.querySelectorAll('#lsMode .ls-stepper').length,
+      labels: Array.from(document.querySelectorAll('#lsMode .ls-stepper-l')).map(e => e.textContent),
+      rpe: document.querySelectorAll('#lsMode .ls-rpe-dot').length,
+      reps: (document.getElementById('lsStep_reps') || {}).textContent
+    }));
+    ok('aucune colonne KG sur un exercice sans charge',
+       m.steppers === 1 && m.labels.indexOf('Kg') < 0, JSON.stringify(m.labels));
+    ok('plus de lien "Noter ma charge"', !/noter ma charge/i.test(m.txt));
+    ok('les reps sont pré-remplies sur l\'objectif', m.reps === '20', m.reps);
+    ok('le RPE reste saisissable', m.rpe === 10, String(m.rpe));
+    await page.click('#lsBtnDone');
+    await page.waitForTimeout(200);
+    const hist = await page.evaluate(() => JSON.parse(localStorage.getItem('ah_track_history') || '[]'));
+    ok('la perf au poids du corps part quand même dans l\'historique',
+       hist.length === 1 && hist[0].exerciseName === 'Toe taps'
+       && hist[0].essais[0].reps === 20 && hist[0].essais[0].load === undefined,
+       JSON.stringify(hist[0] || null));
+  }
+
+  console.log('\n=== §5.1 — PLUS DE TROU VERTICAL SOUS LE TITRE ===\n');
+  {
+    for (const c of CASES) {
+      await open(c.exos, c.sess || 'Jour 6 — LOWER : Isométrique avancé + Pied', 'PROGRAMME TEST', c.prog);
+      const gap = await page.evaluate(() => {
+        const st = document.getElementById('lsStage');
+        const mode = document.getElementById('lsMode');
+        const first = mode.firstElementChild;
+        if (!first) return 0;
+        // Dernier élément visible au-dessus de la zone mode.
+        let above = null;
+        Array.from(st.children).forEach(el => {
+          if (el === mode) return;
+          if (getComputedStyle(el).display === 'none' || !el.getClientRects().length) return;
+          above = el;
+        });
+        if (!above) return 0;
+        return Math.round(first.getBoundingClientRect().top - above.getBoundingClientRect().bottom);
+      });
+      ok(c.label + ' — écart titre → donnée ≤ 80 px', gap <= 80, gap + ' px');
+    }
   }
 
   console.log('\n=== FIN DE SÉANCE ===\n');
@@ -370,6 +511,92 @@ const REAL = [
     ok('fermer puis relancer restaure l\'écran complet',
        back.stage !== 'none' && back.footer !== 'none' && back.complete === 'none' && /fait|valider/i.test(back.btn),
        JSON.stringify(back));
+  }
+
+  console.log('\n=== LES 10 ACQUIS DE LA V1 — VÉRIFIÉS UN PAR UN ===\n');
+  {
+    // Le brief V2 liste 10 comportements à ne casser sous aucun prétexte.
+    // Cette section les rejoue explicitement, dans l'ordre du brief.
+    // Le bilan de fin ouvert par la section précédente capte encore les taps.
+    await page.evaluate(() => {
+      const f = document.getElementById('seFeedback'); if (f) f.style.display = 'none';
+    });
+    await open(PV_J6.exos, PV_J6.name, 'SHRED EXPLOSE', 'se');
+    const a = await page.evaluate(() => {
+      const q = id => document.getElementById(id);
+      const cs = el => getComputedStyle(el);
+      const st = q('lsStage'), body = q('lsBody');
+      const acts = document.querySelectorAll('.ls-actions button');
+      const nl = q('lsNextLine');
+      const nm = q('lsExName');
+      return {
+        scroll: (st.scrollHeight - st.clientHeight) + (body.scrollHeight - body.clientHeight),
+        footerFixed: cs(q('lsFooter')).flexShrink === '0',
+        actions: Array.from(acts).map(b => b.textContent.trim()),
+        actionH: Math.round(acts[1].getBoundingClientRect().height),
+        titleTransform: cs(nm).textTransform,
+        titleColor: cs(nm).color,
+        titleFont: cs(nm).fontFamily,
+        nextTxt: nl.innerText.trim(),
+        nextClipped: nl.scrollHeight > nl.clientHeight + 1,
+        header: q('lsSessName').innerText.trim(),
+        headerClipped: q('lsSessName').scrollHeight > q('lsSessName').clientHeight + 1,
+        dashes: document.querySelectorAll('#lsDashes .ls-dash').length,
+        stage: st.innerText
+      };
+    });
+    ok('1. zéro scroll', a.scroll <= 1, String(a.scroll));
+    ok('2. barre d\'action fixe ‹ · CTA · ›',
+       a.footerFixed && a.actions.length === 3 && a.actions[0] === '‹' && a.actions[2] === '›'
+       && a.actionH >= 56, JSON.stringify(a.actions) + ' h=' + a.actionH);
+    ok('4. titre en casse normale, blanc, police de texte',
+       a.titleTransform === 'none' && a.titleColor === 'rgb(255, 255, 255)'
+       && /Outfit/.test(a.titleFont), a.titleTransform + ' ' + a.titleColor);
+    ok('5. "ENSUITE [nom complet]" jamais tronqué',
+       /^ENSUITE/i.test(a.nextTxt) && !a.nextClipped && a.nextTxt.indexOf('…') < 0, a.nextTxt);
+    ok('6. header complet, non tronqué',
+       a.header === 'Jour 6 — LOWER : Isométrique avancé + Pied' && !a.headerClipped, a.header);
+    ok('8. carte de séance en tirets (12 exos)', a.dashes === 12, String(a.dashes));
+    ok('10. CLASSIQUE / — SÉRIES / durée sous REPS restent supprimés',
+       !/classique/i.test(a.stage) && a.stage.split('\n').every(l => l.trim() !== '—')
+       && !/\bmn\b[\s\S]{0,12}REPS/i.test(a.stage), a.stage.replace(/\n/g, ' | '));
+
+    // 3 — CTA contextuel : DÉMARRER → PAUSE → (exo en reps) FAIT
+    await page.evaluate(() => { window._LS.idx = 1; window._LS.setNum = 1; window._lsRenderEx(); });
+    await page.waitForTimeout(120);
+    const l1 = (await page.textContent('#lsBtnDone')).trim();
+    await page.click('#lsBtnDone'); await page.waitForTimeout(400);
+    const l2 = (await page.textContent('#lsBtnDone')).trim();
+    await page.evaluate(() => { window._LS.idx = 7; window._LS.setNum = 1; window._lsRenderEx(); });
+    await page.waitForTimeout(120);
+    const l3 = (await page.textContent('#lsBtnDone')).trim();
+    ok('3. CTA contextuel Démarrer → Pause → Fait',
+       /démarrer/i.test(l1) && /pause/i.test(l2) && /fait/i.test(l3),
+       [l1, l2, l3].join(' → '));
+
+    // 7 — CÔTÉ GAUCHE en bleu
+    await page.evaluate(() => { window._LS.idx = 2; window._LS.setNum = 1; window._lsRenderEx(); });
+    await page.waitForTimeout(120);
+    const side = await page.evaluate(() => {
+      const el = Array.from(document.querySelectorAll('#lsMode .ls-mode-kicker'))
+        .find(e => /côté/i.test(e.textContent));
+      return el ? { txt: el.innerText.trim(), col: getComputedStyle(el).color } : null;
+    });
+    ok('7. côté gauche/droit annoncé en bleu',
+       side && /gauche/i.test(side.txt) && side.col === 'rgb(74, 158, 219)',
+       side ? side.txt + ' ' + side.col : 'absent');
+
+    // 9 — chrono et reps restent deux gabarits distincts
+    const modes = await page.evaluate(() => {
+      const grab = i => { window._LS.idx = i; window._LS.setNum = 1; window._lsRenderEx();
+                          return document.getElementById('lsMode').innerHTML; };
+      return { chrono: grab(1), reps: grab(7) };
+    });
+    ok('9. chrono et reps sont deux gabarits distincts',
+       /lsBigVal/.test(modes.chrono) && !/ls-stepper/.test(modes.chrono)
+       && /ls-stepper/.test(modes.reps) && !/lsBigVal/.test(modes.reps));
+    await page.evaluate(() => { window._lsClose(); });
+    await page.waitForTimeout(150);
   }
 
   console.log('\n=== AUCUNE ERREUR JS ===\n');

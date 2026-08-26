@@ -1247,19 +1247,19 @@ body{background:var(--bg);color:var(--text);font-family:'Outfit',sans-serif;disp
 /* ── Célébration post-séance (brique 1) ──
    Bandeau court affiché en haut de l'écran de fin. Aucun bouton, aucun
    blocage : il apparaît, il informe, il reste. L'animation dure ~1,1 s. */
-.ls-celebrate{display:none;width:100%;max-width:320px;margin:0 auto 14px;padding:12px 14px;border-radius:12px;background:linear-gradient(135deg,rgba(197,164,78,.14),rgba(197,164,78,.05));border:1px solid rgba(197,164,78,.34);text-align:center}
+.ls-celebrate{display:none;width:100%;max-width:320px;margin:0 auto 14px;padding:12px 14px;border-radius:12px;background:var(--lv-surface,#16203A);border:1px solid var(--lv-border,rgba(212,168,67,.35));text-align:center}
 .ls-celebrate.on{display:block;animation:lsCelebIn .55s cubic-bezier(.2,.8,.3,1) both}
-.ls-celebrate-kicker{font-family:'JetBrains Mono',monospace;font-size:9.5px;letter-spacing:.2em;text-transform:uppercase;font-weight:800;color:var(--ah-gold)}
-.ls-celebrate-msg{font-family:'Outfit',sans-serif;font-size:14px;font-weight:600;color:var(--ah-text,#EDF0F7);line-height:1.4;margin-top:5px}
+.ls-celebrate-kicker{font-family:'JetBrains Mono',monospace;font-size:9.5px;letter-spacing:.2em;text-transform:uppercase;font-weight:800;color:var(--lv-gold,#D4A843)}
+.ls-celebrate-msg{font-family:'Outfit',sans-serif;font-size:14.5px;font-weight:500;color:#FFFFFF;line-height:1.45;margin-top:5px}
 @keyframes lsCelebIn{from{opacity:0;transform:translateY(10px) scale(.97)}to{opacity:1;transform:none}}
 /* Accessibilité : aucune animation n'était filtrée dans le projet jusqu'ici.
    On respecte le réglage système pour cette brique. */
 /* Anticipation : discrète, sous la célébration. Elle informe, elle n'appelle
    pas à l'action — le bouton de retour reste le seul CTA de l'écran. */
-.ls-nextstep{display:none;width:100%;max-width:320px;margin:0 auto 16px;padding:10px 12px;border-radius:10px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.10);text-align:center}
+.ls-nextstep{display:none;width:100%;max-width:320px;margin:0 auto 16px;padding:10px 12px;border-radius:10px;background:var(--lv-surface,#16203A);border:1px solid rgba(255,255,255,.12);text-align:center}
 .ls-nextstep.on{display:block}
-.ls-nextstep-kicker{font-family:'JetBrains Mono',monospace;font-size:8.5px;letter-spacing:.2em;text-transform:uppercase;font-weight:800;color:var(--ah-muted,#8a93a8)}
-.ls-nextstep-txt{font-family:'Outfit',sans-serif;font-size:12.5px;font-weight:600;color:var(--ah-text2,#A8B4CC);line-height:1.4;margin-top:3px}
+.ls-nextstep-kicker{font-family:'JetBrains Mono',monospace;font-size:9px;letter-spacing:.2em;text-transform:uppercase;font-weight:800;color:var(--lv-gold,#D4A843)}
+.ls-nextstep-txt{font-family:'Outfit',sans-serif;font-size:13.5px;font-weight:500;color:#FFFFFF;line-height:1.45;margin-top:3px}
 @media (prefers-reduced-motion: reduce){
   .ls-celebrate.on{animation:none}
 }
@@ -2512,9 +2512,9 @@ body.test-mode #testSkipBar{display:flex}
    fond quasi-noir, bug qui rendait le titre illisible avant cette refonte.
    ════════════════════════════════════════════════════════════════════════════ */
 #liveSession {
-  --lv-bg:#080D18; --lv-surface:#101827; --lv-border:rgba(212,168,67,.18);
+  --lv-bg:#0B1120; --lv-surface:#16203A; --lv-border:rgba(212,168,67,.18);
   --lv-gold:#D4A843; --lv-gold-hot:#F0C24E; --lv-gold-dim:rgba(212,168,67,.35);
-  --lv-txt:#FFFFFF; --lv-txt2:rgba(255,255,255,.62); --lv-txt3:rgba(255,255,255,.38);
+  --lv-txt:#FFFFFF; --lv-txt2:rgba(255,255,255,.70); --lv-txt3:rgba(255,255,255,.45);
   --lv-ok:#22C55E; --lv-rest:#4A9EDB;
 
   position: fixed; inset: 0; z-index: 9999;
@@ -2533,8 +2533,9 @@ body.test-mode #testSkipBar{display:flex}
 /* ── Header : 1 ligne, jamais tronquée, 52px ── */
 .ls-header {
   display: flex; align-items: center; gap: 10px;
-  padding: 8px 12px; flex-shrink: 0;
+  padding: 8px 12px 10px; flex-shrink: 0;
   background: var(--lv-bg);
+  border-bottom: 1px solid rgba(255,255,255,.07);
 }
 .ls-header-left { display: flex; flex-direction: column; flex: 1; min-width: 0; }
 .ls-header-prog {
@@ -2556,13 +2557,6 @@ body.test-mode #testSkipBar{display:flex}
   display: flex; align-items: center; justify-content: center;
 }
 .ls-close-btn:active { background: rgba(255,255,255,.14); }
-
-/* ── Barre de progression de séance (3px) ── */
-.ls-topbar { height: 3px; background: rgba(255,255,255,.08); flex-shrink: 0; }
-.ls-topbar-fill {
-  height: 100%; background: var(--lv-gold);
-  transition: width .35s cubic-bezier(.4,0,.2,1);
-}
 
 /* ── Corps ── */
 .ls-body {
@@ -2637,9 +2631,16 @@ body.test-mode #testSkipBar{display:flex}
 /* ══ ZONE MODE — le seul bloc qui change d'un mode à l'autre ══ */
 .ls-mode {
   flex: 1; min-height: 0;
-  display: flex; flex-direction: column; align-items: center; justify-content: center;
-  gap: 8px; text-align: center; padding: 8px 0;
+  display: flex; flex-direction: column; align-items: center; justify-content: flex-start;
+  gap: 8px; text-align: center; padding: 4px 0 8px;
 }
+/* La zone était centrée dans TOUT l'espace restant : sans vidéo, ça creusait
+   un trou de plusieurs centaines de pixels sous le titre. Le pseudo-élément
+   de tête plafonne cet écart à 64 px et se comprime si besoin ; celui de
+   queue absorbe le reste, juste au-dessus de la barre d'action. */
+.ls-mode::before { content: ''; flex: 0 1 64px; min-height: 0; }
+.ls-mode::after  { content: ''; flex: 1 1 0; min-height: 0; }
+.ls-steppers, .ls-rpe, .ls-sprint-btns, .ls-timerbar, .ls-steps { flex-shrink: 0; }
 .ls-mode-kicker {
   font-family: 'JetBrains Mono', monospace; font-size: 10px; font-weight: 800;
   letter-spacing: .18em; text-transform: uppercase; color: var(--lv-txt2);
@@ -2752,11 +2753,6 @@ body.test-mode #testSkipBar{display:flex}
   font-family: 'Bebas Neue', sans-serif; font-size: 17px; letter-spacing: .04em;
   color: var(--lv-gold); flex-shrink: 0;
 }
-
-/* ── Saisie libre repliée (modes A / C / D) — jamais obligatoire ── */
-.ls-log { flex-shrink: 0; text-align: center; margin-top: 2px; }
-.ls-log-row { display: none; align-items: center; justify-content: center; gap: 7px; margin-top: 5px; }
-.ls-log-row.on { display: flex; }
 
 /* ══ FOOTER : carte de séance en tirets + barre d'action. Jamais scrollable. ══ */
 .ls-footer { flex-shrink: 0; padding: 6px 12px 8px; background: var(--lv-bg); }
@@ -2897,8 +2893,8 @@ body.test-mode #testSkipBar{display:flex}
   padding: 32px 24px; text-align: center; overflow-y: auto;
 }
 .ls-complete-icon { font-size: 64px; margin-bottom: 20px; }
-.ls-complete-title { font-family: 'Bebas Neue', sans-serif; font-size: 38px; color: var(--gold); letter-spacing: 2px; margin-bottom: 8px; }
-.ls-complete-sub { font-size: 14px; color: var(--text2); line-height: 1.6; margin-bottom: 32px; }
+.ls-complete-title { font-family: 'Bebas Neue', sans-serif; font-size: 38px; color: var(--lv-gold-hot); letter-spacing: 2px; margin-bottom: 8px; }
+.ls-complete-sub { font-size: 14px; color: var(--lv-txt2); line-height: 1.6; margin-bottom: 32px; }
 
 /* ════════════════════════════════════════════════════════════════════════════
    DESIGN SYSTEM v1.0 — OVERRIDES GLOBAUX
@@ -3450,7 +3446,6 @@ html body #thinking{
 .ls-complete-title{
   font-family:var(--ah-font-display) !important;
   font-size:42px !important;
-  color:var(--ah-gold) !important;
   letter-spacing:.06em !important;
 }
 /* FAB timer */
@@ -9397,7 +9392,6 @@ window.tiResetOnEnter = function(){ window.tiShowStep(1); };
     </div>
     <button class="ls-close-btn" onclick="_lsClose()" aria-label="Quitter la séance">✕</button>
   </div>
-  <div class="ls-topbar"><div class="ls-topbar-fill" id="lsTopBar" style="width:0%"></div></div>
 
   <!-- ═══ CORPS ═══
        #lsStage, #lsRestOverlay, #lsFooter et #lsComplete sont des enfants
@@ -9421,19 +9415,6 @@ window.tiResetOnEnter = function(){ window.tiShowStep(1); };
 
       <!-- LA ZONE MODE — seul bloc qui change entre les 8 modes. -->
       <div class="ls-mode" id="lsMode"></div>
-
-      <!-- Saisie libre (modes chrono / reps PDC / distance). Repliée, jamais
-           obligatoire. Écrit dans ah_track_history au format du tracker. -->
-      <div class="ls-log" id="lsLog" style="display:none">
-        <button type="button" class="ls-video-link" id="lsLogToggle" onclick="window._lsToggleLog()">＋ Noter ma charge</button>
-        <div class="ls-log-row" id="lsLogRow">
-          <input type="number" inputmode="decimal" id="lsLogLoad" placeholder="kg" step="0.5" min="0">
-          <span class="ls-log-x">×</span>
-          <input type="number" inputmode="numeric" id="lsLogReps" placeholder="reps" step="1" min="0">
-          <button type="button" class="ls-log-ok" onclick="window._lsSaveLog()">OK</button>
-        </div>
-        <div class="ls-log-done" id="lsLogDone"></div>
-      </div>
     </div>
 
     <!-- ═══ ÉTAT REPOS — plein écran, bleu. Jamais d'or ici. ═══ -->
@@ -37975,109 +37956,26 @@ window._lsCloseTechniqueHelp = function() {
 };
 
 // ═══════════════════════════════════════════════════════════════════════════
-// SAISIE DE CHARGE EN SÉANCE
+// SAISIE DE PERFORMANCE EN SÉANCE
 // ───────────────────────────────────────────────────────────────────────────
 // Jusqu'ici, ah_set_history ne stockait AUCUNE performance d'exercice : ni
 // charge, ni reps, ni RPE. Titan ne pouvait donc rien dire sur la progression
 // d'un squat, sauf si l'athlète allait tout ressaisir dans Suivi > Exercices.
 //
-// On écrit ici dans ah_track_history, avec EXACTEMENT le format produit par
-// saveTrack(). Conséquence : la détection de records, _trkRenderProgression,
-// la carte de progression et le contexte Titan fonctionnent immédiatement,
-// sans une ligne de code supplémentaire côté lecture.
+// La saisie vit maintenant DANS le mode reps (steppers REPS / KG / RPE), pas
+// derrière un lien replié : c'est elle qui alimente l'analyse de progression,
+// et un lien de 12 px en bas d'écran ne se tape pas entre deux séries. Elle
+// s'affichait d'ailleurs sur des exercices sans aucune charge (Toe taps,
+// Équilibre yeux fermés), ce qui la rendait doublement inutile.
 //
-// Toujours optionnel : replié par défaut, aucune validation bloquante, et une
-// séance sans saisie se termine exactement comme avant.
+// Les modes chrono, échec et distance écrivent tout seuls (temps tenu, chrono
+// du sprint). Les blocs libres et les bilans n'écrivent rien.
+//
+// Un seul chemin d'écriture : _lsQuickLog, qui produit EXACTEMENT le format
+// de saveTrack(). Conséquence : détection de records, _trkRenderProgression,
+// carte de progression et contexte Titan fonctionnent sans une ligne de code
+// supplémentaire côté lecture.
 // ═══════════════════════════════════════════════════════════════════════════
-window._lsToggleLog = function() {
-  var row = document.getElementById('lsLogRow');
-  var btn = document.getElementById('lsLogToggle');
-  if (!row) return;
-  var open = row.classList.toggle('on');
-  if (btn) btn.textContent = open ? '− Masquer' : '＋ Noter ma charge';
-  if (open) { var l = document.getElementById('lsLogLoad'); if (l) setTimeout(function(){ l.focus(); }, 60); }
-};
-
-window._lsSaveLog = function() {
-  try {
-    var ex = _LS.exos[_LS.idx];
-    if (!ex || !ex.n) return;
-    var loadEl = document.getElementById('lsLogLoad');
-    var repsEl = document.getElementById('lsLogReps');
-    var load = parseFloat((loadEl && loadEl.value) || '');
-    var reps = parseInt((repsEl && repsEl.value) || '', 10);
-    if (!(load > 0) && !(reps > 0)) {
-      if (typeof showToast === 'function') showToast('Entre au moins une charge ou des reps.', 'info');
-      return;
-    }
-    // Nom propre : on retire la partie descriptive après le tiret long, pour
-    // que "Squat — 4×5 lourd" et "Squat" soient bien le MÊME exercice dans
-    // l'historique. Sans ça, aucune progression ne serait jamais détectée.
-    var name = String(ex.n).split('—')[0].trim() || String(ex.n).trim();
-
-    var nowIso = new Date().toISOString();
-    var essai = {};
-    if (load > 0) essai.load = load;
-    if (reps > 0) essai.reps = reps;
-
-    var hist = [];
-    try { hist = JSON.parse(localStorage.getItem('ah_track_history') || '[]'); } catch(e) {}
-    if (!Array.isArray(hist)) hist = [];
-
-    // Même exercice, même jour, même séance → on complète l'entrée existante
-    // plutôt que d'en créer une par série.
-    var today = nowIso.slice(0, 10);
-    var existing = null;
-    for (var i = hist.length - 1; i >= 0; i--) {
-      var h = hist[i];
-      if (h && h.source === 'live_session' && h.date === today
-          && (h.exerciseName === name || h.exo === name)) { existing = h; break; }
-    }
-    if (existing) {
-      existing.essais = (existing.essais || []).concat([essai]);
-      existing.createdAt = Date.now();
-    } else {
-      hist.push({
-        userId: (window.fbUser && window.fbUser.uid) || null,
-        exerciseName: name, exo: name,
-        trackingMethod: 'charge', method: 'charge',
-        values: essai, essais: [essai],
-        rpe: 0,
-        date: today, createdAt: Date.now(),
-        source: 'live_session',
-        sessName: _LS.sessName || '', progKey: _LS.progKey || ''
-      });
-    }
-    if (hist.length > 1000) hist = hist.slice(-1000);
-    localStorage.setItem('ah_track_history', JSON.stringify(hist));
-    try { window.trackHistory = hist; } catch(e) {}
-    try { if (typeof fbSaveProfile === 'function') fbSaveProfile(); } catch(e) {}
-
-    // Retour visuel, puis on referme pour ne pas encombrer l'écran.
-    var done = document.getElementById('lsLogDone');
-    if (done) {
-      var txt = '✓ ' + name + ' — ' + (load > 0 ? load + ' kg' : '') +
-                (load > 0 && reps > 0 ? ' × ' : '') + (reps > 0 ? reps + ' reps' : '') + ' enregistré';
-      done.textContent = txt;
-      done.classList.add('on');
-    }
-    if (loadEl) loadEl.value = ''; if (repsEl) repsEl.value = '';
-    try { if (navigator.vibrate) navigator.vibrate(25); } catch(e) {}
-  } catch(e) { console.warn('[ls log]', e); }
-};
-
-// Remet la zone de saisie à zéro au changement d'exercice.
-function _lsResetLog() {
-  var row = document.getElementById('lsLogRow');
-  var btn = document.getElementById('lsLogToggle');
-  var done = document.getElementById('lsLogDone');
-  if (row) row.classList.remove('on');
-  if (btn) btn.textContent = '＋ Noter ma charge';
-  if (done) { done.classList.remove('on'); done.textContent = ''; }
-  ['lsLogLoad', 'lsLogReps'].forEach(function(id) {
-    var el = document.getElementById(id); if (el) el.value = '';
-  });
-}
 
 // ═══════════════════════════════════════════════════════════════════════════
 // NORMALISATION DES EXERCICES — couche de lecture, aucune donnée réécrite
@@ -38097,6 +37995,12 @@ function _lsResetLog() {
 // validation) qui, sans mode dédié, retombaient dans le gabarit séries-reps.
 var LS_MODES = ['duree','duree_par_cote','echec','reps','reps_par_cote',
                 'distance','bloc_libre','complexe','intervalle','validation'];
+
+// Seules ces techniques changent la MANIÈRE d'exécuter la série et méritent
+// donc un tag. Toute autre (isométrie, fractionné, stato-dynamique…) est
+// déjà portée par le mode d'affichage et la consigne : un tag de plus
+// n'aurait fait qu'une hiérarchie visuelle sans contenu.
+var LS_TAG_TECHNIQUES = ['circuit', 'bi-set', 'superset', 'cluster'];
 
 function _lsHasSide(str) { return /\/\s*(jambe|jbe|c[oô]t[eé]|bras|main|pied|[eé]paule)/i.test(str || ''); }
 
@@ -38457,10 +38361,8 @@ function _lsTimerBlock(sec) {
 
 function _lsRenderMode(vm) {
   var zone = document.getElementById('lsMode');
-  var logBox = document.getElementById('lsLog');
   if (!zone) return;
   var v = vm.valeur, h = '';
-  var showLog = false;
 
   switch (vm.metrique) {
 
@@ -38471,10 +38373,10 @@ function _lsRenderMode(vm) {
       h = _lsKicker(vm) + (vm.metrique === 'duree_par_cote' ? _lsSideTag() : '')
         + _lsTimerBlock(_LS.tmr && _LS.tmr.total ? _LS.tmr.sec : sec);
       if (v && v.max != null && v.max !== v.min) {
-        h += '<div class="ls-big-horizon">objectif de la phase : ' + v.max + ' ' + (v.unite || 's') + '</div>';
+        h += '<div class="ls-big-horizon">' + v.min + ' ' + (v.unite || 's')
+           + ' minimum · pousse jusqu\'à ' + v.max + ' si tu tiens</div>';
       }
       if (vm.consigne) h += '<div class="ls-mode-consigne">' + _lsEsc(vm.consigne) + '</div>';
-      showLog = true;
       break;
     }
 
@@ -38484,46 +38386,47 @@ function _lsRenderMode(vm) {
         + '<div class="ls-big" id="lsBigVal">00:00</div>'
         + '<div class="ls-timerbar"><div class="ls-timerbar-fill" id="lsTimerFill" style="width:0%"></div></div>'
         + '<div class="ls-mode-consigne">Va jusqu\'au bout. Le temps tenu est ton record.</div>';
-      showLog = true;
       break;
     }
 
     // ── MODE B — CHARGE : reps / kg / RPE, validation en 1 tap ──
     case 'reps':
     case 'reps_par_cote': {
-      if (vm.charge) {
+      {
         var last = _lsLastPerf(vm.nom);
         if (!_LS.mb || _LS.mb.exo !== vm.nom) {
+          // L'objectif est présumé atteint : l'athlète valide en 1 tap et
+          // n'ajuste que s'il a fait autre chose. Le haut de la fourchette
+          // est la cible du livre, donc la valeur par défaut.
           _LS.mb = {
             exo: vm.nom,
-            reps: (last && last.reps) || (v && v.min) || 8,
+            reps: (last && last.reps) || (v && (v.max != null ? v.max : v.min)) || 10,
             load: (last && last.load) || 0,
             rpe: (last && last.rpe) || 0,
-            best: _lsBestLoad(vm.nom)
+            best: _lsBestLoad(vm.nom),
+            charge: vm.charge
           };
         }
         var mb = _LS.mb;
-        var objectif = v && v.min != null ? (' · objectif ' + (v.max != null && v.max !== v.min ? v.min + '-' + v.max : v.min) + ' reps') : '';
+        var objectif = v && v.min != null
+          ? (' · objectif ' + (v.max != null && v.max !== v.min ? v.min + '-' + v.max : v.min) + ' reps'
+             + (v.perSide ? ' (' + v.perSide + '/côté)' : (v.side ? ' par côté' : '')))
+          : '';
         h = '<div class="ls-mode-kicker">' + (vm.series.n > 1
               ? 'Série <b>' + _LS.setNum + '</b> / ' + (vm.series.label || vm.series.n)
               : 'Série <b>' + _LS.setNum + '</b>') + objectif + '</div>'
           + '<div class="ls-steppers">'
           +   _lsStepperHtml('reps', 'Reps', mb.reps, 1)
-          +   _lsStepperHtml('load', 'Kg', mb.load, 2.5)
+          // Le champ kg n'existe que si l'exercice se charge — pas de
+          // colonne vide sur Toe taps ou Équilibre yeux fermés.
+          +   (vm.charge ? _lsStepperHtml('load', 'Kg', mb.load, 2.5) : '')
           + '</div>'
           + '<div class="ls-stepper-l" style="margin-top:2px">RPE ressenti</div>'
           + '<div class="ls-rpe" id="lsRpe">' + _lsRpeHtml(mb.rpe) + '</div>';
-        if (mb.best > 0 && mb.load > mb.best) h += '<div class="ls-prflag">🔥 Nouveau record</div>';
+        if (vm.charge && mb.best > 0 && mb.load > mb.best) h += '<div class="ls-prflag">🔥 Nouveau record</div>';
         else if (last) h += '<div class="ls-mode-hint">Dernière fois : ' + (last.load > 0 ? last.load + ' kg × ' : '') + last.reps + ' reps</div>';
         break;
       }
-      // ── MODE C — REPS POIDS DU CORPS : l'objectif est présumé atteint ──
-      var big = v && v.min != null ? (v.max != null && v.max !== v.min ? v.min + '-' + v.max : String(v.min)) : (vm.valeur ? vm.valeur.txt : '—');
-      h = _lsKicker(vm)
-        + '<div class="ls-big ls-big-sm">' + _lsEsc(big) + '</div>'
-        + '<div class="ls-big-unit">reps' + (v && v.perSide ? ' · ' + v.perSide + ' par côté' : (v && v.side ? ' par côté' : '')) + '</div>'
-        + (vm.consigne ? '<div class="ls-mode-consigne">' + _lsEsc(vm.consigne) + '</div>' : '');
-      showLog = true;
       break;
     }
 
@@ -38600,7 +38503,6 @@ function _lsRenderMode(vm) {
   }
 
   zone.innerHTML = h;
-  if (logBox) logBox.style.display = showLog ? '' : 'none';
   _lsTimerPaint();
 }
 
@@ -38665,7 +38567,6 @@ function _lsRenderEx() {
   var ex = _LS.exos[_LS.idx];
   if (!ex) return;
   var total = _LS.exos.length;
-  try { _lsResetLog(); } catch (e) {}
   _lsTimerReset();
 
   if (!_LS.circuitMap || _LS.circuitMapLen !== total) {
@@ -38680,15 +38581,12 @@ function _lsRenderEx() {
   // ── Header ──
   document.getElementById('lsProgName').textContent = _LS.progName || '';
   document.getElementById('lsSessName').textContent = _LS.sessName || '';
-  var bar = document.getElementById('lsTopBar');
-  if (bar) bar.style.width = Math.round((_LS.idx / total) * 100) + '%';
-
   // ── Tags : seulement ce qui est INHABITUEL. Jamais "CLASSIQUE". ──
   var tags = [];
   if (vm.circuit) {
     tags.push('Circuit');
     if (vm.series.n > 1) tags.push('Tour ' + _LS.setNum + '/' + (vm.series.label || vm.series.n));
-  } else if (vm.technique !== 'classique') {
+  } else if (LS_TAG_TECHNIQUES.indexOf(vm.technique) > -1) {
     tags.push(_lsTechniqueLabel(vm.technique));
   }
   if (vm.metrique === 'echec') tags.push('À l\'échec');
@@ -38862,12 +38760,12 @@ window._lsPrimaryAction = function () {
     }
 
     default: {   // reps / reps_par_cote
-      if (vm.charge && _LS.mb) {
+      if (_LS.mb) {
         if (_LS.mb.load > 0 || _LS.mb.reps > 0) {
           var essai = {};
-          if (_LS.mb.load > 0) essai.load = _LS.mb.load;
+          if (vm.charge && _LS.mb.load > 0) essai.load = _LS.mb.load;
           if (_LS.mb.reps > 0) essai.reps = _LS.mb.reps;
-          var isPR = _LS.mb.best > 0 && _LS.mb.load > _LS.mb.best;
+          var isPR = vm.charge && _LS.mb.best > 0 && _LS.mb.load > _LS.mb.best;
           _lsQuickLog(vm.nom, essai, 'charge', _LS.mb.rpe);
           if (isPR) {
             _LS.mb.best = _LS.mb.load;
@@ -39385,6 +39283,21 @@ function _seFbCollectExoNames() {
   });
   return out;
 }
+// Détail du score affiché en fin de séance : l'athlète doit pouvoir vérifier
+// d'où sortent les 80 %. Renvoie '' quand le feedback ne porte pas de quoi
+// l'expliquer — on préfère ne rien dire qu'inventer une justification.
+function _seFbScoreDetail(fb) {
+  fb = fb || {};
+  var parts = [];
+  if (typeof fb.exosDone === 'number' && typeof fb.exosTotal === 'number' && fb.exosTotal > 0) {
+    parts.push(fb.exosDone + ' exercices sur ' + fb.exosTotal + ' validés');
+  } else if (typeof fb.completion === 'number') {
+    parts.push('séance complétée à ' + Math.round(fb.completion) + ' %');
+  }
+  if (typeof fb.intensity === 'number') parts.push('intensité ' + Math.round(fb.intensity) + ' %');
+  if (typeof fb.focus === 'number') parts.push('focus ' + Math.round(fb.focus) + ' %');
+  return parts.length ? parts.join(' · ') : '';
+}
 function _seFbStatusFromScore(score) {
   if (score >= 90) return 'Excellente séance';
   if (score >= 75) return 'Bonne séance';
@@ -39570,9 +39483,16 @@ function _lsFinalizeSession(feedback) {
   // et progression programme jamais incrémentés.
   var msg = 'Tu viens de terminer <strong>' + (_LS.sessName || 'cette séance') + '</strong>.<br>';
   if (feedback.sessionQualityScore != null && feedback.titanStatus) {
-    msg += '<span style="display:inline-block;margin-top:6px;font-size:11px;color:var(--ah-gold);letter-spacing:1px;font-weight:700">SCORE ' + feedback.sessionQualityScore + '% — ' + String(feedback.titanStatus).toUpperCase() + '</span><br>';
+    // Le score n'était jamais expliqué à l'athlète : 80 % de quoi ?
+    // On affiche la base de calcul juste en dessous.
+    msg += '<span style="display:inline-block;margin-top:6px;font-size:11px;color:var(--lv-gold-hot,#F0C24E);letter-spacing:1px;font-weight:700">SCORE ' + feedback.sessionQualityScore + '% — ' + String(feedback.titanStatus).toUpperCase() + '</span><br>';
+    var _detail = _seFbScoreDetail(feedback);
+    if (_detail) msg += '<span style="display:inline-block;margin-top:3px;font-size:11px;color:rgba(255,255,255,.72);line-height:1.4">' + _detail + '</span><br>';
   }
-  msg += '<span style="display:inline-block;margin-top:8px;font-size:13px;color:var(--ah-text2);line-height:1.4;font-style:italic">"' + titanMsg + '"</span>';
+  // Pas de guillemets : ce message est une copy produit écrite à l'avance,
+  // pas une phrase générée par Titan. Le présenter comme une citation de
+  // l'IA serait une promesse que le texte codé en dur ne tient pas.
+  msg += '<span style="display:inline-block;margin-top:8px;font-size:13px;color:rgba(255,255,255,.82);line-height:1.45">' + titanMsg + '</span>';
   var msgEl = document.getElementById('lsCompleteMsg');
   if (msgEl) msgEl.innerHTML = msg;
   if (body) body.scrollTop = 0;

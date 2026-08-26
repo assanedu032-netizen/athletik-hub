@@ -14,10 +14,10 @@ The app is the digital companion of the book *Les Secrets de la Détente Vertica
 
 - **Hosting**: Netlify (`netlify.toml` SPA-rewrites everything to `/index.html`). No build command; the file is served as-is. Production URL: `athletikhub.netlify.app`.
 - **PWA**: two Service Workers —
-  - `sw.js` (cache-first for local assets, network-first for externals) + `manifest.json`. Cache name is `athletik-v256` — bump it when shipping CSS/HTML that must invalidate.
+  - `sw.js` (cache-first for local assets, network-first for externals) + `manifest.json`. Cache name is `athletik-v257` — bump it when shipping CSS/HTML that must invalidate.
   - `firebase-messaging-sw.js` (root) — receives background push notifications (FCM).
 - **No linter, no build**. Validate changes by opening `index.html` in a browser (mobile-first, Android Chrome is the target). Before committing, sanity-check JS syntax by parsing the non-module `<script>` blocks with `node -e` (see Coding conventions).
-- **Tests**: `for f in scripts/test-*.js; do node "$f"; done` — 13 suites, ~460 assertions, pure
+- **Tests**: `for f in scripts/test-*.js; do node "$f"; done` — 14 suites, ~480 assertions, pure
   Node, zéro dépendance : chaque suite extrait les **vraies** fonctions d'`index.html` par
   équilibrage d'accolades et les rejoue contre des mocks. `scripts/test-live-layout.js` est la
   seule exception : elle ouvre un vrai Chromium (Playwright, hors `package.json`) pour mesurer la
@@ -98,19 +98,32 @@ completedPrograms, fcmToken, accessTier`.
     `#lsRestOverlay` (état repos plein écran), `#lsFooter` (tirets + barre d'action, `flex-shrink:0`)
     et `#lsComplete`. `_lsFinalizeSession()` masque tous les enfants sauf `#lsComplete` et
     `_lsClose()` les restaure — **ne jamais imbriquer ces 4 blocs**, ça casserait la fin de séance.
-  - **Tokens `--lv-*` scopés à `#liveSession`** (fond `#080D18`, or `#D4A843`, repos `#4A9EDB`).
-    L'écran n'utilise plus `--text` / `--gold` globaux : en thème light ils produisaient du texte
-    quasi-noir sur fond quasi-noir.
+  - **Tokens `--lv-*` scopés à `#liveSession`** — fond navy `#0B1120`, surfaces `#16203A`, or
+    `#D4A843`, repos `#4A9EDB`. L'écran n'utilise plus `--text` / `--gold` globaux : en thème
+    light (le défaut) ils produisaient du texte quasi-noir sur le navy. **L'écran de fin de
+    séance lit les mêmes tokens** — `.ls-celebrate-msg` / `.ls-nextstep-txt` étaient sur
+    `--ah-text` / `--ah-text2` et rendaient invisibles les deux informations les plus
+    importantes de l'écran. Le fond doit rester **navy, pas noir** : c'est l'identité de marque.
   - **Normalisation à la lecture, jamais de réécriture des données**. `PROGRAMS_V2` stocke
     `e(n, s, r, rest, note)` — 5 chaînes, aucun champ `metrique`. `_lsNormalizeExo(ex, idx, exos,
     circuitMap)` (fonction pure) en dérive le modèle d'affichage. Helpers : `_lsDetectMetrique`,
     `_lsParseValeur`, `_lsSeriesInfo`, `_lsResolveVarSeries`, `_lsCircuitMap`, `_lsComplexSteps`,
     `_lsHasCharge`.
   - **8 modes** rendus par `_lsRenderMode(vm)` dans `#lsMode` : `duree`, `duree_par_cote`, `echec`
-    (chrono montant), `reps` / `reps_par_cote` (mode charge si `_lsHasCharge`, sinon 1-tap PDC),
-    `distance` (chrono manuel au centième), `bloc_libre`, `complexe` (sous-mouvements enchaînés),
-    `intervalle` (cycles effort/récup), `validation` (bilans, pesées, jeûne). Le document de
-    refonte n'en prévoyait que 5 ; les 3 derniers couvrent 46 lignes réelles.
+    (chrono montant), `reps` / `reps_par_cote` (steppers REPS + RPE, colonne KG **seulement si**
+    `_lsHasCharge`), `distance` (chrono manuel au centième), `bloc_libre`, `complexe`
+    (sous-mouvements enchaînés), `intervalle` (cycles effort/récup), `validation` (bilans,
+    pesées, jeûne). Le document de refonte n'en prévoyait que 5 ; les 3 derniers couvrent
+    46 lignes réelles.
+  - **Un seul tag possible**, et seulement si la technique change la manière d'exécuter la série
+    (`LS_TAG_TECHNIQUES` = circuit / bi-set / superset / cluster). Isométrie, fractionné,
+    stato-dynamique sont portés par le mode et la consigne : un tag de plus créait une
+    hiérarchie visuelle sans contenu, visible sur 1 exercice sur 5.
+  - **Une seule barre de progression** : les tirets du footer. La barre fine du header disait
+    la même chose.
+  - **`.ls-mode::before { flex: 0 1 64px }`** plafonne l'écart entre le titre et la donnée
+    principale ; `::after` absorbe le reste. Sans ça, la zone centrée creusait un trou de
+    plusieurs centaines de pixels sur les exercices sans vidéo (91 % d'entre eux).
   - **Un seul bouton** : `_lsPrimaryAction()` dispatche par mode, `_lsPrimaryLabel()` annonce
     exactement ce que le tap va faire. Chrono partagé : `_lsTimerStart/Stop/Toggle/Paint`.
   - **`Var.*`** est résolu par `_lsResolveVarSeries(progKey, phaseIdx, week)` depuis
@@ -121,15 +134,18 @@ completedPrograms, fcmToken, accessTier`.
     `_lsParseRest` retournait 60 et imposait une récup que le livre ne prescrit pas.
   - **Circuits déduits** d'une suite d'exercices à `rest:'-'`, close par un vrai repos
     (`_lsCircuitMap`) — `PROGRAMS_V2` ne porte aucun marqueur d'enchaînement.
-  - **Performances écrites dans `ah_track_history`** au format du tracker (`_lsQuickLog` +
-    `_lsSaveLog`) : charges (`method:'charge'`), temps tenus (`method:'duree'`, plus long = mieux),
-    sprints (`method:'temps'`, plus court = mieux). Records et contexte Titan en profitent sans
-    code de lecture en plus.
+  - **Un seul chemin d'écriture des performances : `_lsQuickLog`**, au format exact de
+    `saveTrack()` dans `ah_track_history` — charges (`method:'charge'`), temps tenus
+    (`method:'duree'`, **plus long = mieux**), sprints (`method:'temps'`, plus court = mieux).
+    Records, progression et contexte Titan en profitent sans code de lecture en plus.
+    La saisie vit **dans** le mode reps, plus derrière un lien replié.
   - `_lsShowComplete()` → `_seFbOpen` / `_eaOpenFeedback` → `_lsFinalizeSession` →
     `_recordSessionCompletion` (80% des séances attendues → `programsDone++`).
-  - **Tests** : `scripts/test-live-screen.js` (95, les 710 exercices normalisés) et
-    `scripts/test-live-layout.js` (133, vrai Chromium en 375×667 et 320×568 — Playwright n'est
-    volontairement pas dans `package.json`, `npm i -D playwright --no-save`).
+  - **Tests** : `scripts/test-live-screen.js` (106, les 710 exercices normalisés),
+    `scripts/test-live-log.js` (38, le chemin d'écriture jusqu'au prompt Titan) et
+    `scripts/test-live-layout.js` (166, vrai Chromium en 375×667 et 320×568 : zéro scroll,
+    contraste AA calculé, parcours complet, et les 10 acquis de la V1 rejoués un par un —
+    Playwright n'est volontairement pas dans `package.json`, `npm i -D playwright --no-save`).
 - **Workout Builder**: `pgBuilder` page (3e sous-onglet de `vTrain`, à côté de Programmes/Librairie). Locked until `programsDone >= 2` (`BUILDER_UNLOCK_PROGRAMS`) OR VIP/MASTER tier OR compte fondateur (`BUILDER_FOUNDER_EMAILS` / `_builderIsDev()`). `_builderCheckUnlock()`. **Piloté par Titan** : l'utilisateur exprime une intention (objectif/durée/matériel/état via chips + phrase libre/vocal `builderToggleMic`), `builderGenerate()` POST `/.netlify/functions/titan` avec `mode:'builder'` + la librairie compacte (`_builderLibraryPayload`) → Titan renvoie une séance **JSON structurée** (blocs échauffement→principal→secondaire→finisher→retour au calme) programmée selon la méthode Athletic Hub (`BUILDER_SYSTEM` côté serveur). `_builderReconcile()` rattache vidéos/catégories depuis `catData`. `builderStartGenerated()` lance via `launchSession` (marquée `_LS.builderMeta`). En fin de séance, `_lsShowComplete` injecte un panneau de ressenti (`_builderInjectFeedback`) et **sauvegarde dans Firestore `users/{uid}/builderSessions`** (cloud, pas localStorage) — `_builderSaveSession`/`_builderSaveFeedback`.
 - **Progression**: `renderProgression()` fills `#progressionCard` in the Moi tab — current score, 8-week sessions bar graph, personal records. Helper `_progressionWeeklySessions(8)`.
 - **Habits**: `activeHabits` array, persisted to `ah_active_habits` via `_persistActiveHabits()`. `checkHabit()` resets the streak on a day gap. `renderActiveHabits()` renders Home + Moi.
