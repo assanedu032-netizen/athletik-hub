@@ -623,7 +623,7 @@ const REAL = [
         return Math.round(r.top) + '/' + Math.round(r.height);
       }));
     }
-    ok('les 12 exercices de la séance gardent le bloc vidéo à la même place',
+    ok('tous les exercices de la séance gardent le bloc vidéo à la même place',
        new Set(tops).size === 1, tops.join(', '));
   }
 
@@ -669,8 +669,9 @@ const REAL = [
     ok('5. "ENSUITE [nom complet]" jamais tronqué',
        /^ENSUITE/i.test(a.nextTxt) && !a.nextClipped && a.nextTxt.indexOf('…') < 0, a.nextTxt);
     ok('6. header complet, non tronqué',
-       a.header === 'Jour 6 — LOWER : Isométrique avancé + Pied' && !a.headerClipped, a.header);
-    ok('8. carte de séance en tirets (12 exos)', a.dashes === 12, String(a.dashes));
+       a.header === PV_J6.name && !a.headerClipped, a.header);
+    ok('8. un tiret par exercice de la séance', a.dashes === PV_J6.exos.length,
+       a.dashes + ' / ' + PV_J6.exos.length);
     ok('10. CLASSIQUE / — SÉRIES / durée sous REPS restent supprimés',
        !/classique/i.test(a.stage) && a.stage.split('\n').every(l => l.trim() !== '—')
        && !/\bmn\b[\s\S]{0,12}REPS/i.test(a.stage), a.stage.replace(/\n/g, ' | '));

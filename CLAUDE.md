@@ -14,7 +14,7 @@ The app is the digital companion of the book *Les Secrets de la Détente Vertica
 
 - **Hosting**: Netlify (`netlify.toml` SPA-rewrites everything to `/index.html`). No build command; the file is served as-is. Production URL: `athletikhub.netlify.app`.
 - **PWA**: two Service Workers —
-  - `sw.js` (cache-first for local assets, network-first for externals) + `manifest.json`. Cache name is `athletik-v260` — bump it when shipping CSS/HTML that must invalidate.
+  - `sw.js` (cache-first for local assets, network-first for externals) + `manifest.json`. Cache name is `athletik-v261` — bump it when shipping CSS/HTML that must invalidate.
   - `firebase-messaging-sw.js` (root) — receives background push notifications (FCM).
 - **No linter, no build**. Validate changes by opening `index.html` in a browser (mobile-first, Android Chrome is the target). Before committing, sanity-check JS syntax by parsing the non-module `<script>` blocks with `node -e` (see Coding conventions).
 - **Tests**: `for f in scripts/test-*.js; do node "$f"; done` — 14 suites, ~480 assertions, pure
@@ -160,7 +160,7 @@ completedPrograms, fcmToken, accessTier`.
     La saisie vit **dans** le mode reps, plus derrière un lien replié.
   - `_lsShowComplete()` → `_seFbOpen` / `_eaOpenFeedback` → `_lsFinalizeSession` →
     `_recordSessionCompletion` (80% des séances attendues → `programsDone++`).
-  - **Tests** : `scripts/test-live-screen.js` (122, les 710 exercices normalisés),
+  - **Tests** : `scripts/test-live-screen.js` (129, les 710 exercices normalisés),
     `scripts/test-live-log.js` (38, le chemin d'écriture jusqu'au prompt Titan) et
     `scripts/test-live-layout.js` (183, vrai Chromium en 375×667 et 320×568 : zéro scroll,
     contraste AA calculé, parcours complet, et les 10 acquis de la V1 rejoués un par un —

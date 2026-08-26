@@ -81,10 +81,10 @@ Object.keys(PV).forEach(k => (PV[k].phases || []).forEach((ph, pi) =>
     (ph.sessions[sk].exos || []).forEach(e => allExos.push({ prog: k, phase: pi, sess: sk, ex: e })))));
 
 console.log('\n=== COUVERTURE DES 6 PROGRAMMES ===\n');
-// 712 depuis la mise en conformité du Jour 1 de SHRED : quatre exercices
-// prescrits qui manquaient ont été rétablis, deux lignes hors programme
-// retirées.
-ok('les 712 lignes d\'exercices sont chargées', allExos.length === 712, String(allExos.length));
+// 730 depuis la mise en conformité de SHRED EXPLOSE : les 11 séances sont
+// régénérées depuis data/shred-explose-program.js, qui prescrit 18 exercices
+// de plus que ce que l'app affichait.
+ok('les 730 lignes d\'exercices sont chargées', allExos.length === 730, String(allExos.length));
 {
   const bad = allExos.filter(x => A.LS_MODES.indexOf(A.lsDetectMetrique(x.ex)) < 0);
   ok('chaque exercice tombe dans un mode connu', bad.length === 0,
@@ -166,36 +166,45 @@ console.log('\n=== REPOS : "-" VEUT DIRE ENCHAÎNER ===\n');
   ok('un tiers du programme n\'impose plus 60 s de récup inventées', dash > 200);
 }
 
-console.log('\n=== SHRED EXPLOSE — JOUR 6 (la séance de la capture) ===\n');
+console.log('\n=== SHRED EXPLOSE — JOUR 6, CONFORME À LA SOURCE ===\n');
 {
   const B = api({ programProgress: { se: { phaseIdx: 0, week: 1 } } }, 'se');
   const exos = PV.se.phases[0].sessions.j6.exos;
   const cm = B.lsCircuitMap(exos);
   const vms = exos.map((e, i) => B.lsNormalizeExo(e, i, exos, cm));
-  const attendu = ['bloc_libre', 'duree', 'duree_par_cote', 'duree_par_cote', 'reps_par_cote',
-                   'duree', 'duree', 'reps', 'duree_par_cote', 'reps', 'bloc_libre', 'bloc_libre'];
-  ok('12 exercices', vms.length === 12, String(vms.length));
+  const attendu = ['bloc_libre', 'duree', 'duree_par_cote', 'duree_par_cote',
+                   'reps', 'reps_par_cote', 'reps', 'reps',
+                   'reps', 'reps', 'duree', 'bloc_libre',
+                   'duree_par_cote', 'reps_par_cote', 'bloc_libre'];
+  ok('15 exercices, comme le programme les prescrit', vms.length === 15, String(vms.length));
   vms.forEach((vm, i) => ok('  ' + (i + 1) + '. ' + vm.nom + ' → ' + attendu[i],
     vm.metrique === attendu[i], vm.metrique));
-  // Les trois défauts visibles sur la capture d'écran.
-  // Avant : badge "MOBILITÉ" + titre "ÉCHAUFFEMENT DYNAMIQUE — MOBILITÉ
-  // COMPLÈTE" + sous-titre "Mobilité complète" — la même information trois
-  // fois. Le badge a disparu, le titre s'arrête au tiret, et la précision
-  // porte enfin une information que le titre ne donne pas.
+
+  // Le circuit pliométrique 5→8 n'existait pas du tout dans l'app avant la
+  // mise en conformité : les quatre exercices étaient absents.
+  ok('le circuit pliométrique est détecté sur 4 exercices',
+     cm[4] && cm[4].total === 4 && cm[4].position === 1 && cm[7].position === 4,
+     JSON.stringify([cm[4], cm[7]]));
+  ok('son repos de fin de tour vaut 2 mn', cm[7] && cm[7].roundRest === 120,
+     String(cm[7] && cm[7].roundRest));
+  ok('les exercices hors circuit n\'y sont pas avalés', !cm[3] && !cm[8]);
+  ok('les préfixes 1) à 4) ne sont plus dans les noms affichés',
+     vms.every(v => !/^\d\)/.test(v.nom)), vms.map(v => v.nom).find(n => /^\d\)/.test(n)));
+
+  // Les trois défauts visibles sur la capture d'origine.
   ok('exo 1 : le titre ne répète plus la précision',
-     vms[0].nom === 'Échauffement dynamique'
-     && vms[0].precision === 'Mobilité complète'
-     && vms[0].nom.indexOf(vms[0].precision) < 0,
+     vms[0].nom === 'Échauffement dynamique' && vms[0].precision === 'mobilité complète',
      vms[0].nom + ' / ' + vms[0].precision);
-  ok('exo 1 : "5-10 mn" n\'est plus une prescription de reps', vms[0].metrique === 'bloc_libre');
+  ok('exo 1 : "10 mn" n\'est plus une prescription de reps', vms[0].metrique === 'bloc_libre');
   ok('exo 1 : repos 0, plus de "1\'" inventé', vms[0].repos === 0, String(vms[0].repos));
-  ok('exo 1 : aucun tag (technique classique)', vms[0].technique === 'classique' && !vms[0].circuit);
   ok('exo 2 : chrono 30 s, horizon 60 s',
      B.lsValeurSeconds(vms[1].valeur, false) === 30 && vms[1].valeur.max === 60,
      JSON.stringify(vms[1].valeur));
-  ok('exo 5 : reps par côté détecté', vms[4].valeur.side === true);
-  ok('aucune vidéo sauf la fente isométrique',
-     vms.filter(v => v.videoId).length === 0 || true);
+  ok('exo 6 : reps par côté, 6 de chaque',
+     vms[5].valeur.perSide === 6 && vms[5].metrique === 'reps_par_cote',
+     JSON.stringify(vms[5].valeur));
+  ok('exo 12 : "10 mn minimum" reste un bloc, pas une série chronométrée',
+     vms[11].metrique === 'bloc_libre' && vms[11].valeur.floor === true);
 }
 
 console.log('\n=== LES MODES QUE LE DOCUMENT NE PRÉVOYAIT PAS ===\n');
@@ -355,7 +364,9 @@ console.log('\n=== RÈGLE 2 — CHAQUE ÉLÉMENT FAIT UN SEUL TRAVAIL ===\n');
      && !/vw\.style\.display = 'none'/.test(html));
   ok('la place du titre est réservée pour que le layout ne saute pas',
      /\.ls-ex-name\s*\{[\s\S]{0,400}min-height: 60px/.test(html)
-     && /\.ls-ex-precision\s*\{[\s\S]{0,240}min-height: 17px/.test(html));
+     && /\.ls-ex-meta\s*\{[\s\S]{0,200}min-height: 20px/.test(html));
+  ok('les tags partagent la ligne du sous-titre, ils ne créent pas de ligne',
+     /<div class="ls-ex-meta">[\s\S]{0,220}id="lsExPrecision"[\s\S]{0,120}id="lsTags"/.test(html));
   ok('le nom de l\'exercice se lit à bout de bras',
      /\.ls-ex-name\s*\{[\s\S]{0,200}font-size: 25px/.test(html)
      && /\.ls-ex-name\s*\{[\s\S]{0,120}font-weight: 700/.test(html));

@@ -2572,12 +2572,15 @@ body.test-mode #testSkipBar{display:flex}
 }
 
 /* ── Tags : affichés seulement si INHABITUELS (jamais "CLASSIQUE") ── */
-.ls-tags { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 6px; flex-shrink: 0; }
-.ls-tags:empty { display: none; }
+.ls-ex-meta {
+  display: flex; align-items: center; justify-content: space-between; gap: 10px;
+  min-height: 20px; margin-top: 3px; flex-shrink: 0;
+}
+.ls-tags { display: flex; gap: 5px; flex-shrink: 0; }
 .ls-tag {
-  padding: 3px 9px; border-radius: 999px;
+  padding: 2px 8px; border-radius: 999px;
   font-family: 'JetBrains Mono', monospace; font-size: 9px; font-weight: 800;
-  letter-spacing: .14em; text-transform: uppercase;
+  letter-spacing: .12em; text-transform: uppercase; white-space: nowrap;
   background: rgba(212,168,67,.14); border: 1px solid var(--lv-border);
   color: var(--lv-gold);
 }
@@ -2594,9 +2597,9 @@ body.test-mode #testSkipBar{display:flex}
   display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
 }
 .ls-ex-precision {
-  font-size: 12.5px; color: var(--lv-txt2); line-height: 1.35; margin-top: 3px;
-  min-height: 17px;   /* une ligne réservée, même vide — voir .ls-ex-name */
-  flex-shrink: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  flex: 1; min-width: 0;
+  font-size: 12.5px; color: var(--lv-txt2); line-height: 1.35;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }
 
 /* ── Vidéo : le bloc n'existe pas quand l'exercice n'a pas de vidéo.
@@ -2963,7 +2966,8 @@ body.test-mode #testSkipBar{display:flex}
   .ls-big { font-size: 52px; }
   .ls-rest-countdown { font-size: 60px; }
   .ls-ex-name { font-size: 21px; min-height: 50px; }
-  .ls-ex-precision { font-size: 12px; min-height: 16px; }
+  .ls-ex-meta { min-height: 18px; }
+  .ls-ex-precision { font-size: 12px; }
   /* Le libellé contextuel du RPE saute avant les cibles tactiles :
      on ne descend jamais les pastilles sous 44 px. */
   .ls-rpe-say { display: none; }
@@ -9493,10 +9497,14 @@ window.tiResetOnEnter = function(){ window.tiShowStep(1); };
   <div class="ls-body" id="lsBody">
 
     <div class="ls-stage" id="lsStage">
-      <!-- Tags : uniquement si INHABITUELS (circuit, round, échec, côté…). -->
-      <div class="ls-tags" id="lsTags"></div>
       <div class="ls-ex-name" id="lsExName">Exercice</div>
-      <div class="ls-ex-precision" id="lsExPrecision"></div>
+      <!-- Sous-titre et tags partagent une ligne réservée : les tags
+           n'apparaissent qu'en circuit, une ligne à eux ferait sauter tout
+           ce qui suit d'un exercice à l'autre. -->
+      <div class="ls-ex-meta">
+        <div class="ls-ex-precision" id="lsExPrecision"></div>
+        <div class="ls-tags" id="lsTags"></div>
+      </div>
 
       <!-- Vidéo : le bloc occupe TOUJOURS le même espace. Sans vidéo, il
            devient un placeholder neutre — le layout ne bouge pas d'un
@@ -21027,85 +21035,104 @@ var PROGRAMS_V2 = (function(){
             // hold rendu en 12 reps au lieu de 30 s, et les deux circuits
             // perdus. Quatre exercices prescrits manquaient.
             j1:{ name:'Jour 1 — UPPER : Challenge + Circuit Cluster + Épaules', exos:[
-              e('Bring Sally Up — Chanson « Flower » de Moby','1','Suivre la chanson','-','Rotation des challenges : Bring Sally Up → Pompes max 2 mn → Burpees max 3 mn (J1/J3/J5).'),
+              e('Bring Sally Up — pompes — chanson Flower','1','Suivre la chanson','-','Rotation : Bring Sally Up → Pompes max 2mn → Burpees max 3mn (J1/J3/J5).'),
               e('1) Pompes diamant','4','2-3 reps','2 mn après les 4'),
               e('2) Dips sur chaise / banc','4','2-3 reps','-'),
-              e('3) Pompes déclinées — pieds surélevés','4','2-3 reps','-'),
+              e('3) Pompes déclinées','4','2-3 reps','-'),
               e('4) Pike push-ups — pompes en V','4','2-3 reps','-'),
-              e('Rotation explosive du buste en planche','3','10 reps','1 mn'),
-              e('Élévations latérales — bouteilles d\'eau ou poids léger','3','12-15 reps','1 mn'),
-              e('1) Pompes larges — écartement maximal','3','10-12 reps','-'),
+              e('Rotation explosive du buste en planche — puissance rotative','3','10 reps','1 mn'),
+              e('Élévations latérales — bouteilles ou pdc','3','12-15 reps','1 mn'),
+              e('1) Pompes larges — pectoraux','3','10-12 reps','-'),
               e('2) Superman hold — lombaires','3','30 s','-'),
               e('3) Pompes serrées — triceps','3','8-10 reps','-'),
-              e('4) Planche dynamique — tap épaules','3','20 reps','1 mn 30'),
+              e('4) Planche dynamique — gainage (tap épaules)','3','20 reps','1 mn 30'),
               e('Élévation orteils','3','15 reps','30 s'),
-              e('Dorsiflexion résistée — tibial antérieur','3','15 reps','30 s'),
+              e('Dorsiflexion tibial','3','15 reps','30 s'),
               e('Équilibre unipodal','3','30 s / jambe','30 s'),
               e('Étirements haut du corps','-','5 mn','-')
             ]},
-            j2:{ name:'Jour 2 — LOWER : Isométrique + Circuit + Sprint', exos:[
-              e('Échauffement dynamique','-','5-10 mn','-'),
-              e('Squat isométrique 90° — mur ou air','4','30-45 s','1 mn'),
-              e('Fente isométrique — genou à 90°','3','30 s / jambe','45 s'),
-              e('Wall sit — descendre progressivement','3','30-60 s','1 mn'),
-              e('Squat jump — explosion maximale','3','10 reps','1 mn'),
-              e('Fente sautée — alterner les jambes','3','10 reps','1 mn'),
-              e('Sumo squat jump','3','10 reps','1 mn'),
-              e('Glute bridge explosif','3','12 reps','45 s'),
-              e('Relevé de pointe unipodal','3','15 reps / jambe','30 s'),
-              e('Dorsiflexion résistée','3','15 reps','30 s'),
-              e('Équilibre yeux fermés','3','30 s / jambe','30 s'),
-              e('Sprint 10s + Jogging 30s + Marche 20s — ALL OUT','8 cycles','Cycle complet','-'),
-              e('Étirements légers','-','5-10 mn','-')
+
+            j2:{ name:'Jour 2 — LOWER : Isométrique + Travail pied + Sprint', exos:[
+              e('Échauffement dynamique — + mobilité','-','10 mn','-'),
+              e('Squat isométrique — 90°','4','30-45 s','1 mn'),
+              e('Fente isométrique','3','30 s / jambe','1 mn'),
+              e('Wall sit','3','30-60 s','1 mn'),
+              e('1) Squat jump — explosivité','3','10 reps','-'),
+              e('2) Fente alternée','3','20 reps (10/jambe)','-'),
+              e('3) Squat sumo — intérieur cuisses','3','15 reps','-'),
+              e('4) Glute bridge — fessiers','3','15 reps','2 mn'),
+              e('Élévation orteils','3','15 reps','30 s'),
+              e('Dorsiflexion tibial','3','15 reps','30 s'),
+              e('Marche sur talons','2','1 mn','30 s'),
+              e('Marche arrière en colline','1','10 mn minimum','-'),
+              e('Cycle Sprint 10s + Jogging 30s + Marche 20s','8','Cycle complet','-'),
+              e('Étirements bas du corps','-','5 mn','-')
             ]},
-            j3:{ name:'Jour 3 — UPPER : Focus Épaules + Proprioception', exos:[
-              e('Échauffement dynamique haut du corps','-','5-10 mn','-'),
+
+            j3:{ name:'Jour 3 — UPPER : Focus épaules + Proprioception + Course', exos:[
+              e('Échauffement dynamique haut du corps — rotations épaules','-','8 mn','-'),
               e('Pike push-ups','4','8-12 reps','1 mn'),
-              e('Handstand hold — poirier contre mur','4','20-40 s','1 mn 30'),
-              e('Pompes hindou — Épaules dynamiques','3','8-10 reps','1 mn'),
-              e('Shoulder taps en planche','3','20 reps (10/côté)','45 s'),
-              e('Planche avant-bras + touche épaule','3','12 reps (6/côté)','45 s'),
+              e('Handstand hold — contre mur','4','20-40 s','1 mn 30'),
+              e('Pompes hindou','3','8-10 reps','1 mn'),
+              e('Shoulder taps en planche','3','20 reps (10/côté)','1 mn'),
+              e('1) Élévations frontales','3','12 reps','-'),
+              e('2) Power rotation debout','3','10 reps / côté','-'),
+              e('3) Élévations latérales','3','12 reps','-'),
+              e('4) Rotation buste unipodal','3','8 reps / côté','1 mn 30'),
+              e('Planche avant-bras avec tap épaules','3','12 reps (6/côté)','45 s'),
               e('T-hold — équilibre en T','3','20-30 s / jambe','45 s'),
-              e('Marche en arrière en colline (ou fractionné)','1','10 mn','-'),
-              e('Fractionné : 1 mn (80%) + 1 mn marche','8 cycles','Cycle complet','-'),
-              e('Rock Back breathing','-','2-5 mn','-')
+              e('Équilibre yeux fermés','2','30 s / jambe','30 s'),
+              e('Fractionné 1mn (80% Vmax) + 1mn marche','8','Cycle complet','-'),
+              e('Étirements haut du corps','-','5 mn','-')
             ]},
-            j4:{ name:'Jour 4 — LOWER : Cardio aérobie 35 mn + Circuit', exos:[
-              e('Échauffement dynamique','-','5-10 mn','-'),
-              e('Course à pied — 60% Vmax — allure conversationnelle','-','35 mn','-'),
-              e('Squat — enchaîner directement','3','15 reps','30 s'),
-              e('Fentes marchées','3','10 reps / jambe','30 s'),
-              e('Squat jump','3','10 reps','30 s'),
-              e('Mountain climbers','3','30 s','30 s'),
-              e('Étirements légers','-','5-10 mn','-')
+
+            j4:{ name:'Jour 4 — LOWER : Cardio longue durée', exos:[
+              e('Échauffement dynamique progressif','-','5-10 mn','-'),
+              e('Course à pied 60% Vmax','-','35 mn','-'),
+              e('1) Squat au poids du corps','2','20 reps','-'),
+              e('2) Fentes marchées','2','30 reps (15/jambe)','-'),
+              e('3) Squat jump','2','10 reps','-'),
+              e('4) Mountain climbers','2','30 s','2 mn'),
+              e('Élévation orteils','2','15 reps','30 s'),
+              e('Dorsiflexion tibial','2','15 reps','30 s'),
+              e('Retour au calme + marche','-','5 mn','-'),
+              e('Étirements complets','-','10 mn','-')
             ]},
-            j5:{ name:'Jour 5 — UPPER : Épaules avancées + Sprint haute intensité', exos:[
-              e('Échauffement dynamique haut du corps','-','5-10 mn','-'),
-              e('Pike push-ups explosifs','4','10-15 reps','1 mn'),
-              e('Pseudo planche push-ups — Force épaules','4','5-8 reps','1 mn 30'),
-              e('Pompes archer — Unilatéral','3','6-8 reps / côté','1 mn'),
+
+            j5:{ name:'Jour 5 — UPPER : Focus épaules + Sprint haute intensité', exos:[
+              e('Échauffement dynamique haut du corps — préparation sprint','-','8 mn','-'),
+              e('Pike push-ups explosifs','4','8-10 reps','1 mn'),
+              e('Pseudo planche push-ups','4','5-8 reps','1 mn 30'),
+              e('Pompes archer','3','6-8 reps / côté','1 mn'),
               e('Handstand progression','4','15-30 s','1 mn 30'),
-              e('Circuit pompes claquées','3','5-8 reps','1 mn'),
-              e('Burpees explosifs','3','8 reps','1 mn'),
-              e('Dips sur chaise explosifs','3','8-10 reps','1 mn'),
-              e('Planche jacks — ouvrir/fermer les pieds','3','15 reps','45 s'),
-              e('Fractionné : 15 s sprint (100%) + 15 s repos — ALL OUT','8 cycles','Cycle complet','-'),
-              e('Rock Back breathing','-','2-5 mn','-')
+              e('1) Pompes claquées — explosivité max','4','6-8 reps','-'),
+              e('2) Burpees — full body','4','10 reps','-'),
+              e('3) Dips explosifs — triceps','4','8 reps','-'),
+              e('4) Planche jacks — cardio gainage','4','20 reps','2 mn'),
+              e('Élévation orteils explosive','3','15 reps','30 s'),
+              e('Sauts unipodaux stabilisés','3','8 reps / jambe','30 s'),
+              e('Fractionné 15s sprint + 15s repos','8','Cycle complet','-'),
+              e('Étirements','-','5 mn','-')
             ]},
-            j6:{ name:'Jour 6 — LOWER : Isométrique avancé + Pied', exos:[
-              e('Échauffement dynamique — Mobilité complète','-','5-10 mn','-'),
-              e('Squat isométrique (90°) — progresser le temps','4','30-60 s','1 mn'),
+
+            j6:{ name:'Jour 6 — LOWER : Isométrique + Pied + Proprioception', exos:[
+              e('Échauffement dynamique — mobilité complète','-','10 mn','-'),
+              e('Squat isométrique — 90°','4','30-60 s','1 mn'),
               e('Fente isométrique','3','30-45 s / jambe','1 mn'),
-              e('Single leg squat hold — pistol progression','3','20-40 s / jambe','1 mn'),
-              e('Relevé de pointe unipodal','3','15 reps / jambe','30 s'),
-              e('Marche sur pointe de pieds','2','1 mn','30 s'),
-              e('Marche sur les talons — activation tibial','2','1 mn','30 s'),
-              e('Dorsiflexion résistée','3','15 reps','30 s'),
-              e('Équilibre yeux fermés','3','30 s / jambe','30 s'),
-              e('Toe taps — Coordination tibial','3','20 reps','30 s'),
-              e('Marche en arrière en colline','1','10 mn minimum','-'),
-              e('Étirements légers','-','5-10 mn','-')
-            ]}
+              e('Single leg squat hold','3','20-40 s / jambe','1 mn'),
+              e('1) Split jumps — alternance','3','12 reps','-'),
+              e('2) Lateral bounds','3','12 reps (6/côté)','-'),
+              e('3) Box squat jumps — assis-debout','3','10 reps','-'),
+              e('4) Calf jumps — mollets','3','15 reps','2 mn'),
+              e('Élévation orteils','3','15 reps','30 s'),
+              e('Dorsiflexion tibial','3','15 reps','30 s'),
+              e('Marche sur talons','2','1 mn','30 s'),
+              e('Marche arrière en colline','1','10 mn minimum','-'),
+              e('Équilibre unipodal — surface instable','3','30 s / jambe','30 s'),
+              e('Sauts unipodaux multidirectionnels','3','8 reps / jambe','1 mn'),
+              e('Étirements complets','-','10 mn','-')
+            ]},
+
           }
         },
         {
@@ -21116,62 +21143,71 @@ var PROGRAMS_V2 = (function(){
           note:'Challenges : note tes records. Sprint progressif : 30m → 40m → 50m. Dernier jour sem 16 = Super Explosif Test complet.',
           weekDays:[d('Lun','j1'),d('Mar','j2'),d('Mer','rest'),d('Jeu','j3'),d('Ven','j4'),d('Sam','opt'),d('Dim','rest')],
           sessions:{
-            j1:{ name:'Jour 1 — Full Body Explosif + Pliométrie', exos:[
-              e('Échauffement général + mobilité','-','10 mn','-'),
-              e('Activation neuromusculaire — Squats PDC','2','10 reps','30 s'),
-              e('Box jumps — Explosivité max','4','5 reps','2 mn'),
-              e('Depth jumps — Hauteur adaptée','3','4 reps','2 mn 30'),
-              e('Broad jumps — Distance maximale','3','5 reps','2 mn'),
-              e('Squat à la barre (ou goblet squat) — dernière série → échec','4','6-8 reps','3 mn'),
-              e('Soulevé de terre — dernière série → échec','4','5-6 reps','3 mn'),
-              e('A) Fentes bulgares — enchaîner avec B','3','8 reps / jambe','-'),
-              e('B) Leg curl','3','10-12 reps','2 mn'),
-              e('Calf raises debout','4','15-20 reps','1 mn'),
-              e('Calf raises unipodal','3','12 reps / jambe','1 mn'),
-              e('Étirements — Focus bas du corps','-','10 mn','-')
+            j1:{ name:'Jour 1 — Full Body Explosif', exos:[
+              e('Échauffement dynamique complet','-','10 mn','-'),
+              e('1) Pike push-ups explosifs — épaules','4','10 reps','-'),
+              e('2) Sprint sur place — high knees','4','30 s','-'),
+              e('3) Mobilité mouv — amplitude','4','8 reps','-'),
+              e('4) Squat jump — explosivité','4','10 reps','2 mn'),
+              e('1) Pompes explosives','3','12 reps','-'),
+              e('2) Fentes sautées','3','20 reps (10/jambe)','-'),
+              e('3) Planche dynamique — core actif','3','30 s','-'),
+              e('4) Burpees — full body','3','10 reps','1 mn 30'),
+              e('Élévation orteils explosive','3','15 reps','30 s'),
+              e('Sauts unipodaux stabilisés','3','8 reps / jambe','30 s'),
+              e('Sprint 30 m × 6','6','30 m','1 mn 30','Évolue 40m/50m selon semaine.'),
+              e('Étirements complets','-','5-8 mn','-')
             ]},
-            j2:{ name:'Jour 2 — Lower + Course avec sprints progressifs', exos:[
-              e('Échauffement dynamique — Skipping, talons-fesses','-','10 mn','-'),
-              e('Squats sautés légers — Activation neuro','2','8 reps','1 mn'),
-              e('Hurdle hops — sauts de haies hauteur progressive','4','6 reps','2 mn 30'),
-              e('Single leg box jumps','3','4 reps / jambe','2 mn'),
-              e('Hip Thrust — charge lourde','4','8-10 reps','2 mn 30'),
-              e('Squat jump avec charge — 20-30% 1RM','4','5 reps','2 mn 30'),
-              e('A) Step-ups explosifs — avec B','3','8 reps / jambe','-'),
-              e('B) Goblet squat — tempo contrôlé','3','12 reps','2 mn'),
-              e('Sprint 30m×6 (sem 9-10) / 40m×6 (sem 11-12) / 50m×6 (sem 13-14)','—','Progression','-','Repos 2-3 mn entre sprints'),
-              e('Fartlek 25 mn à partir de sem 13-14 (optionnel sem 9-12)','-','25 mn','-'),
-              e('Étirements + foam rolling','-','10 mn','-')
+
+            j2:{ name:'Jour 2 — Lower + Course avancée', exos:[
+              e('Échauffement dynamique — focus bas du corps','-','10 mn','-'),
+              e('1) 90/90 — mobilité hanches','4','8 reps / côté','-'),
+              e('2) Rotation buste explosive','4','12 reps / côté','-'),
+              e('3) Dips explosifs','4','10 reps','-'),
+              e('4) Depth jumps — plio intensive','4','6 reps','2 mn'),
+              e('1) Squat jump — hauteur max','3','12 reps','-'),
+              e('2) Fente bulgare sautée — unilatéral explosif','3','8 reps / jambe','-'),
+              e('3) Box jumps','3','10 reps','-'),
+              e('4) Calf jumps — mollets','3','15 reps','2 mn'),
+              e('Marche sur talons — rapide','2','1 mn','30 s'),
+              e('Marche arrière en côte','1','10 mn','-'),
+              e('Course 2mn (85% Vmax) + 1mn marche','6','Cycle','-'),
+              e('Étirements bas du corps','-','8 mn','-')
             ]},
-            j3:{ name:'Jour 3 — Upper + Pliométrie intensive', exos:[
-              e('Échauffement général + mobilité épaules','-','10 mn','-'),
-              e('Pompes claquées','4','6 reps','2 mn'),
-              e('Pompes pliométriques','3','5 reps','2 mn'),
-              e('Développé couché (ou pompes lestées)','4','6-8 reps','3 mn'),
-              e('Développé incliné haltères','3','8-10 reps','2 mn 30'),
-              e('A) Tractions (lestées ou assistées) — avec B','4','6-8 reps','-'),
-              e('B) Rowing barre ou haltères','4','8-10 reps','2 mn'),
-              e('A) Dips lestés — avec B','3','8-10 reps','-'),
-              e('B) Curl biceps haltères','3','10-12 reps','1 mn 30'),
-              e('Planche avec tap épaules','3','20 reps','1 mn'),
-              e('Dead bug explosif','3','12 reps','1 mn'),
-              e('Étirements haut du corps','-','8 mn','-')
+
+            j3:{ name:'Jour 3 — Upper + Plio intensive', exos:[
+              e('Échauffement dynamique explosif — activation maximale','-','10 mn','-'),
+              e('1) Split jumps','5','10 reps','-'),
+              e('2) Lateral bounds','5','12 reps (6/côté)','-'),
+              e('3) Saut survitesse — élastiques','5','8 reps','2 mn 30'),
+              e('1) Planche avant-bras avec tap épaules','4','20 reps','-'),
+              e('2) L-sit hold','4','20-30 s','-'),
+              e('3) Planche latérale — obliques','4','30 s / côté','-'),
+              e('4) Mountain climbers — dynamique','4','30 s','1 mn 30'),
+              e('Pompes claquées — explosivité max','4','8-10 reps','1 mn 30'),
+              e('Traction explosive — ou excentrique','4','6-8 reps','1 mn 30'),
+              e('Dips explosifs','3','10 reps','1 mn'),
+              e('Sprint en côte 15s × 8','8','15 s','2 mn'),
+              e('Étirements complets','-','8 mn','-')
             ]},
-            j4:{ name:'Jour 4 — Full Body Circuit + Conditionnement', exos:[
-              e('Échauffement général corps complet','-','10 mn','-'),
-              e('Front squat (ou squat goblet)','4','6-8 reps','3 mn'),
-              e('Romanian deadlift — Focus ischio','4','8 reps','2 mn 30'),
-              e('Développé militaire','4','6-8 reps','2 mn 30'),
-              e('Rowing haltères','4','8-10 reps','2 mn'),
-              e('A) Élévations latérales — avec B','3','12 reps','-'),
-              e('B) Face pulls','3','15 reps','1 mn 30'),
-              e('Pallof press — Anti-rotation','3','10 reps / côté','1 mn'),
-              e('Russian twists — avec charge','3','20 reps totales','1 mn'),
-              e('Planche latérale','2','30-45 s / côté','1 mn'),
-              e('Burpees','3','10 reps','1 mn 30'),
-              e('Battle ropes (ou sprint) — Intensité max','3','30 s','1 mn'),
-              e('Retour au calme + Étirements complets','-','10 mn','-')
+
+            j4:{ name:'Jour 4 — Full Body Circuit (Vitesse + Force + Plio + Power Rotation)', exos:[
+              e('Échauffement dynamique complet — préparation intense','-','10 mn','-'),
+              e('1) Sprint 4 cônes — multidirection','4','1 série','-'),
+              e('2) Pompes déclinées — force pure haut','4','10 reps','-'),
+              e('3) Box jumps — plio intensive','4','8 reps','-'),
+              e('4) Équilibre yeux fermés — stabilité','4','20 s / jambe','-'),
+              e('5) Rotation explosive debout','4','12 reps / côté','3 mn'),
+              e('1) Squat jump avec charge — gilet si dispo','3','10 reps','-'),
+              e('2) Pompes archer','3','8 reps / côté','-'),
+              e('3) Fentes sautées','3','20 reps','-'),
+              e('4) Burpees avec tuck jump — full body intense','3','8 reps','2 mn'),
+              e('Élévation orteils — + Dorsiflexion','3','15 reps','30 s'),
+              e('Marche arrière — rapide','2','2 mn','30 s'),
+              e('Fartlek 20 mn','1','20 mn','-'),
+              e('Étirements complets','-','10 mn','-')
             ]},
+
             opt:{ name:'Jour 5 — OPTIONNEL : Cardio léger + Mobilité', exos:[
               e('Course légère ou vélo — 50-60% Vmax','-','30-40 mn','-'),
               e('Foam rolling corps complet','-','10 mn','-'),
