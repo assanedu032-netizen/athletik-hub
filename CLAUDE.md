@@ -14,7 +14,7 @@ The app is the digital companion of the book *Les Secrets de la Détente Vertica
 
 - **Hosting**: Netlify (`netlify.toml` SPA-rewrites everything to `/index.html`). No build command; the file is served as-is. Production URL: `athletikhub.netlify.app`.
 - **PWA**: two Service Workers —
-  - `sw.js` (cache-first for local assets, network-first for externals) + `manifest.json`. Cache name is `athletik-v258` — bump it when shipping CSS/HTML that must invalidate.
+  - `sw.js` (cache-first for local assets, network-first for externals) + `manifest.json`. Cache name is `athletik-v259` — bump it when shipping CSS/HTML that must invalidate.
   - `firebase-messaging-sw.js` (root) — receives background push notifications (FCM).
 - **No linter, no build**. Validate changes by opening `index.html` in a browser (mobile-first, Android Chrome is the target). Before committing, sanity-check JS syntax by parsing the non-module `<script>` blocks with `node -e` (see Coding conventions).
 - **Tests**: `for f in scripts/test-*.js; do node "$f"; done` — 14 suites, ~480 assertions, pure
@@ -116,14 +116,29 @@ completedPrograms, fcmToken, accessTier`.
     (sous-mouvements enchaînés), `intervalle` (cycles effort/récup), `validation` (bilans,
     pesées, jeûne). Le document de refonte n'en prévoyait que 5 ; les 3 derniers couvrent
     46 lignes réelles.
-  - **Un seul tag possible**, et seulement si la technique change la manière d'exécuter la série
-    (`LS_TAG_TECHNIQUES` = circuit / bi-set / superset / cluster). Isométrie, fractionné,
-    stato-dynamique sont portés par le mode et la consigne : un tag de plus créait une
-    hiérarchie visuelle sans contenu, visible sur 1 exercice sur 5.
+  - **Les tags disent la STRUCTURE, jamais la méthode** : `CIRCUIT` + `TOUR x/y` et rien d'autre
+    (`LS_TAG_TECHNIQUES` est vide). « Cluster set », « bi-set », « isométrie » sont du vocabulaire
+    de programmation ; `LS_JARGON` les retire aussi des libellés affichés, sans toucher aux données.
+    **En circuit, le compteur `SÉRIE x/y` disparaît** — le tour EST la série.
+  - **Circuits déduits dans les deux formes du livre** (`_lsCircuitMap`) : repos de fin de tour
+    porté par le **dernier** exercice (suite de `rest:'-'`), ou par le **premier**
+    (`rest:'2 mn après les 4'`). Sans le second cas, la fenêtre glissait d'un cran. Le repos ne se
+    déclenche qu'au dernier exercice du tour, via `circuit.roundRest`.
+  - **Préfixes `1)` `2)` retirés à l'affichage** — position dans le circuit, pas partie du nom.
+  - **Mode `score`** pour les challenges du livre (Bring Sally Up, Pompes max 2 mn, Burpees max
+    3 mn) : gros stepper + « Dernière fois ». Sans score saisi, ces séances n'ont aucune mesure.
+  - **RPE : 5 pastilles `2·4·6·8·10` de ≥ 44 px**, optionnel, avec libellé contextuel
+    (`LS_RPE_WORDS`). Dix pastilles faisaient 33 px.
+  - **Titre / sous-titre / consigne sont trois textes distincts** : le sous-titre vient du nom
+    (après le tiret) ou d'une note courte, la consigne d'une note longue — jamais le même texte
+    deux fois.
   - **Une seule barre de progression** : les tirets du footer. La barre fine du header disait
     la même chose.
   - **`.ls-mode::before { max-height: 80px }`** plafonne l'écart entre le titre et la donnée
     principale ; `::after` absorbe le reste.
+  - **L'écran de repos garde la barre du bas** : l'overlay s'arrête au-dessus de `#lsFooter`
+    (`overlay.style.bottom = footer.offsetHeight`), le bouton central devient « Passer le repos »
+    et cesse d'être doré. Libellé `Repos — fin du tour x/y` en circuit.
   - **Le bloc vidéo ne disparaît jamais.** Sans vidéo il devient un placeholder neutre
     (`.ls-video-empty`, « Démo à venir », non cliquable) de même hauteur — le layout ne saute
     pas d'un exercice à l'autre, et les exercices restant à filmer se repèrent en parcourant la
@@ -145,9 +160,9 @@ completedPrograms, fcmToken, accessTier`.
     La saisie vit **dans** le mode reps, plus derrière un lien replié.
   - `_lsShowComplete()` → `_seFbOpen` / `_eaOpenFeedback` → `_lsFinalizeSession` →
     `_recordSessionCompletion` (80% des séances attendues → `programsDone++`).
-  - **Tests** : `scripts/test-live-screen.js` (112, les 710 exercices normalisés),
+  - **Tests** : `scripts/test-live-screen.js` (121, les 710 exercices normalisés),
     `scripts/test-live-log.js` (38, le chemin d'écriture jusqu'au prompt Titan) et
-    `scripts/test-live-layout.js` (175, vrai Chromium en 375×667 et 320×568 : zéro scroll,
+    `scripts/test-live-layout.js` (183, vrai Chromium en 375×667 et 320×568 : zéro scroll,
     contraste AA calculé, parcours complet, et les 10 acquis de la V1 rejoués un par un —
     Playwright n'est volontairement pas dans `package.json`, `npm i -D playwright --no-save`).
 - **Workout Builder**: `pgBuilder` page (3e sous-onglet de `vTrain`, à côté de Programmes/Librairie). Locked until `programsDone >= 2` (`BUILDER_UNLOCK_PROGRAMS`) OR VIP/MASTER tier OR compte fondateur (`BUILDER_FOUNDER_EMAILS` / `_builderIsDev()`). `_builderCheckUnlock()`. **Piloté par Titan** : l'utilisateur exprime une intention (objectif/durée/matériel/état via chips + phrase libre/vocal `builderToggleMic`), `builderGenerate()` POST `/.netlify/functions/titan` avec `mode:'builder'` + la librairie compacte (`_builderLibraryPayload`) → Titan renvoie une séance **JSON structurée** (blocs échauffement→principal→secondaire→finisher→retour au calme) programmée selon la méthode Athletic Hub (`BUILDER_SYSTEM` côté serveur). `_builderReconcile()` rattache vidéos/catégories depuis `catData`. `builderStartGenerated()` lance via `launchSession` (marquée `_LS.builderMeta`). En fin de séance, `_lsShowComplete` injecte un panneau de ressenti (`_builderInjectFeedback`) et **sauvegarde dans Firestore `users/{uid}/builderSessions`** (cloud, pas localStorage) — `_builderSaveSession`/`_builderSaveFeedback`.

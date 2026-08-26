@@ -38,11 +38,18 @@ const PV = new Function('return (function(){' + html.slice(bi, bj).slice(1, -1) 
 const FNS = ['_lsHasSide', '_lsParseValeur', '_lsValeurSeconds', '_lsDetectMetrique',
              '_lsHasCharge', '_lsResolveVarSeries', '_lsProgContext', '_lsSetCount',
              '_lsSeriesInfo', '_lsCircuitMap', '_lsComplexSteps', '_lsNormalizeExo',
-             '_lsParseRest', '_lsDetectTechnique', '_lsTechniqueLabel', '_lsTechniqueInstruction'];
-const SRC = 'var LS_MODES = ' + JSON.stringify(
-    JSON.parse('[' + block(html, "var LS_MODES = [", "];").split('[')[1].replace(/'/g, '"').replace(/\s+/g, '') + ']')
-  ) + ';\n'
-  + FNS.map(n => grab(html, 'function ' + n + '(')).join('\n');
+             '_lsParseRest', '_lsDetectTechnique', '_lsTechniqueLabel',
+             '_lsTechniqueInstruction', '_lsCoachingCue', '_lsObjectifTxt', '_lsScoreLabel'];
+// Les constantes de l'écran live sont extraites telles quelles : les
+// hardcoder ici ferait diverger le test du code qu'il prétend vérifier.
+const CONSTS = ['LS_MODES', 'LS_TAG_TECHNIQUES', 'LS_JARGON', 'LS_RPE_STEPS', 'LS_RPE_WORDS']
+  .map(n => {
+    const i = html.indexOf('\nvar ' + n + ' = ');
+    if (i < 0) throw new Error('constante introuvable: ' + n);
+    const j = html.indexOf(';\n', i);
+    return html.slice(i + 1, j + 1);
+  }).join('\n');
+const SRC = CONSTS + '\n' + FNS.map(n => grab(html, 'function ' + n + '(')).join('\n');
 
 function api(profile, progKey) {
   const store = { ah_profile: JSON.stringify(profile || {}) };
@@ -74,7 +81,10 @@ Object.keys(PV).forEach(k => (PV[k].phases || []).forEach((ph, pi) =>
     (ph.sessions[sk].exos || []).forEach(e => allExos.push({ prog: k, phase: pi, sess: sk, ex: e })))));
 
 console.log('\n=== COUVERTURE DES 6 PROGRAMMES ===\n');
-ok('les 710 lignes d\'exercices sont chargées', allExos.length === 710, String(allExos.length));
+// 712 depuis la mise en conformité du Jour 1 de SHRED : quatre exercices
+// prescrits qui manquaient ont été rétablis, deux lignes hors programme
+// retirées.
+ok('les 712 lignes d\'exercices sont chargées', allExos.length === 712, String(allExos.length));
 {
   const bad = allExos.filter(x => A.LS_MODES.indexOf(A.lsDetectMetrique(x.ex)) < 0);
   ok('chaque exercice tombe dans un mode connu', bad.length === 0,
@@ -288,8 +298,45 @@ console.log('\n=== RÈGLE 2 — CHAQUE ÉLÉMENT FAIT UN SEUL TRAVAIL ===\n');
   ok('le tag "Classique" n\'est jamais rendu',
      /LS_TAG_TECHNIQUES\.indexOf\(vm\.technique\) > -1/.test(js)
      && !/LS_TAG_TECHNIQUES = \[[^\]]*classique/.test(html));
-  ok('seules les techniques d\'enchaînement portent un tag',
-     /LS_TAG_TECHNIQUES = \['circuit', 'bi-set', 'superset', 'cluster'\]/.test(html));
+  // §3 · aucune technique ne porte de tag : seule la STRUCTURE en porte un.
+  ok('aucun tag de technique n\'est rendu',
+     /var LS_TAG_TECHNIQUES = \[\];/.test(html));
+  ok('le jargon de programmation ne sort jamais à l\'écran',
+     A.lsNormalizeExo({ n: 'Pompes diamant — cluster', s: '4', r: '2-3 reps cluster', rest: '-' },
+                      0, [], []).precision === ''
+     && !/cluster/i.test(A.lsNormalizeExo({ n: 'Pompes diamant — cluster', s: '4', r: '2-3 reps cluster', rest: '-' },
+                      0, [], []).nom));
+  ok('les préfixes "1)" disparaissent du nom affiché',
+     A.lsNormalizeExo({ n: '2) Superman hold — lombaires', s: '3', r: '30 s', rest: '-' },
+                      0, [], []).nom === 'Superman hold');
+  ok('un challenge se saisit en score, pas en chrono',
+     A.lsDetectMetrique({ n: 'Bring Sally Up — Chanson « Flower » de Moby', s: '1', r: 'Suivre la chanson' }) === 'score');
+  ok('le libellé du score nomme le mouvement',
+     A.lsScoreLabel('Bring Sally Up') === 'Pompes réalisées'
+     && A.lsScoreLabel('Burpees max 3 mn') === 'Burpees réalisés');
+  ok('la consigne vient de la note du programme, jamais du jargon',
+     A.lsCoachingCue({ note: '2) Lombaires' }, 'classique', '') === ''
+     && A.lsCoachingCue({ note: 'Puissance rotative sur chaque répétition' }, 'classique', '')
+        === 'Puissance rotative sur chaque répétition');
+  ok('une technique classique ne produit aucune consigne',
+     A.lsCoachingCue({ note: '' }, 'classique', '') === '');
+  ok('la consigne ne répète jamais le sous-titre',
+     A.lsCoachingCue({ note: 'Bouteilles ou poids léger' }, 'classique', 'Bouteilles ou poids léger') === '');
+  {
+    // Le sous-titre vient du nom quand il y en a un, la note longue passe
+    // en consigne : les deux ne peuvent plus porter le même texte.
+    var bsu = A.lsNormalizeExo({ n: 'Bring Sally Up — Chanson « Flower » de Moby', s: '1',
+      r: 'Suivre la chanson', rest: '-',
+      note: 'Rotation des challenges : Bring Sally Up → Pompes max 2 mn → Burpees max 3 mn (J1/J3/J5).' },
+      0, [], []);
+    ok('Bring Sally Up : titre, sous-titre et consigne sont trois textes distincts',
+       bsu.nom === 'Bring Sally Up'
+       && bsu.precision === 'Chanson « Flower » de Moby'
+       && bsu.consigne.indexOf('Rotation des challenges') === 0
+       && bsu.precision !== bsu.consigne,
+       JSON.stringify({ n: bsu.nom, p: bsu.precision, c: bsu.consigne.slice(0, 30) }));
+    ok('et son mode est le score, pas une consigne géante', bsu.metrique === 'score');
+  }
   ok('une seule barre de progression : les tirets',
      html.indexOf('ls-topbar') < 0 && /id="lsDashes"/.test(html));
   ok('plus de lien "Noter ma charge"', html.indexOf('Noter ma charge') < 0);

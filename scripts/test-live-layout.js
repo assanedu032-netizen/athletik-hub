@@ -198,6 +198,26 @@ const REAL = [
                covers: b.height > 300, overflow: ov.scrollHeight - ov.clientHeight };
     });
     ok('le repos est un état plein écran', r.active && r.covers);
+    // §11 — la carte de séance et les flèches restent visibles pendant le
+    // repos : c'est le moment où l'athlète a le temps de les regarder.
+    const chrome = await page.evaluate(() => {
+      const f = document.getElementById('lsFooter').getBoundingClientRect();
+      const ov = document.getElementById('lsRestOverlay').getBoundingClientRect();
+      const btn = document.getElementById('lsBtnDone');
+      return { footerVisible: f.height > 0 && f.bottom <= window.innerHeight + 1,
+               overlayStopsAbove: Math.round(ov.bottom) <= Math.round(f.top) + 1,
+               dashes: document.querySelectorAll('#lsDashes .ls-dash').length,
+               arrows: document.querySelectorAll('.ls-nav-btn').length,
+               cta: btn.textContent.trim(),
+               ctaGold: getComputedStyle(btn).backgroundColor };
+    });
+    ok('la barre du bas reste visible pendant le repos',
+       chrome.footerVisible && chrome.overlayStopsAbove && chrome.dashes > 0 && chrome.arrows === 2,
+       JSON.stringify(chrome));
+    ok('le bouton central devient "Passer le repos"',
+       /passer le repos/i.test(chrome.cta), chrome.cta);
+    ok('l\'or est interdit pendant le repos',
+       chrome.ctaGold !== 'rgb(212, 168, 67)', chrome.ctaGold);
     ok('le compte à rebours est bleu, jamais or', r.col === 'rgb(74, 158, 219)', r.col);
     ok('le prochain exercice est nommé en entier',
        r.next.indexOf('Squat excentrique') > -1 && r.next.indexOf('…') < 0, r.next.replace(/\n/g, ' | '));
@@ -339,7 +359,7 @@ const REAL = [
     }));
     ok('valider une série ouvre le repos prescrit', st.rest && st.pending === 'nextSet', JSON.stringify(st));
 
-    await page.click('.ls-rest-skip');
+    await page.click('#lsBtnDone');
     await page.waitForTimeout(180);
     st = await page.evaluate(() => ({
       rest: document.getElementById('lsRestOverlay').classList.contains('ls-rest-active'),
@@ -352,7 +372,7 @@ const REAL = [
     await page.evaluate(() => { window._LS.setNum = 3; window._lsRenderEx(); });
     await page.click('#lsBtnDone');
     await page.waitForTimeout(180);
-    await page.click('.ls-rest-skip');
+    await page.click('#lsBtnDone');
     await page.waitForTimeout(200);
     st = await page.evaluate(() => ({ idx: window._LS.idx, set: window._LS.setNum }));
     ok('dernière série → exercice suivant, compteur remis à 1',
@@ -417,17 +437,27 @@ const REAL = [
     await open([{ n: 'Back squat — 85% 1RM', s: '2', r: '5 reps', rest: '30 s' }], 'Jour test', 'PROGRAMME TEST', 'vd');
     await page.click('.ls-stepper:nth-child(2) .ls-stepper-btn:last-child');
     await page.click('.ls-stepper:nth-child(2) .ls-stepper-btn:last-child');
-    await page.click('.ls-rpe-dot:nth-child(8)');
+    await page.click('.ls-rpe-dot:nth-child(4)');   // échelle 2·4·6·8·10 → 8
     const before = await page.evaluate(() => ({
       kg: document.getElementById('lsStep_load').textContent,
       reps: document.getElementById('lsStep_reps').textContent,
       rpe: window._LS.mb.rpe,
       inputs: document.querySelectorAll('#lsMode input').length,
-      target: Math.round(document.querySelector('.ls-stepper-btn').getBoundingClientRect().height)
+      say: (document.getElementById('lsRpeSay') || {}).textContent,
+      dots: document.querySelectorAll('.ls-rpe-dot').length,
+      minTarget: Math.min.apply(null, Array.from(document.querySelectorAll(
+        '.ls-rpe-dot, .ls-stepper-btn, .ls-nav-btn, #lsBtnDone'))
+        .map(e => Math.round(Math.min(e.getBoundingClientRect().width, e.getBoundingClientRect().height))))
     }));
     ok('les steppers ajustent sans ouvrir le clavier',
        before.kg === '5' && before.reps === '5' && before.rpe === 8 && before.inputs === 0,
        JSON.stringify(before));
+    // §11 — 5 pastilles au lieu de 10, toutes les cibles ≥ 44 px.
+    ok('l\'échelle RPE tient en 5 pastilles', before.dots === 5, String(before.dots));
+    ok('toutes les cibles tactiles font au moins 44 px',
+       before.minTarget >= 44, before.minTarget + ' px');
+    ok('le RPE dit ce qu\'il veut dire', /8 — Difficile mais maîtrisé/.test(before.say || ''),
+       before.say);
     await page.click('#lsBtnDone');
     await page.waitForTimeout(200);
     const hist = await page.evaluate(() => JSON.parse(localStorage.getItem('ah_track_history') || '[]'));
@@ -454,7 +484,7 @@ const REAL = [
        m.steppers === 1 && m.labels.indexOf('Kg') < 0, JSON.stringify(m.labels));
     ok('plus de lien "Noter ma charge"', !/noter ma charge/i.test(m.txt));
     ok('les reps sont pré-remplies sur l\'objectif', m.reps === '20', m.reps);
-    ok('le RPE reste saisissable', m.rpe === 10, String(m.rpe));
+    ok('le RPE reste saisissable', m.rpe === 5, String(m.rpe));
     await page.click('#lsBtnDone');
     await page.waitForTimeout(200);
     const hist = await page.evaluate(() => JSON.parse(localStorage.getItem('ah_track_history') || '[]'));
@@ -483,7 +513,9 @@ const REAL = [
         if (!above) return 0;
         return Math.round(first.getBoundingClientRect().top - above.getBoundingClientRect().bottom);
       });
-      ok(c.label + ' — écart titre → donnée ≤ 80 px', gap <= 80, gap + ' px');
+      // 82 px de tolérance : le plafond CSS est à 80 px, plus la marge de
+      // 2 px du premier élément de la zone mode.
+      ok(c.label + ' — écart titre → donnée ≤ 82 px', gap <= 82, gap + ' px');
     }
   }
 
@@ -674,6 +706,29 @@ const REAL = [
                           return document.getElementById('lsMode').innerHTML; };
       return { chrono: grab(1), reps: grab(7) };
     });
+    // Acquis V5 n°4 et n°6, non couverts jusqu'ici.
+    const g = await page.evaluate(() => {
+      window._LS.idx = 0; window._lsRenderEx();
+      const first = document.getElementById('lsPrevBtn').disabled;
+      window._LS.idx = 3; window._lsRenderEx();
+      const mid = document.getElementById('lsPrevBtn').disabled;
+      window._LS.idx = window._LS.exos.length - 1; window._lsRenderEx();
+      return { first: first, mid: mid, last: document.getElementById('lsNextBtn').disabled };
+    });
+    ok('‹ est grisé sur le premier exercice, actif ensuite',
+       g.first === true && g.mid === false && g.last === true, JSON.stringify(g));
+    await page.evaluate(() => {
+      localStorage.setItem('ah_track_history', JSON.stringify([{
+        exerciseName: 'Squat jump', exo: 'Squat jump', method: 'charge',
+        essais: [{ reps: 3 }], date: '2026-08-20', source: 'live_session', rpe: 0 }]));
+    });
+    await open([{ n: 'Squat jump', s: '4', r: '8-12 reps', rest: '1 mn' }],
+               'Jour test', 'PROGRAMME TEST', 'se');
+    const hist = await page.evaluate(() => document.getElementById('lsMode').innerText);
+    ok('le rappel "Dernière fois" est présent et chiffré',
+       /Dernière fois/i.test(hist) && /3 reps/.test(hist), hist.replace(/\n/g, ' | '));
+    await open(PV_J6.exos, PV_J6.name, 'SHRED EXPLOSE', 'se');
+
     ok('9. chrono et reps sont deux gabarits distincts',
        /lsBigVal/.test(modes.chrono) && !/ls-stepper/.test(modes.chrono)
        && /ls-stepper/.test(modes.reps) && !/lsBigVal/.test(modes.reps));

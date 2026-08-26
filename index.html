@@ -2602,7 +2602,7 @@ body.test-mode #testSkipBar{display:flex}
 /* ── Vidéo : le bloc n'existe pas quand l'exercice n'a pas de vidéo.
    61 exos sur 710 en ont une — l'écran par défaut est donc SANS vidéo. ── */
 .ls-video-wrap {
-  position: relative; width: 100%; aspect-ratio: 16/9; max-height: 158px;
+  position: relative; width: 100%; aspect-ratio: 16/9; max-height: 140px;
   margin: 10px 0 0; border-radius: 12px; overflow: hidden; flex-shrink: 0;
   background: var(--lv-surface) center/cover no-repeat;
   border: 0;
@@ -2634,8 +2634,8 @@ body.test-mode #testSkipBar{display:flex}
 }
 /* Un seul lien secondaire, et il dit ce qu'il fait. */
 .ls-video-link {
-  margin-top: 8px; flex-shrink: 0; align-self: flex-start;
-  background: none; border: 0; padding: 6px 0;
+  margin-top: 6px; flex-shrink: 0; align-self: flex-start;
+  background: none; border: 0; padding: 4px 0;
   font-family: 'Outfit', sans-serif; font-size: 12px; font-weight: 600;
   color: var(--lv-txt2); cursor: pointer;
   text-decoration: underline; text-underline-offset: 3px;
@@ -2647,7 +2647,7 @@ body.test-mode #testSkipBar{display:flex}
 .ls-mode {
   flex: 1; min-height: 0;
   display: flex; flex-direction: column; align-items: center; justify-content: flex-start;
-  gap: 8px; text-align: center; padding: 4px 0 8px;
+  gap: 6px; text-align: center; padding: 2px 0 6px;
 }
 /* Le contenu est centré dans l'espace libre — mais l'écart au-dessus est
    plafonné à 80 px : sans ce plafond, un mode court creusait un trou de
@@ -2695,11 +2695,41 @@ body.test-mode #testSkipBar{display:flex}
 }
 .ls-timerbar-fill.ls-run { background: var(--lv-gold-hot); }
 
+/* ── §9 · objectif et dernière fois côte à côte, compact ── */
+.ls-objbar {
+  display: flex; gap: 8px; width: 100%; max-width: 320px; flex-shrink: 0;
+}
+.ls-obj {
+  flex: 1; display: flex; flex-direction: column; gap: 1px; align-items: center;
+  padding: 6px 8px; border-radius: 10px; background: var(--lv-surface);
+}
+.ls-obj-l {
+  font-family: 'JetBrains Mono', monospace; font-size: 9px; font-weight: 700;
+  letter-spacing: .14em; text-transform: uppercase; color: var(--lv-txt3);
+}
+.ls-obj-v {
+  font-family: 'Bebas Neue', sans-serif; font-size: 19px; line-height: 1;
+  letter-spacing: .04em; color: var(--lv-txt); font-variant-numeric: tabular-nums;
+}
+.ls-obj-v.ls-obj-past { color: var(--lv-txt2); }
+
+/* ── §12 · consigne de coaching. Absente = aucun espace consommé. ── */
+.ls-cue {
+  max-width: 320px; flex-shrink: 0;
+  font-size: 12.5px; line-height: 1.4; color: var(--lv-txt2);
+  padding: 8px 12px; border-radius: 10px;
+  background: var(--lv-surface); border-left: 2px solid var(--lv-gold);
+  text-align: left;
+}
+.ls-cue:empty { display: none; }
+
 /* ── Mode B : steppers charge / reps / RPE ── */
 .ls-steppers { display: flex; gap: 8px; width: 100%; max-width: 320px; }
+.ls-steppers-solo .ls-stepper { padding: 10px 6px 8px; }
+.ls-steppers-solo .ls-stepper-v { font-size: 40px; }
 .ls-stepper {
   flex: 1; background: var(--lv-surface); border: 0;
-  border-radius: 14px; padding: 8px 4px 6px; text-align: center;
+  border-radius: 14px; padding: 6px 4px 5px; text-align: center;
 }
 .ls-stepper-l {
   font-family: 'JetBrains Mono', monospace; font-size: 9px; font-weight: 800;
@@ -2723,15 +2753,34 @@ body.test-mode #testSkipBar{display:flex}
   font-family: 'JetBrains Mono', monospace; font-size: 9.5px; font-weight: 800;
   letter-spacing: .16em; color: var(--lv-gold-hot); text-transform: uppercase;
 }
-/* RPE : 10 pastilles tactiles, pas un select. */
-.ls-rpe { display: flex; gap: 3px; width: 100%; max-width: 320px; justify-content: center; }
-.ls-rpe-dot {
-  flex: 1; max-width: 30px; height: 30px; border-radius: 8px;
-  background: rgba(255,255,255,.06); border: 1px solid rgba(255,255,255,.08);
-  color: var(--lv-txt2); font-size: 11px; font-weight: 700; cursor: pointer;
-  display: flex; align-items: center; justify-content: center; padding: 0;
+/* §11 · RPE — 5 pastilles de ~60 px. Dix pastilles faisaient 33 px : sous
+   le minimum tactile, l'athlète tapait à côté. Toujours optionnel. */
+.ls-rpe-wrap {
+  display: flex; flex-direction: column; align-items: center; gap: 4px;
+  width: 100%; max-width: 320px; flex-shrink: 0;
 }
-.ls-rpe-dot.on { background: var(--lv-gold); border-color: var(--lv-gold); color: #14213D; font-weight: 800; }
+.ls-rpe-l {
+  font-family: 'JetBrains Mono', monospace; font-size: 9px; font-weight: 700;
+  letter-spacing: .14em; text-transform: uppercase; color: var(--lv-txt3);
+}
+.ls-rpe-l span { opacity: .72; font-weight: 400; }
+.ls-rpe { display: flex; gap: 6px; width: 100%; justify-content: center; }
+.ls-rpe-dot {
+  flex: 1; min-height: 46px; border-radius: 12px;
+  background: var(--lv-elevated); border: 0;
+  color: var(--lv-txt2); font-family: 'Bebas Neue', sans-serif;
+  font-size: 19px; letter-spacing: .04em; cursor: pointer;
+  display: flex; align-items: center; justify-content: center; padding: 0;
+  transition: transform .1s, background .12s;
+}
+.ls-rpe-dot:active { transform: scale(.94); }
+.ls-rpe-dot.on {
+  background: var(--lv-gold); color: #14213D; font-weight: 800;
+  box-shadow: 0 0 0 2px var(--lv-gold-hot);
+}
+.ls-rpe-say {
+  min-height: 14px; font-size: 11px; color: var(--lv-txt2); line-height: 1.2;
+}
 
 /* ── Mode D : sprint ── */
 .ls-sprint-btns { display: flex; gap: 10px; width: 100%; max-width: 320px; }
@@ -2771,7 +2820,13 @@ body.test-mode #testSkipBar{display:flex}
 
 /* ══ FOOTER : carte de séance en tirets + barre d'action. Jamais scrollable. ══ */
 .ls-footer { flex-shrink: 0; padding: 6px 12px 8px; background: var(--lv-bg); }
-.ls-dashes { display: flex; gap: 3px; margin-bottom: 8px; }
+.ls-dashrow { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; }
+.ls-dashes { display: flex; gap: 3px; flex: 1; min-width: 0; }
+.ls-dashnum {
+  font-family: 'JetBrains Mono', monospace; font-size: 10px; font-weight: 700;
+  letter-spacing: .08em; color: var(--lv-txt3); flex-shrink: 0;
+  font-variant-numeric: tabular-nums;
+}
 .ls-dash {
   flex: 1; height: 4px; border-radius: 4px; background: var(--lv-elevated);
   transition: background .3s;
@@ -2794,8 +2849,23 @@ body.test-mode #testSkipBar{display:flex}
   padding: 0 10px; line-height: 1.05;
   display: flex; align-items: center; justify-content: center; text-align: center;
 }
-.ls-btn-done:active { background: var(--lv-gold-hot); }
+.ls-btn-done {
+  box-shadow: 0 2px 0 rgba(0,0,0,.28), 0 6px 18px rgba(212,168,67,.20);
+  transition: transform .08s ease, box-shadow .08s ease, background .12s ease;
+}
+.ls-btn-done:active {
+  background: var(--lv-gold-hot);
+  transform: translateY(2px);
+  box-shadow: 0 0 0 rgba(0,0,0,.28), 0 2px 8px rgba(212,168,67,.18);
+}
 .ls-btn-done.ls-btn-run { background: var(--lv-gold-hot); }
+/* Pendant le repos, l'action primaire cesse d'être dorée : l'or signale
+   l'effort, le bleu la récupération. */
+.ls-btn-done.ls-btn-rest {
+  background: var(--lv-elevated); color: var(--lv-rest);
+  box-shadow: 0 2px 0 rgba(0,0,0,.24);
+  font-family: 'Outfit', sans-serif; font-size: 15px; font-weight: 700; letter-spacing: .01em;
+}
 /* Le nom du prochain exercice, jamais tronqué par "…" : 2 lignes max. */
 .ls-nextline {
   margin-top: 7px; display: flex; align-items: baseline; gap: 6px;
@@ -2813,7 +2883,7 @@ body.test-mode #testSkipBar{display:flex}
 
 /* ══ ÉTAT REPOS — plein écran, BLEU. L'or est interdit ici. ══ */
 .ls-rest-overlay {
-  position: absolute; inset: 0; z-index: 5;
+  position: absolute; top: 0; left: 0; right: 0; bottom: 0; z-index: 5;
   background: var(--lv-bg);
   display: none; flex-direction: column; align-items: center; justify-content: center;
   gap: 12px; padding: 20px 18px;
@@ -2850,13 +2920,7 @@ body.test-mode #testSkipBar{display:flex}
 }
 .ls-rest-next-n { font-size: 15px; font-weight: 600; color: var(--lv-txt); line-height: 1.3; margin-top: 4px; }
 .ls-rest-next-m { font-size: 12px; color: var(--lv-txt2); margin-top: 3px; }
-.ls-rest-skip {
-  background: none; border: 0; padding: 10px 16px; min-height: 44px;
-  font-family: 'Outfit', sans-serif; font-size: 13px; font-weight: 700;
-  color: var(--lv-txt2); cursor: pointer;
-  text-decoration: underline; text-underline-offset: 3px;
-}
-.ls-rest-skip:active { color: var(--lv-rest); }
+
 
 /* Bottom-sheet "Comment faire ?" — conservé, non modifié fonctionnellement. */
 .ls-th-ov {
@@ -2894,11 +2958,25 @@ body.test-mode #testSkipBar{display:flex}
   #liveSession, #liveSession * { transition-duration: .01ms !important; animation-duration: .01ms !important; }
 }
 /* Très petits écrans (SE 1re gén., 320×568) : on comprime, on ne scrolle pas. */
-@media (max-height: 600px) {
-  .ls-video-wrap { max-height: 116px; }
-  .ls-big { font-size: 54px; }
-  .ls-rest-countdown { font-size: 62px; }
-  .ls-ex-name { font-size: 19px; -webkit-line-clamp: 2; }
+@media (max-height: 620px) {
+  .ls-video-wrap { max-height: 92px; }
+  .ls-big { font-size: 52px; }
+  .ls-rest-countdown { font-size: 60px; }
+  .ls-ex-name { font-size: 19px; min-height: 46px; }
+  .ls-ex-precision { font-size: 12px; min-height: 16px; }
+  /* Le libellé contextuel du RPE saute avant les cibles tactiles :
+     on ne descend jamais les pastilles sous 44 px. */
+  .ls-rpe-say { display: none; }
+  .ls-obj-v { font-size: 17px; }
+  .ls-obj { padding: 5px 7px; }
+  .ls-stepper-v { font-size: 25px; }
+  .ls-stepper-btn { width: 44px; height: 44px; font-size: 20px; }
+  .ls-rpe-dot { min-height: 44px; font-size: 17px; }
+  .ls-header { padding: 6px 12px 8px; }
+  .ls-footer { padding: 4px 12px 6px; }
+  .ls-dashrow { margin-bottom: 5px; }
+  .ls-nextline { margin-top: 5px; font-size: 10px; }
+  .ls-cue { font-size: 12px; padding: 6px 10px; }
 }
 
 /* Session complete */
@@ -9446,12 +9524,14 @@ window.tiResetOnEnter = function(){ window.tiShowStep(1); };
         <button class="ls-rest-btn" onclick="_lsAdjustRest(15)">+ 15 s</button>
       </div>
       <div class="ls-rest-next" id="lsRestNext"></div>
-      <button class="ls-rest-skip" onclick="_lsSkipRest()">Passer le repos</button>
     </div>
 
     <!-- ═══ FOOTER — carte de séance + barre d'action. Jamais scrollable. ═══ -->
     <div class="ls-footer" id="lsFooter">
-      <div class="ls-dashes" id="lsDashes"></div>
+      <div class="ls-dashrow">
+        <div class="ls-dashes" id="lsDashes"></div>
+        <div class="ls-dashnum" id="lsDashNum"></div>
+      </div>
       <div class="ls-actions">
         <button class="ls-nav-btn" id="lsPrevBtn" onclick="_lsPrevEx()" aria-label="Exercice précédent">‹</button>
         <button class="ls-btn-done" id="lsBtnDone" onclick="window._lsPrimaryAction()">Valider</button>
@@ -20941,20 +21021,27 @@ var PROGRAMS_V2 = (function(){
           note:'Challenges tous les 2 jours en rotation : Bring Sally Up → Pompes max 2 mn → Burpees max 3 mn. Note tes scores.',
           weekDays:[d('Lun','j1'),d('Mar','j2'),d('Mer','j3'),d('Jeu','j4'),d('Ven','j5'),d('Sam','j6'),d('Dim','rest')],
           sessions:{
+            // Mise en conformité 2026-08 : les séries, valeurs, repos et
+            // enchaînements suivent désormais data/shred-explose-program.js
+            // (transcription du PDF). Neuf lignes divergeaient, dont Superman
+            // hold rendu en 12 reps au lieu de 30 s, et les deux circuits
+            // perdus. Quatre exercices prescrits manquaient.
             j1:{ name:'Jour 1 — UPPER : Challenge + Circuit Cluster + Épaules', exos:[
-              e('Bring Sally Up — pompes — Chanson Flower de Moby','1','Suivre la chanson','-'),
-              e('1) Pompes diamant — cluster','4','2-3 reps','2 mn après les 4'),
-              e('2) Dips sur chaise / banc','4','2-3 reps cluster','-'),
-              e('3) Pompes déclinées — pieds surélevés','4','2-3 reps cluster','-'),
-              e('4) Pike push-ups — pompes en V','4','2-3 reps cluster','-'),
-              e('Élévations latérales — bouteilles d\'eau ou poids léger','3','15 reps','45 s'),
-              e('Pompes larges — écartement maximal','3','10-15 reps','45 s'),
-              e('Superman — allongé sur le ventre','3','12 reps','30 s'),
-              e('Pompes serrées triceps','3','10-12 reps','45 s'),
-              e('Planche dynamique — montées sur mains','3','10 reps','45 s'),
+              e('Bring Sally Up — Chanson « Flower » de Moby','1','Suivre la chanson','-','Rotation des challenges : Bring Sally Up → Pompes max 2 mn → Burpees max 3 mn (J1/J3/J5).'),
+              e('1) Pompes diamant','4','2-3 reps','2 mn après les 4'),
+              e('2) Dips sur chaise / banc','4','2-3 reps','-'),
+              e('3) Pompes déclinées — pieds surélevés','4','2-3 reps','-'),
+              e('4) Pike push-ups — pompes en V','4','2-3 reps','-'),
               e('Rotation explosive du buste en planche','3','10 reps','1 mn'),
-              e('Travail pied : élévation orteils + proprio unipodal','3','15 reps / 30 s','30 s'),
-              e('Rock Back breathing — Respiration diaphragmatique','-','2-5 mn','-')
+              e('Élévations latérales — bouteilles d\'eau ou poids léger','3','12-15 reps','1 mn'),
+              e('1) Pompes larges — écartement maximal','3','10-12 reps','-'),
+              e('2) Superman hold — lombaires','3','30 s','-'),
+              e('3) Pompes serrées — triceps','3','8-10 reps','-'),
+              e('4) Planche dynamique — tap épaules','3','20 reps','1 mn 30'),
+              e('Élévation orteils','3','15 reps','30 s'),
+              e('Dorsiflexion résistée — tibial antérieur','3','15 reps','30 s'),
+              e('Équilibre unipodal','3','30 s / jambe','30 s'),
+              e('Étirements haut du corps','-','5 mn','-')
             ]},
             j2:{ name:'Jour 2 — LOWER : Isométrique + Circuit + Sprint', exos:[
               e('Échauffement dynamique','-','5-10 mn','-'),
@@ -37938,13 +38025,15 @@ function _lsTechniqueHelp(t) {
 //   tech       : technique détectée
 //   isInterEx  : true si on enchaîne sur le prochain exercice (fin d'exo)
 //                false si on est entre 2 séries du même exo
-function _lsRestLabel(tech, isInterEx) {
-  if (tech === 'cluster' && !isInterEx) return '⏱ Mini-repos cluster';
-  if (tech === 'circuit' && !isInterEx) return '⏱ Repos circuit';
-  if (tech === 'bi-set' || tech === 'superset') return '⏱ Repos après le bloc';
-  if (tech === 'fractionne') return '⏱ Récup active';
-  if (isInterEx) return '⏱ Transition';
-  return '⏱ Repos entre séries';
+// Le libellé dit ce qui se termine, pas le nom de la méthode. Deux minutes
+// ne sont pas un « mini-repos », et « cluster » ne se lit pas en sueur.
+function _lsRestLabel(tech, isInterEx, circuit, tour, tours) {
+  if (circuit) {
+    return tours > 1 ? ('Repos — fin du tour ' + tour + ' / ' + tours) : 'Repos — fin du tour';
+  }
+  if (tech === 'fractionne') return 'Récup active';
+  if (isInterEx) return 'Transition';
+  return 'Repos entre séries';
 }
 
 // Affiche le bottom-sheet "Comment faire ?" pour la technique courante.
@@ -38014,13 +38103,19 @@ window._lsCloseTechniqueHelp = function() {
 // 710 lignes réelles en a révélé 3 de plus (complexe / intervalle /
 // validation) qui, sans mode dédié, retombaient dans le gabarit séries-reps.
 var LS_MODES = ['duree','duree_par_cote','echec','reps','reps_par_cote',
-                'distance','bloc_libre','complexe','intervalle','validation'];
+                'distance','bloc_libre','complexe','intervalle','validation','score'];
 
-// Seules ces techniques changent la MANIÈRE d'exécuter la série et méritent
-// donc un tag. Toute autre (isométrie, fractionné, stato-dynamique…) est
-// déjà portée par le mode d'affichage et la consigne : un tag de plus
-// n'aurait fait qu'une hiérarchie visuelle sans contenu.
-var LS_TAG_TECHNIQUES = ['circuit', 'bi-set', 'superset', 'cluster'];
+// Aucune technique ne porte plus de tag : seule la STRUCTURE en porte un
+// (CIRCUIT · TOUR x/y). "Cluster set", "bi-set", "isométrie" décrivent la
+// méthode de programmation, pas ce que l'athlète doit faire — et un tag qui
+// n'apparaît que sur un exercice sur cinq crée une hiérarchie fantôme.
+// Ce que l'athlète a besoin de savoir (enchaîner sans repos) est porté par
+// le tag CIRCUIT et par l'absence d'écran de repos.
+var LS_TAG_TECHNIQUES = [];
+
+// Mots de programmation à retirer des libellés affichés. La donnée source
+// n'est pas modifiée — on ne l'affiche simplement pas.
+var LS_JARGON = /\b(cluster(\s+set)?|circuit|superset|bi-?set)\b/ig;
 
 function _lsHasSide(str) { return /\/\s*(jambe|jbe|c[oô]t[eé]|bras|main|pied|[eé]paule)/i.test(str || ''); }
 
@@ -38076,8 +38171,11 @@ function _lsDetectMetrique(ex) {
   var s = String(ex.s || '').trim();
   var low = r.toLowerCase();
 
+  // Les challenges du livre passent avant tout : "Suivre la chanson" est une
+  // consigne, mais le score qui en sort est LA mesure de progression.
+  if (_lsDetectTechnique(ex) === 'challenge') return 'score';
   // Bilans, pesées, photos, jeûne : ce ne sont pas des séries.
-  if (/^(check|discussion|bilan|noter records|variable|1 mesure|1 photo|suivre la chanson)$/i.test(r)) return 'validation';
+  if (/^(check|discussion|bilan|noter records|variable|1 mesure|1 photo)$/i.test(r)) return 'validation';
   if (/^\d+\s*h$/i.test(r)) return 'validation';
   // Fractionné / cycles : effort et récup à l'intérieur d'une même ligne.
   if (/cycle/i.test(low) || /cycles?/i.test(s) || /fractionn[eé]/i.test(n)) return 'intervalle';
@@ -38086,7 +38184,6 @@ function _lsDetectMetrique(ex) {
   if ((n.split('→').length - 1) >= 2) return 'complexe';
   // Échec / challenge : chrono montant, le score EST la performance.
   if (/[ée]chec/i.test(low + ' ' + n) || /\bmax\b/i.test(low)) return 'echec';
-  if (_lsDetectTechnique(ex) === 'challenge') return 'echec';
   // Distance : mètres, jamais confondus avec "mn".
   if (/\d+\s*m\b/i.test(low) && !/\bmn\b/i.test(low)) return 'distance';
 
@@ -38191,24 +38288,49 @@ function _lsSeriesInfo(ex) {
 // (échauffement, étirements) et les bilans sont exclus : sans ça, un
 // échauffement suivi du premier exercice formerait un faux circuit.
 function _lsCircuitMap(exos) {
-  var map = [], run = [], i;
-  function flush(endIdx) {
-    if (run.length >= 2) {
-      for (var k = 0; k < run.length; k++) {
-        map[run[k]] = { position: k + 1, total: run.length };
-      }
+  exos = exos || [];
+  var map = [], i;
+
+  function mark(idxs, restSec) {
+    if (idxs.length < 2) return;
+    for (var k = 0; k < idxs.length; k++) {
+      map[idxs[k]] = { position: k + 1, total: idxs.length, roundRest: restSec };
     }
-    run = [];
   }
-  for (i = 0; i < (exos || []).length; i++) {
+
+  // Forme 1 — le repos de fin de tour est écrit sur le PREMIER exercice :
+  //   "2 mn après les 4". Le livre l'écrit comme ça sur les circuits cluster.
+  //   Sans ce cas, la fenêtre glissait d'un cran : le premier exercice sortait
+  //   du circuit et l'exercice suivant le tour y entrait à tort.
+  var claimed = {};
+  for (i = 0; i < exos.length; i++) {
+    var head = String((exos[i] && exos[i].rest) || '');
+    var m = head.match(/apr[èe]s\s+les\s+(\d+)/i);
+    if (!m) continue;
+    var n = parseInt(m[1], 10);
+    if (!(n >= 2) || i + n > exos.length) continue;
+    var grp = [];
+    for (var k = 0; k < n; k++) { grp.push(i + k); claimed[i + k] = true; }
+    mark(grp, _lsParseRest(head));
+    i += n - 1;
+  }
+
+  // Forme 2 — le repos de fin de tour est sur le DERNIER exercice, les autres
+  //   portent "-" (= enchaîner). C'est la forme la plus courante.
+  var run = [], runRest = 0;
+  function flush() { mark(run, runRest); run = []; runRest = 0; }
+  for (i = 0; i < exos.length; i++) {
+    if (claimed[i]) { flush(); continue; }
     var ex = exos[i];
-    var m = _lsDetectMetrique(ex);
-    if (m === 'bloc_libre' || m === 'validation') { flush(i); continue; }
+    var mt = _lsDetectMetrique(ex);
+    // Les blocs de temps et les bilans ne font jamais partie d'un circuit :
+    // sans ça un échauffement suivi du premier exercice en formait un.
+    if (mt === 'bloc_libre' || mt === 'validation') { flush(); continue; }
     run.push(i);
     var rest = String(ex.rest == null ? '-' : ex.rest).trim();
-    if (rest && rest !== '-') flush(i);   // repos réel → fin du tour
+    if (rest && rest !== '-') { runRest = _lsParseRest(rest); flush(); }
   }
-  flush(i);
+  flush();
   return map;
 }
 
@@ -38230,11 +38352,15 @@ function _lsNormalizeExo(ex, idx, exos, circuitMap) {
   ex = ex || {};
   var nomBrut = String(ex.n || '').trim();
   var nom = nomBrut.split('—')[0].trim() || nomBrut;
+  nom = nom.replace(/^\s*\d+\s*[\)\.]\s*/, '').trim();
   // La précision ne répète JAMAIS le titre : "Échauffement dynamique —
   // Mobilité complète" affichait "Mobilité complète" en badge, en titre ET
   // en sous-titre. Une information affichée trois fois n'en est plus une.
-  var precision = String(ex.note || '').trim();
-  if (!precision && nomBrut.indexOf('—') > -1) precision = nomBrut.split('—').slice(1).join(' — ').trim();
+  var noteBrute = String(ex.note || '').trim();
+  var precision = nomBrut.indexOf('—') > -1 ? nomBrut.split('—').slice(1).join(' — ').trim() : '';
+  if (!precision && noteBrute && noteBrute.length <= 40) precision = noteBrute;
+  precision = precision.replace(LS_JARGON, '').replace(/\s*[–—-]\s*$/, '')
+                       .replace(/\s{2,}/g, ' ').replace(/^[\s,;·]+|[\s,;·]+$/g, '').trim();
   var nl = nom.toLowerCase(), pl = precision.toLowerCase();
   if (precision && (nl.indexOf(pl) > -1 || pl.indexOf(nl) > -1)) precision = '';
 
@@ -38258,7 +38384,7 @@ function _lsNormalizeExo(ex, idx, exos, circuitMap) {
     technique: tech,
     circuit: circuit,
     videoId: vid,
-    consigne: tech === 'classique' ? '' : _lsTechniqueInstruction(tech),
+    consigne: _lsCoachingCue(ex, tech, precision),
     raw: ex
   };
 }
@@ -38363,8 +38489,11 @@ function _lsBestLoad(nom) {
 // RENDU DE LA ZONE MODE
 // ═══════════════════════════════════════════════════════════════════════════
 function _lsKicker(vm) {
+  // En circuit, le compteur de tour est déjà dans les tags : le répéter ici
+  // affichait deux compteurs avec la même valeur (TOUR 1/4 + SÉRIE 1/4).
+  if (vm.circuit) return '';
   var s = vm.series;
-  var unit = vm.circuit ? 'Tour' : (vm.metrique === 'distance' ? 'Sprint' : 'Série');
+  var unit = (vm.metrique === 'distance') ? 'Sprint' : 'Série';
   if (s.n == null) return '<div class="ls-mode-kicker">' + unit + ' <b>' + _LS.setNum + '</b></div>';
   if (s.n <= 1) return '';
   return '<div class="ls-mode-kicker">' + unit + ' <b>' + _LS.setNum + '</b> / ' + (s.label || s.n) + '</div>';
@@ -38396,7 +38525,6 @@ function _lsRenderMode(vm) {
         h += '<div class="ls-big-horizon">' + v.min + ' ' + (v.unite || 's')
            + ' minimum · pousse jusqu\'à ' + v.max + ' si tu tiens</div>';
       }
-      if (vm.consigne) h += '<div class="ls-mode-consigne">' + _lsEsc(vm.consigne) + '</div>';
       break;
     }
 
@@ -38405,48 +38533,57 @@ function _lsRenderMode(vm) {
       h = _lsKicker(vm)
         + '<div class="ls-big" id="lsBigVal">00:00</div>'
         + '<div class="ls-timerbar"><div class="ls-timerbar-fill" id="lsTimerFill" style="width:0%"></div></div>'
-        + '<div class="ls-mode-consigne">Va jusqu\'au bout. Le temps tenu est ton record.</div>';
+;
       break;
     }
 
-    // ── MODE B — CHARGE : reps / kg / RPE, validation en 1 tap ──
+    // ── MODE REPS — objectif, dernière fois, saisie, RPE. 1 tap suffit. ──
     case 'reps':
     case 'reps_par_cote': {
-      {
-        var last = _lsLastPerf(vm.nom);
-        if (!_LS.mb || _LS.mb.exo !== vm.nom) {
-          // L'objectif est présumé atteint : l'athlète valide en 1 tap et
-          // n'ajuste que s'il a fait autre chose. Le haut de la fourchette
-          // est la cible du livre, donc la valeur par défaut.
-          _LS.mb = {
-            exo: vm.nom,
-            reps: (last && last.reps) || (v && (v.max != null ? v.max : v.min)) || 10,
-            load: (last && last.load) || 0,
-            rpe: (last && last.rpe) || 0,
-            best: _lsBestLoad(vm.nom),
-            charge: vm.charge
-          };
-        }
-        var mb = _LS.mb;
-        var objectif = v && v.min != null
-          ? (' · objectif ' + (v.max != null && v.max !== v.min ? v.min + '-' + v.max : v.min) + ' reps'
-             + (v.perSide ? ' (' + v.perSide + '/côté)' : (v.side ? ' par côté' : '')))
-          : '';
-        h = '<div class="ls-mode-kicker">' + (vm.series.n > 1
-              ? 'Série <b>' + _LS.setNum + '</b> / ' + (vm.series.label || vm.series.n)
-              : 'Série <b>' + _LS.setNum + '</b>') + objectif + '</div>'
-          + '<div class="ls-steppers">'
-          +   _lsStepperHtml('reps', 'Reps', mb.reps, 1)
-          // Le champ kg n'existe que si l'exercice se charge — pas de
-          // colonne vide sur Toe taps ou Équilibre yeux fermés.
-          +   (vm.charge ? _lsStepperHtml('load', 'Kg', mb.load, 2.5) : '')
-          + '</div>'
-          + '<div class="ls-stepper-l" style="margin-top:2px">RPE ressenti</div>'
-          + '<div class="ls-rpe" id="lsRpe">' + _lsRpeHtml(mb.rpe) + '</div>';
-        if (vm.charge && mb.best > 0 && mb.load > mb.best) h += '<div class="ls-prflag">🔥 Nouveau record</div>';
-        else if (last) h += '<div class="ls-mode-hint">Dernière fois : ' + (last.load > 0 ? last.load + ' kg × ' : '') + last.reps + ' reps</div>';
-        break;
+      var last = _lsLastPerf(vm.nom);
+      if (!_LS.mb || _LS.mb.exo !== vm.nom) {
+        // L'objectif est présumé atteint : l'athlète valide en 1 tap et
+        // n'ajuste que s'il a fait autre chose. Le haut de la fourchette
+        // est la cible du livre, donc la valeur par défaut.
+        _LS.mb = {
+          exo: vm.nom,
+          reps: (last && last.reps) || (v && (v.max != null ? v.max : v.min)) || 10,
+          load: (last && last.load) || 0,
+          rpe: 0,
+          best: _lsBestLoad(vm.nom),
+          charge: vm.charge
+        };
       }
+      var mb = _LS.mb;
+      h = _lsObjectifBar(vm, _lsObjectifTxt(v, 'reps'), last)
+        + '<div class="ls-steppers">'
+        +   _lsStepperHtml('reps', 'Reps', mb.reps, 1)
+        // Le champ kg n'existe que si l'exercice se charge — pas de
+        // colonne vide sur Toe taps ou Équilibre yeux fermés.
+        +   (vm.charge ? _lsStepperHtml('load', 'Kg', mb.load, 2.5) : '')
+        + '</div>'
+        + _lsRpeBlock(mb.rpe);
+      if (vm.charge && mb.best > 0 && mb.load > mb.best) h += '<div class="ls-prflag">🔥 Nouveau record</div>';
+      break;
+    }
+
+    // ── MODE SCORE — challenges du livre : le score EST la performance ──
+    // Bring Sally Up, Pompes max 2 mn, Burpees max 3 mn tournent tous les
+    // deux jours et doivent être notés à chaque fois : sans score saisi, il
+    // n'y a aucune mesure de progression sur ces séances.
+    case 'score': {
+      var lastSc = _lsLastPerf(vm.nom);
+      if (!_LS.mb || _LS.mb.exo !== vm.nom) {
+        _LS.mb = { exo: vm.nom, reps: (lastSc && lastSc.reps) || 0, load: 0, rpe: 0,
+                   best: 0, charge: false, score: true };
+      }
+      h = '<div class="ls-mode-kicker">Challenge</div>'
+        + '<div class="ls-steppers ls-steppers-solo">'
+        +   _lsStepperHtml('reps', _lsScoreLabel(vm.nom), _LS.mb.reps, 1)
+        + '</div>'
+        + (lastSc && lastSc.reps
+            ? '<div class="ls-mode-hint">Dernière fois : ' + lastSc.reps + '</div>'
+            : '<div class="ls-mode-hint">Premier passage — ce score devient ta référence.</div>');
       break;
     }
 
@@ -38496,7 +38633,7 @@ function _lsRenderMode(vm) {
              + (s.valeur ? '<div class="ls-step-v">' + _lsEsc(s.valeur) + '</div>' : '')
              + '</div>';
       }).join('') + '</div>'
-      + '<div class="ls-mode-consigne">Enchaîne sans pause entre les trois.</div>';
+;
       break;
     }
 
@@ -38522,8 +38659,67 @@ function _lsRenderMode(vm) {
     }
   }
 
+  // §12 — la consigne est rendue une seule fois, à la fin, et seulement si
+  // l'exercice en porte une. Pas de bloc vide, pas de doublon entre modes.
+  if (vm.consigne) h += '<div class="ls-cue">' + _lsEsc(vm.consigne) + '</div>';
   zone.innerHTML = h;
   _lsTimerPaint();
+}
+
+// §9 — objectif et dernière fois côte à côte : la comparaison doit être
+// immédiate, pas répartie entre le haut et le bas de l'écran.
+function _lsObjectifTxt(v, unite) {
+  if (!v || v.min == null) return '';
+  var base = (v.max != null && v.max !== v.min) ? (v.min + '-' + v.max) : String(v.min);
+  var u = unite || v.unite || '';
+  return base + (u ? ' ' + u : '') + (v.perSide ? ' · ' + v.perSide + '/côté' : (v.side ? ' /côté' : ''));
+}
+function _lsObjectifBar(vm, objectifTxt, last) {
+  var cells = '';
+  if (objectifTxt) {
+    cells += '<div class="ls-obj"><span class="ls-obj-l">Objectif</span>'
+           + '<span class="ls-obj-v">' + _lsEsc(objectifTxt) + '</span></div>';
+  }
+  if (last) {
+    var lt = (last.load > 0 ? last.load + ' kg × ' : '') + (last.reps || '?') + ' reps';
+    cells += '<div class="ls-obj"><span class="ls-obj-l">Dernière fois</span>'
+           + '<span class="ls-obj-v ls-obj-past">' + _lsEsc(lt) + '</span></div>';
+  }
+  return _lsKicker(vm) + (cells ? '<div class="ls-objbar">' + cells + '</div>' : '');
+}
+// §12 — une phrase, jamais deux, et seulement si elle apprend quelque chose.
+// La note du programme prime sur la phrase générique de la technique ; une
+// technique « classique » n'a rien de spécifique à dire.
+function _lsCoachingCue(ex, tech, precision) {
+  var note = String((ex && ex.note) || '').replace(LS_JARGON, '')
+    .replace(/^\s*\d+\s*[\)\.]\s*/, '').replace(/\s{2,}/g, ' ').trim();
+  var pl = String(precision || '').toLowerCase();
+  if (note.length > 12 && /[a-zà-ÿ]/i.test(note)
+      && (!pl || note.toLowerCase() !== pl)) {
+    return note.charAt(0).toUpperCase() + note.slice(1);
+  }
+  if (tech && tech !== 'classique') return _lsTechniqueInstruction(tech);
+  return '';
+}
+
+function _lsScoreLabel(nom) {
+  var n = String(nom || '').toLowerCase();
+  if (/burpee/.test(n)) return 'Burpees réalisés';
+  if (/pompe|sally/.test(n)) return 'Pompes réalisées';
+  if (/traction/.test(n)) return 'Tractions réalisées';
+  return 'Répétitions réalisées';
+}
+// §11 — RPE : 5 pastilles de ~60 px au lieu de 10 de 33 px. Optionnel :
+// le bouton de validation reste actif sans RPE saisi.
+var LS_RPE_STEPS = [2, 4, 6, 8, 10];
+var LS_RPE_WORDS = { 2: 'Très facile', 4: 'Confortable', 6: 'Soutenu',
+                     8: 'Difficile mais maîtrisé', 10: 'Maximal' };
+function _lsRpeBlock(cur) {
+  return '<div class="ls-rpe-wrap">'
+       + '<div class="ls-rpe-l">RPE <span>optionnel</span></div>'
+       + '<div class="ls-rpe" id="lsRpe">' + _lsRpeHtml(cur) + '</div>'
+       + '<div class="ls-rpe-say" id="lsRpeSay">' + (cur ? _lsEsc(cur + ' — ' + (LS_RPE_WORDS[cur] || '')) : '') + '</div>'
+       + '</div>';
 }
 
 function _lsStepperHtml(key, label, val, step) {
@@ -38537,8 +38733,10 @@ function _lsStepperHtml(key, label, val, step) {
 }
 function _lsRpeHtml(cur) {
   var h = '';
-  for (var i = 1; i <= 10; i++) {
-    h += '<button type="button" class="ls-rpe-dot' + (i === cur ? ' on' : '') + '" onclick="window._lsSetRpe(' + i + ')">' + i + '</button>';
+  for (var i = 0; i < LS_RPE_STEPS.length; i++) {
+    var n = LS_RPE_STEPS[i];
+    h += '<button type="button" class="ls-rpe-dot' + (n === cur ? ' on' : '')
+       + '" onclick="window._lsSetRpe(' + n + ')" aria-pressed="' + (n === cur) + '">' + n + '</button>';
   }
   return h;
 }
@@ -38556,6 +38754,9 @@ window._lsSetRpe = function (n) {
   _LS.mb.rpe = (_LS.mb.rpe === n ? 0 : n);
   var box = document.getElementById('lsRpe');
   if (box) box.innerHTML = _lsRpeHtml(_LS.mb.rpe);
+  var say = document.getElementById('lsRpeSay');
+  if (say) say.textContent = _LS.mb.rpe ? (_LS.mb.rpe + ' — ' + (LS_RPE_WORDS[_LS.mb.rpe] || '')) : '';
+  try { if (navigator.vibrate) navigator.vibrate(10); } catch (e) {}
 };
 
 // Spécification d'un intervalle, lue dans le libellé (aucune donnée inventée).
@@ -38651,6 +38852,8 @@ function _lsRenderEx() {
     dashes += '<div class="ls-dash' + (i < _LS.idx ? ' done' : (i === _LS.idx ? ' current' : '')) + '"></div>';
   }
   document.getElementById('lsDashes').innerHTML = dashes;
+  var dn = document.getElementById('lsDashNum');
+  if (dn) dn.textContent = (_LS.idx + 1) + ' / ' + total;
   var prevBtn = document.getElementById('lsPrevBtn'), nextBtn = document.getElementById('lsNextBtn');
   if (prevBtn) prevBtn.disabled = (_LS.idx === 0);
   if (nextBtn) nextBtn.disabled = (_LS.idx >= total - 1);
@@ -38693,6 +38896,8 @@ function _lsPrimaryLabel(vm) {
       if (_LS.cx < steps.length - 1) return '→ Étape suivante';
       return endsSession ? '✓ Terminer la séance' : '✓ Valider le tour';
     }
+    case 'score':
+      return endsSession ? '✓ Terminer la séance' : '✓ Score noté';
     case 'validation':
       return endsSession ? '✓ Terminer la séance' : '✓ Fait';
     default:
@@ -38703,7 +38908,15 @@ function _lsPrimaryLabel(vm) {
 }
 function _lsPaintPrimary() {
   var btn = document.getElementById('lsBtnDone');
-  if (!btn || !_LS.vm) return;
+  if (!btn) return;
+  if (_LS.restActive) {
+    btn.textContent = 'Passer le repos';
+    btn.classList.add('ls-btn-rest');
+    btn.classList.remove('ls-btn-run');
+    return;
+  }
+  btn.classList.remove('ls-btn-rest');
+  if (!_LS.vm) return;
   btn.textContent = _lsPrimaryLabel(_LS.vm);
   btn.classList.toggle('ls-btn-run', !!(_LS.tmr && _LS.tmr.running));
 }
@@ -38712,6 +38925,7 @@ function _lsPaintPrimary() {
 // ACTION PRINCIPALE — un seul bouton, un seul comportement par mode
 // ═══════════════════════════════════════════════════════════════════════════
 window._lsPrimaryAction = function () {
+  if (_LS.restActive) { _lsSkipRest(); return; }
   var vm = _LS.vm; if (!vm) return;
   var t = _LS.tmr || {};
   switch (vm.metrique) {
@@ -38774,6 +38988,15 @@ window._lsPrimaryAction = function () {
         _lsRenderMode(vm); _lsPaintPrimary(); return;
       }
       _LS.cx = 0;
+      _lsDoneSet();
+      return;
+    }
+
+    case 'score': {
+      if (_LS.mb && _LS.mb.reps > 0) {
+        _lsQuickLog(vm.nom, { reps: _LS.mb.reps }, 'charge', 0);
+        if (typeof showToast === 'function') showToast('Score enregistré : ' + _LS.mb.reps, 'ok');
+      }
       _lsDoneSet();
       return;
     }
@@ -38913,10 +39136,16 @@ function _lsDoneSet() {
 
   _LS._pendingAction = isLastSet ? 'nextEx' : 'nextSet';
   var restSec = vm.repos;
+  if (vm.circuit) {
+    // En circuit, seul le dernier exercice du tour déclenche le repos —
+    // et c'est le repos du TOUR, où qu'il soit écrit dans les données.
+    restSec = (vm.circuit.position >= vm.circuit.total) ? (vm.circuit.roundRest || 0) : 0;
+  }
   if (restSec > 0) {
     try {
       var tEl = document.querySelector('#lsRestOverlay .ls-rest-title');
-      if (tEl) tEl.textContent = _lsRestLabel(vm.circuit ? 'circuit' : vm.technique, isLastSet).replace(/^⏱\s*/, '');
+      if (tEl) tEl.textContent = _lsRestLabel(vm.technique, isLastSet, !!vm.circuit,
+                                              _LS.setNum, vm.series.n || 1);
     } catch (_) {}
     _lsStartRest(restSec);
   } else {
@@ -38970,7 +39199,14 @@ function _lsStartRest(sec) {
     }
   } catch (_) {}
 
+  // L'overlay s'arrête au-dessus du footer : les tirets et les flèches
+  // restent visibles pendant le repos.
+  try {
+    var _ft = document.getElementById('lsFooter');
+    if (_ft) overlay.style.bottom = _ft.offsetHeight + 'px';
+  } catch (_) {}
   overlay.classList.add('ls-rest-active');
+  _lsPaintPrimary();
   countdown.textContent = _lsFmt(sec);
   bar.style.width = '100%';
   bar.style.transition = 'none';
@@ -38997,6 +39233,7 @@ function _lsStartRest(sec) {
       clearInterval(_LS.restInterval);
       _LS.restActive = false;
       overlay.classList.remove('ls-rest-active');
+      _lsPaintPrimary();
       try { if (typeof window.tim_sndFinish === 'function') window.tim_sndFinish(); } catch (e) {}
       _lsApplyPending();
     }
@@ -39007,6 +39244,7 @@ function _lsSkipRest() {
   clearInterval(_LS.restInterval);
   _LS.restActive = false;
   document.getElementById('lsRestOverlay').classList.remove('ls-rest-active');
+  _lsPaintPrimary();
   try { if (typeof window.tim_minutCancelNotif === 'function') window.tim_minutCancelNotif(); } catch (e) {}
   _lsApplyPending();
 }
