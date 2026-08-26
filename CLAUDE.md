@@ -14,7 +14,7 @@ The app is the digital companion of the book *Les Secrets de la Détente Vertica
 
 - **Hosting**: Netlify (`netlify.toml` SPA-rewrites everything to `/index.html`). No build command; the file is served as-is. Production URL: `athletikhub.netlify.app`.
 - **PWA**: two Service Workers —
-  - `sw.js` (cache-first for local assets, network-first for externals) + `manifest.json`. Cache name is `athletik-v262` — bump it when shipping CSS/HTML that must invalidate.
+  - `sw.js` (cache-first for local assets, network-first for externals) + `manifest.json`. Cache name is `athletik-v263` — bump it when shipping CSS/HTML that must invalidate.
   - `firebase-messaging-sw.js` (root) — receives background push notifications (FCM).
 - **No linter, no build**. Validate changes by opening `index.html` in a browser (mobile-first, Android Chrome is the target). Before committing, sanity-check JS syntax by parsing the non-module `<script>` blocks with `node -e` (see Coding conventions).
 - **Tests**: `for f in scripts/test-*.js; do node "$f"; done` — 14 suites, ~480 assertions, pure
@@ -77,6 +77,13 @@ completedPrograms, fcmToken, accessTier`.
 ## Domain logic to know about
 
 - **Programme attribution**: `calcProgramFromTallyAnswers(objectif, sit, cont, mat)` replicates the Tally form Pd5KB5 scoring. `programKey` is **only set after `obCalcProg()`** runs (post sit/cont/mat) — until then the home séance card shows "À DÉTERMINER" (see `renderUserData()`).
+- **Conformité des données** : les séances de `se`, `tri` et `ep` sont **régénérées depuis
+  `data/*-program.js`** (transcriptions des PDF, qui font autorité sur séries / valeurs / repos /
+  enchaînements). `vd` était déjà conforme. Audit croisé : `42 séances conformes sur 42
+  comparables`, 559 exercices source = 559 affichés. Les séances sans contrepartie source
+  (`opt`, `mener`, `bilan`) sont laissées telles quelles ; `ea` et `mt` ont une granularité de
+  séance différente et restent à cadrer. **Ne pas modifier une prescription à la main** : corriger
+  le fichier source puis régénérer.
 - **PROGRAMS_V2**: holds the rich data (phases → weekDays → sessions → exos) for **all 6 programmes** — `vd` (Vertical Dunk), `ea` (Elite Athlète), `se` (Shred Explose), `tri` (Triphasique), `mt` (Microtraining), `ep` (Explose+). All complete, no stubs. `renderProgramV2(key)` renders the V2 UI; `openProg(k)` enforces the lock (a user can only open their attributed programme).
 - **Premium access system (3 voies)** — gated par `hasValidAccess()` qui retourne `true` si :
   1. `ah_profile.hasBookAccess === true` (validé serveur, **source de vérité = Firestore users/{uid}.hasBookAccess**)
@@ -160,7 +167,7 @@ completedPrograms, fcmToken, accessTier`.
     La saisie vit **dans** le mode reps, plus derrière un lien replié.
   - `_lsShowComplete()` → `_seFbOpen` / `_eaOpenFeedback` → `_lsFinalizeSession` →
     `_recordSessionCompletion` (80% des séances attendues → `programsDone++`).
-  - **Tests** : `scripts/test-live-screen.js` (131, les 710 exercices normalisés),
+  - **Tests** : `scripts/test-live-screen.js` (132, les 710 exercices normalisés),
     `scripts/test-live-log.js` (38, le chemin d'écriture jusqu'au prompt Titan) et
     `scripts/test-live-layout.js` (183, vrai Chromium en 375×667 et 320×568 : zéro scroll,
     contraste AA calculé, parcours complet, et les 10 acquis de la V1 rejoués un par un —

@@ -75,16 +75,17 @@ const R = [];
 const ok = (l, c, d) => { R.push(c); console.log((c ? '  PASS  ' : '  FAIL  ') + l + (d && !c ? '  → ' + d : '')); };
 
 const A = api();
+const LS_MODES_LIST = A.LS_MODES;
 const allExos = [];
 Object.keys(PV).forEach(k => (PV[k].phases || []).forEach((ph, pi) =>
   Object.keys(ph.sessions || {}).forEach(sk =>
     (ph.sessions[sk].exos || []).forEach(e => allExos.push({ prog: k, phase: pi, sess: sk, ex: e })))));
 
 console.log('\n=== COUVERTURE DES 6 PROGRAMMES ===\n');
-// 764 après la mise en conformité de SHRED EXPLOSE et de TRIPHASIQUE : leurs
-// séances sont régénérées depuis data/*.js, qui prescrivent 52 exercices de
-// plus que ce que l'application affichait.
-ok('les 764 lignes d\'exercices sont chargées', allExos.length === 764, String(allExos.length));
+// 824 après la mise en conformité de SHRED EXPLOSE, TRIPHASIQUE et EXPLOSE+.
+// Leurs séances sont régénérées depuis data/*.js : les programmes prescrivent
+// 112 exercices de plus que ce que l'application affichait.
+ok('les 824 lignes d\'exercices sont chargées', allExos.length === 824, String(allExos.length));
 {
   const bad = allExos.filter(x => A.LS_MODES.indexOf(A.lsDetectMetrique(x.ex)) < 0);
   ok('chaque exercice tombe dans un mode connu', bad.length === 0,
@@ -96,9 +97,15 @@ ok('les 764 lignes d\'exercices sont chargées', allExos.length === 764, String(
   const tally = {};
   allExos.forEach(x => { const m = A.lsDetectMetrique(x.ex); tally[m] = (tally[m] || 0) + 1; });
   console.log('        répartition :', JSON.stringify(tally));
-  ok('les 3 familles hors-doc sont détectées',
-     tally.complexe > 0 && tally.intervalle > 0 && tally.validation > 0,
-     JSON.stringify({ c: tally.complexe, i: tally.intervalle, v: tally.validation }));
+  // Le mode complexe n'a plus de données à rendre : les sources décrivent
+  // les enchaînements triphasiques comme trois exercices distincts en
+  // circuit, ce qui est plus juste qu'une ligne "A → B → C". Le mode reste
+  // en place pour le Workout Builder et les séances perso.
+  ok('les familles intervalle et validation sont détectées',
+     tally.intervalle > 0 && tally.validation > 0,
+     JSON.stringify({ i: tally.intervalle, v: tally.validation }));
+  ok('le mode complexe reste disponible même sans données programme',
+     LS_MODES_LIST.indexOf('complexe') > -1);
   ok('aucune durée ne passe pour des reps',
      !allExos.some(x => /\bmn\b/i.test(x.ex.r || '') && /^reps/.test(A.lsDetectMetrique(x.ex))));
 }
