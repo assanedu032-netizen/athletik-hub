@@ -81,10 +81,10 @@ Object.keys(PV).forEach(k => (PV[k].phases || []).forEach((ph, pi) =>
     (ph.sessions[sk].exos || []).forEach(e => allExos.push({ prog: k, phase: pi, sess: sk, ex: e })))));
 
 console.log('\n=== COUVERTURE DES 6 PROGRAMMES ===\n');
-// 730 depuis la mise en conformité de SHRED EXPLOSE : les 11 séances sont
-// régénérées depuis data/shred-explose-program.js, qui prescrit 18 exercices
-// de plus que ce que l'app affichait.
-ok('les 730 lignes d\'exercices sont chargées', allExos.length === 730, String(allExos.length));
+// 764 après la mise en conformité de SHRED EXPLOSE et de TRIPHASIQUE : leurs
+// séances sont régénérées depuis data/*.js, qui prescrivent 52 exercices de
+// plus que ce que l'application affichait.
+ok('les 764 lignes d\'exercices sont chargées', allExos.length === 764, String(allExos.length));
 {
   const bad = allExos.filter(x => A.LS_MODES.indexOf(A.lsDetectMetrique(x.ex)) < 0);
   ok('chaque exercice tombe dans un mode connu', bad.length === 0,
@@ -158,6 +158,9 @@ console.log('\n=== REPOS : "-" VEUT DIRE ENCHAÎNER ===\n');
   ok('"2 mn après les 4" → 120, pas 124',
      A.lsParseRest('2 mn après les 4') === 120, String(A.lsParseRest('2 mn après les 4')));
   ok('"1 mn 30" → 90', A.lsParseRest('1 mn 30') === 90, String(A.lsParseRest('1 mn 30')));
+  // Fourchette de repos : on décompte la borne basse, l'athlète rallonge.
+  ok('"2-3 mn" → 120, la borne basse', A.lsParseRest('2-3 mn') === 120, String(A.lsParseRest('2-3 mn')));
+  ok('"1-3 mn" → 60', A.lsParseRest('1-3 mn') === 60, String(A.lsParseRest('1-3 mn')));
   ok('"2 mn 30" reste correct après le resserrage', A.lsParseRest('2 mn 30') === 150);
   ok('"45 s" → 45', A.lsParseRest('45 s') === 45);
   ok('"30 s" → 30', A.lsParseRest('30 s') === 30);

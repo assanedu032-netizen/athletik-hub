@@ -21235,36 +21235,53 @@ var PROGRAMS_V2 = (function(){
           weekDays:[d('Lun','j1'),d('Mar','rest'),d('Mer','j2'),d('Jeu','rest'),d('Ven','j3'),d('Sam','opt'),d('Dim','rest')],
           sessions:{
             j1:{ name:'Jour 1 — Isométrique bas + haut du corps', exos:[
-              e('Échauffement dynamique','-','5-8 mn','-'),
-              e('Squat isométrique — position basse (90°)','Var.*','15-30 s → 60-90 s','1 mn 30'),
-              e('Fente isométrique — genou avant à 90°','Var.*','15-30 s / jambe → 45-60 s','1 mn 30'),
-              e('Single leg hold — unipodal genou fléchi','Var.*','15-20 s / jambe → 40-60 s','1 mn'),
-              e('Planche avant-bras — maintien strict','Var.*','20-30 s → 60-90 s','1 mn'),
-              e('Pompe isométrique — mi-course maintien','Var.*','10-15 s → 30-45 s','1 mn'),
-              e('Hollow body hold','Var.*','15-20 s → 40-60 s','1 mn'),
-              e('Travail pied : élévation orteils','3','15 reps','30 s'),
-              e('Équilibre unipodal yeux fermés','3','30 s / jambe','30 s'),
-              e('Transmission Force — sauts/mouvements spécifiques 100%','-','9 mn','-')
+              e('Échauffement dynamique général','-','8-10 mn','-'),
+              e('Squat isométrique — 90°','Var.*','15 s → 90 s','1-3 mn'),
+              e('Fente isométrique — avant','Var.*','15 s → 90 s / jambe','1-3 mn'),
+              e('Single leg squat hold','Var.*','15 s → 60 s / jambe','1-3 mn'),
+              e('Planche sur coudes — gainage actif','Var.*','15 s → 90 s','1-3 mn'),
+              e('Pompe isométrique — position basse','Var.*','15 s → 60 s','1-3 mn'),
+              e('Hollow body hold — abdos + lombaires','Var.*','15 s → 60 s','1-3 mn'),
+              e('Élévation orteils','3','15 reps','30 s'),
+              e('Dorsiflexion tibial','3','15 reps','30 s'),
+              e('Marche sur talons','2','1 mn','30 s'),
+              e('Marche arrière — coordination','2','1 mn','30 s'),
+              e('Équilibre unipodal — yeux ouverts','3','30 s / jambe','30 s'),
+              e('Équilibre yeux fermés — stabilité avancée','2','20 s / jambe','30 s'),
+              e('Mouvements spécifiques à ton objectif — Transmission Force','-','9 mn','-','OBLIGATOIRE — mouvements spécifiques à ton sport (sauts, dunks, sprints, frappes...)'),
+              e('Étirements légers','-','5-10 mn','-')
             ]},
-            j2:{ name:'Jour 2 — Isométrique à l\'échec', exos:[
-              e('Échauffement dynamique','-','5-8 mn','-'),
-              e('Wall sit — descendre progressivement','Var.*','À l\'échec complet','2 mn'),
-              e('Fente isométrique arrière — genou à 90°','Var.*','À l\'échec / jambe','2 mn'),
-              e('Calf raise hold — pointe de pied maintenu','Var.*','À l\'échec','1 mn'),
-              e('Planche avant-bras — À l\'échec absolu','Var.*','À l\'échec complet','2 mn'),
-              e('L-sit sur chaise (ou sol) — maintien max','Var.*','À l\'échec','2 mn'),
-              e('Traction isométrique — mi-course maintien (si barre dispo)','Var.*','À l\'échec','2 mn'),
-              e('Transmission Force — sauts/mouvements spécifiques 100%','-','9 mn','-')
+
+            j2:{ name:'Jour 2 — Isométrique à l\'échec (séance limite)', exos:[
+              e('Échauffement dynamique général','-','8-10 mn','-'),
+              e('Wall sit — dos au mur','Var.*','À L\'ÉCHEC','2-3 mn'),
+              e('Fente isométrique — arrière','Var.*','À L\'ÉCHEC / jambe','2-3 mn'),
+              e('Calf raise hold — pointes','Var.*','À L\'ÉCHEC','1-2 mn'),
+              e('Planche sur mains','Var.*','À L\'ÉCHEC','2-3 mn'),
+              e('L-sit — ou progression','Var.*','À L\'ÉCHEC','2-3 mn'),
+              e('Traction isométrique — menton au-dessus','Var.*','À L\'ÉCHEC','2-3 mn'),
+              e('Élévation orteils','3','15 reps','30 s'),
+              e('Dorsiflexion tibial','3','15 reps','30 s'),
+              e('Marche sur talons','2','1 mn','30 s'),
+              e('Équilibre unipodal','3','30 s / jambe','30 s'),
+              e('Mouvements spécifiques à ton objectif — Transmission Force','-','9 mn','-','OBLIGATOIRE — mouvements spécifiques à ton sport (sauts, dunks, sprints, frappes...)'),
+              e('Étirements légers','-','5-10 mn','-')
             ]},
+
             j3:{ name:'Jour 3 — Isométrique allégé (récupération active)', exos:[
-              e('Mobilité dynamique — Carioca, skipping léger','-','5-8 mn','-'),
-              e('Squat isométrique — maintien courts','2','10 s × 3 positions','45 s'),
-              e('Fente isométrique — courts maintiens','2','10 s / jambe','45 s'),
-              e('Planche — 50% de ta durée max','2','10 s','30 s'),
-              e('Planche latérale — court','2','10 s / côté','30 s'),
-              e('Travail mobilité : 90/90, Cat Cow, Fente 3D','3','8 reps chaque','30 s'),
-              e('Transmission Force — sauts/mouvements spécifiques 100%','-','9 mn','-')
+              e('Échauffement dynamique général','-','8-10 mn','-'),
+              e('Squat isométrique — 90°','2','10 s','1 mn'),
+              e('Fente isométrique — avant','2','10 s / jambe','1 mn'),
+              e('Planche sur coudes','2','10 s','1 mn'),
+              e('Planche latérale — récupération active','2','10 s / côté','1 mn'),
+              e('Élévation orteils — allégé','2','10 reps','30 s'),
+              e('Dorsiflexion tibial','2','10 reps','30 s'),
+              e('Marche arrière','1','1 mn','-'),
+              e('Équilibre unipodal — allégé','2','20 s / jambe','30 s'),
+              e('Mouvements spécifiques à ton objectif — Transmission Force','-','9 mn','-','OBLIGATOIRE — mouvements spécifiques à ton sport (sauts, dunks, sprints, frappes...)'),
+              e('Étirements complets','-','10 mn','-')
             ]},
+
             opt:{ name:'Jour Optionnel — Variantes Isométriques', exos:[
               e('Squat iso à différentes hauteurs (120°, 90°, 60°)','2','20 s chaque hauteur','1 mn'),
               e('Single leg squat iso — variation pistol','2','15-30 s / jambe','1 mn'),
@@ -21284,33 +21301,50 @@ var PROGRAMS_V2 = (function(){
           weekDays:[d('Lun','j1'),d('Mar','rest'),d('Mer','j2'),d('Jeu','rest'),d('Ven','j3'),d('Sam','opt'),d('Dim','rest')],
           sessions:{
             j1:{ name:'Jour 1 — Excentrique bas + haut du corps', exos:[
-              e('Échauffement dynamique','-','5-8 mn','-'),
-              e('Squat excentrique — 5 s descente, 3 s montée','Var.*','8-10 reps','2 mn'),
-              e('Fente excentrique — 5 s descente, 3 s montée','Var.*','8-10 reps / jambe','2 mn'),
-              e('Nordic hamstring excentrique — contrôle total','Var.*','5-8 reps','2 mn 30'),
-              e('Pompe excentrique — 5 s descente, 3 s montée','Var.*','8-10 reps','2 mn'),
-              e('Traction excentrique — descente 5 s (si barre dispo)','Var.*','5-8 reps','2 mn'),
-              e('Dips excentrique — 5 s descente','Var.*','8-10 reps','2 mn'),
-              e('Transmission Force — sauts/mouvements spécifiques 100%','-','9 mn','-')
+              e('Échauffement dynamique général','-','8-10 mn','-'),
+              e('Squat excentrique — contrôle total','Var.*','8-12 reps','2-3 mn'),
+              e('Fente excentrique — avant','Var.*','8-12 reps / jambe','2-3 mn'),
+              e('Nordic hamstring excentrique — freinage maximal','Var.*','8-12 reps','2-3 mn'),
+              e('Pompe excentrique','Var.*','8-12 reps','2-3 mn'),
+              e('Traction excentrique — contrôle descente','Var.*','8-12 reps','2-3 mn'),
+              e('Dips excentrique','Var.*','8-12 reps','2-3 mn'),
+              e('Élévation orteils','3','15 reps','30 s'),
+              e('Dorsiflexion tibial','3','15 reps','30 s'),
+              e('Marche sur talons','2','1 mn','30 s'),
+              e('Équilibre unipodal','3','30 s / jambe','30 s'),
+              e('Mouvements spécifiques à ton objectif — Transmission Force','-','9 mn','-','OBLIGATOIRE — mouvements spécifiques à ton sport (sauts, dunks, sprints, frappes...)'),
+              e('Étirements légers','-','5-10 mn','-')
             ]},
-            j2:{ name:'Jour 2 — Excentrique unilatéral', exos:[
-              e('Échauffement dynamique','-','5-8 mn','-'),
-              e('Single leg squat excentrique — 5 s descente','Var.*','5-8 reps / jambe','2 mn'),
-              e('Step-down excentrique — descente 5 s sur une jambe','Var.*','8 reps / jambe','2 mn'),
-              e('Calf raise excentrique unipodal — 5 s descente','Var.*','10-12 reps / jambe','1 mn 30'),
-              e('Pompe large excentrique — 5 s descente','Var.*','8-10 reps','2 mn'),
-              e('Pike push-up excentrique — 5 s descente','Var.*','6-8 reps','2 mn'),
-              e('Reverse nordic excentrique — 5 s descente','Var.*','6-8 reps','2 mn'),
-              e('Transmission Force — sauts/mouvements spécifiques 100%','-','9 mn','-')
+
+            j2:{ name:'Jour 2 — Excentrique focus contrôle unilatéral', exos:[
+              e('Échauffement dynamique général','-','8-10 mn','-'),
+              e('Single leg squat excentrique — pistol','Var.*','8-12 reps / jambe','2-3 mn'),
+              e('Step-down excentrique — contrôle genou','Var.*','8-12 reps / jambe','2-3 mn'),
+              e('Calf raise excentrique — mollets','Var.*','8-12 reps','2 mn'),
+              e('Pompe excentrique','Var.*','8-12 reps','2-3 mn','Variante large — pectoraux étirés'),
+              e('Pike push-up excentrique — épaules','Var.*','8-12 reps','2-3 mn'),
+              e('Reverse nordic excentrique — quadriceps','Var.*','8-12 reps','2-3 mn'),
+              e('Élévation orteils','3','15 reps','30 s'),
+              e('Dorsiflexion tibial','3','15 reps','30 s'),
+              e('Équilibre unipodal','3','30 s / jambe','30 s'),
+              e('Équilibre yeux fermés','2','20 s / jambe','30 s'),
+              e('Mouvements spécifiques à ton objectif — Transmission Force','-','9 mn','-','OBLIGATOIRE — mouvements spécifiques à ton sport (sauts, dunks, sprints, frappes...)'),
+              e('Étirements légers','-','5-10 mn','-')
             ]},
+
             j3:{ name:'Jour 3 — Excentrique allégé (récupération active)', exos:[
-              e('Mobilité dynamique légère','-','5-8 mn','-'),
-              e('Squat excentrique allégé — tempo 3s+2s','2','5 reps','1 mn'),
-              e('Fente excentrique allégé','2','5 reps / jambe','1 mn'),
-              e('Pompe excentrique allégé — tempo 3s+2s','2','5 reps','1 mn'),
-              e('Travail mobilité : 90/90, Cat Cow, Fente 3D','3','8 reps chaque','30 s'),
-              e('Transmission Force — sauts/mouvements spécifiques 100%','-','9 mn','-')
+              e('Échauffement dynamique général','-','8-10 mn','-'),
+              e('Squat excentrique — volontairement réduit','2','5 reps','1 mn'),
+              e('Fente excentrique — avant','2','5 reps / jambe','1 mn'),
+              e('Pompe excentrique','2','5 reps','1 mn'),
+              e('Dips excentrique','2','5 reps','1 mn'),
+              e('Élévation orteils — allégé','2','10 reps','30 s'),
+              e('Dorsiflexion tibial','2','10 reps','30 s'),
+              e('Équilibre unipodal — allégé','2','20 s / jambe','30 s'),
+              e('Mouvements spécifiques à ton objectif — Transmission Force','-','9 mn','-','OBLIGATOIRE — mouvements spécifiques à ton sport (sauts, dunks, sprints, frappes...)'),
+              e('Étirements complets','-','10 mn','-')
             ]},
+
             opt:{ name:'Jour Optionnel — Excentrique + Charge légère', exos:[
               e('Squat excentrique avec sac à dos lesté','2','8 reps','2 mn'),
               e('Fente bulgare excentrique — charge légère','2','8 reps / jambe','2 mn'),
@@ -21329,49 +21363,59 @@ var PROGRAMS_V2 = (function(){
           weekDays:[d('Lun','j1'),d('Mar','rest'),d('Mer','j2'),d('Jeu','rest'),d('Ven','j3'),d('Sam','j4'),d('Dim','rest')],
           sessions:{
             j1:{ name:'Jour 1 — Bas du corps explosif + Haut du corps', exos:[
-              e('Échauffement dynamique — Skipping, talons-fesses','-','8-10 mn','-'),
-              e('Squat jump — EXPLOSION MAXIMALE','Var.*','6-8 reps','2 mn 30'),
-              e('Fente sautée — Alterner les jambes à vitesse max','Var.*','8-10 reps','2 mn'),
-              e('Broad jumps — Distance maximale — TOUT DONNER','Var.*','5-6 reps','2 mn 30'),
-              e('Pompe claquée — Décoller le plus haut possible','Var.*','5-8 reps','2 mn'),
-              e('Dips explosifs — montée ultra-rapide','Var.*','6-8 reps','2 mn'),
-              e('Traction explosive — montée rapide (si barre dispo)','Var.*','4-6 reps','2 mn 30'),
-              e('Sprint 20 m — Vitesse maximale','4','1 rep','2 mn'),
-              e('Étirements + retour au calme','-','8 mn','-')
+              e('Échauffement dynamique + activation','-','10 mn','-'),
+              e('Squat jump','Var.*','8-12 reps','2-3 mn'),
+              e('Fente sautée alternée — changement en l\'air','Var.*','8-12 reps tot','2-3 mn'),
+              e('Broad jumps — distance maximale','Var.*','8-12 reps','2-3 mn'),
+              e('Pompe claquée — mains décollent du sol','Var.*','8-12 reps','2-3 mn'),
+              e('Dips explosif — accélération max','Var.*','8-12 reps','2-3 mn'),
+              e('Traction explosive — vitesse maximale','Var.*','8-12 reps','2-3 mn'),
+              e('Élévation orteils — explosive','3','15 reps','30 s'),
+              e('Dorsiflexion tibial — explosive','3','15 reps','30 s'),
+              e('Équilibre unipodal — + perturbations','3','30 s / jambe','30 s'),
+              e('Mouvements spécifiques à ton objectif — Transmission Force','-','9 mn','-','OBLIGATOIRE — mouvements spécifiques à ton sport (sauts, dunks, sprints, frappes...)'),
+              e('Étirements légers','-','5-10 mn','-')
             ]},
-            j2:{ name:'Jour 2 — Vitesse + Single leg + Box jumps', exos:[
-              e('Échauffement dynamique','-','8-10 mn','-'),
-              e('Speed squat survitesse — descente contrôlée, montée ULTRA-RAPIDE','Var.*','6-8 reps','2 mn'),
-              e('Single leg jump — unipodal explosif','Var.*','4-5 reps / jambe','2 mn'),
-              e('Box jumps — réception douce, descente contrôlée','Var.*','5-6 reps','2 mn 30'),
-              e('Lateral bounds — bonds latéraux explosifs','Var.*','8-10 reps','1 mn 30'),
-              e('Pompe explosive — montée max','Var.*','6-8 reps','2 mn'),
-              e('Tuck jump — genoux à la poitrine','Var.*','6 reps','2 mn'),
-              e('Étirements + retour au calme','-','8 mn','-')
+
+            j2:{ name:'Jour 2 — Bas du corps explosif + Survitesse', exos:[
+              e('Échauffement dynamique + activation','-','10 mn','-'),
+              e('Speed squat — élastiques assistance','Var.*','8-12 reps','2-3 mn'),
+              e('Single leg jump — unilatéral explosif','Var.*','8-12 reps / jambe','2-3 mn'),
+              e('Box jumps — hauteur progressive','Var.*','8-12 reps','2-3 mn'),
+              e('Pompe explosive — bandes','Var.*','8-12 reps','2-3 mn'),
+              e('Pike push-up explosif','Var.*','8-12 reps','2-3 mn'),
+              e('Élévation orteils — explosive','3','15 reps','30 s'),
+              e('Dorsiflexion tibial — explosive','3','15 reps','30 s'),
+              e('Mouvements spécifiques à ton objectif — Transmission Force','-','9 mn','-','OBLIGATOIRE — mouvements spécifiques à ton sport (sauts, dunks, sprints, frappes...)'),
+              e('Étirements légers','-','5-10 mn','-')
             ]},
-            j3:{ name:'Jour 3 — Pompes claquées variantes + Bas du corps', exos:[
-              e('Échauffement dynamique haut du corps','-','8-10 mn','-'),
-              e('Pompe claquée standard — hauteur max','Var.*','5-8 reps','2 mn'),
-              e('Pompe claquée déclinée — pieds surélevés','Var.*','5-6 reps','2 mn'),
-              e('Pompe claquée diamant','Var.*','5-6 reps','2 mn'),
-              e('Traction explosive (si barre dispo)','Var.*','4-5 reps','2 mn 30'),
-              e('Dips explosifs sur chaise','Var.*','6-8 reps','2 mn'),
-              e('Squat jump chargé (sac dos) — option avancée','Var.*','5-6 reps','2 mn'),
-              e('Calf jump — triples flexions explosives pieds','Var.*','8-10 reps','1 mn'),
-              e('Étirements + retour au calme','-','8 mn','-')
+
+            j3:{ name:'Jour 3 — Haut du corps explosif + Bas du corps', exos:[
+              e('Échauffement dynamique + activation','-','10 mn','-'),
+              e('Pompe claquée','Var.*','8-12 reps','2-3 mn','Variantes — mains + pieds décollent'),
+              e('Traction explosive — tirer le plus vite possible','Var.*','8-12 reps','2-3 mn'),
+              e('Dips explosif — accélération max','Var.*','8-12 reps','2-3 mn'),
+              e('Squat jump — hauteur maximale','Var.*','8-12 reps','2-3 mn'),
+              e('Calf jump — mollets','Var.*','8-12 reps','2 mn'),
+              e('Mouvements spécifiques à ton objectif — Transmission Force','-','9 mn','-','OBLIGATOIRE — mouvements spécifiques à ton sport (sauts, dunks, sprints, frappes...)'),
+              e('Étirements légers','-','5-10 mn','-')
             ]},
-            j4:{ name:'Jour 4 — Circuit Triphasique (ISO + EXC + EXPLO)', exos:[
-              e('Échauffement dynamique complet','-','8-10 mn','-'),
-              e('— CIRCUIT BAS DU CORPS (3 tours) —','-','-','-'),
-              e('Squat isométrique 30 s → Squat excentrique 5 reps → Squat jump 5 reps','3','Enchaîner sans pause','2 mn entre tours'),
-              e('Fente iso 20 s/jambe → Fente exc 5 reps/jambe → Fente sautée 6 reps','3','Enchaîner sans pause','2 mn entre tours'),
-              e('— CIRCUIT HAUT DU CORPS (3 tours) —','-','-','-'),
-              e('Planche 20 s → Pompe exc 5 reps → Pompe claquée 5 reps','3','Enchaîner sans pause','2 mn entre tours'),
-              e('— FINISHER —','-','-','-'),
-              e('Broad jumps — DISTANCE MAX','3','5 reps','2 mn'),
-              e('Sprint 20 m','3','1 rep','2 mn'),
-              e('Étirements complets + retour au calme','-','10 mn','-')
-            ]}
+
+            j4:{ name:'Jour 4 — Circuit triphasique ISO + EXCENTRIQUE + EXPLOSIF', exos:[
+              e('Échauffement dynamique complet','-','10 mn','-'),
+              e('1) Squat isométrique — 90°','3','30-45 s','1 mn'),
+              e('2) Squat excentrique — eXCENTRIQUE — contrôle','3','8 reps','1 mn'),
+              e('3) Squat jump — eXPLOSIVITÉ','3','8 reps','2 mn'),
+              e('1) Planche sur coudes — iSOMÉTRIQUE — gainage actif','3','30-45 s','1 mn'),
+              e('2) Pompe excentrique — eXCENTRIQUE — contrôle','3','8 reps','1 mn'),
+              e('3) Pompe claquée — eXPLOSIVITÉ','3','8 reps','2 mn'),
+              e('1) Élévation orteils — isométrique — Maintien','2','30 s','30 s'),
+              e('2) Dorsiflexion tibial — excentrique — 5s + 3s','2','8 reps','30 s'),
+              e('3) Dorsiflexion tibial — explosive','2','12 reps','30 s'),
+              e('Mouvements spécifiques à ton objectif — Transmission Force','-','9 mn','-','OBLIGATOIRE — mouvements spécifiques à ton sport (sauts, dunks, sprints, frappes...)'),
+              e('Étirements complets','-','8-10 mn','-')
+            ]},
+
           }
         }
       ],
@@ -37895,6 +37939,11 @@ function _lsParseRest(str) {
   if (str == null) return 0;
   var s = (str + '').toLowerCase().trim();
   if (!s || s === '-' || s === '–' || s === '—') return 0;
+  // Repos en fourchette ("2-3 mn", 40 lignes sur 764) : on décompte la borne
+  // BASSE. L'athlète rallonge d'un tap sur +15 s s'il en a besoin ; l'inverse
+  // l'obligerait à attendre une minute de plus que le minimum prescrit.
+  var range = s.match(/^(\d+)\s*[-–]\s*(\d+)\s*(mn|min|s|sec)/);
+  if (range) s = range[1] + ' ' + range[3];
   var mn = 0, sec = 0;
   var mMatch = s.match(/(\d+)\s*mn/);
   if (mMatch) mn = parseInt(mMatch[1]);
