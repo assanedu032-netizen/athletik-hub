@@ -354,8 +354,11 @@ console.log('\n=== RÈGLE 2 — CHAQUE ÉLÉMENT FAIT UN SEUL TRAVAIL ===\n');
      /\.ls-video-wrap\.ls-video-empty \.ls-video-soon\s*\{\s*display: block/.test(html)
      && !/vw\.style\.display = 'none'/.test(html));
   ok('la place du titre est réservée pour que le layout ne saute pas',
-     /\.ls-ex-name\s*\{[\s\S]{0,400}min-height: 51px/.test(html)
+     /\.ls-ex-name\s*\{[\s\S]{0,400}min-height: 60px/.test(html)
      && /\.ls-ex-precision\s*\{[\s\S]{0,240}min-height: 17px/.test(html));
+  ok('le nom de l\'exercice se lit à bout de bras',
+     /\.ls-ex-name\s*\{[\s\S]{0,200}font-size: 25px/.test(html)
+     && /\.ls-ex-name\s*\{[\s\S]{0,120}font-weight: 700/.test(html));
   ok('l\'écran de fin lit les tokens de l\'écran live, pas le thème global',
      /\.ls-celebrate-msg\{[^}]*color:#FFFFFF/.test(html)
      && /\.ls-nextstep-txt\{[^}]*color:#FFFFFF/.test(html)

@@ -2585,12 +2585,12 @@ body.test-mode #testSkipBar{display:flex}
 
 /* ── Nom de l'exercice : casse normale, body font, 2 lignes max ── */
 .ls-ex-name {
-  font-family: 'Outfit', sans-serif; font-weight: 600;
-  font-size: 21px; line-height: 1.22; color: var(--lv-txt);
-  letter-spacing: -.01em; flex-shrink: 0;
+  font-family: 'Outfit', sans-serif; font-weight: 700;
+  font-size: 25px; line-height: 1.18; color: var(--lv-txt);
+  letter-spacing: -.015em; flex-shrink: 0;
   /* Deux lignes réservées, qu'il en faille une ou deux : sinon le bloc
      vidéo et toute la zone mode se décalent d'un exercice à l'autre. */
-  min-height: 51px;
+  min-height: 60px;
   display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
 }
 .ls-ex-precision {
@@ -2962,7 +2962,7 @@ body.test-mode #testSkipBar{display:flex}
   .ls-video-wrap { max-height: 92px; }
   .ls-big { font-size: 52px; }
   .ls-rest-countdown { font-size: 60px; }
-  .ls-ex-name { font-size: 19px; min-height: 46px; }
+  .ls-ex-name { font-size: 21px; min-height: 50px; }
   .ls-ex-precision { font-size: 12px; min-height: 16px; }
   /* Le libellé contextuel du RPE saute avant les cibles tactiles :
      on ne descend jamais les pastilles sous 44 px. */
