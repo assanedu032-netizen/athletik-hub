@@ -14,7 +14,7 @@ The app is the digital companion of the book *Les Secrets de la Détente Vertica
 
 - **Hosting**: Netlify (`netlify.toml` SPA-rewrites everything to `/index.html`). No build command; the file is served as-is. Production URL: `athletikhub.netlify.app`.
 - **PWA**: two Service Workers —
-  - `sw.js` (cache-first for local assets, network-first for externals) + `manifest.json`. Cache name is `athletik-v257` — bump it when shipping CSS/HTML that must invalidate.
+  - `sw.js` (cache-first for local assets, network-first for externals) + `manifest.json`. Cache name is `athletik-v258` — bump it when shipping CSS/HTML that must invalidate.
   - `firebase-messaging-sw.js` (root) — receives background push notifications (FCM).
 - **No linter, no build**. Validate changes by opening `index.html` in a browser (mobile-first, Android Chrome is the target). Before committing, sanity-check JS syntax by parsing the non-module `<script>` blocks with `node -e` (see Coding conventions).
 - **Tests**: `for f in scripts/test-*.js; do node "$f"; done` — 14 suites, ~480 assertions, pure
@@ -98,8 +98,9 @@ completedPrograms, fcmToken, accessTier`.
     `#lsRestOverlay` (état repos plein écran), `#lsFooter` (tirets + barre d'action, `flex-shrink:0`)
     et `#lsComplete`. `_lsFinalizeSession()` masque tous les enfants sauf `#lsComplete` et
     `_lsClose()` les restaure — **ne jamais imbriquer ces 4 blocs**, ça casserait la fin de séance.
-  - **Tokens `--lv-*` scopés à `#liveSession`** — fond navy `#0B1120`, surfaces `#16203A`, or
-    `#D4A843`, repos `#4A9EDB`. L'écran n'utilise plus `--text` / `--gold` globaux : en thème
+  - **Tokens `--lv-*` scopés à `#liveSession`** — fond navy `#14213D` (**canal B − canal R ≥ 35 :
+    le fond doit se lire comme bleu, jamais comme noir**), surfaces `#1E2E52`, boutons
+    secondaires `#27395F`, or `#D4A843`, repos `#4A9EDB`. L'écran n'utilise plus `--text` / `--gold` globaux : en thème
     light (le défaut) ils produisaient du texte quasi-noir sur le navy. **L'écran de fin de
     séance lit les mêmes tokens** — `.ls-celebrate-msg` / `.ls-nextstep-txt` étaient sur
     `--ah-text` / `--ah-text2` et rendaient invisibles les deux informations les plus
@@ -121,9 +122,12 @@ completedPrograms, fcmToken, accessTier`.
     hiérarchie visuelle sans contenu, visible sur 1 exercice sur 5.
   - **Une seule barre de progression** : les tirets du footer. La barre fine du header disait
     la même chose.
-  - **`.ls-mode::before { flex: 0 1 64px }`** plafonne l'écart entre le titre et la donnée
-    principale ; `::after` absorbe le reste. Sans ça, la zone centrée creusait un trou de
-    plusieurs centaines de pixels sur les exercices sans vidéo (91 % d'entre eux).
+  - **`.ls-mode::before { max-height: 80px }`** plafonne l'écart entre le titre et la donnée
+    principale ; `::after` absorbe le reste.
+  - **Le bloc vidéo ne disparaît jamais.** Sans vidéo il devient un placeholder neutre
+    (`.ls-video-empty`, « Démo à venir », non cliquable) de même hauteur — le layout ne saute
+    pas d'un exercice à l'autre, et les exercices restant à filmer se repèrent en parcourant la
+    séance. `.ls-ex-name` réserve 2 lignes et `.ls-ex-precision` 1 ligne pour la même raison.
   - **Un seul bouton** : `_lsPrimaryAction()` dispatche par mode, `_lsPrimaryLabel()` annonce
     exactement ce que le tap va faire. Chrono partagé : `_lsTimerStart/Stop/Toggle/Paint`.
   - **`Var.*`** est résolu par `_lsResolveVarSeries(progKey, phaseIdx, week)` depuis
@@ -141,9 +145,9 @@ completedPrograms, fcmToken, accessTier`.
     La saisie vit **dans** le mode reps, plus derrière un lien replié.
   - `_lsShowComplete()` → `_seFbOpen` / `_eaOpenFeedback` → `_lsFinalizeSession` →
     `_recordSessionCompletion` (80% des séances attendues → `programsDone++`).
-  - **Tests** : `scripts/test-live-screen.js` (106, les 710 exercices normalisés),
+  - **Tests** : `scripts/test-live-screen.js` (112, les 710 exercices normalisés),
     `scripts/test-live-log.js` (38, le chemin d'écriture jusqu'au prompt Titan) et
-    `scripts/test-live-layout.js` (166, vrai Chromium en 375×667 et 320×568 : zéro scroll,
+    `scripts/test-live-layout.js` (175, vrai Chromium en 375×667 et 320×568 : zéro scroll,
     contraste AA calculé, parcours complet, et les 10 acquis de la V1 rejoués un par un —
     Playwright n'est volontairement pas dans `package.json`, `npm i -D playwright --no-save`).
 - **Workout Builder**: `pgBuilder` page (3e sous-onglet de `vTrain`, à côté de Programmes/Librairie). Locked until `programsDone >= 2` (`BUILDER_UNLOCK_PROGRAMS`) OR VIP/MASTER tier OR compte fondateur (`BUILDER_FOUNDER_EMAILS` / `_builderIsDev()`). `_builderCheckUnlock()`. **Piloté par Titan** : l'utilisateur exprime une intention (objectif/durée/matériel/état via chips + phrase libre/vocal `builderToggleMic`), `builderGenerate()` POST `/.netlify/functions/titan` avec `mode:'builder'` + la librairie compacte (`_builderLibraryPayload`) → Titan renvoie une séance **JSON structurée** (blocs échauffement→principal→secondaire→finisher→retour au calme) programmée selon la méthode Athletic Hub (`BUILDER_SYSTEM` côté serveur). `_builderReconcile()` rattache vidéos/catégories depuis `catData`. `builderStartGenerated()` lance via `launchSession` (marquée `_LS.builderMeta`). En fin de séance, `_lsShowComplete` injecte un panneau de ressenti (`_builderInjectFeedback`) et **sauvegarde dans Firestore `users/{uid}/builderSessions`** (cloud, pas localStorage) — `_builderSaveSession`/`_builderSaveFeedback`.

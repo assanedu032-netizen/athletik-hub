@@ -142,7 +142,13 @@ console.log('\n=== REPOS : "-" VEUT DIRE ENCHAÎNER ===\n');
 {
   ok('"-" → 0 seconde', A.lsParseRest('-') === 0, String(A.lsParseRest('-')));
   ok('"1 mn" → 60', A.lsParseRest('1 mn') === 60);
-  ok('"2 mn 30" → 150', A.lsParseRest('2 mn 30') === 150);
+  ok('"2 mn 30" → 150', A.lsParseRest('2 mn 30') === 150, String(A.lsParseRest('2 mn 30')));
+  // Le nombre doit suivre immédiatement les minutes : "2 mn après les 4"
+  // veut dire 2 minutes, pas 2 mn 04.
+  ok('"2 mn après les 4" → 120, pas 124',
+     A.lsParseRest('2 mn après les 4') === 120, String(A.lsParseRest('2 mn après les 4')));
+  ok('"1 mn 30" → 90', A.lsParseRest('1 mn 30') === 90, String(A.lsParseRest('1 mn 30')));
+  ok('"2 mn 30" reste correct après le resserrage', A.lsParseRest('2 mn 30') === 150);
   ok('"45 s" → 45', A.lsParseRest('45 s') === 45);
   ok('"30 s" → 30', A.lsParseRest('30 s') === 30);
   const dash = allExos.filter(x => !x.ex.rest || x.ex.rest === '-').length;
@@ -296,13 +302,26 @@ console.log('\n=== RÈGLE 2 — CHAQUE ÉLÉMENT FAIT UN SEUL TRAVAIL ===\n');
   ok('le message de fin n\'est plus présenté comme une citation de Titan',
      !/font-style:italic">"' \+ titanMsg/.test(html));
   ok('l\'écart titre → donnée est plafonné',
-     /\.ls-mode::before\s*\{[^}]*flex:\s*0 1 64px/.test(html));
+     /\.ls-mode::before\s*\{[^}]*max-height:\s*80px/.test(html));
+  ok('le bloc vidéo ne disparaît jamais',
+     /\.ls-video-wrap\.ls-video-empty \.ls-video-soon\s*\{\s*display: block/.test(html)
+     && !/vw\.style\.display = 'none'/.test(html));
+  ok('la place du titre est réservée pour que le layout ne saute pas',
+     /\.ls-ex-name\s*\{[\s\S]{0,400}min-height: 51px/.test(html)
+     && /\.ls-ex-precision\s*\{[\s\S]{0,240}min-height: 17px/.test(html));
   ok('l\'écran de fin lit les tokens de l\'écran live, pas le thème global',
      /\.ls-celebrate-msg\{[^}]*color:#FFFFFF/.test(html)
      && /\.ls-nextstep-txt\{[^}]*color:#FFFFFF/.test(html)
      && !/\.ls-complete-sub \{[^}]*var\(--text2\)/.test(html));
-  ok('le fond de l\'écran live est un navy, pas du noir',
-     /--lv-bg:#0B1120/.test(html) && /--lv-surface:#16203A/.test(html));
+  // Critère mécanique : canal B − canal R ≥ 35 sur le fond.
+  ok('le fond est visiblement bleu (B − R ≥ 35)', (function () {
+    var m = html.match(/--lv-bg:#([0-9A-Fa-f]{6})/);
+    if (!m) return false;
+    var r = parseInt(m[1].slice(0, 2), 16), b = parseInt(m[1].slice(4, 6), 16);
+    return b - r >= 35;
+  })());
+  ok('trois niveaux de surface distincts',
+     /--lv-surface:#1E2E52/.test(html) && /--lv-elevated:#27395F/.test(html));
   ok('le repos est bleu, jamais or',
      /\.ls-rest-countdown\s*\{[^}]*var\(--lv-rest\)/.test(html));
   ok('la donnée principale est le seul élément doré et énorme',

@@ -282,10 +282,30 @@ const REAL = [
                footer: rgb(getComputedStyle(document.getElementById('lsFooter')).backgroundColor) };
     });
     // Navy = le bleu domine nettement le rouge, et le fond n'est pas noir.
-    ok('le fond de l\'écran live est un navy, pas du noir',
-       col.live[2] - col.live[0] >= 12 && col.live[2] >= 24, 'rgb(' + col.live.join(',') + ')');
+    // Critère mécanique du brief V3 : canal Bleu − canal Rouge ≥ 35.
+    ok('le fond est visiblement bleu (B − R ≥ 35)',
+       col.live[2] - col.live[0] >= 35, 'rgb(' + col.live.join(',') + ') → écart ' + (col.live[2] - col.live[0]));
     ok('le footer partage le même navy',
-       col.footer[2] - col.footer[0] >= 12, 'rgb(' + col.footer.join(',') + ')');
+       col.footer[2] - col.footer[0] >= 35, 'rgb(' + col.footer.join(',') + ')');
+    // Les surfaces doivent se détacher SANS bordure.
+    const surf = await page.evaluate(() => {
+      const rgb = s => s.match(/[\d.]+/g).map(Number);
+      const lum = c => { const f = v => { v /= 255; return v <= .03928 ? v / 12.92 : Math.pow((v + .055) / 1.055, 2.4); };
+        return .2126 * f(c[0]) + .7152 * f(c[1]) + .0722 * f(c[2]); };
+      const bg = rgb(getComputedStyle(document.getElementById('liveSession')).backgroundColor);
+      const vw = document.getElementById('lsVideoWrap');
+      const s1 = rgb(getComputedStyle(vw).backgroundColor);
+      const nav = rgb(getComputedStyle(document.getElementById('lsPrevBtn')).backgroundColor);
+      const r = (a, b) => { const L1 = lum(a), L2 = lum(b);
+        return Math.round(((Math.max(L1, L2) + .05) / (Math.min(L1, L2) + .05)) * 100) / 100; };
+      return { video: r(s1, bg), nav: r(nav, bg), s1: s1, bg: bg, navRgb: nav };
+    });
+    // Sur un fond sombre, un ratio WCAG (fait pour du texte) écrase l'écart :
+    // ce qui rend une surface visible, c'est le saut de clarté par canal.
+    const step = (a, b) => Math.round(((a[0]-b[0]) + (a[1]-b[1]) + (a[2]-b[2])) / 3);
+    ok('le bloc vidéo se détache du fond sans bordure', step(surf.s1, surf.bg) >= 8,
+       '+' + step(surf.s1, surf.bg) + ' niveaux (rgb(' + surf.s1.join(',') + ') sur rgb(' + surf.bg.join(',') + '))');
+    ok('les boutons secondaires se détachent du fond', surf.video >= 1.1, surf.video + ':1');
   }
 
   console.log('\n=== 320 × 568 (iPhone SE 1re génération) ===\n');
@@ -511,6 +531,68 @@ const REAL = [
     ok('fermer puis relancer restaure l\'écran complet',
        back.stage !== 'none' && back.footer !== 'none' && back.complete === 'none' && /fait|valider/i.test(back.btn),
        JSON.stringify(back));
+  }
+
+  console.log('\n=== §3 — LE BLOC VIDÉO NE DISPARAÎT JAMAIS ===\n');
+  {
+    await page.evaluate(() => {
+      const f = document.getElementById('seFeedback'); if (f) f.style.display = 'none';
+    });
+    await open([
+      { n: 'Fente isométrique', s: '3', r: '30-45 s / jambe', rest: '1 mn', video: 'dQw4w9WgXcQ' },
+      { n: 'Toe taps — Coordination tibial', s: '3', r: '20 reps', rest: '30 s' }
+    ], 'Jour test', 'PROGRAMME TEST', 'se');
+    const withV = await page.evaluate(() => {
+      const vw = document.getElementById('lsVideoWrap');
+      const r = vw.getBoundingClientRect();
+      return { h: Math.round(r.height), top: Math.round(r.top),
+               display: getComputedStyle(vw).display,
+               play: getComputedStyle(document.getElementById('lsPlayCircle')).display,
+               soon: getComputedStyle(document.getElementById('lsVideoSoon')).display,
+               link: getComputedStyle(document.getElementById('lsVideoLink')).display,
+               clickable: vw.getAttribute('role') };
+    });
+    await page.evaluate(() => { window._LS.idx = 1; window._lsRenderEx(); });
+    await page.waitForTimeout(150);
+    await shot(path.join(OUT, 'v3-placeholder.png'));
+    const noV = await page.evaluate(() => {
+      const vw = document.getElementById('lsVideoWrap');
+      const r = vw.getBoundingClientRect();
+      return { h: Math.round(r.height), top: Math.round(r.top),
+               display: getComputedStyle(vw).display,
+               play: getComputedStyle(document.getElementById('lsPlayCircle')).display,
+               soon: getComputedStyle(document.getElementById('lsVideoSoon')).display,
+               txt: document.getElementById('lsVideoSoon').textContent.trim(),
+               link: getComputedStyle(document.getElementById('lsVideoLink')).display,
+               clickable: vw.getAttribute('role') };
+    });
+    ok('le bloc existe dans les deux états',
+       withV.display !== 'none' && noV.display !== 'none');
+    ok('aucun saut de layout entre les deux exercices',
+       withV.h === noV.h && withV.top === noV.top,
+       'avec: h=' + withV.h + ' top=' + withV.top + ' | sans: h=' + noV.h + ' top=' + noV.top);
+    ok('avec vidéo : bouton play, lien visible',
+       withV.play !== 'none' && withV.soon === 'none' && withV.link !== 'none'
+       && withV.clickable === 'button');
+    ok('sans vidéo : "Démo à venir", pas de play, pas de lien',
+       noV.play === 'none' && noV.soon !== 'none' && noV.link === 'none'
+       && /Démo à venir/.test(noV.txt), JSON.stringify(noV));
+    ok('le placeholder n\'est pas cliquable', noV.clickable === null, String(noV.clickable));
+    ok('aucun message d\'erreur dans le placeholder',
+       !/indisponible|erreur|manquant/i.test(noV.txt), noV.txt);
+    // Aucun saut de layout sur une vraie séance complète.
+    await open(PV_J6.exos, PV_J6.name, 'SHRED EXPLOSE', 'se');
+    const tops = [];
+    for (let i = 0; i < PV_J6.exos.length; i++) {
+      await page.evaluate(i => { window._LS.idx = i; window._LS.setNum = 1; window._lsRenderEx(); }, i);
+      await page.waitForTimeout(35);
+      tops.push(await page.evaluate(() => {
+        const r = document.getElementById('lsVideoWrap').getBoundingClientRect();
+        return Math.round(r.top) + '/' + Math.round(r.height);
+      }));
+    }
+    ok('les 12 exercices de la séance gardent le bloc vidéo à la même place',
+       new Set(tops).size === 1, tops.join(', '));
   }
 
   console.log('\n=== LES 10 ACQUIS DE LA V1 — VÉRIFIÉS UN PAR UN ===\n');

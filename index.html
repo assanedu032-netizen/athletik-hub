@@ -1247,7 +1247,7 @@ body{background:var(--bg);color:var(--text);font-family:'Outfit',sans-serif;disp
 /* ── Célébration post-séance (brique 1) ──
    Bandeau court affiché en haut de l'écran de fin. Aucun bouton, aucun
    blocage : il apparaît, il informe, il reste. L'animation dure ~1,1 s. */
-.ls-celebrate{display:none;width:100%;max-width:320px;margin:0 auto 14px;padding:12px 14px;border-radius:12px;background:var(--lv-surface,#16203A);border:1px solid var(--lv-border,rgba(212,168,67,.35));text-align:center}
+.ls-celebrate{display:none;width:100%;max-width:320px;margin:0 auto 14px;padding:12px 14px;border-radius:12px;background:var(--lv-surface,#1E2E52);border:1px solid var(--lv-border,rgba(212,168,67,.35));text-align:center}
 .ls-celebrate.on{display:block;animation:lsCelebIn .55s cubic-bezier(.2,.8,.3,1) both}
 .ls-celebrate-kicker{font-family:'JetBrains Mono',monospace;font-size:9.5px;letter-spacing:.2em;text-transform:uppercase;font-weight:800;color:var(--lv-gold,#D4A843)}
 .ls-celebrate-msg{font-family:'Outfit',sans-serif;font-size:14.5px;font-weight:500;color:#FFFFFF;line-height:1.45;margin-top:5px}
@@ -1256,7 +1256,7 @@ body{background:var(--bg);color:var(--text);font-family:'Outfit',sans-serif;disp
    On respecte le réglage système pour cette brique. */
 /* Anticipation : discrète, sous la célébration. Elle informe, elle n'appelle
    pas à l'action — le bouton de retour reste le seul CTA de l'écran. */
-.ls-nextstep{display:none;width:100%;max-width:320px;margin:0 auto 16px;padding:10px 12px;border-radius:10px;background:var(--lv-surface,#16203A);border:1px solid rgba(255,255,255,.12);text-align:center}
+.ls-nextstep{display:none;width:100%;max-width:320px;margin:0 auto 16px;padding:10px 12px;border-radius:10px;background:var(--lv-surface,#1E2E52);border:0;text-align:center}
 .ls-nextstep.on{display:block}
 .ls-nextstep-kicker{font-family:'JetBrains Mono',monospace;font-size:9px;letter-spacing:.2em;text-transform:uppercase;font-weight:800;color:var(--lv-gold,#D4A843)}
 .ls-nextstep-txt{font-family:'Outfit',sans-serif;font-size:13.5px;font-weight:500;color:#FFFFFF;line-height:1.45;margin-top:3px}
@@ -2512,9 +2512,10 @@ body.test-mode #testSkipBar{display:flex}
    fond quasi-noir, bug qui rendait le titre illisible avant cette refonte.
    ════════════════════════════════════════════════════════════════════════════ */
 #liveSession {
-  --lv-bg:#0B1120; --lv-surface:#16203A; --lv-border:rgba(212,168,67,.18);
+  --lv-bg:#14213D; --lv-surface:#1E2E52; --lv-elevated:#27395F;
+  --lv-border:rgba(212,168,67,.20);
   --lv-gold:#D4A843; --lv-gold-hot:#F0C24E; --lv-gold-dim:rgba(212,168,67,.35);
-  --lv-txt:#FFFFFF; --lv-txt2:rgba(255,255,255,.70); --lv-txt3:rgba(255,255,255,.45);
+  --lv-txt:#FFFFFF; --lv-txt2:rgba(255,255,255,.72); --lv-txt3:rgba(255,255,255,.56);
   --lv-ok:#22C55E; --lv-rest:#4A9EDB;
 
   position: fixed; inset: 0; z-index: 9999;
@@ -2535,7 +2536,7 @@ body.test-mode #testSkipBar{display:flex}
   display: flex; align-items: center; gap: 10px;
   padding: 8px 12px 10px; flex-shrink: 0;
   background: var(--lv-bg);
-  border-bottom: 1px solid rgba(255,255,255,.07);
+  border-bottom: 1px solid rgba(255,255,255,.10);
 }
 .ls-header-left { display: flex; flex-direction: column; flex: 1; min-width: 0; }
 .ls-header-prog {
@@ -2552,11 +2553,11 @@ body.test-mode #testSkipBar{display:flex}
 }
 .ls-close-btn {
   width: 36px; height: 36px; border-radius: 50%; flex-shrink: 0;
-  background: rgba(255,255,255,.07); border: none; cursor: pointer;
+  background: var(--lv-elevated); border: none; cursor: pointer;
   color: var(--lv-txt); font-size: 17px;
   display: flex; align-items: center; justify-content: center;
 }
-.ls-close-btn:active { background: rgba(255,255,255,.14); }
+.ls-close-btn:active { background: var(--lv-surface); }
 
 /* ── Corps ── */
 .ls-body {
@@ -2587,31 +2588,45 @@ body.test-mode #testSkipBar{display:flex}
   font-family: 'Outfit', sans-serif; font-weight: 600;
   font-size: 21px; line-height: 1.22; color: var(--lv-txt);
   letter-spacing: -.01em; flex-shrink: 0;
+  /* Deux lignes réservées, qu'il en faille une ou deux : sinon le bloc
+     vidéo et toute la zone mode se décalent d'un exercice à l'autre. */
+  min-height: 51px;
   display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
 }
 .ls-ex-precision {
   font-size: 12.5px; color: var(--lv-txt2); line-height: 1.35; margin-top: 3px;
+  min-height: 17px;   /* une ligne réservée, même vide — voir .ls-ex-name */
   flex-shrink: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }
-.ls-ex-precision:empty { display: none; }
 
 /* ── Vidéo : le bloc n'existe pas quand l'exercice n'a pas de vidéo.
    61 exos sur 710 en ont une — l'écran par défaut est donc SANS vidéo. ── */
 .ls-video-wrap {
-  position: relative; width: 100%; aspect-ratio: 16/9; max-height: 168px;
+  position: relative; width: 100%; aspect-ratio: 16/9; max-height: 158px;
   margin: 10px 0 0; border-radius: 12px; overflow: hidden; flex-shrink: 0;
   background: var(--lv-surface) center/cover no-repeat;
-  border: 1px solid rgba(255,255,255,.06);
+  border: 0;
   display: flex; align-items: center; justify-content: center;
   cursor: pointer;
 }
+/* Placeholder : même hauteur, même ratio, aucun affordance de clic. */
+.ls-video-wrap.ls-video-empty {
+  cursor: default; border: 1px solid var(--lv-border);
+}
+.ls-video-soon {
+  display: none;
+  font-family: 'Outfit', sans-serif; font-size: 13px; font-weight: 500;
+  color: var(--lv-txt3); letter-spacing: .01em;
+}
+.ls-video-wrap.ls-video-empty .ls-play-circle { display: none; }
+.ls-video-wrap.ls-video-empty .ls-video-soon  { display: block; }
 .ls-play-circle {
   width: 54px; height: 54px; border-radius: 50%;
   background: rgba(8,13,24,.62); border: 2px solid var(--lv-gold);
   display: flex; align-items: center; justify-content: center;
   transition: transform .15s;
 }
-.ls-video-wrap:active .ls-play-circle { transform: scale(.92); }
+.ls-video-wrap:not(.ls-video-empty):active .ls-play-circle { transform: scale(.92); }
 .ls-play-icon {
   width: 0; height: 0; margin-left: 4px;
   border-top: 10px solid transparent; border-bottom: 10px solid transparent;
@@ -2634,11 +2649,11 @@ body.test-mode #testSkipBar{display:flex}
   display: flex; flex-direction: column; align-items: center; justify-content: flex-start;
   gap: 8px; text-align: center; padding: 4px 0 8px;
 }
-/* La zone était centrée dans TOUT l'espace restant : sans vidéo, ça creusait
-   un trou de plusieurs centaines de pixels sous le titre. Le pseudo-élément
-   de tête plafonne cet écart à 64 px et se comprime si besoin ; celui de
-   queue absorbe le reste, juste au-dessus de la barre d'action. */
-.ls-mode::before { content: ''; flex: 0 1 64px; min-height: 0; }
+/* Le contenu est centré dans l'espace libre — mais l'écart au-dessus est
+   plafonné à 80 px : sans ce plafond, un mode court creusait un trou de
+   plusieurs centaines de pixels sous le titre. Le pseudo-élément de queue
+   absorbe tout le surplus, juste au-dessus de la barre d'action. */
+.ls-mode::before { content: ''; flex: 1 1 0; max-height: 80px; min-height: 0; }
 .ls-mode::after  { content: ''; flex: 1 1 0; min-height: 0; }
 .ls-steppers, .ls-rpe, .ls-sprint-btns, .ls-timerbar, .ls-steps { flex-shrink: 0; }
 .ls-mode-kicker {
@@ -2672,7 +2687,7 @@ body.test-mode #testSkipBar{display:flex}
 /* Le timer EST la barre : un seul élément porte donnée + progression. */
 .ls-timerbar {
   width: 100%; max-width: 300px; height: 6px; border-radius: 6px;
-  background: rgba(255,255,255,.09); overflow: hidden;
+  background: var(--lv-elevated); overflow: hidden;
 }
 .ls-timerbar-fill {
   height: 100%; width: 100%; border-radius: 6px;
@@ -2683,7 +2698,7 @@ body.test-mode #testSkipBar{display:flex}
 /* ── Mode B : steppers charge / reps / RPE ── */
 .ls-steppers { display: flex; gap: 8px; width: 100%; max-width: 320px; }
 .ls-stepper {
-  flex: 1; background: var(--lv-surface); border: 1px solid rgba(255,255,255,.08);
+  flex: 1; background: var(--lv-surface); border: 0;
   border-radius: 14px; padding: 8px 4px 6px; text-align: center;
 }
 .ls-stepper-l {
@@ -2692,9 +2707,9 @@ body.test-mode #testSkipBar{display:flex}
 }
 .ls-stepper-row { display: flex; align-items: center; justify-content: space-between; gap: 2px; margin-top: 2px; }
 .ls-stepper-btn {
-  width: 34px; height: 34px; flex-shrink: 0; border-radius: 10px;
-  background: rgba(255,255,255,.07); border: 0; color: var(--lv-txt);
-  font-size: 19px; line-height: 1; cursor: pointer;
+  width: 46px; height: 46px; flex-shrink: 0; border-radius: 12px;
+  background: var(--lv-elevated); border: 0; color: var(--lv-txt);
+  font-size: 22px; line-height: 1; cursor: pointer;
   display: flex; align-items: center; justify-content: center;
 }
 .ls-stepper-btn:active { background: var(--lv-gold-dim); }
@@ -2716,16 +2731,16 @@ body.test-mode #testSkipBar{display:flex}
   color: var(--lv-txt2); font-size: 11px; font-weight: 700; cursor: pointer;
   display: flex; align-items: center; justify-content: center; padding: 0;
 }
-.ls-rpe-dot.on { background: var(--lv-gold); border-color: var(--lv-gold); color: #0B1220; font-weight: 800; }
+.ls-rpe-dot.on { background: var(--lv-gold); border-color: var(--lv-gold); color: #14213D; font-weight: 800; }
 
 /* ── Mode D : sprint ── */
 .ls-sprint-btns { display: flex; gap: 10px; width: 100%; max-width: 320px; }
 .ls-sprint-btn {
-  flex: 1; min-height: 56px; border-radius: 14px; border: 1.5px solid var(--lv-border);
-  background: var(--lv-surface); color: var(--lv-txt);
+  flex: 1; min-height: 56px; border-radius: 14px; border: 0;
+  background: var(--lv-elevated); color: var(--lv-txt);
   font-family: 'Bebas Neue', sans-serif; font-size: 18px; letter-spacing: .1em; cursor: pointer;
 }
-.ls-sprint-btn.ls-armed { background: var(--lv-gold); border-color: var(--lv-gold); color: #0B1220; }
+.ls-sprint-btn.ls-armed { background: var(--lv-gold); border-color: var(--lv-gold); color: #14213D; }
 .ls-sprint-btn:disabled { opacity: .35; }
 .ls-splits {
   display: flex; gap: 6px; flex-wrap: wrap; justify-content: center;
@@ -2737,17 +2752,17 @@ body.test-mode #testSkipBar{display:flex}
 .ls-step {
   display: flex; align-items: center; gap: 9px; text-align: left;
   padding: 9px 11px; border-radius: 11px;
-  background: rgba(255,255,255,.03); border: 1px solid rgba(255,255,255,.07);
+  background: var(--lv-surface); border: 0;
 }
 .ls-step.on { background: rgba(212,168,67,.12); border-color: var(--lv-gold); }
 .ls-step.done { opacity: .42; }
 .ls-step-i {
   width: 22px; height: 22px; flex-shrink: 0; border-radius: 50%;
-  background: rgba(255,255,255,.08); color: var(--lv-txt2);
+  background: var(--lv-elevated); color: var(--lv-txt2);
   font-family: 'JetBrains Mono', monospace; font-size: 10px; font-weight: 800;
   display: flex; align-items: center; justify-content: center;
 }
-.ls-step.on .ls-step-i { background: var(--lv-gold); color: #0B1220; }
+.ls-step.on .ls-step-i { background: var(--lv-gold); color: #14213D; }
 .ls-step-n { flex: 1; min-width: 0; font-size: 13px; font-weight: 600; color: var(--lv-txt); line-height: 1.25; }
 .ls-step-v {
   font-family: 'Bebas Neue', sans-serif; font-size: 17px; letter-spacing: .04em;
@@ -2758,7 +2773,7 @@ body.test-mode #testSkipBar{display:flex}
 .ls-footer { flex-shrink: 0; padding: 6px 12px 8px; background: var(--lv-bg); }
 .ls-dashes { display: flex; gap: 3px; margin-bottom: 8px; }
 .ls-dash {
-  flex: 1; height: 4px; border-radius: 4px; background: rgba(255,255,255,.11);
+  flex: 1; height: 4px; border-radius: 4px; background: var(--lv-elevated);
   transition: background .3s;
 }
 .ls-dash.done { background: var(--lv-gold); }
@@ -2766,15 +2781,15 @@ body.test-mode #testSkipBar{display:flex}
 .ls-actions { display: flex; align-items: stretch; gap: 8px; }
 .ls-nav-btn {
   width: 56px; min-height: 56px; flex-shrink: 0; border-radius: 14px; border: 0;
-  background: rgba(255,255,255,.06); color: var(--lv-txt2);
+  background: var(--lv-surface); color: var(--lv-txt2);
   font-size: 20px; cursor: pointer;
   display: flex; align-items: center; justify-content: center;
 }
-.ls-nav-btn:active { background: rgba(255,255,255,.12); }
+.ls-nav-btn:active { background: var(--lv-elevated); }
 .ls-nav-btn:disabled { opacity: .25; }
 .ls-btn-done {
   flex: 1; min-height: 56px; border-radius: 14px; border: 0;
-  background: var(--lv-gold); color: #0B1220; cursor: pointer;
+  background: var(--lv-gold); color: #14213D; cursor: pointer;
   font-family: 'Bebas Neue', sans-serif; font-size: 19px; letter-spacing: .08em;
   padding: 0 10px; line-height: 1.05;
   display: flex; align-items: center; justify-content: center; text-align: center;
@@ -2814,16 +2829,16 @@ body.test-mode #testSkipBar{display:flex}
 }
 .ls-rest-bar-wrap {
   width: 100%; max-width: 300px; height: 6px; border-radius: 6px;
-  background: rgba(74,158,219,.18); overflow: hidden;
+  background: var(--lv-elevated); overflow: hidden;
 }
 .ls-rest-bar { height: 100%; background: var(--lv-rest); border-radius: 6px; transition: width .9s linear; }
 .ls-rest-adj { display: flex; gap: 10px; }
 .ls-rest-btn {
-  min-width: 92px; min-height: 56px; border-radius: 14px; border: 1px solid rgba(74,158,219,.35);
-  background: rgba(74,158,219,.10); color: var(--lv-rest);
+  min-width: 92px; min-height: 56px; border-radius: 14px; border: 0;
+  background: var(--lv-elevated); color: var(--lv-rest);
   font-family: 'Bebas Neue', sans-serif; font-size: 17px; letter-spacing: .08em; cursor: pointer;
 }
-.ls-rest-btn:active { background: rgba(74,158,219,.22); }
+.ls-rest-btn:active { background: var(--lv-surface); }
 /* Le prochain exercice affiché EN ENTIER : c'est le moment de se préparer. */
 .ls-rest-next {
   width: 100%; max-width: 320px; padding-top: 12px; margin-top: 4px;
@@ -2845,13 +2860,13 @@ body.test-mode #testSkipBar{display:flex}
 
 /* Bottom-sheet "Comment faire ?" — conservé, non modifié fonctionnellement. */
 .ls-th-ov {
-  position: fixed; inset: 0; z-index: 10000; background: rgba(6,10,20,.72);
+  position: fixed; inset: 0; z-index: 10000; background: rgba(10,17,34,.78);
   display: none; align-items: flex-end; justify-content: center;
   opacity: 0; transition: opacity .2s;
 }
 .ls-th-ov.on { display: flex; opacity: 1; }
 .ls-th-sheet {
-  width: 100%; max-width: 430px; background: var(--lv-surface, #101827);
+  width: 100%; max-width: 430px; background: var(--lv-surface, #1E2E52);
   border-radius: 20px 20px 0 0; padding: 10px 20px 26px;
   border-top: 1px solid rgba(212,168,67,.25);
   animation: lsThUp .26s cubic-bezier(.2,.8,.3,1) both;
@@ -2866,7 +2881,7 @@ body.test-mode #testSkipBar{display:flex}
 .ls-th-text { font-size: 13.5px; color: rgba(255,255,255,.7); line-height: 1.55; margin-top: 9px; }
 .ls-th-cta {
   width: 100%; min-height: 52px; margin-top: 18px; border: 0; border-radius: 14px;
-  background: #D4A843; color: #0B1220; cursor: pointer;
+  background: #D4A843; color: #14213D; cursor: pointer;
   font-family: 'Bebas Neue', sans-serif; font-size: 18px; letter-spacing: .08em;
 }
 
@@ -9405,12 +9420,16 @@ window.tiResetOnEnter = function(){ window.tiShowStep(1); };
       <div class="ls-ex-name" id="lsExName">Exercice</div>
       <div class="ls-ex-precision" id="lsExPrecision"></div>
 
-      <!-- Vidéo : le bloc est retiré du DOM quand l'exercice n'en a pas. -->
-      <div class="ls-video-wrap" id="lsVideoWrap" style="display:none"
+      <!-- Vidéo : le bloc occupe TOUJOURS le même espace. Sans vidéo, il
+           devient un placeholder neutre — le layout ne bouge pas d'un
+           exercice à l'autre, et les exercices restant à filmer se
+           repèrent d'un coup d'œil en parcourant la séance. -->
+      <div class="ls-video-wrap" id="lsVideoWrap"
            onclick="_lsOpenVideo()" role="button" tabindex="0" aria-label="Voir la démonstration">
-        <div class="ls-play-circle"><div class="ls-play-icon"></div></div>
+        <div class="ls-play-circle" id="lsPlayCircle"><div class="ls-play-icon"></div></div>
+        <div class="ls-video-soon" id="lsVideoSoon">ⓘ&nbsp; Démo à venir</div>
       </div>
-      <button type="button" class="ls-video-link" id="lsVideoLink" style="display:none"
+      <button type="button" class="ls-video-link" id="lsVideoLink"
               onclick="_lsOpenVideo()">ⓘ&nbsp; Voir la démonstration</button>
 
       <!-- LA ZONE MODE — seul bloc qui change entre les 8 modes. -->
@@ -37758,10 +37777,11 @@ function _lsParseRest(str) {
   if (mMatch) mn = parseInt(mMatch[1]);
   var sMatch = s.match(/(\d+)\s*s(?:ec|$|\s)/);
   if (sMatch) sec = parseInt(sMatch[1]);
-  // "2 mn 30" : les secondes suivent les minutes sans unité. Sans ce cas,
-  // le repos tombait à 120 s au lieu de 150.
+  // "2 mn 30" : les secondes suivent les minutes sans unité. Le nombre doit
+  // suivre IMMÉDIATEMENT les minutes — sinon "2 mn après les 4" ramassait
+  // le 4 et donnait un repos de 2 mn 04 au lieu de 2 mn pile.
   if (mMatch && !sMatch) {
-    var tail = s.slice(s.indexOf(mMatch[0]) + mMatch[0].length).match(/(\d+)/);
+    var tail = s.slice(s.indexOf(mMatch[0]) + mMatch[0].length).match(/^\s*(\d{1,2})\s*$/);
     if (tail) sec = parseInt(tail[1]);
   }
   if (!mMatch && !sMatch) {
@@ -38609,12 +38629,16 @@ function _lsRenderEx() {
   // ── Vidéo : le bloc disparaît quand il n'y en a pas (91 % des exercices) ──
   var vw = document.getElementById('lsVideoWrap'), vl = document.getElementById('lsVideoLink');
   if (vm.videoId) {
-    vw.style.display = '';
+    vw.classList.remove('ls-video-empty');
     vw.style.backgroundImage = 'url(https://i.ytimg.com/vi/' + vm.videoId + '/mqdefault.jpg)';
+    vw.setAttribute('role', 'button'); vw.setAttribute('tabindex', '0');
     vl.style.display = '';
   } else {
-    vw.style.display = 'none';
+    // Ton neutre, aucun bouton play, aucun message d'erreur : l'exercice
+    // n'a pas encore de démo, ce n'est pas une panne.
+    vw.classList.add('ls-video-empty');
     vw.style.backgroundImage = '';
+    vw.removeAttribute('role'); vw.removeAttribute('tabindex');
     vl.style.display = 'none';
   }
 
@@ -39790,6 +39814,9 @@ function _lsClose() {
 }
 
 function _lsOpenVideo() {
+  // Le bloc placeholder n'est pas cliquable : on sort avant tout le reste.
+  var _vw = document.getElementById('lsVideoWrap');
+  if (_vw && _vw.classList.contains('ls-video-empty')) return;
   var ex = (_LS.exos && _LS.exos[_LS.idx]) || null;
   // Les exos PROGRAMS_V2 utilisent ex.n (nom court) ; ex.name est le champ legacy.
   var exoName = ex ? (ex.n || ex.name || 'Exercice') : 'Exercice';
