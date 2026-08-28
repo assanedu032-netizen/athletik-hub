@@ -1180,7 +1180,17 @@ body{background:var(--bg);color:var(--text);font-family:'Outfit',sans-serif;disp
 .msg.titan{align-self:flex-start}
 .msg.user{align-self:flex-end}
 
-.msg-bubble{padding:10px 14px;font-size:13px;line-height:1.55;font-weight:500;word-wrap:break-word}
+.msg-bubble{padding:10px 14px;font-size:13px;line-height:1.55;font-weight:500;word-wrap:break-word;overflow-wrap:anywhere}
+/* Respiration des réponses de Titan : un paragraphe par idée, une ligne par
+   information. Sans ça, tout revenait en un seul bloc. */
+.msg-bubble p{margin:0 0 9px}
+.msg-bubble p:last-child{margin-bottom:0}
+.msg-bubble strong{font-weight:800}
+.msg-bubble em{font-style:italic}
+.msg-bubble .tm-list{margin:0 0 9px;padding:0;list-style:none;display:flex;flex-direction:column;gap:5px}
+.msg-bubble .tm-list:last-child{margin-bottom:0}
+.msg-bubble .tm-list li{position:relative;padding-left:15px}
+.msg-bubble .tm-list li::before{content:'';position:absolute;left:3px;top:.55em;width:5px;height:5px;border-radius:50%;background:currentColor;opacity:.45}
 .msg.titan .msg-bubble{background:var(--surface);border:1px solid var(--border);border-radius:4px 16px 16px 16px;color:var(--text)}
 .msg.user .msg-bubble{background:var(--navy);border-radius:16px 4px 16px 16px;color:#fff}
 
@@ -25311,6 +25321,41 @@ function getTimeStr() {
   return now.getHours().toString().padStart(2,'0') + ':' + now.getMinutes().toString().padStart(2,'0');
 }
 
+// Rendu des réponses de Titan : gras, listes, retours à la ligne.
+// ─────────────────────────────────────────────────────────────────────────
+// Avant ça, le texte partait tel quel dans innerHTML. Deux conséquences :
+//   1. HTML écrase les \n → tout arrivait en un seul bloc compact, même
+//      quand Titan avait bien mis sa liste sur des lignes séparées ;
+//   2. les "**gras**" sortaient avec leurs astérisques, faute de renderer.
+//
+// L'échappement HTML se fait AVANT toute transformation : Titan reprend
+// souvent le texte de l'athlète, il ne doit jamais pouvoir injecter de
+// balise dans la page. On n'interprète ensuite que trois formes — gras,
+// listes, sauts de ligne — pas un Markdown complet : le chat reste une
+// conversation, pas un document.
+function _titanRenderMd(raw) {
+  var src = String(raw == null ? '' : raw);
+  var t = escapeHtml(src).replace(/\r\n?/g, '\n');
+
+  // Un titre Markdown ne doit jamais apparaître brut. On le rend en gras
+  // sur sa ligne plutôt que d'afficher les dièses.
+  t = t.replace(/^[ \t]{0,3}#{1,6}[ \t]+(.+)$/gm, '<strong>$1</strong>');
+  t = t.replace(/\*\*([^*\n]+)\*\*/g, '<strong>$1</strong>');
+  t = t.replace(/(^|[\s(])\*([^*\n]+)\*(?=[\s.,;:!?)]|$)/g, '$1<em>$2</em>');
+
+  var LI = /^[ \t]*(?:[-*\u2022\u2023\u25AA]|\u2192|\d+[.)])[ \t]+/;
+  return t.split(/\n{2,}/).map(function (block) {
+    var lines = block.split('\n');
+    var hasItem = lines.some(function (l) { return LI.test(l); });
+    var allItems = lines.every(function (l) { return !l.trim() || LI.test(l); });
+    if (hasItem && allItems) {
+      return '<ul class="tm-list">' + lines.filter(function (l) { return l.trim(); })
+        .map(function (l) { return '<li>' + l.replace(LI, '') + '</li>'; }).join('') + '</ul>';
+    }
+    return '<p>' + lines.join('<br>') + '</p>';
+  }).join('');
+}
+
 // imgDataUrl : vignette de la photo jointe (messages user uniquement).
 function addMessage(text, type, imgDataUrl) {
   const body = document.getElementById('chatBody');
@@ -25324,7 +25369,7 @@ function addMessage(text, type, imgDataUrl) {
 
   if (type === 'titan') {
     msg.innerHTML = '<div class="msg-titan-label"><div class="mtl-av"></div><div class="mtl-name">Titan</div></div>'
-      + '<div class="msg-bubble">' + text + '</div>'
+      + '<div class="msg-bubble">' + _titanRenderMd(text) + '</div>'
       + '<div class="msg-time">' + getTimeStr() + '</div>';
   } else if (type === 'user') {
     var photoHtml = imgDataUrl
