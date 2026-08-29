@@ -14,7 +14,7 @@ The app is the digital companion of the book *Les Secrets de la Détente Vertica
 
 - **Hosting**: Netlify (`netlify.toml` SPA-rewrites everything to `/index.html`). No build command; the file is served as-is. Production URL: `athletikhub.netlify.app`.
 - **PWA**: two Service Workers —
-  - `sw.js` (cache-first for local assets, network-first for externals) + `manifest.json`. Cache name is `athletik-v270` — bump it when shipping CSS/HTML that must invalidate.
+  - `sw.js` (cache-first for local assets, network-first for externals) + `manifest.json`. Cache name is `athletik-v271` — bump it when shipping CSS/HTML that must invalidate.
   - `firebase-messaging-sw.js` (root) — receives background push notifications (FCM).
 - **No linter, no build**. Validate changes by opening `index.html` in a browser (mobile-first, Android Chrome is the target). Before committing, sanity-check JS syntax by parsing the non-module `<script>` blocks with `node -e` (see Coding conventions).
 - **Tests**: `for f in scripts/test-*.js; do node "$f"; done` — 18 suites, ~700 assertions, pure
@@ -136,6 +136,12 @@ completedPrograms, fcmToken, accessTier`.
   - **La méthode se déclare en 6ᵉ argument de `e()`** : `e('Squat','4','5 reps','2 mn','',
     { id:'eccentric', tempoDown:5 })`. Absente → `_ahResolveMethod()` retombe sur la détection
     textuelle d'avant, donc **aucune séance existante n'a besoin d'être migrée**.
+    **77 exercices déclarent aujourd'hui leur méthode** : 49 émis par le générateur depuis
+    `data/*.js` (se, tri, ep, vd) et 28 injectés dans `ea` depuis son champ `technique`.
+  - **Une méthode n'écrase jamais un type d'exécution compatible.** `forceExecution` ne s'applique
+    que si le texte n'en porte pas déjà un : sans cette nuance, « Fente isométrique — 30 s / jambe »
+    perdait son « par côté » et « — À L'ÉCHEC » devenait un compte à rebours au lieu d'un chrono
+    montant. La répartition des 826 exercices en modes est **inchangée** après structuration.
   - **8 modes** rendus par `_lsRenderMode(vm)` dans `#lsMode` : `duree`, `duree_par_cote`, `echec`
     (chrono montant), `reps` / `reps_par_cote` (steppers REPS + RPE, colonne KG **seulement si**
     `_lsHasCharge`), `distance` (chrono manuel au centième), `bloc_libre`, `complexe`
@@ -193,7 +199,7 @@ completedPrograms, fcmToken, accessTier`.
   - **Tests méthodes** : `scripts/test-methods.js` (27) — validation de la sortie Titan, alignement
     registre client ↔ miroir serveur, et la preuve que programme standard et Workout Builder
     produisent la **même séquence** pour la même méthode.
-  - **Tests** : `scripts/test-live-screen.js` (168, les 710 exercices normalisés),
+  - **Tests** : `scripts/test-live-screen.js` (172, les 710 exercices normalisés),
     `scripts/test-live-log.js` (38, le chemin d'écriture jusqu'au prompt Titan) et
     `scripts/test-live-layout.js` (204, vrai Chromium en 375×667 et 320×568 : zéro scroll,
     contraste AA calculé, parcours complet, et les 10 acquis de la V1 rejoués un par un —

@@ -337,10 +337,28 @@ console.log('\n=== RÉTROCOMPATIBILITÉ : RIEN N\'A BOUGÉ ===\n');
   ok('mais le repli ne force jamais le mode',
      A.lsNormalizeExo({ n: 'Squat isométrique (90°)', s: '4', r: '30-60 s', rest: '1 mn' },
        0, [], []).metrique === 'duree');
-  // Le point qui compte : les 826 exercices actuels ne changent pas de mode.
+  // Les méthodes déjà présentes en texte sont maintenant structurées, mais
+  // le TYPE D'EXÉCUTION de chaque exercice n'a pas bougé pour autant.
   const declared = allExos.filter(x => x.ex.method).length;
-  ok('aucun exercice des programmes ne déclare encore de méthode', declared === 0,
-     String(declared));
+  ok('les méthodes des programmes sont structurées', declared >= 70, String(declared));
+  {
+    const by = {};
+    allExos.forEach(x => { if (x.ex.method) by[x.ex.method.id] = (by[x.ex.method.id] || 0) + 1; });
+    ok('  et couvrent isométrie, excentrique, rest-pause et superset',
+       by.isometric > 20 && by.eccentric > 20 && by.rest_pause > 0 && by.superset > 0,
+       JSON.stringify(by));
+  }
+  // Le piège : une méthode ne doit jamais écraser un type d'exécution qui
+  // porte déjà sa propre logique de mesure.
+  ok('une isométrie par côté garde son « par côté »',
+     A.lsNormalizeExo({ n: 'Fente isométrique', s: '3', r: '30 s / jambe', rest: '1 mn',
+       method: { id: 'isometric' } }, 0, [], []).metrique === 'duree_par_cote');
+  ok('une isométrie à l\'échec garde son chrono montant',
+     A.lsNormalizeExo({ n: 'Fente isométrique', s: '3', r: 'À L\'ÉCHEC / jambe', rest: '2 mn',
+       method: { id: 'isometric' } }, 0, [], []).metrique === 'echec');
+  ok('mais une isométrie écrite en reps devient bien un chrono',
+     A.lsNormalizeExo({ n: 'Pompe', s: '3', r: '10 reps', rest: '1 mn',
+       method: { id: 'isometric', duration: 25 } }, 0, [], []).metrique === 'duree');
   ok('une méthode inconnue retombe sur classique',
      A.ahResolveMethod({ n: 'Squat', method: { id: 'inexistante' } }).id === 'classic');
 }
