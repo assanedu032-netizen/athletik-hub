@@ -80,3 +80,6 @@ playwright/.cache/
 
 # Captures de la vérification "zéro scroll" (scripts/test-live-layout.js)
 .live-shots/
+
+# Sortie accidentelle d'un script de capture (SP non défini)
+undefined/
