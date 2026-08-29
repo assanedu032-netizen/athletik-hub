@@ -627,6 +627,65 @@ const REAL = [
        new Set(tops).size === 1, tops.join(', '));
   }
 
+  console.log('\n=== ÉCRAN DE FIN AVEC LE PANNEAU BUILDER ===\n');
+  {
+    await page.evaluate(() => {
+      const f = document.getElementById('seFeedback'); if (f) f.style.display = 'none';
+      const bf = document.getElementById('builderFeedback'); if (bf) bf.remove();
+    });
+    await open([{ n: 'Sprint 30 m', s: '1', r: '30 m', rest: '-' }],
+      'Explosivité — Sprint + Technique de contraste (Post-Activation Potentiation)',
+      'WORKOUT BUILDER', 'se');
+    await page.evaluate(() => {
+      window._LS.builderMeta = { workout: { objectif: 'Explosivité' }, intent: {} };
+      const c = document.getElementById('lsCelebrate');
+      c.className = 'ls-celebrate on';
+      c.innerHTML = '<div class="ls-celebrate-kicker">Jalon</div>'
+                  + '<div class="ls-celebrate-msg">10e séance au total. Nouveau repère enregistré.</div>';
+      const n = document.getElementById('lsNextStep');
+      n.className = 'ls-nextstep on';
+      n.innerHTML = '<div class="ls-nextstep-kicker">Prochaine étape</div>'
+                  + '<div class="ls-nextstep-txt">10 semaines depuis ton dernier test. Il est temps de le refaire.</div>';
+      window._lsFinalizeSession({});
+      window._builderInjectFeedback ? window._builderInjectFeedback() : _builderInjectFeedback();
+    });
+    await page.waitForTimeout(400);
+    await shot(path.join(OUT, 'builder-fin.png'));
+    const m = await page.evaluate(() => {
+      const c = document.getElementById('lsComplete');
+      const save = document.getElementById('bfSaveBtn');
+      const back = Array.from(c.querySelectorAll('button')).find(b => /Retour/.test(b.textContent));
+      const r1 = save.getBoundingClientRect(), r2 = back.getBoundingClientRect();
+      c.scrollTop = 0;
+      const icon = c.querySelector('.ls-complete-icon').getBoundingClientRect();
+      const cr = c.getBoundingClientRect();
+      return { gap: Math.round(r2.top - r1.bottom),
+               w: [Math.round(r1.width), Math.round(r2.width)],
+               iconCut: icon.top < cr.top - 1,
+               over: c.scrollHeight - c.clientHeight };
+    });
+    // Les deux boutons se touchaient : dorés, de largeurs différentes, ils se
+    // lisaient comme un seul élément mal positionné.
+    ok('les deux boutons ne se touchent plus', m.gap >= 16, m.gap + ' px');
+    ok('et ils ont la même largeur', m.w[0] === m.w[1], m.w.join(' / '));
+    // justify-content:center faisait déborder des DEUX côtés : le haut
+    // sortait de la zone scrollable et devenait inatteignable.
+    ok('le haut de l\'écran reste atteignable au scroll', !m.iconCut,
+       'déborde de ' + m.over + 'px');
+    ok('l\'écran de fin est scrollable quand il déborde', m.over >= 0);
+
+    // Sans le panneau Builder, le bouton garde sa largeur d'origine.
+    const sans = await page.evaluate(() => {
+      const bf = document.getElementById('builderFeedback'); if (bf) bf.remove();
+      const c = document.getElementById('lsComplete');
+      const back = Array.from(c.querySelectorAll('button')).find(b => /Retour/.test(b.textContent));
+      return Math.round(back.getBoundingClientRect().width);
+    });
+    ok('sans le panneau, le bouton retour est inchangé', sans === 280, String(sans));
+    await page.evaluate(() => { window._lsClose(); });
+    await page.waitForTimeout(200);
+  }
+
   console.log('\n=== LES 10 ACQUIS DE LA V1 — VÉRIFIÉS UN PAR UN ===\n');
   {
     // Le brief V2 liste 10 comportements à ne casser sous aucun prétexte.

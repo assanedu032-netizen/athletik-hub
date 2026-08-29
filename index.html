@@ -2999,9 +2999,15 @@ body.test-mode #testSkipBar{display:flex}
 /* Session complete */
 .ls-complete {
   flex: 1; min-height: 0; display: flex; flex-direction: column;
-  align-items: center; justify-content: center;
+  align-items: center;
+  justify-content: center;
+  justify-content: safe center;   /* le haut reste atteignable au scroll */
   padding: 32px 24px; text-align: center; overflow-y: auto;
 }
+/* Quand le panneau de ressenti Builder est là, le bouton de retour s'aligne
+   sur sa largeur : deux boutons dorés de largeurs différentes et collés se
+   lisaient comme un seul élément mal positionné. */
+#builderFeedback ~ .btn { max-width: 340px !important; }
 .ls-complete-icon { font-size: 64px; margin-bottom: 20px; }
 .ls-complete-title { font-family: 'Bebas Neue', sans-serif; font-size: 38px; color: var(--lv-gold-hot); letter-spacing: 2px; margin-bottom: 8px; }
 .ls-complete-sub { font-size: 14px; color: var(--lv-txt2); line-height: 1.6; margin-bottom: 32px; }
@@ -28298,7 +28304,7 @@ function _builderInjectFeedback() {
 
   var panel = document.createElement('div');
   panel.id = 'builderFeedback';
-  panel.style.cssText = 'width:100%;max-width:340px;margin:14px auto 0;text-align:left';
+  panel.style.cssText = 'width:100%;max-width:340px;margin:14px auto 20px;text-align:left';
   panel.innerHTML =
       '<div style="font-size:12px;font-weight:800;color:#fff;text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px">Ton ressenti</div>'
     + '<div style="font-size:11px;color:rgba(255,255,255,.7);margin-bottom:6px">Difficulté</div>'
