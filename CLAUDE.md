@@ -14,10 +14,10 @@ The app is the digital companion of the book *Les Secrets de la Détente Vertica
 
 - **Hosting**: Netlify (`netlify.toml` SPA-rewrites everything to `/index.html`). No build command; the file is served as-is. Production URL: `athletikhub.netlify.app`.
 - **PWA**: two Service Workers —
-  - `sw.js` (cache-first for local assets, network-first for externals) + `manifest.json`. Cache name is `athletik-v266` — bump it when shipping CSS/HTML that must invalidate.
+  - `sw.js` (cache-first for local assets, network-first for externals) + `manifest.json`. Cache name is `athletik-v267` — bump it when shipping CSS/HTML that must invalidate.
   - `firebase-messaging-sw.js` (root) — receives background push notifications (FCM).
 - **No linter, no build**. Validate changes by opening `index.html` in a browser (mobile-first, Android Chrome is the target). Before committing, sanity-check JS syntax by parsing the non-module `<script>` blocks with `node -e` (see Coding conventions).
-- **Tests**: `for f in scripts/test-*.js; do node "$f"; done` — 16 suites, ~605 assertions, pure
+- **Tests**: `for f in scripts/test-*.js; do node "$f"; done` — 17 suites, ~636 assertions, pure
   Node, zéro dépendance : chaque suite extrait les **vraies** fonctions d'`index.html` par
   équilibrage d'accolades et les rejoue contre des mocks. `scripts/test-live-layout.js` est la
   seule exception : elle ouvre un vrai Chromium (Playwright, hors `package.json`) pour mesurer la
@@ -185,12 +185,18 @@ completedPrograms, fcmToken, accessTier`.
 - **Habits**: `activeHabits` array, persisted to `ah_active_habits` via `_persistActiveHabits()`. `checkHabit()` resets the streak on a day gap. `renderActiveHabits()` renders Home + Moi.
 - **Exercise library**: `catData` is the flat exercise database (198 exercises). `_LIB_CAT_MAP` maps the chip filters to `catData` keys. Schema `{name, diff:'easy'|'med'|'hard', muscles, desc, mat, tag?, video?}`. Videos: per-exo `video` field OR `_LIB_VIDEO_MAP` lookup by name. The library has a "🎯 Mon programme" filter (`_libFlatExos('myprogram')`).
 - **Titan AI**: `callAnthropicAPI()` builds `ctx` from `ah_profile` (not `window.user`) and POSTs to `/.netlify/functions/titan`.
+  Le contexte envoyé comprend **le profil (11 champs), l'état athlète
+  (`_ahBuildAthleteState`) et la nutrition (`_titanNutritionCtx`)** — morphologie, cibles
+  quotidiennes, journal du jour et moyenne 7 jours. Sans ce dernier bloc, Titan redemandait le
+  poids pourtant saisi à l'onboarding et estimait les calories de tête. Côté serveur,
+  `buildNutritionContext()` n'écrit une ligne que si la donnée existe : **jamais de valeur
+  inventée, jamais de « Non renseigné » sur un champ rempli**.
   Les réponses passent par **`_titanRenderMd()`** avant d'entrer dans la bulle : échappement HTML
   **d'abord** (Titan reprend le texte de l'athlète — l'injecter brut dans `innerHTML` était une
   faille), puis gras, listes et sauts de ligne. Sans ce rendu, HTML écrasait les `\n` et tout
   arrivait en un seul bloc compact, `**gras**` compris. Section `FORME DES RÉPONSES` du
   `STATIC_SYSTEM` côté serveur : **forme uniquement**, le ton et les règles de coaching sont
-  intouchés. Tests : `scripts/test-titan-format.js` (37). Foreground/background push handled by FCM. The same function has a **`mode:'builder'` branch** (`BUILDER_SYSTEM` + `buildBuilderUserMessage` + `parseWorkoutJson`) that returns `{ workout }` (JSON, `BUILDER_MAX_TOKENS`) for the Workout Builder, reusing the auth/quota/moderation layers.
+  intouchés. Tests : `scripts/test-titan-format.js` (37) et `scripts/test-titan-nutrition.js` (31). Foreground/background push handled by FCM. The same function has a **`mode:'builder'` branch** (`BUILDER_SYSTEM` + `buildBuilderUserMessage` + `parseWorkoutJson`) that returns `{ workout }` (JSON, `BUILDER_MAX_TOKENS`) for the Workout Builder, reusing the auth/quota/moderation layers.
 
 ## Backend — Netlify Functions (`netlify/functions/`)
 

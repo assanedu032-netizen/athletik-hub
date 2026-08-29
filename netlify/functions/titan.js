@@ -877,6 +877,48 @@ dis simplement que tu ne l'as pas enregistrée et propose comment l'obtenir.`);
   return L.join('\n');
 }
 
+// Morphologie, cibles et journal du jour. Sans cette section, Titan
+// redemandait le poids alors qu'il est saisi à l'onboarding, et estimait les
+// calories de tête alors que l'app en tient le compte exact.
+// Une ligne n'est écrite que si la donnée existe : jamais de "Non renseigné"
+// là où l'athlète a bien rempli, jamais de valeur inventée là où il n'a rien.
+function buildNutritionContext(n) {
+  if (!n) return '';
+  const L = [];
+  const morpho = [];
+  if (n.poids)  morpho.push(n.poids + ' kg');
+  if (n.taille) morpho.push(n.taille + ' cm');
+  if (n.age)    morpho.push(n.age + ' ans');
+  if (n.sexe)   morpho.push(n.sexe);
+  if (morpho.length) L.push('Morphologie : ' + morpho.join(' · '));
+  if (n.objectif) L.push('Objectif nutrition : ' + n.objectif);
+  if (n.cibles) {
+    const c = n.cibles;
+    L.push('Cibles quotidiennes : ' + c.kcal + ' kcal'
+      + (c.prot ? ' · ' + c.prot + 'g prot' : '')
+      + (c.gluc ? ' · ' + c.gluc + 'g gluc' : '')
+      + (c.lip  ? ' · ' + c.lip  + 'g lip'  : ''));
+  }
+  if (n.aujourdhui) {
+    const a = n.aujourdhui;
+    if (a.repas > 0) {
+      L.push("Aujourd'hui : " + a.repas + ' repas enregistré' + (a.repas > 1 ? 's' : '')
+        + ' — ' + a.kcal + ' kcal · ' + a.prot + 'g prot · ' + a.gluc + 'g gluc · ' + a.lip + 'g lip');
+      if (a.noms && a.noms.length) L.push('  ' + a.noms.join(', '));
+    } else {
+      L.push("Aujourd'hui : aucun repas enregistré dans le journal.");
+    }
+  }
+  if (n.moyenne7j) {
+    L.push('Moyenne sur ' + n.moyenne7j.jours + ' jours : ' + n.moyenne7j.kcal + ' kcal/jour');
+  }
+  if (!L.length) return '';
+  return '\n\nNUTRITION\n' + L.join('\n')
+    + "\nCes chiffres viennent du profil et du journal de l'athlète. Tu ne redemandes"
+    + "\njamais une donnée qui est écrite ici. Si une information manque et qu'elle"
+    + "\nte serait vraiment utile, tu la demandes une fois, sans insister.";
+}
+
 function buildAthleteContext(ctx) {
   ctx = ctx || {};
   return `PROFIL ATHLÈTE
@@ -889,7 +931,7 @@ SAT complété : ${ctx.satDone ? 'Oui' : 'Non'}
 Score SAT : ${ctx.athScore != null ? ctx.athScore + '/100' : 'Non fait'}${ctx.vertJump != null ? ' — Détente : ' + ctx.vertJump + ' cm' : ''}
 Sport : ${ctx.sport || 'Non renseigné'}
 Objectif nutrition : ${ctx.nutriObj || 'Non renseigné'}
-Accès : ${ctx.accessTier || 'Essai gratuit'}`;
+Accès : ${ctx.accessTier || 'Essai gratuit'}` + buildNutritionContext(ctx.nutrition);
 }
 
 // ---------- RAG : index livre chargé une fois par instance chaude ----------

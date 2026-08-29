@@ -25117,6 +25117,71 @@ function checkKeywordFilter(text) {
 
 // LAYER 2 (modération OpenAI), LAYER 3 (system prompt), LAYER 4 (Constitutional AI) : tout côté serveur.
 
+// Morphologie + cibles + journal du jour, tels que l'app les affiche déjà
+// dans l'onglet Nutrition. Aucun calcul nouveau : on relit les mêmes champs
+// et le même journal, pour que Titan voie ce que l'athlète voit.
+// Renvoie null si rien n'est renseigné — mieux vaut pas de section qu'une
+// section vide qui laisserait croire à des données absentes.
+function _titanNutritionCtx(prof) {
+  prof = prof || {};
+  var out = {};
+  var poids  = parseFloat(prof.poids  != null ? prof.poids  : prof.nutriPoids);
+  var taille = parseFloat(prof.taille != null ? prof.taille : prof.nutriTaille);
+  if (isFinite(poids)  && poids  > 0) out.poids  = poids;
+  if (isFinite(taille) && taille > 0) out.taille = taille;
+  if (prof.age)  out.age  = prof.age;
+  if (prof.sexe) out.sexe = prof.sexe;
+  if (prof.nutriObj || prof.objNutri) out.objectif = prof.nutriObj || prof.objNutri;
+
+  // Cibles quotidiennes calculées par l'app (écran Nutrition).
+  if (prof.nutriCal) {
+    out.cibles = { kcal: prof.nutriCal, prot: prof.nutriProt || null,
+                   gluc: prof.nutriGluc || null, lip: prof.nutriLip || null };
+  }
+
+  // Journal du jour : ce que l'athlète a réellement enregistré.
+  try {
+    var journal = JSON.parse(localStorage.getItem('ah_nutri_journal') || '[]');
+    if (Array.isArray(journal) && journal.length) {
+      var today = new Date().toISOString().slice(0, 10);
+      var todays = journal.filter(function (m) {
+        return m && m.date && String(m.date).slice(0, 10) === today;
+      });
+      var t = { kcal: 0, prot: 0, gluc: 0, lip: 0 };
+      todays.forEach(function (m) {
+        var x = m.totals || {};
+        t.kcal += x.cal || 0; t.prot += x.p || 0; t.gluc += x.g || 0; t.lip += x.l || 0;
+      });
+      out.aujourdhui = {
+        repas: todays.length,
+        kcal: Math.round(t.kcal), prot: Math.round(t.prot),
+        gluc: Math.round(t.gluc), lip: Math.round(t.lip),
+        // Les noms des repas, bornés : Titan doit pouvoir dire de quoi il parle.
+        noms: todays.slice(-6).map(function (m) { return m.name || m.label || 'repas'; })
+      };
+      // Sur les 7 derniers jours, la moyenne dit plus que le seul jour J.
+      var days = {};
+      journal.forEach(function (m) {
+        if (!m || !m.date || !m.totals) return;
+        var d = String(m.date).slice(0, 10);
+        var diff = (new Date(today) - new Date(d)) / 86400000;
+        if (diff < 0 || diff > 6) return;
+        days[d] = (days[d] || 0) + (m.totals.cal || 0);
+      });
+      var ks = Object.keys(days);
+      if (ks.length >= 2) {
+        out.moyenne7j = {
+          jours: ks.length,
+          kcal: Math.round(ks.reduce(function (a, k) { return a + days[k]; }, 0) / ks.length)
+        };
+      }
+    }
+  } catch (e) {}
+
+  return Object.keys(out).length ? out : null;
+}
+window._titanNutritionCtx = _titanNutritionCtx;
+
 async function callAnthropicAPI(userMessage, photo) {
   // Avec photo : contenu en blocs (image d'abord, comme recommandé par
   // Anthropic quand le texte commente l'image). L'index du message est retenu
@@ -25165,6 +25230,14 @@ async function callAnthropicAPI(userMessage, photo) {
     nutriObj:   pick('nutriObj', pick('objNutri', '')),
     accessTier: prof.accessTier || (function(){ try { return localStorage.getItem('ah_access_tier'); } catch(e) { return null; } })(),
   };
+
+  // ── Morphologie et nutrition ──
+  // Ces champs existent dans ah_profile depuis l'onboarding mais ne
+  // partaient pas : Titan redemandait le poids et estimait les calories à
+  // la main alors que l'app calcule des cibles et tient un journal.
+  try {
+    ctx.nutrition = _titanNutritionCtx(prof);
+  } catch(e) { console.warn('[titan nutri ctx]', e); }
 
   // ── État réel de l'athlète (séances, exercices, tests, tendances) ──
   // C'est CE bloc qui manquait : sans lui, Titan n'avait que 14 champs
