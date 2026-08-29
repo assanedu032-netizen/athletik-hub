@@ -2311,6 +2311,9 @@ body:has(.scr.on) .tim-fab{display:none}
 
 .rm-hero {
   width: 100%; height: 200px; overflow: hidden; flex-shrink: 0; position: relative;
+  /* Fond de repli quand la recette n'a pas encore de photo : le héro garde
+     sa hauteur et son compteur de calories, il ne devient pas blanc. */
+  background: linear-gradient(160deg, #243B6B 0%, #16223F 100%);
 }
 .rm-hero img { width: 100%; height: 100%; object-fit: cover; }
 .rm-hero-overlay { position: absolute; inset: 0; background: linear-gradient(to top, rgba(0,0,0,.5) 0%, transparent 60%); }
@@ -10344,14 +10347,20 @@ function showNutriTab(el, tab) {
     var h = Math.floor(t/60), m = t%60;
     return m ? (h+'h'+(m<10?'0':'')+m) : (h+'h');
   }
+  // Recettes dont le fichier image ne correspond pas au plat. Le hero passe
+  // en fond neutre : mieux vaut pas de photo qu'une photo d'un autre plat.
+  // À vider dès que le visuel correct est fourni.
+  var RECIPE_IMG_MISSING = { 20: true };
+
   function R(o) {
     var ingredients = (o.ing || []).map(function(s){ var p = s.split('|'); return {name:p[0].trim(), qty:(p[1]||'').trim()}; });
     return {
       id: o.id, name: o.n, tag: o.c, tagLabel: TAG_LABELS[o.c] || 'RECETTE',
-      tagline: o.tl || (o.kcal + ' kcal · ' + o.p + 'g protéines'),
+      tagline: o.tl || '',
       cals: o.kcal, prot: o.p, carbs: o.g, fat: o.l,
       time: _totalTime(o.pm, o.cm, o.rm),
-      img: 'images/recipes/recipe-' + String(o.id).padStart(3,'0') + '.webp',
+      img: RECIPE_IMG_MISSING[o.id] ? '' :
+           ('images/recipes/recipe-' + String(o.id).padStart(3,'0') + '.webp'),
       titan: o.q || QUOTE_BY_MOMENT[o.m] || QUOTE_BY_MOMENT.any,
       ingredients: ingredients, steps: o.st || [],
       moment: o.m || 'any', difficulty: o.d || 'facile',
@@ -10720,7 +10729,11 @@ function showRecipe(key, portionsOverride) {
   var tagEl = document.getElementById('rmTag');
   tagEl.textContent = r.tagLabel;
   tagEl.className = 'rm-tag ' + r.tag;
-  document.getElementById('rmImg').src = r.img;
+  // Sans image, on n'affiche pas de <img> vide : le héro garde son fond
+  // navy et son compteur de calories.
+  var imgEl = document.getElementById('rmImg');
+  if (r.img) { imgEl.src = r.img; imgEl.style.display = ''; }
+  else { imgEl.removeAttribute('src'); imgEl.style.display = 'none'; }
   document.getElementById('rmTime').textContent = r.time;
   document.getElementById('rmTitanMsg').textContent = r.titan;
   // Conseil Titan — fait nutritionnel + conseil pratique sous la recette
@@ -10731,7 +10744,10 @@ function showRecipe(key, portionsOverride) {
   if (tipTxt) tipTxt.textContent = tip.fact + ' ' + tip.advice;
   // Tagline (1-liner sous le hero)
   var tagline = document.getElementById('rmTagline');
-  if (tagline) tagline.textContent = r.tagline || '';
+  if (tagline) {
+    tagline.textContent = r.tagline || '';
+    tagline.style.display = r.tagline ? '' : 'none';
+  }
   // Méta row : moment + difficulté + temps total
   var momentMap = { 'pre-workout':'🌅 Pré-workout', 'post-workout':'💪 Post-workout', 'pre-game':'🏆 Pré-match', 'post-game':'🔥 Post-match', 'recovery':'😌 Récup', 'before-sleep':'🌙 Sommeil', 'any':'⚙️ Tout moment' };
   var diffMap = { 'facile':'🟢 Facile', 'moyen':'🟡 Moyen', 'difficile':'🔴 Difficile' };
@@ -10872,6 +10888,17 @@ function _scaleIngredientQty(qtyStr, mult) {
   }
   if (!isFinite(n)) return qtyStr;
   var scaled = n * mult;
+  // "1 scoop (30g)" : le poids entre parenthèses doit suivre lui aussi,
+  // sinon on affiche "1.5 scoop (30g)" — la dose et le poids se
+  // contredisent dans la même ligne.
+  rest = rest.replace(/\((\s*)(\d+(?:[.,]\d+)?)(\s*[a-zA-Zµ]*)\)/g,
+    function (whole, sp, num, unit) {
+      var v = parseFloat(String(num).replace(',', '.')) * mult;
+      if (!isFinite(v)) return whole;
+      var f = (Math.abs(v - Math.round(v)) < 0.01)
+        ? String(Math.round(v)) : v.toFixed(1).replace(/\.0$/, '');
+      return '(' + sp + f + unit + ')';
+    });
   // Format : entier si entier, sinon 1 décimale (ex 1.5, 0.5).
   // Évite "0.0g" en repassant à 1 si scaled < 0.5.
   var formatted;
