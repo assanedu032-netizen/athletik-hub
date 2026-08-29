@@ -27896,6 +27896,29 @@ function builderRenderResult(w) {
       var meta = [];
       if (e.rest && e.rest !== '-') meta.push('repos ' + e.rest);
       if (e.catLabel) meta.push(e.catLabel);
+      // La méthode n'est pas un mot posé sur la carte : on affiche ce
+      // qu'elle va réellement faire faire à l'athlète.
+      var mHtml = '';
+      if (e.method && e.method.id && typeof AH_METHODS !== 'undefined' && AH_METHODS[e.method.id]) {
+        var def = AH_METHODS[e.method.id];
+        var seq = '';
+        if (typeof def.expand === 'function') {
+          var cfg = {}; Object.keys(e.method).forEach(function(k){ if (k !== 'id') cfg[k] = e.method[k]; });
+          var steps = null; try { steps = def.expand(cfg); } catch(_) {}
+          if (steps) seq = steps.map(function(st){
+            return st.kind === 'rest' ? st.sec + ' s'
+                 : st.kind === 'drop' ? '↓'
+                 : st.reps + (st.load ? '×' + st.load + 'kg' : '');
+          }).join(' → ');
+        }
+        if (!seq && e.method.duration)  seq = e.method.duration + ' s de maintien';
+        if (!seq && e.method.tempoDown) seq = e.method.tempoDown + ' s de descente par rep';
+        mHtml = '<div style="display:flex;align-items:center;gap:7px;margin-top:6px;flex-wrap:wrap">'
+          + '<span style="font-family:\'JetBrains Mono\',monospace;font-size:9px;font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:var(--navy);background:var(--gold);padding:2px 7px;border-radius:4px">'
+          + esc(def.label) + '</span>'
+          + (seq ? '<span style="font-family:\'JetBrains Mono\',monospace;font-size:11px;color:var(--text2)">' + esc(seq) + '</span>' : '')
+          + '</div>';
+      }
       var safeName = String(e.n || '').replace(/'/g, "\\'").replace(/"/g, '&quot;');
       var safeNote = String(e.note || '').replace(/'/g, "\\'").replace(/"/g, '&quot;');
       // Carte entière cliquable → ouvre la fiche exercice (lib si dispo, sinon
@@ -27906,6 +27929,7 @@ function builderRenderResult(w) {
       html += '<div style="font-size:12px;color:var(--gold);font-weight:700;margin-top:2px">' + esc(prescr || '—') + '</div></div>';
       html += '<div style="flex-shrink:0;color:var(--gold);font-size:18px;font-weight:700;line-height:1">›</div>';
       html += '</div>';
+      html += mHtml;
       if (meta.length) html += '<div style="font-size:11px;color:var(--muted);margin-top:5px">' + esc(meta.join(' · ')) + '</div>';
       if (e.note && String(e.note).trim()) html += '<div style="font-size:11px;color:var(--text2);margin-top:4px;font-style:italic">' + esc(e.note) + '</div>';
       html += '</div>';
@@ -28264,7 +28288,7 @@ function builderStartGenerated() {
   var exos = [];
   _builderWorkout.blocs.forEach(function(bloc){
     (bloc.exos || []).forEach(function(e){
-      exos.push({
+      var ex = {
         n: e.n,
         name: e.n,
         s: e.sets || 1,
@@ -28272,7 +28296,11 @@ function builderStartGenerated() {
         rest: e.rest || '-',
         note: (bloc.titre ? bloc.titre + (e.note ? ' — ' + e.note : '') : (e.note || '')),
         video: e.video || null
-      });
+      };
+      // La méthode prescrite par Titan passe au moteur telle quelle : c'est
+      // lui qui décide comment elle s'exécute, pas le Builder.
+      if (e.method && typeof e.method === 'object' && e.method.id) ex.method = e.method;
+      exos.push(ex);
     });
   });
   if (!exos.length) { if (typeof showToast === 'function') showToast('Séance vide.', 'info'); return; }

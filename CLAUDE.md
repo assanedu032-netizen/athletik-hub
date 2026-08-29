@@ -14,10 +14,10 @@ The app is the digital companion of the book *Les Secrets de la Détente Vertica
 
 - **Hosting**: Netlify (`netlify.toml` SPA-rewrites everything to `/index.html`). No build command; the file is served as-is. Production URL: `athletikhub.netlify.app`.
 - **PWA**: two Service Workers —
-  - `sw.js` (cache-first for local assets, network-first for externals) + `manifest.json`. Cache name is `athletik-v269` — bump it when shipping CSS/HTML that must invalidate.
+  - `sw.js` (cache-first for local assets, network-first for externals) + `manifest.json`. Cache name is `athletik-v270` — bump it when shipping CSS/HTML that must invalidate.
   - `firebase-messaging-sw.js` (root) — receives background push notifications (FCM).
 - **No linter, no build**. Validate changes by opening `index.html` in a browser (mobile-first, Android Chrome is the target). Before committing, sanity-check JS syntax by parsing the non-module `<script>` blocks with `node -e` (see Coding conventions).
-- **Tests**: `for f in scripts/test-*.js; do node "$f"; done` — 17 suites, ~636 assertions, pure
+- **Tests**: `for f in scripts/test-*.js; do node "$f"; done` — 18 suites, ~700 assertions, pure
   Node, zéro dépendance : chaque suite extrait les **vraies** fonctions d'`index.html` par
   équilibrage d'accolades et les rejoue contre des mocks. `scripts/test-live-layout.js` est la
   seule exception : elle ouvre un vrai Chromium (Playwright, hors `package.json`) pour mesurer la
@@ -129,6 +129,10 @@ completedPrograms, fcmToken, accessTier`.
     séquentielle, `expand(cfg)` qui la **réduit à une suite d'étapes** que l'écran sait déjà
     jouer. Ajouter EMOM ou AMRAP = une entrée de plus dans le registre, **aucune branche de plus
     dans le rendu**.
+  - **Titan peut prescrire une méthode, pas en inventer une.** `BUILDER_METHODS` (miroir serveur
+    du registre) + `sanitizeMethod()` retirent toute méthode ou tout paramètre hors schéma avant
+    que la séance n'atteigne l'app, et refusent une prescription incomplète (rest-pause sans
+    blocs, isométrie sans durée) — mieux vaut aucune méthode qu'une méthode injouable.
   - **La méthode se déclare en 6ᵉ argument de `e()`** : `e('Squat','4','5 reps','2 mn','',
     { id:'eccentric', tempoDown:5 })`. Absente → `_ahResolveMethod()` retombe sur la détection
     textuelle d'avant, donc **aucune séance existante n'a besoin d'être migrée**.
@@ -186,6 +190,9 @@ completedPrograms, fcmToken, accessTier`.
     La saisie vit **dans** le mode reps, plus derrière un lien replié.
   - `_lsShowComplete()` → `_seFbOpen` / `_eaOpenFeedback` → `_lsFinalizeSession` →
     `_recordSessionCompletion` (80% des séances attendues → `programsDone++`).
+  - **Tests méthodes** : `scripts/test-methods.js` (27) — validation de la sortie Titan, alignement
+    registre client ↔ miroir serveur, et la preuve que programme standard et Workout Builder
+    produisent la **même séquence** pour la même méthode.
   - **Tests** : `scripts/test-live-screen.js` (168, les 710 exercices normalisés),
     `scripts/test-live-log.js` (38, le chemin d'écriture jusqu'au prompt Titan) et
     `scripts/test-live-layout.js` (204, vrai Chromium en 375×667 et 320×568 : zéro scroll,

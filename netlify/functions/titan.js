@@ -680,11 +680,41 @@ Schéma EXACT :
     {
       "titre": "Échauffement" | "Bloc principal" | "Bloc secondaire" | "Finisher" | "Retour au calme",
       "exos": [
-        { "n": "NOM EXACT d'un exercice de la LIBRAIRIE fournie", "sets": number, "reps": "string (ex: 5, 30s, 10m, 2 min)", "rest": "string (ex: 30s, 90s, 2min, -)", "note": "string courte ou vide" }
+        { "n": "NOM EXACT d'un exercice de la LIBRAIRIE fournie", "sets": number, "reps": "string (ex: 5, 30s, 10m, 2 min)", "rest": "string (ex: 30s, 90s, 2min, -)", "note": "string courte ou vide", "method": objet optionnel, voir MÉTHODES }
       ]
     }
   ]
 }
+
+═══════════════════════════════
+MÉTHODES D'ENTRAÎNEMENT
+═══════════════════════════════
+Le champ "method" est OPTIONNEL. Tu ne le mets que si la méthode sert
+réellement l'objectif de la séance — un exercice sans "method" est classique,
+et c'est le cas le plus fréquent. Ne mets JAMAIS une méthode pour faire riche.
+
+Tu ne peux utiliser QUE ces méthodes, avec QUE ces paramètres. Toute autre
+forme sera retirée avant d'arriver à l'athlète :
+
+  { "id": "isometric",  "duration": 25 }
+      maintien d'une position. duration en SECONDES.
+  { "id": "eccentric",  "tempoDown": 5 }
+      descente contrôlée. tempoDown en SECONDES par répétition.
+  { "id": "rest_pause", "reps": 8, "microRest": 15, "blocks": [3, 2] }
+      série longue coupée : 8 reps, 15 s, 3 reps, 15 s, 2 reps.
+  { "id": "drop_set",   "drops": [{"reps":12,"load":60},{"reps":10,"load":45}] }
+      on allège sans repos. load en KG, au moins 2 paliers.
+  { "id": "superset" }   enchaîné avec l'exercice suivant, repos après les deux.
+  { "id": "circuit", "rounds": 3 }   enchaînement de plusieurs exercices.
+
+Règles d'emploi :
+- Le champ "reps" reste rempli normalement : la méthode ne le remplace pas.
+- Isométrie et rest-pause fatiguent beaucoup : au maximum un ou deux
+  exercices par séance, jamais sur un athlète fatigué ou débutant.
+- Drop set et rest-pause supposent une charge : jamais au poids du corps seul.
+- Pas de méthode sur l'échauffement ni sur le retour au calme.
+- N'écris jamais le nom de la méthode dans "n" : "Développé couché", pas
+  "Développé couché rest-pause". La méthode est une donnée, pas un libellé.
 
 ═══════════════════════════════
 CONTRAINTE LIBRAIRIE (ABSOLUE)
@@ -753,6 +783,51 @@ function buildBuilderUserMessage(intent, library) {
   return parts.join('\n');
 }
 
+// Miroir du registre AH_METHODS côté client. Titan peut prescrire une
+// méthode, mais pas en inventer une : tout ce qui n'est pas ici est retiré
+// de la sortie avant de l'envoyer à l'app. Les règles de prescription
+// restent maîtrisées par le système, pas par le modèle.
+const BUILDER_METHODS = {
+  classic:    [],
+  isometric:  ['duration'],
+  eccentric:  ['tempoDown'],
+  rest_pause: ['reps', 'microRest', 'blocks'],
+  drop_set:   ['drops'],
+  superset:   [],
+  circuit:    ['rounds']
+};
+
+function sanitizeMethod(m) {
+  if (!m) return null;
+  const id = typeof m === 'string' ? m : m.id;
+  if (!id || !BUILDER_METHODS[id] || id === 'classic') return null;
+  const out = { id };
+  const num = (v) => { const n = parseFloat(v); return isFinite(n) && n > 0 ? n : null; };
+  BUILDER_METHODS[id].forEach((f) => {
+    const v = m[f];
+    if (v == null) return;
+    if (f === 'blocks') {
+      const a = (Array.isArray(v) ? v : []).map(num).filter(Boolean).slice(0, 6);
+      if (a.length) out.blocks = a;
+    } else if (f === 'drops') {
+      const a = (Array.isArray(v) ? v : []).map((d) => {
+        const reps = num(d && d.reps);
+        return reps ? { reps, load: num(d && d.load) || undefined } : null;
+      }).filter(Boolean).slice(0, 5);
+      if (a.length >= 2) out.drops = a;
+    } else {
+      const n = num(v);
+      if (n) out[f] = n;
+    }
+  });
+  // Une méthode à séquence sans ses paramètres ne vaut rien : on la retire
+  // plutôt que d'envoyer à l'app une prescription qu'elle ne peut pas jouer.
+  if (id === 'rest_pause' && !(out.reps && out.blocks)) return null;
+  if (id === 'drop_set' && !out.drops) return null;
+  if (id === 'isometric' && !out.duration) return null;
+  return out;
+}
+
 function parseWorkoutJson(text) {
   if (!text) return null;
   let s = String(text).trim();
@@ -765,6 +840,12 @@ function parseWorkoutJson(text) {
   try {
     const obj = JSON.parse(s);
     if (!obj || !Array.isArray(obj.blocs)) return null;
+    obj.blocs.forEach((b) => {
+      (b && Array.isArray(b.exos) ? b.exos : []).forEach((e) => {
+        const m = sanitizeMethod(e && e.method);
+        if (m) e.method = m; else if (e) delete e.method;
+      });
+    });
     return obj;
   } catch (e) {
     return null;
