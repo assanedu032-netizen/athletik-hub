@@ -1,4 +1,4 @@
-const CACHE = 'athletik-v268';
+const CACHE = 'athletik-v269';
 const ASSETS = [
   '/',
   '/index.html',

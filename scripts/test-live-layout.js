@@ -627,6 +627,109 @@ const REAL = [
        new Set(tops).size === 1, tops.join(', '));
   }
 
+  console.log('\n=== MOTEUR DE MÉTHODES DANS LE NAVIGATEUR ===\n');
+  {
+    await page.evaluate(() => {
+      const f = document.getElementById('seFeedback'); if (f) f.style.display = 'none';
+    });
+    // Rest-pause : 8 → 15 s → 3 → 15 s → 2, joué du début à la fin.
+    await page.evaluate(() => {
+      try { localStorage.removeItem('ah_track_history'); } catch (e) {}
+      window.launchSession([{ n: 'Développé couché', s: '3', r: '8 reps', rest: '2 mn',
+        method: { id: 'rest_pause', reps: 8, microRest: 15, blocks: [3, 2] } }],
+        'Jour test', 'PROGRAMME TEST', 'se', 't');
+    });
+    await page.waitForFunction(() => {
+      const el = document.getElementById('liveSession');
+      return el && el.getBoundingClientRect().top <= 0.5;
+    }, { timeout: 5000 });
+    await page.waitForTimeout(200);
+    await shot(path.join(OUT, 'methode-restpause.png'));
+
+    const s0 = await page.evaluate(() => ({
+      mode: window._LS.vm.metrique,
+      steps: document.querySelectorAll('#lsMode .ls-seq-step').length,
+      big: (document.querySelector('#lsMode .ls-big') || {}).textContent,
+      cta: document.getElementById('lsBtnDone').textContent.trim(),
+      over: document.getElementById('lsStage').scrollHeight - document.getElementById('lsStage').clientHeight
+    }));
+    ok('le rest-pause est joué comme une séquence', s0.mode === 'sequence', s0.mode);
+    ok('les 5 étapes sont visibles d\'un coup d\'œil', s0.steps === 5, String(s0.steps));
+    ok('la première étape affiche 8 reps', s0.big === '8', s0.big);
+    ok('le bouton dit ce que le tap va faire', /8 reps faites/.test(s0.cta), s0.cta);
+    ok('et l\'écran ne déborde pas', s0.over <= 1, String(s0.over));
+
+    await page.click('#lsBtnDone');           // 8 reps faites → micro-récup
+    await page.waitForTimeout(150);
+    const s1 = await page.evaluate(() => ({
+      cta: document.getElementById('lsBtnDone').textContent.trim(),
+      val: (document.getElementById('lsBigVal') || {}).textContent,
+      running: !!(window._LS.tmr && window._LS.tmr.running)
+    }));
+    ok('l\'étape suivante est la récup courte', /récup/i.test(s1.cta) && s1.val === '00:15',
+       s1.cta + ' / ' + s1.val);
+    // L'athlète vient de finir son bloc : la récup part toute seule.
+    ok('la micro-récup se lance sans rien toucher', s1.running === true);
+
+    await page.click('#lsBtnDone');           // passe la récup
+    await page.waitForTimeout(150);
+    const s2 = await page.evaluate(() => (document.querySelector('#lsMode .ls-big') || {}).textContent);
+    ok('puis le deuxième bloc de 3 reps', s2 === '3', s2);
+
+    await page.click('#lsBtnDone');           // 3 reps
+    await page.waitForTimeout(120);
+    await page.click('#lsBtnDone');           // récup
+    await page.waitForTimeout(120);
+    const s3 = await page.evaluate(() => ({
+      big: (document.querySelector('#lsMode .ls-big') || {}).textContent,
+      cta: document.getElementById('lsBtnDone').textContent.trim()
+    }));
+    ok('puis le dernier bloc de 2 reps', s3.big === '2', s3.big);
+    ok('et le bouton annonce la fin de série', /série terminée|terminer la séance/i.test(s3.cta), s3.cta);
+
+    await page.click('#lsBtnDone');           // clôt la série
+    await page.waitForTimeout(250);
+    const hist = await page.evaluate(() => JSON.parse(localStorage.getItem('ah_track_history') || '[]'));
+    // 8 + 3 + 2 = 13 reps : comparable à une série classique, donc la
+    // détection de records continue de fonctionner.
+    ok('le rest-pause s\'enregistre comme 13 reps',
+       hist.length === 1 && hist[0].essais[0].reps === 13, JSON.stringify(hist[0] || null));
+    ok('avec le détail des blocs à côté',
+       hist[0].training && hist[0].training.id === 'rest_pause'
+       && hist[0].training.blocks.join(',') === '8,3,2', JSON.stringify(hist[0].training));
+    ok('sans toucher au type de mesure', hist[0].method === 'charge', hist[0].method);
+
+    // Isométrie déclarée : le chrono s'impose, quel que soit le nom.
+    await page.evaluate(() => window.launchSession(
+      [{ n: 'Pompe', s: '3', r: '25 s', rest: '1 mn', method: { id: 'isometric' } }],
+      'Jour test', 'PROGRAMME TEST', 'se', 't'));
+    await page.waitForTimeout(400);
+    const iso = await page.evaluate(() => ({
+      mode: window._LS.vm.metrique, nom: document.getElementById('lsExName').textContent,
+      val: (document.getElementById('lsBigVal') || {}).textContent
+    }));
+    ok('« Pompe » + méthode isométrique → chrono de 25 s',
+       iso.mode === 'duree' && iso.val === '00:25' && iso.nom === 'Pompe', JSON.stringify(iso));
+
+    // Drop set.
+    await page.evaluate(() => window.launchSession(
+      [{ n: 'Leg extension', s: '1', r: '12 reps', rest: '2 mn', method: { id: 'drop_set',
+         drops: [{ reps: 12, load: 60 }, { reps: 10, load: 45 }, { reps: 8, load: 30 }] } }],
+      'Jour test', 'PROGRAMME TEST', 'se', 't'));
+    await page.waitForTimeout(400);
+    await shot(path.join(OUT, 'methode-dropset.png'));
+    const dsm = await page.evaluate(() => ({
+      mode: window._LS.vm.metrique,
+      steps: document.querySelectorAll('#lsMode .ls-seq-step').length,
+      unit: (document.querySelector('#lsMode .ls-big-unit') || {}).textContent
+    }));
+    ok('le drop set est joué comme une séquence',
+       dsm.mode === 'sequence' && dsm.steps === 5, JSON.stringify(dsm));
+    ok('et la charge de chaque palier est annoncée', /60 kg/.test(dsm.unit), dsm.unit);
+    await page.evaluate(() => { window._lsClose(); });
+    await page.waitForTimeout(200);
+  }
+
   console.log('\n=== ÉCRAN DE FIN AVEC LE PANNEAU BUILDER ===\n');
   {
     await page.evaluate(() => {

@@ -40,14 +40,32 @@ const FNS = ['_lsHasSide', '_lsParseValeur', '_lsValeurSeconds', '_lsDetectMetri
              '_lsSeriesInfo', '_lsCircuitMap', '_lsComplexSteps', '_lsNormalizeExo',
              '_lsParseRest', '_lsDetectTechnique', '_lsTechniqueLabel',
              '_lsTechniqueInstruction', '_lsCoachingCue', '_lsObjectifTxt', '_lsScoreLabel',
-             '_lsFindVideo', '_lsVideoKey'];
+             '_lsFindVideo', '_lsVideoKey', '_ahNum', '_ahResolveMethod'];
 // Les constantes de l'écran live sont extraites telles quelles : les
 // hardcoder ici ferait diverger le test du code qu'il prétend vérifier.
 const CONSTS = ['LS_MODES', 'LS_TAG_TECHNIQUES', 'LS_JARGON', 'LS_RPE_STEPS', 'LS_RPE_WORDS',
-                '_lsVideoIndex']
+                '_lsVideoIndex', 'AH_METHODS', 'LS_TEXT_TO_METHOD']
   .map(n => {
     const i = html.indexOf('\nvar ' + n + ' = ');
     if (i < 0) throw new Error('constante introuvable: ' + n);
+    // AH_METHODS contient des fonctions, donc des ';' : on équilibre les
+    // accolades au lieu de couper au premier point-virgule.
+    const eq = html.indexOf('=', i) + 1;
+    let k = eq;
+    while (html[k] === ' ' || html[k] === '\n') k++;
+    const open = html[k];
+    if (open === '{' || open === '[') {
+      const close = open === '{' ? '}' : ']';
+      let d = 0, j = k, str = null;
+      for (; j < html.length; j++) {
+        const c = html[j];
+        if (str) { if (c === '\\') j++; else if (c === str) str = null; continue; }
+        if (c === '"' || c === "'") { str = c; continue; }
+        if (c === open) d++;
+        else if (c === close) { d--; if (!d) { j++; break; } }
+      }
+      return html.slice(i + 1, j) + ';';
+    }
     const j = html.indexOf(';\n', i);
     return html.slice(i + 1, j + 1);
   }).join('\n');
@@ -62,7 +80,7 @@ function api(profile, progKey) {
   const _LS = { progKey: progKey || '', exos: [], idx: 0, setNum: 1 };
   return new Function('PROGRAMS_V2', '_LIB_VIDEO_MAP', 'localStorage', '_LS',
     'getProgramProgress', 'console',
-    SRC + '\nreturn {' + FNS.map(n => n.slice(1) + ':' + n).join(',') + ', LS_MODES:LS_MODES, _LS:_LS};')(
+    SRC + '\nreturn {' + FNS.map(n => n.slice(1) + ':' + n).join(',') + ', LS_MODES:LS_MODES, AH_METHODS:AH_METHODS, _LS:_LS};')(
       PV, VIDEO_MAP, localStorage, _LS,
       function (k) {
         try {
@@ -242,6 +260,99 @@ console.log('\n=== SHRED EXPLOSE — JOUR 6, CONFORME À LA SOURCE ===\n');
      JSON.stringify(vms[5].valeur));
   ok('exo 12 : "10 mn minimum" reste un bloc, pas une série chronométrée',
      vms[11].metrique === 'bloc_libre' && vms[11].valeur.floor === true);
+}
+
+console.log('\n=== MOTEUR DE MÉTHODES — LE REGISTRE ===\n');
+{
+  const M = A.AH_METHODS;
+  ok('les 7 méthodes du cahier des charges sont définies',
+     ['classic','isometric','eccentric','rest_pause','drop_set','superset','circuit']
+       .every(k => M[k] && M[k].id === k), Object.keys(M).join(', '));
+  ok('chacune déclare les champs que le Builder doit afficher',
+     Object.keys(M).every(k => Array.isArray(M[k].fields)),
+     Object.keys(M).filter(k => !Array.isArray(M[k].fields)).join(', '));
+  ok('isométrie impose un chrono', M.isometric.forceExecution === 'duree');
+  ok('superset et circuit sont des blocs', M.superset.block === true && M.circuit.block === true);
+
+  // expand() est la clé de l'extensibilité : une méthode se réduit à une
+  // séquence d'étapes que l'écran sait déjà jouer.
+  const rp = M.rest_pause.expand({ reps: 8, microRest: 15, blocks: [3, 2] });
+  ok('rest-pause 8 → 15s → 3 → 15s → 2', rp.length === 5
+     && rp[0].reps === 8 && rp[1].sec === 15 && rp[2].reps === 3
+     && rp[3].sec === 15 && rp[4].reps === 2, JSON.stringify(rp));
+  ok('sa micro-récup a une valeur par défaut',
+     M.rest_pause.expand({ reps: 8, blocks: [3] })[1].sec === 15);
+  ok('une config incomplète ne produit pas de séquence bancale',
+     M.rest_pause.expand({ blocks: [3, 2] }) === null
+     && M.rest_pause.expand({ reps: 8 }) === null);
+
+  const ds = M.drop_set.expand({ drops: [
+    { reps: 12, load: 60 }, { reps: 10, load: 45 }, { reps: 8, load: 30 } ] });
+  ok('drop set 12/60 → drop → 10/45 → drop → 8/30', ds.length === 5
+     && ds[0].load === 60 && ds[1].kind === 'drop' && ds[4].reps === 8, JSON.stringify(ds));
+  ok('un drop set vide ne produit rien', M.drop_set.expand({ drops: [] }) === null);
+  ok('classique et isométrie n\'ont pas de séquence',
+     !M.classic.expand && !M.isometric.expand);
+}
+
+console.log('\n=== LA MÉTHODE PILOTE L\'EXÉCUTION ===\n');
+{
+  // Une isométrie déclarée impose un chrono, quelle que soit la forme du
+  // texte — c'est tout l'objet du moteur : ne plus dépendre du libellé.
+  const iso = A.lsNormalizeExo(
+    { n: 'Pompe', s: '3', r: '25 s', rest: '1 mn', method: { id: 'isometric' } }, 0, [], []);
+  ok('exercice + méthode isométrique → mode chrono', iso.metrique === 'duree', iso.metrique);
+  ok('le nom ne porte plus la méthode', iso.nom === 'Pompe');
+  ok('la consigne vient du registre', /Tiens la position/.test(iso.consigne), iso.consigne);
+
+  const rp = A.lsNormalizeExo({ n: 'Développé couché', s: '3', r: '8 reps', rest: '2 mn',
+    method: { id: 'rest_pause', reps: 8, microRest: 15, blocks: [3, 2] } }, 0, [], []);
+  ok('une méthode à séquence impose le mode sequence', rp.metrique === 'sequence', rp.metrique);
+  ok('et la séquence est prête à jouer', rp.method.steps.length === 5);
+
+  const ecc = A.lsNormalizeExo({ n: 'Traction', s: '4', r: '5 reps', rest: '2 mn',
+    method: { id: 'eccentric', tempoDown: 5 } }, 0, [], []);
+  ok('excentrique reste en reps', ecc.metrique === 'reps');
+  ok('et porte son tempo', ecc.tempo && ecc.tempo.down === 5, JSON.stringify(ecc.tempo));
+
+  // Le même exercice, quatre méthodes, un seul nom : c'est le §2 du brief.
+  const noms = ['classic','isometric','eccentric','rest_pause'].map(id =>
+    A.lsNormalizeExo({ n: 'Pompe', s: '3', r: '10 reps', rest: '1 mn',
+      method: { id: id, reps: 8, microRest: 15, blocks: [2] } }, 0, [], []).nom);
+  ok('un exercice, plusieurs méthodes, un seul nom',
+     noms.every(n => n === 'Pompe'), noms.join(' | '));
+}
+
+console.log('\n=== RÉTROCOMPATIBILITÉ : RIEN N\'A BOUGÉ ===\n');
+{
+  ok('sans méthode déclarée, l\'exercice est classique',
+     A.ahResolveMethod({ n: 'Squat', s: '3', r: '10 reps' }).id === 'classic');
+  ok('et rien n\'est marqué comme déclaré',
+     A.ahResolveMethod({ n: 'Squat', s: '3', r: '10 reps' }).declared === false);
+  // La détection textuelle d'avant continue de servir de repli.
+  ok('une isométrie écrite dans le nom est encore reconnue',
+     A.ahResolveMethod({ n: 'Squat isométrique (90°)', s: '4', r: '30 s' }).id === 'isometric');
+  ok('un cluster écrit dans la valeur aussi',
+     A.ahResolveMethod({ n: 'Pompes diamant', s: '4', r: '2-3 reps cluster' }).id === 'rest_pause');
+  ok('mais le repli ne force jamais le mode',
+     A.lsNormalizeExo({ n: 'Squat isométrique (90°)', s: '4', r: '30-60 s', rest: '1 mn' },
+       0, [], []).metrique === 'duree');
+  // Le point qui compte : les 826 exercices actuels ne changent pas de mode.
+  const declared = allExos.filter(x => x.ex.method).length;
+  ok('aucun exercice des programmes ne déclare encore de méthode', declared === 0,
+     String(declared));
+  ok('une méthode inconnue retombe sur classique',
+     A.ahResolveMethod({ n: 'Squat', method: { id: 'inexistante' } }).id === 'classic');
+}
+
+console.log('\n=== HISTORIQUE : LA PROGRESSION N\'EST PAS CASSÉE ===\n');
+{
+  ok('le détail de méthode part dans un champ distinct',
+     /function _lsQuickLog\(nom, essai, method, rpe, training\)/.test(html));
+  ok('il ne touche pas au type de mesure lu par _ahTrackValue',
+     /trackingMethod: method, method: method/.test(html) && /training: training \|\| null/.test(html));
+  ok('un rest-pause s\'enregistre comme une série comparable',
+     /reps: tot \}, 'charge', 0, \{/.test(html));
 }
 
 console.log('\n=== LES MODES QUE LE DOCUMENT NE PRÉVOYAIT PAS ===\n');

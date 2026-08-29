@@ -2729,6 +2729,24 @@ body.test-mode #testSkipBar{display:flex}
 }
 .ls-obj-v.ls-obj-past { color: var(--lv-txt2); }
 
+/* ── Séquence (rest-pause, drop set) : la carte de la série, d'un coup d'œil ── */
+.ls-seq {
+  display: flex; flex-wrap: wrap; align-items: center; justify-content: center;
+  gap: 5px; max-width: 320px; flex-shrink: 0;
+}
+.ls-seq-step {
+  font-family: 'JetBrains Mono', monospace; font-size: 11px; font-weight: 700;
+  padding: 4px 8px; border-radius: 7px;
+  background: var(--lv-surface); color: var(--lv-txt3); white-space: nowrap;
+}
+.ls-seq-step.k-rest { color: var(--lv-rest); }
+.ls-seq-step.done { opacity: .45; }
+.ls-seq-step.on {
+  background: var(--lv-gold); color: #14213D;
+  box-shadow: 0 0 0 2px var(--lv-gold-hot);
+}
+.ls-seq-arrow { font-size: 10px; color: var(--lv-txt3); }
+
 /* ── §12 · consigne de coaching. Absente = aucun espace consommé. ── */
 .ls-cue {
   max-width: 320px; flex-shrink: 0;
@@ -20658,7 +20676,15 @@ const catData={echauf:[{"name":"Activation neuromusculaire","diff":"easy","muscl
 // ════════════════════════════════════════════════════════════════════════════
 var PROGRAMS_V2 = (function(){
   // Helper compact : exercice = {n: nom, s: séries, r: reps/durée, rest: repos, note}
-  function e(n, s, r, rest, note) { return {n:n, s:s||'-', r:r||'-', rest:rest||'-', note:note||''}; }
+  // meta : méthode d'entraînement structurée, optionnelle.
+  //   e('Squat','4','5 reps','2 mn','', { id:'eccentric', tempoDown:5 })
+  // Absente → l'exercice est classique, ou sa méthode est déduite du texte
+  // comme avant. Aucune séance existante n'a besoin d'être migrée.
+  function e(n, s, r, rest, note, meta) {
+    var o = {n:n, s:s||'-', r:r||'-', rest:rest||'-', note:note||''};
+    if (meta) o.method = meta;
+    return o;
+  }
   // Helper jour-semaine : d=label, s=clé session ou 'rest' ou 'opt'
   function d(label, sessKey) { return {d:label, s:sessKey}; }
 
@@ -38433,8 +38459,131 @@ window._lsCloseTechniqueHelp = function() {
 // Les 8 modes d'affichage. Le doc de refonte en prévoyait 5 ; l'audit des
 // 710 lignes réelles en a révélé 3 de plus (complexe / intervalle /
 // validation) qui, sans mode dédié, retombaient dans le gabarit séries-reps.
+// ═══════════════════════════════════════════════════════════════════════════
+// AH_METHODS — REGISTRE CENTRAL DES MÉTHODES D'ENTRAÎNEMENT
+// ───────────────────────────────────────────────────────────────────────────
+// Une méthode = une définition = une logique d'exécution. Les programmes, le
+// Workout Builder et Titan décrivent ; ce registre définit ; l'écran live
+// exécute. Aucun des trois ne réimplémente une méthode de son côté.
+//
+// Trois axes indépendants, qu'il ne faut pas mélanger :
+//   EXÉCUTION  comment on mesure l'effort   → reps, durée, distance… (LS_MODES)
+//   MÉTHODE    comment on organise l'effort → ce registre
+//   STRUCTURE  comment on organise la séance → split, phase, bloc (hors moteur)
+//
+// `expand(cfg)` est la clé de l'extensibilité : chaque méthode se réduit à une
+// SÉQUENCE d'étapes que l'écran sait déjà jouer (un compteur, un décompte, un
+// repos). Le live n'apprend pas sept méthodes — il apprend à jouer une
+// séquence. Ajouter EMOM ou AMRAP plus tard, c'est une entrée de plus ici,
+// pas une branche de plus dans le rendu.
+//
+// `fields` pilote l'interface du Builder : chaque méthode déclare les seuls
+// paramètres qui la concernent, l'écran n'affiche que ceux-là.
+var AH_METHODS = {
+  classic: {
+    id: 'classic', label: 'Classique',
+    fields: ['sets', 'reps', 'rest'],
+    cue: ''
+  },
+  isometric: {
+    id: 'isometric', label: 'Isométrie',
+    fields: ['sets', 'duration', 'rest'],
+    forceExecution: 'duree',
+    cue: 'Tiens la position. Respire calmement.'
+  },
+  eccentric: {
+    id: 'eccentric', label: 'Excentrique',
+    fields: ['sets', 'reps', 'tempoDown', 'rest'],
+    cue: 'Contrôle la descente. C\'est elle qui fait le travail.'
+  },
+  rest_pause: {
+    id: 'rest_pause', label: 'Rest-pause',
+    fields: ['reps', 'microRest', 'blocks'],
+    cue: 'Va au bout, courte pause, repars.',
+    expand: function (c) {
+      var reps = _ahNum(c.reps), micro = _ahNum(c.microRest) || 15;
+      var blocks = Array.isArray(c.blocks) ? c.blocks : [];
+      if (!reps) return null;
+      var out = [{ kind: 'reps', reps: reps }];
+      blocks.forEach(function (b) {
+        var n = _ahNum(b);
+        if (!n) return;
+        out.push({ kind: 'rest', sec: micro }, { kind: 'reps', reps: n });
+      });
+      return out.length > 1 ? out : null;
+    }
+  },
+  drop_set: {
+    id: 'drop_set', label: 'Drop set',
+    fields: ['drops'],
+    cue: 'Tu enchaînes sans repos, tu allèges, tu repars.',
+    expand: function (c) {
+      var drops = Array.isArray(c.drops) ? c.drops : [];
+      var out = [];
+      drops.forEach(function (d, i) {
+        var reps = _ahNum(d && d.reps);
+        if (!reps) return;
+        if (i > 0) out.push({ kind: 'drop', load: _ahNum(d.load) });
+        out.push({ kind: 'reps', reps: reps, load: _ahNum(d && d.load) });
+      });
+      return out.length ? out : null;
+    }
+  },
+  superset: {
+    id: 'superset', label: 'Superset',
+    fields: ['rest'], block: true,
+    cue: 'Enchaîne sans repos avec l\'exercice suivant.'
+  },
+  circuit: {
+    id: 'circuit', label: 'Circuit',
+    fields: ['rounds', 'rest'], block: true,
+    cue: 'Enchaîne proprement, sans te précipiter.'
+  }
+};
+
+function _ahNum(v) {
+  if (v == null) return null;
+  var n = parseFloat(String(v).replace(',', '.'));
+  return isFinite(n) && n > 0 ? n : null;
+}
+
+// Résout la méthode d'un exercice. La donnée structurée fait autorité ; à
+// défaut on retombe sur la détection textuelle qui existait déjà, pour que
+// les 826 exercices actuels gardent exactement le comportement qu'ils ont.
+var LS_TEXT_TO_METHOD = {
+  isometrie: 'isometric', 'stato-dynamique': 'isometric',
+  cluster: 'rest_pause', circuit: 'circuit',
+  superset: 'superset', 'bi-set': 'superset'
+};
+function _ahResolveMethod(ex) {
+  var raw = ex && ex.method;
+  if (typeof raw === 'string') raw = { id: raw };
+  var id = raw && raw.id;
+  if (!id || !AH_METHODS[id]) {
+    // Pas de méthode déclarée : on lit le texte comme avant.
+    var tech = _lsDetectTechnique(ex);
+    id = LS_TEXT_TO_METHOD[tech] || null;
+    if (!id && /excentri/i.test(String((ex && ex.n) || '') + ' ' + String((ex && ex.note) || ''))) {
+      id = 'eccentric';
+    }
+    if (!id) id = 'classic';
+    raw = raw || {};
+  }
+  var def = AH_METHODS[id];
+  var cfg = {};
+  Object.keys(raw || {}).forEach(function (k) { if (k !== 'id') cfg[k] = raw[k]; });
+  var steps = null;
+  if (typeof def.expand === 'function') {
+    try { steps = def.expand(cfg); } catch (e) { steps = null; }
+  }
+  return { id: id, def: def, config: cfg, steps: steps, declared: !!(ex && ex.method) };
+}
+window.AH_METHODS = AH_METHODS;
+window._ahResolveMethod = _ahResolveMethod;
+
 var LS_MODES = ['duree','duree_par_cote','echec','reps','reps_par_cote',
-                'distance','bloc_libre','complexe','intervalle','validation','score'];
+                'distance','bloc_libre','complexe','intervalle','validation','score',
+                'sequence'];
 
 // Aucune technique ne porte plus de tag : seule la STRUCTURE en porte un
 // (CIRCUIT · TOUR x/y). "Cluster set", "bi-set", "isométrie" décrivent la
@@ -38720,7 +38869,13 @@ function _lsNormalizeExo(ex, idx, exos, circuitMap) {
   var nl = nom.toLowerCase(), pl = precision.toLowerCase();
   if (precision && (nl.indexOf(pl) > -1 || pl.indexOf(nl) > -1)) precision = '';
 
+  // La méthode est résolue AVANT le type d'exécution : une isométrie
+  // déclarée impose un chrono, quelle que soit la forme du texte, et une
+  // méthode à séquence (rest-pause, drop set) impose le mode sequence.
+  var method = _ahResolveMethod(ex);
   var metrique = _lsDetectMetrique(ex);
+  if (method.steps && method.steps.length) metrique = 'sequence';
+  else if (method.def.forceExecution && method.declared) metrique = method.def.forceExecution;
   var valeur = _lsParseValeur(ex.r);
   var series = _lsSeriesInfo(ex);
   var repos = _lsParseRest(ex.rest);
@@ -38738,9 +38893,12 @@ function _lsNormalizeExo(ex, idx, exos, circuitMap) {
     series: series,
     repos: repos,
     technique: tech,
+    method: method,
     circuit: circuit,
     videoId: vid,
-    consigne: _lsCoachingCue(ex, tech, precision),
+    tempo: (method.id === 'eccentric' && _ahNum(method.config.tempoDown))
+      ? { down: _ahNum(method.config.tempoDown) } : null,
+    consigne: _lsCoachingCue(ex, tech, precision) || (method.declared ? method.def.cue : ''),
     raw: ex
   };
 }
@@ -38919,7 +39077,39 @@ function _lsRenderMode(vm) {
         +   (vm.charge ? _lsStepperHtml('load', 'Kg', mb.load, 2.5) : '')
         + '</div>'
         + _lsRpeBlock(mb.rpe);
+      if (vm.tempo && vm.tempo.down) {
+        h += '<div class="ls-tempo">' + vm.tempo.down + ' s de descente par répétition</div>';
+      }
       if (vm.charge && mb.best > 0 && mb.load > mb.best) h += '<div class="ls-prflag">🔥 Nouveau record</div>';
+      break;
+    }
+
+    // ── MODE SÉQUENCE — rest-pause, drop set, et toute méthode à étapes ──
+    case 'sequence': {
+      var steps = vm.method.steps || [];
+      if (!_LS.sq || _LS.sq.exo !== vm.nom) _LS.sq = { exo: vm.nom, i: 0 };
+      if (_LS.sq.i >= steps.length) _LS.sq.i = 0;
+      var cur = steps[_LS.sq.i] || {};
+      h = '<div class="ls-mode-kicker">' + _lsEsc(vm.method.def.label)
+        + (vm.series.n > 1 ? ' · série <b>' + _LS.setNum + '</b> / ' + (vm.series.label || vm.series.n) : '')
+        + '</div>'
+        + '<div class="ls-seq">' + steps.map(function (st, i) {
+            var cls = i < _LS.sq.i ? ' done' : (i === _LS.sq.i ? ' on' : '');
+            var lbl = st.kind === 'rest' ? _lsFmt(st.sec)
+                    : st.kind === 'drop' ? 'Allège'
+                    : st.reps + (st.load ? ' × ' + st.load + ' kg' : '');
+            return '<span class="ls-seq-step' + cls + ' k-' + st.kind + '">' + _lsEsc(lbl) + '</span>';
+          }).join('<span class="ls-seq-arrow">→</span>') + '</div>';
+      if (cur.kind === 'rest') {
+        h += _lsTimerBlock(_LS.tmr && _LS.tmr.total ? _LS.tmr.sec : cur.sec)
+           + '<div class="ls-mode-hint">Récup courte — repars dès que ça sonne.</div>';
+      } else if (cur.kind === 'drop') {
+        h += '<div class="ls-big ls-big-sm">Allège</div>'
+           + '<div class="ls-big-unit">' + (cur.load ? 'passe à ' + cur.load + ' kg' : 'baisse la charge') + '</div>';
+      } else {
+        h += '<div class="ls-big">' + _lsEsc(String(cur.reps)) + '</div>'
+           + '<div class="ls-big-unit">reps' + (cur.load ? ' · ' + cur.load + ' kg' : '') + '</div>';
+      }
       break;
     }
 
@@ -39252,6 +39442,14 @@ function _lsPrimaryLabel(vm) {
       if (_LS.cx < steps.length - 1) return '→ Étape suivante';
       return endsSession ? '✓ Terminer la séance' : '✓ Valider le tour';
     }
+    case 'sequence': {
+      var st = (vm.method.steps || [])[(_LS.sq && _LS.sq.i) || 0] || {};
+      if (st.kind === 'rest') return 'Passer la récup';
+      if (st.kind === 'drop') return '✓ Charge allégée';
+      var last = ((_LS.sq && _LS.sq.i) || 0) >= (vm.method.steps || []).length - 1;
+      if (last) return endsSession ? '✓ Terminer la séance' : '✓ Série terminée';
+      return '✓ ' + st.reps + ' reps faites';
+    }
     case 'score':
       return endsSession ? '✓ Terminer la séance' : '✓ Score noté';
     case 'validation':
@@ -39348,6 +39546,30 @@ window._lsPrimaryAction = function () {
       return;
     }
 
+    case 'sequence': {
+      var steps = vm.method.steps || [];
+      var i = (_LS.sq && _LS.sq.i) || 0;
+      var cur = steps[i] || {};
+      if (cur.kind === 'rest') { _lsTimerStop(); _lsSeqNext(vm); return; }
+      if (i >= steps.length - 1) {
+        // Dernière étape : on enregistre le total et on clôt la série.
+        var tot = steps.reduce(function (a, st) { return a + (st.kind === 'reps' ? (st.reps || 0) : 0); }, 0);
+        if (tot > 0) {
+          _lsQuickLog(vm.nom, { reps: tot }, 'charge', 0, {
+            id: vm.method.id,
+            blocks: steps.filter(function (st) { return st.kind === 'reps'; })
+                         .map(function (st) { return st.reps; }),
+            config: vm.method.config
+          });
+        }
+        _LS.sq = null;
+        _lsDoneSet();
+        return;
+      }
+      _lsSeqNext(vm);
+      return;
+    }
+
     case 'score': {
       if (_LS.mb && _LS.mb.reps > 0) {
         _lsQuickLog(vm.nom, { reps: _LS.mb.reps }, 'charge', 0);
@@ -39439,9 +39661,27 @@ window._lsSprintStop = function () {
 };
 window._lsSkipBlock = function () { _lsTimerStop(); _lsNextEx(); };
 
+// Avance d'une étape dans une séquence et relance le rendu du mode.
+function _lsSeqNext(vm) {
+  _lsTimerStop();
+  _LS.sq = _LS.sq || { exo: vm.nom, i: 0 };
+  _LS.sq.i++;
+  _lsTimerReset();
+  _lsRenderMode(vm);
+  _lsPaintPrimary();
+  try { if (navigator.vibrate) navigator.vibrate(20); } catch (e) {}
+  // La micro-récup se décompte d'elle-même et enchaîne : c'est le moteur
+  // qui joue la méthode, pas l'athlète qui la pilote.
+  var nxt = (vm.method.steps || [])[_LS.sq.i];
+  if (nxt && nxt.kind === 'rest') {
+    _lsTimerStart(nxt.sec, 'down', function () { _lsSeqNext(vm); });
+    _lsPaintPrimary();
+  }
+}
+
 // Écriture d'une performance — même clé, même format que le tracker manuel,
 // donc records / progression / contexte Titan en profitent sans code en plus.
-function _lsQuickLog(nom, essai, method, rpe) {
+function _lsQuickLog(nom, essai, method, rpe, training) {
   try {
     if (!nom || !essai) return;
     var today = new Date().toISOString().slice(0, 10);
@@ -39457,6 +39697,7 @@ function _lsQuickLog(nom, essai, method, rpe) {
     if (found) {
       found.essais = (found.essais || []).concat([essai]);
       if (rpe > 0) found.rpe = rpe;
+      if (training) found.training = training;
       found.createdAt = Date.now();
     } else {
       hist.push({
@@ -39467,6 +39708,7 @@ function _lsQuickLog(nom, essai, method, rpe) {
         rpe: rpe > 0 ? rpe : 0,
         date: today, createdAt: Date.now(),
         source: 'live_session',
+        training: training || null,
         sessName: _LS.sessName || '', progKey: _LS.progKey || ''
       });
     }
@@ -39631,7 +39873,7 @@ function _lsNextEx() {
   _lsTimerStop();
   _LS.restActive = false;
   _LS._pendingAction = null;
-  _LS.side = null; _LS.cx = 0; _LS.cxExo = null; _LS.iv = null; _LS.mb = null; _LS.sp = null;
+  _LS.side = null; _LS.cx = 0; _LS.cxExo = null; _LS.iv = null; _LS.mb = null; _LS.sp = null; _LS.sq = null;
   if (_LS.idx < _LS.exos.length - 1) {
     _LS.idx++;
     _LS.setNum = 1;
@@ -39647,7 +39889,7 @@ function _lsPrevEx() {
   _lsTimerStop();
   _LS.restActive = false;
   _LS._pendingAction = null;
-  _LS.side = null; _LS.cx = 0; _LS.cxExo = null; _LS.iv = null; _LS.mb = null; _LS.sp = null;
+  _LS.side = null; _LS.cx = 0; _LS.cxExo = null; _LS.iv = null; _LS.mb = null; _LS.sp = null; _LS.sq = null;
   if (_LS.idx > 0) {
     _LS.idx--;
     _LS.setNum = 1;

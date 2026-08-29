@@ -14,7 +14,7 @@ The app is the digital companion of the book *Les Secrets de la Détente Vertica
 
 - **Hosting**: Netlify (`netlify.toml` SPA-rewrites everything to `/index.html`). No build command; the file is served as-is. Production URL: `athletikhub.netlify.app`.
 - **PWA**: two Service Workers —
-  - `sw.js` (cache-first for local assets, network-first for externals) + `manifest.json`. Cache name is `athletik-v268` — bump it when shipping CSS/HTML that must invalidate.
+  - `sw.js` (cache-first for local assets, network-first for externals) + `manifest.json`. Cache name is `athletik-v269` — bump it when shipping CSS/HTML that must invalidate.
   - `firebase-messaging-sw.js` (root) — receives background push notifications (FCM).
 - **No linter, no build**. Validate changes by opening `index.html` in a browser (mobile-first, Android Chrome is the target). Before committing, sanity-check JS syntax by parsing the non-module `<script>` blocks with `node -e` (see Coding conventions).
 - **Tests**: `for f in scripts/test-*.js; do node "$f"; done` — 17 suites, ~636 assertions, pure
@@ -121,6 +121,17 @@ completedPrograms, fcmToken, accessTier`.
     circuitMap)` (fonction pure) en dérive le modèle d'affichage. Helpers : `_lsDetectMetrique`,
     `_lsParseValeur`, `_lsSeriesInfo`, `_lsResolveVarSeries`, `_lsCircuitMap`, `_lsComplexSteps`,
     `_lsHasCharge`.
+  - **`AH_METHODS` — registre central des méthodes d'entraînement.** Une méthode = une définition
+    = une logique d'exécution, partagée par les programmes, le Builder, Titan et l'écran live.
+    Trois axes qu'il ne faut **pas** mélanger : *exécution* (comment on mesure — `LS_MODES`),
+    *méthode* (comment on organise l'effort — ce registre), *structure* (split, phase, bloc —
+    hors moteur). Chaque méthode déclare `fields` (pilote l'UI du Builder) et, si elle est
+    séquentielle, `expand(cfg)` qui la **réduit à une suite d'étapes** que l'écran sait déjà
+    jouer. Ajouter EMOM ou AMRAP = une entrée de plus dans le registre, **aucune branche de plus
+    dans le rendu**.
+  - **La méthode se déclare en 6ᵉ argument de `e()`** : `e('Squat','4','5 reps','2 mn','',
+    { id:'eccentric', tempoDown:5 })`. Absente → `_ahResolveMethod()` retombe sur la détection
+    textuelle d'avant, donc **aucune séance existante n'a besoin d'être migrée**.
   - **8 modes** rendus par `_lsRenderMode(vm)` dans `#lsMode` : `duree`, `duree_par_cote`, `echec`
     (chrono montant), `reps` / `reps_par_cote` (steppers REPS + RPE, colonne KG **seulement si**
     `_lsHasCharge`), `distance` (chrono manuel au centième), `bloc_libre`, `complexe`
@@ -175,9 +186,9 @@ completedPrograms, fcmToken, accessTier`.
     La saisie vit **dans** le mode reps, plus derrière un lien replié.
   - `_lsShowComplete()` → `_seFbOpen` / `_eaOpenFeedback` → `_lsFinalizeSession` →
     `_recordSessionCompletion` (80% des séances attendues → `programsDone++`).
-  - **Tests** : `scripts/test-live-screen.js` (140, les 710 exercices normalisés),
+  - **Tests** : `scripts/test-live-screen.js` (168, les 710 exercices normalisés),
     `scripts/test-live-log.js` (38, le chemin d'écriture jusqu'au prompt Titan) et
-    `scripts/test-live-layout.js` (188, vrai Chromium en 375×667 et 320×568 : zéro scroll,
+    `scripts/test-live-layout.js` (204, vrai Chromium en 375×667 et 320×568 : zéro scroll,
     contraste AA calculé, parcours complet, et les 10 acquis de la V1 rejoués un par un —
     Playwright n'est volontairement pas dans `package.json`, `npm i -D playwright --no-save`).
 - **Workout Builder**: `pgBuilder` page (3e sous-onglet de `vTrain`, à côté de Programmes/Librairie). Locked until `programsDone >= 2` (`BUILDER_UNLOCK_PROGRAMS`) OR VIP/MASTER tier OR compte fondateur (`BUILDER_FOUNDER_EMAILS` / `_builderIsDev()`). `_builderCheckUnlock()`. **Piloté par Titan** : l'utilisateur exprime une intention (objectif/durée/matériel/état via chips + phrase libre/vocal `builderToggleMic`), `builderGenerate()` POST `/.netlify/functions/titan` avec `mode:'builder'` + la librairie compacte (`_builderLibraryPayload`) → Titan renvoie une séance **JSON structurée** (blocs échauffement→principal→secondaire→finisher→retour au calme) programmée selon la méthode Athletic Hub (`BUILDER_SYSTEM` côté serveur). `_builderReconcile()` rattache vidéos/catégories depuis `catData`. `builderStartGenerated()` lance via `launchSession` (marquée `_LS.builderMeta`). En fin de séance, `_lsShowComplete` injecte un panneau de ressenti (`_builderInjectFeedback`) et **sauvegarde dans Firestore `users/{uid}/builderSessions`** (cloud, pas localStorage) — `_builderSaveSession`/`_builderSaveFeedback`.
