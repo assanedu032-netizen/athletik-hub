@@ -8683,7 +8683,7 @@ window.tiResetOnEnter = function(){ window.tiShowStep(1); };
 
   <!-- Test push notif (n'apparaît qu'après activation notif + FCM token) -->
   <div class="setting-item" onclick="sendTestNotif()">
-    <div class="si-left"><div class="si-icon">🧪</div><div><div class="si-text">Envoyer un test</div><div class="si-sub">Vérifie que les push notifs arrivent</div></div></div>
+    <div class="si-left"><div class="si-icon">🧪</div><div><div class="si-text">Envoyer un test</div><div class="si-sub" id="notifTestSub">Vérifie que les push notifs arrivent</div></div></div>
     <div class="si-right">→</div>
   </div>
 
@@ -26742,6 +26742,39 @@ function setMode(el, mode) {
 // Volontairement simple et non alarmant : l'app fonctionne sans le push.
 var FCM_UNAVAILABLE_MSG = 'Les rappels ne sont pas encore disponibles. Vérifie la configuration Firebase.';
 
+// La raison exacte d'un échec push n'existait que dans console.warn — invisible
+// sur un téléphone, donc l'utilisateur testait à l'aveugle. _fcmDiag() la ramène
+// à l'écran : toast court + ligne persistante sous « Envoyer un test ».
+var FCM_SERVER_ERRORS = {
+  service_account_missing_or_invalid:
+    'Serveur : FIREBASE_SERVICE_ACCOUNT absente ou invalide sur Netlify.',
+  invalid_json:      'Serveur : requête mal formée.',
+  missing_token:     'Aucun token push envoyé — réactive les notifications.',
+  fcm_rejected:      'Firebase a refusé l\'envoi (token périmé ?). Désactive puis réactive les notifications.',
+  network_or_auth_error:
+    'Serveur : Firebase injoignable ou compte de service refusé.'
+};
+function _fcmEsc(t) {
+  return String(t == null ? '' : t)
+    .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+}
+// reason : texte précis (client ou serveur). Vide → message générique.
+function _fcmDiag(reason) {
+  var msg = (reason && String(reason).trim()) || FCM_UNAVAILABLE_MSG;
+  var sub = document.getElementById('notifTestSub');
+  if (sub) {
+    sub.innerHTML = _fcmEsc(msg);
+    sub.style.color = '#E5484D';
+  }
+  if (typeof showToast === 'function') showToast(_fcmEsc(msg), 'err');
+  console.warn('[FCM]', msg);
+}
+function _fcmDiagOk(msg) {
+  var sub = document.getElementById('notifTestSub');
+  if (sub) { sub.innerHTML = _fcmEsc(msg); sub.style.color = ''; }
+}
+window._fcmDiag = _fcmDiag;
+
 // ─── Préférences notif par catégorie ───
 // Stockage dans ah_profile.notifPrefs (sync Firestore via FB_SYNC_KEYS).
 // Lu par session-reminders.js / weekly-engagement.js pour respecter le choix.
@@ -26801,7 +26834,7 @@ async function toggleNotif() {
       var tk1 = await _registerFCMToken();
       if (typeof showToast === 'function') {
         if (tk1) showToast('Notifications activées ✅', 'success');
-        else showToast(FCM_UNAVAILABLE_MSG, 'info');
+        else _fcmDiag(window._fcmLastError);
       }
     } else {
       _disableTitanReminders();
@@ -26835,7 +26868,7 @@ async function toggleNotif() {
       var tk2 = await _registerFCMToken();
       if (typeof showToast === 'function') {
         if (tk2) showToast('Notifications activées ✅', 'success');
-        else showToast(FCM_UNAVAILABLE_MSG, 'info');
+        else _fcmDiag(window._fcmLastError);
       }
     } else {
       notifOn = false;
@@ -26924,15 +26957,24 @@ window.sendTestNotif = async function() {
   // Pas de token stocké : on tente de l'enregistrer maintenant (le bouton
   // Notifications affiche peut-être "activé" sans que le token soit prêt).
   if (!prof.fcmToken) {
-    if (!('Notification' in window) || Notification.permission !== 'granted') {
-      if (typeof showToast === 'function') showToast('Autorise d\'abord les notifications (bouton ci-dessus).', 'info');
+    if (!('Notification' in window)) {
+      _fcmDiag('Ce navigateur ne gère pas les notifications. Installe l\'app (Ajouter à l\'écran d\'accueil) et réessaie depuis Chrome.');
+      return;
+    }
+    // « denied » ne se répare pas avec le bouton du dessus : le navigateur a
+    // bloqué le site, il faut passer par ses réglages.
+    if (Notification.permission === 'denied') {
+      _fcmDiag('Notifications BLOQUÉES par le navigateur. Cadenas à gauche de l\'adresse → Autorisations → Notifications → Autoriser, puis recharge.');
+      return;
+    }
+    if (Notification.permission !== 'granted') {
+      _fcmDiag('Autorise d\'abord les notifications avec le bouton ci-dessus.');
       return;
     }
     if (typeof showToast === 'function') showToast('Activation du push en cours…', 'info');
     var tok = await _registerFCMToken();
     if (!tok) {
-      console.warn('Test notif — push indisponible :', window._fcmLastError);
-      if (typeof showToast === 'function') showToast(FCM_UNAVAILABLE_MSG, 'info');
+      _fcmDiag(window._fcmLastError);
       return;
     }
     try { prof = JSON.parse(localStorage.getItem('ah_profile') || '{}'); } catch(e) {}
@@ -26947,12 +26989,22 @@ window.sendTestNotif = async function() {
         body: 'Si tu vois cette notif, le push background est bien actif.'
       })
     });
-    var j = await r.json();
+    var j = {};
+    try { j = await r.json(); } catch(e) {}
     if (j.ok) {
       if (typeof showToast === 'function') showToast('Notif envoyée. Vérifie le centre de notif du téléphone.', 'ok');
+      _fcmDiagOk('Envoyée à ' + new Date().toLocaleTimeString('fr-FR').slice(0,5) +
+        ' — si rien n\'arrive, le blocage est côté téléphone.');
     } else {
-      console.warn('Test notif — send-notif a échoué :', j.error);
-      if (typeof showToast === 'function') showToast(FCM_UNAVAILABLE_MSG, 'info');
+      // Le code d'erreur du serveur est traduit ; s'il est inconnu on l'affiche
+      // brut plutôt que de le remplacer par un message générique inutile.
+      var srv = FCM_SERVER_ERRORS[j.error] ||
+        ('Serveur : ' + (j.error || ('HTTP ' + r.status)));
+      if (j.error === 'fcm_rejected' && j.fcm && j.fcm.error && j.fcm.error.status) {
+        srv += ' [' + j.fcm.error.status + ']';
+      }
+      if (j.message) console.warn('[FCM] détail serveur :', j.message);
+      _fcmDiag(srv);
     }
   } catch(e) {
     console.warn('Test notif — réseau indisponible :', e);
