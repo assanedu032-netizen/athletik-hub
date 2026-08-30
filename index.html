@@ -38750,6 +38750,20 @@ var LS_JARGON = /\b(cluster(\s+set)?|circuit|superset|bi-?set)\b/ig;
 
 function _lsHasSide(str) { return /\/\s*(jambe|jbe|c[oô]t[eé]|bras|main|pied|[eé]paule)/i.test(str || ''); }
 
+// Décolle l'unité du nombre : "30s" → "30 s", "1mn" → "1 mn", "10m" → "10 m".
+// Toutes les détections d'unité s'appuient sur une frontière de mot (\bs\b),
+// et il n'y en a AUCUNE entre un chiffre et la lettre qui le suit — les deux
+// sont des caractères de mot. Conséquence : "30 s" était lu comme une durée,
+// "30s" tombait dans le mode « validation » (« Coche quand c'est fait »), sans
+// chronomètre. Les programmes du livre écrivent toujours "30 s", d'où
+// l'invisibilité du défaut ; le Workout Builder, lui, produit "30s" — c'est
+// la forme que le prompt serveur demande à Titan.
+// Normalisation À LA LECTURE uniquement : la donnée d'origine n'est pas
+// réécrite, et `txt` continue d'afficher la prescription telle qu'elle est.
+function _lsSpaceUnits(txt) {
+  return String(txt == null ? '' : txt).replace(/(\d)([a-zA-Zà-üÀ-Ü])/g, '$1 $2');
+}
+
 // Analyse la prescription (ex.r) en valeur exploitable.
 // "30-60 s" → {min:30,max:60,unite:'s'} | "12 reps (6/côté)" → {min:12,perSide:6}
 // "15 s → 90 s" → {min:15,max:90,progressif:true} | "10 mn minimum" → {floor:true}
@@ -38765,7 +38779,7 @@ function _lsParseValeur(raw) {
     body = r.replace(paren[0], ' ');
   }
   var side = _lsHasSide(r);
-  body = body.replace(/\/\s*(jambe|jbe|c[oô]t[eé]|bras|main|pied|[eé]paule)s?/ig, ' ');
+  body = _lsSpaceUnits(body.replace(/\/\s*(jambe|jbe|c[oô]t[eé]|bras|main|pied|[eé]paule)s?/ig, ' '));
   var unite = null;
   if (/\b(mn|min|minutes?)\b/i.test(body)) unite = 'mn';
   else if (/\b(s|sec|secondes?)\b/i.test(body)) unite = 's';
@@ -38800,7 +38814,7 @@ function _lsDetectMetrique(ex) {
   var r = String(ex.r || '').trim();
   var n = String(ex.n || '');
   var s = String(ex.s || '').trim();
-  var low = r.toLowerCase();
+  var low = _lsSpaceUnits(r.toLowerCase());
 
   // Les challenges du livre passent avant tout : "Suivre la chanson" est une
   // consigne, mais le score qui en sort est LA mesure de progression.
@@ -38832,6 +38846,14 @@ function _lsDetectMetrique(ex) {
     return _lsHasSide(r) ? 'duree_par_cote' : 'duree';
   }
   if (/reps?\b|r[ée]p[ée]titions?/i.test(low)) return _lsHasSide(r) ? 'reps_par_cote' : 'reps';
+  // Un nombre nu ("5", "8-10") avec une prescription derrière, c'est un nombre
+  // de répétitions. PROGRAMS_V2 écrit toujours l'unité ("5 reps") — aucun de
+  // ses 827 exercices n'est concerné — mais le Workout Builder produit "5",
+  // et l'athlète se retrouvait devant « Coche quand c'est fait » au lieu du
+  // compteur de reps.
+  if (/^\d+(?:[.,]\d+)?(?:\s*[-–—→]+\s*\d+(?:[.,]\d+)?)?$/.test(low)) {
+    return _lsHasSide(r) ? 'reps_par_cote' : 'reps';
+  }
   if (!r || r === '-') return 'bloc_libre';
   return 'validation';
 }
@@ -39030,9 +39052,13 @@ function _lsNormalizeExo(ex, idx, exos, circuitMap) {
   //   « Fente isométrique — 30 s / jambe » perdait son « par côté » ;
   //   « Fente isométrique — À L'ÉCHEC » devenait un compte à rebours au lieu
   //   d'un chrono montant, et l'athlète perdait sa mesure.
+  // `validation` est volontairement ABSENT de cette liste : ce n'est pas un
+  // type d'exécution choisi, c'est le seau « je n'ai pas su lire la ligne ».
+  // Une isométrie déclarée par Titan doit l'emporter dessus, sinon la méthode
+  // ne rattrape jamais une prescription mal formée.
   var COMPATIBLE = {
     duree: ['duree', 'duree_par_cote', 'echec', 'intervalle', 'bloc_libre',
-            'score', 'validation', 'complexe', 'distance']
+            'score', 'complexe', 'distance']
   };
   if (method.steps && method.steps.length) metrique = 'sequence';
   else if (method.def.forceExecution && method.declared) {
@@ -39069,6 +39095,7 @@ function _lsNormalizeExo(ex, idx, exos, circuitMap) {
 window._lsNormalizeExo = _lsNormalizeExo;
 window._lsDetectMetrique = _lsDetectMetrique;
 window._lsParseValeur = _lsParseValeur;
+window._lsSpaceUnits = _lsSpaceUnits;
 window._lsSeriesInfo = _lsSeriesInfo;
 window._lsCircuitMap = _lsCircuitMap;
 window._lsResolveVarSeries = _lsResolveVarSeries;

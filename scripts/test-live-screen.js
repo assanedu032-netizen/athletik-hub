@@ -35,7 +35,7 @@ for (; bj < html.length; bj++) {
 const PV = new Function('return (function(){' + html.slice(bi, bj).slice(1, -1) + '})();')();
 
 // ── Les vraies fonctions de normalisation, extraites du fichier ──
-const FNS = ['_lsHasSide', '_lsParseValeur', '_lsValeurSeconds', '_lsDetectMetrique',
+const FNS = ['_lsSpaceUnits', '_lsHasSide', '_lsParseValeur', '_lsValeurSeconds', '_lsDetectMetrique',
              '_lsHasCharge', '_lsResolveVarSeries', '_lsProgContext', '_lsSetCount',
              '_lsSeriesInfo', '_lsCircuitMap', '_lsComplexSteps', '_lsNormalizeExo',
              '_lsParseRest', '_lsDetectTechnique', '_lsTechniqueLabel',
@@ -560,6 +560,59 @@ console.log('\n=== RÈGLE 2 — CHAQUE ÉLÉMENT FAIT UN SEUL TRAVAIL ===\n');
   ok('prefers-reduced-motion respecté sur l\'écran live',
      /prefers-reduced-motion[\s\S]{0,120}#liveSession/.test(html));
   ok('focus clavier visible', /#liveSession button:focus-visible/.test(html));
+}
+
+console.log('\n=== FORMAT DU WORKOUT BUILDER (unités collées) ===\n');
+{
+  // Le prompt serveur demande à Titan `"reps": "string (ex: 5, 30s, 10m, 2 min)"`.
+  // Ces formes ne viennent JAMAIS de PROGRAMS_V2, qui écrit toujours "30 s" et
+  // "5 reps" — d'où un défaut invisible pendant tout l'audit des 826 lignes :
+  // "30s" tombait en mode `validation` (« Coche quand c'est fait », sans
+  // chronomètre) et "5" aussi, alors que ce sont une durée et des répétitions.
+  const B = api();
+  const mode = (r, s) => B.lsNormalizeExo({ n: 'Iso ischio', r: r, s: s == null ? '3' : s, rest: '60s' }, 0, [], null).metrique;
+  const secs = (r) => { const vm = B.lsNormalizeExo({ n: 'X', r: r, s: '3', rest: '-' }, 0, [], null);
+                        return B.lsValeurSeconds(vm.valeur, false); };
+
+  ok('"30s" est une durée, pas une case à cocher', mode('30s') === 'duree', mode('30s'));
+  ok('"30s" vaut 30 secondes de chrono', secs('30s') === 30, String(secs('30s')));
+  ok('"45s" aussi', mode('45s') === 'duree', mode('45s'));
+  ok('"30sec" aussi', mode('30sec') === 'duree', mode('30sec'));
+  ok('"2min" est une durée', ['duree', 'bloc_libre'].indexOf(mode('2min')) > -1, mode('2min'));
+  ok('"2min" vaut 120 secondes', secs('2min') === 120, String(secs('2min')));
+  ok('"10m" reste une distance', mode('10m') === 'distance', mode('10m'));
+  ok('"12reps" est un compteur de reps', mode('12reps') === 'reps', mode('12reps'));
+  ok('"30s / jambe" garde le par-côté', mode('30s / jambe') === 'duree_par_cote', mode('30s / jambe'));
+  ok('un nombre nu ("5") est un nombre de reps', mode('5') === 'reps', mode('5'));
+  ok('une fourchette nue ("8-10") aussi', mode('8-10') === 'reps', mode('8-10'));
+
+  // La forme espacée du livre continue de donner exactement le même résultat.
+  ok('"30 s" inchangé', mode('30 s') === 'duree', mode('30 s'));
+  ok('"8 reps" inchangé', mode('8 reps') === 'reps', mode('8 reps'));
+  ok('"Check" reste une validation', mode('Check') === 'validation', mode('Check'));
+  ok('"16 h" (jeûne) reste une validation', mode('16 h') === 'validation', mode('16 h'));
+  ok('"5h" collé reste une validation', mode('5h') === 'validation', mode('5h'));
+
+  // Le texte affiché n'est pas réécrit : on normalise à la lecture seulement.
+  const vmRaw = B.lsNormalizeExo({ n: 'X', r: '30s', s: '3', rest: '-' }, 0, [], null);
+  ok('la prescription reste affichée telle quelle', vmRaw.valeur.txt === '30s', vmRaw.valeur.txt);
+
+  // Une méthode déclarée doit rattraper une ligne illisible : `validation`
+  // est le seau « je n'ai pas su lire », pas un type d'exécution choisi.
+  const iso = B.lsNormalizeExo(
+    { n: 'Iso ischio', r: 'tenir', s: '3', rest: '60s', method: { id: 'isometric', duration: 30 } },
+    0, [], null);
+  ok('une isométrie déclarée impose le chrono même sur un texte illisible',
+     iso.metrique === 'duree', iso.metrique);
+  // … mais elle n'écrase toujours pas un type d'exécution porté par le texte.
+  const isoSide = B.lsNormalizeExo(
+    { n: 'Fente isométrique', r: '30 s / jambe', s: '3', rest: '60s', method: { id: 'isometric', duration: 30 } },
+    0, [], null);
+  ok('… sans écraser le « par côté » du texte', isoSide.metrique === 'duree_par_cote', isoSide.metrique);
+  const isoEchec = B.lsNormalizeExo(
+    { n: 'Fente isométrique', r: 'À L\'ÉCHEC', s: '3', rest: '60s', method: { id: 'isometric' } },
+    0, [], null);
+  ok('… ni le chrono montant de « à l\'échec »', isoEchec.metrique === 'echec', isoEchec.metrique);
 }
 
 console.log('\n=== NON-RÉGRESSION ===\n');
