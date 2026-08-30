@@ -288,6 +288,27 @@ Style générique INTERDIT vs style Titan ATTENDU :
 - "Bienvenue !" → "T'es là. C'est déjà ça."
 
 ═══════════════════════════════
+FORME DES RÉPONSES
+═══════════════════════════════
+Ce que tu dis ne change pas. La façon dont tu le poses, si : l'athlète te
+lit sur un téléphone, souvent entre deux séries. Écris-lui comme un coach
+qui envoie un message, pas comme un rapport.
+
+- Un paragraphe = 1 à 3 phrases. Idée terminée → tu passes une ligne.
+- Jamais plus de 3 phrases collées d'affilée.
+- Plusieurs informations distinctes (les aliments d'un repas, des séries,
+  des étapes) : UNE PAR LIGNE, chacune sur son propre tiret. Jamais collées
+  dans la même phrase séparées par des points médians.
+- Le gras (**comme ceci**) souligne LE point important : une ou deux fois
+  par réponse, jamais plus. Une réponse entièrement en gras ne souligne
+  plus rien.
+- Pas de titres (#, ##, ###). Pas de tableaux. Pas de sections numérotées.
+- Un emoji peut aider à repérer une ligne dans une liste d'aliments ou
+  d'exercices. Rare, jamais décoratif.
+- Question courte → réponse courte. Tu n'ajoutes jamais une ligne pour
+  remplir : la longueur suit le sujet, pas l'inverse.
+
+═══════════════════════════════
 PHRASES D'ANCRAGE (extraites du livre d'Alassane)
 ═══════════════════════════════
 - "La motivation, c'est des conneries."
@@ -659,11 +680,41 @@ Schéma EXACT :
     {
       "titre": "Échauffement" | "Bloc principal" | "Bloc secondaire" | "Finisher" | "Retour au calme",
       "exos": [
-        { "n": "NOM EXACT d'un exercice de la LIBRAIRIE fournie", "sets": number, "reps": "string (ex: 5, 30s, 10m, 2 min)", "rest": "string (ex: 30s, 90s, 2min, -)", "note": "string courte ou vide" }
+        { "n": "NOM EXACT d'un exercice de la LIBRAIRIE fournie", "sets": number, "reps": "string (ex: 5, 30s, 10m, 2 min)", "rest": "string (ex: 30s, 90s, 2min, -)", "note": "string courte ou vide", "method": objet optionnel, voir MÉTHODES }
       ]
     }
   ]
 }
+
+═══════════════════════════════
+MÉTHODES D'ENTRAÎNEMENT
+═══════════════════════════════
+Le champ "method" est OPTIONNEL. Tu ne le mets que si la méthode sert
+réellement l'objectif de la séance — un exercice sans "method" est classique,
+et c'est le cas le plus fréquent. Ne mets JAMAIS une méthode pour faire riche.
+
+Tu ne peux utiliser QUE ces méthodes, avec QUE ces paramètres. Toute autre
+forme sera retirée avant d'arriver à l'athlète :
+
+  { "id": "isometric",  "duration": 25 }
+      maintien d'une position. duration en SECONDES.
+  { "id": "eccentric",  "tempoDown": 5 }
+      descente contrôlée. tempoDown en SECONDES par répétition.
+  { "id": "rest_pause", "reps": 8, "microRest": 15, "blocks": [3, 2] }
+      série longue coupée : 8 reps, 15 s, 3 reps, 15 s, 2 reps.
+  { "id": "drop_set",   "drops": [{"reps":12,"load":60},{"reps":10,"load":45}] }
+      on allège sans repos. load en KG, au moins 2 paliers.
+  { "id": "superset" }   enchaîné avec l'exercice suivant, repos après les deux.
+  { "id": "circuit", "rounds": 3 }   enchaînement de plusieurs exercices.
+
+Règles d'emploi :
+- Le champ "reps" reste rempli normalement : la méthode ne le remplace pas.
+- Isométrie et rest-pause fatiguent beaucoup : au maximum un ou deux
+  exercices par séance, jamais sur un athlète fatigué ou débutant.
+- Drop set et rest-pause supposent une charge : jamais au poids du corps seul.
+- Pas de méthode sur l'échauffement ni sur le retour au calme.
+- N'écris jamais le nom de la méthode dans "n" : "Développé couché", pas
+  "Développé couché rest-pause". La méthode est une donnée, pas un libellé.
 
 ═══════════════════════════════
 CONTRAINTE LIBRAIRIE (ABSOLUE)
@@ -732,6 +783,51 @@ function buildBuilderUserMessage(intent, library) {
   return parts.join('\n');
 }
 
+// Miroir du registre AH_METHODS côté client. Titan peut prescrire une
+// méthode, mais pas en inventer une : tout ce qui n'est pas ici est retiré
+// de la sortie avant de l'envoyer à l'app. Les règles de prescription
+// restent maîtrisées par le système, pas par le modèle.
+const BUILDER_METHODS = {
+  classic:    [],
+  isometric:  ['duration'],
+  eccentric:  ['tempoDown'],
+  rest_pause: ['reps', 'microRest', 'blocks'],
+  drop_set:   ['drops'],
+  superset:   [],
+  circuit:    ['rounds']
+};
+
+function sanitizeMethod(m) {
+  if (!m) return null;
+  const id = typeof m === 'string' ? m : m.id;
+  if (!id || !BUILDER_METHODS[id] || id === 'classic') return null;
+  const out = { id };
+  const num = (v) => { const n = parseFloat(v); return isFinite(n) && n > 0 ? n : null; };
+  BUILDER_METHODS[id].forEach((f) => {
+    const v = m[f];
+    if (v == null) return;
+    if (f === 'blocks') {
+      const a = (Array.isArray(v) ? v : []).map(num).filter(Boolean).slice(0, 6);
+      if (a.length) out.blocks = a;
+    } else if (f === 'drops') {
+      const a = (Array.isArray(v) ? v : []).map((d) => {
+        const reps = num(d && d.reps);
+        return reps ? { reps, load: num(d && d.load) || undefined } : null;
+      }).filter(Boolean).slice(0, 5);
+      if (a.length >= 2) out.drops = a;
+    } else {
+      const n = num(v);
+      if (n) out[f] = n;
+    }
+  });
+  // Une méthode à séquence sans ses paramètres ne vaut rien : on la retire
+  // plutôt que d'envoyer à l'app une prescription qu'elle ne peut pas jouer.
+  if (id === 'rest_pause' && !(out.reps && out.blocks)) return null;
+  if (id === 'drop_set' && !out.drops) return null;
+  if (id === 'isometric' && !out.duration) return null;
+  return out;
+}
+
 function parseWorkoutJson(text) {
   if (!text) return null;
   let s = String(text).trim();
@@ -744,6 +840,12 @@ function parseWorkoutJson(text) {
   try {
     const obj = JSON.parse(s);
     if (!obj || !Array.isArray(obj.blocs)) return null;
+    obj.blocs.forEach((b) => {
+      (b && Array.isArray(b.exos) ? b.exos : []).forEach((e) => {
+        const m = sanitizeMethod(e && e.method);
+        if (m) e.method = m; else if (e) delete e.method;
+      });
+    });
     return obj;
   } catch (e) {
     return null;
@@ -856,6 +958,48 @@ dis simplement que tu ne l'as pas enregistrée et propose comment l'obtenir.`);
   return L.join('\n');
 }
 
+// Morphologie, cibles et journal du jour. Sans cette section, Titan
+// redemandait le poids alors qu'il est saisi à l'onboarding, et estimait les
+// calories de tête alors que l'app en tient le compte exact.
+// Une ligne n'est écrite que si la donnée existe : jamais de "Non renseigné"
+// là où l'athlète a bien rempli, jamais de valeur inventée là où il n'a rien.
+function buildNutritionContext(n) {
+  if (!n) return '';
+  const L = [];
+  const morpho = [];
+  if (n.poids)  morpho.push(n.poids + ' kg');
+  if (n.taille) morpho.push(n.taille + ' cm');
+  if (n.age)    morpho.push(n.age + ' ans');
+  if (n.sexe)   morpho.push(n.sexe);
+  if (morpho.length) L.push('Morphologie : ' + morpho.join(' · '));
+  if (n.objectif) L.push('Objectif nutrition : ' + n.objectif);
+  if (n.cibles) {
+    const c = n.cibles;
+    L.push('Cibles quotidiennes : ' + c.kcal + ' kcal'
+      + (c.prot ? ' · ' + c.prot + 'g prot' : '')
+      + (c.gluc ? ' · ' + c.gluc + 'g gluc' : '')
+      + (c.lip  ? ' · ' + c.lip  + 'g lip'  : ''));
+  }
+  if (n.aujourdhui) {
+    const a = n.aujourdhui;
+    if (a.repas > 0) {
+      L.push("Aujourd'hui : " + a.repas + ' repas enregistré' + (a.repas > 1 ? 's' : '')
+        + ' — ' + a.kcal + ' kcal · ' + a.prot + 'g prot · ' + a.gluc + 'g gluc · ' + a.lip + 'g lip');
+      if (a.noms && a.noms.length) L.push('  ' + a.noms.join(', '));
+    } else {
+      L.push("Aujourd'hui : aucun repas enregistré dans le journal.");
+    }
+  }
+  if (n.moyenne7j) {
+    L.push('Moyenne sur ' + n.moyenne7j.jours + ' jours : ' + n.moyenne7j.kcal + ' kcal/jour');
+  }
+  if (!L.length) return '';
+  return '\n\nNUTRITION\n' + L.join('\n')
+    + "\nCes chiffres viennent du profil et du journal de l'athlète. Tu ne redemandes"
+    + "\njamais une donnée qui est écrite ici. Si une information manque et qu'elle"
+    + "\nte serait vraiment utile, tu la demandes une fois, sans insister.";
+}
+
 function buildAthleteContext(ctx) {
   ctx = ctx || {};
   return `PROFIL ATHLÈTE
@@ -868,7 +1012,7 @@ SAT complété : ${ctx.satDone ? 'Oui' : 'Non'}
 Score SAT : ${ctx.athScore != null ? ctx.athScore + '/100' : 'Non fait'}${ctx.vertJump != null ? ' — Détente : ' + ctx.vertJump + ' cm' : ''}
 Sport : ${ctx.sport || 'Non renseigné'}
 Objectif nutrition : ${ctx.nutriObj || 'Non renseigné'}
-Accès : ${ctx.accessTier || 'Essai gratuit'}`;
+Accès : ${ctx.accessTier || 'Essai gratuit'}` + buildNutritionContext(ctx.nutrition);
 }
 
 // ---------- RAG : index livre chargé une fois par instance chaude ----------

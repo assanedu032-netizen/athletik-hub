@@ -14,10 +14,10 @@ The app is the digital companion of the book *Les Secrets de la Détente Vertica
 
 - **Hosting**: Netlify (`netlify.toml` SPA-rewrites everything to `/index.html`). No build command; the file is served as-is. Production URL: `athletikhub.netlify.app`.
 - **PWA**: two Service Workers —
-  - `sw.js` (cache-first for local assets, network-first for externals) + `manifest.json`. Cache name is `athletik-v264` — bump it when shipping CSS/HTML that must invalidate.
+  - `sw.js` (cache-first for local assets, network-first for externals) + `manifest.json`. Cache name is `athletik-v271` — bump it when shipping CSS/HTML that must invalidate.
   - `firebase-messaging-sw.js` (root) — receives background push notifications (FCM).
 - **No linter, no build**. Validate changes by opening `index.html` in a browser (mobile-first, Android Chrome is the target). Before committing, sanity-check JS syntax by parsing the non-module `<script>` blocks with `node -e` (see Coding conventions).
-- **Tests**: `for f in scripts/test-*.js; do node "$f"; done` — 14 suites, ~480 assertions, pure
+- **Tests**: `for f in scripts/test-*.js; do node "$f"; done` — 18 suites, ~700 assertions, pure
   Node, zéro dépendance : chaque suite extrait les **vraies** fonctions d'`index.html` par
   équilibrage d'accolades et les rejoue contre des mocks. `scripts/test-live-layout.js` est la
   seule exception : elle ouvre un vrai Chromium (Playwright, hors `package.json`) pour mesurer la
@@ -121,6 +121,27 @@ completedPrograms, fcmToken, accessTier`.
     circuitMap)` (fonction pure) en dérive le modèle d'affichage. Helpers : `_lsDetectMetrique`,
     `_lsParseValeur`, `_lsSeriesInfo`, `_lsResolveVarSeries`, `_lsCircuitMap`, `_lsComplexSteps`,
     `_lsHasCharge`.
+  - **`AH_METHODS` — registre central des méthodes d'entraînement.** Une méthode = une définition
+    = une logique d'exécution, partagée par les programmes, le Builder, Titan et l'écran live.
+    Trois axes qu'il ne faut **pas** mélanger : *exécution* (comment on mesure — `LS_MODES`),
+    *méthode* (comment on organise l'effort — ce registre), *structure* (split, phase, bloc —
+    hors moteur). Chaque méthode déclare `fields` (pilote l'UI du Builder) et, si elle est
+    séquentielle, `expand(cfg)` qui la **réduit à une suite d'étapes** que l'écran sait déjà
+    jouer. Ajouter EMOM ou AMRAP = une entrée de plus dans le registre, **aucune branche de plus
+    dans le rendu**.
+  - **Titan peut prescrire une méthode, pas en inventer une.** `BUILDER_METHODS` (miroir serveur
+    du registre) + `sanitizeMethod()` retirent toute méthode ou tout paramètre hors schéma avant
+    que la séance n'atteigne l'app, et refusent une prescription incomplète (rest-pause sans
+    blocs, isométrie sans durée) — mieux vaut aucune méthode qu'une méthode injouable.
+  - **La méthode se déclare en 6ᵉ argument de `e()`** : `e('Squat','4','5 reps','2 mn','',
+    { id:'eccentric', tempoDown:5 })`. Absente → `_ahResolveMethod()` retombe sur la détection
+    textuelle d'avant, donc **aucune séance existante n'a besoin d'être migrée**.
+    **77 exercices déclarent aujourd'hui leur méthode** : 49 émis par le générateur depuis
+    `data/*.js` (se, tri, ep, vd) et 28 injectés dans `ea` depuis son champ `technique`.
+  - **Une méthode n'écrase jamais un type d'exécution compatible.** `forceExecution` ne s'applique
+    que si le texte n'en porte pas déjà un : sans cette nuance, « Fente isométrique — 30 s / jambe »
+    perdait son « par côté » et « — À L'ÉCHEC » devenait un compte à rebours au lieu d'un chrono
+    montant. La répartition des 826 exercices en modes est **inchangée** après structuration.
   - **8 modes** rendus par `_lsRenderMode(vm)` dans `#lsMode` : `duree`, `duree_par_cote`, `echec`
     (chrono montant), `reps` / `reps_par_cote` (steppers REPS + RPE, colonne KG **seulement si**
     `_lsHasCharge`), `distance` (chrono manuel au centième), `bloc_libre`, `complexe`
@@ -175,16 +196,31 @@ completedPrograms, fcmToken, accessTier`.
     La saisie vit **dans** le mode reps, plus derrière un lien replié.
   - `_lsShowComplete()` → `_seFbOpen` / `_eaOpenFeedback` → `_lsFinalizeSession` →
     `_recordSessionCompletion` (80% des séances attendues → `programsDone++`).
-  - **Tests** : `scripts/test-live-screen.js` (140, les 710 exercices normalisés),
+  - **Tests méthodes** : `scripts/test-methods.js` (27) — validation de la sortie Titan, alignement
+    registre client ↔ miroir serveur, et la preuve que programme standard et Workout Builder
+    produisent la **même séquence** pour la même méthode.
+  - **Tests** : `scripts/test-live-screen.js` (172, les 710 exercices normalisés),
     `scripts/test-live-log.js` (38, le chemin d'écriture jusqu'au prompt Titan) et
-    `scripts/test-live-layout.js` (183, vrai Chromium en 375×667 et 320×568 : zéro scroll,
+    `scripts/test-live-layout.js` (204, vrai Chromium en 375×667 et 320×568 : zéro scroll,
     contraste AA calculé, parcours complet, et les 10 acquis de la V1 rejoués un par un —
     Playwright n'est volontairement pas dans `package.json`, `npm i -D playwright --no-save`).
 - **Workout Builder**: `pgBuilder` page (3e sous-onglet de `vTrain`, à côté de Programmes/Librairie). Locked until `programsDone >= 2` (`BUILDER_UNLOCK_PROGRAMS`) OR VIP/MASTER tier OR compte fondateur (`BUILDER_FOUNDER_EMAILS` / `_builderIsDev()`). `_builderCheckUnlock()`. **Piloté par Titan** : l'utilisateur exprime une intention (objectif/durée/matériel/état via chips + phrase libre/vocal `builderToggleMic`), `builderGenerate()` POST `/.netlify/functions/titan` avec `mode:'builder'` + la librairie compacte (`_builderLibraryPayload`) → Titan renvoie une séance **JSON structurée** (blocs échauffement→principal→secondaire→finisher→retour au calme) programmée selon la méthode Athletic Hub (`BUILDER_SYSTEM` côté serveur). `_builderReconcile()` rattache vidéos/catégories depuis `catData`. `builderStartGenerated()` lance via `launchSession` (marquée `_LS.builderMeta`). En fin de séance, `_lsShowComplete` injecte un panneau de ressenti (`_builderInjectFeedback`) et **sauvegarde dans Firestore `users/{uid}/builderSessions`** (cloud, pas localStorage) — `_builderSaveSession`/`_builderSaveFeedback`.
 - **Progression**: `renderProgression()` fills `#progressionCard` in the Moi tab — current score, 8-week sessions bar graph, personal records. Helper `_progressionWeeklySessions(8)`.
 - **Habits**: `activeHabits` array, persisted to `ah_active_habits` via `_persistActiveHabits()`. `checkHabit()` resets the streak on a day gap. `renderActiveHabits()` renders Home + Moi.
 - **Exercise library**: `catData` is the flat exercise database (198 exercises). `_LIB_CAT_MAP` maps the chip filters to `catData` keys. Schema `{name, diff:'easy'|'med'|'hard', muscles, desc, mat, tag?, video?}`. Videos: per-exo `video` field OR `_LIB_VIDEO_MAP` lookup by name. The library has a "🎯 Mon programme" filter (`_libFlatExos('myprogram')`).
-- **Titan AI**: `callAnthropicAPI()` builds `ctx` from `ah_profile` (not `window.user`) and POSTs to `/.netlify/functions/titan`. Foreground/background push handled by FCM. The same function has a **`mode:'builder'` branch** (`BUILDER_SYSTEM` + `buildBuilderUserMessage` + `parseWorkoutJson`) that returns `{ workout }` (JSON, `BUILDER_MAX_TOKENS`) for the Workout Builder, reusing the auth/quota/moderation layers.
+- **Titan AI**: `callAnthropicAPI()` builds `ctx` from `ah_profile` (not `window.user`) and POSTs to `/.netlify/functions/titan`.
+  Le contexte envoyé comprend **le profil (11 champs), l'état athlète
+  (`_ahBuildAthleteState`) et la nutrition (`_titanNutritionCtx`)** — morphologie, cibles
+  quotidiennes, journal du jour et moyenne 7 jours. Sans ce dernier bloc, Titan redemandait le
+  poids pourtant saisi à l'onboarding et estimait les calories de tête. Côté serveur,
+  `buildNutritionContext()` n'écrit une ligne que si la donnée existe : **jamais de valeur
+  inventée, jamais de « Non renseigné » sur un champ rempli**.
+  Les réponses passent par **`_titanRenderMd()`** avant d'entrer dans la bulle : échappement HTML
+  **d'abord** (Titan reprend le texte de l'athlète — l'injecter brut dans `innerHTML` était une
+  faille), puis gras, listes et sauts de ligne. Sans ce rendu, HTML écrasait les `\n` et tout
+  arrivait en un seul bloc compact, `**gras**` compris. Section `FORME DES RÉPONSES` du
+  `STATIC_SYSTEM` côté serveur : **forme uniquement**, le ton et les règles de coaching sont
+  intouchés. Tests : `scripts/test-titan-format.js` (37) et `scripts/test-titan-nutrition.js` (31). Foreground/background push handled by FCM. The same function has a **`mode:'builder'` branch** (`BUILDER_SYSTEM` + `buildBuilderUserMessage` + `parseWorkoutJson`) that returns `{ workout }` (JSON, `BUILDER_MAX_TOKENS`) for the Workout Builder, reusing the auth/quota/moderation layers.
 
 ## Backend — Netlify Functions (`netlify/functions/`)
 
