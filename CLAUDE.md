@@ -17,7 +17,7 @@ The app is the digital companion of the book *Les Secrets de la Détente Vertica
   - `sw.js` (cache-first for local assets, network-first for externals) + `manifest.json`. Cache name is `athletik-v271` — bump it when shipping CSS/HTML that must invalidate.
   - `firebase-messaging-sw.js` (root) — receives background push notifications (FCM).
 - **No linter, no build**. Validate changes by opening `index.html` in a browser (mobile-first, Android Chrome is the target). Before committing, sanity-check JS syntax by parsing the non-module `<script>` blocks with `node -e` (see Coding conventions).
-- **Tests**: `for f in scripts/test-*.js; do node "$f"; done` — 20 suites, ~1 020 assertions, pure
+- **Tests**: `for f in scripts/test-*.js; do node "$f"; done` — 20 suites, ~1 040 assertions, pure
   Node, zéro dépendance : chaque suite extrait les **vraies** fonctions d'`index.html` par
   équilibrage d'accolades et les rejoue contre des mocks. `scripts/test-live-layout.js` est la
   seule exception : elle ouvre un vrai Chromium (Playwright, hors `package.json`) pour mesurer la
@@ -263,6 +263,17 @@ completedPrograms, fcmToken, accessTier`.
 - **Progression**: `renderProgression()` fills `#progressionCard` in the Moi tab — current score, 8-week sessions bar graph, personal records. Helper `_progressionWeeklySessions(8)`.
 - **Habits**: `activeHabits` array, persisted to `ah_active_habits` via `_persistActiveHabits()`. `checkHabit()` resets the streak on a day gap. `renderActiveHabits()` renders Home + Moi.
 - **Exercise library**: `catData` is the flat exercise database (198 exercises). `_LIB_CAT_MAP` maps the chip filters to `catData` keys. Schema `{name, diff:'easy'|'med'|'hard', muscles, desc, mat, tag?, video?}`. Videos: per-exo `video` field OR `_LIB_VIDEO_MAP` lookup by name. The library has a "🎯 Mon programme" filter (`_libFlatExos('myprogram')`).
+- **Une séance terminée doit ARRIVER jusqu'à Titan.** `_recordSessionCompletion` écrit dans
+  `ah_set_history` (type `session`, + `builder:true` pour le Builder) et stocke désormais
+  `exoNames` (12 max, 60 car.) + `exoCount` : la clé ne gardait aucune trace du **contenu**,
+  donc Titan savait qu'une séance avait eu lieu sans pouvoir en parler — et pour une séance
+  Builder, dont la composition ne vit qu'en Firestore `users/{uid}/builderSessions`, il n'avait
+  rien. Côté prompt : `daysAgoTxt()` écrit **AUJOURD'HUI / hier** (« il y a 0 jour(s) » ne se
+  lit pas), `frDate()` donne la **date du jour** (elle ne servait qu'à la clé de quota), et la
+  ligne nomme la **source** (« créée avec le Workout Builder » vs le nom du programme) — le
+  client l'envoyait déjà, le serveur ne l'imprimait pas. Les entrées antérieures n'ont pas
+  ces champs et s'affichent sans ligne vide ni compte inventé.
+  Tests : `scripts/test-athlete-state.js` (66).
 - **Titan AI**: `callAnthropicAPI()` builds `ctx` from `ah_profile` (not `window.user`) and POSTs to `/.netlify/functions/titan`.
   Le contexte envoyé comprend **le profil (11 champs), l'état athlète
   (`_ahBuildAthleteState`) et la nutrition (`_titanNutritionCtx`)** — morphologie, cibles

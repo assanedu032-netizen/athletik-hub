@@ -911,6 +911,21 @@ function fmtVal(e, v) {
   return String(v);
 }
 
+// « il y a 0 jour(s) » est illisible pour dire « aujourd'hui ». Une séance
+// terminée il y a dix minutes doit se reconnaître comme telle.
+function daysAgoTxt(n) {
+  if (n == null) return 'date inconnue';
+  if (n === 0) return "AUJOURD'HUI";
+  if (n === 1) return 'hier';
+  return 'il y a ' + n + ' jours';
+}
+function frDate(iso) {
+  try {
+    return new Date(iso).toLocaleDateString('fr-FR',
+      { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric', timeZone: 'UTC' });
+  } catch (e) { return String(iso).slice(0, 10); }
+}
+
 function buildAthleteState(st) {
   if (!st || typeof st !== 'object') {
     return `DONNÉES D'ENTRAÎNEMENT
@@ -919,6 +934,12 @@ Dis-le si l'athlète pose une question qui en dépend. N'invente rien.`;
   }
   const L = [];
   L.push('DONNÉES D\'ENTRAÎNEMENT RÉELLES (enregistrées dans l\'app)');
+  // Sans la date du jour, « il y a 0 jour(s) » ne veut rien dire et rien ne
+  // permet de raisonner temporellement. Elle n'était utilisée que pour la
+  // clé de quota.
+  if (st.generatedAt) {
+    L.push(`Nous sommes le ${frDate(st.generatedAt)}.`);
+  }
 
   if (st.program) {
     const p = st.program;
@@ -934,9 +955,21 @@ Dis-le si l'athlète pose une question qui en dépend. N'invente rien.`;
   if (Array.isArray(st.recentSessions) && st.recentSessions.length) {
     L.push('\nSÉANCES RÉCENTES (de la plus récente à la plus ancienne)');
     st.recentSessions.forEach((s, i) => {
-      let line = `${i + 1}. ${s.name} — il y a ${s.daysAgo == null ? '?' : s.daysAgo} jour(s)`;
+      let line = `${i + 1}. ${s.name} — ${daysAgoTxt(s.daysAgo)}`;
+      // D'où vient la séance : le client l'envoyait déjà, le prompt ne
+      // l'imprimait pas. L'athlète qui dit « ma séance du Workout Builder »
+      // ne trouvait donc aucun de ces mots dans le contexte.
+      if (s.source === 'workout_builder') line += ' — créée avec le Workout Builder';
+      else if (s.program) line += ` — ${s.program}`;
+      if (s.exoCount) line += ` — ${s.exoCount} exercice${s.exoCount > 1 ? 's' : ''}`;
       if (s.score != null) line += ` — score de séance ${s.score}/100`;
       L.push(line);
+      // Le contenu, pour les deux séances les plus récentes seulement :
+      // au-delà, c'est du bruit qui dilue le reste du contexte.
+      if (i < 2 && Array.isArray(s.exoNames) && s.exoNames.length) {
+        L.push(`   exercices : ${s.exoNames.join(', ')}`
+             + (s.exoCount > s.exoNames.length ? `, +${s.exoCount - s.exoNames.length} autres` : ''));
+      }
       const f = s.feedback;
       if (f) {
         const bits = [];

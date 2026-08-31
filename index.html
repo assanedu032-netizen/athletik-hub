@@ -29582,7 +29582,9 @@ function _bumpProfileCounter(key, delta) {
 // le mode coaché GBG legacy). Garantit que sessionsDone / streak / history
 // / phasesDone / programsDone sont incrémentés à la même règle partout.
 //
-// opts = { progKey?, sessKey?, sessName?, progName?, feedback?, builder? }
+// opts = { progKey?, sessKey?, sessName?, progName?, feedback?, builder?, exos? }
+//   exos : noms des exercices de la séance (facultatif). Sert à ce que Titan
+//   puisse parler du CONTENU d'une séance, pas seulement de son existence.
 function _recordSessionCompletion(opts) {
   opts = opts || {};
   try {
@@ -29599,7 +29601,20 @@ function _recordSessionCompletion(opts) {
     };
     if (opts.feedback) entry.sessionEndFeedback = opts.feedback;
     if (opts.builder)  entry.builder = true;
+    // LIMITE LEVÉE : ah_set_history ne gardait aucune trace du CONTENU de la
+    // séance. Titan savait donc qu'une séance avait eu lieu, sans jamais
+    // pouvoir dire ce qu'il y avait dedans — et sur une séance Builder, dont
+    // la composition ne vit qu'en Firestore, il n'avait rien du tout.
+    // On stocke des NOMS, pas des prescriptions : 12 au plus, tronqués à
+    // 60 caractères. Coût ~300 octets par séance, la clé est déjà synchronisée.
+    if (Array.isArray(opts.exos) && opts.exos.length) {
+      entry.exoCount = opts.exos.length;
+      entry.exoNames = opts.exos.slice(0, 12).map(function (n) {
+        return String(n == null ? '' : n).trim().slice(0, 60);
+      }).filter(Boolean);
+    }
     hist.push(entry);
+    if (hist.length > 300) hist = hist.slice(-300);
     localStorage.setItem('ah_set_history', JSON.stringify(hist));
     if (typeof renderBadges === 'function') renderBadges();
     // Avance phase/programme uniquement si on a les clés (chemin V1 legacy
@@ -30480,6 +30495,9 @@ window._ahBuildAthleteState = function(opts) {
       return {
         name: s.sessName || 'Séance',
         program: s.progName || null,
+        source: s.builder ? 'workout_builder' : 'programme',
+        exoCount: s.exoCount || null,
+        exoNames: Array.isArray(s.exoNames) && s.exoNames.length ? s.exoNames : null,
         date: String(s.date).slice(0, 10),
         daysAgo: _ahDaysBetween(s.date, today),
         score: (s.sessionEndFeedback && typeof s.sessionEndFeedback.sessionQualityScore === 'number')
@@ -40922,7 +40940,8 @@ function _lsFinalizeSession(feedback) {
     progName: _LS.progName,
     sessName: _LS.sessName,
     feedback: feedback,
-    builder:  !!_LS.builderMeta
+    builder:  !!_LS.builderMeta,
+    exos:     (_LS.exos || []).map(function (e) { return e && (e.n || e.name); })
   });
   // ── Célébration post-séance (brique 1) ──
   // Couche SECONDAIRE : entièrement isolée en try/catch, exécutée APRÈS
