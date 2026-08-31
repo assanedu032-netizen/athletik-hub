@@ -17,7 +17,7 @@ The app is the digital companion of the book *Les Secrets de la Détente Vertica
   - `sw.js` (cache-first for local assets, network-first for externals) + `manifest.json`. Cache name is `athletik-v271` — bump it when shipping CSS/HTML that must invalidate.
   - `firebase-messaging-sw.js` (root) — receives background push notifications (FCM).
 - **No linter, no build**. Validate changes by opening `index.html` in a browser (mobile-first, Android Chrome is the target). Before committing, sanity-check JS syntax by parsing the non-module `<script>` blocks with `node -e` (see Coding conventions).
-- **Tests**: `for f in scripts/test-*.js; do node "$f"; done` — 19 suites, ~775 assertions, pure
+- **Tests**: `for f in scripts/test-*.js; do node "$f"; done` — 20 suites, ~1 020 assertions, pure
   Node, zéro dépendance : chaque suite extrait les **vraies** fonctions d'`index.html` par
   équilibrage d'accolades et les rejoue contre des mocks. `scripts/test-live-layout.js` est la
   seule exception : elle ouvre un vrai Chromium (Playwright, hors `package.json`) pour mesurer la
@@ -134,6 +134,26 @@ completedPrograms, fcmToken, accessTier`.
     circuitMap)` (fonction pure) en dérive le modèle d'affichage. Helpers : `_lsDetectMetrique`,
     `_lsParseValeur`, `_lsSeriesInfo`, `_lsResolveVarSeries`, `_lsCircuitMap`, `_lsComplexSteps`,
     `_lsHasCharge`.
+  - **Le chrono lit l'HORLOGE, pas les ticks.** `_lsTimerStart` retient une échéance
+    (`endsAt`) et `_lsTimerRemaining` en dérive le restant à chaque repeinture (250 ms).
+    L'ancien `setInterval` d'une seconde décrémentait un compteur : étranglé en arrière-plan,
+    il **dérivait de 53 s sur un décompte de 60 s** et ne rattrapait jamais. Tout décompte
+    arme aussi `tim_minutScheduleNotif` — avant, seul le repos entre séries le faisait, et
+    une isométrie de 45 s téléphone en poche ne sonnait pas. La pause fige le restant et
+    désarme ; la reprise recalcule l'échéance. Le son est **inchangé** (choix du 05/06/2026 :
+    seul le son de fin joue un MP3).
+  - **Une micro-récup EST une récupération.** `_LS.sq.resting` + `_lsInRest()` : le bouton se
+    dégrise (`ls-btn-rest`) et le chrono passe en **bleu** (`.ls-tone-rest`). Avant, la
+    micro-récup passait par `_lsTimerStart` sans toucher `_LS.restActive` — « Passer la récup »
+    s'affichait en **or plein au centre**, l'élément le plus voyant de l'écran invitant à
+    sauter la récupération prescrite. Libellés : « Récupération courte » (intra-séquence) vs
+    « Récupération complète » (entre séries) — deux intentions, deux noms, deux couleurs.
+  - **Dans le mode séquence, l'ACTION passe avant le nom de la méthode** : `Série 1/4` →
+    grosse valeur + « répétitions » → chaîne d'étapes → `Cluster set` en libellé secondaire.
+    L'athlète n'a jamais besoin de connaître le nom de la technique pour l'exécuter.
+  - **Les compteurs sont nommés** : `Exercice 4 / 12` dans le footer (`.ls-dashnum-l`),
+    `Série 1 / 4` dans la zone mode. Un `4 / 12` nu laissait deviner lequel des deux niveaux
+    de progression il représentait.
   - **`AH_METHODS` — registre central des méthodes d'entraînement.** Une méthode = une définition
     = une logique d'exécution, partagée par les programmes, le Builder, Titan et l'écran live.
     Trois axes qu'il ne faut **pas** mélanger : *exécution* (comment on mesure — `LS_MODES`),
@@ -142,6 +162,19 @@ completedPrograms, fcmToken, accessTier`.
     séquentielle, `expand(cfg)` qui la **réduit à une suite d'étapes** que l'écran sait déjà
     jouer. Ajouter EMOM ou AMRAP = une entrée de plus dans le registre, **aucune branche de plus
     dans le rendu**.
+  - **Cluster Set ≠ Rest-Pause** (annexe du livre, p. 151). Le cluster **découpe pour garder
+    la qualité** (« 5 reps en 2+2+1, 10-15 s »), le rest-pause **va chercher des reps après
+    l'échec** (« max reps > 10 s > max reps »). `LS_TEXT_TO_METHOD` mappait `cluster →
+    rest_pause` : une interprétation silencieuse qui changeait la nature de la séance. Les
+    8 exercices concernés sont reclassés `cluster` — **prescription inchangée** (4 séries,
+    2-3 reps, repos), seule la méthode déclarée est corrigée. Sans découpage fourni par la
+    source, ils restent en compteur de reps : **rien n'est inventé**.
+  - **Tempo : le code du livre à TROIS chiffres** (p. 152, « 4-2-1 = 4 s descente, 2 s pause
+    en bas, 1 s montée »), pas la notation à quatre chiffres courante en salle.
+    `_lsTempoTxt()` l'écrit en phrase — « Descends en 4 s → tiens 2 s en bas → remonte vite ».
+    La forme `eccentric { tempoDown }` des 27 excentriques reste valide et inchangée. La
+    consigne est rendue **avant** les steppers : en queue de zone, elle tombait 4 px sous le
+    footer et n'a jamais été visible en 375×667.
   - **Titan peut prescrire une méthode, pas en inventer une.** `BUILDER_METHODS` (miroir serveur
     du registre) + `sanitizeMethod()` retirent toute méthode ou tout paramètre hors schéma avant
     que la séance n'atteigne l'app, et refusent une prescription incomplète (rest-pause sans
@@ -212,9 +245,11 @@ completedPrograms, fcmToken, accessTier`.
   - **Tests méthodes** : `scripts/test-methods.js` (39) — validation de la sortie Titan, alignement
     registre client ↔ miroir serveur, et la preuve que programme standard et Workout Builder
     produisent la **même séquence** pour la même méthode.
-  - **Tests** : `scripts/test-live-screen.js` (192, les 710 exercices normalisés + le format Builder),
+  - **Tests** : `scripts/test-live-screen.js` (212, les 710 exercices normalisés, le format
+    Builder, cluster et tempo), `scripts/test-live-timer.js` (40, horloge simulée : dérive,
+    pause, notification, dégrisage du bouton),
     `scripts/test-live-log.js` (38, le chemin d'écriture jusqu'au prompt Titan) et
-    `scripts/test-live-layout.js` (204, vrai Chromium en 375×667 et 320×568 : zéro scroll,
+    `scripts/test-live-layout.js` (232, vrai Chromium en 375×667 et 320×568 : zéro scroll,
     contraste AA calculé, parcours complet, et les 10 acquis de la V1 rejoués un par un —
     Playwright n'est volontairement pas dans `package.json`, `npm i -D playwright --no-save`).
 - **Notifications push (FCM)** : `_registerFCMToken()` écrit la cause exacte d'un échec dans

@@ -899,6 +899,81 @@ const REAL = [
     await page.waitForTimeout(150);
   }
 
+  // ── Le mode séquence n'existe dans AUCUN programme : sans cette section,
+  //    aucun test ne le voit jamais rendu dans un vrai navigateur. ──
+  console.log('\n=== SÉQUENCE ET TEMPO, RENDUS POUR DE VRAI ===\n');
+  {
+    const SEQ = [
+      { n: 'Squat', s: '4', r: '5 reps', rest: '2 mn', note: 'Bloc principal',
+        method: { id: 'cluster', blocks: [2, 2, 1], microRest: 12 } },
+      { n: 'Nordic hamstring', s: '3', r: '6 reps', rest: '90 s', note: '',
+        method: { id: 'tempo', down: 4, pause: 2, up: 1 } }
+    ];
+    const readSeq = () => page.evaluate(() => {
+      const q = (s) => { const e = document.querySelector(s); return e ? e.textContent.trim() : null; };
+      const b = document.getElementById('lsBody');
+      const btn = document.getElementById('lsBtnDone');
+      return {
+        mode: window._LS.vm && window._LS.vm.metrique,
+        big: q('#lsMode .ls-big'), unit: q('#lsMode .ls-big-unit'),
+        kicker: q('#lsMode .ls-mode-kicker'), hint: q('#lsMode .ls-mode-hint'),
+        chain: Array.from(document.querySelectorAll('#lsMode .ls-seq-step')).map(e => e.textContent.trim()),
+        restTone: !!document.querySelector('#lsMode .ls-big.ls-tone-rest'),
+        btn: btn.textContent.trim(), btnRest: btn.classList.contains('ls-btn-rest'),
+        dash: document.getElementById('lsDashNum').textContent.trim(),
+        overflow: b.scrollHeight - b.clientHeight
+      };
+    });
+
+    for (const vp of [{ width: 375, height: 667 }, { width: 320, height: 568 }]) {
+      const tag = vp.width + '×' + vp.height;
+      await page.setViewportSize(vp);
+      await open(SEQ, 'Séance Titan', 'WORKOUT BUILDER', '');
+
+      const a = await readSeq();
+      ok(tag + ' · un cluster déclaré atteint le mode séquence', a.mode === 'sequence', a.mode);
+      ok(tag + ' · l\'action est la donnée principale', a.big === '2' && /répétition/.test(a.unit || ''),
+         a.big + ' ' + a.unit);
+      ok(tag + ' · le compteur de séries est nommé', a.kicker === 'Série 1 / 4', a.kicker);
+      ok(tag + ' · la chaîne complète est visible',
+         a.chain.join(' ') === '2 00:12 2 00:12 1', a.chain.join(' '));
+      ok(tag + ' · le nom de la méthode est secondaire', a.hint === 'Cluster set', a.hint);
+      ok(tag + ' · le compteur d\'exercices est nommé', /^Exercice 1 \/ 2$/.test(a.dash), a.dash);
+      ok(tag + ' · zéro débordement sur l\'étape de travail', a.overflow <= 0, String(a.overflow));
+
+      await page.evaluate(() => window._lsPrimaryAction());
+      await page.waitForTimeout(350);
+      const b = await readSeq();
+      ok(tag + ' · la micro-récup s\'appelle « Récupération courte »',
+         b.kicker === 'Récupération courte', b.kicker);
+      ok(tag + ' · elle est bleue, pas dorée', b.restTone === true);
+      ok(tag + ' · le bouton « Passer la récup » est dégrisé', b.btnRest === true && /Passer/.test(b.btn),
+         b.btn + ' / ' + b.btnRest);
+      ok(tag + ' · zéro débordement pendant la récup', b.overflow <= 0, String(b.overflow));
+
+      // Exercice 2 : le tempo doit être LISIBLE, pas seulement présent dans le DOM.
+      await page.evaluate(() => window._lsNextEx());
+      await page.waitForTimeout(350);
+      const t = await page.evaluate(() => {
+        const e = document.querySelector('#lsMode .ls-tempo');
+        const foot = document.getElementById('lsFooter').getBoundingClientRect();
+        const r = e && e.getBoundingClientRect();
+        const b = document.getElementById('lsBody');
+        return { txt: e ? e.textContent.trim() : null,
+                 visible: !!(r && r.height > 0 && r.bottom <= foot.top + 1),
+                 overflow: b.scrollHeight - b.clientHeight };
+      });
+      ok(tag + ' · le code 4-2-1 est écrit en phrase',
+         /Descends en 4 s/.test(t.txt || '') && /remonte vite/.test(t.txt || ''), t.txt);
+      ok(tag + ' · et il tient AU-DESSUS du footer', t.visible === true, t.txt);
+      ok(tag + ' · zéro débordement sur l\'exercice à tempo', t.overflow <= 0, String(t.overflow));
+
+      await page.evaluate(() => { window._lsClose(); });
+      await page.waitForTimeout(150);
+    }
+    await page.setViewportSize({ width: 375, height: 667 });
+  }
+
   console.log('\n=== AUCUNE ERREUR JS ===\n');
   {
     const real = errs.filter(e => !/firebase|network|Failed to fetch|importScripts|ServiceWorker/i.test(e));

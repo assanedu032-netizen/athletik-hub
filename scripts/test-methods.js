@@ -133,7 +133,10 @@ console.log('\n=== LES 64 MÉTHODES EN TEXTE LIBRE RESTENT COUVERTES ===\n');
     ['Squat stato-dynamique — Iso profonde puis explosion', '6 s min', 'isometric'],
     ['Nordic hamstring excentrique — freinage maximal', '8-12 reps', 'eccentric'],
     ['Dips excentrique', '5 reps', 'eccentric'],
-    ['Dips sur chaise / banc', '2-3 reps cluster', 'rest_pause'],
+    // Le livre (annexe p. 151) distingue Cluster Set et Rest-Pause : l'un
+    // découpe pour garder la qualité, l'autre va chercher l'échec. Cette
+    // ligne assertait la confusion — elle asserte maintenant la distinction.
+    ['Dips sur chaise / banc', '2-3 reps cluster', 'cluster'],
     ['Squat', '10 reps', 'classic'],
     ['Échauffement dynamique', '10 mn', 'classic']
   ];

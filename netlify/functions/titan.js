@@ -700,8 +700,16 @@ forme sera retirée avant d'arriver à l'athlète :
       maintien d'une position. duration en SECONDES.
   { "id": "eccentric",  "tempoDown": 5 }
       descente contrôlée. tempoDown en SECONDES par répétition.
-  { "id": "rest_pause", "reps": 8, "microRest": 15, "blocks": [3, 2] }
-      série longue coupée : 8 reps, 15 s, 3 reps, 15 s, 2 reps.
+  { "id": "tempo",      "down": 4, "pause": 2, "up": 1 }
+      vitesse imposée à chaque phase : 4 s de descente, 2 s de pause en bas,
+      1 s de montée (le code 4-2-1 du livre). "pause": 0 = sans pause.
+  { "id": "cluster",    "blocks": [2, 2, 1], "microRest": 12 }
+      série DÉCOUPÉE pour garder la qualité : 2 reps, 12 s, 2 reps, 12 s,
+      1 rep. Micro-pause de 10 à 15 s. Ce n'est PAS un rest-pause : on
+      s'arrête AVANT l'échec, c'est tout l'intérêt.
+  { "id": "rest_pause", "reps": 8, "microRest": 10, "blocks": [3, 2] }
+      on va chercher des reps APRÈS l'échec : 8 reps, 10 s, 3 reps, 10 s,
+      2 reps. À l'opposé du cluster — ne confonds jamais les deux.
   { "id": "drop_set",   "drops": [{"reps":12,"load":60},{"reps":10,"load":45}] }
       on allège sans repos. load en KG, au moins 2 paliers.
   { "id": "superset" }   enchaîné avec l'exercice suivant, repos après les deux.
@@ -800,6 +808,8 @@ const BUILDER_METHODS = {
   classic:    [],
   isometric:  ['duration'],
   eccentric:  ['tempoDown'],
+  tempo:      ['down', 'pause', 'up'],
+  cluster:    ['blocks', 'microRest'],
   rest_pause: ['reps', 'microRest', 'blocks'],
   drop_set:   ['drops'],
   superset:   [],
@@ -824,6 +834,11 @@ function sanitizeMethod(m) {
         return reps ? { reps, load: num(d && d.load) || undefined } : null;
       }).filter(Boolean).slice(0, 5);
       if (a.length >= 2) out.drops = a;
+    } else if (f === 'pause') {
+      // Seul paramètre où 0 a un sens : « sans pause en bas ». num() exige
+      // un nombre strictement positif et l'effacerait.
+      const n = parseFloat(v);
+      if (isFinite(n) && n >= 0 && n <= 10) out.pause = n;
     } else {
       const n = num(v);
       if (n) out[f] = n;
@@ -834,6 +849,10 @@ function sanitizeMethod(m) {
   if (id === 'rest_pause' && !(out.reps && out.blocks)) return null;
   if (id === 'drop_set' && !out.drops) return null;
   if (id === 'isometric' && !out.duration) return null;
+  // Un cluster, c'est un découpage : un seul bloc n'en est pas un.
+  if (id === 'cluster' && !(out.blocks && out.blocks.length > 1)) return null;
+  // Un tempo sans aucune phase chiffrée ne prescrit rien.
+  if (id === 'tempo' && out.down == null && out.up == null && out.pause == null) return null;
   return out;
 }
 

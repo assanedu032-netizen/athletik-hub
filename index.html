@@ -2693,6 +2693,14 @@ body.test-mode #testSkipBar{display:flex}
   font-variant-numeric: tabular-nums;
 }
 .ls-big.ls-big-sm { font-size: 52px; }
+/* Une récupération n'est jamais dorée : l'or dit « effort » sur cet écran.
+   La micro-récup d'une séquence emprunte donc le bleu de l'écran de repos. */
+.ls-big.ls-tone-rest { color: var(--lv-rest); }
+.ls-timerbar-fill.ls-tone-rest { background: var(--lv-rest); }
+.ls-seq-step.on.k-rest {
+  background: var(--lv-rest); color: #0E1B2E;
+  box-shadow: 0 0 0 2px var(--lv-rest);
+}
 .ls-big-unit {
   font-family: 'JetBrains Mono', monospace; font-size: 11px; font-weight: 800;
   letter-spacing: .2em; color: var(--lv-txt2); text-transform: uppercase;
@@ -2858,8 +2866,14 @@ body.test-mode #testSkipBar{display:flex}
 .ls-dashes { display: flex; gap: 3px; flex: 1; min-width: 0; }
 .ls-dashnum {
   font-family: 'JetBrains Mono', monospace; font-size: 10px; font-weight: 700;
-  letter-spacing: .08em; color: var(--lv-txt3); flex-shrink: 0;
-  font-variant-numeric: tabular-nums;
+  letter-spacing: .08em; color: var(--lv-txt2); flex-shrink: 0;
+  font-variant-numeric: tabular-nums; white-space: nowrap;
+}
+/* Le mot qui donne son sens au compteur reste en retrait : c'est une
+   étiquette, pas une donnée. */
+.ls-dashnum-l {
+  font-size: 9px; font-weight: 700; letter-spacing: .14em;
+  text-transform: uppercase; color: var(--lv-txt3);
 }
 .ls-dash {
   flex: 1; height: 4px; border-radius: 4px; background: var(--lv-elevated);
@@ -20945,10 +20959,10 @@ var PROGRAMS_V2 = (function(){
           sessions: {
             j1: { name:'Jour 1 — UPPER : Challenge + Circuit Cluster + Épaules', exos: [
               e('Bring Sally Up — Chanson « Flower » de Moby','1','Suivre la chanson','-','Rotation des challenges : Bring Sally Up → Pompes max 2 mn → Burpees max 3 mn (J1/J3/J5).'),
-              e('1) Pompes diamant','4','2-3 reps','2 mn après les 4','',{id:'rest_pause'}),
-              e('2) Dips sur chaise / banc','4','2-3 reps cluster','-','',{id:'rest_pause'}),
-              e('3) Pompes déclinées — pieds surélevés','4','2-3 reps cluster','-','',{id:'rest_pause'}),
-              e('4) Pike push-ups — pompes en V','4','2-3 reps cluster','-','',{id:'rest_pause'}),
+              e('1) Pompes diamant','4','2-3 reps','2 mn après les 4','',{id:'cluster'}),
+              e('2) Dips sur chaise / banc','4','2-3 reps cluster','-','',{id:'cluster'}),
+              e('3) Pompes déclinées — pieds surélevés','4','2-3 reps cluster','-','',{id:'cluster'}),
+              e('4) Pike push-ups — pompes en V','4','2-3 reps cluster','-','',{id:'cluster'}),
               e('Rotation explosive du buste en planche','3','10 reps','1 mn'),
               e('Rock Back breathing — Respiration diaphragmatique','-','2-5 mn','-'),
               e('Visualisation — Visualise ta prochaine performance','-','1-2 mn','-')
@@ -21115,10 +21129,10 @@ var PROGRAMS_V2 = (function(){
             // perdus. Quatre exercices prescrits manquaient.
             j1:{ name:'Jour 1 — UPPER : Challenge + Circuit Cluster + Épaules', exos:[
               e('Bring Sally Up — pompes — chanson Flower','1','Suivre la chanson','-','Rotation : Bring Sally Up → Pompes max 2mn → Burpees max 3mn (J1/J3/J5).'),
-              e('1) Pompes diamant','4','2-3 reps','2 mn après les 4','',{id:'rest_pause'}),
-              e('2) Dips sur chaise / banc','4','2-3 reps','-','',{id:'rest_pause'}),
-              e('3) Pompes déclinées','4','2-3 reps','-','',{id:'rest_pause'}),
-              e('4) Pike push-ups — pompes en V','4','2-3 reps','-','',{id:'rest_pause'}),
+              e('1) Pompes diamant','4','2-3 reps','2 mn après les 4','',{id:'cluster'}),
+              e('2) Dips sur chaise / banc','4','2-3 reps','-','',{id:'cluster'}),
+              e('3) Pompes déclinées','4','2-3 reps','-','',{id:'cluster'}),
+              e('4) Pike push-ups — pompes en V','4','2-3 reps','-','',{id:'cluster'}),
               e('Rotation explosive du buste en planche — puissance rotative','3','10 reps','1 mn'),
               e('Élévations latérales — bouteilles ou pdc','3','12-15 reps','1 mn'),
               e('1) Pompes larges — pectoraux','3','10-12 reps','-'),
@@ -28036,6 +28050,10 @@ function builderRenderResult(w) {
         }
         if (!seq && e.method.duration)  seq = e.method.duration + ' s de maintien';
         if (!seq && e.method.tempoDown) seq = e.method.tempoDown + ' s de descente par rep';
+        // Le tempo du livre se lit en phrase, pas en code « 4-2-1 ».
+        if (!seq && typeof window._lsTempoTxt === 'function') {
+          seq = window._lsTempoTxt(window._lsTempoOf({ id: e.method.id, config: e.method })) || '';
+        }
         mHtml = '<div style="display:flex;align-items:center;gap:7px;margin-top:6px;flex-wrap:wrap">'
           + '<span style="font-family:\'JetBrains Mono\',monospace;font-size:9px;font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:var(--navy);background:var(--gold);padding:2px 7px;border-radius:4px">'
           + esc(def.label) + '</span>'
@@ -38541,7 +38559,10 @@ function _lsRestLabel(tech, isInterEx, circuit, tour, tours) {
   }
   if (tech === 'fractionne') return 'Récup active';
   if (isInterEx) return 'Transition';
-  return 'Repos entre séries';
+  // « Récupération complète » et « Récupération courte » (micro-récup d'une
+  // séquence) doivent se distinguer au premier coup d'œil : ce ne sont pas
+  // deux réglages du même repos, ce sont deux intentions différentes.
+  return 'Récupération complète';
 }
 
 // Affiche le bottom-sheet "Comment faire ?" pour la technique courante.
@@ -38647,12 +38668,47 @@ var AH_METHODS = {
     fields: ['sets', 'reps', 'tempoDown', 'rest'],
     cue: 'Contrôle la descente. C\'est elle qui fait le travail.'
   },
+  // Annexe p. 152 : « Squat : 4 s descente, 2 s pause en bas, 1 s montée
+  // (code 4-2-1) ». Le livre définit TROIS phases — pas les quatre de la
+  // notation courante en salle. On respecte sa convention, on n'en invente
+  // pas une autre.
+  tempo: {
+    id: 'tempo', label: 'Tempo',
+    fields: ['sets', 'reps', 'down', 'pause', 'up', 'rest'],
+    cue: 'Le tempo fait le travail. Ne triche pas sur la descente.'
+  },
+  // Annexe « Tableau des techniques d'intensification », p. 151 :
+  //   Cluster Set — « 5 reps découpées en 2+2+1 avec 10-15 s de pause
+  //   intra-série. Mini-pauses pour maintenir la qualité et l'intensité. »
+  //   Rest-Pause  — « Max reps > 10 s > max reps > 10 s > répéter le cycle.
+  //   Aller chercher des reps supplémentaires APRÈS l'échec musculaire. »
+  // Ce sont deux techniques distinctes : l'une préserve la fraîcheur, l'autre
+  // va chercher l'échec. Les confondre change la nature de la séance — et
+  // c'est ce que faisait `cluster → rest_pause`.
+  cluster: {
+    id: 'cluster', label: 'Cluster set',
+    fields: ['sets', 'blocks', 'microRest', 'rest'],
+    cue: 'Coupe la série en blocs. Chaque rep reste franche.',
+    expand: function (c) {
+      var blocks = Array.isArray(c.blocks) ? c.blocks : [];
+      var micro = _ahNum(c.microRest) || 12; // 10-15 s, milieu de la fourchette du livre
+      var out = [];
+      blocks.forEach(function (b) {
+        var n = _ahNum(b);
+        if (!n) return;
+        if (out.length) out.push({ kind: 'rest', sec: micro });
+        out.push({ kind: 'reps', reps: n });
+      });
+      // Un seul bloc n'est pas un cluster : c'est une série normale.
+      return out.length > 1 ? out : null;
+    }
+  },
   rest_pause: {
     id: 'rest_pause', label: 'Rest-pause',
     fields: ['reps', 'microRest', 'blocks'],
     cue: 'Va au bout, courte pause, repars.',
     expand: function (c) {
-      var reps = _ahNum(c.reps), micro = _ahNum(c.microRest) || 15;
+      var reps = _ahNum(c.reps), micro = _ahNum(c.microRest) || 10; // 10 s — valeur du livre
       var blocks = Array.isArray(c.blocks) ? c.blocks : [];
       if (!reps) return null;
       var out = [{ kind: 'reps', reps: reps }];
@@ -38703,7 +38759,7 @@ function _ahNum(v) {
 // les 826 exercices actuels gardent exactement le comportement qu'ils ont.
 var LS_TEXT_TO_METHOD = {
   isometrie: 'isometric', 'stato-dynamique': 'isometric',
-  cluster: 'rest_pause', circuit: 'circuit',
+  cluster: 'cluster', circuit: 'circuit',
   superset: 'superset', 'bi-set': 'superset'
 };
 function _ahResolveMethod(ex) {
@@ -39026,6 +39082,37 @@ function _lsComplexSteps(ex) {
 // Modèle d'affichage complet d'un exercice. Fonction PURE : aucune lecture
 // du DOM, aucune écriture. C'est elle que testent les 710 cas de
 // scripts/test-live-screen.js.
+// Tempo affichable. Deux formes coexistent, volontairement :
+//   eccentric { tempoDown: 5 }          → 27 exercices existants, inchangés
+//   tempo     { down: 4, pause: 2, up: 1 } → code du livre (annexe p. 152)
+// La seconde n'invalide pas la première : un exercice qui ne déclare que la
+// descente continue d'afficher exactement ce qu'il affichait.
+function _lsTempoOf(method) {
+  if (!method || !method.config) return null;
+  var c = method.config;
+  if (method.id === 'tempo') {
+    var d = _ahNum(c.down), u = _ahNum(c.up);
+    var pz = c.pause == null ? null : parseFloat(String(c.pause).replace(',', '.'));
+    if (!d && !u && !pz) return null;
+    return { down: d, pause: (isFinite(pz) && pz >= 0) ? pz : null, up: u };
+  }
+  if (method.id === 'eccentric' && _ahNum(c.tempoDown)) return { down: _ahNum(c.tempoDown) };
+  return null;
+}
+
+// Phrase du tempo, en français d'athlète. « 4-2-1 » ne dit rien à personne :
+// on écrit ce que la personne doit faire, dans l'ordre où elle le fait.
+function _lsTempoTxt(t) {
+  if (!t) return '';
+  var parts = [];
+  if (t.down) parts.push('Descends en ' + t.down + ' s');
+  if (t.pause) parts.push('tiens ' + t.pause + ' s en bas');
+  else if (t.pause === 0) parts.push('sans pause en bas');
+  if (t.up) parts.push(t.up <= 1 ? 'remonte vite' : 'remonte en ' + t.up + ' s');
+  if (!parts.length) return '';
+  return parts.join(' → ');
+}
+
 function _lsNormalizeExo(ex, idx, exos, circuitMap) {
   ex = ex || {};
   var nomBrut = String(ex.n || '').trim();
@@ -39085,14 +39172,15 @@ function _lsNormalizeExo(ex, idx, exos, circuitMap) {
     method: method,
     circuit: circuit,
     videoId: vid,
-    tempo: (method.id === 'eccentric' && _ahNum(method.config.tempoDown))
-      ? { down: _ahNum(method.config.tempoDown) } : null,
+    tempo: _lsTempoOf(method),
     consigne: _lsCoachingCue(ex, tech, precision) || (method.declared ? method.def.cue : ''),
     raw: ex
   };
 }
 
 window._lsNormalizeExo = _lsNormalizeExo;
+window._lsTempoOf = _lsTempoOf;
+window._lsTempoTxt = _lsTempoTxt;
 window._lsDetectMetrique = _lsDetectMetrique;
 window._lsParseValeur = _lsParseValeur;
 window._lsSpaceUnits = _lsSpaceUnits;
@@ -39109,11 +39197,15 @@ function _lsEsc(s) {
 }
 function _lsTimerStop() {
   if (_LS.tmr && _LS.tmr.id) { clearInterval(_LS.tmr.id); _LS.tmr.id = null; }
-  if (_LS.tmr) _LS.tmr.running = false;
+  if (_LS.tmr) { _LS.tmr.running = false; _LS.tmr.endsAt = 0; }
+  // Le chrono ne tourne plus : la notification système qu'il avait armée
+  // n'a plus de raison de sonner.
+  try { if (typeof window.tim_minutCancelNotif === 'function') window.tim_minutCancelNotif(); } catch (e) {}
 }
 function _lsTimerReset() {
   _lsTimerStop();
-  _LS.tmr = { id: null, running: false, dir: 'down', sec: 0, total: 0, onEnd: null, beeped: false };
+  _LS.tmr = { id: null, running: false, dir: 'down', sec: 0, total: 0, onEnd: null,
+              beeped: false, endsAt: 0, startedAt: 0 };
 }
 function _lsTimerPaint() {
   var t = _LS.tmr; if (!t) return;
@@ -39128,32 +39220,83 @@ function _lsTimerPaint() {
       ? Math.max(0, Math.min(100, (t.sec / t.total) * 100))
       : Math.max(0, Math.min(100, ((t.total - t.sec) / t.total) * 100))) + '%';
 }
+// Le chrono lit l'HORLOGE, il ne compte pas les ticks.
+// Un `setInterval` d'une seconde est étranglé dès que l'onglet passe en
+// arrière-plan sur mobile : le compteur décrémenté à chaque tick prenait du
+// retard sur le temps réel et ne le rattrapait jamais. Une échéance
+// (`endsAt`) donne le bon restant à chaque repeinture, quel que soit le
+// nombre de ticks reçus — et permet de rattraper d'un coup au retour d'écran.
+function _lsTimerRemaining(t) {
+  if (!t || !t.endsAt) return t ? t.sec : 0;
+  if (t.dir === 'down') return Math.max(0, Math.round((t.endsAt - Date.now()) / 1000));
+  return Math.max(0, Math.round((Date.now() - t.startedAt) / 1000));
+}
+function _lsTimerTick() {
+  var t = _LS.tmr; if (!t || !t.running) return;
+  t.sec = _lsTimerRemaining(t);
+  // Bip + vibration à 3 s de la fin, puis à 0. Le seuil est un "<=" : avec
+  // un onglet étranglé, la seconde exacte peut ne jamais être observée.
+  if (t.dir === 'down' && t.sec <= 3 && t.sec > 0 && !t.beeped) {
+    t.beeped = true;
+    try { if (typeof window.tim_sndTick === 'function') window.tim_sndTick(); } catch (e) {}
+    try { if (navigator.vibrate) navigator.vibrate(60); } catch (e) {}
+  }
+  _lsTimerPaint();
+  if (t.dir === 'down' && t.sec <= 0) {
+    var cb = t.onEnd;
+    _lsTimerStop();
+    try { if (typeof window.tim_sndFinish === 'function') window.tim_sndFinish(); } catch (e) {}
+    try { if (navigator.vibrate) navigator.vibrate([200, 80, 200]); } catch (e) {}
+    if (cb) cb();
+  }
+}
 function _lsTimerStart(sec, dir, onEnd) {
   _lsTimerStop();
-  _LS.tmr = { id: null, running: true, dir: dir || 'down', sec: sec, total: sec, onEnd: onEnd || null, beeped: false };
+  var now = Date.now();
+  // Chrono montant : `endsAt` sert de marqueur « ancré sur l'horloge » et le
+  // restant se lit depuis startedAt. Le laisser à 0 renverrait t.sec figé.
+  _LS.tmr = { id: null, running: true, dir: dir || 'down', sec: sec, total: sec,
+              onEnd: onEnd || null, beeped: false,
+              endsAt: (dir === 'up' ? 1 : now + sec * 1000),
+              startedAt: now - (dir === 'up' ? sec * 1000 : 0) };
   try { if (typeof window.tim_beepUnlock === 'function') window.tim_beepUnlock(); } catch (e) {}
+  // Téléphone en poche pendant une isométrie de 45 s : sans notification
+  // système, rien ne signale la fin. Le repos entre séries en armait déjà
+  // une ; les chronos d'exercice et les micro-récups, non.
+  if (_LS.tmr.dir === 'down') {
+    try {
+      if (typeof window.tim_minutScheduleNotif === 'function') {
+        window.tim_minutScheduleNotif(_LS.tmr.endsAt);
+      }
+    } catch (e) {}
+  }
   _lsTimerPaint();
-  _LS.tmr.id = setInterval(function () {
-    var t = _LS.tmr; if (!t || !t.running) return;
-    t.sec += (t.dir === 'down' ? -1 : 1);
-    // Bip + vibration à 3 s de la fin, puis à 0.
-    if (t.dir === 'down' && t.sec === 3 && !t.beeped) {
-      t.beeped = true;
-      try { if (typeof window.tim_sndTick === 'function') window.tim_sndTick(); } catch (e) {}
-      try { if (navigator.vibrate) navigator.vibrate(60); } catch (e) {}
-    }
-    _lsTimerPaint();
-    if (t.dir === 'down' && t.sec <= 0) {
-      _lsTimerStop();
-      try { if (typeof window.tim_sndFinish === 'function') window.tim_sndFinish(); } catch (e) {}
-      try { if (navigator.vibrate) navigator.vibrate([200, 80, 200]); } catch (e) {}
-      var cb = t.onEnd; if (cb) cb();
-    }
-  }, 1000);
+  // 250 ms : la repeinture reste au bon dixième après un retour d'arrière-plan,
+  // sans coûter davantage qu'un calcul de différence de dates.
+  _LS.tmr.id = setInterval(_lsTimerTick, 250);
 }
 function _lsTimerToggle() {
   var t = _LS.tmr; if (!t) return;
-  t.running = !t.running;
+  if (t.running) {
+    // Pause : on fige le restant, l'échéance n'a plus de sens.
+    t.sec = _lsTimerRemaining(t);
+    t.running = false;
+    t.endsAt = 0;
+    try { if (typeof window.tim_minutCancelNotif === 'function') window.tim_minutCancelNotif(); } catch (e) {}
+  } else {
+    var now = Date.now();
+    t.running = true;
+    if (t.dir === 'down') {
+      t.endsAt = now + t.sec * 1000;
+      try {
+        if (typeof window.tim_minutScheduleNotif === 'function') window.tim_minutScheduleNotif(t.endsAt);
+      } catch (e) {}
+    } else {
+      t.startedAt = now - t.sec * 1000;
+      t.endsAt = 1; // marqueur : le chrono montant lit startedAt
+    }
+    if (!t.id) t.id = setInterval(_lsTimerTick, 250);
+  }
   _lsPaintPrimary();
 }
 
@@ -39207,9 +39350,10 @@ function _lsSideTag() {
   return '<div class="ls-mode-kicker" style="color:var(--lv-rest)">Côté <b style="color:var(--lv-rest)">'
        + (_LS.side === 'G' ? 'gauche' : 'droit') + '</b></div>';
 }
-function _lsTimerBlock(sec) {
-  return '<div class="ls-big" id="lsBigVal">' + _lsFmt(sec) + '</div>'
-       + '<div class="ls-timerbar"><div class="ls-timerbar-fill" id="lsTimerFill"></div></div>';
+function _lsTimerBlock(sec, tone) {
+  var t = tone ? ' ls-tone-' + tone : '';
+  return '<div class="ls-big' + t + '" id="lsBigVal">' + _lsFmt(sec) + '</div>'
+       + '<div class="ls-timerbar"><div class="ls-timerbar-fill' + t + '" id="lsTimerFill"></div></div>';
 }
 
 function _lsRenderMode(vm) {
@@ -39259,7 +39403,13 @@ function _lsRenderMode(vm) {
         };
       }
       var mb = _LS.mb;
+      // Le tempo est une CONSIGNE D'EXÉCUTION : il vient avant la saisie, pas
+      // après. En queue de zone, il tombait 4 px sous le footer et n'a jamais
+      // été visible en 375×667 — ni pour le nouveau code à trois phases, ni
+      // pour les 27 excentriques qui l'affichaient déjà.
+      var tempoTxt = _lsTempoTxt(vm.tempo);
       h = _lsObjectifBar(vm, _lsObjectifTxt(v, 'reps'), last)
+        + (tempoTxt ? '<div class="ls-tempo">' + _lsEsc(tempoTxt) + '</div>' : '')
         + '<div class="ls-steppers">'
         +   _lsStepperHtml('reps', 'Reps', mb.reps, 1)
         // Le champ kg n'existe que si l'exercice se charge — pas de
@@ -39267,9 +39417,6 @@ function _lsRenderMode(vm) {
         +   (vm.charge ? _lsStepperHtml('load', 'Kg', mb.load, 2.5) : '')
         + '</div>'
         + _lsRpeBlock(mb.rpe);
-      if (vm.tempo && vm.tempo.down) {
-        h += '<div class="ls-tempo">' + vm.tempo.down + ' s de descente par répétition</div>';
-      }
       if (vm.charge && mb.best > 0 && mb.load > mb.best) h += '<div class="ls-prflag">🔥 Nouveau record</div>';
       break;
     }
@@ -39280,26 +39427,39 @@ function _lsRenderMode(vm) {
       if (!_LS.sq || _LS.sq.exo !== vm.nom) _LS.sq = { exo: vm.nom, i: 0 };
       if (_LS.sq.i >= steps.length) _LS.sq.i = 0;
       var cur = steps[_LS.sq.i] || {};
-      h = '<div class="ls-mode-kicker">' + _lsEsc(vm.method.def.label)
-        + (vm.series.n > 1 ? ' · série <b>' + _LS.setNum + '</b> / ' + (vm.series.label || vm.series.n) : '')
-        + '</div>'
-        + '<div class="ls-seq">' + steps.map(function (st, i) {
-            var cls = i < _LS.sq.i ? ' done' : (i === _LS.sq.i ? ' on' : '');
-            var lbl = st.kind === 'rest' ? _lsFmt(st.sec)
-                    : st.kind === 'drop' ? 'Allège'
-                    : st.reps + (st.load ? ' × ' + st.load + ' kg' : '');
-            return '<span class="ls-seq-step' + cls + ' k-' + st.kind + '">' + _lsEsc(lbl) + '</span>';
-          }).join('<span class="ls-seq-arrow">→</span>') + '</div>';
+      // ORDRE : où j'en suis → CE QUE JE FAIS MAINTENANT → la suite → le nom
+      // de la méthode. Le nom passait avant tout le reste ; l'athlète n'a pas
+      // besoin de savoir que ça s'appelle « rest-pause » pour l'exécuter.
+      var seqChain = '<div class="ls-seq">' + steps.map(function (st, i) {
+          var cls = i < _LS.sq.i ? ' done' : (i === _LS.sq.i ? ' on' : '');
+          var lbl = st.kind === 'rest' ? _lsFmt(st.sec)
+                  : st.kind === 'drop' ? 'Allège'
+                  : st.reps + (st.load ? ' × ' + st.load + ' kg' : '');
+          return '<span class="ls-seq-step' + cls + ' k-' + st.kind + '">' + _lsEsc(lbl) + '</span>';
+        }).join('<span class="ls-seq-arrow">→</span>') + '</div>';
+
       if (cur.kind === 'rest') {
-        h += _lsTimerBlock(_LS.tmr && _LS.tmr.total ? _LS.tmr.sec : cur.sec)
-           + '<div class="ls-mode-hint">Récup courte — repars dès que ça sonne.</div>';
+        // « Récupération courte » se distingue de la « Récupération complète »
+        // de fin de série par son nom ET par sa couleur : deux intentions
+        // différentes, pas deux réglages du même repos.
+        h = '<div class="ls-mode-kicker" style="color:var(--lv-rest)">Récupération courte</div>'
+          + _lsTimerBlock(_LS.tmr && _LS.tmr.total ? _LS.tmr.sec : cur.sec, 'rest')
+          + '<div class="ls-big-unit" style="color:var(--lv-rest)">avant le bloc suivant</div>';
       } else if (cur.kind === 'drop') {
-        h += '<div class="ls-big ls-big-sm">Allège</div>'
-           + '<div class="ls-big-unit">' + (cur.load ? 'passe à ' + cur.load + ' kg' : 'baisse la charge') + '</div>';
+        h = _lsKicker(vm)
+          + '<div class="ls-big ls-big-sm">Allège</div>'
+          + '<div class="ls-big-unit">' + (cur.load ? 'passe à ' + cur.load + ' kg' : 'baisse la charge') + '</div>';
       } else {
-        h += '<div class="ls-big">' + _lsEsc(String(cur.reps)) + '</div>'
-           + '<div class="ls-big-unit">reps' + (cur.load ? ' · ' + cur.load + ' kg' : '') + '</div>';
+        h = _lsKicker(vm)
+          + '<div class="ls-big">' + _lsEsc(String(cur.reps)) + '</div>'
+          + '<div class="ls-big-unit">'
+          +   (cur.reps === 1 ? 'répétition' : 'répétitions')
+          +   (cur.load ? ' · ' + cur.load + ' kg' : '') + '</div>';
       }
+      h += seqChain;
+      // La méthode reste accessible — en bas, en petit, jamais nécessaire
+      // pour comprendre quoi faire.
+      h += '<div class="ls-mode-hint">' + _lsEsc(vm.method.def.label) + '</div>';
       break;
     }
 
@@ -39588,8 +39748,14 @@ function _lsRenderEx() {
     dashes += '<div class="ls-dash' + (i < _LS.idx ? ' done' : (i === _LS.idx ? ' current' : '')) + '"></div>';
   }
   document.getElementById('lsDashes').innerHTML = dashes;
+  // Deux niveaux de progression coexistent à l'écran (la série dans la zone
+  // mode, l'exercice dans le footer). Un compteur nu — « 4 / 12 » — laissait
+  // deviner lequel des deux il représentait.
   var dn = document.getElementById('lsDashNum');
-  if (dn) dn.textContent = (_LS.idx + 1) + ' / ' + total;
+  if (dn) {
+    dn.innerHTML = '<span class="ls-dashnum-l">Exercice</span> '
+                 + (_LS.idx + 1) + ' / ' + total;
+  }
   var prevBtn = document.getElementById('lsPrevBtn'), nextBtn = document.getElementById('lsNextBtn');
   if (prevBtn) prevBtn.disabled = (_LS.idx === 0);
   if (nextBtn) nextBtn.disabled = (_LS.idx >= total - 1);
@@ -39650,9 +39816,23 @@ function _lsPrimaryLabel(vm) {
       return '✓ Fait';
   }
 }
+// Une micro-récup EST une récupération : elle doit dégriser le bouton comme
+// le repos entre séries. Sans ce prédicat, elle passait par _lsTimerStart,
+// _LS.restActive restait faux, et « Passer la récup » s'affichait en or plein
+// au centre de l'écran — l'élément le plus voyant invitait à sauter la
+// récupération prescrite.
+function _lsInRest() {
+  return !!(_LS.restActive || (_LS.sq && _LS.sq.resting));
+}
 function _lsPaintPrimary() {
   var btn = document.getElementById('lsBtnDone');
   if (!btn) return;
+  if (_LS.sq && _LS.sq.resting) {
+    btn.textContent = 'Passer la récup';
+    btn.classList.add('ls-btn-rest');
+    btn.classList.remove('ls-btn-run');
+    return;
+  }
   if (_LS.restActive) {
     btn.textContent = 'Passer le repos';
     btn.classList.add('ls-btn-rest');
@@ -39863,10 +40043,11 @@ function _lsSeqNext(vm) {
   // La micro-récup se décompte d'elle-même et enchaîne : c'est le moteur
   // qui joue la méthode, pas l'athlète qui la pilote.
   var nxt = (vm.method.steps || [])[_LS.sq.i];
-  if (nxt && nxt.kind === 'rest') {
+  _LS.sq.resting = !!(nxt && nxt.kind === 'rest');
+  if (_LS.sq.resting) {
     _lsTimerStart(nxt.sec, 'down', function () { _lsSeqNext(vm); });
-    _lsPaintPrimary();
   }
+  _lsPaintPrimary();
 }
 
 // Écriture d'une performance — même clé, même format que le tracker manuel,
