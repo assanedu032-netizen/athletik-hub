@@ -680,7 +680,7 @@ Schéma EXACT :
     {
       "titre": "Échauffement" | "Bloc principal" | "Bloc secondaire" | "Finisher" | "Retour au calme",
       "exos": [
-        { "n": "NOM EXACT d'un exercice de la LIBRAIRIE fournie", "sets": number, "reps": "string (ex: 5, 30s, 10m, 2 min)", "rest": "string (ex: 30s, 90s, 2min, -)", "note": "string courte ou vide", "method": objet optionnel, voir MÉTHODES }
+        { "n": "NOM EXACT d'un exercice de la LIBRAIRIE fournie", "sets": number, "reps": "string, UNITÉ DÉTACHÉE (ex: \"8 reps\", \"30 s\", \"10 m\", \"2 mn\")", "rest": "string, même règle (ex: \"90 s\", \"2 mn\", \"-\" pour enchaîner)", "note": "string courte ou vide", "method": objet optionnel, voir MÉTHODES }
       ]
     }
   ]
@@ -706,6 +706,15 @@ forme sera retirée avant d'arriver à l'athlète :
       on allège sans repos. load en KG, au moins 2 paliers.
   { "id": "superset" }   enchaîné avec l'exercice suivant, repos après les deux.
   { "id": "circuit", "rounds": 3 }   enchaînement de plusieurs exercices.
+
+FORMAT DES PRESCRIPTIONS (reps / rest) — l'unité est TOUJOURS séparée du
+nombre par une espace : "30 s" et non "30s", "2 mn" et non "2min", "8 reps" et
+non "8reps", "10 m" et non "10m". C'est la forme qu'utilisent les programmes du
+livre, et celle que l'écran de séance lit pour décider s'il affiche un
+chronomètre ou un compteur de répétitions. Une unité collée au nombre lui fait
+perdre la mesure. Un travail au temps s'écrit en secondes ("45 s"), un travail
+en répétitions porte le mot ("8 reps", "8-10 reps"), un repos vaut "-" quand il
+faut enchaîner sans pause.
 
 Règles d'emploi :
 - Le champ "reps" reste rempli normalement : la méthode ne le remplace pas.
@@ -734,8 +743,8 @@ STRUCTURE :
 SÉRIES / RÉPÉTITIONS / REPOS selon l'objectif (changer les reps = changer l'objectif) :
 - Force max : 3 à 5 reps lourdes, repos LONG 2-3 min.
 - Puissance / explosivité / détente : 3 à 5 reps de QUALITÉ maximale, repos COMPLETS 2-3 min (jamais à court de repos sur le travail explosif).
-- Hypertrophie : 8 à 12 reps, repos 60-90s.
-- Gainage / core / endurance : au temps (20-45s), repos courts.
+- Hypertrophie : 8 à 12 reps, repos 60-90 s.
+- Gainage / core / endurance : au temps (20-45 s), repos courts.
 - Mobilité / échauffement : 1-2 séries légères.
 
 VOLUME & INTENSITÉ :
@@ -828,6 +837,17 @@ function sanitizeMethod(m) {
   return out;
 }
 
+// Un prompt ne garantit rien : le modèle écrira "30s" de temps en temps.
+// On détache l'unité du nombre À LA FRONTIÈRE, là où le texte libre de Titan
+// devient une donnée de l'app — même endroit que sanitizeMethod(). L'écran
+// live normalise déjà à la lecture (_lsSpaceUnits), mais ce qui part en
+// Firestore doit être propre dès l'écriture : les séances Builder sauvegardées
+// sont relues plus tard, et par du code qui n'est pas forcément celui-là.
+function normalizePrescription(v) {
+  if (typeof v !== 'string') return v;
+  return v.replace(/(\d)([a-zA-Zà-üÀ-Ü])/g, '$1 $2').replace(/\s{2,}/g, ' ').trim();
+}
+
 function parseWorkoutJson(text) {
   if (!text) return null;
   let s = String(text).trim();
@@ -842,8 +862,11 @@ function parseWorkoutJson(text) {
     if (!obj || !Array.isArray(obj.blocs)) return null;
     obj.blocs.forEach((b) => {
       (b && Array.isArray(b.exos) ? b.exos : []).forEach((e) => {
-        const m = sanitizeMethod(e && e.method);
-        if (m) e.method = m; else if (e) delete e.method;
+        if (!e) return;
+        e.reps = normalizePrescription(e.reps);
+        e.rest = normalizePrescription(e.rest);
+        const m = sanitizeMethod(e.method);
+        if (m) e.method = m; else delete e.method;
       });
     });
     return obj;

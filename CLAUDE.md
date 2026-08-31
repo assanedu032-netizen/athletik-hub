@@ -17,7 +17,7 @@ The app is the digital companion of the book *Les Secrets de la Détente Vertica
   - `sw.js` (cache-first for local assets, network-first for externals) + `manifest.json`. Cache name is `athletik-v271` — bump it when shipping CSS/HTML that must invalidate.
   - `firebase-messaging-sw.js` (root) — receives background push notifications (FCM).
 - **No linter, no build**. Validate changes by opening `index.html` in a browser (mobile-first, Android Chrome is the target). Before committing, sanity-check JS syntax by parsing the non-module `<script>` blocks with `node -e` (see Coding conventions).
-- **Tests**: `for f in scripts/test-*.js; do node "$f"; done` — 19 suites, ~755 assertions, pure
+- **Tests**: `for f in scripts/test-*.js; do node "$f"; done` — 19 suites, ~775 assertions, pure
   Node, zéro dépendance : chaque suite extrait les **vraies** fonctions d'`index.html` par
   équilibrage d'accolades et les rejoue contre des mocks. `scripts/test-live-layout.js` est la
   seule exception : elle ouvre un vrai Chromium (Playwright, hors `package.json`) pour mesurer la
@@ -120,12 +120,16 @@ completedPrograms, fcmToken, accessTier`.
     l'unité du nombre avant toute détection (`"30s"` → `"30 s"`) : les détections d'unité
     reposent sur `\b`, et il n'y a **aucune frontière de mot entre un chiffre et la lettre qui
     le suit**. `PROGRAMS_V2` écrit toujours `"30 s"` — d'où un défaut invisible sur les 826
-    lignes — mais le **Workout Builder** produit `"30s"` / `"5"` (forme demandée à Titan par
-    `BUILDER_SYSTEM`), qui tombaient en mode `validation` (« Coche quand c'est fait ») au lieu
+    lignes — mais le **Workout Builder** produisait `"30s"` / `"5"`, qui tombaient en mode
+    `validation` (« Coche quand c'est fait ») au lieu
     d'un chrono ou d'un compteur de reps. Un **nombre nu** (`"5"`, `"8-10"`) est lu comme des
     répétitions ; aucun des 827 `e()` du fichier n'est concerné.
     `validation` est volontairement **hors** de `COMPATIBLE.duree` : c'est le seau « je n'ai pas
-    su lire », pas un type d'exécution, donc une méthode déclarée doit l'emporter dessus. `PROGRAMS_V2` stocke
+    su lire », pas un type d'exécution, donc une méthode déclarée doit l'emporter dessus.
+    Côté serveur, `BUILDER_SYSTEM` réclame désormais l'**unité détachée** et
+    `normalizePrescription()` la rétablit dans `parseWorkoutJson()` — un prompt ne garantit rien,
+    et ce qui part en Firestore doit être propre dès l'écriture. `_lsSpaceUnits` reste le filet
+    pour les séances déjà enregistrées. `PROGRAMS_V2` stocke
     `e(n, s, r, rest, note)` — 5 chaînes, aucun champ `metrique`. `_lsNormalizeExo(ex, idx, exos,
     circuitMap)` (fonction pure) en dérive le modèle d'affichage. Helpers : `_lsDetectMetrique`,
     `_lsParseValeur`, `_lsSeriesInfo`, `_lsResolveVarSeries`, `_lsCircuitMap`, `_lsComplexSteps`,
@@ -205,7 +209,7 @@ completedPrograms, fcmToken, accessTier`.
     La saisie vit **dans** le mode reps, plus derrière un lien replié.
   - `_lsShowComplete()` → `_seFbOpen` / `_eaOpenFeedback` → `_lsFinalizeSession` →
     `_recordSessionCompletion` (80% des séances attendues → `programsDone++`).
-  - **Tests méthodes** : `scripts/test-methods.js` (27) — validation de la sortie Titan, alignement
+  - **Tests méthodes** : `scripts/test-methods.js` (39) — validation de la sortie Titan, alignement
     registre client ↔ miroir serveur, et la preuve que programme standard et Workout Builder
     produisent la **même séquence** pour la même méthode.
   - **Tests** : `scripts/test-live-screen.js` (192, les 710 exercices normalisés + le format Builder),
