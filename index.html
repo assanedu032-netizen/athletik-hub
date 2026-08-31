@@ -6042,6 +6042,37 @@ body.ah-lib-open .tim-fab{display:none!important}
 .bld-fav-row-acts .bld-fav-del{color:#EF4444;border-color:rgba(239,68,68,.30)}
 .bld-fav-trigger{padding:9px 14px;background:#fff;border:1px solid rgba(197,164,78,.40);color:#C5A44E;border-radius:999px;font-family:'Outfit',sans-serif;font-size:12px;font-weight:700;letter-spacing:.02em;cursor:pointer;display:inline-flex;align-items:center;gap:6px}
 .bld-fav-trigger:active{transform:scale(.96)}
+
+/* ── Article Reader Overlay ── */
+#articleOverlay{position:fixed;inset:0;background:var(--ah-bg);z-index:9600;display:flex;flex-direction:column;transform:translateX(100%);transition:transform .3s cubic-bezier(.25,.46,.45,.94);will-change:transform}
+#articleOverlay.on{transform:translateX(0)}
+.art-hdr{flex-shrink:0;padding:16px 18px 14px;border-bottom:1px solid var(--ah-border);display:flex;align-items:center;gap:12px;background:var(--ah-bg);position:sticky;top:0;z-index:2}
+.art-hdr-back{width:40px;height:40px;border-radius:50%;background:var(--ah-surface);border:1px solid var(--ah-border);display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--ah-text);font-size:18px;flex-shrink:0;-webkit-tap-highlight-color:rgba(197,164,78,.1)}
+.art-hdr-info{flex:1;min-width:0}
+.art-hdr-tag{font-family:'JetBrains Mono',monospace;font-size:9px;letter-spacing:.22em;color:var(--ah-gold);text-transform:uppercase;font-weight:700;margin-bottom:3px}
+.art-hdr-title{font-family:'Bebas Neue',sans-serif;font-size:15px;color:var(--ah-text);letter-spacing:.05em;line-height:1.1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.art-body{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch}
+.art-content{padding:30px 22px 80px;max-width:640px;margin:0 auto}
+.art-title{font-family:'Bebas Neue',sans-serif;font-size:26px;letter-spacing:.04em;line-height:1.15;color:var(--ah-text);margin-bottom:10px}
+.art-meta{font-family:'JetBrains Mono',monospace;font-size:9.5px;letter-spacing:.18em;color:var(--ah-muted);text-transform:uppercase;margin-bottom:28px;display:flex;gap:16px;flex-wrap:wrap}
+.art-intro{font-family:'Outfit',sans-serif;font-size:16px;line-height:1.8;color:var(--ah-text);margin-bottom:14px;font-weight:500}
+.art-p{font-family:'Outfit',sans-serif;font-size:15px;line-height:1.78;color:var(--ah-text2);margin-bottom:13px}
+.art-section-title{font-family:'Bebas Neue',sans-serif;font-size:20px;letter-spacing:.06em;color:var(--ah-text);margin:34px 0 14px;line-height:1.2}
+.art-thought{background:linear-gradient(135deg,rgba(197,164,78,.12),rgba(197,164,78,.04));border-left:3px solid var(--ah-gold);border-radius:0 10px 10px 0;padding:14px 18px;margin:16px 0;font-family:'Outfit',sans-serif;font-size:15px;line-height:1.65;color:var(--ah-gold);font-style:italic}
+.art-divider{height:1px;background:var(--ah-border);margin:30px 0}
+.art-steps-wrap{margin:8px 0 20px}
+.art-step{background:var(--ah-surface);border:1px solid var(--ah-border2);border-radius:14px;padding:18px 18px 18px 16px;margin-bottom:12px;position:relative;border-left:3px solid var(--ah-gold)}
+.art-step-num{font-family:'JetBrains Mono',monospace;font-size:9px;letter-spacing:.22em;color:var(--ah-gold);text-transform:uppercase;font-weight:700;margin-bottom:5px}
+.art-step-title{font-family:'Bebas Neue',sans-serif;font-size:19px;letter-spacing:.05em;color:var(--ah-text);margin-bottom:10px;line-height:1.1}
+.art-step-p{font-family:'Outfit',sans-serif;font-size:14.5px;line-height:1.72;color:var(--ah-text2);margin-bottom:9px}
+.art-step-p:last-child{margin-bottom:0}
+/* Home teaser card */
+.art-teaser-card{margin:10px 16px 0;background:linear-gradient(135deg,rgba(197,164,78,.09),rgba(197,164,78,.02));border:1px solid rgba(197,164,78,.28);border-radius:14px;padding:16px;cursor:pointer;-webkit-tap-highlight-color:rgba(197,164,78,.08);transition:transform .12s}
+.art-teaser-card:active{transform:scale(.975)}
+.art-teaser-eyebrow{font-family:'JetBrains Mono',monospace;font-size:9px;letter-spacing:.22em;color:var(--ah-gold);text-transform:uppercase;font-weight:700;margin-bottom:8px}
+.art-teaser-title{font-family:'Bebas Neue',sans-serif;font-size:17px;letter-spacing:.05em;color:var(--ah-text);line-height:1.2;margin-bottom:6px}
+.art-teaser-sub{font-family:'Outfit',sans-serif;font-size:12px;line-height:1.5;color:var(--ah-text2);margin-bottom:12px}
+.art-teaser-cta{font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:.16em;color:var(--ah-gold);text-transform:uppercase;font-weight:700;display:flex;align-items:center;gap:5px}
 </style>
 
 <template id="__bundler_thumbnail" data-bg-color="#243B6B">
@@ -7433,6 +7464,14 @@ window.tiResetOnEnter = function(){ window.tiShowStep(1); };
     <!-- ═══ TITAN SMART : Engagement du jour + Lecture recommandée ═══
          Rempli par renderTitanSmartCards() en fonction du programme + phase. -->
     <div id="titanSmartCards"></div>
+
+    <!-- ═══ ARTICLE TEASER — carte éditoriale lecture du jour ═══ -->
+    <div class="art-teaser-card" onclick="window.openArticle&&window.openArticle('mental-resistance')" role="button" tabindex="0" aria-label="Lire l'article : Résistance mentale">
+      <div class="art-teaser-eyebrow">📖 Préparation mentale · Lecture</div>
+      <div class="art-teaser-title">Comment améliorer sa résistance mentale</div>
+      <div class="art-teaser-sub">Le protocole en 5 étapes pour apprendre à repousser tes limites quand ton cerveau te demande d'arrêter.</div>
+      <div class="art-teaser-cta">Lire l'article <span>→</span></div>
+    </div>
 
     <!-- ═══ SCOREBOARD navy-deep DS v1.0 ═══ -->
     <div class="ah-scoreboard" id="homeScoreboard" style="margin:6px 20px 0;background:var(--ah-navy-deep);padding:14px 18px;border-radius:14px">
@@ -9340,6 +9379,142 @@ window.tiResetOnEnter = function(){ window.tiShowStep(1); };
     <!-- Boutons -->
     <button id="rmAddFavBtn" class="rm-add-btn" onclick="toggleCurrentRecipeFavorite()" style="background:linear-gradient(135deg,var(--gold),#D4B86A);color:var(--navy);margin-bottom:8px">⭐ Ajouter aux favoris (+ liste de courses)</button>
     <button class="rm-add-btn" onclick="addRecipeToJournal()" style="background:var(--surface2);color:var(--text);border:1.5px solid var(--border)">+ Ajouter au journal du jour</button>
+  </div>
+</div>
+
+<!-- ═══ ARTICLE READER — overlay plein écran, slide depuis la droite ═══ -->
+<div id="articleOverlay" style="display:none">
+  <!-- Header sticky -->
+  <div class="art-hdr">
+    <div class="art-hdr-back" onclick="window.closeArticle&&window.closeArticle()" aria-label="Retour">←</div>
+    <div class="art-hdr-info">
+      <div class="art-hdr-tag">📖 Préparation mentale</div>
+      <div class="art-hdr-title">Comment améliorer sa résistance mentale</div>
+    </div>
+  </div>
+  <!-- Body scrollable -->
+  <div class="art-body">
+    <div class="art-content">
+
+      <!-- Titre & méta -->
+      <div class="art-title">Comment améliorer sa résistance mentale : le protocole que j'utilise pour repousser ses limites</div>
+      <div class="art-meta">
+        <span>📖 Lecture · 10 min</span>
+        <span>Préparation mentale</span>
+      </div>
+
+      <!-- Introduction -->
+      <p class="art-intro">Et si votre résistance mentale pouvait se travailler comme votre force physique ?</p>
+      <p class="art-p">On parle beaucoup de motivation, de discipline et de mental dans le sport. Mais une question m'a longtemps intéressé en tant que coach et sportif : comment devient-on réellement plus résistant mentalement ?</p>
+      <p class="art-p">J'ai cherché ma propre réponse à cette question. Et elle est peut-être beaucoup plus simple que vous ne le pensez.</p>
+      <p class="art-p">Pour développer votre résistance mentale, vous devez apprendre à rester dans l'effort lorsque votre cerveau commence à vous dire d'arrêter. Je vais vous montrer comment transformer un exercice simple en véritable outil de développement mental.</p>
+
+      <div class="art-divider"></div>
+
+      <!-- Section 1 -->
+      <div class="art-section-title">Le Bring Sally Up : un exercice simple, mais loin d'être facile</div>
+      <p class="art-p">Le principe est extrêmement simple. Vous choisissez un exercice — ici, les pompes — puis vous réalisez les mouvements en suivant le rythme d'une musique. Lorsque la musique vous indique de monter, vous montez. Lorsqu'elle vous indique de descendre, vous descendez. Certaines positions peuvent être maintenues plusieurs secondes.</p>
+      <p class="art-p">L'objectif est de suivre le rythme sans interruption, jusqu'à la fin du morceau. Sur le papier, cela paraît simple. En pratique, c'est une autre histoire.</p>
+      <p class="art-p">Plus l'exercice avance, plus la fatigue augmente. Les muscles commencent à brûler. Le mouvement devient difficile. Et surtout, vous commencez à entendre cette petite voix intérieure :</p>
+      <div class="art-thought">«« C'est trop dur. »»<br>«« J'arrête. »»<br>«« Je ne peux plus. »»</div>
+      <p class="art-p">C'est précisément à ce moment-là que l'exercice devient intéressant. Parce que vous n'entraînez plus uniquement votre physique. Vous entraînez également votre capacité à rester engagé lorsque l'effort devient inconfortable.</p>
+
+      <div class="art-divider"></div>
+
+      <!-- Section 2 -->
+      <div class="art-section-title">Le véritable objectif n'est pas seulement de terminer l'exercice</div>
+      <p class="art-p">Lorsque je fais travailler cet exercice à des sportifs, je ne leur demande pas simplement de réussir le maximum de répétitions. Je veux qu'ils observent ce qui se passe dans leur tête lorsqu'ils commencent à être en difficulté.</p>
+      <p class="art-p">Parce qu'il existe une différence entre ce que votre corps est capable de faire et ce que votre cerveau pense être capable de faire. Cette distinction est essentielle.</p>
+      <p class="art-p">Votre condition physique ne change pas complètement du jour au lendemain. En revanche, votre manière de réagir face à la difficulté peut commencer à évoluer dès aujourd'hui.</p>
+
+      <div class="art-divider"></div>
+
+      <!-- Section 3 -->
+      <div class="art-section-title">Le moment où votre cerveau vous demande d'arrêter</div>
+      <p class="art-p">Lorsque l'effort devient difficile, vous commencez à recevoir différents signaux : douleur musculaire, brûlure, fatigue, inconfort… Et votre perception de l'effort augmente. À ce moment-là, une pensée apparaît souvent automatiquement :</p>
+      <div class="art-thought">« Il faut que j'arrête. »</div>
+      <p class="art-p">Le problème, c'est que nous interprétons parfois cette sensation comme une preuve que nous avons atteint notre limite physique. Mais est-ce réellement le cas ?</p>
+      <p class="art-p">Vous réalisez le Bring Sally Up. Vous arrivez à un moment extrêmement difficile. Vous pensez « Je ne peux plus. » Vous abandonnez. Mais quelques secondes plus tard, vous êtes capable de réaliser encore une répétition propre.</p>
+      <p class="art-p">Posez-vous alors la question : était-ce réellement votre limite physique — ou votre limite du moment, telle que vous l'avez perçue ? Cette différence est fondamentale.</p>
+
+      <div class="art-divider"></div>
+
+      <!-- Section 4 -->
+      <div class="art-section-title">Physique contre mental : apprenez à faire la différence</div>
+      <p class="art-p">Imaginez deux sportifs. Le premier est physiquement plus fort. Le second est légèrement moins fort, mais il possède une meilleure capacité à rester concentré et engagé lorsque l'effort devient difficile. Sur un exercice d'endurance musculaire, le deuxième peut parfois continuer plus longtemps.</p>
+      <p class="art-p">Pourquoi ? Parce que la performance ne dépend pas uniquement de la capacité physique. Votre capacité à gérer l'effort, l'inconfort et les pensées qui apparaissent pendant celui-ci joue également un rôle. C'est exactement ce que vous allez apprendre à observer avec ce protocole.</p>
+
+      <div class="art-divider"></div>
+
+      <!-- Les 5 étapes -->
+      <div class="art-section-title">Le protocole en 5 étapes</div>
+      <div class="art-steps-wrap">
+
+        <div class="art-step">
+          <div class="art-step-num">Étape 01</div>
+          <div class="art-step-title">Prenez un carnet</div>
+          <p class="art-step-p">Avant de commencer, préparez deux choses : un carnet d'entraînement et un stylo. Pas votre téléphone — un véritable carnet dans lequel vous allez pouvoir écrire.</p>
+          <p class="art-step-p">Pourquoi ? Parce que votre objectif n'est pas simplement de faire l'exercice. Votre objectif est de comprendre votre propre fonctionnement mental.</p>
+        </div>
+
+        <div class="art-step">
+          <div class="art-step-num">Étape 02</div>
+          <div class="art-step-title">Donnez-vous à 100 %</div>
+          <p class="art-step-p">Choisissez un environnement dans lequel vous ne serez pas interrompu. Pas de téléphone, pas de distraction, pas de conversation. Vous lancez le Bring Sally Up et vous vous engagez réellement.</p>
+          <p class="art-step-p">Votre objectif est de tenir le plus longtemps possible et, surtout, de ne pas abandonner volontairement. Si vous êtes très avancé et terminez sans réelle difficulté, recommencez une deuxième fois sans pause. C'est votre deuxième passage qui servira de véritable référence.</p>
+        </div>
+
+        <div class="art-step">
+          <div class="art-step-num">Étape 03</div>
+          <div class="art-step-title">Observez vos pensées</div>
+          <p class="art-step-p">C'est probablement la partie la plus importante du protocole. Pendant l'exercice, observez ce qui se passe dans votre tête. Lorsque la difficulté arrive, quelles pensées apparaissent ?</p>
+          <div class="art-thought" style="margin:12px 0 10px;font-size:14px">« C'est dur. » · « J'ai envie d'arrêter. » · « Je n'y arriverai pas. » · « Ça brûle trop. »</div>
+          <p class="art-step-p">Ne cherchez pas immédiatement à les supprimer. Observez-les. Votre objectif est de comprendre votre propre dialogue intérieur lorsque vous êtes sous pression.</p>
+        </div>
+
+        <div class="art-step">
+          <div class="art-step-num">Étape 04</div>
+          <div class="art-step-title">Écrivez ce qui s'est passé</div>
+          <p class="art-step-p">Une fois l'exercice terminé, prenez votre carnet et écrivez. Essayez de vous rappeler les moments où vous avez commencé à être en difficulté. Qu'avez-vous pensé ? À quel moment avez-vous voulu abandonner ? Qu'est-ce qui vous a fait arrêter ?</p>
+          <p class="art-step-p">Soyez honnête. Ce carnet n'est pas destiné à impressionner quelqu'un. Il est destiné à vous permettre de mieux vous comprendre.</p>
+        </div>
+
+        <div class="art-step">
+          <div class="art-step-num">Étape 05</div>
+          <div class="art-step-title">Transformez votre dialogue intérieur</div>
+          <p class="art-step-p">Maintenant que vous connaissez vos pensées automatiques, vous allez pouvoir travailler dessus. J'appelle cela les mantras. Votre mantra doit être personnel — il doit répondre directement aux pensées que vous avez identifiées.</p>
+          <p class="art-step-p">Par exemple, si votre pensée automatique est « Ça brûle, je dois arrêter », vous pouvez la remplacer par :</p>
+          <div class="art-thought" style="margin:10px 0;font-size:14px">« Cette sensation fait partie de l'effort. Je suis capable de rester engagé. »</div>
+          <p class="art-step-p">L'objectif n'est pas de nier ce que vous ressentez. La brûlure existe. La fatigue existe. Mais vous pouvez apprendre à changer la manière dont vous interprétez ces sensations.</p>
+        </div>
+
+      </div>
+
+      <div class="art-divider"></div>
+
+      <!-- Section Répétition -->
+      <div class="art-section-title">Répétition, écriture et visualisation</div>
+      <p class="art-p">Votre travail ne s'arrête pas à l'exercice. Utilisez votre carnet le matin et le soir. Répétez vos mantras. Écrivez-les. Visualisez-vous en train de réaliser l'exercice — imaginez le moment où la difficulté arrive, les pensées qui apparaissent, puis imaginez-vous en train de rester concentré et de continuer.</p>
+      <p class="art-p">Vous êtes en train de créer un nouveau réflexe mental. Et comme pour l'entraînement physique, ce processus demande de la répétition.</p>
+
+      <div class="art-divider"></div>
+
+      <!-- Section Transposition -->
+      <div class="art-section-title">Transposez cette méthode à votre sport</div>
+      <p class="art-p">C'est là que le protocole devient réellement intéressant. Le Bring Sally Up n'est qu'un outil. Le véritable objectif est de développer une capacité mentale que vous pourrez ensuite transférer à votre discipline.</p>
+      <p class="art-p">Vous êtes basketteur ? Travaillez cette capacité dans les dernières minutes d'un match, lorsque vos jambes sont lourdes et que vous devez encore défendre. Vous êtes volleyeur ? Utilisez-la lorsque la concentration devient difficile et que vous devez rester performant dans les moments importants. Vous travaillez votre sprint ou votre détente verticale ? Appliquez cette logique à votre entraînement.</p>
+      <p class="art-p">Le principe reste le même : apprendre à reconnaître ce qui se passe dans votre tête lorsque la difficulté apparaît, puis apprendre à mieux y répondre.</p>
+
+      <div class="art-divider"></div>
+
+      <!-- Conclusion -->
+      <div class="art-section-title">La vraie résistance mentale ne consiste pas à ne jamais souffrir</div>
+      <p class="art-p">Être mentalement résistant ne signifie pas ne jamais ressentir de fatigue, de douleur ou de difficulté. Cela signifie apprendre à rester lucide lorsque ces sensations apparaissent.</p>
+      <p class="art-p">Votre corps vous envoie des informations. Votre cerveau les interprète. Et votre comportement dépend en partie de cette interprétation. Le travail consiste donc à mieux comprendre ce dialogue — à identifier vos pensées automatiques, à les remettre en question, puis à construire progressivement de nouvelles réponses.</p>
+      <p class="art-p">Le Bring Sally Up n'est qu'un exercice. Mais si vous l'utilisez correctement, il peut devenir un véritable laboratoire pour observer votre mental. Et ce que vous apprenez dans cet exercice peut ensuite vous accompagner bien au-delà des pompes.</p>
+      <p class="art-p" style="font-style:italic;color:var(--ah-text);font-weight:500">Dans votre entraînement. Dans votre sport. Et dans les moments où vous devez continuer alors que votre cerveau vous demande d'arrêter.</p>
+
+    </div>
   </div>
 </div>
 
@@ -41359,5 +41534,29 @@ async function fbSaveProfile() {
   } else {
     setTimeout(maybeShow, 3000);
   }
+})();
+
+// ── Article Reader — open / close ──────────────────────────────────────────
+window.openArticle = function(slug) {
+  var el = document.getElementById('articleOverlay');
+  if (!el) return;
+  el.style.display = 'flex';
+  requestAnimationFrame(function() {
+    requestAnimationFrame(function() { el.classList.add('on'); });
+  });
+  var body = el.querySelector('.art-body');
+  if (body) body.scrollTop = 0;
+};
+window.closeArticle = function() {
+  var el = document.getElementById('articleOverlay');
+  if (!el) return;
+  el.classList.remove('on');
+  setTimeout(function() { el.style.display = 'none'; }, 320);
+};
+// Close on back gesture (popstate)
+(function(){
+  document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') { var el = document.getElementById('articleOverlay'); if (el && el.classList.contains('on')) window.closeArticle(); }
+  });
 })();
 </script>
