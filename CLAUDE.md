@@ -17,7 +17,7 @@ The app is the digital companion of the book *Les Secrets de la Détente Vertica
   - `sw.js` (cache-first for local assets, network-first for externals) + `manifest.json`. Cache name is `athletik-v271` — bump it when shipping CSS/HTML that must invalidate.
   - `firebase-messaging-sw.js` (root) — receives background push notifications (FCM).
 - **No linter, no build**. Validate changes by opening `index.html` in a browser (mobile-first, Android Chrome is the target). Before committing, sanity-check JS syntax by parsing the non-module `<script>` blocks with `node -e` (see Coding conventions).
-- **Tests**: `for f in scripts/test-*.js; do node "$f"; done` — 20 suites, ~1 040 assertions, pure
+- **Tests**: `for f in scripts/test-*.js; do node "$f"; done` — 21 suites, ~1 085 assertions, pure
   Node, zéro dépendance : chaque suite extrait les **vraies** fonctions d'`index.html` par
   équilibrage d'accolades et les rejoue contre des mocks. `scripts/test-live-layout.js` est la
   seule exception : elle ouvre un vrai Chromium (Playwright, hors `package.json`) pour mesurer la
@@ -274,6 +274,20 @@ completedPrograms, fcmToken, accessTier`.
   client l'envoyait déjà, le serveur ne l'imprimait pas. Les entrées antérieures n'ont pas
   ces champs et s'affichent sans ligne vide ni compte inventé.
   Tests : `scripts/test-athlete-state.js` (66).
+- **Messages de Titan enregistrés (favoris)** : `☆ Enregistrer` / `★ Enregistré` sous chaque
+  bulle Titan (jamais sous un message de l'athlète), étoile + compteur dans l'en-tête du chat,
+  feuille du bas `#titanSavedOv`. Trois contraintes du code existant dictent la conception :
+  **aucun message n'a d'identifiant** (`conversationHistory` = tableau plat `{role, content}`)
+  → l'id est un **hash du contenu** (`_titanMsgId`), stable au rechargement et **dédoublonnant
+  par nature** ; **`ah_titan_chat` ne garde que 40 messages** → le favori **porte son propre
+  texte**, sinon il devient une coquille vide (et il survit à `resetTitanChat`) ; **il n'existe
+  qu'une seule conversation** → pas de `conversationId`, « revenir au message » = le retrouver
+  dans `#chatBody` par son hash, sinon on le dit franchement.
+  Stockage : `ah_titan_saved` dans `FB_SYNC_KEYS` → voyage dans `users/{uid}` déjà écrit par
+  `fbSaveProfile()`. **Aucune lecture Firestore supplémentaire, aucun listener, aucune règle à
+  ajouter** (`validProfileShape` utilise `hasAny`) — c'est le motif de `ah_recipe_favorites`.
+  Plafond 100 entrées. Pas de toast : le bouton bascule sous le doigt.
+  Test : `scripts/test-titan-saved.js` (43, vrai Chromium en 375×667 et 320×568).
 - **Titan AI**: `callAnthropicAPI()` builds `ctx` from `ah_profile` (not `window.user`) and POSTs to `/.netlify/functions/titan`.
   Le contexte envoyé comprend **le profil (11 champs), l'état athlète
   (`_ahBuildAthleteState`) et la nutrition (`_titanNutritionCtx`)** — morphologie, cibles

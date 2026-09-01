@@ -1198,6 +1198,69 @@ body{background:var(--bg);color:var(--text);font-family:'Outfit',sans-serif;disp
 .msg.titan .msg-time{margin-left:4px}
 .msg.user .msg-time{margin-right:4px;text-align:right}
 
+/* ═══ MESSAGES ENREGISTRÉS ═══
+   Action secondaire : elle vit sur la même ligne que l'heure pour ne pas
+   ajouter de hauteur à la conversation. La zone tactile est étendue à 44 px
+   par un pseudo-élément — grandir le bouton lui-même alourdirait le chat. */
+.msg-foot{display:flex;align-items:center;gap:8px;margin-top:3px}
+.msg-foot .msg-time{margin-top:0}
+.msg-save{
+  position:relative;display:inline-flex;align-items:center;gap:5px;
+  padding:5px 9px;border:1px solid var(--border);border-radius:20px;
+  background:none;color:var(--muted);cursor:pointer;
+  font-family:'Outfit',sans-serif;font-size:10px;font-weight:700;
+  letter-spacing:.04em;line-height:1;transition:color .15s,border-color .15s,background .15s;
+}
+.msg-save::after{content:'';position:absolute;inset:-11px -8px;}
+.msg-save .mss-star{font-size:12px;line-height:1}
+.msg-save:active{background:var(--surface2)}
+.msg-save.on{color:var(--gold);border-color:rgba(197,164,78,.55);background:rgba(197,164,78,.10)}
+.msg-save.on .mss-star{animation:msgSavePop .32s cubic-bezier(.2,.9,.3,1.3) both}
+@keyframes msgSavePop{0%{transform:scale(.7)}60%{transform:scale(1.28)}100%{transform:scale(1)}}
+@media (prefers-reduced-motion:reduce){.msg-save.on .mss-star{animation:none}}
+
+/* Mise en évidence au retour depuis un favori. */
+.msg.msg-hl .msg-bubble{
+  box-shadow:0 0 0 2px var(--gold),0 6px 20px rgba(197,164,78,.28);
+  transition:box-shadow .3s;
+}
+
+/* Compteur sur l'étoile de l'en-tête du chat. */
+.ch-saved-badge{
+  position:absolute;top:-4px;right:-5px;min-width:15px;height:15px;padding:0 3px;
+  border-radius:8px;background:var(--gold);color:var(--navy);
+  font-family:'Outfit',sans-serif;font-size:9px;font-weight:800;line-height:15px;
+  text-align:center;pointer-events:none;
+}
+
+/* La liste — même feuille du bas que le reste de l'app. */
+.tsv-ov{position:fixed;inset:0;z-index:10000;background:rgba(10,17,34,.78);display:none;align-items:flex-end;justify-content:center;opacity:0;transition:opacity .2s}
+.tsv-ov.on{display:flex;opacity:1}
+.tsv-sheet{width:100%;max-width:430px;max-height:82vh;display:flex;flex-direction:column;background:var(--bg);border-radius:20px 20px 0 0;border-top:1px solid rgba(197,164,78,.25);animation:tsvUp .26s cubic-bezier(.2,.8,.3,1) both}
+@keyframes tsvUp{from{transform:translateY(40px)}to{transform:translateY(0)}}
+.tsv-grab{width:42px;height:4px;border-radius:2px;background:var(--border2);margin:10px auto 4px;flex-shrink:0}
+.tsv-head{display:flex;align-items:baseline;justify-content:space-between;gap:10px;padding:6px 20px 12px;flex-shrink:0}
+.tsv-title{font-family:'Bebas Neue',sans-serif;font-size:20px;letter-spacing:.8px;color:var(--text);white-space:nowrap}
+.tsv-count{font-size:11px;font-weight:700;color:var(--muted)}
+.tsv-list{overflow-y:auto;padding:0 16px 22px;display:flex;flex-direction:column;gap:9px;-webkit-overflow-scrolling:touch}
+.tsv-item{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:12px 13px;cursor:pointer;text-align:left;width:100%;font-family:'Outfit',sans-serif}
+.tsv-item:active{border-color:var(--gold)}
+.tsv-item-top{display:flex;align-items:center;gap:7px;margin-bottom:6px}
+.tsv-chip{font-size:9px;font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:var(--gold);background:rgba(197,164,78,.13);border-radius:4px;padding:2px 6px}
+.tsv-date{font-size:10px;color:var(--muted);font-weight:600}
+.tsv-txt{font-size:12.5px;line-height:1.5;color:var(--text);font-weight:500;overflow-wrap:anywhere}
+.tsv-txt p{margin:0 0 7px}.tsv-txt p:last-child{margin-bottom:0}
+.tsv-txt strong{font-weight:800}
+.tsv-txt .tm-list{margin:0 0 7px;padding:0;list-style:none;display:flex;flex-direction:column;gap:4px}
+.tsv-txt .tm-list:last-child{margin-bottom:0}
+.tsv-txt .tm-list li{position:relative;padding-left:14px}
+.tsv-txt .tm-list li::before{content:'';position:absolute;left:3px;top:.55em;width:4px;height:4px;border-radius:50%;background:currentColor;opacity:.45}
+.tsv-actions{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:9px}
+.tsv-goto{font-size:10.5px;font-weight:700;color:var(--gold)}
+.tsv-rm{background:none;border:0;padding:6px 8px;margin:-6px -8px;color:var(--muted);font-family:'Outfit',sans-serif;font-size:10.5px;font-weight:700;cursor:pointer}
+.tsv-rm:active{color:#DC2626}
+.tsv-empty{padding:26px 20px 34px;text-align:center;color:var(--muted);font-size:12.5px;line-height:1.6}
+
 /* Titan label */
 .msg-titan-label{display:flex;align-items:center;gap:6px;margin-bottom:4px}
 .mtl-av{width:22px;height:22px;border-radius:50%;background:var(--navy);border:1.5px solid var(--gold);flex-shrink:0}
@@ -8482,6 +8545,8 @@ window.tiResetOnEnter = function(){ window.tiShowStep(1); };
     <div class="ch-back" onclick="switchTab('home')" style="position:absolute;left:14px;top:14px;font-size:22px;color:var(--ah-gold);cursor:pointer">←</div>
     <!-- Bouton guide rapide Titan — discret, à gauche du menu paramètres -->
     <button type="button" onclick="window.openGuide && window.openGuide('titan')" aria-label="Guide rapide Titan" title="Guide rapide" style="position:absolute;right:48px;top:14px;display:inline-flex;align-items:center;justify-content:center;width:24px;height:24px;border-radius:50%;background:rgba(197,164,78,.15);border:1px solid rgba(197,164,78,.45);color:var(--ah-gold);font-family:'Outfit',sans-serif;font-size:12px;font-weight:800;cursor:pointer;padding:0;line-height:1">?</button>
+    <!-- Messages enregistrés : même gabarit que le bouton « ? » voisin. -->
+    <button type="button" id="chSavedBtn" onclick="window.titanOpenSaved()" aria-label="Messages enregistrés" title="Messages enregistrés" style="position:absolute;right:82px;top:14px;display:inline-flex;align-items:center;justify-content:center;width:24px;height:24px;border-radius:50%;background:rgba(197,164,78,.15);border:1px solid rgba(197,164,78,.45);color:var(--ah-gold);font-size:12px;cursor:pointer;padding:0;line-height:1">★<span class="ch-saved-badge" id="chSavedCount" style="display:none">0</span></button>
     <div class="ch-menu" onclick="switchTab('moi')" style="position:absolute;right:14px;top:14px;font-size:22px;color:rgba(255,255,255,.5);cursor:pointer">⋮</div>
     <div class="ch-avatar" style="width:88px;height:88px;border-radius:50%;overflow:hidden;border:2.5px solid var(--ah-gold);background:var(--ah-navy-deep);box-shadow:0 6px 22px rgba(197,164,78,.28),0 0 0 4px rgba(197,164,78,.08);display:flex;align-items:center;justify-content:center">
       <img src="images/titan-mascot.png" alt="Titan" decoding="async" style="width:100%;height:100%;object-fit:cover" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">
@@ -8490,6 +8555,18 @@ window.tiResetOnEnter = function(){ window.tiShowStep(1); };
     <div class="ch-info" style="display:flex;flex-direction:column;align-items:center;gap:2px">
       <div class="ch-name">TITAN</div>
       <div class="ch-status" id="chatStatus">En ligne</div>
+    </div>
+  </div>
+
+  <!-- Feuille « Messages enregistrés » — même motif que les autres overlays. -->
+  <div class="tsv-ov" id="titanSavedOv" onclick="if(event.target===this)window.titanCloseSaved()">
+    <div class="tsv-sheet" role="dialog" aria-label="Messages enregistrés">
+      <div class="tsv-grab"></div>
+      <div class="tsv-head">
+        <div class="tsv-title">MESSAGES ENREGISTRÉS</div>
+        <div class="tsv-count" id="tsvCount"></div>
+      </div>
+      <div class="tsv-list" id="tsvList"></div>
     </div>
   </div>
 
@@ -15970,7 +16047,11 @@ function switchTab(tab){
   var titanBtn=document.querySelector('.nav-titan');
   if(titanBtn)titanBtn.style.filter=(tab==='chat')?'drop-shadow(0 0 8px rgba(197,164,78,.6))':'none';
   // Restaure la conversation Titan depuis localStorage à l'ouverture
-  if (tab === 'chat') { try { restoreTitanChat(); } catch(e) {} }
+  if (tab === 'chat') {
+    try { restoreTitanChat(); } catch(e) {}
+    // Après restauration : le message d'accueil statique n'a pas d'identifiant.
+    try { _titanDecorateStatic(); _titanSavedRefreshBadge(); } catch(e) {}
+  }
   // Init SAT step-by-step quand on entre dans Tracks
   if (tab === 'tracks') {
     try { initSATv7(); } catch(e) { console.warn('initSATv7 error:', e); }
@@ -25621,6 +25702,211 @@ function _titanTrimImages(msgs) {
   });
 }
 
+// ══════════════════════════════════════════════════════════════════════
+// MESSAGES ENREGISTRÉS — favoris des réponses de Titan
+// ─────────────────────────────────────────────────────────────────────
+// Trois contraintes dictent toute la conception, et elles viennent du code
+// existant, pas d'un choix esthétique :
+//
+//  1. AUCUN MESSAGE N'A D'IDENTIFIANT. conversationHistory est un tableau
+//     plat de {role, content}. L'identifiant est donc DÉRIVÉ du contenu
+//     (hash 32 bits en base 36) : stable d'un rechargement à l'autre, et
+//     dédoublonnant par nature — deux enregistrements du même message
+//     produisent la même clé, donc une seule entrée (§6 du cahier).
+//
+//  2. LE CHAT NE GARDE QUE 40 MESSAGES (persistTitanChat). Un favori doit
+//     donc porter SON PROPRE TEXTE : sinon il devient une coquille vide dès
+//     que le message sort de la fenêtre. C'est aussi ce qui le rend
+//     consultable après un resetTitanChat().
+//
+//  3. IL N'Y A QU'UNE SEULE CONVERSATION. Pas de conversationId à stocker :
+//     « revenir au message » = le retrouver dans #chatBody par son hash.
+//     S'il n'y est plus, on le dit — on ne fait pas défiler dans le vide.
+//
+// Stockage : ah_titan_saved, inscrit dans FB_SYNC_KEYS → il voyage dans le
+// document users/{uid} déjà écrit par fbSaveProfile(). Aucune lecture
+// Firestore supplémentaire, aucun listener, aucune règle à ajouter — c'est
+// exactement le motif de ah_recipe_favorites.
+// ══════════════════════════════════════════════════════════════════════
+var TITAN_SAVED_MAX = 100;
+
+// Texte des messages actuellement à l'écran, indexé par hash. Rempli par
+// addMessage : évite de relire le DOM et de perdre le markdown d'origine.
+window._titanMsgText = window._titanMsgText || {};
+
+// Hash 32 bits (variante djb2) → base 36. Non cryptographique : il sert à
+// identifier, pas à protéger.
+function _titanMsgId(text) {
+  var str = String(text == null ? '' : text).trim();
+  var h = 5381;
+  for (var i = 0; i < str.length; i++) h = ((h << 5) + h + str.charCodeAt(i)) | 0;
+  // La longueur départage les rares collisions de hash sur des textes courts.
+  return (h >>> 0).toString(36) + '-' + str.length.toString(36);
+}
+function _titanSavedGet() {
+  try {
+    var a = JSON.parse(localStorage.getItem('ah_titan_saved') || '[]');
+    return Array.isArray(a) ? a.filter(function (e) { return e && e.id && e.text; }) : [];
+  } catch (e) { return []; }
+}
+function _titanSavedSet(arr) {
+  try {
+    localStorage.setItem('ah_titan_saved', JSON.stringify(arr.slice(0, TITAN_SAVED_MAX)));
+    if (typeof fbSaveProfile === 'function') fbSaveProfile();
+  } catch (e) {}
+}
+function _titanIsSaved(id) {
+  return _titanSavedGet().some(function (e) { return e.id === id; });
+}
+
+// Met à jour le compteur de l'en-tête. Appelé après chaque changement.
+function _titanSavedRefreshBadge() {
+  var el = document.getElementById('chSavedCount');
+  if (!el) return;
+  var n = _titanSavedGet().length;
+  el.textContent = n > 99 ? '99+' : String(n);
+  el.style.display = n ? '' : 'none';
+}
+window._titanSavedRefreshBadge = _titanSavedRefreshBadge;
+
+// Bascule un message. Idempotent : plusieurs taps rapides sur le même
+// message ne peuvent pas créer deux entrées, l'état est relu à chaque appel.
+window.titanToggleSave = function (id, btn) {
+  if (!id) return;
+  var list = _titanSavedGet();
+  var idx = -1;
+  for (var i = 0; i < list.length; i++) { if (list[i].id === id) { idx = i; break; } }
+  var nowSaved;
+  if (idx > -1) {
+    list.splice(idx, 1);
+    nowSaved = false;
+  } else {
+    var text = window._titanMsgText[id];
+    if (!text) return;                 // rien à enregistrer, on ne devine pas
+    list.unshift({ id: id, text: text, savedAt: new Date().toISOString() });
+    nowSaved = true;
+  }
+  _titanSavedSet(list);
+  // Le bouton passé en argument est repeint immédiatement ; les éventuels
+  // jumeaux (même message affiché deux fois) suivent par le sélecteur.
+  var all = document.querySelectorAll('.msg-save[data-mid="' + id + '"]');
+  Array.prototype.forEach.call(all, function (b) { _titanPaintSaveBtn(b, nowSaved); });
+  if (btn && all.length === 0) _titanPaintSaveBtn(btn, nowSaved);
+  _titanSavedRefreshBadge();
+  // Pas de toast : le bouton bascule sous le doigt et le compteur de
+  // l'en-tête s'incrémente — la confirmation est déjà à l'écran, et un
+  // toast par tap s'empilerait sur la conversation.
+  try { if (navigator.vibrate) navigator.vibrate(nowSaved ? 18 : 10); } catch (e) {}
+};
+
+function _titanPaintSaveBtn(btn, saved) {
+  if (!btn) return;
+  btn.classList.toggle('on', !!saved);
+  btn.setAttribute('aria-pressed', saved ? 'true' : 'false');
+  btn.innerHTML = '<span class="mss-star">' + (saved ? '★' : '☆') + '</span>'
+                + (saved ? 'Enregistré' : 'Enregistrer');
+}
+
+// Le HTML du bouton, inséré par addMessage sous chaque réponse de Titan.
+function _titanSaveBtnHtml(id) {
+  var on = _titanIsSaved(id);
+  return '<button type="button" class="msg-save' + (on ? ' on' : '') + '"'
+       + ' data-mid="' + id + '" aria-pressed="' + (on ? 'true' : 'false') + '"'
+       + ' onclick="window.titanToggleSave(\'' + id + '\', this)">'
+       + '<span class="mss-star">' + (on ? '★' : '☆') + '</span>'
+       + (on ? 'Enregistré' : 'Enregistrer') + '</button>';
+}
+
+// ── La liste ──
+function _titanSavedDate(iso) {
+  try {
+    var d = new Date(iso), now = new Date();
+    var jour = d.toDateString() === now.toDateString();
+    var hier = new Date(now.getTime() - 86400000).toDateString() === d.toDateString();
+    var hm = ('0' + d.getHours()).slice(-2) + ':' + ('0' + d.getMinutes()).slice(-2);
+    if (jour) return "Aujourd'hui · " + hm;
+    if (hier) return 'Hier · ' + hm;
+    return d.toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' }) + ' · ' + hm;
+  } catch (e) { return ''; }
+}
+
+window.titanOpenSaved = function () {
+  var ov = document.getElementById('titanSavedOv');
+  var list = document.getElementById('tsvList');
+  var cnt = document.getElementById('tsvCount');
+  if (!ov || !list) return;
+  var items = _titanSavedGet();
+  if (cnt) cnt.textContent = items.length ? items.length + (items.length > 1 ? ' messages' : ' message') : '';
+  if (!items.length) {
+    list.innerHTML = '<div class="tsv-empty">Aucun message enregistré pour l\'instant.<br>'
+      + 'Sous chaque réponse de Titan, touche <b>☆ Enregistrer</b> pour la retrouver ici.</div>';
+  } else {
+    list.innerHTML = items.map(function (e) {
+      var present = !!document.querySelector('.msg[data-mid="' + e.id + '"]');
+      return '<div class="tsv-item" onclick="window.titanGotoSaved(\'' + e.id + '\')">'
+        + '<div class="tsv-item-top"><span class="tsv-chip">Titan</span>'
+        +   '<span class="tsv-date">' + _titanSavedDate(e.savedAt) + '</span></div>'
+        + '<div class="tsv-txt">' + _titanRenderMd(e.text) + '</div>'
+        + '<div class="tsv-actions">'
+        +   '<span class="tsv-goto">' + (present ? 'Voir dans la conversation →' : 'Plus dans la conversation') + '</span>'
+        +   '<button type="button" class="tsv-rm" onclick="event.stopPropagation();window.titanRemoveSaved(\'' + e.id + '\')">Retirer</button>'
+        + '</div></div>';
+    }).join('');
+  }
+  ov.classList.add('on');
+};
+window.titanCloseSaved = function () {
+  var ov = document.getElementById('titanSavedOv');
+  if (ov) ov.classList.remove('on');
+};
+window.titanRemoveSaved = function (id) {
+  window.titanToggleSave(id, null);
+  window.titanOpenSaved();   // la liste se recompose sur l'état à jour
+};
+
+// Retour au message d'origine. S'il a quitté la fenêtre de 40 messages, on
+// le dit franchement plutôt que de faire défiler vers rien.
+// Le message d'accueil est écrit en dur dans le HTML (et re-écrit par
+// resetTitanChat). Plutôt que de dupliquer le bouton dans ces deux chaînes,
+// on décore après coup toute bulle Titan qui n'a pas encore d'identifiant.
+// Idempotent : une bulle déjà décorée est ignorée.
+function _titanDecorateStatic() {
+  var msgs = document.querySelectorAll('#chatBody .msg.titan:not([data-mid])');
+  Array.prototype.forEach.call(msgs, function (el) {
+    var bubble = el.querySelector('.msg-bubble');
+    var timeEl = el.querySelector('.msg-time');
+    if (!bubble || !timeEl || el.querySelector('.msg-save')) return;
+    var txt = bubble.textContent.trim();
+    if (!txt) return;
+    var mid = _titanMsgId(txt);
+    window._titanMsgText[mid] = txt;
+    el.setAttribute('data-mid', mid);
+    var foot = document.createElement('div');
+    foot.className = 'msg-foot';
+    timeEl.parentNode.insertBefore(foot, timeEl);
+    foot.appendChild(timeEl);
+    foot.insertAdjacentHTML('beforeend', _titanSaveBtnHtml(mid));
+  });
+}
+window._titanDecorateStatic = _titanDecorateStatic;
+
+window.titanGotoSaved = function (id) {
+  var el = document.querySelector('.msg[data-mid="' + id + '"]');
+  if (!el) {
+    if (typeof showToast === 'function') {
+      showToast('Ce message n\'est plus dans la conversation — son texte reste ici.', 'info');
+    }
+    return;
+  }
+  window.titanCloseSaved();
+  setTimeout(function () {
+    try { el.scrollIntoView({ behavior: 'smooth', block: 'center' }); }
+    catch (e) { el.scrollIntoView(); }
+    el.classList.add('msg-hl');
+    setTimeout(function () { el.classList.remove('msg-hl'); }, 2200);
+  }, 220);
+};
+
 function persistTitanChat() {
   try {
     // Le base64 ne doit JAMAIS toucher localStorage : quota de 5 Mo, saturé
@@ -25643,6 +25929,7 @@ function restoreTitanChat() {
     if (m.role === 'user') addMessage(m.content, 'user');
     else if (m.role === 'assistant') addMessage(m.content, 'titan');
   });
+  try { _titanSavedRefreshBadge(); } catch(e) {}
 }
 
 function resetTitanChat() {
@@ -25652,6 +25939,9 @@ function resetTitanChat() {
   if (body) {
     body.innerHTML = '<div class="msg titan"><div class="msg-titan-label"><div class="mtl-av"></div><div class="mtl-name">Titan</div></div><div class="msg-bubble">Yo. T\'es connecté. Si t\'es là c\'est pour bosser. Dis-moi ce que tu veux travailler ou pose ta question.</div><div class="msg-time">Aujourd\'hui</div></div>';
   }
+  // Les messages enregistrés SURVIVENT à l'effacement du chat : ils portent
+  // leur propre texte. On rafraîchit seulement le compteur, qui ne change pas.
+  try { _titanDecorateStatic(); _titanSavedRefreshBadge(); } catch(e) {}
 }
 window.resetTitanChat = resetTitanChat;
 
@@ -25760,9 +26050,17 @@ function addMessage(text, type, imgDataUrl) {
   }
 
   if (type === 'titan') {
+    // L'identifiant est dérivé du texte : c'est la seule clé stable dont on
+    // dispose, et elle rend le doublon impossible. Les messages de
+    // l'utilisateur n'en reçoivent pas — on n'enregistre pas ses propres
+    // questions (§1 du cahier).
+    var mid = _titanMsgId(text);
+    window._titanMsgText[mid] = text;
+    msg.setAttribute('data-mid', mid);
     msg.innerHTML = '<div class="msg-titan-label"><div class="mtl-av"></div><div class="mtl-name">Titan</div></div>'
       + '<div class="msg-bubble">' + _titanRenderMd(text) + '</div>'
-      + '<div class="msg-time">' + getTimeStr() + '</div>';
+      + '<div class="msg-foot"><span class="msg-time">' + getTimeStr() + '</span>'
+      +   _titanSaveBtnHtml(mid) + '</div>';
   } else if (type === 'user') {
     var photoHtml = imgDataUrl
       ? '<img class="msg-photo" src="' + imgDataUrl + '" alt="Photo envoyée">' : '';
@@ -33619,6 +33917,9 @@ var FB_SYNC_KEYS = [
   ['ah_badges_earned',            'badgesEarned',        true],
   ['ah_builder_session',          'builderSession',      true],
   ['ah_recipe_favorites',         'recipeFavorites',     true],
+  // Messages de Titan enregistrés par l'athlète. Ils portent leur texte :
+  // ah_titan_chat ne garde que 40 messages et n'est pas synchronisé.
+  ['ah_titan_saved',              'titanSaved',          true],
   ['ah_shopping_checks',          'shoppingChecks',      true],
   ['ah_shopping_meal_plan',       'shoppingMealPlan',    true],
   ['ah_shopping_meal_plan_checks','shoppingMealChecks',  true],

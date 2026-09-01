@@ -83,3 +83,4 @@ playwright/.cache/
 
 # Sortie accidentelle d'un script de capture (SP non défini)
 undefined/
+.tmp-titan-saved/

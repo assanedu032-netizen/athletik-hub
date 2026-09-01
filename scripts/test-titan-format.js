@@ -106,9 +106,18 @@ console.log('\n=== NON-RÉGRESSION ===\n');
 {
   ok('le message de l\'athlète reste échappé comme avant',
      /escapeHtml\(text \|\| ''\)/.test(html));
+  // Le renderer ne doit JAMAIS toucher un message de l'athlète. On énumère
+  // ses points d'appel plutôt que de les compter : un nouvel appel devient
+  // une décision explicite, pas un compteur à rallonge.
+  //   1. sa définition
+  //   2. la bulle de Titan dans addMessage
+  //   3. la liste des messages enregistrés (même contenu, même rendu)
   ok('seul le message de Titan passe par le renderer',
      /_titanRenderMd\(text\)/.test(html)
-     && (html.match(/_titanRenderMd\(/g) || []).length === 2);
+     && (html.match(/_titanRenderMd\(/g) || []).length === 3
+     && !/_titanRenderMd\([^)]*escapeHtml/.test(html));
+  ok('  et la liste des enregistrés le rend comme la bulle',
+     /class="tsv-txt">' \+ _titanRenderMd\(e\.text\)/.test(html));
   ok('la bulle sait afficher paragraphes et listes',
      /\.msg-bubble p\{/.test(html) && /\.msg-bubble \.tm-list\{/.test(html));
   ok('rien d\'autre n\'a changé dans addMessage',
