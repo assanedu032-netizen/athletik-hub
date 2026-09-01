@@ -17,7 +17,7 @@ The app is the digital companion of the book *Les Secrets de la Détente Vertica
   - `sw.js` (cache-first for local assets, network-first for externals) + `manifest.json`. Cache name is `athletik-v271` — bump it when shipping CSS/HTML that must invalidate.
   - `firebase-messaging-sw.js` (root) — receives background push notifications (FCM).
 - **No linter, no build**. Validate changes by opening `index.html` in a browser (mobile-first, Android Chrome is the target). Before committing, sanity-check JS syntax by parsing the non-module `<script>` blocks with `node -e` (see Coding conventions).
-- **Tests**: `for f in scripts/test-*.js; do node "$f"; done` — 21 suites, ~1 085 assertions, pure
+- **Tests**: `for f in scripts/test-*.js; do node "$f"; done` — 22 suites, ~1 130 assertions, pure
   Node, zéro dépendance : chaque suite extrait les **vraies** fonctions d'`index.html` par
   équilibrage d'accolades et les rejoue contre des mocks. `scripts/test-live-layout.js` est la
   seule exception : elle ouvre un vrai Chromium (Playwright, hors `package.json`) pour mesurer la
@@ -274,6 +274,23 @@ completedPrograms, fcmToken, accessTier`.
   client l'envoyait déjà, le serveur ne l'imprimait pas. Les entrées antérieures n'ont pas
   ces champs et s'affichent sans ligne vide ni compte inventé.
   Tests : `scripts/test-athlete-state.js` (66).
+- **La conversation Titan se synchronise** (`ah_titan_chat` dans `FB_SYNC_KEYS`). C'est la
+  seule clé synchronisée qui s'écrit à **chaque tour** et dont la taille dépend de ce que le
+  modèle produit — trois garde-fous, aucun optionnel :
+  **(1) écriture groupée** — `persistTitanChat` n'appelle pas `fbSaveProfile` (ce serait une
+  écriture du document entier par message) ; `_titanScheduleSync()` regroupe une rafale en une
+  seule écriture après 6 s, et ne fait rien hors connexion.
+  **(2) fusion, jamais écrasement** — `_fbApplyPayload` écrit le distant par-dessus le local ;
+  appliqué tel quel au chat, il effacerait les messages de l'appareil qui se connecte.
+  `_titanMergeChat` réunit les deux côtés, dédoublonne sur `role+contenu`, ordonne par `t` et
+  écrête à 40. Chaque message porte désormais `t` (l'instant réel) — les conversations
+  antérieures n'en ont pas et sont placées en tête, dans leur ordre.
+  **(3) budget d'octets** — `_titanChatForSync` n'envoie que la queue tenant dans 60 Ko
+  (`MAX_TOKENS = 700` ≈ 2,8 Ko par réponse ; le document porte déjà séances, tracking et
+  nutrition sous la limite de 1 Mo). localStorage garde toujours ses 40 messages.
+  `getTimeStr(ts)` affiche l'heure **du message** (et sa date s'il est d'un autre jour) : la
+  restauration montrait l'heure du rechargement sur toutes les bulles.
+  Test : `scripts/test-titan-sync.js` (37).
 - **Messages de Titan enregistrés (favoris)** : `☆ Enregistrer` / `★ Enregistré` sous chaque
   bulle Titan (jamais sous un message de l'athlète), étoile + compteur dans l'en-tête du chat,
   feuille du bas `#titanSavedOv`. Trois contraintes du code existant dictent la conception :
@@ -287,7 +304,7 @@ completedPrograms, fcmToken, accessTier`.
   `fbSaveProfile()`. **Aucune lecture Firestore supplémentaire, aucun listener, aucune règle à
   ajouter** (`validProfileShape` utilise `hasAny`) — c'est le motif de `ah_recipe_favorites`.
   Plafond 100 entrées. Pas de toast : le bouton bascule sous le doigt.
-  Test : `scripts/test-titan-saved.js` (43, vrai Chromium en 375×667 et 320×568).
+  Test : `scripts/test-titan-saved.js` (49, vrai Chromium en 375×667 et 320×568).
 - **Titan AI**: `callAnthropicAPI()` builds `ctx` from `ah_profile` (not `window.user`) and POSTs to `/.netlify/functions/titan`.
   Le contexte envoyé comprend **le profil (11 champs), l'état athlète
   (`_ahBuildAthleteState`) et la nutrition (`_titanNutritionCtx`)** — morphologie, cibles

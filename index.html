@@ -25561,14 +25561,17 @@ async function callAnthropicAPI(userMessage, photo) {
   // pour pouvoir retirer le base64 de l'historique juste après la réponse.
   if (photo && photo.data) {
     conversationHistory.push({
-      role: 'user',
+      role: 'user', t: Date.now(),
       content: [
         { type: 'image', source: { type: 'base64', media_type: photo.media_type, data: photo.data } },
         { type: 'text', text: userMessage || 'Regarde cette image et dis-moi ce que tu en penses.' }
       ]
     });
   } else {
-    conversationHistory.push({ role: 'user', content: userMessage });
+    // `t` : l'instant réel du message. Il sert à FUSIONNER deux appareils
+    // dans le bon ordre — sans lui, la synchronisation ne saurait pas
+    // entrelacer une conversation tenue sur le téléphone et sur la tablette.
+    conversationHistory.push({ role: 'user', content: userMessage, t: Date.now() });
   }
   // L'image RESTE en memoire : sans ca, a la question suivante ("tu as recu
   // ca ?"), Titan ne la voyait plus et repondait qu'il ne recoit pas les
@@ -25656,7 +25659,7 @@ async function callAnthropicAPI(userMessage, photo) {
     }
 
     if (data.reply) {
-      conversationHistory.push({ role: 'assistant', content: data.reply });
+      conversationHistory.push({ role: 'assistant', content: data.reply, t: Date.now() });
       persistTitanChat();
       return data.reply;
     }
@@ -25907,14 +25910,118 @@ window.titanGotoSaved = function (id) {
   }, 220);
 };
 
+// ── Synchronisation du chat entre appareils ──────────────────────────
+// Le chat est la seule clé synchronisée qui s'écrit à CHAQUE tour de
+// conversation. Trois précautions en découlent, et aucune n'est optionnelle :
+//
+//  1. ÉCRITURE GROUPÉE. persistTitanChat n'appelle pas fbSaveProfile :
+//     ce serait une écriture Firestore du document ENTIER par message.
+//     _titanScheduleSync regroupe une rafale d'échanges en une seule
+//     écriture, quelques secondes après le dernier message.
+//
+//  2. FUSION, PAS ÉCRASEMENT. _fbApplyPayload écrit la valeur Firestore
+//     par-dessus le local. Appliqué tel quel au chat, ça effacerait les
+//     messages écrits sur l'appareil qui se connecte. _titanMergeChat
+//     réunit les deux côtés, dédoublonne et remet dans l'ordre du temps.
+//
+//  3. BUDGET D'OCTETS. Le document users/{uid} porte déjà l'historique de
+//     séances, le tracking et le journal nutritionnel, sous une limite
+//     Firestore de 1 Mo. Une réponse de Titan monte à ~2,8 Ko (MAX_TOKENS
+//     = 700). On ne synchronise donc que la queue qui tient dans le budget ;
+//     localStorage, lui, garde toujours ses 40 messages.
+var TITAN_CHAT_KEEP = 40;
+var TITAN_CHAT_SYNC_BYTES = 60000;   // ~60 Ko réservés au chat dans le document
+var TITAN_SYNC_DEBOUNCE = 6000;
+var _titanSyncTimer = null;
+
 function persistTitanChat() {
   try {
     // Le base64 ne doit JAMAIS toucher localStorage : quota de 5 Mo, saturé
     // en quelques photos, et c'est tout le chat qui serait alors perdu.
-    var tail = conversationHistory.slice(-40).map(_titanStripImages);
+    var tail = conversationHistory.slice(-TITAN_CHAT_KEEP).map(_titanStripImages);
     localStorage.setItem('ah_titan_chat', JSON.stringify(tail));
   } catch(e) {}
+  _titanScheduleSync();
 }
+
+// Une écriture pour toute une rafale de messages, jamais une par message.
+function _titanScheduleSync() {
+  if (!window.fbUser || typeof fbSaveProfile !== 'function') return;
+  if (_titanSyncTimer) clearTimeout(_titanSyncTimer);
+  _titanSyncTimer = setTimeout(function () {
+    _titanSyncTimer = null;
+    try { fbSaveProfile(); } catch (e) {}
+  }, TITAN_SYNC_DEBOUNCE);
+}
+window._titanScheduleSync = _titanScheduleSync;
+
+// Clé d'identité d'un message pour la fusion. Même principe que les favoris :
+// aucun message n'a d'identifiant, on le dérive du rôle et du contenu.
+function _titanMsgKey(m) {
+  var c = m && m.content;
+  if (Array.isArray(c)) {
+    c = c.filter(function (b) { return b && b.type === 'text'; })
+         .map(function (b) { return b.text; }).join(' ');
+  }
+  return (m && m.role) + '|' + String(c == null ? '' : c);
+}
+
+// Réunit deux versions d'une même conversation. Un message présent des deux
+// côtés n'apparaît qu'une fois ; l'ordre est celui du temps réel. Les
+// messages écrits avant cette version n'ont pas d'horodatage : ils sont
+// forcément antérieurs sur cet appareil, on les place donc en tête, dans
+// leur ordre d'origine.
+function _titanMergeChat(local, remote) {
+  var a = Array.isArray(local) ? local : [];
+  var b = Array.isArray(remote) ? remote : [];
+  if (!a.length) return b.slice(-TITAN_CHAT_KEEP);
+  if (!b.length) return a.slice(-TITAN_CHAT_KEEP);
+  var seen = {}, out = [];
+  a.concat(b).forEach(function (m, i) {
+    if (!m || !m.role) return;
+    var k = _titanMsgKey(m);
+    if (seen[k]) {
+      // Doublon : on garde l'horodatage le plus ancien, c'est le vrai.
+      var prev = seen[k];
+      if (m.t && (!prev.t || m.t < prev.t)) prev.t = m.t;
+      return;
+    }
+    // `ord` préserve l'ordre d'origine des messages sans horodatage.
+    var e = { m: m, t: m.t || 0, ord: i };
+    seen[k] = e;
+    out.push(e);
+  });
+  out.sort(function (x, y) {
+    if (x.t && y.t) return x.t - y.t || x.ord - y.ord;
+    if (x.t) return 1;      // un message daté est postérieur aux non datés
+    if (y.t) return -1;
+    return x.ord - y.ord;
+  });
+  return out.slice(-TITAN_CHAT_KEEP).map(function (e) {
+    // Copie : on ne mute jamais le tableau d'entrée, qui peut être
+    // conversationHistory elle-même. L'horodatage retenu est le plus ancien
+    // des deux côtés — c'est celui du vrai envoi.
+    var c = {};
+    Object.keys(e.m).forEach(function (k) { c[k] = e.m[k]; });
+    if (e.t) c.t = e.t;
+    return c;
+  });
+}
+window._titanMergeChat = _titanMergeChat;
+
+// Queue de conversation qui tient dans le budget d'octets du document.
+function _titanChatForSync(arr) {
+  var a = Array.isArray(arr) ? arr : [];
+  var out = a.slice(-TITAN_CHAT_KEEP);
+  while (out.length > 1) {
+    var size;
+    try { size = JSON.stringify(out).length; } catch (e) { return []; }
+    if (size <= TITAN_CHAT_SYNC_BYTES) break;
+    out = out.slice(1);   // on sacrifie le plus ancien, jamais le plus récent
+  }
+  return out;
+}
+window._titanChatForSync = _titanChatForSync;
 
 function restoreTitanChat() {
   var body = document.getElementById('chatBody');
@@ -25926,8 +26033,8 @@ function restoreTitanChat() {
   body.innerHTML = '';
   conversationHistory = saved.slice();
   saved.forEach(function(m){
-    if (m.role === 'user') addMessage(m.content, 'user');
-    else if (m.role === 'assistant') addMessage(m.content, 'titan');
+    if (m.role === 'user') addMessage(m.content, 'user', null, m.t);
+    else if (m.role === 'assistant') addMessage(m.content, 'titan', null, m.t);
   });
   try { _titanSavedRefreshBadge(); } catch(e) {}
 }
@@ -25998,9 +26105,16 @@ function getDemoResponse(msg) {
   return defaults[Math.floor(Math.random() * defaults.length)];
 }
 
-function getTimeStr() {
-  const now = new Date();
-  return now.getHours().toString().padStart(2,'0') + ':' + now.getMinutes().toString().padStart(2,'0');
+function getTimeStr(ts) {
+  const now = (ts && isFinite(ts)) ? new Date(ts) : new Date();
+  if (isNaN(now.getTime())) return getTimeStr();
+  var hm = now.getHours().toString().padStart(2,'0') + ':' + now.getMinutes().toString().padStart(2,'0');
+  // Un message d'un autre jour a besoin de sa date : sinon deux appareils
+  // synchronisés affichent « 09:14 » sur des messages séparés d'une semaine.
+  if (ts && new Date(ts).toDateString() !== new Date().toDateString()) {
+    return now.toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' }) + ' · ' + hm;
+  }
+  return hm;
 }
 
 // Rendu des réponses de Titan : gras, listes, retours à la ligne.
@@ -26039,7 +26153,11 @@ function _titanRenderMd(raw) {
 }
 
 // imgDataUrl : vignette de la photo jointe (messages user uniquement).
-function addMessage(text, type, imgDataUrl) {
+// `ts` : l'instant réel du message (ms). Absent → maintenant. Sans lui, une
+// conversation restaurée affichait l'heure du RECHARGEMENT sur chacune de ses
+// bulles — défaut invisible tant que le chat ne vivait que sur un appareil,
+// intenable dès qu'il se synchronise entre deux.
+function addMessage(text, type, imgDataUrl, ts) {
   const body = document.getElementById('chatBody');
   const msg = document.createElement('div');
   msg.className = 'msg ' + type;
@@ -26059,13 +26177,13 @@ function addMessage(text, type, imgDataUrl) {
     msg.setAttribute('data-mid', mid);
     msg.innerHTML = '<div class="msg-titan-label"><div class="mtl-av"></div><div class="mtl-name">Titan</div></div>'
       + '<div class="msg-bubble">' + _titanRenderMd(text) + '</div>'
-      + '<div class="msg-foot"><span class="msg-time">' + getTimeStr() + '</span>'
+      + '<div class="msg-foot"><span class="msg-time">' + getTimeStr(ts) + '</span>'
       +   _titanSaveBtnHtml(mid) + '</div>';
   } else if (type === 'user') {
     var photoHtml = imgDataUrl
       ? '<img class="msg-photo" src="' + imgDataUrl + '" alt="Photo envoyée">' : '';
     msg.innerHTML = '<div class="msg-bubble">' + photoHtml + escapeHtml(text || '') + '</div>'
-      + '<div class="msg-time">' + getTimeStr() + '</div>';
+      + '<div class="msg-time">' + getTimeStr(ts) + '</div>';
   }
 
   body.appendChild(msg);
@@ -33918,8 +34036,13 @@ var FB_SYNC_KEYS = [
   ['ah_builder_session',          'builderSession',      true],
   ['ah_recipe_favorites',         'recipeFavorites',     true],
   // Messages de Titan enregistrés par l'athlète. Ils portent leur texte :
-  // ah_titan_chat ne garde que 40 messages et n'est pas synchronisé.
+  // ah_titan_chat ne garde que 40 messages, et une conversation peut avoir
+  // été effacée depuis.
   ['ah_titan_saved',              'titanSaved',          true],
+  // La conversation elle-même. Écrasement interdit : elle est FUSIONNÉE à
+  // la lecture (_titanMergeChat) et écrêtée à l'écriture
+  // (_titanChatForSync) — voir le bloc de synchronisation du chat.
+  ['ah_titan_chat',               'titanChat',           true],
   ['ah_shopping_checks',          'shoppingChecks',      true],
   ['ah_shopping_meal_plan',       'shoppingMealPlan',    true],
   ['ah_shopping_meal_plan_checks','shoppingMealChecks',  true],
@@ -33950,6 +34073,12 @@ function _fbCollectPayload() {
       out[ff] = isJson ? JSON.parse(raw) : raw;
     } catch(e) { /* skip clé corrompue */ }
   });
+  // Le chat est la seule clé dont la taille dépend de ce que le modèle
+  // écrit. On envoie la queue qui tient dans son budget d'octets, pour ne
+  // jamais faire grossir le document users/{uid} sans limite.
+  try {
+    if (out.titanChat) out.titanChat = _titanChatForSync(out.titanChat);
+  } catch(e) { delete out.titanChat; }
   // accessTier n'est PLUS émis ici : audit sécurité — ce champ est désormais
   // verrouillé côté serveur (firestore.rules lockedFields()), écrit
   // uniquement par check-code.js via Admin SDK. Le renvoyer ici ferait
@@ -33983,6 +34112,14 @@ function _fbApplyPayload(data) {
     var sk = entry[0], ff = entry[1], isJson = entry[2];
     if (data[ff] == null) return;
     try {
+      // La conversation est FUSIONNÉE, jamais écrasée : l'écrasement
+      // effacerait les messages écrits sur l'appareil qui se connecte.
+      if (sk === 'ah_titan_chat') {
+        var localChat = [];
+        try { localChat = JSON.parse(localStorage.getItem('ah_titan_chat') || '[]'); } catch(_) {}
+        localStorage.setItem(sk, JSON.stringify(_titanMergeChat(localChat, data[ff])));
+        return;
+      }
       var v = isJson ? JSON.stringify(data[ff]) : data[ff];
       localStorage.setItem(sk, v);
     } catch(e) {}

@@ -243,6 +243,54 @@ const MIME = { '.html':'text/html','.js':'text/javascript','.css':'text/css','.j
   ok('aucune exception JS', errs.filter(e => !/firebase|fetch|ServiceWorker/i.test(e)).length === 0,
      errs.slice(0,2).join(' | '));
 
+  console.log('\n=== 7bis · SYNCHRO ENTRE DEUX APPAREILS ===\n');
+  {
+    // On simule l'arrivée d'une conversation Firestore écrite ailleurs, en
+    // passant par le VRAI chemin de restauration (_fbApplyPayload).
+    const T = Date.now() - 3600000;
+    await page.evaluate((T) => {
+      localStorage.setItem('ah_titan_chat', JSON.stringify([
+        { role:'user', content:'Écrit sur le téléphone', t: T + 60000 },
+        { role:'assistant', content:'Réponse téléphone', t: T + 61000 }
+      ]));
+      window._fbApplyPayload({
+        profile: JSON.parse(localStorage.getItem('ah_profile') || '{}'),
+        titanChat: [
+          { role:'user', content:'Écrit sur la tablette', t: T },
+          { role:'assistant', content:'Réponse tablette', t: T + 1000 }
+        ]
+      });
+    }, T);
+    const merged = await page.evaluate(() =>
+      JSON.parse(localStorage.getItem('ah_titan_chat') || '[]').map(m => m.content));
+    ok('les deux appareils sont réunis, rien n\'est écrasé', merged.length === 4, JSON.stringify(merged));
+    ok('  dans l\'ordre du temps réel',
+       merged.join('|') === 'Écrit sur la tablette|Réponse tablette|Écrit sur le téléphone|Réponse téléphone',
+       merged.join('|'));
+
+    await page.evaluate(() => {
+      document.querySelectorAll('.scr').forEach(v => { v.style.display='none'; v.classList.remove('on'); });
+      window.switchTab('home'); window.switchTab('chat');
+    });
+    await page.waitForTimeout(350);
+    const shown = await page.evaluate(() => ({
+      bubbles: Array.from(document.querySelectorAll('#chatBody .msg-bubble')).map(e => e.textContent.trim()),
+      times: Array.from(document.querySelectorAll('#chatBody .msg-time')).map(e => e.textContent.trim())
+    }));
+    ok('la conversation fusionnée s\'affiche entièrement', shown.bubbles.length === 4, JSON.stringify(shown.bubbles));
+    ok('chaque bulle porte l\'heure de SON message, pas celle du rechargement',
+       new Set(shown.times).size > 1, JSON.stringify(shown.times));
+
+    // Le payload sortant doit contenir la conversation.
+    const out = await page.evaluate(() => {
+      const p = window._fbCollectPayload();
+      return { has: Array.isArray(p.titanChat), n: (p.titanChat || []).length,
+               bytes: JSON.stringify(p.titanChat || []).length };
+    });
+    ok('la conversation part bien vers Firestore', out.has && out.n === 4, JSON.stringify(out));
+    ok('  sous le budget d\'octets', out.bytes < 60000, String(out.bytes));
+  }
+
   console.log('\n=== 8 · PETIT ÉCRAN (320×568) ===\n');
   {
     await page.setViewportSize({ width: 320, height: 568 });
