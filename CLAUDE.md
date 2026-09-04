@@ -17,7 +17,7 @@ The app is the digital companion of the book *Les Secrets de la Détente Vertica
   - `sw.js` (cache-first for local assets, network-first for externals) + `manifest.json`. Cache name is `athletik-v271` — bump it when shipping CSS/HTML that must invalidate.
   - `firebase-messaging-sw.js` (root) — receives background push notifications (FCM).
 - **No linter, no build**. Validate changes by opening `index.html` in a browser (mobile-first, Android Chrome is the target). Before committing, sanity-check JS syntax by parsing the non-module `<script>` blocks with `node -e` (see Coding conventions).
-- **Tests**: `for f in scripts/test-*.js; do node "$f"; done` — 24 suites, ~1 240 assertions, pure
+- **Tests**: `for f in scripts/test-*.js; do node "$f"; done` — 24 suites, ~1 275 assertions, pure
   Node, zéro dépendance : chaque suite extrait les **vraies** fonctions d'`index.html` par
   équilibrage d'accolades et les rejoue contre des mocks. `scripts/test-live-layout.js` est la
   seule exception : elle ouvre un vrai Chromium (Playwright, hors `package.json`) pour mesurer la
@@ -295,10 +295,24 @@ completedPrograms, fcmToken, accessTier`.
   `_titanIsFoodMessage()` est le déclencheur, volontairement **strict** : chaque déclenchement
   consomme un appel du quota, et un faux positif ferait répondre Titan en mode analyse à une
   question d'entraînement.
+  **Le parseur doit survivre à un modèle qui écrit en paragraphes.** Titan met des retours à la
+  ligne **littéraux** dans ses chaînes — illégal en JSON, `JSON.parse` lève. `parseNutritionJson`
+  tente donc trois lectures : brute, puis `nutEscapeControlChars()` (échappe les caractères de
+  contrôle **dans** les chaînes), puis `nutCloseTruncated()` (referme ce qu'une coupure au plafond
+  de jetons a laissé ouvert, après avoir jeté le dernier élément incomplet). En dernier recours
+  `nutExtractReply()` sauve la phrase seule. **Le serveur ne renvoie JAMAIS le brut** : le premier
+  repli déversait le JSON dans la bulle de l'athlète. `_titanUnwrapJson()` est le filet client —
+  aucune bulle Titan ne peut afficher du JSON, quelle qu'en soit la cause.
+  **Le déclencheur travaille sur des RADICAUX** (`enregistr\w*`), pas des formes exactes :
+  `\benregistre\b` ne matche pas « enregistrer », et « Tu peux enregistrer dans le journal »
+  partait en chat normal où Titan répondait qu'il ne savait pas enregistrer.
+  `STATIC_SYSTEM` porte une section **CE QUE L'APP SAIT FAIRE POUR TOI** : Titan sait que la carte
+  existe et ne doit jamais dire que c'est impossible. Elle vit là et **pas** dans
+  `buildNutritionContext()`, qui garde sa règle « pas de donnée → pas de section ».
   `.tn-items[hidden]{display:none}` est **nécessaire** : `display:flex` d'une classe bat la règle
   navigateur `[hidden]{display:none}`, et le détail restait visible pendant que `el.hidden` valait
   `true` — un test qui lit la propriété ne voit pas la différence.
-  Tests : `scripts/test-titan-nutri-action.js` (76) et `scripts/test-nutri-card.js` (28, vrai
+  Tests : `scripts/test-titan-nutri-action.js` (107) et `scripts/test-nutri-card.js` (28, vrai
   Chromium).
 - **La conversation Titan se synchronise** (`ah_titan_chat` dans `FB_SYNC_KEYS`). C'est la
   seule clé synchronisée qui s'écrit à **chaque tour** et dont la taille dépend de ce que le

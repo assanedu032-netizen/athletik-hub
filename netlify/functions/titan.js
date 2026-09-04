@@ -288,6 +288,17 @@ Style générique INTERDIT vs style Titan ATTENDU :
 - "Bienvenue !" → "T'es là. C'est déjà ça."
 
 ═══════════════════════════════
+CE QUE L'APP SAIT FAIRE POUR TOI
+═══════════════════════════════
+Quand l'athlète te décrit un repas, l'app affiche SOUS ta réponse une carte
+récapitulative (calories, protéines, glucides, lipides) avec un bouton
+« Enregistrer dans mon journal ».
+
+Tu n'écris jamais toi-même dans son journal — c'est lui qui valide d'un tap.
+Mais tu ne dis JAMAIS que c'est impossible, ni qu'il doit ressaisir chaque
+aliment à la main : tu lui dis de valider sur la carte juste en dessous.
+
+═══════════════════════════════
 FORME DES RÉPONSES
 ═══════════════════════════════
 Ce que tu dis ne change pas. La façon dont tu le poses, si : l'athlète te
@@ -793,7 +804,7 @@ Sois concis dans les "note". Tu es un coach, pas un bavard. Réponds en françai
 // Ce mode n'écrit RIEN. Il décrit ce qui pourrait être écrit ; c'est le
 // client qui présente la carte, et l'athlète qui décide.
 // ════════════════════════════════════════════════════════════════════════════
-const NUTRITION_MAX_TOKENS = 1600;
+const NUTRITION_MAX_TOKENS = 3000;
 const NUTRITION_MAX_ITEMS = 25;
 
 const NUTRITION_SYSTEM = `Tu es TITAN. L'athlète te décrit ce qu'il a mangé, en langage courant.
@@ -841,6 +852,7 @@ TA RÉPONSE ("reply")
 - Ton habituel : direct, tutoiement, pas de flatterie.
 - Donne le total, dis clairement ce qui est estimé.
 - N'écris JAMAIS que tu as enregistré quoi que ce soit : tu n'écris rien, c'est l'athlète qui valide sur sa carte.
+- Ne dis JAMAIS que tu ne peux pas enregistrer, ni qu'il faut tout ressaisir à la main. La carte sous ta réponse porte un bouton « Enregistrer dans mon journal » : si l'athlète demande à enregistrer, tu lui dis de valider là.
 - Ne répète pas le tableau des items ligne par ligne : le client l'affiche déjà.
 - Reste court : 2 à 5 phrases.
 
@@ -901,18 +913,102 @@ function sanitizeNutrition(n) {
   };
 }
 
+// Un modèle entraîné à écrire en paragraphes met des RETOURS À LA LIGNE
+// LITTÉRAUX dans ses chaînes. C'est illégal en JSON, JSON.parse lève, et
+// l'athlète recevait alors le JSON brut dans sa bulle. On échappe donc les
+// caractères de contrôle À L'INTÉRIEUR des chaînes avant de réessayer.
+function nutEscapeControlChars(s) {
+  let out = '', inStr = false, esc = false;
+  for (let i = 0; i < s.length; i++) {
+    const c = s[i];
+    if (esc) { out += c; esc = false; continue; }
+    if (c === '\\') { out += c; esc = true; continue; }
+    if (c === '"') { inStr = !inStr; out += c; continue; }
+    if (inStr && c === '\n') { out += '\\n'; continue; }
+    if (inStr && c === '\r') { out += '\\r'; continue; }
+    if (inStr && c === '\t') { out += '\\t'; continue; }
+    out += c;
+  }
+  return out;
+}
+
+// Réponse coupée en cours de route (plafond de jetons atteint) : on referme
+// ce qui est resté ouvert, après avoir jeté le dernier élément incomplet.
+function nutCloseTruncated(s) {
+  const stack = [];
+  let inStr = false, esc = false, lastSafe = -1;
+  for (let i = 0; i < s.length; i++) {
+    const c = s[i];
+    if (esc) { esc = false; continue; }
+    if (c === '\\') { esc = true; continue; }
+    if (inStr) { if (c === '"') inStr = false; continue; }
+    if (c === '"') { inStr = true; continue; }
+    if (c === '{' || c === '[') stack.push(c === '{' ? '}' : ']');
+    else if (c === '}' || c === ']') { stack.pop(); lastSafe = i; }
+  }
+  if (!stack.length) return s;
+  // On coupe après le dernier élément COMPLET, sinon on refermerait autour
+  // d'une paire clé/valeur tronquée.
+  let body = lastSafe > -1 ? s.slice(0, lastSafe + 1) : s;
+  const stack2 = [];
+  inStr = false; esc = false;
+  for (let i = 0; i < body.length; i++) {
+    const c = body[i];
+    if (esc) { esc = false; continue; }
+    if (c === '\\') { esc = true; continue; }
+    if (inStr) { if (c === '"') inStr = false; continue; }
+    if (c === '"') { inStr = true; continue; }
+    if (c === '{' || c === '[') stack2.push(c === '{' ? '}' : ']');
+    else if (c === '}' || c === ']') stack2.pop();
+  }
+  return body + stack2.reverse().join('');
+}
+
+// Dernier recours : récupérer le TEXTE de la réponse, même si la structure
+// est irrécupérable. L'athlète doit toujours recevoir une phrase lisible —
+// jamais du JSON.
+function nutExtractReply(s) {
+  const k = s.indexOf('"reply"');
+  if (k < 0) return '';
+  const q = s.indexOf('"', s.indexOf(':', k) + 1);
+  if (q < 0) return '';
+  let out = '', esc = false;
+  for (let i = q + 1; i < s.length; i++) {
+    const c = s[i];
+    if (esc) {
+      out += (c === 'n' ? '\n' : c === 't' ? '\t' : c === 'r' ? '' : c);
+      esc = false; continue;
+    }
+    if (c === '\\') { esc = true; continue; }
+    if (c === '"') break;
+    out += c;
+  }
+  return out.trim();
+}
+
 function parseNutritionJson(text) {
   if (!text) return null;
   let s = String(text).trim().replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/i, '').trim();
   const first = s.indexOf('{'), last = s.lastIndexOf('}');
   if (first > -1 && last > first) s = s.slice(first, last + 1);
-  try {
-    const obj = JSON.parse(s);
-    if (!obj || typeof obj !== 'object') return null;
-    const reply = nutStr(obj.reply, 2000);
-    if (!reply) return null;
-    return { reply, nutrition: sanitizeNutrition(obj.nutrition) };
-  } catch (e) { return null; }
+  else if (first > -1) s = s.slice(first);   // sortie coupée : pas d'accolade finale
+
+  // Trois tentatives, de la plus fidèle à la plus permissive.
+  const essais = [s, nutEscapeControlChars(s), nutCloseTruncated(nutEscapeControlChars(s))];
+  for (let i = 0; i < essais.length; i++) {
+    try {
+      const obj = JSON.parse(essais[i]);
+      if (!obj || typeof obj !== 'object') continue;
+      const reply = nutStr(obj.reply, 2000);
+      if (!reply) continue;
+      return { reply, nutrition: sanitizeNutrition(obj.nutrition) };
+    } catch (e) { /* on tente la réparation suivante */ }
+  }
+
+  // Structure perdue : on sauve au moins la phrase.
+  const reply = nutStr(nutExtractReply(s), 2000);
+  if (reply) return { reply, nutrition: null };
+  return null;
 }
 
 function buildBuilderUserMessage(intent, library) {
@@ -1204,6 +1300,9 @@ function buildNutritionContext(n) {
   if (n.moyenne7j) {
     L.push('Moyenne sur ' + n.moyenne7j.jours + ' jours : ' + n.moyenne7j.kcal + ' kcal/jour');
   }
+  // Règle du projet : pas de donnée → PAS de section. Une section vide
+  // laisserait croire à des champs non renseignés. La capacité d'enregistrer
+  // n'est pas une donnée de l'athlète : elle vit dans STATIC_SYSTEM.
   if (!L.length) return '';
   return '\n\nNUTRITION\n' + L.join('\n')
     + "\nCes chiffres viennent du profil et du journal de l'athlète. Tu ne redemandes"
@@ -1500,9 +1599,13 @@ exports.handler = async function(event) {
       const parsed = parseNutritionJson(raw);
       // Analyse illisible : on ne perd PAS la conversation pour autant. Le
       // texte brut part comme une réponse normale, sans carte d'action.
+      // Irrécupérable : on renvoie une phrase, JAMAIS le brut. Déverser le
+      // JSON dans la bulle était pire que n'importe quel message d'erreur.
       if (!parsed) {
         console.error('[titan] nutrition parse failed', raw && raw.slice(0, 300));
-        return { statusCode: 200, headers, body: JSON.stringify({ reply: raw || 'Je n\'ai pas réussi à analyser ça. Reformule ?' }) };
+        return { statusCode: 200, headers, body: JSON.stringify({
+          reply: 'J\'ai calé sur ce message. Redis-moi ce que tu as mangé, plus simplement.'
+        }) };
       }
       return { statusCode: 200, headers, body: JSON.stringify(parsed) };
     } catch (err) {

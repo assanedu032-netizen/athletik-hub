@@ -9,16 +9,21 @@ const ROOT = path.join(__dirname, '..');
 const html = fs.readFileSync(process.argv[2] || path.join(ROOT, 'index.html'), 'utf8');
 const srv  = fs.readFileSync(process.argv[3] || path.join(ROOT, 'netlify', 'functions', 'titan.js'), 'utf8');
 
+// Extraction d'une fonction de premier niveau.
+// L'équilibrage d'accolades classique ne tient pas ici : ces fonctions
+// contiennent des accolades dans des CHAÎNES ('{'), des commentaires FRANÇAIS
+// pleins d'apostrophes, et des littéraux d'EXPRESSION RÉGULIÈRE contenant des
+// guillemets (/"reply"\s*:/). Distinguer tout ça demanderait un vrai parseur.
+// Ce fichier indente systématiquement ses corps de fonction : une accolade
+// fermante en COLONNE 0 marque donc la fin, sans ambiguïté.
 function grab(text, decl) {
   const s = text.indexOf(decl);
   if (s < 0) throw new Error('introuvable: ' + decl);
-  let i = text.indexOf('{', text.indexOf('(', s)), d = 0, j = i;
-  for (; j < text.length; j++) {
-    if (text[j] === '{') d++;
-    else if (text[j] === '}') { d--; if (!d) { j++; break; } }
-  }
-  return text.slice(s, j);
+  const e = text.indexOf('\n}', s);
+  if (e < 0) throw new Error('fin introuvable: ' + decl);
+  return text.slice(s, e + 2);
 }
+
 function grabConst(text, name) {
   const re = new RegExp('const\\s+' + name + '\\s*=\\s*\\d+;');
   const m = re.exec(text);
@@ -62,6 +67,9 @@ const sanitize = new Function(
   grabConst(srv, 'NUTRITION_MAX_ITEMS') + '\n'
   + grab(srv, 'function nutNum(') + '\n'
   + grab(srv, 'function nutStr(') + '\n'
+  + grab(srv, 'function nutEscapeControlChars(') + '\n'
+  + grab(srv, 'function nutCloseTruncated(') + '\n'
+  + grab(srv, 'function nutExtractReply(') + '\n'
   + grab(srv, 'function sanitizeNutrition(') + '\n'
   + grab(srv, 'function parseNutritionJson(') + '\n'
   + 'return { san:sanitizeNutrition, parse:parseNutritionJson };'
@@ -162,6 +170,93 @@ console.log('\n=== LA RÉPONSE DU MODÈLE EST TOUJOURS DU TEXTE LISIBLE ===\n');
   const sansNut = sanitize.parse('{"reply":"Je ne vois pas de repas ici."}');
   ok('une réponse sans analyse reste une réponse valide',
      sansNut && sansNut.reply && sansNut.nutrition === null, JSON.stringify(sansNut));
+}
+
+console.log('\n=== AUCUN JSON NE DOIT ARRIVER DANS UNE BULLE ===\n');
+{
+  // Le cas réellement observé en production : Titan écrit en PARAGRAPHES, donc
+  // il met des retours à la ligne LITTÉRAUX dans la chaîne "reply". C'est
+  // illégal en JSON, JSON.parse levait, et le repli déversait le brut à
+  // l'écran. Le JSON était pourtant complet — il se terminait par "}}}.
+  const avecSautsDeLigne = '{"reply":"Voilà ton estimation.\n\n'
+    + 'Beaucoup de quantités sont à la louche.\n\n**Total : 1500 kcal**",'
+    + '"nutrition":{"items":[{"name":"Céréales","quantity":"2 poignées","calories":220,'
+    + '"protein":5,"carbs":44,"fat":2,"estimated":true}],"confidence":"moyenne"}}';
+  const p = sanitize.parse(avecSautsDeLigne);
+  ok('un retour à la ligne littéral ne fait plus échouer la lecture', p !== null);
+  ok('  la réponse est récupérée entière', /Voilà ton estimation/.test(p.reply) && /1500 kcal/.test(p.reply), p && p.reply);
+  ok('  ses paragraphes sont conservés', /\n\n/.test(p.reply));
+  ok('  et l\'analyse est exploitable', p.nutrition && p.nutrition.items.length === 1
+     && p.nutrition.totals.calories === 220, JSON.stringify(p.nutrition && p.nutrition.totals));
+  ok('  aucune accolade ne subsiste dans le texte', p.reply.indexOf('{') < 0 && p.reply.indexOf('"nutrition"') < 0);
+}
+{
+  // Réponse coupée au plafond de jetons : on sauve ce qui est complet.
+  const coupe = '{"reply":"Voilà ton total.","nutrition":{"items":['
+    + '{"name":"Riz","quantity":"200 g","calories":260,"protein":5,"carbs":57,"fat":1,"estimated":false},'
+    + '{"name":"Poulet","quantity":"150 g","calories":250,"protein":35,"carbs":0,"fat":11,"estimated":false},'
+    + '{"name":"Avoca';
+  const p = sanitize.parse(coupe);
+  ok('une réponse coupée en plein vol reste lisible', p !== null && p.reply === 'Voilà ton total.', p && p.reply);
+  ok('  et les aliments complets sont conservés',
+     p.nutrition && p.nutrition.items.length === 2, JSON.stringify(p.nutrition && p.nutrition.items.map(i => i.name)));
+  ok('  l\'aliment tronqué est écarté',
+     !(p.nutrition.items || []).some(i => /Avoca/.test(i.name)));
+}
+{
+  // Structure irrécupérable : on sauve au moins la phrase.
+  const casse = '{"reply":"J\'ai fait le calcul.","nutrition":{"items":[{{{ !!! ';
+  const p = sanitize.parse(casse);
+  ok('une structure détruite laisse quand même une phrase',
+     p !== null && p.reply === "J'ai fait le calcul.", p && p.reply);
+  ok('  et aucune analyse inventée', p.nutrition === null);
+  ok('du texte sans aucun JSON ne renvoie rien', sanitize.parse('Salut, ça va ?') === null);
+}
+{
+  // Le repli serveur ne renvoie PLUS jamais le brut.
+  ok('le serveur ne renvoie plus `reply: raw`', !/reply: raw/.test(srv));
+  ok('  il renvoie une phrase en français', /calé sur ce message/.test(srv));
+}
+{
+  // Filet client : même si un JSON passait, la bulle ne doit pas l'afficher.
+  const unwrap = new Function(grab(html, 'function _titanUnwrapJson(') + '\nreturn _titanUnwrapJson;')();
+  ok('le client déballe un JSON qui aurait échappé au serveur',
+     unwrap('{"reply":"Voilà ton total.","nutrition":{"items":[]}}') === 'Voilà ton total.');
+  ok('  même si ce JSON est cassé',
+     unwrap('{"reply":"Texte sauvé.","nutrition":{"items":[{{{') === 'Texte sauvé.');
+  ok('  et il restitue les sauts de ligne échappés',
+     unwrap('{"reply":"Ligne 1\\nLigne 2","nutrition":null}') === 'Ligne 1\nLigne 2');
+  ok('un message normal n\'est jamais touché',
+     unwrap('Salut. Voilà ton total : 1500 kcal.') === 'Salut. Voilà ton total : 1500 kcal.');
+  ok('  ni un message qui commence par une accolade sans être du JSON Titan',
+     unwrap('{ceci n\'est pas du json}') === '{ceci n\'est pas du json}');
+  ok('le filet est branché sur les bulles de Titan',
+     /if \(type === 'titan'\) text = _titanUnwrapJson\(text\);/.test(html));
+}
+
+console.log('\n=== « TU PEUX ENREGISTRER » DOIT DÉCLENCHER L\'ACTION ===\n');
+{
+  // La phrase exacte de la capture. Le déclencheur exigeait « \benregistre\b »,
+  // qui ne matche PAS « enregistrer » : la frontière de mot échoue devant le
+  // « r ». Le message partait en chat normal, et Titan répondait qu'il ne
+  // savait pas enregistrer.
+  [
+    'Tu peux enregistrer dans le journal',
+    'enregistre ça',
+    'Enregistre',
+    'ajoute ça à mon journal',
+    'rajoute le tout dans mon suivi',
+    'sauvegarde ça',
+    'note ça dans mon journal',
+    'tu peux enregistrer ça'
+  ].forEach(t => ok('  « ' + t + ' »', cli.isFood(t) === true, t));
+  ok('mais « Pk tu répond comme ça » ne déclenche rien', cli.isFood('Pk tu répond comme ça') === false);
+  ok('le prompt interdit à Titan de dire qu\'il ne peut pas enregistrer',
+     /Ne dis JAMAIS que tu ne peux pas enregistrer/.test(srv));
+  ok('  et le prompt de base annonce la carte',
+     /CE QUE L'APP SAIT FAIRE POUR TOI[\s\S]{0,400}Enregistrer dans mon journal/.test(srv));
+  ok('  sans jamais prétendre écrire lui-même',
+     /Tu n'écris jamais toi-même dans son journal/.test(srv));
 }
 
 console.log('\n=== TESTS 1 à 4 · ANALYSER N\'EST PAS ÉCRIRE ===\n');

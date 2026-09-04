@@ -25782,8 +25782,13 @@ var TITAN_FOOD_RE = new RegExp([
   // la demande de calcul. « calorique » n'est pas « calorie » : on coupe au radical.
   "\\b(?:calcule|combien de |compte)[^?]{0,30}(?:calori|kcal|prot[ée]in|macro|glucide|lipide)",
   "\\b(?:calori|kcal|macro)\\w*\\b.{0,25}\\b(?:aujourd|journ[ée]e|repas|mang)",
-  // la demande d'enregistrement
-  "\\b(?:enregistre|ajoute|note|log)\\b.{0,30}\\b(?:journal|suivi|repas|journ[ée]e|nutrition|[çc]a)\\b"
+  // la demande d'enregistrement. RADICAUX, pas formes exactes : « \\benregistre\\b »
+  // ne matche pas « enregistrer » — la frontière de mot échoue devant le « r ».
+  // C'est ce qui a fait passer « Tu peux enregistrer dans le journal » en chat
+  // normal, où Titan a répondu qu'il ne savait pas enregistrer.
+  "\\b(?:enregistr|ajout|rajout|not[e]|log|sauvegard|inscri)\\w*\\b.{0,40}\\b(?:journal|suivi|repas|journ[ée]e|nutrition|calorie|[çc]a|le tout)\\b",
+  // et sa forme la plus courte, sans complément : « enregistre »
+  "^\\s*(?:tu peux |peux-tu |stp |s'?il te pla[îi]t )?(?:enregistr|ajout|sauvegard)\\w*\\s*(?:[çc]a)?\\s*[.!]?\\s*$"
 ].join('|'), 'i');
 
 function _titanIsFoodMessage(text) {
@@ -26402,6 +26407,27 @@ function _titanRenderMd(raw) {
 // conversation restaurée affichait l'heure du RECHARGEMENT sur chacune de ses
 // bulles — défaut invisible tant que le chat ne vivait que sur un appareil,
 // intenable dès qu'il se synchronise entre deux.
+// Filet de sécurité de dernier rang. Si un jour une réponse structurée
+// arrive à la place d'une phrase — parseur serveur mis en défaut, mode
+// inattendu, déploiement décalé — l'athlète ne doit PAS voir du JSON dans sa
+// bulle. On récupère le champ `reply` et on jette le reste.
+function _titanUnwrapJson(text) {
+  if (typeof text !== 'string') return text;
+  var t = text.trim();
+  if (t.charAt(0) !== '{' || t.indexOf('"reply"') < 0) return text;
+  try {
+    var o = JSON.parse(t);
+    if (o && typeof o.reply === 'string' && o.reply.trim()) return o.reply;
+  } catch (e) {}
+  // JSON illisible : on extrait la chaîne de `reply` à la main.
+  var m = /"reply"\s*:\s*"((?:[^"\\]|\\.)*)"/.exec(t);
+  if (m) {
+    try { return JSON.parse('"' + m[1] + '"'); } catch (e) { return m[1]; }
+  }
+  return 'Réponse illisible. Redemande-moi ça autrement.';
+}
+window._titanUnwrapJson = _titanUnwrapJson;
+
 function addMessage(text, type, imgDataUrl, ts) {
   const body = document.getElementById('chatBody');
   const msg = document.createElement('div');
@@ -26411,6 +26437,7 @@ function addMessage(text, type, imgDataUrl, ts) {
     text = text.filter(function(b){ return b && b.type === 'text'; })
                .map(function(b){ return b.text; }).join(' ');
   }
+  if (type === 'titan') text = _titanUnwrapJson(text);
 
   if (type === 'titan') {
     // L'identifiant est dérivé du texte : c'est la seule clé stable dont on
