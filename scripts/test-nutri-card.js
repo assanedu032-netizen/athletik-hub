@@ -57,7 +57,9 @@ const MIME = { '.html':'text/html','.js':'text/javascript','.css':'text/css','.j
     ],
     totals: { calories:640, protein:38, carbs:78, fat:15 },
     estimatedItems: ['quantité de poulet', 'taille de la salade'],
-    confidence: 'moyenne', wantsSave: true,
+    // wantsSave FAUX : cette section teste la carte de PROPOSITION. La
+    // demande explicite a sa propre section, plus bas.
+    confidence: 'moyenne', wantsSave: false,
     question: 'Tu peux me donner le poids du poulet ? Ça change le total de 100 kcal.'
   };
 
@@ -166,6 +168,58 @@ const MIME = { '.html':'text/html','.js':'text/javascript','.css':'text/css','.j
   await page.waitForFunction(() => typeof window._titanRenderNutriCard === 'function', { timeout: 20000 });
   const after = await page.evaluate(() => JSON.parse(localStorage.getItem('ah_nutri_journal') || '[]'));
   ok('TEST 4 — la donnée survit au rechargement', after.length === 1 && after[0].totals.cal === 640);
+
+  console.log('\n=== DEMANDE EXPLICITE : L\'APP ÉCRIT, ET SAIT ANNULER ===\n');
+  {
+    await page.evaluate(() => {
+      localStorage.removeItem('ah_nutri_journal');
+      localStorage.setItem('ah_profile', JSON.stringify({ nutriCal: 2000 }));
+      document.querySelectorAll('.tn-wrap').forEach(e => e.remove());
+      window._titanRenderNutriCard({
+        items: [{ name: 'Poulet', quantity: '150 g', calories: 250, protein: 35, carbs: 0, fat: 11, estimated: false },
+                { name: 'Riz', quantity: '200 g', calories: 260, protein: 5, carbs: 57, fat: 1, estimated: false }],
+        totals: { calories: 510, protein: 40, carbs: 57, fat: 12 },
+        estimatedItems: [], confidence: 'haute', wantsSave: true, question: ''
+      });
+    });
+    await page.waitForTimeout(500);
+    const e1 = await page.evaluate(() => {
+      const j = JSON.parse(localStorage.getItem('ah_nutri_journal') || '[]');
+      const c = document.querySelector('.tn-card');
+      return { n: j.length, id: j[0] && j[0].id, cal: j[0] && j[0].totals.cal,
+               txt: c ? c.textContent.replace(/\s+/g, ' ').trim() : null,
+               undo: !!document.querySelector('.tn-btn-no'),
+               propose: !!document.querySelector('.tn-btn-go') };
+    });
+    ok('« ajoute-le » écrit sans attendre de tap', e1.n === 1 && e1.cal === 510, JSON.stringify(e1));
+    ok('  l\'entrée porte un identifiant', /^m[a-z0-9]+$/.test(e1.id || ''), String(e1.id));
+    ok('  la carte confirme au passé', /Ajouté à ton journal/.test(e1.txt || ''), e1.txt);
+    ok('  et annonce ce qu\'il reste', /reste 1490 kcal/.test(e1.txt || ''), e1.txt);
+    ok('  elle ne propose plus, elle propose d\'ANNULER', e1.undo === true && e1.propose === false);
+    await shot('nutri-5-auto.png');
+
+    await page.evaluate(() => document.querySelector('.tn-btn-no').click());
+    await page.waitForTimeout(300);
+    const e2 = await page.evaluate(() => ({
+      n: JSON.parse(localStorage.getItem('ah_nutri_journal') || '[]').length,
+      txt: (document.querySelector('.tn-card') || {}).textContent
+    }));
+    ok('Annuler retire l\'entrée', e2.n === 0, String(e2.n));
+    ok('  et le dit clairement', /Ajout annulé/.test(e2.txt || ''), e2.txt);
+  }
+  {
+    // Une entrée sans identifiant (enregistrée avant la mise à jour) doit
+    // rester supprimable par sa position, comme avant.
+    const ok2 = await page.evaluate(() => {
+      localStorage.setItem('ah_nutri_journal', JSON.stringify([
+        { date: new Date().toISOString(), name: 'Vieux repas', totals: { cal: 300, p: 0, g: 0, l: 0 } }
+      ]));
+      const done = window.removeJournalMeal(0);
+      return { done, n: JSON.parse(localStorage.getItem('ah_nutri_journal') || '[]').length };
+    });
+    ok('une entrée d\'avant la mise à jour se retire toujours par index',
+       ok2.done === true && ok2.n === 0, JSON.stringify(ok2));
+  }
 
   ok('aucune exception JS', errs.filter(e => !/firebase|fetch|ServiceWorker/i.test(e)).length === 0,
      errs.slice(0,2).join(' | '));

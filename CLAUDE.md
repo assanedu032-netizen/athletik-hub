@@ -17,7 +17,7 @@ The app is the digital companion of the book *Les Secrets de la Détente Vertica
   - `sw.js` (cache-first for local assets, network-first for externals) + `manifest.json`. Cache name is `athletik-v271` — bump it when shipping CSS/HTML that must invalidate.
   - `firebase-messaging-sw.js` (root) — receives background push notifications (FCM).
 - **No linter, no build**. Validate changes by opening `index.html` in a browser (mobile-first, Android Chrome is the target). Before committing, sanity-check JS syntax by parsing the non-module `<script>` blocks with `node -e` (see Coding conventions).
-- **Tests**: `for f in scripts/test-*.js; do node "$f"; done` — 24 suites, ~1 300 assertions, pure
+- **Tests**: `for f in scripts/test-*.js; do node "$f"; done` — 24 suites, ~1 350 assertions, pure
   Node, zéro dépendance : chaque suite extrait les **vraies** fonctions d'`index.html` par
   équilibrage d'accolades et les rejoue contre des mocks. `scripts/test-live-layout.js` est la
   seule exception : elle ouvre un vrai Chromium (Playwright, hors `package.json`) pour mesurer la
@@ -323,7 +323,26 @@ completedPrograms, fcmToken, accessTier`.
   `.tn-items[hidden]{display:none}` est **nécessaire** : `display:flex` d'une classe bat la règle
   navigateur `[hidden]{display:none}`, et le détail restait visible pendant que `el.hidden` valait
   `true` — un test qui lit la propriété ne voit pas la différence.
-  Tests : `scripts/test-titan-nutri-action.js` (128) et `scripts/test-nutri-card.js` (28, vrai
+  **Chaque repas du journal a un `id`.** Avant, un repas ne se désignait que par sa POSITION
+  (`journal.indexOf(m)`) — un index qui se décale dès qu'une autre écriture arrive (recette, plan
+  repas, synchro d'un autre appareil), donc « supprime ce que je viens d'ajouter » pouvait retirer
+  le mauvais. `_mealId()` équipe les **quatre** écrivains ; `_journalIndexOf(ref)` accepte un id
+  **ou** un index, donc les entrées antérieures restent joignables sans migration.
+  `_journalRead()` / `_journalWrite()` sont le **point de passage unique** (rendu + synchro), et
+  `updateJournalMeal(ref, patch)` — qui n'existait sous aucune forme — recalcule `totals` et les
+  champs plats ensemble pour qu'ils ne divergent jamais.
+  **Les restantes voyagent enfin.** `renderJournalToday` calculait `rdi − totals.cal` pour
+  l'écran sans jamais l'envoyer : « combien me reste-t-il ? » échouait sur une donnée déjà
+  disponible. Le contexte porte maintenant `restantes` **et** le détail repas par repas avec leur
+  id (le prompt interdit de montrer les ids à l'écran). Journal vide → la cible entière reste.
+  **Fenêtres élargies** : mode nutrition `slice(-6)` → `slice(-10)` (aligné sur le chat ; 6 ne
+  laissait que trois échanges et « ajoute-le » perdait le repas), fil `TITAN_CHAT_KEEP` 40 → 60.
+  **Écriture sur confirmation orale** : `wantsSave` (demande explicite, jamais une intention
+  future) fait écrire l'app **dès la réponse**, et la carte devient un accusé de réception portant
+  **Annuler cet ajout** — qui retire l'entrée **par son id**. Sans `wantsSave`, la carte propose et
+  seul le tap écrit. `_titanRemainingToday()` relit le journal **après** écriture : la valeur du
+  contexte serveur date d'avant.
+  Tests : `scripts/test-titan-nutri-action.js` (170) et `scripts/test-nutri-card.js` (36, vrai
   Chromium).
 - **La conversation Titan se synchronise** (`ah_titan_chat` dans `FB_SYNC_KEYS`). C'est la
   seule clé synchronisée qui s'écrit à **chaque tour** et dont la taille dépend de ce que le

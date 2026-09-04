@@ -11439,19 +11439,96 @@ function _findSubs(name) {
   return null;
 }
 
-// Retire une entrée du journal (par index dans le tableau global)
-function removeJournalMeal(idx) {
+// ══════════════════════════════════════════════════════════════════════
+// IDENTITÉ DES REPAS DU JOURNAL
+// ─────────────────────────────────────────────────────────────────────
+// Jusqu'ici un repas ne se désignait que par sa POSITION dans le tableau
+// global (`journal.indexOf(m)`, résolu à l'affichage). Cet index se décale
+// dès qu'une autre écriture arrive : une recette ajoutée, une journée de
+// plan repas loggée, ou une synchronisation depuis un autre appareil.
+// « Supprime ce que je viens d'ajouter » pouvait donc supprimer le mauvais.
+//
+// Chaque NOUVELLE entrée porte désormais un `id` stable. Les entrées déjà
+// enregistrées n'en ont pas : elles continuent de fonctionner par index,
+// exactement comme avant. Aucune migration, aucune donnée touchée.
+// ══════════════════════════════════════════════════════════════════════
+function _mealId() {
+  return 'm' + Date.now().toString(36) + Math.floor(Math.random() * 1679616).toString(36);
+}
+window._mealId = _mealId;
+
+function _journalRead() {
   try {
-    var arr = JSON.parse(localStorage.getItem('ah_nutri_journal') || '[]');
-    if (idx < 0 || idx >= arr.length) return;
-    arr.splice(idx, 1);
+    var a = JSON.parse(localStorage.getItem('ah_nutri_journal') || '[]');
+    return Array.isArray(a) ? a : [];
+  } catch (e) { return []; }
+}
+function _journalWrite(arr) {
+  try {
     localStorage.setItem('ah_nutri_journal', JSON.stringify(arr));
     if (typeof renderJournalToday === 'function') renderJournalToday();
     if (typeof fbSaveProfile === 'function') fbSaveProfile();
-    if (typeof showToast === 'function') showToast('Retiré du journal', 'info');
-  } catch(e) {}
+    return true;
+  } catch (e) { console.warn('[journal]', e); return false; }
+}
+window._journalRead = _journalRead;
+window._journalWrite = _journalWrite;
+
+// Retrouve une entrée par son id, ou par son index si elle date d'avant.
+// Renvoie l'index réel, ou -1.
+function _journalIndexOf(ref, arr) {
+  arr = arr || _journalRead();
+  if (typeof ref === 'number') return (ref >= 0 && ref < arr.length) ? ref : -1;
+  var id = String(ref == null ? '' : ref);
+  if (!id) return -1;
+  for (var i = 0; i < arr.length; i++) if (arr[i] && arr[i].id === id) return i;
+  return -1;
+}
+window._journalIndexOf = _journalIndexOf;
+
+// Retire une entrée du journal. Accepte un id (stable) OU un index (legacy —
+// c'est ce que passe le bouton ✕ de la liste, via journal.indexOf(m)).
+function removeJournalMeal(ref) {
+  var arr = _journalRead();
+  var idx = _journalIndexOf(ref, arr);
+  if (idx < 0) {
+    if (typeof showToast === 'function') showToast('Repas introuvable — il a déjà été retiré.', 'info');
+    return false;
+  }
+  arr.splice(idx, 1);
+  if (!_journalWrite(arr)) return false;
+  if (typeof showToast === 'function') showToast('Retiré du journal', 'info');
+  return true;
 }
 window.removeJournalMeal = removeJournalMeal;
+
+// Modifier un repas — n'existait sous AUCUNE forme dans l'app.
+// `patch` porte les macros à corriger ; les totaux sont recalculés pour que
+// `totals` (ce que lit renderJournalToday) et les champs plats ne divergent
+// jamais.
+function updateJournalMeal(ref, patch) {
+  if (!patch || typeof patch !== 'object') return false;
+  var arr = _journalRead();
+  var idx = _journalIndexOf(ref, arr);
+  if (idx < 0) return false;
+  var m = arr[idx];
+  var n = function (v, def) {
+    var x = parseFloat(v);
+    return isFinite(x) && x >= 0 ? Math.round(x) : def;
+  };
+  var cur = m.totals || {};
+  var cal = n(patch.calories, n(cur.cal, 0));
+  var pr  = n(patch.protein,  n(cur.p, 0));
+  var gl  = n(patch.carbs,    n(cur.g, 0));
+  var li  = n(patch.fat,      n(cur.l, 0));
+  m.totals = { cal: cal, p: pr, g: gl, l: li };
+  m.cals = cal; m.prot = pr; m.carbs = gl; m.fat = li;
+  if (typeof patch.name === 'string' && patch.name.trim()) m.name = patch.name.trim().slice(0, 70);
+  if (Array.isArray(patch.foods)) m.foods = patch.foods;
+  m.editedAt = new Date().toISOString();
+  return _journalWrite(arr);
+}
+window.updateJournalMeal = updateJournalMeal;
 
 // Widget Home : affiche les 4 repas du jour si un plan a été généré
 function renderHomeMealPlan() {
@@ -14379,6 +14456,7 @@ function addRecipeToJournal() {
     var key = 'ah_nutri_journal';
     var arr = []; try { arr = JSON.parse(localStorage.getItem(key) || '[]'); } catch(e) {}
     arr.push({
+      id: _mealId(),
       ts: Date.now(),
       date: new Date().toISOString(),
       name: r.name + (curr !== base ? ' × ' + curr : ''),
@@ -14420,6 +14498,7 @@ function logMealPlanDay(dayIdx) {
       var carbs = r.plannedCarbs != null ? r.plannedCarbs : (r.carbs || 0);
       var fat = r.plannedFat != null ? r.plannedFat : (r.fat || 0);
       arr.push({
+        id: _mealId(),
         ts: Date.now(), date: new Date().toISOString(),
         name: r.name + (portions !== 1 ? ' × ' + portions : ''),
         cals: cals, prot: prot, carbs: carbs, fat: fat,
@@ -25553,7 +25632,15 @@ function _titanNutritionCtx(prof) {
   // Journal du jour : ce que l'athlète a réellement enregistré.
   try {
     var journal = JSON.parse(localStorage.getItem('ah_nutri_journal') || '[]');
-    if (Array.isArray(journal) && journal.length) {
+    if (!Array.isArray(journal)) journal = [];
+    if (!journal.length && out.cibles && out.cibles.kcal) {
+      // Journal vide : la journée entière reste à consommer. Sans cette
+      // branche, la question se posait justement au pire moment.
+      out.aujourdhui = { repas: 0, kcal: 0, prot: 0, gluc: 0, lip: 0, noms: [], liste: [] };
+      out.restantes = { kcal: out.cibles.kcal, prot: out.cibles.prot || null,
+                        gluc: out.cibles.gluc || null, lip: out.cibles.lip || null };
+    }
+    if (journal.length) {
       var today = new Date().toISOString().slice(0, 10);
       var todays = journal.filter(function (m) {
         return m && m.date && String(m.date).slice(0, 10) === today;
@@ -25568,8 +25655,37 @@ function _titanNutritionCtx(prof) {
         kcal: Math.round(t.kcal), prot: Math.round(t.prot),
         gluc: Math.round(t.gluc), lip: Math.round(t.lip),
         // Les noms des repas, bornés : Titan doit pouvoir dire de quoi il parle.
-        noms: todays.slice(-6).map(function (m) { return m.name || m.label || 'repas'; })
+        noms: todays.slice(-6).map(function (m) { return m.name || m.label || 'repas'; }),
+        // Le DÉTAIL de chaque repas, avec son identifiant. Sans lui, Titan ne
+        // pouvait ni commenter un repas précis, ni en désigner un à modifier
+        // ou à retirer — il ne voyait qu'une liste de noms.
+        liste: todays.slice(-8).map(function (m) {
+          var x = m.totals || {};
+          var e = {
+            nom: m.name || m.label || 'repas',
+            kcal: Math.round(x.cal || 0), prot: Math.round(x.p || 0),
+            gluc: Math.round(x.g || 0), lip: Math.round(x.l || 0)
+          };
+          if (m.id) e.id = m.id;
+          if (m.ts) {
+            var d = new Date(m.ts);
+            e.heure = ('0' + d.getHours()).slice(-2) + ':' + ('0' + d.getMinutes()).slice(-2);
+          }
+          return e;
+        })
       };
+      // LES RESTANTES. Elles étaient calculées par renderJournalToday pour
+      // l'écran (`rdi - totals.cal`) et ne faisaient jamais le voyage : la
+      // question « combien me reste-t-il ? » échouait sur une donnée déjà
+      // disponible trois lignes plus haut.
+      if (out.cibles && out.cibles.kcal) {
+        out.restantes = {
+          kcal: Math.round(out.cibles.kcal - t.kcal),
+          prot: out.cibles.prot ? Math.round(out.cibles.prot - t.prot) : null,
+          gluc: out.cibles.gluc ? Math.round(out.cibles.gluc - t.gluc) : null,
+          lip:  out.cibles.lip  ? Math.round(out.cibles.lip  - t.lip)  : null
+        };
+      }
       // Sur les 7 derniers jours, la moyenne dit plus que le seul jour J.
       var days = {};
       journal.forEach(function (m) {
@@ -25837,7 +25953,30 @@ window._titanNutriPending = window._titanNutriPending || {};
 
 function _titanNutriFmt(n) { return Math.round(Number(n) || 0); }
 
+// Ce qu'il reste sur la journée, relu APRÈS écriture. La valeur du contexte
+// serveur date d'avant : l'annoncer telle quelle donnerait un chiffre faux
+// juste après un ajout.
+function _titanRemainingToday() {
+  try {
+    var prof = JSON.parse(localStorage.getItem('ah_profile') || '{}');
+    var cible = parseFloat(prof.nutriCal);
+    if (!isFinite(cible) || cible <= 0) return null;
+    var today = new Date().toISOString().slice(0, 10);
+    var used = _journalRead().reduce(function (a, m) {
+      if (!m || !m.date || String(m.date).slice(0, 10) !== today) return a;
+      return a + (((m.totals || {}).cal) || 0);
+    }, 0);
+    return Math.round(cible - used);
+  } catch (e) { return null; }
+}
+window._titanRemainingToday = _titanRemainingToday;
+
 // La carte d'action, rendue SOUS la réponse de Titan.
+// `nut.wantsSave` vient du serveur et vaut true UNIQUEMENT sur une demande
+// explicite (« ajoute-le », « enregistre ça »). Dans ce cas l'app écrit tout
+// de suite — la phrase EST la confirmation — et la carte devient un accusé
+// de réception portant un bouton Annuler. Sinon elle propose, et rien n'est
+// écrit tant que l'athlète n'a pas tapé.
 function _titanRenderNutriCard(nut) {
   if (!nut || !Array.isArray(nut.items) || !nut.items.length) return;
   if (!nut.totals || !nut.totals.calories) return;   // rien de chiffré → rien à proposer
@@ -25846,6 +25985,17 @@ function _titanRenderNutriCard(nut) {
 
   var id = 'nc' + Date.now().toString(36) + Math.floor(Math.random() * 1000).toString(36);
   window._titanNutriPending[id] = nut;
+
+  if (nut.wantsSave) {
+    var wrapNow = document.createElement('div');
+    wrapNow.className = 'msg titan tn-wrap';
+    wrapNow.innerHTML = '<div class="tn-card" id="' + id + '"></div>';
+    body.appendChild(wrapNow);
+    window._titanNutriSave(id, true);
+    try { wrapNow.scrollIntoView({ behavior: 'smooth', block: 'start' }); }
+    catch (e) { body.scrollTop = body.scrollHeight; }
+    return;
+  }
 
   var t = nut.totals;
   var conf = nut.confidence || 'moyenne';
@@ -25922,12 +26072,13 @@ window._titanNutriDismiss = function (id) {
 };
 
 // LA SEULE écriture. Elle part d'un tap, jamais d'une phrase.
-window._titanNutriSave = function (id) {
+window._titanNutriSave = function (id, spoken) {
   var nut = window._titanNutriPending[id];
   if (!nut) return;                       // déjà traité : pas de double écriture
   delete window._titanNutriPending[id];
   var t = nut.totals || {};
   var entry = {
+    id: _mealId(),
     ts: Date.now(),
     date: new Date().toISOString(),
     name: _titanNutriLabel(nut),
@@ -25946,30 +26097,42 @@ window._titanNutriSave = function (id) {
     confidence: nut.confidence || 'moyenne',
     estimated: !!(nut.estimatedItems && nut.estimatedItems.length)
   };
-  var ok = false;
-  try {
-    var arr = [];
-    try { arr = JSON.parse(localStorage.getItem('ah_nutri_journal') || '[]'); } catch (e) {}
-    if (!Array.isArray(arr)) arr = [];
-    arr.push(entry);
-    localStorage.setItem('ah_nutri_journal', JSON.stringify(arr));
-    ok = true;
-  } catch (e) { console.warn('[titan nutri save]', e); }
+  var arr = _journalRead();
+  arr.push(entry);
+  var ok = _journalWrite(arr);   // rend le journal + déclenche la synchro
 
   var el = document.getElementById(id);
   if (!ok) {
     if (el) el.innerHTML = '<div class="tn-done tn-done-no">Enregistrement impossible — mémoire de l\'appareil saturée.</div>';
     return;
   }
-  // Le journal du jour et la synchro passent par les chemins existants.
-  try { if (typeof renderJournalToday === 'function') renderJournalToday(); } catch (e) {}
-  try { if (typeof fbSaveProfile === 'function') fbSaveProfile(); } catch (e) {}
   if (el) {
-    el.innerHTML = '<div class="tn-done">✓ Enregistré — ' + _titanNutriFmt(t.calories)
-      + ' kcal ajoutées à ta journée.'
-      + '<button type="button" class="tn-see" onclick="window._titanNutriOpenJournal()">Voir mon journal</button></div>';
+    var reste = _titanRemainingToday();
+    el.innerHTML = '<div class="tn-done">✓ ' + (spoken ? 'Ajouté à ton journal' : 'Enregistré')
+      + ' — ' + _titanNutriFmt(t.calories) + ' kcal'
+      + (reste != null
+          ? (reste >= 0 ? '. Il te reste ' + reste + ' kcal aujourd\'hui.'
+                        : '. Tu es à ' + Math.abs(reste) + ' kcal au-dessus de ta cible.')
+          : ' ajoutées à ta journée.')
+      + '</div>'
+      // Écrire sur une phrase va vite ; il faut donc pouvoir revenir en
+      // arrière aussi vite. L'entrée porte un id, on retire la BONNE.
+      + '<div class="tn-actions">'
+      +   '<button type="button" class="tn-btn tn-btn-no" onclick="window._titanNutriUndo(\'' + entry.id + '\', this)">Annuler cet ajout</button>'
+      +   '<button type="button" class="tn-see" onclick="window._titanNutriOpenJournal()">Voir mon journal</button>'
+      + '</div>';
   }
   try { if (navigator.vibrate) navigator.vibrate(24); } catch (e) {}
+};
+
+// Retire l'entrée qui vient d'être écrite, par son identifiant.
+window._titanNutriUndo = function (mealId, btn) {
+  var card = btn && btn.closest ? btn.closest('.tn-card') : null;
+  var done = removeJournalMeal(mealId);
+  if (!card) return;
+  card.innerHTML = done
+    ? '<div class="tn-done tn-done-no">Ajout annulé — ton journal est revenu comme avant.</div>'
+    : '<div class="tn-done tn-done-no">Ce repas n\'est plus dans ton journal.</div>';
 };
 
 window._titanNutriOpenJournal = function () {
@@ -26212,7 +26375,7 @@ window.titanGotoSaved = function (id) {
 //     Firestore de 1 Mo. Une réponse de Titan monte à ~2,8 Ko (MAX_TOKENS
 //     = 700). On ne synchronise donc que la queue qui tient dans le budget ;
 //     localStorage, lui, garde toujours ses 40 messages.
-var TITAN_CHAT_KEEP = 40;
+var TITAN_CHAT_KEEP = 60;
 var TITAN_CHAT_SYNC_BYTES = 60000;   // ~60 Ko réservés au chat dans le document
 var TITAN_SYNC_DEBOUNCE = 6000;
 var _titanSyncTimer = null;
@@ -38007,6 +38170,8 @@ function scanSaveToJournal() {
   var journal = [];
   try { journal = JSON.parse(localStorage.getItem('ah_nutri_journal') || '[]'); } catch(e) {}
   journal.push({
+    id: _mealId(),
+    ts: Date.now(),
     date: new Date().toISOString(),
     foods: scanState.foods,
     totals: totals,

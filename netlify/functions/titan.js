@@ -846,7 +846,8 @@ CONFIANCE
 
 "question" : à remplir UNIQUEMENT si une précision changerait vraiment le total (la quantité de viande, de féculent, la taille d'une part de gâteau). Une seule question, courte. Sinon chaîne vide.
 
-"wantsSave" : true SEULEMENT si l'athlète demande explicitement d'enregistrer, d'ajouter à son journal ou à son suivi. Une simple question du type « combien ça fait ? » n'est PAS une demande d'enregistrement.
+"wantsSave" : true SEULEMENT si l'athlète demande explicitement d'enregistrer, d'ajouter à son journal ou à son suivi — « enregistre ça », « ajoute-le », « oui vas-y », « mets-le dans mon journal ». Une simple question du type « combien ça fait ? » n'est PAS une demande d'enregistrement, et une intention future non plus (« je vais manger du riz ce soir » → false, toujours).
+Quand "wantsSave" vaut true, l'app ÉCRIT le repas dès ta réponse. Dis-le au passé dans "reply" — « C'est ajouté » — et rappelle ce qu'il lui reste sur la journée. Sinon, propose : « Je l'ajoute à ton journal ? »
 
 TA RÉPONSE ("reply")
 - Ton habituel : direct, tutoiement, pas de flatterie.
@@ -1296,10 +1297,30 @@ function buildNutritionContext(n) {
     if (a.repas > 0) {
       L.push("Aujourd'hui : " + a.repas + ' repas enregistré' + (a.repas > 1 ? 's' : '')
         + ' — ' + a.kcal + ' kcal · ' + a.prot + 'g prot · ' + a.gluc + 'g gluc · ' + a.lip + 'g lip');
-      if (a.noms && a.noms.length) L.push('  ' + a.noms.join(', '));
+      // Le détail, un repas par ligne. Titan peut ainsi commenter un repas
+      // précis, et le DÉSIGNER par son id pour une correction.
+      if (Array.isArray(a.liste) && a.liste.length) {
+        a.liste.forEach((m) => {
+          L.push('  · ' + (m.heure ? m.heure + ' — ' : '') + m.nom
+            + ' : ' + m.kcal + ' kcal · ' + m.prot + 'g prot · ' + m.gluc + 'g gluc · ' + m.lip + 'g lip'
+            + (m.id ? '   [' + m.id + ']' : '   [sans identifiant — enregistré avant la mise à jour]'));
+        });
+      } else if (a.noms && a.noms.length) {
+        L.push('  ' + a.noms.join(', '));
+      }
     } else {
       L.push("Aujourd'hui : aucun repas enregistré dans le journal.");
     }
+  }
+  // CE QU'IL RESTE. C'est la réponse à « combien me reste-t-il ? », et elle
+  // n'était pas transmise alors qu'elle est calculée pour l'écran.
+  if (n.restantes) {
+    const r = n.restantes;
+    L.push('RESTE AUJOURD\'HUI : ' + r.kcal + ' kcal'
+      + (r.prot != null ? ' · ' + r.prot + 'g prot' : '')
+      + (r.gluc != null ? ' · ' + r.gluc + 'g gluc' : '')
+      + (r.lip  != null ? ' · ' + r.lip  + 'g lip'  : '')
+      + (r.kcal < 0 ? '  (cible dépassée)' : ''));
   }
   if (n.moyenne7j) {
     L.push('Moyenne sur ' + n.moyenne7j.jours + ' jours : ' + n.moyenne7j.kcal + ' kcal/jour');
@@ -1311,7 +1332,10 @@ function buildNutritionContext(n) {
   return '\n\nNUTRITION\n' + L.join('\n')
     + "\nCes chiffres viennent du profil et du journal de l'athlète. Tu ne redemandes"
     + "\njamais une donnée qui est écrite ici. Si une information manque et qu'elle"
-    + "\nte serait vraiment utile, tu la demandes une fois, sans insister.";
+    + "\nte serait vraiment utile, tu la demandes une fois, sans insister."
+    + "\nLes identifiants entre crochets servent à DÉSIGNER un repas déjà enregistré"
+    + "\nquand l'athlète veut le corriger ou le retirer. Ne les montre jamais à"
+    + "\nl'écran : ce sont des références techniques, pas une information pour lui.";
 }
 
 function buildAthleteContext(ctx) {
@@ -1597,7 +1621,9 @@ exports.handler = async function(event) {
           model: MODEL,
           max_tokens: NUTRITION_MAX_TOKENS,
           system: nutSystem,
-          messages: sanitizeMessages(messages.slice(-6)),
+          // 10, comme le chat normal. 6 ne laissait que trois échanges :
+          // « ajoute-le » perdait le repas mentionné plus haut.
+          messages: sanitizeMessages(messages.slice(-10)),
         }),
       });
       const data = await resp.json();

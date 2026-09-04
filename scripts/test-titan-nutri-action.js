@@ -45,7 +45,7 @@ const localStorage = {
   setItem: (k, v) => { store[k] = String(v); },
   removeItem: k => { delete store[k]; }
 };
-const calls = { render: 0, save: 0 };
+const calls = { render: 0, save: 0, toasts: [] };
 const doc = { getElementById: () => null };
 const win = { _titanNutriTurns: 0 };
 const cst = (n) => {
@@ -55,11 +55,18 @@ const cst = (n) => {
 };
 const cli = new Function(
   'localStorage', 'document', 'window', 'navigator', 'console',
-  'renderJournalToday', 'fbSaveProfile', '_lsEsc',
+  'renderJournalToday', 'fbSaveProfile', '_lsEsc', 'showToast',
   grabTrigger() + '\n'
   + grab(html, 'function _titanIsFoodMessage(') + '\n'
   + cst('TITAN_NUTRI_LATCH') + '\n' + cst('TITAN_OFFTOPIC_RE') + '\n'
   + grab(html, 'function _titanWantsNutrition(') + '\n'
+  + grab(html, 'function _mealId(') + '\n'
+  + grab(html, 'function _journalRead(') + '\n'
+  + grab(html, 'function _journalWrite(') + '\n'
+  + grab(html, 'function _journalIndexOf(') + '\n'
+  + grab(html, 'function removeJournalMeal(') + '\n'
+  + grab(html, 'function updateJournalMeal(') + '\n'
+  + grab(html, 'function _titanRemainingToday(') + '\n'
   + grab(html, 'function _titanNutriFmt(') + '\n'
   + grab(html, 'function _titanNutriLabel(') + '\n'
   + 'window._titanNutriPending = {};\n'
@@ -67,9 +74,13 @@ const cli = new Function(
                html.indexOf('window._titanNutriOpenJournal =')) + '\n'
   + 'return { isFood:_titanIsFoodMessage, wants:_titanWantsNutrition,'
   + '         label:_titanNutriLabel, save:window._titanNutriSave,'
+  + '         mealId:_mealId, read:_journalRead, indexOf:_journalIndexOf,'
+  + '         remove:removeJournalMeal, update:updateJournalMeal,'
+  + '         reste:_titanRemainingToday,'
   + '         pending:window._titanNutriPending };'
 )(localStorage, doc, win, {}, console,
-  () => { calls.render++; }, () => { calls.save++; }, (t) => String(t));
+  () => { calls.render++; }, () => { calls.save++; }, (t) => String(t),
+  (m) => { calls.toasts.push(m); });
 
 // ── Côté serveur ──
 const sanitize = new Function(
@@ -410,9 +421,16 @@ console.log('\n=== TEST 5 · CLOISONNEMENT ENTRE UTILISATEURS ===\n');
     // par un appel Firestore direct qui contournerait FB_SYNC_KEYS.
     const i = html.indexOf('window._titanNutriSave = function');
     const corps = html.slice(i, html.indexOf('window._titanNutriOpenJournal ='));
-    ok('  la synchro passe par fbSaveProfile, pas par un chemin direct',
-       /fbSaveProfile\(\)/.test(corps) && !/window\.fb\./.test(corps),
+    // L'écriture passe par _journalWrite, le point de passage UNIQUE qui rend
+    // le journal et déclenche la synchro. Aucun appel Firestore direct nulle
+    // part : ce serait contourner FB_SYNC_KEYS.
+    ok('  l\'écriture passe par le point de passage unique du journal',
+       /_journalWrite\(arr\)/.test(corps) && !/window\.fb\./.test(corps),
        corps.length + ' caractères lus');
+    ok('  et ce point de passage synchronise bien',
+       /function _journalWrite[\s\S]{0,400}?fbSaveProfile\(\)/.test(html));
+    ok('  aucun écrivain du journal n\'appelle Firestore directement',
+       !/_journalWrite[\s\S]{0,300}?window\.fb\.(setDoc|doc)\(/.test(html));
   }
   ok('  ah_nutri_journal est bien une clé synchronisée',
      /\['ah_nutri_journal',\s*'nutriJournal',\s*true\]/.test(html));
@@ -453,6 +471,150 @@ console.log('\n=== LA SÉPARATION CHAT / ACTION EST DANS LE CODE ===\n');
   ok('  et l\'eau à zéro', /Eau, th[ée], caf[ée] noir[\s\S]{0,40}0 partout/.test(srv));
   ok('wantsSave exige une demande EXPLICITE',
      /wantsSave[\s\S]{0,180}SEULEMENT si l'athlète demande explicitement/.test(srv));
+}
+
+console.log('\n=== CHAQUE REPAS A UNE IDENTITÉ ===\n');
+{
+  // Avant : un repas ne se désignait que par sa POSITION dans le tableau
+  // global. Cet index se décale dès qu'une autre écriture arrive — recette,
+  // plan repas, synchro d'un autre appareil — et « supprime ce que je viens
+  // d'ajouter » pouvait retirer le mauvais.
+  store.ah_nutri_journal = JSON.stringify([]);
+  const a = cli.mealId(), b = cli.mealId();
+  ok('deux identifiants ne se ressemblent pas', a !== b, a + ' / ' + b);
+  ok('  et ils sont utilisables comme clé', /^m[a-z0-9]+$/.test(a), a);
+
+  const mk = (id, nom, cal) => ({ id, ts: Date.now(), date: new Date().toISOString(),
+    name: nom, cals: cal, prot: 0, carbs: 0, fat: 0,
+    totals: { cal, p: 0, g: 0, l: 0 }, source: 'titan' });
+  store.ah_nutri_journal = JSON.stringify([mk('m1', 'Petit-déj', 400), mk('m2', 'Déjeuner', 700)]);
+
+  ok('un repas se retrouve par son id', cli.indexOf('m2') === 1, String(cli.indexOf('m2')));
+  ok('  et par son index, comme avant', cli.indexOf(0) === 0);
+  ok('  un id inconnu ne renvoie personne', cli.indexOf('mZZZ') === -1);
+  ok('  une entrée sans id reste joignable par index',
+     cli.indexOf(1, [{ name: 'vieux' }, { name: 'vieux2' }]) === 1);
+}
+{
+  // Le scénario qui cassait : une autre écriture s'intercale, puis on
+  // supprime « celui d'avant ».
+  const mk = (id, nom, cal) => ({ id, ts: Date.now(), date: new Date().toISOString(),
+    name: nom, cals: cal, totals: { cal, p: 0, g: 0, l: 0 } });
+  store.ah_nutri_journal = JSON.stringify([mk('m1', 'Petit-déj', 400), mk('m2', 'Déjeuner', 700)]);
+  const visé = 'm1';
+  // Une recette s'ajoute AU DÉBUT (synchro d'un autre appareil, par ex.).
+  const arr = cli.read(); arr.unshift(mk('m0', 'Recette', 300));
+  store.ah_nutri_journal = JSON.stringify(arr);
+  cli.remove(visé);
+  const reste = cli.read().map(m => m.name);
+  ok('la suppression par id retire le BON repas malgré le décalage',
+     reste.join('|') === 'Recette|Déjeuner', reste.join('|'));
+  ok('  supprimer deux fois ne casse rien', cli.remove(visé) === false);
+  ok('  et le dit à l\'athlète', calls.toasts.some(t => /introuvable/.test(t)),
+     JSON.stringify(calls.toasts.slice(-2)));
+}
+{
+  // Modifier — n'existait sous aucune forme dans l'app.
+  const mk = (id, cal) => ({ id, ts: Date.now(), date: new Date().toISOString(),
+    name: 'Riz', cals: cal, prot: 5, carbs: 45, fat: 1, totals: { cal, p: 5, g: 45, l: 1 } });
+  store.ah_nutri_journal = JSON.stringify([mk('r1', 240)]);
+  ok('« finalement 250 g au lieu de 200 » est applicable',
+     cli.update('r1', { calories: 300, carbs: 56 }) === true);
+  const m = cli.read()[0];
+  ok('  les totaux lus par le journal sont à jour',
+     m.totals.cal === 300 && m.totals.g === 56, JSON.stringify(m.totals));
+  ok('  et les champs plats ne divergent pas',
+     m.cals === 300 && m.carbs === 56, m.cals + '/' + m.carbs);
+  ok('  ce qui n\'est pas corrigé est conservé', m.totals.p === 5 && m.totals.l === 1);
+  ok('  la correction est datée', /^\d{4}-/.test(m.editedAt || ''), m.editedAt);
+  ok('modifier un repas inconnu échoue proprement', cli.update('inconnu', { calories: 1 }) === false);
+  ok('un patch vide est refusé', cli.update('r1', null) === false);
+}
+
+console.log('\n=== CAS 3 · « COMBIEN ME RESTE-T-IL ? » ===\n');
+{
+  store.ah_profile = JSON.stringify({ nutriCal: 2988 });
+  const today = new Date().toISOString();
+  store.ah_nutri_journal = JSON.stringify([
+    { id: 'a', date: today, totals: { cal: 515, p: 14, g: 84, l: 14 } },
+    { id: 'b', date: '2020-01-01T10:00:00Z', totals: { cal: 9000, p: 0, g: 0, l: 0 } }
+  ]);
+  ok('les restantes se calculent sur la journée EN COURS',
+     cli.reste() === 2473, String(cli.reste()));
+  store.ah_nutri_journal = JSON.stringify([]);
+  ok('journal vide → la cible entière reste', cli.reste() === 2988, String(cli.reste()));
+  store.ah_nutri_journal = JSON.stringify([{ id: 'c', date: today, totals: { cal: 3200 } }]);
+  ok('cible dépassée → valeur négative, pas zéro', cli.reste() === -212, String(cli.reste()));
+  store.ah_profile = JSON.stringify({});
+  ok('sans cible enregistrée, on n\'invente rien', cli.reste() === null, String(cli.reste()));
+
+  // Côté serveur : la ligne doit exister dans le prompt.
+  // L'apostrophe est échappée dans la source JS : RESTE AUJOURD\'HUI.
+  ok('le prompt porte la ligne RESTE AUJOURD\'HUI', /RESTE AUJOURD\\?'HUI/.test(srv));
+  ok('  et le détail repas par repas', /a\.liste\.forEach/.test(srv));
+  ok('  avec les identifiants, mais jamais montrés à l\'athlète',
+     /Ne les montre jamais à/.test(srv));
+}
+
+console.log('\n=== CAS 2 · « OUI, AJOUTE-LE » ÉCRIT VRAIMENT ===\n');
+{
+  // wantsSave vient du serveur et n'est vrai que sur une demande EXPLICITE.
+  store.ah_nutri_journal = JSON.stringify([]);
+  store.ah_profile = JSON.stringify({ nutriCal: 2000 });
+  const nut = sanitize.san({
+    items: [{ name: 'Poulet', quantity: '150 g', calories: 250, protein: 35, carbs: 0, fat: 11 },
+            { name: 'Riz', quantity: '200 g', calories: 260, protein: 5, carbs: 57, fat: 1 }],
+    wantsSave: true, confidence: 'haute'
+  });
+  ok('la demande explicite est portée par l\'analyse', nut.wantsSave === true);
+  cli.pending['x1'] = nut;
+  cli.save('x1', true);
+  const j = cli.read();
+  ok('le repas est écrit', j.length === 1 && j[0].totals.cal === 510, JSON.stringify(j.map(m => m.totals)));
+  ok('  et il porte un identifiant', !!j[0].id, String(j[0].id));
+  ok('les restantes sont recalculées APRÈS écriture', cli.reste() === 1490, String(cli.reste()));
+
+  // Le filet : annuler retire exactement cette entrée.
+  ok('l\'ajout s\'annule', cli.remove(j[0].id) === true);
+  ok('  et le journal revient comme avant', cli.read().length === 0);
+}
+{
+  // La règle de sécurité : une simple mention n'écrit RIEN.
+  store.ah_nutri_journal = JSON.stringify([]);
+  const nut = sanitize.san({
+    items: [{ name: 'Riz', calories: 260, protein: 5, carbs: 57, fat: 1 }],
+    wantsSave: false
+  });
+  ok('CAS 6 — une intention future ne demande pas l\'écriture', nut.wantsSave === false);
+  cli.pending['x2'] = nut;
+  ok('  et rien n\'est écrit tant qu\'on n\'a pas décidé', cli.read().length === 0);
+  ok('le prompt exige une demande explicite',
+     /wantsSave[\s\S]{0,300}intention future[\s\S]{0,60}false/.test(srv));
+  ok('  et fait parler Titan au passé quand l\'app a écrit',
+     /Quand "wantsSave" vaut true, l'app ÉCRIT le repas dès ta réponse/.test(srv));
+}
+{
+  // Le rendu de la carte : demande explicite → accusé de réception + Annuler.
+  const i = html.indexOf('function _titanRenderNutriCard');
+  const corps = html.slice(i, html.indexOf('window._titanRenderNutriCard ='));
+  ok('une demande explicite écrit sans attendre de tap',
+     /if \(nut\.wantsSave\) \{[\s\S]{0,400}_titanNutriSave\(id, true\)/.test(corps));
+  ok('  et la carte porte un bouton Annuler',
+     /_titanNutriUndo\(/.test(html) && /Annuler cet ajout/.test(html));
+  ok('  qui retire l\'entrée par son identifiant',
+     /removeJournalMeal\(mealId\)/.test(html));
+  ok('sans demande explicite, la carte propose et n\'écrit pas',
+     /tn-btn-go" onclick="window\._titanNutriSave\(\\'/.test(html));
+}
+
+console.log('\n=== LES FENÊTRES DE CONTEXTE ===\n');
+{
+  ok('le mode nutrition voit 10 messages, comme le chat',
+     (srv.match(/messages\.slice\(-10\)/g) || []).length === 2
+     && !/messages\.slice\(-6\)/.test(srv),
+     (srv.match(/messages\.slice\(-\d+\)/g) || []).join(', '));
+  ok('le fil garde 60 messages', /var TITAN_CHAT_KEEP = 60;/.test(html));
+  ok('  et la synchro reste bornée en octets', /TITAN_CHAT_SYNC_BYTES = 60000/.test(html));
 }
 
 const failed = R.filter(x => !x).length;
