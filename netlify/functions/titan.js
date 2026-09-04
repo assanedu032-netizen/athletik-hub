@@ -779,6 +779,142 @@ SÉCURITÉ (priorités, dans l'ordre) : 1) qualité d'exécution, 2) prévention
 
 Sois concis dans les "note". Tu es un coach, pas un bavard. Réponds en français. JSON uniquement.`;
 
+// ════════════════════════════════════════════════════════════════════════════
+// MODE NUTRITION — analyse d'un repas décrit en langage naturel
+// ────────────────────────────────────────────────────────────────────────────
+// Troisième voie de la fonction, sur le modèle de `mode:'builder'` : mêmes
+// couches d'authentification, de quota et de modération, un système et un
+// budget de jetons propres, une sortie STRUCTURÉE.
+//
+// Un SEUL appel renvoie la réponse conversationnelle ET l'analyse. Deux
+// appels séparés doubleraient la consommation du quota (20/jour/uid) pour
+// une seule question de l'athlète.
+//
+// Ce mode n'écrit RIEN. Il décrit ce qui pourrait être écrit ; c'est le
+// client qui présente la carte, et l'athlète qui décide.
+// ════════════════════════════════════════════════════════════════════════════
+const NUTRITION_MAX_TOKENS = 1600;
+const NUTRITION_MAX_ITEMS = 25;
+
+const NUTRITION_SYSTEM = `Tu es TITAN. L'athlète te décrit ce qu'il a mangé, en langage courant.
+
+Tu réponds UNIQUEMENT par un objet JSON valide, sans texte autour, sans bloc de code.
+
+{
+  "reply": "ta réponse à l'athlète, dans ton ton habituel",
+  "nutrition": {
+    "items": [
+      { "name": "nom de l'aliment", "quantity": "quantité telle que tu la retiens (ex: 150 g, 1 unité, 2 tranches)",
+        "calories": number, "protein": number, "carbs": number, "fat": number,
+        "estimated": true|false }
+    ],
+    "totals": { "calories": number, "protein": number, "carbs": number, "fat": number },
+    "estimatedItems": ["ce dont la quantité n'était pas précisée"],
+    "confidence": "haute" | "moyenne" | "basse",
+    "wantsSave": true|false,
+    "question": "une seule question de précision, ou chaîne vide"
+  }
+}
+
+RÈGLES D'ANALYSE
+- Comprends les fautes, l'absence de ponctuation, les abréviations ("ojd", "smothie", "manger" pour "mangé").
+- Quantité donnée → tu l'utilises. Quantité absente → tu estimes une portion courante ET tu mets "estimated": true, et tu ajoutes l'aliment dans "estimatedItems".
+- "une poignée", "un peu", "un petit morceau", "une part", "un verre" : estime, mais marque TOUJOURS "estimated": true.
+- Les macros sont en GRAMMES, les calories en kcal. Nombres entiers, jamais de texte dans un champ numérique.
+- "totals" est la somme des items. Ne la fabrique pas séparément.
+
+COMPLÉMENTS ET BOISSONS — n'invente jamais une valeur
+- Eau, thé, café noir, glaçons : 0 partout.
+- Créatine, L-carnitine, BCAA, vitamines, électrolytes : 0 calorie (une dose de 5 g n'apporte rien de significatif). Tu peux les lister avec des zéros pour montrer que tu les as vus.
+- Un complément dont tu ne connais pas la composition : 0 partout, et tu le signales dans "reply".
+
+CONFIANCE
+- "haute" : toutes les quantités étaient données.
+- "moyenne" : quelques portions estimées.
+- "basse" : la plupart des quantités manquent, ou des aliments sont ambigus.
+
+"question" : à remplir UNIQUEMENT si une précision changerait vraiment le total (la quantité de viande, de féculent, la taille d'une part de gâteau). Une seule question, courte. Sinon chaîne vide.
+
+"wantsSave" : true SEULEMENT si l'athlète demande explicitement d'enregistrer, d'ajouter à son journal ou à son suivi. Une simple question du type « combien ça fait ? » n'est PAS une demande d'enregistrement.
+
+TA RÉPONSE ("reply")
+- Ton habituel : direct, tutoiement, pas de flatterie.
+- Donne le total, dis clairement ce qui est estimé.
+- N'écris JAMAIS que tu as enregistré quoi que ce soit : tu n'écris rien, c'est l'athlète qui valide sur sa carte.
+- Ne répète pas le tableau des items ligne par ligne : le client l'affiche déjà.
+- Reste court : 2 à 5 phrases.
+
+Si le message ne parle finalement pas de nourriture, renvoie "items": [], des totaux à zéro, et réponds normalement dans "reply".`;
+
+// Le modèle peut renvoyer n'importe quoi : on ne fait confiance à aucun champ.
+// Même esprit que sanitizeMethod — ce qui n'est pas conforme est retiré, et
+// une analyse vide vaut mieux qu'une analyse inventée.
+function nutNum(v, max) {
+  const n = typeof v === 'number' ? v : parseFloat(v);
+  if (!isFinite(n) || n < 0) return 0;
+  return Math.round(Math.min(n, max));
+}
+function nutStr(v, max) {
+  if (typeof v !== 'string') return '';
+  return v.trim().slice(0, max);
+}
+function sanitizeNutrition(n) {
+  if (!n || typeof n !== 'object') return null;
+  const rawItems = Array.isArray(n.items) ? n.items.slice(0, NUTRITION_MAX_ITEMS) : [];
+  const items = rawItems.map((it) => {
+    const name = nutStr(it && it.name, 80);
+    if (!name) return null;
+    return {
+      name,
+      quantity: nutStr(it && it.quantity, 40),
+      // Bornes hautes : un aliment isolé ne dépasse pas ces valeurs. Elles
+      // n'existent pas pour être justes, mais pour qu'une hallucination ne
+      // parte pas dans le journal de l'athlète.
+      calories: nutNum(it && it.calories, 5000),
+      protein: nutNum(it && it.protein, 500),
+      carbs: nutNum(it && it.carbs, 1000),
+      fat: nutNum(it && it.fat, 500),
+      estimated: !!(it && it.estimated),
+    };
+  }).filter(Boolean);
+
+  // Les totaux sont RECALCULÉS depuis les items, jamais repris du modèle :
+  // c'est la seule façon que le total affiché corresponde au détail affiché.
+  const totals = items.reduce((a, it) => ({
+    calories: a.calories + it.calories,
+    protein: a.protein + it.protein,
+    carbs: a.carbs + it.carbs,
+    fat: a.fat + it.fat,
+  }), { calories: 0, protein: 0, carbs: 0, fat: 0 });
+
+  const conf = ['haute', 'moyenne', 'basse'].indexOf(n.confidence) > -1 ? n.confidence : 'moyenne';
+  const estimatedItems = (Array.isArray(n.estimatedItems) ? n.estimatedItems : [])
+    .map((x) => nutStr(x, 60)).filter(Boolean).slice(0, 12);
+
+  return {
+    items,
+    totals,
+    estimatedItems,
+    confidence: conf,
+    wantsSave: n.wantsSave === true,
+    question: nutStr(n.question, 200),
+  };
+}
+
+function parseNutritionJson(text) {
+  if (!text) return null;
+  let s = String(text).trim().replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/i, '').trim();
+  const first = s.indexOf('{'), last = s.lastIndexOf('}');
+  if (first > -1 && last > first) s = s.slice(first, last + 1);
+  try {
+    const obj = JSON.parse(s);
+    if (!obj || typeof obj !== 'object') return null;
+    const reply = nutStr(obj.reply, 2000);
+    if (!reply) return null;
+    return { reply, nutrition: sanitizeNutrition(obj.nutrition) };
+  } catch (e) { return null; }
+}
+
 function buildBuilderUserMessage(intent, library) {
   intent = intent || {};
   const libLines = (Array.isArray(library) ? library : [])
@@ -1327,6 +1463,50 @@ exports.handler = async function(event) {
       return { statusCode: 200, headers, body: JSON.stringify({ workout }) };
     } catch (err) {
       console.error('[titan] builder fetch error:', err.message);
+      return { statusCode: 502, headers, body: JSON.stringify({ error: 'Erreur de connexion au serveur Titan.' }) };
+    }
+  }
+
+  // ── Mode nutrition : même chaîne, sortie structurée ──
+  // Le contexte athlète (morphologie, cibles, journal du jour) est joint :
+  // sans lui Titan ne saurait pas si 2 200 kcal est beaucoup ou peu POUR CET
+  // athlète, et redemanderait un poids déjà saisi à l'onboarding.
+  if (body.mode === 'nutrition') {
+    const nutSystem = [
+      { type: 'text', text: NUTRITION_SYSTEM, cache_control: { type: 'ephemeral' } },
+      { type: 'text', text: buildAthleteContext(ctx) },
+    ];
+    try {
+      const resp = await fetch('https://api.anthropic.com/v1/messages', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-api-key': process.env.ANTHROPIC_API_KEY,
+          'anthropic-version': '2023-06-01',
+        },
+        body: JSON.stringify({
+          model: MODEL,
+          max_tokens: NUTRITION_MAX_TOKENS,
+          system: nutSystem,
+          messages: sanitizeMessages(messages.slice(-6)),
+        }),
+      });
+      const data = await resp.json();
+      if (!resp.ok) {
+        console.error('[titan] nutrition anthropic error', resp.status, data);
+        return { statusCode: 502, headers, body: JSON.stringify({ error: 'Erreur API Titan.' }) };
+      }
+      const raw = data.content && data.content[0] && data.content[0].text;
+      const parsed = parseNutritionJson(raw);
+      // Analyse illisible : on ne perd PAS la conversation pour autant. Le
+      // texte brut part comme une réponse normale, sans carte d'action.
+      if (!parsed) {
+        console.error('[titan] nutrition parse failed', raw && raw.slice(0, 300));
+        return { statusCode: 200, headers, body: JSON.stringify({ reply: raw || 'Je n\'ai pas réussi à analyser ça. Reformule ?' }) };
+      }
+      return { statusCode: 200, headers, body: JSON.stringify(parsed) };
+    } catch (err) {
+      console.error('[titan] nutrition fetch error:', err.message);
       return { statusCode: 502, headers, body: JSON.stringify({ error: 'Erreur de connexion au serveur Titan.' }) };
     }
   }

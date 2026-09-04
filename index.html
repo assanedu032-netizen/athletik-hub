@@ -1198,6 +1198,44 @@ body{background:var(--bg);color:var(--text);font-family:'Outfit',sans-serif;disp
 .msg.titan .msg-time{margin-left:4px}
 .msg.user .msg-time{margin-right:4px;text-align:right}
 
+/* ═══ CARTE NUTRITION DE TITAN ═══
+   Navy + or du design system, aucune couleur nouvelle. Elle occupe toute la
+   largeur du fil : c'est une action, pas une bulle de conversation. */
+.tn-wrap{max-width:100%!important;align-self:stretch!important}
+.tn-card{background:var(--surface);border:1px solid rgba(197,164,78,.35);border-radius:14px;padding:13px 14px;font-family:'Outfit',sans-serif}
+.tn-head{display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;margin-bottom:11px}
+.tn-chip{font-size:9px;font-weight:800;letter-spacing:.14em;text-transform:uppercase;color:var(--gold);background:rgba(197,164,78,.13);border-radius:4px;padding:3px 7px}
+.tn-conf{font-size:10px;font-weight:700;color:var(--muted)}
+.tn-conf-basse{color:#C4703A}
+.tn-totals{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-bottom:11px}
+.tn-t{background:var(--bg);border-radius:10px;padding:8px 4px;text-align:center;min-width:0}
+.tn-t-v{font-family:'Bebas Neue',sans-serif;font-size:22px;line-height:1;letter-spacing:.02em;color:var(--text);font-variant-numeric:tabular-nums}
+.tn-t-v i{font-style:normal;font-size:12px;opacity:.65}
+.tn-t-kcal .tn-t-v{color:var(--gold)}
+.tn-t-l{font-size:8.5px;font-weight:800;letter-spacing:.09em;text-transform:uppercase;color:var(--muted);margin-top:3px}
+.tn-toggle{width:100%;background:none;border:0;border-top:1px solid var(--border);padding:9px 0 0;color:var(--text2);font-family:'Outfit',sans-serif;font-size:11.5px;font-weight:700;cursor:pointer;text-align:left}
+.tn-items{display:flex;flex-direction:column;gap:5px;padding-top:8px}
+/* `display:flex` d'une classe bat la règle navigateur `[hidden]{display:none}`.
+   Sans cette ligne, le détail restait VISIBLE alors que `el.hidden` valait
+   true — un test qui lit la propriété ne voit pas la différence, seule une
+   mesure à l'écran l'attrape. */
+.tn-items[hidden]{display:none}
+.tn-item{display:flex;align-items:baseline;justify-content:space-between;gap:10px;font-size:12px}
+.tn-item-n{color:var(--text);min-width:0;overflow-wrap:anywhere}
+.tn-item-q{color:var(--muted);font-size:11px;margin-left:6px}
+.tn-est{font-size:8.5px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:#C4703A;background:rgba(196,112,58,.14);border-radius:3px;padding:1px 5px;margin-left:6px;white-space:nowrap}
+.tn-item-k{color:var(--text2);font-weight:700;white-space:nowrap;font-variant-numeric:tabular-nums}
+.tn-warn{margin-top:10px;font-size:11.5px;line-height:1.45;color:var(--text2);background:rgba(196,112,58,.10);border-left:2px solid #C4703A;border-radius:0 8px 8px 0;padding:8px 10px}
+.tn-q{margin-top:9px;font-size:12px;line-height:1.45;color:var(--text);font-style:italic}
+.tn-actions{display:flex;flex-direction:column;gap:7px;margin-top:12px}
+.tn-btn{width:100%;min-height:44px;border-radius:11px;font-family:'Outfit',sans-serif;font-size:13px;font-weight:800;cursor:pointer;border:0}
+.tn-btn-go{background:linear-gradient(135deg,var(--gold),var(--gold2));color:var(--navy)}
+.tn-btn-go:active{filter:brightness(.94)}
+.tn-btn-no{background:none;border:1px solid var(--border);color:var(--text2);min-height:38px;font-size:12px;font-weight:700}
+.tn-done{font-size:12.5px;font-weight:700;color:var(--gold);line-height:1.5}
+.tn-done-no{color:var(--muted);font-weight:600}
+.tn-see{display:block;margin-top:8px;background:none;border:1px solid rgba(197,164,78,.45);border-radius:9px;min-height:38px;padding:0 14px;color:var(--gold);font-family:'Outfit',sans-serif;font-size:12px;font-weight:700;cursor:pointer}
+
 /* ═══ MESSAGES ENREGISTRÉS ═══
    Action secondaire : elle vit sur la même ligne que l'heure pour ne pas
    ajouter de hauteur à la conversation. La zone tactile est étendue à 44 px
@@ -25555,7 +25593,11 @@ function _titanNutritionCtx(prof) {
 }
 window._titanNutritionCtx = _titanNutritionCtx;
 
-async function callAnthropicAPI(userMessage, photo) {
+// opts.mode : 'nutrition' déclenche la sortie structurée. L'analyse
+// éventuelle est déposée dans window._titanLastNutrition — sendMessage la
+// rend en carte APRÈS la bulle, pour que l'ordre à l'écran soit celui de la
+// conversation : Titan répond, puis propose l'action.
+async function callAnthropicAPI(userMessage, photo, opts) {
   // Avec photo : contenu en blocs (image d'abord, comme recommandé par
   // Anthropic quand le texte commente l'image). L'index du message est retenu
   // pour pouvoir retirer le base64 de l'historique juste après la réponse.
@@ -25646,6 +25688,7 @@ async function callAnthropicAPI(userMessage, photo) {
         'Authorization': 'Bearer ' + idToken,
       },
       body: JSON.stringify({
+        mode: opts && opts.mode ? opts.mode : undefined,
         messages: _titanTrimImages(conversationHistory.slice(-10)),
         ctx: ctx,
       }),
@@ -25659,6 +25702,7 @@ async function callAnthropicAPI(userMessage, photo) {
     }
 
     if (data.reply) {
+      window._titanLastNutrition = data.nutrition || null;
       conversationHistory.push({ role: 'assistant', content: data.reply, t: Date.now() });
       persistTitanChat();
       return data.reply;
@@ -25704,6 +25748,207 @@ function _titanTrimImages(msgs) {
     return (i === lastImg) ? m : _titanStripImages(m);
   });
 }
+
+// ══════════════════════════════════════════════════════════════════════
+// TITAN — ANALYSE NUTRITIONNELLE ET ACTION D'ENREGISTREMENT
+// ─────────────────────────────────────────────────────────────────────
+// Séparation stricte, demandée et respectée :
+//   CHAT   = comprendre et répondre. N'écrit jamais.
+//   ACTION = écrire dans le journal. Ne part que sur un tap de l'athlète.
+//
+// Une analyse ne déclenche AUCUNE écriture, même quand l'athlète a dit
+// « enregistre ça » : sa phrase ouvre la carte, c'est le bouton qui écrit.
+// Titan ne peut donc pas se tromper silencieusement sur les données de
+// quelqu'un — au pire il affiche un total que l'athlète refuse.
+//
+// L'écriture réutilise le format EXACT des trois écrivains existants
+// (scanSaveToJournal, addRecipeToJournal, logMealPlanDay) : renderJournalToday
+// lit `totals.{cal,p,g,l}` et `name`, et la clé ah_nutri_journal est déjà
+// synchronisée vers users/{uid}.nutriJournal. Aucune structure nouvelle,
+// aucune règle Firestore à ajouter.
+// ══════════════════════════════════════════════════════════════════════
+
+// Déclencheur du mode nutrition. Volontairement STRICT : chaque message
+// analysé consomme un appel du quota (20/jour), et un faux positif ferait
+// répondre Titan en mode analyse à une question d'entraînement.
+var TITAN_FOOD_RE = new RegExp([
+  // ce que l'athlète a consommé
+  "\\bj'?ai (?:mang|bouff|pris|d[ée]jeun|d[îi]n|petit-?d[ée]jeun|grignot|bu)",
+  "\\bje viens de (?:mang|bouff|prendre|boire)",
+  "\\bj'?ai (?:rien|pas) mang",
+  // le contexte de repas
+  "\\bpetit[- ]?d[ée]j",
+  "\\b(?:d[ée]jeuner|d[îi]ner|go[ûu]ter|collation|repas)\\b",
+  // la demande de calcul. « calorique » n'est pas « calorie » : on coupe au radical.
+  "\\b(?:calcule|combien de |compte)[^?]{0,30}(?:calori|kcal|prot[ée]in|macro|glucide|lipide)",
+  "\\b(?:calori|kcal|macro)\\w*\\b.{0,25}\\b(?:aujourd|journ[ée]e|repas|mang)",
+  // la demande d'enregistrement
+  "\\b(?:enregistre|ajoute|note|log)\\b.{0,30}\\b(?:journal|suivi|repas|journ[ée]e|nutrition|[çc]a)\\b"
+].join('|'), 'i');
+
+function _titanIsFoodMessage(text) {
+  var t = String(text || '');
+  if (t.trim().length < 8) return false;
+  return TITAN_FOOD_RE.test(t.toLowerCase());
+}
+window._titanIsFoodMessage = _titanIsFoodMessage;
+
+// Analyses en attente de décision, indexées par un identifiant de carte.
+// Rien n'est écrit tant que l'athlète n'a pas tapé « Enregistrer ».
+window._titanNutriPending = window._titanNutriPending || {};
+
+function _titanNutriFmt(n) { return Math.round(Number(n) || 0); }
+
+// La carte d'action, rendue SOUS la réponse de Titan.
+function _titanRenderNutriCard(nut) {
+  if (!nut || !Array.isArray(nut.items) || !nut.items.length) return;
+  if (!nut.totals || !nut.totals.calories) return;   // rien de chiffré → rien à proposer
+  var body = document.getElementById('chatBody');
+  if (!body) return;
+
+  var id = 'nc' + Date.now().toString(36) + Math.floor(Math.random() * 1000).toString(36);
+  window._titanNutriPending[id] = nut;
+
+  var t = nut.totals;
+  var conf = nut.confidence || 'moyenne';
+  var confTxt = conf === 'haute' ? 'Quantités précises'
+              : conf === 'basse' ? 'Beaucoup de quantités manquent'
+              : 'Certaines portions sont estimées';
+
+  var h = '<div class="tn-card" id="' + id + '">'
+    + '<div class="tn-head"><span class="tn-chip">Bilan estimé</span>'
+    +   '<span class="tn-conf tn-conf-' + conf + '">' + confTxt + '</span></div>'
+    + '<div class="tn-totals">'
+    +   '<div class="tn-t tn-t-kcal"><div class="tn-t-v">' + _titanNutriFmt(t.calories) + '</div><div class="tn-t-l">kcal</div></div>'
+    +   '<div class="tn-t"><div class="tn-t-v">' + _titanNutriFmt(t.protein) + '<i>g</i></div><div class="tn-t-l">Protéines</div></div>'
+    +   '<div class="tn-t"><div class="tn-t-v">' + _titanNutriFmt(t.carbs) + '<i>g</i></div><div class="tn-t-l">Glucides</div></div>'
+    +   '<div class="tn-t"><div class="tn-t-v">' + _titanNutriFmt(t.fat) + '<i>g</i></div><div class="tn-t-l">Lipides</div></div>'
+    + '</div>';
+
+  // Le détail est replié : l'athlète veut un total, pas un tableau.
+  h += '<button type="button" class="tn-toggle" onclick="window._titanNutriToggle(\'' + id + '\')">'
+     + nut.items.length + ' aliment' + (nut.items.length > 1 ? 's' : '') + ' — voir le détail</button>'
+     + '<div class="tn-items" id="' + id + '_items" hidden>'
+     + nut.items.map(function (it) {
+         return '<div class="tn-item"><div class="tn-item-n">' + _lsEsc(it.name)
+              + (it.quantity ? '<span class="tn-item-q">' + _lsEsc(it.quantity) + '</span>' : '')
+              + (it.estimated ? '<span class="tn-est">estimé</span>' : '')
+              + '</div><div class="tn-item-k">' + _titanNutriFmt(it.calories) + ' kcal</div></div>';
+       }).join('')
+     + '</div>';
+
+  if (nut.estimatedItems && nut.estimatedItems.length) {
+    h += '<div class="tn-warn">⚠️ Quantités non précisées : '
+       + _lsEsc(nut.estimatedItems.join(', ')) + '. Le total est une estimation.</div>';
+  }
+  if (nut.question) {
+    h += '<div class="tn-q">' + _lsEsc(nut.question) + '</div>';
+  }
+
+  h += '<div class="tn-actions">'
+    +   '<button type="button" class="tn-btn tn-btn-go" onclick="window._titanNutriSave(\'' + id + '\')">Enregistrer dans mon journal</button>'
+    +   '<button type="button" class="tn-btn tn-btn-no" onclick="window._titanNutriDismiss(\'' + id + '\')">Pas maintenant</button>'
+    + '</div></div>';
+
+  var wrap = document.createElement('div');
+  wrap.className = 'msg titan tn-wrap';
+  wrap.innerHTML = h;
+  body.appendChild(wrap);
+  // On cadre le HAUT de la carte, pas le bas du fil : le défilement
+  // automatique du chat mettait les totaux hors écran, et ce sont eux que
+  // l'athlète est venu lire.
+  try {
+    wrap.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  } catch (e) { body.scrollTop = body.scrollHeight; }
+}
+window._titanRenderNutriCard = _titanRenderNutriCard;
+
+window._titanNutriToggle = function (id) {
+  var el = document.getElementById(id + '_items');
+  if (!el) return;
+  el.hidden = !el.hidden;
+  var btn = el.previousElementSibling;
+  if (btn && btn.classList.contains('tn-toggle')) {
+    btn.textContent = btn.textContent.replace(
+      el.hidden ? 'masquer le détail' : 'voir le détail',
+      el.hidden ? 'voir le détail' : 'masquer le détail');
+  }
+};
+
+window._titanNutriDismiss = function (id) {
+  delete window._titanNutriPending[id];
+  var el = document.getElementById(id);
+  if (el) {
+    el.innerHTML = '<div class="tn-done tn-done-no">Analyse gardée pour toi — rien n\'a été enregistré.</div>';
+  }
+};
+
+// LA SEULE écriture. Elle part d'un tap, jamais d'une phrase.
+window._titanNutriSave = function (id) {
+  var nut = window._titanNutriPending[id];
+  if (!nut) return;                       // déjà traité : pas de double écriture
+  delete window._titanNutriPending[id];
+  var t = nut.totals || {};
+  var entry = {
+    ts: Date.now(),
+    date: new Date().toISOString(),
+    name: _titanNutriLabel(nut),
+    // Mêmes champs que addRecipeToJournal / logMealPlanDay…
+    cals: _titanNutriFmt(t.calories), prot: _titanNutriFmt(t.protein),
+    carbs: _titanNutriFmt(t.carbs), fat: _titanNutriFmt(t.fat),
+    // …et le seul que renderJournalToday lit réellement.
+    totals: { cal: _titanNutriFmt(t.calories), p: _titanNutriFmt(t.protein),
+              g: _titanNutriFmt(t.carbs), l: _titanNutriFmt(t.fat) },
+    servings: 1,
+    source: 'titan',
+    // `foods` est le nom déjà employé par le scan photo. Ces trois champs
+    // sont additifs : les lecteurs existants les ignorent, et ils rendent
+    // l'entrée exploitable plus tard (moyennes, comparaisons de semaines).
+    foods: nut.items,
+    confidence: nut.confidence || 'moyenne',
+    estimated: !!(nut.estimatedItems && nut.estimatedItems.length)
+  };
+  var ok = false;
+  try {
+    var arr = [];
+    try { arr = JSON.parse(localStorage.getItem('ah_nutri_journal') || '[]'); } catch (e) {}
+    if (!Array.isArray(arr)) arr = [];
+    arr.push(entry);
+    localStorage.setItem('ah_nutri_journal', JSON.stringify(arr));
+    ok = true;
+  } catch (e) { console.warn('[titan nutri save]', e); }
+
+  var el = document.getElementById(id);
+  if (!ok) {
+    if (el) el.innerHTML = '<div class="tn-done tn-done-no">Enregistrement impossible — mémoire de l\'appareil saturée.</div>';
+    return;
+  }
+  // Le journal du jour et la synchro passent par les chemins existants.
+  try { if (typeof renderJournalToday === 'function') renderJournalToday(); } catch (e) {}
+  try { if (typeof fbSaveProfile === 'function') fbSaveProfile(); } catch (e) {}
+  if (el) {
+    el.innerHTML = '<div class="tn-done">✓ Enregistré — ' + _titanNutriFmt(t.calories)
+      + ' kcal ajoutées à ta journée.'
+      + '<button type="button" class="tn-see" onclick="window._titanNutriOpenJournal()">Voir mon journal</button></div>';
+  }
+  try { if (navigator.vibrate) navigator.vibrate(24); } catch (e) {}
+};
+
+window._titanNutriOpenJournal = function () {
+  try { if (typeof switchTab === 'function') switchTab('nutri'); } catch (e) {}
+};
+
+// Libellé de l'entrée dans le journal : les aliments qui pèsent le plus,
+// pas une liste exhaustive illisible dans une ligne de 40 caractères.
+function _titanNutriLabel(nut) {
+  var items = (nut.items || []).slice().sort(function (a, b) { return b.calories - a.calories; });
+  var names = items.slice(0, 3).map(function (i) { return i.name; }).filter(Boolean);
+  if (!names.length) return 'Repas (Titan)';
+  var lbl = names.join(', ');
+  if (items.length > names.length) lbl += ' +' + (items.length - names.length);
+  return lbl.slice(0, 70);
+}
+window._titanNutriLabel = _titanNutriLabel;
 
 // ══════════════════════════════════════════════════════════════════════
 // MESSAGES ENREGISTRÉS — favoris des réponses de Titan
@@ -26360,13 +26605,24 @@ async function sendMessage() {
   }
 
   showTyping(true);
-  const reply = await callAnthropicAPI(text, photo);
+  // Un message qui parle de nourriture part en mode nutrition : MÊME appel,
+  // MÊME quota, mais la réponse rapporte en plus une analyse structurée.
+  window._titanLastNutrition = null;
+  const isFood = _titanIsFoodMessage(text);
+  const reply = await callAnthropicAPI(text, photo, isFood ? { mode: 'nutrition' } : null);
+  const nutrition = window._titanLastNutrition;
+  window._titanLastNutrition = null;
 
   // Simulate typing delay
   const delay = Math.min(reply.length * 15, 2000);
   setTimeout(() => {
     showTyping(false);
     addMessage(reply, 'titan');
+    // La carte suit la réponse — jamais à sa place. Isolée : si elle échoue,
+    // la conversation reste intacte.
+    if (nutrition) {
+      try { _titanRenderNutriCard(nutrition); } catch (e) { console.warn('[titan nutri card]', e); }
+    }
   }, delay);
 }
 

@@ -17,7 +17,7 @@ The app is the digital companion of the book *Les Secrets de la Détente Vertica
   - `sw.js` (cache-first for local assets, network-first for externals) + `manifest.json`. Cache name is `athletik-v271` — bump it when shipping CSS/HTML that must invalidate.
   - `firebase-messaging-sw.js` (root) — receives background push notifications (FCM).
 - **No linter, no build**. Validate changes by opening `index.html` in a browser (mobile-first, Android Chrome is the target). Before committing, sanity-check JS syntax by parsing the non-module `<script>` blocks with `node -e` (see Coding conventions).
-- **Tests**: `for f in scripts/test-*.js; do node "$f"; done` — 22 suites, ~1 130 assertions, pure
+- **Tests**: `for f in scripts/test-*.js; do node "$f"; done` — 24 suites, ~1 240 assertions, pure
   Node, zéro dépendance : chaque suite extrait les **vraies** fonctions d'`index.html` par
   équilibrage d'accolades et les rejoue contre des mocks. `scripts/test-live-layout.js` est la
   seule exception : elle ouvre un vrai Chromium (Playwright, hors `package.json`) pour mesurer la
@@ -274,6 +274,32 @@ completedPrograms, fcmToken, accessTier`.
   client l'envoyait déjà, le serveur ne l'imprimait pas. Les entrées antérieures n'ont pas
   ces champs et s'affichent sans ligne vide ni compte inventé.
   Tests : `scripts/test-athlete-state.js` (66).
+- **Titan écrit dans le journal nutritionnel — mais seulement sur un tap.**
+  Troisième voie de `titan.js` (`mode:'nutrition'`), sur le modèle de `mode:'builder'` : mêmes
+  couches auth / quota / modération, système et budget propres (`NUTRITION_MAX_TOKENS = 1600`),
+  sortie structurée. **Un seul appel renvoie `{reply, nutrition}`** — deux appels séparés
+  doubleraient la consommation du quota (20/jour/uid) pour une seule question.
+  **Séparation stricte CHAT / ACTION** : l'analyse n'écrit JAMAIS, même quand l'athlète a dit
+  « enregistre ça ». Sa phrase ouvre la carte ; c'est `_titanNutriSave(id)` — donc un tap — qui
+  écrit. La carte est retirée de `_titanNutriPending` à la première écriture : un second tap ne
+  peut pas dupliquer.
+  **Les totaux sont RECALCULÉS depuis les items** côté serveur, jamais repris du modèle — sinon
+  le total affiché peut ne pas correspondre au détail affiché. `sanitizeNutrition()` borne chaque
+  valeur (5000 kcal / 500 g par aliment), écrase les négatifs, le texte et les `NaN`, plafonne à
+  25 aliments — même esprit que `sanitizeMethod`.
+  **Écriture au format des trois écrivains existants** (`scanSaveToJournal`, `addRecipeToJournal`,
+  `logMealPlanDay`) : `totals.{cal,p,g,l}` + `name` sont ce que `renderJournalToday` lit ;
+  `foods`, `confidence` et `estimated` sont additifs. Clé `ah_nutri_journal`, déjà dans
+  `FB_SYNC_KEYS` → `users/{uid}.nutriJournal`. **Aucune structure nouvelle, aucune règle
+  Firestore à ajouter, aucun appel Firestore direct** — la synchro passe par `fbSaveProfile()`.
+  `_titanIsFoodMessage()` est le déclencheur, volontairement **strict** : chaque déclenchement
+  consomme un appel du quota, et un faux positif ferait répondre Titan en mode analyse à une
+  question d'entraînement.
+  `.tn-items[hidden]{display:none}` est **nécessaire** : `display:flex` d'une classe bat la règle
+  navigateur `[hidden]{display:none}`, et le détail restait visible pendant que `el.hidden` valait
+  `true` — un test qui lit la propriété ne voit pas la différence.
+  Tests : `scripts/test-titan-nutri-action.js` (76) et `scripts/test-nutri-card.js` (28, vrai
+  Chromium).
 - **La conversation Titan se synchronise** (`ah_titan_chat` dans `FB_SYNC_KEYS`). C'est la
   seule clé synchronisée qui s'écrit à **chaque tour** et dont la taille dépend de ce que le
   modèle produit — trois garde-fous, aucun optionnel :

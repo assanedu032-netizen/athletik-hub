@@ -162,11 +162,16 @@ console.log('\n=== CÂBLAGE DANS LA COUCHE DE SYNCHRO ===\n');
 console.log('\n=== L\'HEURE AFFICHÉE EST CELLE DU MESSAGE ===\n');
 {
   const getTimeStr = new Function('return ' + fn('getTimeStr').replace(/^function /, 'function ') + ';')();
-  const d = new Date(2026, 8, 1, 14, 32);
-  ok('un message du jour affiche son heure', getTimeStr(d.getTime()) === '14:32', getTimeStr(d.getTime()));
-  const vieux = new Date(2026, 7, 20, 9, 5).getTime();
+  // Dates construites À PARTIR DE MAINTENANT : une date en dur devient
+  // « un autre jour » dès le lendemain, et l'assertion se met à échouer
+  // toute seule sans qu'aucun code n'ait changé.
+  const d = new Date(); d.setHours(14, 32, 0, 0);
+  ok('un message du jour affiche son heure, sans date', getTimeStr(d.getTime()) === '14:32', getTimeStr(d.getTime()));
+  const vieux = new Date(Date.now() - 15 * 86400000); vieux.setHours(9, 5, 0, 0);
+  const vTxt = getTimeStr(vieux.getTime());
   ok('un message d\'un autre jour porte sa date',
-     /août/.test(getTimeStr(vieux)) && /09:05/.test(getTimeStr(vieux)), getTimeStr(vieux));
+     /\d/.test(vTxt) && /·/.test(vTxt) && /09:05/.test(vTxt), vTxt);
+  ok('  et il est bien plus long qu\'une simple heure', vTxt.length > 6, vTxt);
   ok('sans horodatage → l\'heure courante, comme avant',
      /^\d\d:\d\d$/.test(getTimeStr()), getTimeStr());
   ok('un horodatage aberrant ne casse rien', /^\d\d:\d\d$/.test(getTimeStr(NaN)), getTimeStr(NaN));
