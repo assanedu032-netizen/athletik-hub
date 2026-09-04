@@ -317,10 +317,18 @@ console.log('\n=== « TU PEUX ENREGISTRER » DOIT DÉCLENCHER L\'ACTION ===\n');
   ok('mais « Pk tu répond comme ça » ne déclenche rien', cli.isFood('Pk tu répond comme ça') === false);
   ok('le prompt interdit à Titan de dire qu\'il ne peut pas enregistrer',
      /Ne dis JAMAIS que tu ne peux pas enregistrer/.test(srv));
-  ok('  et le prompt de base annonce la carte',
-     /CE QUE L'APP SAIT FAIRE POUR TOI[\s\S]{0,400}Enregistrer dans mon journal/.test(srv));
+  ok('  et le prompt de base annonce la capacité',
+     /CE QUE L'APP SAIT FAIRE POUR TOI[\s\S]{0,300}enregistrer un repas dans le journal/.test(srv));
   ok('  sans jamais prétendre écrire lui-même',
-     /Tu n'écris jamais toi-même dans son journal/.test(srv));
+     /Tu n'écris jamais toi-même/.test(srv));
+  // Titan promettait « la carte s'affiche juste en dessous » en conversation
+  // normale, où AUCUNE carte n'apparaît : l'app passait pour cassée. Il ne
+  // peut pas savoir si la carte sortira — il invite donc la phrase qui, elle,
+  // déclenche l'enregistrement à coup sûr.
+  ok('  et il lui est interdit de promettre une carte',
+     /NE PROMETS JAMAIS DE CARTE/.test(srv));
+  ok('  il invite plutôt la phrase qui déclenche vraiment l\'action',
+     /ajoute ça à mon journal[\s\S]{0,120}déclenche l'enregistrement/.test(srv));
 }
 
 console.log('\n=== LA NUTRITION EST UN SUJET, PAS UN MESSAGE ISOLÉ ===\n');

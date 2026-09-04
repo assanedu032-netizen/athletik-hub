@@ -17,7 +17,7 @@ The app is the digital companion of the book *Les Secrets de la Détente Vertica
   - `sw.js` (cache-first for local assets, network-first for externals) + `manifest.json`. Cache name is `athletik-v271` — bump it when shipping CSS/HTML that must invalidate.
   - `firebase-messaging-sw.js` (root) — receives background push notifications (FCM).
 - **No linter, no build**. Validate changes by opening `index.html` in a browser (mobile-first, Android Chrome is the target). Before committing, sanity-check JS syntax by parsing the non-module `<script>` blocks with `node -e` (see Coding conventions).
-- **Tests**: `for f in scripts/test-*.js; do node "$f"; done` — 24 suites, ~1 400 assertions, pure
+- **Tests**: `for f in scripts/test-*.js; do node "$f"; done` — 25 suites, ~1 440 assertions, pure
   Node, zéro dépendance : chaque suite extrait les **vraies** fonctions d'`index.html` par
   équilibrage d'accolades et les rejoue contre des mocks. `scripts/test-live-layout.js` est la
   seule exception : elle ouvre un vrai Chromium (Playwright, hors `package.json`) pour mesurer la
@@ -260,6 +260,25 @@ completedPrograms, fcmToken, accessTier`.
   inconnu s'affiche brut plutôt que d'être effacé. Le texte est **échappé avant `innerHTML`**.
   Test : `scripts/test-notif-diag.js` (35).
 - **Workout Builder**: `pgBuilder` page (3e sous-onglet de `vTrain`, à côté de Programmes/Librairie). Locked until `programsDone >= 2` (`BUILDER_UNLOCK_PROGRAMS`) OR VIP/MASTER tier OR compte fondateur (`BUILDER_FOUNDER_EMAILS` / `_builderIsDev()`). `_builderCheckUnlock()`. **Piloté par Titan** : l'utilisateur exprime une intention (objectif/durée/matériel/état via chips + phrase libre/vocal `builderToggleMic`), `builderGenerate()` POST `/.netlify/functions/titan` avec `mode:'builder'` + la librairie compacte (`_builderLibraryPayload`) → Titan renvoie une séance **JSON structurée** (blocs échauffement→principal→secondaire→finisher→retour au calme) programmée selon la méthode Athletic Hub (`BUILDER_SYSTEM` côté serveur). `_builderReconcile()` rattache vidéos/catégories depuis `catData`. `builderStartGenerated()` lance via `launchSession` (marquée `_LS.builderMeta`). En fin de séance, `_lsShowComplete` injecte un panneau de ressenti (`_builderInjectFeedback`) et **sauvegarde dans Firestore `users/{uid}/builderSessions`** (cloud, pas localStorage) — `_builderSaveSession`/`_builderSaveFeedback`.
+- **Suivi › Progrès** (`renderSuiviOverview`) — hiérarchie **état → progression → Titan →
+  priorité → action → historique**, quatre niveaux de carte pour distinguer information ≠
+  observation ≠ priorité ≠ action. Rien n'est inventé : `_suiviDimensions()` lit les **4
+  composantes réelles** du score (`detente` 40 %, `squat` 25 %, `sprint30` 20 %, `fms` 15 %) via
+  `ascValueToPercent`, une dimension non mesurée s'affiche `—` sans barre à zéro ;
+  `_suiviProgression()` ne compare que **deux tests** et renvoie `null` sinon ;
+  `_suiviInsights()` exige un minimum de mesures (écart ≥ 15 pts, RPE sur ≥ 4 relevés,
+  ≥ 3 séances/7 j) et plafonne à 3 observations.
+  **Bug corrigé — `_trProgressionDelta` prenait les deux dernières entrées de `ah_set_history`
+  sans filtrer.** Cette clé mélange tests (qui portent `values`) et séances (qui n'en portent
+  pas) : **une seule séance enregistrée après un test suffisait à annuler toute la progression**.
+  Autant dire toujours. Le filtre `type !== 'session' && e.values` la ressuscite.
+  L'onglet « Vue d'ensemble » devient **« Progrès »** et `.sub-tab` passe de `flex:1` à
+  `flex:1 1 auto` + `min-width:0` : les quatre étaient forcés à la même largeur, « Exercices »
+  se faisait couper de 9 px, et la rangée débordait de 3 px en 320 px (défaut **préexistant**).
+  Attention : `.sub-tab` est défini **quatre fois** dans le fichier — c'est la version « design
+  system » (pleine de `!important`, vers la ligne 3700) qui gagne.
+  Test : `scripts/test-suivi-overview.js` (39, vrai Chromium, les 3 états réels : rien mesuré,
+  un seul test, deux tests + séances).
 - **Progression**: `renderProgression()` fills `#progressionCard` in the Moi tab — current score, 8-week sessions bar graph, personal records. Helper `_progressionWeeklySessions(8)`.
 - **Habits**: `activeHabits` array, persisted to `ah_active_habits` via `_persistActiveHabits()`. `checkHabit()` resets the streak on a day gap. `renderActiveHabits()` renders Home + Moi.
 - **Exercise library**: `catData` is the flat exercise database (198 exercises). `_LIB_CAT_MAP` maps the chip filters to `catData` keys. Schema `{name, diff:'easy'|'med'|'hard', muscles, desc, mat, tag?, video?}`. Videos: per-exo `video` field OR `_LIB_VIDEO_MAP` lookup by name. The library has a "🎯 Mon programme" filter (`_libFlatExos('myprogram')`).
