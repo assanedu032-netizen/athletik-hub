@@ -172,6 +172,10 @@ const MIME = { '.html':'text/html','.js':'text/javascript','.css':'text/css','.j
   console.log('\n=== DEMANDE EXPLICITE : L\'APP ÉCRIT, ET SAIT ANNULER ===\n');
   {
     await page.evaluate(() => {
+      // Cette section tourne après un rechargement : on remet l'app sur le
+      // chat, sinon la capture ne montre que l'écran de démarrage.
+      document.querySelectorAll('.scr').forEach(v => { v.style.display = 'none'; v.classList.remove('on'); });
+      window.switchTab('chat');
       localStorage.removeItem('ah_nutri_journal');
       localStorage.setItem('ah_profile', JSON.stringify({ nutriCal: 2000 }));
       document.querySelectorAll('.tn-wrap').forEach(e => e.remove());
