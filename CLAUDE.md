@@ -17,7 +17,7 @@ The app is the digital companion of the book *Les Secrets de la Détente Vertica
   - `sw.js` (cache-first for local assets, network-first for externals) + `manifest.json`. Cache name is `athletik-v271` — bump it when shipping CSS/HTML that must invalidate.
   - `firebase-messaging-sw.js` (root) — receives background push notifications (FCM).
 - **No linter, no build**. Validate changes by opening `index.html` in a browser (mobile-first, Android Chrome is the target). Before committing, sanity-check JS syntax by parsing the non-module `<script>` blocks with `node -e` (see Coding conventions).
-- **Tests**: `for f in scripts/test-*.js; do node "$f"; done` — 18 suites, ~700 assertions, pure
+- **Tests**: `for f in scripts/test-*.js; do node "$f"; done` — 24 suites, ~1 350 assertions, pure
   Node, zéro dépendance : chaque suite extrait les **vraies** fonctions d'`index.html` par
   équilibrage d'accolades et les rejoue contre des mocks. `scripts/test-live-layout.js` est la
   seule exception : elle ouvre un vrai Chromium (Playwright, hors `package.json`) pour mesurer la
@@ -116,11 +116,44 @@ completedPrograms, fcmToken, accessTier`.
     séance lit les mêmes tokens** — `.ls-celebrate-msg` / `.ls-nextstep-txt` étaient sur
     `--ah-text` / `--ah-text2` et rendaient invisibles les deux informations les plus
     importantes de l'écran. Le fond doit rester **navy, pas noir** : c'est l'identité de marque.
-  - **Normalisation à la lecture, jamais de réécriture des données**. `PROGRAMS_V2` stocke
+  - **Normalisation à la lecture, jamais de réécriture des données**. `_lsSpaceUnits()` décolle
+    l'unité du nombre avant toute détection (`"30s"` → `"30 s"`) : les détections d'unité
+    reposent sur `\b`, et il n'y a **aucune frontière de mot entre un chiffre et la lettre qui
+    le suit**. `PROGRAMS_V2` écrit toujours `"30 s"` — d'où un défaut invisible sur les 826
+    lignes — mais le **Workout Builder** produisait `"30s"` / `"5"`, qui tombaient en mode
+    `validation` (« Coche quand c'est fait ») au lieu
+    d'un chrono ou d'un compteur de reps. Un **nombre nu** (`"5"`, `"8-10"`) est lu comme des
+    répétitions ; aucun des 827 `e()` du fichier n'est concerné.
+    `validation` est volontairement **hors** de `COMPATIBLE.duree` : c'est le seau « je n'ai pas
+    su lire », pas un type d'exécution, donc une méthode déclarée doit l'emporter dessus.
+    Côté serveur, `BUILDER_SYSTEM` réclame désormais l'**unité détachée** et
+    `normalizePrescription()` la rétablit dans `parseWorkoutJson()` — un prompt ne garantit rien,
+    et ce qui part en Firestore doit être propre dès l'écriture. `_lsSpaceUnits` reste le filet
+    pour les séances déjà enregistrées. `PROGRAMS_V2` stocke
     `e(n, s, r, rest, note)` — 5 chaînes, aucun champ `metrique`. `_lsNormalizeExo(ex, idx, exos,
     circuitMap)` (fonction pure) en dérive le modèle d'affichage. Helpers : `_lsDetectMetrique`,
     `_lsParseValeur`, `_lsSeriesInfo`, `_lsResolveVarSeries`, `_lsCircuitMap`, `_lsComplexSteps`,
     `_lsHasCharge`.
+  - **Le chrono lit l'HORLOGE, pas les ticks.** `_lsTimerStart` retient une échéance
+    (`endsAt`) et `_lsTimerRemaining` en dérive le restant à chaque repeinture (250 ms).
+    L'ancien `setInterval` d'une seconde décrémentait un compteur : étranglé en arrière-plan,
+    il **dérivait de 53 s sur un décompte de 60 s** et ne rattrapait jamais. Tout décompte
+    arme aussi `tim_minutScheduleNotif` — avant, seul le repos entre séries le faisait, et
+    une isométrie de 45 s téléphone en poche ne sonnait pas. La pause fige le restant et
+    désarme ; la reprise recalcule l'échéance. Le son est **inchangé** (choix du 05/06/2026 :
+    seul le son de fin joue un MP3).
+  - **Une micro-récup EST une récupération.** `_LS.sq.resting` + `_lsInRest()` : le bouton se
+    dégrise (`ls-btn-rest`) et le chrono passe en **bleu** (`.ls-tone-rest`). Avant, la
+    micro-récup passait par `_lsTimerStart` sans toucher `_LS.restActive` — « Passer la récup »
+    s'affichait en **or plein au centre**, l'élément le plus voyant de l'écran invitant à
+    sauter la récupération prescrite. Libellés : « Récupération courte » (intra-séquence) vs
+    « Récupération complète » (entre séries) — deux intentions, deux noms, deux couleurs.
+  - **Dans le mode séquence, l'ACTION passe avant le nom de la méthode** : `Série 1/4` →
+    grosse valeur + « répétitions » → chaîne d'étapes → `Cluster set` en libellé secondaire.
+    L'athlète n'a jamais besoin de connaître le nom de la technique pour l'exécuter.
+  - **Les compteurs sont nommés** : `Exercice 4 / 12` dans le footer (`.ls-dashnum-l`),
+    `Série 1 / 4` dans la zone mode. Un `4 / 12` nu laissait deviner lequel des deux niveaux
+    de progression il représentait.
   - **`AH_METHODS` — registre central des méthodes d'entraînement.** Une méthode = une définition
     = une logique d'exécution, partagée par les programmes, le Builder, Titan et l'écran live.
     Trois axes qu'il ne faut **pas** mélanger : *exécution* (comment on mesure — `LS_MODES`),
@@ -129,6 +162,19 @@ completedPrograms, fcmToken, accessTier`.
     séquentielle, `expand(cfg)` qui la **réduit à une suite d'étapes** que l'écran sait déjà
     jouer. Ajouter EMOM ou AMRAP = une entrée de plus dans le registre, **aucune branche de plus
     dans le rendu**.
+  - **Cluster Set ≠ Rest-Pause** (annexe du livre, p. 151). Le cluster **découpe pour garder
+    la qualité** (« 5 reps en 2+2+1, 10-15 s »), le rest-pause **va chercher des reps après
+    l'échec** (« max reps > 10 s > max reps »). `LS_TEXT_TO_METHOD` mappait `cluster →
+    rest_pause` : une interprétation silencieuse qui changeait la nature de la séance. Les
+    8 exercices concernés sont reclassés `cluster` — **prescription inchangée** (4 séries,
+    2-3 reps, repos), seule la méthode déclarée est corrigée. Sans découpage fourni par la
+    source, ils restent en compteur de reps : **rien n'est inventé**.
+  - **Tempo : le code du livre à TROIS chiffres** (p. 152, « 4-2-1 = 4 s descente, 2 s pause
+    en bas, 1 s montée »), pas la notation à quatre chiffres courante en salle.
+    `_lsTempoTxt()` l'écrit en phrase — « Descends en 4 s → tiens 2 s en bas → remonte vite ».
+    La forme `eccentric { tempoDown }` des 27 excentriques reste valide et inchangée. La
+    consigne est rendue **avant** les steppers : en queue de zone, elle tombait 4 px sous le
+    footer et n'a jamais été visible en 375×667.
   - **Titan peut prescrire une méthode, pas en inventer une.** `BUILDER_METHODS` (miroir serveur
     du registre) + `sanitizeMethod()` retirent toute méthode ou tout paramètre hors schéma avant
     que la séance n'atteigne l'app, et refusent une prescription incomplète (rest-pause sans
@@ -196,18 +242,139 @@ completedPrograms, fcmToken, accessTier`.
     La saisie vit **dans** le mode reps, plus derrière un lien replié.
   - `_lsShowComplete()` → `_seFbOpen` / `_eaOpenFeedback` → `_lsFinalizeSession` →
     `_recordSessionCompletion` (80% des séances attendues → `programsDone++`).
-  - **Tests méthodes** : `scripts/test-methods.js` (27) — validation de la sortie Titan, alignement
+  - **Tests méthodes** : `scripts/test-methods.js` (39) — validation de la sortie Titan, alignement
     registre client ↔ miroir serveur, et la preuve que programme standard et Workout Builder
     produisent la **même séquence** pour la même méthode.
-  - **Tests** : `scripts/test-live-screen.js` (172, les 710 exercices normalisés),
+  - **Tests** : `scripts/test-live-screen.js` (212, les 710 exercices normalisés, le format
+    Builder, cluster et tempo), `scripts/test-live-timer.js` (40, horloge simulée : dérive,
+    pause, notification, dégrisage du bouton),
     `scripts/test-live-log.js` (38, le chemin d'écriture jusqu'au prompt Titan) et
-    `scripts/test-live-layout.js` (204, vrai Chromium en 375×667 et 320×568 : zéro scroll,
+    `scripts/test-live-layout.js` (232, vrai Chromium en 375×667 et 320×568 : zéro scroll,
     contraste AA calculé, parcours complet, et les 10 acquis de la V1 rejoués un par un —
     Playwright n'est volontairement pas dans `package.json`, `npm i -D playwright --no-save`).
+- **Notifications push (FCM)** : `_registerFCMToken()` écrit la cause exacte d'un échec dans
+  `window._fcmLastError`, `_fcmDiag(raison)` la **ramène à l'écran** — toast rouge + ligne
+  persistante sous « Envoyer un test » (`#notifTestSub`). Avant, les quatre chemins d'échec
+  affichaient le même `FCM_UNAVAILABLE_MSG` et la vraie raison ne partait qu'en `console.warn`,
+  invisible sur un téléphone. `FCM_SERVER_ERRORS` traduit les 5 codes de `send-notif.js` ; un code
+  inconnu s'affiche brut plutôt que d'être effacé. Le texte est **échappé avant `innerHTML`**.
+  Test : `scripts/test-notif-diag.js` (35).
 - **Workout Builder**: `pgBuilder` page (3e sous-onglet de `vTrain`, à côté de Programmes/Librairie). Locked until `programsDone >= 2` (`BUILDER_UNLOCK_PROGRAMS`) OR VIP/MASTER tier OR compte fondateur (`BUILDER_FOUNDER_EMAILS` / `_builderIsDev()`). `_builderCheckUnlock()`. **Piloté par Titan** : l'utilisateur exprime une intention (objectif/durée/matériel/état via chips + phrase libre/vocal `builderToggleMic`), `builderGenerate()` POST `/.netlify/functions/titan` avec `mode:'builder'` + la librairie compacte (`_builderLibraryPayload`) → Titan renvoie une séance **JSON structurée** (blocs échauffement→principal→secondaire→finisher→retour au calme) programmée selon la méthode Athletic Hub (`BUILDER_SYSTEM` côté serveur). `_builderReconcile()` rattache vidéos/catégories depuis `catData`. `builderStartGenerated()` lance via `launchSession` (marquée `_LS.builderMeta`). En fin de séance, `_lsShowComplete` injecte un panneau de ressenti (`_builderInjectFeedback`) et **sauvegarde dans Firestore `users/{uid}/builderSessions`** (cloud, pas localStorage) — `_builderSaveSession`/`_builderSaveFeedback`.
 - **Progression**: `renderProgression()` fills `#progressionCard` in the Moi tab — current score, 8-week sessions bar graph, personal records. Helper `_progressionWeeklySessions(8)`.
 - **Habits**: `activeHabits` array, persisted to `ah_active_habits` via `_persistActiveHabits()`. `checkHabit()` resets the streak on a day gap. `renderActiveHabits()` renders Home + Moi.
 - **Exercise library**: `catData` is the flat exercise database (198 exercises). `_LIB_CAT_MAP` maps the chip filters to `catData` keys. Schema `{name, diff:'easy'|'med'|'hard', muscles, desc, mat, tag?, video?}`. Videos: per-exo `video` field OR `_LIB_VIDEO_MAP` lookup by name. The library has a "🎯 Mon programme" filter (`_libFlatExos('myprogram')`).
+- **Une séance terminée doit ARRIVER jusqu'à Titan.** `_recordSessionCompletion` écrit dans
+  `ah_set_history` (type `session`, + `builder:true` pour le Builder) et stocke désormais
+  `exoNames` (12 max, 60 car.) + `exoCount` : la clé ne gardait aucune trace du **contenu**,
+  donc Titan savait qu'une séance avait eu lieu sans pouvoir en parler — et pour une séance
+  Builder, dont la composition ne vit qu'en Firestore `users/{uid}/builderSessions`, il n'avait
+  rien. Côté prompt : `daysAgoTxt()` écrit **AUJOURD'HUI / hier** (« il y a 0 jour(s) » ne se
+  lit pas), `frDate()` donne la **date du jour** (elle ne servait qu'à la clé de quota), et la
+  ligne nomme la **source** (« créée avec le Workout Builder » vs le nom du programme) — le
+  client l'envoyait déjà, le serveur ne l'imprimait pas. Les entrées antérieures n'ont pas
+  ces champs et s'affichent sans ligne vide ni compte inventé.
+  Tests : `scripts/test-athlete-state.js` (66).
+- **Titan écrit dans le journal nutritionnel — mais seulement sur un tap.**
+  Troisième voie de `titan.js` (`mode:'nutrition'`), sur le modèle de `mode:'builder'` : mêmes
+  couches auth / quota / modération, système et budget propres (`NUTRITION_MAX_TOKENS = 1600`),
+  sortie structurée. **Un seul appel renvoie `{reply, nutrition}`** — deux appels séparés
+  doubleraient la consommation du quota (20/jour/uid) pour une seule question.
+  **Séparation stricte CHAT / ACTION** : l'analyse n'écrit JAMAIS, même quand l'athlète a dit
+  « enregistre ça ». Sa phrase ouvre la carte ; c'est `_titanNutriSave(id)` — donc un tap — qui
+  écrit. La carte est retirée de `_titanNutriPending` à la première écriture : un second tap ne
+  peut pas dupliquer.
+  **Les totaux sont RECALCULÉS depuis les items** côté serveur, jamais repris du modèle — sinon
+  le total affiché peut ne pas correspondre au détail affiché. `sanitizeNutrition()` borne chaque
+  valeur (5000 kcal / 500 g par aliment), écrase les négatifs, le texte et les `NaN`, plafonne à
+  25 aliments — même esprit que `sanitizeMethod`.
+  **Écriture au format des trois écrivains existants** (`scanSaveToJournal`, `addRecipeToJournal`,
+  `logMealPlanDay`) : `totals.{cal,p,g,l}` + `name` sont ce que `renderJournalToday` lit ;
+  `foods`, `confidence` et `estimated` sont additifs. Clé `ah_nutri_journal`, déjà dans
+  `FB_SYNC_KEYS` → `users/{uid}.nutriJournal`. **Aucune structure nouvelle, aucune règle
+  Firestore à ajouter, aucun appel Firestore direct** — la synchro passe par `fbSaveProfile()`.
+  `_titanIsFoodMessage()` est le déclencheur, volontairement **strict** : un faux positif ferait
+  répondre Titan en mode analyse à une question d'entraînement.
+  **La nutrition est un SUJET, pas un message isolé.** `_titanWantsNutrition()` pose un verrou de
+  3 échanges : après « calcule mes kilocal », les rebonds (« pk tu réponds comme ça », « refais le
+  calcul », « tu peux enregistrer ») repassaient en chat normal — Titan redonnait le total **en
+  texte**, sans aliments structurés, donc **aucune carte et journal à zéro**. Le verrou ne coûte
+  **aucun appel supplémentaire** (même appel, sortie structurée) et `TITAN_OFFTOPIC_RE` le relâche
+  dès qu'on parle séance, blessure ou sommeil. Un message resté verrouillé sans parler de
+  nourriture ne coûte rien : le prompt renvoie une liste vide, aucune carte n'est rendue.
+  Le prompt interdit explicitement **un total sans aliments en face**, et couvre le cas
+  « je reviens sur une analyse déjà faite » → réémettre `items` en entier.
+  **Le mode nutrition charge `STATIC_SYSTEM`** (en cache, donc gratuit ensuite) : sans lui il
+  perdait toute la définition du personnage — ton, tutoiement, règles de coaching — et ne gardait
+  que le « ton habituel : direct » de `NUTRITION_SYSTEM`. Les réponses en sortaient plus plates.
+  **Le parseur doit survivre à un modèle qui écrit en paragraphes.** Titan met des retours à la
+  ligne **littéraux** dans ses chaînes — illégal en JSON, `JSON.parse` lève. `parseNutritionJson`
+  tente donc trois lectures : brute, puis `nutEscapeControlChars()` (échappe les caractères de
+  contrôle **dans** les chaînes), puis `nutCloseTruncated()` (referme ce qu'une coupure au plafond
+  de jetons a laissé ouvert, après avoir jeté le dernier élément incomplet). En dernier recours
+  `nutExtractReply()` sauve la phrase seule. **Le serveur ne renvoie JAMAIS le brut** : le premier
+  repli déversait le JSON dans la bulle de l'athlète. `_titanUnwrapJson()` est le filet client —
+  aucune bulle Titan ne peut afficher du JSON, quelle qu'en soit la cause.
+  **Le déclencheur travaille sur des RADICAUX** (`enregistr\w*`), pas des formes exactes :
+  `\benregistre\b` ne matche pas « enregistrer », et « Tu peux enregistrer dans le journal »
+  partait en chat normal où Titan répondait qu'il ne savait pas enregistrer.
+  `STATIC_SYSTEM` porte une section **CE QUE L'APP SAIT FAIRE POUR TOI** : Titan sait que la carte
+  existe et ne doit jamais dire que c'est impossible. Elle vit là et **pas** dans
+  `buildNutritionContext()`, qui garde sa règle « pas de donnée → pas de section ».
+  `.tn-items[hidden]{display:none}` est **nécessaire** : `display:flex` d'une classe bat la règle
+  navigateur `[hidden]{display:none}`, et le détail restait visible pendant que `el.hidden` valait
+  `true` — un test qui lit la propriété ne voit pas la différence.
+  **Chaque repas du journal a un `id`.** Avant, un repas ne se désignait que par sa POSITION
+  (`journal.indexOf(m)`) — un index qui se décale dès qu'une autre écriture arrive (recette, plan
+  repas, synchro d'un autre appareil), donc « supprime ce que je viens d'ajouter » pouvait retirer
+  le mauvais. `_mealId()` équipe les **quatre** écrivains ; `_journalIndexOf(ref)` accepte un id
+  **ou** un index, donc les entrées antérieures restent joignables sans migration.
+  `_journalRead()` / `_journalWrite()` sont le **point de passage unique** (rendu + synchro), et
+  `updateJournalMeal(ref, patch)` — qui n'existait sous aucune forme — recalcule `totals` et les
+  champs plats ensemble pour qu'ils ne divergent jamais.
+  **Les restantes voyagent enfin.** `renderJournalToday` calculait `rdi − totals.cal` pour
+  l'écran sans jamais l'envoyer : « combien me reste-t-il ? » échouait sur une donnée déjà
+  disponible. Le contexte porte maintenant `restantes` **et** le détail repas par repas avec leur
+  id (le prompt interdit de montrer les ids à l'écran). Journal vide → la cible entière reste.
+  **Fenêtres élargies** : mode nutrition `slice(-6)` → `slice(-10)` (aligné sur le chat ; 6 ne
+  laissait que trois échanges et « ajoute-le » perdait le repas), fil `TITAN_CHAT_KEEP` 40 → 60.
+  **Écriture sur confirmation orale** : `wantsSave` (demande explicite, jamais une intention
+  future) fait écrire l'app **dès la réponse**, et la carte devient un accusé de réception portant
+  **Annuler cet ajout** — qui retire l'entrée **par son id**. Sans `wantsSave`, la carte propose et
+  seul le tap écrit. `_titanRemainingToday()` relit le journal **après** écriture : la valeur du
+  contexte serveur date d'avant.
+  Tests : `scripts/test-titan-nutri-action.js` (170) et `scripts/test-nutri-card.js` (36, vrai
+  Chromium).
+- **La conversation Titan se synchronise** (`ah_titan_chat` dans `FB_SYNC_KEYS`). C'est la
+  seule clé synchronisée qui s'écrit à **chaque tour** et dont la taille dépend de ce que le
+  modèle produit — trois garde-fous, aucun optionnel :
+  **(1) écriture groupée** — `persistTitanChat` n'appelle pas `fbSaveProfile` (ce serait une
+  écriture du document entier par message) ; `_titanScheduleSync()` regroupe une rafale en une
+  seule écriture après 6 s, et ne fait rien hors connexion.
+  **(2) fusion, jamais écrasement** — `_fbApplyPayload` écrit le distant par-dessus le local ;
+  appliqué tel quel au chat, il effacerait les messages de l'appareil qui se connecte.
+  `_titanMergeChat` réunit les deux côtés, dédoublonne sur `role+contenu`, ordonne par `t` et
+  écrête à 40. Chaque message porte désormais `t` (l'instant réel) — les conversations
+  antérieures n'en ont pas et sont placées en tête, dans leur ordre.
+  **(3) budget d'octets** — `_titanChatForSync` n'envoie que la queue tenant dans 60 Ko
+  (`MAX_TOKENS = 700` ≈ 2,8 Ko par réponse ; le document porte déjà séances, tracking et
+  nutrition sous la limite de 1 Mo). localStorage garde toujours ses 40 messages.
+  `getTimeStr(ts)` affiche l'heure **du message** (et sa date s'il est d'un autre jour) : la
+  restauration montrait l'heure du rechargement sur toutes les bulles.
+  Test : `scripts/test-titan-sync.js` (37).
+- **Messages de Titan enregistrés (favoris)** : `☆ Enregistrer` / `★ Enregistré` sous chaque
+  bulle Titan (jamais sous un message de l'athlète), étoile + compteur dans l'en-tête du chat,
+  feuille du bas `#titanSavedOv`. Trois contraintes du code existant dictent la conception :
+  **aucun message n'a d'identifiant** (`conversationHistory` = tableau plat `{role, content}`)
+  → l'id est un **hash du contenu** (`_titanMsgId`), stable au rechargement et **dédoublonnant
+  par nature** ; **`ah_titan_chat` ne garde que 40 messages** → le favori **porte son propre
+  texte**, sinon il devient une coquille vide (et il survit à `resetTitanChat`) ; **il n'existe
+  qu'une seule conversation** → pas de `conversationId`, « revenir au message » = le retrouver
+  dans `#chatBody` par son hash, sinon on le dit franchement.
+  Stockage : `ah_titan_saved` dans `FB_SYNC_KEYS` → voyage dans `users/{uid}` déjà écrit par
+  `fbSaveProfile()`. **Aucune lecture Firestore supplémentaire, aucun listener, aucune règle à
+  ajouter** (`validProfileShape` utilise `hasAny`) — c'est le motif de `ah_recipe_favorites`.
+  Plafond 100 entrées. Pas de toast : le bouton bascule sous le doigt.
+  Test : `scripts/test-titan-saved.js` (49, vrai Chromium en 375×667 et 320×568).
 - **Titan AI**: `callAnthropicAPI()` builds `ctx` from `ah_profile` (not `window.user`) and POSTs to `/.netlify/functions/titan`.
   Le contexte envoyé comprend **le profil (11 champs), l'état athlète
   (`_ahBuildAthleteState`) et la nutrition (`_titanNutritionCtx`)** — morphologie, cibles

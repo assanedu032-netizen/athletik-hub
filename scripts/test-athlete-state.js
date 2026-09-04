@@ -5,7 +5,7 @@ const fs = require('fs');
 const path = require('path');
 const ROOT = path.join(__dirname, '..');
 const html = fs.readFileSync(process.argv[2] || path.join(ROOT, 'index.html'), 'utf8');
-const srv  = fs.readFileSync(path.join(ROOT, 'netlify', 'functions', 'titan.js'), 'utf8');
+const srv  = fs.readFileSync(process.argv[3] || path.join(ROOT, 'netlify', 'functions', 'titan.js'), 'utf8');
 
 function grabFrom(text, decl) {
   const start = text.indexOf(decl);
@@ -41,7 +41,9 @@ function buildState(store, next, streakInfo) {
 }
 
 // ── Côté serveur : rendu textuel ──
-const SERVER_SRC = grabFrom(srv, 'function fmtVal(') + '\n' + grabFrom(srv, 'function buildAthleteState(');
+const SERVER_SRC = grabFrom(srv, 'function daysAgoTxt(') + '\n'
+  + grabFrom(srv, 'function frDate(') + '\n'
+  + grabFrom(srv, 'function fmtVal(') + '\n' + grabFrom(srv, 'function buildAthleteState(');
 const render = new Function(SERVER_SRC + '\nreturn buildAthleteState;')();
 
 const iso = (daysAgo) => {
@@ -220,6 +222,77 @@ console.log('\n=== INTÉGRATION ET NON-RÉGRESSION ===\n');
     buildState({ ah_set_history: 'CASSÉ{{', ah_track_history: '((', ah_profile: '}}' })({ now: NOW });
   } catch (e) { threw = true; }
   ok('données corrompues → aucune exception', !threw);
+}
+
+console.log('\n=== UNE SÉANCE WORKOUT BUILDER ARRIVE JUSQU\'À TITAN ===\n');
+{
+  // Le doute de départ : « j'ai fait une séance Builder, Titan n'est pas au
+  // courant ». Enregistrement ET restitution doivent être prouvés.
+  const entry = {
+    type: 'session', date: iso(0), progKey: '', sessKey: '',
+    progName: 'WORKOUT BUILDER', sessName: 'Développer la détente verticale',
+    builder: true, exoCount: 12,
+    exoNames: ['Squat jump', 'Fentes sautées', 'Nordic hamstring', 'Gainage'],
+    sessionEndFeedback: { sessionQualityScore: 80, productivity: 80 }
+  };
+  const st = buildState({ ah_set_history: JSON.stringify([entry]) })({ now: NOW });
+  ok('la séance Builder est dans l\'état athlète',
+     st.lastSession && st.lastSession.name === 'Développer la détente verticale',
+     JSON.stringify(st.lastSession));
+  ok('elle est marquée comme venant du Builder',
+     st.lastSession.source === 'workout_builder', st.lastSession.source);
+  ok('elle compte dans l\'assiduité', st.adherence.sessionsTotal === 1 && st.adherence.last7Days === 1);
+  ok('son contenu est transmis', st.lastSession.exoCount === 12 &&
+     st.lastSession.exoNames.length === 4, JSON.stringify(st.lastSession.exoNames));
+
+  const txt = render(st);
+  // On vérifie la LIGNE DE LA SÉANCE : « 0 sur 7 jours » de la ligne
+  // d'assiduité est légitime et n'a rien à voir.
+  const ligneSeance = txt.split('\n').find(l => /Développer/.test(l)) || '';
+  ok('Titan lit « AUJOURD\'HUI », pas « il y a 0 jour(s) »',
+     /AUJOURD'HUI/.test(ligneSeance) && !/0 jour/.test(ligneSeance), ligneSeance);
+  ok('Titan lit les mots « Workout Builder »', /Workout Builder/.test(txt));
+  ok('Titan lit les exercices de la séance',
+     /Squat jump, Fentes sautées/.test(txt) && /\+8 autres/.test(txt),
+     txt.split('\n').find(l => /exercices :/.test(l)));
+  ok('Titan connaît la date du jour', /Nous sommes le .*2026/.test(txt),
+     txt.split('\n')[1]);
+}
+{
+  // Une séance de programme garde son nom de programme, pas la mention Builder.
+  const e = { type: 'session', date: iso(1), progName: 'SHRED EXPLOSE',
+              sessName: 'Jour 6 — LOWER', progKey: 'se', sessKey: 'j6',
+              exoCount: 8, exoNames: ['Squat', 'Depth jump'] };
+  const txt = render(buildState({ ah_set_history: JSON.stringify([e]) })({ now: NOW }));
+  ok('une séance de programme est datée « hier »', /— hier —/.test(txt),
+     txt.split('\n').find(l => /Jour 6/.test(l)));
+  ok('  et porte le nom de son programme', /SHRED EXPLOSE/.test(txt));
+  ok('  sans être attribuée au Builder', !/Workout Builder/.test(txt));
+}
+{
+  // Les séances déjà enregistrées n'ont pas de contenu : rien ne doit casser
+  // ni être inventé pour elles.
+  const vieille = { type: 'session', date: iso(3), progName: 'VERTICAL DUNK',
+                    sessName: 'Jour 2', progKey: 'vd', sessKey: 'j2' };
+  const st = buildState({ ah_set_history: JSON.stringify([vieille]) })({ now: NOW });
+  ok('une séance d\'avant la mise à jour n\'a pas de contenu',
+     st.lastSession.exoNames === null && st.lastSession.exoCount === null);
+  const txt = render(st);
+  ok('  elle s\'affiche quand même', /Jour 2 — il y a 3 jours/.test(txt),
+     txt.split('\n').find(l => /Jour 2/.test(l)));
+  ok('  sans ligne « exercices » vide', !/exercices : *$/m.test(txt));
+  ok('  et sans nombre d\'exercices inventé', !/— 0 exercice/.test(txt));
+}
+{
+  // Le détail du contenu ne doit pas noyer le contexte : 2 séances au plus.
+  const many = [0, 1, 2, 3].map(d => ({
+    type: 'session', date: iso(d), sessName: 'S' + d, progName: 'P', progKey: 'vd', sessKey: 'j1',
+    exoCount: 3, exoNames: ['A' + d, 'B' + d]
+  }));
+  const txt = render(buildState({ ah_set_history: JSON.stringify(many.reverse()) })({ now: NOW }));
+  const lignes = txt.split('\n').filter(l => /^ {3}exercices :/.test(l));
+  ok('le contenu n\'est détaillé que pour les 2 séances les plus récentes',
+     lignes.length === 2, String(lignes.length));
 }
 
 const failed = R.filter(x => !x).length;

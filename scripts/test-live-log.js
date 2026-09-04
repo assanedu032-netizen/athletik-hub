@@ -145,7 +145,9 @@ console.log('\n=== CHAÎNE COMPLÈTE : SÉANCE → TITAN ===\n');
       { getItem: k => (k in store ? store[k] : null), setItem(){}, removeItem(){} },
       { _ahNextStep: () => null, _ahWeeksSinceTest: () => null, _ahStreakInfo: () => null },
       console)();
-  const render = new Function(grab(srv, 'function fmtVal(') + '\n'
+  const render = new Function(grab(srv, 'function daysAgoTxt(') + '\n'
+    + grab(srv, 'function frDate(') + '\n'
+    + grab(srv, 'function fmtVal(') + '\n'
     + grab(srv, 'function buildAthleteState(') + '\nreturn buildAthleteState;')();
   const txt = render(st);
 

@@ -1198,6 +1198,107 @@ body{background:var(--bg);color:var(--text);font-family:'Outfit',sans-serif;disp
 .msg.titan .msg-time{margin-left:4px}
 .msg.user .msg-time{margin-right:4px;text-align:right}
 
+/* ═══ CARTE NUTRITION DE TITAN ═══
+   Navy + or du design system, aucune couleur nouvelle. Elle occupe toute la
+   largeur du fil : c'est une action, pas une bulle de conversation. */
+.tn-wrap{max-width:100%!important;align-self:stretch!important}
+.tn-card{background:var(--surface);border:1px solid rgba(197,164,78,.35);border-radius:14px;padding:13px 14px;font-family:'Outfit',sans-serif}
+.tn-head{display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;margin-bottom:11px}
+.tn-chip{font-size:9px;font-weight:800;letter-spacing:.14em;text-transform:uppercase;color:var(--gold);background:rgba(197,164,78,.13);border-radius:4px;padding:3px 7px}
+.tn-conf{font-size:10px;font-weight:700;color:var(--muted)}
+.tn-conf-basse{color:#C4703A}
+.tn-totals{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-bottom:11px}
+.tn-t{background:var(--bg);border-radius:10px;padding:8px 4px;text-align:center;min-width:0}
+.tn-t-v{font-family:'Bebas Neue',sans-serif;font-size:22px;line-height:1;letter-spacing:.02em;color:var(--text);font-variant-numeric:tabular-nums}
+.tn-t-v i{font-style:normal;font-size:12px;opacity:.65}
+.tn-t-kcal .tn-t-v{color:var(--gold)}
+.tn-t-l{font-size:8.5px;font-weight:800;letter-spacing:.09em;text-transform:uppercase;color:var(--muted);margin-top:3px}
+.tn-toggle{width:100%;background:none;border:0;border-top:1px solid var(--border);padding:9px 0 0;color:var(--text2);font-family:'Outfit',sans-serif;font-size:11.5px;font-weight:700;cursor:pointer;text-align:left}
+.tn-items{display:flex;flex-direction:column;gap:5px;padding-top:8px}
+/* `display:flex` d'une classe bat la règle navigateur `[hidden]{display:none}`.
+   Sans cette ligne, le détail restait VISIBLE alors que `el.hidden` valait
+   true — un test qui lit la propriété ne voit pas la différence, seule une
+   mesure à l'écran l'attrape. */
+.tn-items[hidden]{display:none}
+.tn-item{display:flex;align-items:baseline;justify-content:space-between;gap:10px;font-size:12px}
+.tn-item-n{color:var(--text);min-width:0;overflow-wrap:anywhere}
+.tn-item-q{color:var(--muted);font-size:11px;margin-left:6px}
+.tn-est{font-size:8.5px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:#C4703A;background:rgba(196,112,58,.14);border-radius:3px;padding:1px 5px;margin-left:6px;white-space:nowrap}
+.tn-item-k{color:var(--text2);font-weight:700;white-space:nowrap;font-variant-numeric:tabular-nums}
+.tn-warn{margin-top:10px;font-size:11.5px;line-height:1.45;color:var(--text2);background:rgba(196,112,58,.10);border-left:2px solid #C4703A;border-radius:0 8px 8px 0;padding:8px 10px}
+.tn-q{margin-top:9px;font-size:12px;line-height:1.45;color:var(--text);font-style:italic}
+.tn-actions{display:flex;flex-direction:column;gap:7px;margin-top:12px}
+.tn-btn{width:100%;min-height:44px;border-radius:11px;font-family:'Outfit',sans-serif;font-size:13px;font-weight:800;cursor:pointer;border:0}
+.tn-btn-go{background:linear-gradient(135deg,var(--gold),var(--gold2));color:var(--navy)}
+.tn-btn-go:active{filter:brightness(.94)}
+.tn-btn-no{background:none;border:1px solid var(--border);color:var(--text2);min-height:38px;font-size:12px;font-weight:700}
+.tn-done{font-size:12.5px;font-weight:700;color:var(--gold);line-height:1.5}
+.tn-done-no{color:var(--muted);font-weight:600}
+.tn-see{display:block;margin-top:8px;background:none;border:1px solid rgba(197,164,78,.45);border-radius:9px;min-height:38px;padding:0 14px;color:var(--gold);font-family:'Outfit',sans-serif;font-size:12px;font-weight:700;cursor:pointer}
+
+/* ═══ MESSAGES ENREGISTRÉS ═══
+   Action secondaire : elle vit sur la même ligne que l'heure pour ne pas
+   ajouter de hauteur à la conversation. La zone tactile est étendue à 44 px
+   par un pseudo-élément — grandir le bouton lui-même alourdirait le chat. */
+.msg-foot{display:flex;align-items:center;gap:8px;margin-top:3px}
+.msg-foot .msg-time{margin-top:0}
+.msg-save{
+  position:relative;display:inline-flex;align-items:center;gap:5px;
+  padding:5px 9px;border:1px solid var(--border);border-radius:20px;
+  background:none;color:var(--muted);cursor:pointer;
+  font-family:'Outfit',sans-serif;font-size:10px;font-weight:700;
+  letter-spacing:.04em;line-height:1;transition:color .15s,border-color .15s,background .15s;
+}
+.msg-save::after{content:'';position:absolute;inset:-11px -8px;}
+.msg-save .mss-star{font-size:12px;line-height:1}
+.msg-save:active{background:var(--surface2)}
+.msg-save.on{color:var(--gold);border-color:rgba(197,164,78,.55);background:rgba(197,164,78,.10)}
+.msg-save.on .mss-star{animation:msgSavePop .32s cubic-bezier(.2,.9,.3,1.3) both}
+@keyframes msgSavePop{0%{transform:scale(.7)}60%{transform:scale(1.28)}100%{transform:scale(1)}}
+@media (prefers-reduced-motion:reduce){.msg-save.on .mss-star{animation:none}}
+
+/* Mise en évidence au retour depuis un favori. */
+.msg.msg-hl .msg-bubble{
+  box-shadow:0 0 0 2px var(--gold),0 6px 20px rgba(197,164,78,.28);
+  transition:box-shadow .3s;
+}
+
+/* Compteur sur l'étoile de l'en-tête du chat. */
+.ch-saved-badge{
+  position:absolute;top:-4px;right:-5px;min-width:15px;height:15px;padding:0 3px;
+  border-radius:8px;background:var(--gold);color:var(--navy);
+  font-family:'Outfit',sans-serif;font-size:9px;font-weight:800;line-height:15px;
+  text-align:center;pointer-events:none;
+}
+
+/* La liste — même feuille du bas que le reste de l'app. */
+.tsv-ov{position:fixed;inset:0;z-index:10000;background:rgba(10,17,34,.78);display:none;align-items:flex-end;justify-content:center;opacity:0;transition:opacity .2s}
+.tsv-ov.on{display:flex;opacity:1}
+.tsv-sheet{width:100%;max-width:430px;max-height:82vh;display:flex;flex-direction:column;background:var(--bg);border-radius:20px 20px 0 0;border-top:1px solid rgba(197,164,78,.25);animation:tsvUp .26s cubic-bezier(.2,.8,.3,1) both}
+@keyframes tsvUp{from{transform:translateY(40px)}to{transform:translateY(0)}}
+.tsv-grab{width:42px;height:4px;border-radius:2px;background:var(--border2);margin:10px auto 4px;flex-shrink:0}
+.tsv-head{display:flex;align-items:baseline;justify-content:space-between;gap:10px;padding:6px 20px 12px;flex-shrink:0}
+.tsv-title{font-family:'Bebas Neue',sans-serif;font-size:20px;letter-spacing:.8px;color:var(--text);white-space:nowrap}
+.tsv-count{font-size:11px;font-weight:700;color:var(--muted)}
+.tsv-list{overflow-y:auto;padding:0 16px 22px;display:flex;flex-direction:column;gap:9px;-webkit-overflow-scrolling:touch}
+.tsv-item{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:12px 13px;cursor:pointer;text-align:left;width:100%;font-family:'Outfit',sans-serif}
+.tsv-item:active{border-color:var(--gold)}
+.tsv-item-top{display:flex;align-items:center;gap:7px;margin-bottom:6px}
+.tsv-chip{font-size:9px;font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:var(--gold);background:rgba(197,164,78,.13);border-radius:4px;padding:2px 6px}
+.tsv-date{font-size:10px;color:var(--muted);font-weight:600}
+.tsv-txt{font-size:12.5px;line-height:1.5;color:var(--text);font-weight:500;overflow-wrap:anywhere}
+.tsv-txt p{margin:0 0 7px}.tsv-txt p:last-child{margin-bottom:0}
+.tsv-txt strong{font-weight:800}
+.tsv-txt .tm-list{margin:0 0 7px;padding:0;list-style:none;display:flex;flex-direction:column;gap:4px}
+.tsv-txt .tm-list:last-child{margin-bottom:0}
+.tsv-txt .tm-list li{position:relative;padding-left:14px}
+.tsv-txt .tm-list li::before{content:'';position:absolute;left:3px;top:.55em;width:4px;height:4px;border-radius:50%;background:currentColor;opacity:.45}
+.tsv-actions{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:9px}
+.tsv-goto{font-size:10.5px;font-weight:700;color:var(--gold)}
+.tsv-rm{background:none;border:0;padding:6px 8px;margin:-6px -8px;color:var(--muted);font-family:'Outfit',sans-serif;font-size:10.5px;font-weight:700;cursor:pointer}
+.tsv-rm:active{color:#DC2626}
+.tsv-empty{padding:26px 20px 34px;text-align:center;color:var(--muted);font-size:12.5px;line-height:1.6}
+
 /* Titan label */
 .msg-titan-label{display:flex;align-items:center;gap:6px;margin-bottom:4px}
 .mtl-av{width:22px;height:22px;border-radius:50%;background:var(--navy);border:1.5px solid var(--gold);flex-shrink:0}
@@ -2693,6 +2794,14 @@ body.test-mode #testSkipBar{display:flex}
   font-variant-numeric: tabular-nums;
 }
 .ls-big.ls-big-sm { font-size: 52px; }
+/* Une récupération n'est jamais dorée : l'or dit « effort » sur cet écran.
+   La micro-récup d'une séquence emprunte donc le bleu de l'écran de repos. */
+.ls-big.ls-tone-rest { color: var(--lv-rest); }
+.ls-timerbar-fill.ls-tone-rest { background: var(--lv-rest); }
+.ls-seq-step.on.k-rest {
+  background: var(--lv-rest); color: #0E1B2E;
+  box-shadow: 0 0 0 2px var(--lv-rest);
+}
 .ls-big-unit {
   font-family: 'JetBrains Mono', monospace; font-size: 11px; font-weight: 800;
   letter-spacing: .2em; color: var(--lv-txt2); text-transform: uppercase;
@@ -2858,8 +2967,14 @@ body.test-mode #testSkipBar{display:flex}
 .ls-dashes { display: flex; gap: 3px; flex: 1; min-width: 0; }
 .ls-dashnum {
   font-family: 'JetBrains Mono', monospace; font-size: 10px; font-weight: 700;
-  letter-spacing: .08em; color: var(--lv-txt3); flex-shrink: 0;
-  font-variant-numeric: tabular-nums;
+  letter-spacing: .08em; color: var(--lv-txt2); flex-shrink: 0;
+  font-variant-numeric: tabular-nums; white-space: nowrap;
+}
+/* Le mot qui donne son sens au compteur reste en retrait : c'est une
+   étiquette, pas une donnée. */
+.ls-dashnum-l {
+  font-size: 9px; font-weight: 700; letter-spacing: .14em;
+  text-transform: uppercase; color: var(--lv-txt3);
 }
 .ls-dash {
   flex: 1; height: 4px; border-radius: 4px; background: var(--lv-elevated);
@@ -6028,6 +6143,37 @@ body.ah-lib-open .tim-fab{display:none!important}
 .bld-fav-row-acts .bld-fav-del{color:#EF4444;border-color:rgba(239,68,68,.30)}
 .bld-fav-trigger{padding:9px 14px;background:#fff;border:1px solid rgba(197,164,78,.40);color:#C5A44E;border-radius:999px;font-family:'Outfit',sans-serif;font-size:12px;font-weight:700;letter-spacing:.02em;cursor:pointer;display:inline-flex;align-items:center;gap:6px}
 .bld-fav-trigger:active{transform:scale(.96)}
+
+/* ── Article Reader Overlay ── */
+#articleOverlay{position:fixed;inset:0;background:var(--ah-bg);z-index:9600;display:flex;flex-direction:column;transform:translateX(100%);transition:transform .3s cubic-bezier(.25,.46,.45,.94);will-change:transform}
+#articleOverlay.on{transform:translateX(0)}
+.art-hdr{flex-shrink:0;padding:16px 18px 14px;border-bottom:1px solid var(--ah-border);display:flex;align-items:center;gap:12px;background:var(--ah-bg);position:sticky;top:0;z-index:2}
+.art-hdr-back{width:40px;height:40px;border-radius:50%;background:var(--ah-surface);border:1px solid var(--ah-border);display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--ah-text);font-size:18px;flex-shrink:0;-webkit-tap-highlight-color:rgba(197,164,78,.1)}
+.art-hdr-info{flex:1;min-width:0}
+.art-hdr-tag{font-family:'JetBrains Mono',monospace;font-size:9px;letter-spacing:.22em;color:var(--ah-gold);text-transform:uppercase;font-weight:700;margin-bottom:3px}
+.art-hdr-title{font-family:'Bebas Neue',sans-serif;font-size:15px;color:var(--ah-text);letter-spacing:.05em;line-height:1.1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.art-body{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch}
+.art-content{padding:30px 22px 80px;max-width:640px;margin:0 auto}
+.art-title{font-family:'Bebas Neue',sans-serif;font-size:26px;letter-spacing:.04em;line-height:1.15;color:var(--ah-text);margin-bottom:10px}
+.art-meta{font-family:'JetBrains Mono',monospace;font-size:9.5px;letter-spacing:.18em;color:var(--ah-muted);text-transform:uppercase;margin-bottom:28px;display:flex;gap:16px;flex-wrap:wrap}
+.art-intro{font-family:'Outfit',sans-serif;font-size:16px;line-height:1.8;color:var(--ah-text);margin-bottom:14px;font-weight:500}
+.art-p{font-family:'Outfit',sans-serif;font-size:15px;line-height:1.78;color:var(--ah-text2);margin-bottom:13px}
+.art-section-title{font-family:'Bebas Neue',sans-serif;font-size:20px;letter-spacing:.06em;color:var(--ah-text);margin:34px 0 14px;line-height:1.2}
+.art-thought{background:linear-gradient(135deg,rgba(197,164,78,.12),rgba(197,164,78,.04));border-left:3px solid var(--ah-gold);border-radius:0 10px 10px 0;padding:14px 18px;margin:16px 0;font-family:'Outfit',sans-serif;font-size:15px;line-height:1.65;color:var(--ah-gold);font-style:italic}
+.art-divider{height:1px;background:var(--ah-border);margin:30px 0}
+.art-steps-wrap{margin:8px 0 20px}
+.art-step{background:var(--ah-surface);border:1px solid var(--ah-border2);border-radius:14px;padding:18px 18px 18px 16px;margin-bottom:12px;position:relative;border-left:3px solid var(--ah-gold)}
+.art-step-num{font-family:'JetBrains Mono',monospace;font-size:9px;letter-spacing:.22em;color:var(--ah-gold);text-transform:uppercase;font-weight:700;margin-bottom:5px}
+.art-step-title{font-family:'Bebas Neue',sans-serif;font-size:19px;letter-spacing:.05em;color:var(--ah-text);margin-bottom:10px;line-height:1.1}
+.art-step-p{font-family:'Outfit',sans-serif;font-size:14.5px;line-height:1.72;color:var(--ah-text2);margin-bottom:9px}
+.art-step-p:last-child{margin-bottom:0}
+/* Home teaser card */
+.art-teaser-card{margin:10px 16px 0;background:linear-gradient(135deg,rgba(197,164,78,.09),rgba(197,164,78,.02));border:1px solid rgba(197,164,78,.28);border-radius:14px;padding:16px;cursor:pointer;-webkit-tap-highlight-color:rgba(197,164,78,.08);transition:transform .12s}
+.art-teaser-card:active{transform:scale(.975)}
+.art-teaser-eyebrow{font-family:'JetBrains Mono',monospace;font-size:9px;letter-spacing:.22em;color:var(--ah-gold);text-transform:uppercase;font-weight:700;margin-bottom:8px}
+.art-teaser-title{font-family:'Bebas Neue',sans-serif;font-size:17px;letter-spacing:.05em;color:var(--ah-text);line-height:1.2;margin-bottom:6px}
+.art-teaser-sub{font-family:'Outfit',sans-serif;font-size:12px;line-height:1.5;color:var(--ah-text2);margin-bottom:12px}
+.art-teaser-cta{font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:.16em;color:var(--ah-gold);text-transform:uppercase;font-weight:700;display:flex;align-items:center;gap:5px}
 </style>
 
 <template id="__bundler_thumbnail" data-bg-color="#243B6B">
@@ -7420,6 +7566,14 @@ window.tiResetOnEnter = function(){ window.tiShowStep(1); };
          Rempli par renderTitanSmartCards() en fonction du programme + phase. -->
     <div id="titanSmartCards"></div>
 
+    <!-- ═══ ARTICLE TEASER — carte éditoriale lecture du jour ═══ -->
+    <div class="art-teaser-card" onclick="window.openArticle&&window.openArticle('mental-resistance')" role="button" tabindex="0" aria-label="Lire l'article : Résistance mentale">
+      <div class="art-teaser-eyebrow">📖 Préparation mentale · Lecture</div>
+      <div class="art-teaser-title">Comment améliorer sa résistance mentale</div>
+      <div class="art-teaser-sub">Le protocole en 5 étapes pour apprendre à repousser tes limites quand ton cerveau te demande d'arrêter.</div>
+      <div class="art-teaser-cta">Lire l'article <span>→</span></div>
+    </div>
+
     <!-- ═══ SCOREBOARD navy-deep DS v1.0 ═══ -->
     <div class="ah-scoreboard" id="homeScoreboard" style="margin:6px 20px 0;background:var(--ah-navy-deep);padding:14px 18px;border-radius:14px">
       <div class="grp"><span class="lbl">SCORE</span><span class="val empty" id="sbSet">—</span></div>
@@ -8429,6 +8583,8 @@ window.tiResetOnEnter = function(){ window.tiShowStep(1); };
     <div class="ch-back" onclick="switchTab('home')" style="position:absolute;left:14px;top:14px;font-size:22px;color:var(--ah-gold);cursor:pointer">←</div>
     <!-- Bouton guide rapide Titan — discret, à gauche du menu paramètres -->
     <button type="button" onclick="window.openGuide && window.openGuide('titan')" aria-label="Guide rapide Titan" title="Guide rapide" style="position:absolute;right:48px;top:14px;display:inline-flex;align-items:center;justify-content:center;width:24px;height:24px;border-radius:50%;background:rgba(197,164,78,.15);border:1px solid rgba(197,164,78,.45);color:var(--ah-gold);font-family:'Outfit',sans-serif;font-size:12px;font-weight:800;cursor:pointer;padding:0;line-height:1">?</button>
+    <!-- Messages enregistrés : même gabarit que le bouton « ? » voisin. -->
+    <button type="button" id="chSavedBtn" onclick="window.titanOpenSaved()" aria-label="Messages enregistrés" title="Messages enregistrés" style="position:absolute;right:82px;top:14px;display:inline-flex;align-items:center;justify-content:center;width:24px;height:24px;border-radius:50%;background:rgba(197,164,78,.15);border:1px solid rgba(197,164,78,.45);color:var(--ah-gold);font-size:12px;cursor:pointer;padding:0;line-height:1">★<span class="ch-saved-badge" id="chSavedCount" style="display:none">0</span></button>
     <div class="ch-menu" onclick="switchTab('moi')" style="position:absolute;right:14px;top:14px;font-size:22px;color:rgba(255,255,255,.5);cursor:pointer">⋮</div>
     <div class="ch-avatar" style="width:88px;height:88px;border-radius:50%;overflow:hidden;border:2.5px solid var(--ah-gold);background:var(--ah-navy-deep);box-shadow:0 6px 22px rgba(197,164,78,.28),0 0 0 4px rgba(197,164,78,.08);display:flex;align-items:center;justify-content:center">
       <img src="images/titan-mascot.png" alt="Titan" decoding="async" style="width:100%;height:100%;object-fit:cover" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">
@@ -8437,6 +8593,18 @@ window.tiResetOnEnter = function(){ window.tiShowStep(1); };
     <div class="ch-info" style="display:flex;flex-direction:column;align-items:center;gap:2px">
       <div class="ch-name">TITAN</div>
       <div class="ch-status" id="chatStatus">En ligne</div>
+    </div>
+  </div>
+
+  <!-- Feuille « Messages enregistrés » — même motif que les autres overlays. -->
+  <div class="tsv-ov" id="titanSavedOv" onclick="if(event.target===this)window.titanCloseSaved()">
+    <div class="tsv-sheet" role="dialog" aria-label="Messages enregistrés">
+      <div class="tsv-grab"></div>
+      <div class="tsv-head">
+        <div class="tsv-title">MESSAGES ENREGISTRÉS</div>
+        <div class="tsv-count" id="tsvCount"></div>
+      </div>
+      <div class="tsv-list" id="tsvList"></div>
     </div>
   </div>
 
@@ -8683,7 +8851,7 @@ window.tiResetOnEnter = function(){ window.tiShowStep(1); };
 
   <!-- Test push notif (n'apparaît qu'après activation notif + FCM token) -->
   <div class="setting-item" onclick="sendTestNotif()">
-    <div class="si-left"><div class="si-icon">🧪</div><div><div class="si-text">Envoyer un test</div><div class="si-sub">Vérifie que les push notifs arrivent</div></div></div>
+    <div class="si-left"><div class="si-icon">🧪</div><div><div class="si-text">Envoyer un test</div><div class="si-sub" id="notifTestSub">Vérifie que les push notifs arrivent</div></div></div>
     <div class="si-right">→</div>
   </div>
 
@@ -9326,6 +9494,142 @@ window.tiResetOnEnter = function(){ window.tiShowStep(1); };
     <!-- Boutons -->
     <button id="rmAddFavBtn" class="rm-add-btn" onclick="toggleCurrentRecipeFavorite()" style="background:linear-gradient(135deg,var(--gold),#D4B86A);color:var(--navy);margin-bottom:8px">⭐ Ajouter aux favoris (+ liste de courses)</button>
     <button class="rm-add-btn" onclick="addRecipeToJournal()" style="background:var(--surface2);color:var(--text);border:1.5px solid var(--border)">+ Ajouter au journal du jour</button>
+  </div>
+</div>
+
+<!-- ═══ ARTICLE READER — overlay plein écran, slide depuis la droite ═══ -->
+<div id="articleOverlay" style="display:none">
+  <!-- Header sticky -->
+  <div class="art-hdr">
+    <div class="art-hdr-back" onclick="window.closeArticle&&window.closeArticle()" aria-label="Retour">←</div>
+    <div class="art-hdr-info">
+      <div class="art-hdr-tag">📖 Préparation mentale</div>
+      <div class="art-hdr-title">Comment améliorer sa résistance mentale</div>
+    </div>
+  </div>
+  <!-- Body scrollable -->
+  <div class="art-body">
+    <div class="art-content">
+
+      <!-- Titre & méta -->
+      <div class="art-title">Comment améliorer sa résistance mentale : le protocole que j'utilise pour repousser ses limites</div>
+      <div class="art-meta">
+        <span>📖 Lecture · 10 min</span>
+        <span>Préparation mentale</span>
+      </div>
+
+      <!-- Introduction -->
+      <p class="art-intro">Et si votre résistance mentale pouvait se travailler comme votre force physique ?</p>
+      <p class="art-p">On parle beaucoup de motivation, de discipline et de mental dans le sport. Mais une question m'a longtemps intéressé en tant que coach et sportif : comment devient-on réellement plus résistant mentalement ?</p>
+      <p class="art-p">J'ai cherché ma propre réponse à cette question. Et elle est peut-être beaucoup plus simple que vous ne le pensez.</p>
+      <p class="art-p">Pour développer votre résistance mentale, vous devez apprendre à rester dans l'effort lorsque votre cerveau commence à vous dire d'arrêter. Je vais vous montrer comment transformer un exercice simple en véritable outil de développement mental.</p>
+
+      <div class="art-divider"></div>
+
+      <!-- Section 1 -->
+      <div class="art-section-title">Le Bring Sally Up : un exercice simple, mais loin d'être facile</div>
+      <p class="art-p">Le principe est extrêmement simple. Vous choisissez un exercice — ici, les pompes — puis vous réalisez les mouvements en suivant le rythme d'une musique. Lorsque la musique vous indique de monter, vous montez. Lorsqu'elle vous indique de descendre, vous descendez. Certaines positions peuvent être maintenues plusieurs secondes.</p>
+      <p class="art-p">L'objectif est de suivre le rythme sans interruption, jusqu'à la fin du morceau. Sur le papier, cela paraît simple. En pratique, c'est une autre histoire.</p>
+      <p class="art-p">Plus l'exercice avance, plus la fatigue augmente. Les muscles commencent à brûler. Le mouvement devient difficile. Et surtout, vous commencez à entendre cette petite voix intérieure :</p>
+      <div class="art-thought">«« C'est trop dur. »»<br>«« J'arrête. »»<br>«« Je ne peux plus. »»</div>
+      <p class="art-p">C'est précisément à ce moment-là que l'exercice devient intéressant. Parce que vous n'entraînez plus uniquement votre physique. Vous entraînez également votre capacité à rester engagé lorsque l'effort devient inconfortable.</p>
+
+      <div class="art-divider"></div>
+
+      <!-- Section 2 -->
+      <div class="art-section-title">Le véritable objectif n'est pas seulement de terminer l'exercice</div>
+      <p class="art-p">Lorsque je fais travailler cet exercice à des sportifs, je ne leur demande pas simplement de réussir le maximum de répétitions. Je veux qu'ils observent ce qui se passe dans leur tête lorsqu'ils commencent à être en difficulté.</p>
+      <p class="art-p">Parce qu'il existe une différence entre ce que votre corps est capable de faire et ce que votre cerveau pense être capable de faire. Cette distinction est essentielle.</p>
+      <p class="art-p">Votre condition physique ne change pas complètement du jour au lendemain. En revanche, votre manière de réagir face à la difficulté peut commencer à évoluer dès aujourd'hui.</p>
+
+      <div class="art-divider"></div>
+
+      <!-- Section 3 -->
+      <div class="art-section-title">Le moment où votre cerveau vous demande d'arrêter</div>
+      <p class="art-p">Lorsque l'effort devient difficile, vous commencez à recevoir différents signaux : douleur musculaire, brûlure, fatigue, inconfort… Et votre perception de l'effort augmente. À ce moment-là, une pensée apparaît souvent automatiquement :</p>
+      <div class="art-thought">« Il faut que j'arrête. »</div>
+      <p class="art-p">Le problème, c'est que nous interprétons parfois cette sensation comme une preuve que nous avons atteint notre limite physique. Mais est-ce réellement le cas ?</p>
+      <p class="art-p">Vous réalisez le Bring Sally Up. Vous arrivez à un moment extrêmement difficile. Vous pensez « Je ne peux plus. » Vous abandonnez. Mais quelques secondes plus tard, vous êtes capable de réaliser encore une répétition propre.</p>
+      <p class="art-p">Posez-vous alors la question : était-ce réellement votre limite physique — ou votre limite du moment, telle que vous l'avez perçue ? Cette différence est fondamentale.</p>
+
+      <div class="art-divider"></div>
+
+      <!-- Section 4 -->
+      <div class="art-section-title">Physique contre mental : apprenez à faire la différence</div>
+      <p class="art-p">Imaginez deux sportifs. Le premier est physiquement plus fort. Le second est légèrement moins fort, mais il possède une meilleure capacité à rester concentré et engagé lorsque l'effort devient difficile. Sur un exercice d'endurance musculaire, le deuxième peut parfois continuer plus longtemps.</p>
+      <p class="art-p">Pourquoi ? Parce que la performance ne dépend pas uniquement de la capacité physique. Votre capacité à gérer l'effort, l'inconfort et les pensées qui apparaissent pendant celui-ci joue également un rôle. C'est exactement ce que vous allez apprendre à observer avec ce protocole.</p>
+
+      <div class="art-divider"></div>
+
+      <!-- Les 5 étapes -->
+      <div class="art-section-title">Le protocole en 5 étapes</div>
+      <div class="art-steps-wrap">
+
+        <div class="art-step">
+          <div class="art-step-num">Étape 01</div>
+          <div class="art-step-title">Prenez un carnet</div>
+          <p class="art-step-p">Avant de commencer, préparez deux choses : un carnet d'entraînement et un stylo. Pas votre téléphone — un véritable carnet dans lequel vous allez pouvoir écrire.</p>
+          <p class="art-step-p">Pourquoi ? Parce que votre objectif n'est pas simplement de faire l'exercice. Votre objectif est de comprendre votre propre fonctionnement mental.</p>
+        </div>
+
+        <div class="art-step">
+          <div class="art-step-num">Étape 02</div>
+          <div class="art-step-title">Donnez-vous à 100 %</div>
+          <p class="art-step-p">Choisissez un environnement dans lequel vous ne serez pas interrompu. Pas de téléphone, pas de distraction, pas de conversation. Vous lancez le Bring Sally Up et vous vous engagez réellement.</p>
+          <p class="art-step-p">Votre objectif est de tenir le plus longtemps possible et, surtout, de ne pas abandonner volontairement. Si vous êtes très avancé et terminez sans réelle difficulté, recommencez une deuxième fois sans pause. C'est votre deuxième passage qui servira de véritable référence.</p>
+        </div>
+
+        <div class="art-step">
+          <div class="art-step-num">Étape 03</div>
+          <div class="art-step-title">Observez vos pensées</div>
+          <p class="art-step-p">C'est probablement la partie la plus importante du protocole. Pendant l'exercice, observez ce qui se passe dans votre tête. Lorsque la difficulté arrive, quelles pensées apparaissent ?</p>
+          <div class="art-thought" style="margin:12px 0 10px;font-size:14px">« C'est dur. » · « J'ai envie d'arrêter. » · « Je n'y arriverai pas. » · « Ça brûle trop. »</div>
+          <p class="art-step-p">Ne cherchez pas immédiatement à les supprimer. Observez-les. Votre objectif est de comprendre votre propre dialogue intérieur lorsque vous êtes sous pression.</p>
+        </div>
+
+        <div class="art-step">
+          <div class="art-step-num">Étape 04</div>
+          <div class="art-step-title">Écrivez ce qui s'est passé</div>
+          <p class="art-step-p">Une fois l'exercice terminé, prenez votre carnet et écrivez. Essayez de vous rappeler les moments où vous avez commencé à être en difficulté. Qu'avez-vous pensé ? À quel moment avez-vous voulu abandonner ? Qu'est-ce qui vous a fait arrêter ?</p>
+          <p class="art-step-p">Soyez honnête. Ce carnet n'est pas destiné à impressionner quelqu'un. Il est destiné à vous permettre de mieux vous comprendre.</p>
+        </div>
+
+        <div class="art-step">
+          <div class="art-step-num">Étape 05</div>
+          <div class="art-step-title">Transformez votre dialogue intérieur</div>
+          <p class="art-step-p">Maintenant que vous connaissez vos pensées automatiques, vous allez pouvoir travailler dessus. J'appelle cela les mantras. Votre mantra doit être personnel — il doit répondre directement aux pensées que vous avez identifiées.</p>
+          <p class="art-step-p">Par exemple, si votre pensée automatique est « Ça brûle, je dois arrêter », vous pouvez la remplacer par :</p>
+          <div class="art-thought" style="margin:10px 0;font-size:14px">« Cette sensation fait partie de l'effort. Je suis capable de rester engagé. »</div>
+          <p class="art-step-p">L'objectif n'est pas de nier ce que vous ressentez. La brûlure existe. La fatigue existe. Mais vous pouvez apprendre à changer la manière dont vous interprétez ces sensations.</p>
+        </div>
+
+      </div>
+
+      <div class="art-divider"></div>
+
+      <!-- Section Répétition -->
+      <div class="art-section-title">Répétition, écriture et visualisation</div>
+      <p class="art-p">Votre travail ne s'arrête pas à l'exercice. Utilisez votre carnet le matin et le soir. Répétez vos mantras. Écrivez-les. Visualisez-vous en train de réaliser l'exercice — imaginez le moment où la difficulté arrive, les pensées qui apparaissent, puis imaginez-vous en train de rester concentré et de continuer.</p>
+      <p class="art-p">Vous êtes en train de créer un nouveau réflexe mental. Et comme pour l'entraînement physique, ce processus demande de la répétition.</p>
+
+      <div class="art-divider"></div>
+
+      <!-- Section Transposition -->
+      <div class="art-section-title">Transposez cette méthode à votre sport</div>
+      <p class="art-p">C'est là que le protocole devient réellement intéressant. Le Bring Sally Up n'est qu'un outil. Le véritable objectif est de développer une capacité mentale que vous pourrez ensuite transférer à votre discipline.</p>
+      <p class="art-p">Vous êtes basketteur ? Travaillez cette capacité dans les dernières minutes d'un match, lorsque vos jambes sont lourdes et que vous devez encore défendre. Vous êtes volleyeur ? Utilisez-la lorsque la concentration devient difficile et que vous devez rester performant dans les moments importants. Vous travaillez votre sprint ou votre détente verticale ? Appliquez cette logique à votre entraînement.</p>
+      <p class="art-p">Le principe reste le même : apprendre à reconnaître ce qui se passe dans votre tête lorsque la difficulté apparaît, puis apprendre à mieux y répondre.</p>
+
+      <div class="art-divider"></div>
+
+      <!-- Conclusion -->
+      <div class="art-section-title">La vraie résistance mentale ne consiste pas à ne jamais souffrir</div>
+      <p class="art-p">Être mentalement résistant ne signifie pas ne jamais ressentir de fatigue, de douleur ou de difficulté. Cela signifie apprendre à rester lucide lorsque ces sensations apparaissent.</p>
+      <p class="art-p">Votre corps vous envoie des informations. Votre cerveau les interprète. Et votre comportement dépend en partie de cette interprétation. Le travail consiste donc à mieux comprendre ce dialogue — à identifier vos pensées automatiques, à les remettre en question, puis à construire progressivement de nouvelles réponses.</p>
+      <p class="art-p">Le Bring Sally Up n'est qu'un exercice. Mais si vous l'utilisez correctement, il peut devenir un véritable laboratoire pour observer votre mental. Et ce que vous apprenez dans cet exercice peut ensuite vous accompagner bien au-delà des pompes.</p>
+      <p class="art-p" style="font-style:italic;color:var(--ah-text);font-weight:500">Dans votre entraînement. Dans votre sport. Et dans les moments où vous devez continuer alors que votre cerveau vous demande d'arrêter.</p>
+
+    </div>
   </div>
 </div>
 
@@ -11135,19 +11439,96 @@ function _findSubs(name) {
   return null;
 }
 
-// Retire une entrée du journal (par index dans le tableau global)
-function removeJournalMeal(idx) {
+// ══════════════════════════════════════════════════════════════════════
+// IDENTITÉ DES REPAS DU JOURNAL
+// ─────────────────────────────────────────────────────────────────────
+// Jusqu'ici un repas ne se désignait que par sa POSITION dans le tableau
+// global (`journal.indexOf(m)`, résolu à l'affichage). Cet index se décale
+// dès qu'une autre écriture arrive : une recette ajoutée, une journée de
+// plan repas loggée, ou une synchronisation depuis un autre appareil.
+// « Supprime ce que je viens d'ajouter » pouvait donc supprimer le mauvais.
+//
+// Chaque NOUVELLE entrée porte désormais un `id` stable. Les entrées déjà
+// enregistrées n'en ont pas : elles continuent de fonctionner par index,
+// exactement comme avant. Aucune migration, aucune donnée touchée.
+// ══════════════════════════════════════════════════════════════════════
+function _mealId() {
+  return 'm' + Date.now().toString(36) + Math.floor(Math.random() * 1679616).toString(36);
+}
+window._mealId = _mealId;
+
+function _journalRead() {
   try {
-    var arr = JSON.parse(localStorage.getItem('ah_nutri_journal') || '[]');
-    if (idx < 0 || idx >= arr.length) return;
-    arr.splice(idx, 1);
+    var a = JSON.parse(localStorage.getItem('ah_nutri_journal') || '[]');
+    return Array.isArray(a) ? a : [];
+  } catch (e) { return []; }
+}
+function _journalWrite(arr) {
+  try {
     localStorage.setItem('ah_nutri_journal', JSON.stringify(arr));
     if (typeof renderJournalToday === 'function') renderJournalToday();
     if (typeof fbSaveProfile === 'function') fbSaveProfile();
-    if (typeof showToast === 'function') showToast('Retiré du journal', 'info');
-  } catch(e) {}
+    return true;
+  } catch (e) { console.warn('[journal]', e); return false; }
+}
+window._journalRead = _journalRead;
+window._journalWrite = _journalWrite;
+
+// Retrouve une entrée par son id, ou par son index si elle date d'avant.
+// Renvoie l'index réel, ou -1.
+function _journalIndexOf(ref, arr) {
+  arr = arr || _journalRead();
+  if (typeof ref === 'number') return (ref >= 0 && ref < arr.length) ? ref : -1;
+  var id = String(ref == null ? '' : ref);
+  if (!id) return -1;
+  for (var i = 0; i < arr.length; i++) if (arr[i] && arr[i].id === id) return i;
+  return -1;
+}
+window._journalIndexOf = _journalIndexOf;
+
+// Retire une entrée du journal. Accepte un id (stable) OU un index (legacy —
+// c'est ce que passe le bouton ✕ de la liste, via journal.indexOf(m)).
+function removeJournalMeal(ref) {
+  var arr = _journalRead();
+  var idx = _journalIndexOf(ref, arr);
+  if (idx < 0) {
+    if (typeof showToast === 'function') showToast('Repas introuvable — il a déjà été retiré.', 'info');
+    return false;
+  }
+  arr.splice(idx, 1);
+  if (!_journalWrite(arr)) return false;
+  if (typeof showToast === 'function') showToast('Retiré du journal', 'info');
+  return true;
 }
 window.removeJournalMeal = removeJournalMeal;
+
+// Modifier un repas — n'existait sous AUCUNE forme dans l'app.
+// `patch` porte les macros à corriger ; les totaux sont recalculés pour que
+// `totals` (ce que lit renderJournalToday) et les champs plats ne divergent
+// jamais.
+function updateJournalMeal(ref, patch) {
+  if (!patch || typeof patch !== 'object') return false;
+  var arr = _journalRead();
+  var idx = _journalIndexOf(ref, arr);
+  if (idx < 0) return false;
+  var m = arr[idx];
+  var n = function (v, def) {
+    var x = parseFloat(v);
+    return isFinite(x) && x >= 0 ? Math.round(x) : def;
+  };
+  var cur = m.totals || {};
+  var cal = n(patch.calories, n(cur.cal, 0));
+  var pr  = n(patch.protein,  n(cur.p, 0));
+  var gl  = n(patch.carbs,    n(cur.g, 0));
+  var li  = n(patch.fat,      n(cur.l, 0));
+  m.totals = { cal: cal, p: pr, g: gl, l: li };
+  m.cals = cal; m.prot = pr; m.carbs = gl; m.fat = li;
+  if (typeof patch.name === 'string' && patch.name.trim()) m.name = patch.name.trim().slice(0, 70);
+  if (Array.isArray(patch.foods)) m.foods = patch.foods;
+  m.editedAt = new Date().toISOString();
+  return _journalWrite(arr);
+}
+window.updateJournalMeal = updateJournalMeal;
 
 // Widget Home : affiche les 4 repas du jour si un plan a été généré
 function renderHomeMealPlan() {
@@ -14075,6 +14456,7 @@ function addRecipeToJournal() {
     var key = 'ah_nutri_journal';
     var arr = []; try { arr = JSON.parse(localStorage.getItem(key) || '[]'); } catch(e) {}
     arr.push({
+      id: _mealId(),
       ts: Date.now(),
       date: new Date().toISOString(),
       name: r.name + (curr !== base ? ' × ' + curr : ''),
@@ -14116,6 +14498,7 @@ function logMealPlanDay(dayIdx) {
       var carbs = r.plannedCarbs != null ? r.plannedCarbs : (r.carbs || 0);
       var fat = r.plannedFat != null ? r.plannedFat : (r.fat || 0);
       arr.push({
+        id: _mealId(),
         ts: Date.now(), date: new Date().toISOString(),
         name: r.name + (portions !== 1 ? ' × ' + portions : ''),
         cals: cals, prot: prot, carbs: carbs, fat: fat,
@@ -15781,7 +16164,11 @@ function switchTab(tab){
   var titanBtn=document.querySelector('.nav-titan');
   if(titanBtn)titanBtn.style.filter=(tab==='chat')?'drop-shadow(0 0 8px rgba(197,164,78,.6))':'none';
   // Restaure la conversation Titan depuis localStorage à l'ouverture
-  if (tab === 'chat') { try { restoreTitanChat(); } catch(e) {} }
+  if (tab === 'chat') {
+    try { restoreTitanChat(); } catch(e) {}
+    // Après restauration : le message d'accueil statique n'a pas d'identifiant.
+    try { _titanDecorateStatic(); _titanSavedRefreshBadge(); } catch(e) {}
+  }
   // Init SAT step-by-step quand on entre dans Tracks
   if (tab === 'tracks') {
     try { initSATv7(); } catch(e) { console.warn('initSATv7 error:', e); }
@@ -20945,10 +21332,10 @@ var PROGRAMS_V2 = (function(){
           sessions: {
             j1: { name:'Jour 1 — UPPER : Challenge + Circuit Cluster + Épaules', exos: [
               e('Bring Sally Up — Chanson « Flower » de Moby','1','Suivre la chanson','-','Rotation des challenges : Bring Sally Up → Pompes max 2 mn → Burpees max 3 mn (J1/J3/J5).'),
-              e('1) Pompes diamant','4','2-3 reps','2 mn après les 4','',{id:'rest_pause'}),
-              e('2) Dips sur chaise / banc','4','2-3 reps cluster','-','',{id:'rest_pause'}),
-              e('3) Pompes déclinées — pieds surélevés','4','2-3 reps cluster','-','',{id:'rest_pause'}),
-              e('4) Pike push-ups — pompes en V','4','2-3 reps cluster','-','',{id:'rest_pause'}),
+              e('1) Pompes diamant','4','2-3 reps','2 mn après les 4','',{id:'cluster'}),
+              e('2) Dips sur chaise / banc','4','2-3 reps cluster','-','',{id:'cluster'}),
+              e('3) Pompes déclinées — pieds surélevés','4','2-3 reps cluster','-','',{id:'cluster'}),
+              e('4) Pike push-ups — pompes en V','4','2-3 reps cluster','-','',{id:'cluster'}),
               e('Rotation explosive du buste en planche','3','10 reps','1 mn'),
               e('Rock Back breathing — Respiration diaphragmatique','-','2-5 mn','-'),
               e('Visualisation — Visualise ta prochaine performance','-','1-2 mn','-')
@@ -21115,10 +21502,10 @@ var PROGRAMS_V2 = (function(){
             // perdus. Quatre exercices prescrits manquaient.
             j1:{ name:'Jour 1 — UPPER : Challenge + Circuit Cluster + Épaules', exos:[
               e('Bring Sally Up — pompes — chanson Flower','1','Suivre la chanson','-','Rotation : Bring Sally Up → Pompes max 2mn → Burpees max 3mn (J1/J3/J5).'),
-              e('1) Pompes diamant','4','2-3 reps','2 mn après les 4','',{id:'rest_pause'}),
-              e('2) Dips sur chaise / banc','4','2-3 reps','-','',{id:'rest_pause'}),
-              e('3) Pompes déclinées','4','2-3 reps','-','',{id:'rest_pause'}),
-              e('4) Pike push-ups — pompes en V','4','2-3 reps','-','',{id:'rest_pause'}),
+              e('1) Pompes diamant','4','2-3 reps','2 mn après les 4','',{id:'cluster'}),
+              e('2) Dips sur chaise / banc','4','2-3 reps','-','',{id:'cluster'}),
+              e('3) Pompes déclinées','4','2-3 reps','-','',{id:'cluster'}),
+              e('4) Pike push-ups — pompes en V','4','2-3 reps','-','',{id:'cluster'}),
               e('Rotation explosive du buste en planche — puissance rotative','3','10 reps','1 mn'),
               e('Élévations latérales — bouteilles ou pdc','3','12-15 reps','1 mn'),
               e('1) Pompes larges — pectoraux','3','10-12 reps','-'),
@@ -25245,7 +25632,15 @@ function _titanNutritionCtx(prof) {
   // Journal du jour : ce que l'athlète a réellement enregistré.
   try {
     var journal = JSON.parse(localStorage.getItem('ah_nutri_journal') || '[]');
-    if (Array.isArray(journal) && journal.length) {
+    if (!Array.isArray(journal)) journal = [];
+    if (!journal.length && out.cibles && out.cibles.kcal) {
+      // Journal vide : la journée entière reste à consommer. Sans cette
+      // branche, la question se posait justement au pire moment.
+      out.aujourdhui = { repas: 0, kcal: 0, prot: 0, gluc: 0, lip: 0, noms: [], liste: [] };
+      out.restantes = { kcal: out.cibles.kcal, prot: out.cibles.prot || null,
+                        gluc: out.cibles.gluc || null, lip: out.cibles.lip || null };
+    }
+    if (journal.length) {
       var today = new Date().toISOString().slice(0, 10);
       var todays = journal.filter(function (m) {
         return m && m.date && String(m.date).slice(0, 10) === today;
@@ -25260,8 +25655,37 @@ function _titanNutritionCtx(prof) {
         kcal: Math.round(t.kcal), prot: Math.round(t.prot),
         gluc: Math.round(t.gluc), lip: Math.round(t.lip),
         // Les noms des repas, bornés : Titan doit pouvoir dire de quoi il parle.
-        noms: todays.slice(-6).map(function (m) { return m.name || m.label || 'repas'; })
+        noms: todays.slice(-6).map(function (m) { return m.name || m.label || 'repas'; }),
+        // Le DÉTAIL de chaque repas, avec son identifiant. Sans lui, Titan ne
+        // pouvait ni commenter un repas précis, ni en désigner un à modifier
+        // ou à retirer — il ne voyait qu'une liste de noms.
+        liste: todays.slice(-8).map(function (m) {
+          var x = m.totals || {};
+          var e = {
+            nom: m.name || m.label || 'repas',
+            kcal: Math.round(x.cal || 0), prot: Math.round(x.p || 0),
+            gluc: Math.round(x.g || 0), lip: Math.round(x.l || 0)
+          };
+          if (m.id) e.id = m.id;
+          if (m.ts) {
+            var d = new Date(m.ts);
+            e.heure = ('0' + d.getHours()).slice(-2) + ':' + ('0' + d.getMinutes()).slice(-2);
+          }
+          return e;
+        })
       };
+      // LES RESTANTES. Elles étaient calculées par renderJournalToday pour
+      // l'écran (`rdi - totals.cal`) et ne faisaient jamais le voyage : la
+      // question « combien me reste-t-il ? » échouait sur une donnée déjà
+      // disponible trois lignes plus haut.
+      if (out.cibles && out.cibles.kcal) {
+        out.restantes = {
+          kcal: Math.round(out.cibles.kcal - t.kcal),
+          prot: out.cibles.prot ? Math.round(out.cibles.prot - t.prot) : null,
+          gluc: out.cibles.gluc ? Math.round(out.cibles.gluc - t.gluc) : null,
+          lip:  out.cibles.lip  ? Math.round(out.cibles.lip  - t.lip)  : null
+        };
+      }
       // Sur les 7 derniers jours, la moyenne dit plus que le seul jour J.
       var days = {};
       journal.forEach(function (m) {
@@ -25285,20 +25709,27 @@ function _titanNutritionCtx(prof) {
 }
 window._titanNutritionCtx = _titanNutritionCtx;
 
-async function callAnthropicAPI(userMessage, photo) {
+// opts.mode : 'nutrition' déclenche la sortie structurée. L'analyse
+// éventuelle est déposée dans window._titanLastNutrition — sendMessage la
+// rend en carte APRÈS la bulle, pour que l'ordre à l'écran soit celui de la
+// conversation : Titan répond, puis propose l'action.
+async function callAnthropicAPI(userMessage, photo, opts) {
   // Avec photo : contenu en blocs (image d'abord, comme recommandé par
   // Anthropic quand le texte commente l'image). L'index du message est retenu
   // pour pouvoir retirer le base64 de l'historique juste après la réponse.
   if (photo && photo.data) {
     conversationHistory.push({
-      role: 'user',
+      role: 'user', t: Date.now(),
       content: [
         { type: 'image', source: { type: 'base64', media_type: photo.media_type, data: photo.data } },
         { type: 'text', text: userMessage || 'Regarde cette image et dis-moi ce que tu en penses.' }
       ]
     });
   } else {
-    conversationHistory.push({ role: 'user', content: userMessage });
+    // `t` : l'instant réel du message. Il sert à FUSIONNER deux appareils
+    // dans le bon ordre — sans lui, la synchronisation ne saurait pas
+    // entrelacer une conversation tenue sur le téléphone et sur la tablette.
+    conversationHistory.push({ role: 'user', content: userMessage, t: Date.now() });
   }
   // L'image RESTE en memoire : sans ca, a la question suivante ("tu as recu
   // ca ?"), Titan ne la voyait plus et repondait qu'il ne recoit pas les
@@ -25373,6 +25804,7 @@ async function callAnthropicAPI(userMessage, photo) {
         'Authorization': 'Bearer ' + idToken,
       },
       body: JSON.stringify({
+        mode: opts && opts.mode ? opts.mode : undefined,
         messages: _titanTrimImages(conversationHistory.slice(-10)),
         ctx: ctx,
       }),
@@ -25386,7 +25818,8 @@ async function callAnthropicAPI(userMessage, photo) {
     }
 
     if (data.reply) {
-      conversationHistory.push({ role: 'assistant', content: data.reply });
+      window._titanLastNutrition = data.nutrition || null;
+      conversationHistory.push({ role: 'assistant', content: data.reply, t: Date.now() });
       persistTitanChat();
       return data.reply;
     }
@@ -25432,14 +25865,609 @@ function _titanTrimImages(msgs) {
   });
 }
 
+// ══════════════════════════════════════════════════════════════════════
+// TITAN — ANALYSE NUTRITIONNELLE ET ACTION D'ENREGISTREMENT
+// ─────────────────────────────────────────────────────────────────────
+// Séparation stricte, demandée et respectée :
+//   CHAT   = comprendre et répondre. N'écrit jamais.
+//   ACTION = écrire dans le journal. Ne part que sur un tap de l'athlète.
+//
+// Une analyse ne déclenche AUCUNE écriture, même quand l'athlète a dit
+// « enregistre ça » : sa phrase ouvre la carte, c'est le bouton qui écrit.
+// Titan ne peut donc pas se tromper silencieusement sur les données de
+// quelqu'un — au pire il affiche un total que l'athlète refuse.
+//
+// L'écriture réutilise le format EXACT des trois écrivains existants
+// (scanSaveToJournal, addRecipeToJournal, logMealPlanDay) : renderJournalToday
+// lit `totals.{cal,p,g,l}` et `name`, et la clé ah_nutri_journal est déjà
+// synchronisée vers users/{uid}.nutriJournal. Aucune structure nouvelle,
+// aucune règle Firestore à ajouter.
+// ══════════════════════════════════════════════════════════════════════
+
+// Déclencheur du mode nutrition. Volontairement STRICT : chaque message
+// analysé consomme un appel du quota (20/jour), et un faux positif ferait
+// répondre Titan en mode analyse à une question d'entraînement.
+var TITAN_FOOD_RE = new RegExp([
+  // ce que l'athlète a consommé
+  "\\bj'?ai (?:mang|bouff|pris|d[ée]jeun|d[îi]n|petit-?d[ée]jeun|grignot|bu)",
+  "\\bje viens de (?:mang|bouff|prendre|boire)",
+  "\\bj'?ai (?:rien|pas) mang",
+  // le contexte de repas
+  "\\bpetit[- ]?d[ée]j",
+  "\\b(?:d[ée]jeuner|d[îi]ner|go[ûu]ter|collation|repas)\\b",
+  // la demande de calcul. « calorique » n'est pas « calorie » : on coupe au radical.
+  "\\b(?:calcule|combien de |compte)[^?]{0,30}(?:calori|kcal|prot[ée]in|macro|glucide|lipide)",
+  "\\b(?:calori|kcal|macro)\\w*\\b.{0,25}\\b(?:aujourd|journ[ée]e|repas|mang)",
+  // la demande d'enregistrement. RADICAUX, pas formes exactes : « \\benregistre\\b »
+  // ne matche pas « enregistrer » — la frontière de mot échoue devant le « r ».
+  // C'est ce qui a fait passer « Tu peux enregistrer dans le journal » en chat
+  // normal, où Titan a répondu qu'il ne savait pas enregistrer.
+  "\\b(?:enregistr|ajout|rajout|not[e]|log|sauvegard|inscri)\\w*\\b.{0,40}\\b(?:journal|suivi|repas|journ[ée]e|nutrition|calorie|[çc]a|le tout)\\b",
+  // et sa forme la plus courte, sans complément : « enregistre »
+  "^\\s*(?:tu peux |peux-tu |stp |s'?il te pla[îi]t )?(?:enregistr|ajout|sauvegard)\\w*\\s*(?:[çc]a)?\\s*[.!]?\\s*$"
+].join('|'), 'i');
+
+function _titanIsFoodMessage(text) {
+  var t = String(text || '');
+  if (t.trim().length < 8) return false;
+  return TITAN_FOOD_RE.test(t.toLowerCase());
+}
+window._titanIsFoodMessage = _titanIsFoodMessage;
+
+// La nutrition est un SUJET, pas un message isolé.
+// Le déclencheur ne lisait que le message courant. Après « calcule mes
+// calories », un simple « pourquoi tu réponds comme ça » ou « refais le
+// calcul » repassait en chat normal : Titan redonnait le total en texte, et
+// l'app n'avait plus rien à enregistrer — aucune carte, journal à zéro.
+// Le verrou garde le mode analyse quelques échanges. Il ne coûte AUCUN appel
+// supplémentaire : c'est le même appel, avec une sortie structurée. Et si le
+// message suivant parle vraiment d'autre chose, le prompt renvoie une liste
+// vide et aucune carte n'est rendue.
+var TITAN_NUTRI_LATCH = 3;
+window._titanNutriTurns = 0;
+
+// Changement franc de sujet → on relâche le verrou tout de suite, sans
+// attendre son expiration.
+var TITAN_OFFTOPIC_RE = /\b(s[ée]ance|entra[îi]nement|programme|squat|saut|d[ée]tente|muscu|blessure|genou|dos|[ée]paule|sommeil|dormir|motivation|repos|[ée]chauffement|pliom)/i;
+
+function _titanWantsNutrition(text) {
+  if (_titanIsFoodMessage(text)) {
+    window._titanNutriTurns = TITAN_NUTRI_LATCH;
+    return true;
+  }
+  if (window._titanNutriTurns > 0) {
+    if (TITAN_OFFTOPIC_RE.test(String(text || ''))) {
+      window._titanNutriTurns = 0;
+      return false;
+    }
+    window._titanNutriTurns--;
+    return true;
+  }
+  return false;
+}
+window._titanWantsNutrition = _titanWantsNutrition;
+
+// Analyses en attente de décision, indexées par un identifiant de carte.
+// Rien n'est écrit tant que l'athlète n'a pas tapé « Enregistrer ».
+window._titanNutriPending = window._titanNutriPending || {};
+
+function _titanNutriFmt(n) { return Math.round(Number(n) || 0); }
+
+// Ce qu'il reste sur la journée, relu APRÈS écriture. La valeur du contexte
+// serveur date d'avant : l'annoncer telle quelle donnerait un chiffre faux
+// juste après un ajout.
+function _titanRemainingToday() {
+  try {
+    var prof = JSON.parse(localStorage.getItem('ah_profile') || '{}');
+    var cible = parseFloat(prof.nutriCal);
+    if (!isFinite(cible) || cible <= 0) return null;
+    var today = new Date().toISOString().slice(0, 10);
+    var used = _journalRead().reduce(function (a, m) {
+      if (!m || !m.date || String(m.date).slice(0, 10) !== today) return a;
+      return a + (((m.totals || {}).cal) || 0);
+    }, 0);
+    return Math.round(cible - used);
+  } catch (e) { return null; }
+}
+window._titanRemainingToday = _titanRemainingToday;
+
+// La carte d'action, rendue SOUS la réponse de Titan.
+// `nut.wantsSave` vient du serveur et vaut true UNIQUEMENT sur une demande
+// explicite (« ajoute-le », « enregistre ça »). Dans ce cas l'app écrit tout
+// de suite — la phrase EST la confirmation — et la carte devient un accusé
+// de réception portant un bouton Annuler. Sinon elle propose, et rien n'est
+// écrit tant que l'athlète n'a pas tapé.
+function _titanRenderNutriCard(nut) {
+  if (!nut || !Array.isArray(nut.items) || !nut.items.length) return;
+  if (!nut.totals || !nut.totals.calories) return;   // rien de chiffré → rien à proposer
+  var body = document.getElementById('chatBody');
+  if (!body) return;
+
+  var id = 'nc' + Date.now().toString(36) + Math.floor(Math.random() * 1000).toString(36);
+  window._titanNutriPending[id] = nut;
+
+  if (nut.wantsSave) {
+    var wrapNow = document.createElement('div');
+    wrapNow.className = 'msg titan tn-wrap';
+    wrapNow.innerHTML = '<div class="tn-card" id="' + id + '"></div>';
+    body.appendChild(wrapNow);
+    window._titanNutriSave(id, true);
+    try { wrapNow.scrollIntoView({ behavior: 'smooth', block: 'start' }); }
+    catch (e) { body.scrollTop = body.scrollHeight; }
+    return;
+  }
+
+  var t = nut.totals;
+  var conf = nut.confidence || 'moyenne';
+  var confTxt = conf === 'haute' ? 'Quantités précises'
+              : conf === 'basse' ? 'Beaucoup de quantités manquent'
+              : 'Certaines portions sont estimées';
+
+  var h = '<div class="tn-card" id="' + id + '">'
+    + '<div class="tn-head"><span class="tn-chip">Bilan estimé</span>'
+    +   '<span class="tn-conf tn-conf-' + conf + '">' + confTxt + '</span></div>'
+    + '<div class="tn-totals">'
+    +   '<div class="tn-t tn-t-kcal"><div class="tn-t-v">' + _titanNutriFmt(t.calories) + '</div><div class="tn-t-l">kcal</div></div>'
+    +   '<div class="tn-t"><div class="tn-t-v">' + _titanNutriFmt(t.protein) + '<i>g</i></div><div class="tn-t-l">Protéines</div></div>'
+    +   '<div class="tn-t"><div class="tn-t-v">' + _titanNutriFmt(t.carbs) + '<i>g</i></div><div class="tn-t-l">Glucides</div></div>'
+    +   '<div class="tn-t"><div class="tn-t-v">' + _titanNutriFmt(t.fat) + '<i>g</i></div><div class="tn-t-l">Lipides</div></div>'
+    + '</div>';
+
+  // Le détail est replié : l'athlète veut un total, pas un tableau.
+  h += '<button type="button" class="tn-toggle" onclick="window._titanNutriToggle(\'' + id + '\')">'
+     + nut.items.length + ' aliment' + (nut.items.length > 1 ? 's' : '') + ' — voir le détail</button>'
+     + '<div class="tn-items" id="' + id + '_items" hidden>'
+     + nut.items.map(function (it) {
+         return '<div class="tn-item"><div class="tn-item-n">' + _lsEsc(it.name)
+              + (it.quantity ? '<span class="tn-item-q">' + _lsEsc(it.quantity) + '</span>' : '')
+              + (it.estimated ? '<span class="tn-est">estimé</span>' : '')
+              + '</div><div class="tn-item-k">' + _titanNutriFmt(it.calories) + ' kcal</div></div>';
+       }).join('')
+     + '</div>';
+
+  if (nut.estimatedItems && nut.estimatedItems.length) {
+    h += '<div class="tn-warn">⚠️ Quantités non précisées : '
+       + _lsEsc(nut.estimatedItems.join(', ')) + '. Le total est une estimation.</div>';
+  }
+  if (nut.question) {
+    h += '<div class="tn-q">' + _lsEsc(nut.question) + '</div>';
+  }
+
+  h += '<div class="tn-actions">'
+    +   '<button type="button" class="tn-btn tn-btn-go" onclick="window._titanNutriSave(\'' + id + '\')">Enregistrer dans mon journal</button>'
+    +   '<button type="button" class="tn-btn tn-btn-no" onclick="window._titanNutriDismiss(\'' + id + '\')">Pas maintenant</button>'
+    + '</div></div>';
+
+  var wrap = document.createElement('div');
+  wrap.className = 'msg titan tn-wrap';
+  wrap.innerHTML = h;
+  body.appendChild(wrap);
+  // On cadre le HAUT de la carte, pas le bas du fil : le défilement
+  // automatique du chat mettait les totaux hors écran, et ce sont eux que
+  // l'athlète est venu lire.
+  try {
+    wrap.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  } catch (e) { body.scrollTop = body.scrollHeight; }
+}
+window._titanRenderNutriCard = _titanRenderNutriCard;
+
+window._titanNutriToggle = function (id) {
+  var el = document.getElementById(id + '_items');
+  if (!el) return;
+  el.hidden = !el.hidden;
+  var btn = el.previousElementSibling;
+  if (btn && btn.classList.contains('tn-toggle')) {
+    btn.textContent = btn.textContent.replace(
+      el.hidden ? 'masquer le détail' : 'voir le détail',
+      el.hidden ? 'voir le détail' : 'masquer le détail');
+  }
+};
+
+window._titanNutriDismiss = function (id) {
+  delete window._titanNutriPending[id];
+  var el = document.getElementById(id);
+  if (el) {
+    el.innerHTML = '<div class="tn-done tn-done-no">Analyse gardée pour toi — rien n\'a été enregistré.</div>';
+  }
+};
+
+// LA SEULE écriture. Elle part d'un tap, jamais d'une phrase.
+window._titanNutriSave = function (id, spoken) {
+  var nut = window._titanNutriPending[id];
+  if (!nut) return;                       // déjà traité : pas de double écriture
+  delete window._titanNutriPending[id];
+  var t = nut.totals || {};
+  var entry = {
+    id: _mealId(),
+    ts: Date.now(),
+    date: new Date().toISOString(),
+    name: _titanNutriLabel(nut),
+    // Mêmes champs que addRecipeToJournal / logMealPlanDay…
+    cals: _titanNutriFmt(t.calories), prot: _titanNutriFmt(t.protein),
+    carbs: _titanNutriFmt(t.carbs), fat: _titanNutriFmt(t.fat),
+    // …et le seul que renderJournalToday lit réellement.
+    totals: { cal: _titanNutriFmt(t.calories), p: _titanNutriFmt(t.protein),
+              g: _titanNutriFmt(t.carbs), l: _titanNutriFmt(t.fat) },
+    servings: 1,
+    source: 'titan',
+    // `foods` est le nom déjà employé par le scan photo. Ces trois champs
+    // sont additifs : les lecteurs existants les ignorent, et ils rendent
+    // l'entrée exploitable plus tard (moyennes, comparaisons de semaines).
+    foods: nut.items,
+    confidence: nut.confidence || 'moyenne',
+    estimated: !!(nut.estimatedItems && nut.estimatedItems.length)
+  };
+  var arr = _journalRead();
+  arr.push(entry);
+  var ok = _journalWrite(arr);   // rend le journal + déclenche la synchro
+
+  var el = document.getElementById(id);
+  if (!ok) {
+    if (el) el.innerHTML = '<div class="tn-done tn-done-no">Enregistrement impossible — mémoire de l\'appareil saturée.</div>';
+    return;
+  }
+  if (el) {
+    var reste = _titanRemainingToday();
+    el.innerHTML = '<div class="tn-done">✓ ' + (spoken ? 'Ajouté à ton journal' : 'Enregistré')
+      + ' — ' + _titanNutriFmt(t.calories) + ' kcal'
+      + (reste != null
+          ? (reste >= 0 ? '. Il te reste ' + reste + ' kcal aujourd\'hui.'
+                        : '. Tu es à ' + Math.abs(reste) + ' kcal au-dessus de ta cible.')
+          : ' ajoutées à ta journée.')
+      + '</div>'
+      // Écrire sur une phrase va vite ; il faut donc pouvoir revenir en
+      // arrière aussi vite. L'entrée porte un id, on retire la BONNE.
+      + '<div class="tn-actions">'
+      +   '<button type="button" class="tn-btn tn-btn-no" onclick="window._titanNutriUndo(\'' + entry.id + '\', this)">Annuler cet ajout</button>'
+      +   '<button type="button" class="tn-see" onclick="window._titanNutriOpenJournal()">Voir mon journal</button>'
+      + '</div>';
+  }
+  try { if (navigator.vibrate) navigator.vibrate(24); } catch (e) {}
+};
+
+// Retire l'entrée qui vient d'être écrite, par son identifiant.
+window._titanNutriUndo = function (mealId, btn) {
+  var card = btn && btn.closest ? btn.closest('.tn-card') : null;
+  var done = removeJournalMeal(mealId);
+  if (!card) return;
+  card.innerHTML = done
+    ? '<div class="tn-done tn-done-no">Ajout annulé — ton journal est revenu comme avant.</div>'
+    : '<div class="tn-done tn-done-no">Ce repas n\'est plus dans ton journal.</div>';
+};
+
+window._titanNutriOpenJournal = function () {
+  try { if (typeof switchTab === 'function') switchTab('nutri'); } catch (e) {}
+};
+
+// Libellé de l'entrée dans le journal : les aliments qui pèsent le plus,
+// pas une liste exhaustive illisible dans une ligne de 40 caractères.
+function _titanNutriLabel(nut) {
+  var items = (nut.items || []).slice().sort(function (a, b) { return b.calories - a.calories; });
+  var names = items.slice(0, 3).map(function (i) { return i.name; }).filter(Boolean);
+  if (!names.length) return 'Repas (Titan)';
+  var lbl = names.join(', ');
+  if (items.length > names.length) lbl += ' +' + (items.length - names.length);
+  return lbl.slice(0, 70);
+}
+window._titanNutriLabel = _titanNutriLabel;
+
+// ══════════════════════════════════════════════════════════════════════
+// MESSAGES ENREGISTRÉS — favoris des réponses de Titan
+// ─────────────────────────────────────────────────────────────────────
+// Trois contraintes dictent toute la conception, et elles viennent du code
+// existant, pas d'un choix esthétique :
+//
+//  1. AUCUN MESSAGE N'A D'IDENTIFIANT. conversationHistory est un tableau
+//     plat de {role, content}. L'identifiant est donc DÉRIVÉ du contenu
+//     (hash 32 bits en base 36) : stable d'un rechargement à l'autre, et
+//     dédoublonnant par nature — deux enregistrements du même message
+//     produisent la même clé, donc une seule entrée (§6 du cahier).
+//
+//  2. LE CHAT NE GARDE QUE 40 MESSAGES (persistTitanChat). Un favori doit
+//     donc porter SON PROPRE TEXTE : sinon il devient une coquille vide dès
+//     que le message sort de la fenêtre. C'est aussi ce qui le rend
+//     consultable après un resetTitanChat().
+//
+//  3. IL N'Y A QU'UNE SEULE CONVERSATION. Pas de conversationId à stocker :
+//     « revenir au message » = le retrouver dans #chatBody par son hash.
+//     S'il n'y est plus, on le dit — on ne fait pas défiler dans le vide.
+//
+// Stockage : ah_titan_saved, inscrit dans FB_SYNC_KEYS → il voyage dans le
+// document users/{uid} déjà écrit par fbSaveProfile(). Aucune lecture
+// Firestore supplémentaire, aucun listener, aucune règle à ajouter — c'est
+// exactement le motif de ah_recipe_favorites.
+// ══════════════════════════════════════════════════════════════════════
+var TITAN_SAVED_MAX = 100;
+
+// Texte des messages actuellement à l'écran, indexé par hash. Rempli par
+// addMessage : évite de relire le DOM et de perdre le markdown d'origine.
+window._titanMsgText = window._titanMsgText || {};
+
+// Hash 32 bits (variante djb2) → base 36. Non cryptographique : il sert à
+// identifier, pas à protéger.
+function _titanMsgId(text) {
+  var str = String(text == null ? '' : text).trim();
+  var h = 5381;
+  for (var i = 0; i < str.length; i++) h = ((h << 5) + h + str.charCodeAt(i)) | 0;
+  // La longueur départage les rares collisions de hash sur des textes courts.
+  return (h >>> 0).toString(36) + '-' + str.length.toString(36);
+}
+function _titanSavedGet() {
+  try {
+    var a = JSON.parse(localStorage.getItem('ah_titan_saved') || '[]');
+    return Array.isArray(a) ? a.filter(function (e) { return e && e.id && e.text; }) : [];
+  } catch (e) { return []; }
+}
+function _titanSavedSet(arr) {
+  try {
+    localStorage.setItem('ah_titan_saved', JSON.stringify(arr.slice(0, TITAN_SAVED_MAX)));
+    if (typeof fbSaveProfile === 'function') fbSaveProfile();
+  } catch (e) {}
+}
+function _titanIsSaved(id) {
+  return _titanSavedGet().some(function (e) { return e.id === id; });
+}
+
+// Met à jour le compteur de l'en-tête. Appelé après chaque changement.
+function _titanSavedRefreshBadge() {
+  var el = document.getElementById('chSavedCount');
+  if (!el) return;
+  var n = _titanSavedGet().length;
+  el.textContent = n > 99 ? '99+' : String(n);
+  el.style.display = n ? '' : 'none';
+}
+window._titanSavedRefreshBadge = _titanSavedRefreshBadge;
+
+// Bascule un message. Idempotent : plusieurs taps rapides sur le même
+// message ne peuvent pas créer deux entrées, l'état est relu à chaque appel.
+window.titanToggleSave = function (id, btn) {
+  if (!id) return;
+  var list = _titanSavedGet();
+  var idx = -1;
+  for (var i = 0; i < list.length; i++) { if (list[i].id === id) { idx = i; break; } }
+  var nowSaved;
+  if (idx > -1) {
+    list.splice(idx, 1);
+    nowSaved = false;
+  } else {
+    var text = window._titanMsgText[id];
+    if (!text) return;                 // rien à enregistrer, on ne devine pas
+    list.unshift({ id: id, text: text, savedAt: new Date().toISOString() });
+    nowSaved = true;
+  }
+  _titanSavedSet(list);
+  // Le bouton passé en argument est repeint immédiatement ; les éventuels
+  // jumeaux (même message affiché deux fois) suivent par le sélecteur.
+  var all = document.querySelectorAll('.msg-save[data-mid="' + id + '"]');
+  Array.prototype.forEach.call(all, function (b) { _titanPaintSaveBtn(b, nowSaved); });
+  if (btn && all.length === 0) _titanPaintSaveBtn(btn, nowSaved);
+  _titanSavedRefreshBadge();
+  // Pas de toast : le bouton bascule sous le doigt et le compteur de
+  // l'en-tête s'incrémente — la confirmation est déjà à l'écran, et un
+  // toast par tap s'empilerait sur la conversation.
+  try { if (navigator.vibrate) navigator.vibrate(nowSaved ? 18 : 10); } catch (e) {}
+};
+
+function _titanPaintSaveBtn(btn, saved) {
+  if (!btn) return;
+  btn.classList.toggle('on', !!saved);
+  btn.setAttribute('aria-pressed', saved ? 'true' : 'false');
+  btn.innerHTML = '<span class="mss-star">' + (saved ? '★' : '☆') + '</span>'
+                + (saved ? 'Enregistré' : 'Enregistrer');
+}
+
+// Le HTML du bouton, inséré par addMessage sous chaque réponse de Titan.
+function _titanSaveBtnHtml(id) {
+  var on = _titanIsSaved(id);
+  return '<button type="button" class="msg-save' + (on ? ' on' : '') + '"'
+       + ' data-mid="' + id + '" aria-pressed="' + (on ? 'true' : 'false') + '"'
+       + ' onclick="window.titanToggleSave(\'' + id + '\', this)">'
+       + '<span class="mss-star">' + (on ? '★' : '☆') + '</span>'
+       + (on ? 'Enregistré' : 'Enregistrer') + '</button>';
+}
+
+// ── La liste ──
+function _titanSavedDate(iso) {
+  try {
+    var d = new Date(iso), now = new Date();
+    var jour = d.toDateString() === now.toDateString();
+    var hier = new Date(now.getTime() - 86400000).toDateString() === d.toDateString();
+    var hm = ('0' + d.getHours()).slice(-2) + ':' + ('0' + d.getMinutes()).slice(-2);
+    if (jour) return "Aujourd'hui · " + hm;
+    if (hier) return 'Hier · ' + hm;
+    return d.toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' }) + ' · ' + hm;
+  } catch (e) { return ''; }
+}
+
+window.titanOpenSaved = function () {
+  var ov = document.getElementById('titanSavedOv');
+  var list = document.getElementById('tsvList');
+  var cnt = document.getElementById('tsvCount');
+  if (!ov || !list) return;
+  var items = _titanSavedGet();
+  if (cnt) cnt.textContent = items.length ? items.length + (items.length > 1 ? ' messages' : ' message') : '';
+  if (!items.length) {
+    list.innerHTML = '<div class="tsv-empty">Aucun message enregistré pour l\'instant.<br>'
+      + 'Sous chaque réponse de Titan, touche <b>☆ Enregistrer</b> pour la retrouver ici.</div>';
+  } else {
+    list.innerHTML = items.map(function (e) {
+      var present = !!document.querySelector('.msg[data-mid="' + e.id + '"]');
+      return '<div class="tsv-item" onclick="window.titanGotoSaved(\'' + e.id + '\')">'
+        + '<div class="tsv-item-top"><span class="tsv-chip">Titan</span>'
+        +   '<span class="tsv-date">' + _titanSavedDate(e.savedAt) + '</span></div>'
+        + '<div class="tsv-txt">' + _titanRenderMd(e.text) + '</div>'
+        + '<div class="tsv-actions">'
+        +   '<span class="tsv-goto">' + (present ? 'Voir dans la conversation →' : 'Plus dans la conversation') + '</span>'
+        +   '<button type="button" class="tsv-rm" onclick="event.stopPropagation();window.titanRemoveSaved(\'' + e.id + '\')">Retirer</button>'
+        + '</div></div>';
+    }).join('');
+  }
+  ov.classList.add('on');
+};
+window.titanCloseSaved = function () {
+  var ov = document.getElementById('titanSavedOv');
+  if (ov) ov.classList.remove('on');
+};
+window.titanRemoveSaved = function (id) {
+  window.titanToggleSave(id, null);
+  window.titanOpenSaved();   // la liste se recompose sur l'état à jour
+};
+
+// Retour au message d'origine. S'il a quitté la fenêtre de 40 messages, on
+// le dit franchement plutôt que de faire défiler vers rien.
+// Le message d'accueil est écrit en dur dans le HTML (et re-écrit par
+// resetTitanChat). Plutôt que de dupliquer le bouton dans ces deux chaînes,
+// on décore après coup toute bulle Titan qui n'a pas encore d'identifiant.
+// Idempotent : une bulle déjà décorée est ignorée.
+function _titanDecorateStatic() {
+  var msgs = document.querySelectorAll('#chatBody .msg.titan:not([data-mid])');
+  Array.prototype.forEach.call(msgs, function (el) {
+    var bubble = el.querySelector('.msg-bubble');
+    var timeEl = el.querySelector('.msg-time');
+    if (!bubble || !timeEl || el.querySelector('.msg-save')) return;
+    var txt = bubble.textContent.trim();
+    if (!txt) return;
+    var mid = _titanMsgId(txt);
+    window._titanMsgText[mid] = txt;
+    el.setAttribute('data-mid', mid);
+    var foot = document.createElement('div');
+    foot.className = 'msg-foot';
+    timeEl.parentNode.insertBefore(foot, timeEl);
+    foot.appendChild(timeEl);
+    foot.insertAdjacentHTML('beforeend', _titanSaveBtnHtml(mid));
+  });
+}
+window._titanDecorateStatic = _titanDecorateStatic;
+
+window.titanGotoSaved = function (id) {
+  var el = document.querySelector('.msg[data-mid="' + id + '"]');
+  if (!el) {
+    if (typeof showToast === 'function') {
+      showToast('Ce message n\'est plus dans la conversation — son texte reste ici.', 'info');
+    }
+    return;
+  }
+  window.titanCloseSaved();
+  setTimeout(function () {
+    try { el.scrollIntoView({ behavior: 'smooth', block: 'center' }); }
+    catch (e) { el.scrollIntoView(); }
+    el.classList.add('msg-hl');
+    setTimeout(function () { el.classList.remove('msg-hl'); }, 2200);
+  }, 220);
+};
+
+// ── Synchronisation du chat entre appareils ──────────────────────────
+// Le chat est la seule clé synchronisée qui s'écrit à CHAQUE tour de
+// conversation. Trois précautions en découlent, et aucune n'est optionnelle :
+//
+//  1. ÉCRITURE GROUPÉE. persistTitanChat n'appelle pas fbSaveProfile :
+//     ce serait une écriture Firestore du document ENTIER par message.
+//     _titanScheduleSync regroupe une rafale d'échanges en une seule
+//     écriture, quelques secondes après le dernier message.
+//
+//  2. FUSION, PAS ÉCRASEMENT. _fbApplyPayload écrit la valeur Firestore
+//     par-dessus le local. Appliqué tel quel au chat, ça effacerait les
+//     messages écrits sur l'appareil qui se connecte. _titanMergeChat
+//     réunit les deux côtés, dédoublonne et remet dans l'ordre du temps.
+//
+//  3. BUDGET D'OCTETS. Le document users/{uid} porte déjà l'historique de
+//     séances, le tracking et le journal nutritionnel, sous une limite
+//     Firestore de 1 Mo. Une réponse de Titan monte à ~2,8 Ko (MAX_TOKENS
+//     = 700). On ne synchronise donc que la queue qui tient dans le budget ;
+//     localStorage, lui, garde toujours ses 40 messages.
+var TITAN_CHAT_KEEP = 60;
+var TITAN_CHAT_SYNC_BYTES = 60000;   // ~60 Ko réservés au chat dans le document
+var TITAN_SYNC_DEBOUNCE = 6000;
+var _titanSyncTimer = null;
+
 function persistTitanChat() {
   try {
     // Le base64 ne doit JAMAIS toucher localStorage : quota de 5 Mo, saturé
     // en quelques photos, et c'est tout le chat qui serait alors perdu.
-    var tail = conversationHistory.slice(-40).map(_titanStripImages);
+    var tail = conversationHistory.slice(-TITAN_CHAT_KEEP).map(_titanStripImages);
     localStorage.setItem('ah_titan_chat', JSON.stringify(tail));
   } catch(e) {}
+  _titanScheduleSync();
 }
+
+// Une écriture pour toute une rafale de messages, jamais une par message.
+function _titanScheduleSync() {
+  if (!window.fbUser || typeof fbSaveProfile !== 'function') return;
+  if (_titanSyncTimer) clearTimeout(_titanSyncTimer);
+  _titanSyncTimer = setTimeout(function () {
+    _titanSyncTimer = null;
+    try { fbSaveProfile(); } catch (e) {}
+  }, TITAN_SYNC_DEBOUNCE);
+}
+window._titanScheduleSync = _titanScheduleSync;
+
+// Clé d'identité d'un message pour la fusion. Même principe que les favoris :
+// aucun message n'a d'identifiant, on le dérive du rôle et du contenu.
+function _titanMsgKey(m) {
+  var c = m && m.content;
+  if (Array.isArray(c)) {
+    c = c.filter(function (b) { return b && b.type === 'text'; })
+         .map(function (b) { return b.text; }).join(' ');
+  }
+  return (m && m.role) + '|' + String(c == null ? '' : c);
+}
+
+// Réunit deux versions d'une même conversation. Un message présent des deux
+// côtés n'apparaît qu'une fois ; l'ordre est celui du temps réel. Les
+// messages écrits avant cette version n'ont pas d'horodatage : ils sont
+// forcément antérieurs sur cet appareil, on les place donc en tête, dans
+// leur ordre d'origine.
+function _titanMergeChat(local, remote) {
+  var a = Array.isArray(local) ? local : [];
+  var b = Array.isArray(remote) ? remote : [];
+  if (!a.length) return b.slice(-TITAN_CHAT_KEEP);
+  if (!b.length) return a.slice(-TITAN_CHAT_KEEP);
+  var seen = {}, out = [];
+  a.concat(b).forEach(function (m, i) {
+    if (!m || !m.role) return;
+    var k = _titanMsgKey(m);
+    if (seen[k]) {
+      // Doublon : on garde l'horodatage le plus ancien, c'est le vrai.
+      var prev = seen[k];
+      if (m.t && (!prev.t || m.t < prev.t)) prev.t = m.t;
+      return;
+    }
+    // `ord` préserve l'ordre d'origine des messages sans horodatage.
+    var e = { m: m, t: m.t || 0, ord: i };
+    seen[k] = e;
+    out.push(e);
+  });
+  out.sort(function (x, y) {
+    if (x.t && y.t) return x.t - y.t || x.ord - y.ord;
+    if (x.t) return 1;      // un message daté est postérieur aux non datés
+    if (y.t) return -1;
+    return x.ord - y.ord;
+  });
+  return out.slice(-TITAN_CHAT_KEEP).map(function (e) {
+    // Copie : on ne mute jamais le tableau d'entrée, qui peut être
+    // conversationHistory elle-même. L'horodatage retenu est le plus ancien
+    // des deux côtés — c'est celui du vrai envoi.
+    var c = {};
+    Object.keys(e.m).forEach(function (k) { c[k] = e.m[k]; });
+    if (e.t) c.t = e.t;
+    return c;
+  });
+}
+window._titanMergeChat = _titanMergeChat;
+
+// Queue de conversation qui tient dans le budget d'octets du document.
+function _titanChatForSync(arr) {
+  var a = Array.isArray(arr) ? arr : [];
+  var out = a.slice(-TITAN_CHAT_KEEP);
+  while (out.length > 1) {
+    var size;
+    try { size = JSON.stringify(out).length; } catch (e) { return []; }
+    if (size <= TITAN_CHAT_SYNC_BYTES) break;
+    out = out.slice(1);   // on sacrifie le plus ancien, jamais le plus récent
+  }
+  return out;
+}
+window._titanChatForSync = _titanChatForSync;
 
 function restoreTitanChat() {
   var body = document.getElementById('chatBody');
@@ -25451,9 +26479,10 @@ function restoreTitanChat() {
   body.innerHTML = '';
   conversationHistory = saved.slice();
   saved.forEach(function(m){
-    if (m.role === 'user') addMessage(m.content, 'user');
-    else if (m.role === 'assistant') addMessage(m.content, 'titan');
+    if (m.role === 'user') addMessage(m.content, 'user', null, m.t);
+    else if (m.role === 'assistant') addMessage(m.content, 'titan', null, m.t);
   });
+  try { _titanSavedRefreshBadge(); } catch(e) {}
 }
 
 function resetTitanChat() {
@@ -25463,6 +26492,10 @@ function resetTitanChat() {
   if (body) {
     body.innerHTML = '<div class="msg titan"><div class="msg-titan-label"><div class="mtl-av"></div><div class="mtl-name">Titan</div></div><div class="msg-bubble">Yo. T\'es connecté. Si t\'es là c\'est pour bosser. Dis-moi ce que tu veux travailler ou pose ta question.</div><div class="msg-time">Aujourd\'hui</div></div>';
   }
+  // Les messages enregistrés SURVIVENT à l'effacement du chat : ils portent
+  // leur propre texte. On rafraîchit seulement le compteur, qui ne change pas.
+  window._titanNutriTurns = 0;
+  try { _titanDecorateStatic(); _titanSavedRefreshBadge(); } catch(e) {}
 }
 window.resetTitanChat = resetTitanChat;
 
@@ -25519,9 +26552,16 @@ function getDemoResponse(msg) {
   return defaults[Math.floor(Math.random() * defaults.length)];
 }
 
-function getTimeStr() {
-  const now = new Date();
-  return now.getHours().toString().padStart(2,'0') + ':' + now.getMinutes().toString().padStart(2,'0');
+function getTimeStr(ts) {
+  const now = (ts && isFinite(ts)) ? new Date(ts) : new Date();
+  if (isNaN(now.getTime())) return getTimeStr();
+  var hm = now.getHours().toString().padStart(2,'0') + ':' + now.getMinutes().toString().padStart(2,'0');
+  // Un message d'un autre jour a besoin de sa date : sinon deux appareils
+  // synchronisés affichent « 09:14 » sur des messages séparés d'une semaine.
+  if (ts && new Date(ts).toDateString() !== new Date().toDateString()) {
+    return now.toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' }) + ' · ' + hm;
+  }
+  return hm;
 }
 
 // Rendu des réponses de Titan : gras, listes, retours à la ligne.
@@ -25560,7 +26600,32 @@ function _titanRenderMd(raw) {
 }
 
 // imgDataUrl : vignette de la photo jointe (messages user uniquement).
-function addMessage(text, type, imgDataUrl) {
+// `ts` : l'instant réel du message (ms). Absent → maintenant. Sans lui, une
+// conversation restaurée affichait l'heure du RECHARGEMENT sur chacune de ses
+// bulles — défaut invisible tant que le chat ne vivait que sur un appareil,
+// intenable dès qu'il se synchronise entre deux.
+// Filet de sécurité de dernier rang. Si un jour une réponse structurée
+// arrive à la place d'une phrase — parseur serveur mis en défaut, mode
+// inattendu, déploiement décalé — l'athlète ne doit PAS voir du JSON dans sa
+// bulle. On récupère le champ `reply` et on jette le reste.
+function _titanUnwrapJson(text) {
+  if (typeof text !== 'string') return text;
+  var t = text.trim();
+  if (t.charAt(0) !== '{' || t.indexOf('"reply"') < 0) return text;
+  try {
+    var o = JSON.parse(t);
+    if (o && typeof o.reply === 'string' && o.reply.trim()) return o.reply;
+  } catch (e) {}
+  // JSON illisible : on extrait la chaîne de `reply` à la main.
+  var m = /"reply"\s*:\s*"((?:[^"\\]|\\.)*)"/.exec(t);
+  if (m) {
+    try { return JSON.parse('"' + m[1] + '"'); } catch (e) { return m[1]; }
+  }
+  return 'Réponse illisible. Redemande-moi ça autrement.';
+}
+window._titanUnwrapJson = _titanUnwrapJson;
+
+function addMessage(text, type, imgDataUrl, ts) {
   const body = document.getElementById('chatBody');
   const msg = document.createElement('div');
   msg.className = 'msg ' + type;
@@ -25569,16 +26634,25 @@ function addMessage(text, type, imgDataUrl) {
     text = text.filter(function(b){ return b && b.type === 'text'; })
                .map(function(b){ return b.text; }).join(' ');
   }
+  if (type === 'titan') text = _titanUnwrapJson(text);
 
   if (type === 'titan') {
+    // L'identifiant est dérivé du texte : c'est la seule clé stable dont on
+    // dispose, et elle rend le doublon impossible. Les messages de
+    // l'utilisateur n'en reçoivent pas — on n'enregistre pas ses propres
+    // questions (§1 du cahier).
+    var mid = _titanMsgId(text);
+    window._titanMsgText[mid] = text;
+    msg.setAttribute('data-mid', mid);
     msg.innerHTML = '<div class="msg-titan-label"><div class="mtl-av"></div><div class="mtl-name">Titan</div></div>'
       + '<div class="msg-bubble">' + _titanRenderMd(text) + '</div>'
-      + '<div class="msg-time">' + getTimeStr() + '</div>';
+      + '<div class="msg-foot"><span class="msg-time">' + getTimeStr(ts) + '</span>'
+      +   _titanSaveBtnHtml(mid) + '</div>';
   } else if (type === 'user') {
     var photoHtml = imgDataUrl
       ? '<img class="msg-photo" src="' + imgDataUrl + '" alt="Photo envoyée">' : '';
     msg.innerHTML = '<div class="msg-bubble">' + photoHtml + escapeHtml(text || '') + '</div>'
-      + '<div class="msg-time">' + getTimeStr() + '</div>';
+      + '<div class="msg-time">' + getTimeStr(ts) + '</div>';
   }
 
   body.appendChild(msg);
@@ -25755,13 +26829,24 @@ async function sendMessage() {
   }
 
   showTyping(true);
-  const reply = await callAnthropicAPI(text, photo);
+  // Un message qui parle de nourriture part en mode nutrition : MÊME appel,
+  // MÊME quota, mais la réponse rapporte en plus une analyse structurée.
+  window._titanLastNutrition = null;
+  const isFood = _titanWantsNutrition(text);
+  const reply = await callAnthropicAPI(text, photo, isFood ? { mode: 'nutrition' } : null);
+  const nutrition = window._titanLastNutrition;
+  window._titanLastNutrition = null;
 
   // Simulate typing delay
   const delay = Math.min(reply.length * 15, 2000);
   setTimeout(() => {
     showTyping(false);
     addMessage(reply, 'titan');
+    // La carte suit la réponse — jamais à sa place. Isolée : si elle échoue,
+    // la conversation reste intacte.
+    if (nutrition) {
+      try { _titanRenderNutriCard(nutrition); } catch (e) { console.warn('[titan nutri card]', e); }
+    }
   }, delay);
 }
 
@@ -26742,6 +27827,39 @@ function setMode(el, mode) {
 // Volontairement simple et non alarmant : l'app fonctionne sans le push.
 var FCM_UNAVAILABLE_MSG = 'Les rappels ne sont pas encore disponibles. Vérifie la configuration Firebase.';
 
+// La raison exacte d'un échec push n'existait que dans console.warn — invisible
+// sur un téléphone, donc l'utilisateur testait à l'aveugle. _fcmDiag() la ramène
+// à l'écran : toast court + ligne persistante sous « Envoyer un test ».
+var FCM_SERVER_ERRORS = {
+  service_account_missing_or_invalid:
+    'Serveur : FIREBASE_SERVICE_ACCOUNT absente ou invalide sur Netlify.',
+  invalid_json:      'Serveur : requête mal formée.',
+  missing_token:     'Aucun token push envoyé — réactive les notifications.',
+  fcm_rejected:      'Firebase a refusé l\'envoi (token périmé ?). Désactive puis réactive les notifications.',
+  network_or_auth_error:
+    'Serveur : Firebase injoignable ou compte de service refusé.'
+};
+function _fcmEsc(t) {
+  return String(t == null ? '' : t)
+    .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+}
+// reason : texte précis (client ou serveur). Vide → message générique.
+function _fcmDiag(reason) {
+  var msg = (reason && String(reason).trim()) || FCM_UNAVAILABLE_MSG;
+  var sub = document.getElementById('notifTestSub');
+  if (sub) {
+    sub.innerHTML = _fcmEsc(msg);
+    sub.style.color = '#E5484D';
+  }
+  if (typeof showToast === 'function') showToast(_fcmEsc(msg), 'err');
+  console.warn('[FCM]', msg);
+}
+function _fcmDiagOk(msg) {
+  var sub = document.getElementById('notifTestSub');
+  if (sub) { sub.innerHTML = _fcmEsc(msg); sub.style.color = ''; }
+}
+window._fcmDiag = _fcmDiag;
+
 // ─── Préférences notif par catégorie ───
 // Stockage dans ah_profile.notifPrefs (sync Firestore via FB_SYNC_KEYS).
 // Lu par session-reminders.js / weekly-engagement.js pour respecter le choix.
@@ -26801,7 +27919,7 @@ async function toggleNotif() {
       var tk1 = await _registerFCMToken();
       if (typeof showToast === 'function') {
         if (tk1) showToast('Notifications activées ✅', 'success');
-        else showToast(FCM_UNAVAILABLE_MSG, 'info');
+        else _fcmDiag(window._fcmLastError);
       }
     } else {
       _disableTitanReminders();
@@ -26835,7 +27953,7 @@ async function toggleNotif() {
       var tk2 = await _registerFCMToken();
       if (typeof showToast === 'function') {
         if (tk2) showToast('Notifications activées ✅', 'success');
-        else showToast(FCM_UNAVAILABLE_MSG, 'info');
+        else _fcmDiag(window._fcmLastError);
       }
     } else {
       notifOn = false;
@@ -26924,15 +28042,24 @@ window.sendTestNotif = async function() {
   // Pas de token stocké : on tente de l'enregistrer maintenant (le bouton
   // Notifications affiche peut-être "activé" sans que le token soit prêt).
   if (!prof.fcmToken) {
-    if (!('Notification' in window) || Notification.permission !== 'granted') {
-      if (typeof showToast === 'function') showToast('Autorise d\'abord les notifications (bouton ci-dessus).', 'info');
+    if (!('Notification' in window)) {
+      _fcmDiag('Ce navigateur ne gère pas les notifications. Installe l\'app (Ajouter à l\'écran d\'accueil) et réessaie depuis Chrome.');
+      return;
+    }
+    // « denied » ne se répare pas avec le bouton du dessus : le navigateur a
+    // bloqué le site, il faut passer par ses réglages.
+    if (Notification.permission === 'denied') {
+      _fcmDiag('Notifications BLOQUÉES par le navigateur. Cadenas à gauche de l\'adresse → Autorisations → Notifications → Autoriser, puis recharge.');
+      return;
+    }
+    if (Notification.permission !== 'granted') {
+      _fcmDiag('Autorise d\'abord les notifications avec le bouton ci-dessus.');
       return;
     }
     if (typeof showToast === 'function') showToast('Activation du push en cours…', 'info');
     var tok = await _registerFCMToken();
     if (!tok) {
-      console.warn('Test notif — push indisponible :', window._fcmLastError);
-      if (typeof showToast === 'function') showToast(FCM_UNAVAILABLE_MSG, 'info');
+      _fcmDiag(window._fcmLastError);
       return;
     }
     try { prof = JSON.parse(localStorage.getItem('ah_profile') || '{}'); } catch(e) {}
@@ -26947,12 +28074,22 @@ window.sendTestNotif = async function() {
         body: 'Si tu vois cette notif, le push background est bien actif.'
       })
     });
-    var j = await r.json();
+    var j = {};
+    try { j = await r.json(); } catch(e) {}
     if (j.ok) {
       if (typeof showToast === 'function') showToast('Notif envoyée. Vérifie le centre de notif du téléphone.', 'ok');
+      _fcmDiagOk('Envoyée à ' + new Date().toLocaleTimeString('fr-FR').slice(0,5) +
+        ' — si rien n\'arrive, le blocage est côté téléphone.');
     } else {
-      console.warn('Test notif — send-notif a échoué :', j.error);
-      if (typeof showToast === 'function') showToast(FCM_UNAVAILABLE_MSG, 'info');
+      // Le code d'erreur du serveur est traduit ; s'il est inconnu on l'affiche
+      // brut plutôt que de le remplacer par un message générique inutile.
+      var srv = FCM_SERVER_ERRORS[j.error] ||
+        ('Serveur : ' + (j.error || ('HTTP ' + r.status)));
+      if (j.error === 'fcm_rejected' && j.fcm && j.fcm.error && j.fcm.error.status) {
+        srv += ' [' + j.fcm.error.status + ']';
+      }
+      if (j.message) console.warn('[FCM] détail serveur :', j.message);
+      _fcmDiag(srv);
     }
   } catch(e) {
     console.warn('Test notif — réseau indisponible :', e);
@@ -27984,6 +29121,10 @@ function builderRenderResult(w) {
         }
         if (!seq && e.method.duration)  seq = e.method.duration + ' s de maintien';
         if (!seq && e.method.tempoDown) seq = e.method.tempoDown + ' s de descente par rep';
+        // Le tempo du livre se lit en phrase, pas en code « 4-2-1 ».
+        if (!seq && typeof window._lsTempoTxt === 'function') {
+          seq = window._lsTempoTxt(window._lsTempoOf({ id: e.method.id, config: e.method })) || '';
+        }
         mHtml = '<div style="display:flex;align-items:center;gap:7px;margin-top:6px;flex-wrap:wrap">'
           + '<span style="font-family:\'JetBrains Mono\',monospace;font-size:9px;font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:var(--navy);background:var(--gold);padding:2px 7px;border-radius:4px">'
           + esc(def.label) + '</span>'
@@ -29337,7 +30478,9 @@ function _bumpProfileCounter(key, delta) {
 // le mode coaché GBG legacy). Garantit que sessionsDone / streak / history
 // / phasesDone / programsDone sont incrémentés à la même règle partout.
 //
-// opts = { progKey?, sessKey?, sessName?, progName?, feedback?, builder? }
+// opts = { progKey?, sessKey?, sessName?, progName?, feedback?, builder?, exos? }
+//   exos : noms des exercices de la séance (facultatif). Sert à ce que Titan
+//   puisse parler du CONTENU d'une séance, pas seulement de son existence.
 function _recordSessionCompletion(opts) {
   opts = opts || {};
   try {
@@ -29354,7 +30497,20 @@ function _recordSessionCompletion(opts) {
     };
     if (opts.feedback) entry.sessionEndFeedback = opts.feedback;
     if (opts.builder)  entry.builder = true;
+    // LIMITE LEVÉE : ah_set_history ne gardait aucune trace du CONTENU de la
+    // séance. Titan savait donc qu'une séance avait eu lieu, sans jamais
+    // pouvoir dire ce qu'il y avait dedans — et sur une séance Builder, dont
+    // la composition ne vit qu'en Firestore, il n'avait rien du tout.
+    // On stocke des NOMS, pas des prescriptions : 12 au plus, tronqués à
+    // 60 caractères. Coût ~300 octets par séance, la clé est déjà synchronisée.
+    if (Array.isArray(opts.exos) && opts.exos.length) {
+      entry.exoCount = opts.exos.length;
+      entry.exoNames = opts.exos.slice(0, 12).map(function (n) {
+        return String(n == null ? '' : n).trim().slice(0, 60);
+      }).filter(Boolean);
+    }
     hist.push(entry);
+    if (hist.length > 300) hist = hist.slice(-300);
     localStorage.setItem('ah_set_history', JSON.stringify(hist));
     if (typeof renderBadges === 'function') renderBadges();
     // Avance phase/programme uniquement si on a les clés (chemin V1 legacy
@@ -30235,6 +31391,9 @@ window._ahBuildAthleteState = function(opts) {
       return {
         name: s.sessName || 'Séance',
         program: s.progName || null,
+        source: s.builder ? 'workout_builder' : 'programme',
+        exoCount: s.exoCount || null,
+        exoNames: Array.isArray(s.exoNames) && s.exoNames.length ? s.exoNames : null,
         date: String(s.date).slice(0, 10),
         daysAgo: _ahDaysBetween(s.date, today),
         score: (s.sessionEndFeedback && typeof s.sessionEndFeedback.sessionQualityScore === 'number')
@@ -33356,6 +34515,14 @@ var FB_SYNC_KEYS = [
   ['ah_badges_earned',            'badgesEarned',        true],
   ['ah_builder_session',          'builderSession',      true],
   ['ah_recipe_favorites',         'recipeFavorites',     true],
+  // Messages de Titan enregistrés par l'athlète. Ils portent leur texte :
+  // ah_titan_chat ne garde que 40 messages, et une conversation peut avoir
+  // été effacée depuis.
+  ['ah_titan_saved',              'titanSaved',          true],
+  // La conversation elle-même. Écrasement interdit : elle est FUSIONNÉE à
+  // la lecture (_titanMergeChat) et écrêtée à l'écriture
+  // (_titanChatForSync) — voir le bloc de synchronisation du chat.
+  ['ah_titan_chat',               'titanChat',           true],
   ['ah_shopping_checks',          'shoppingChecks',      true],
   ['ah_shopping_meal_plan',       'shoppingMealPlan',    true],
   ['ah_shopping_meal_plan_checks','shoppingMealChecks',  true],
@@ -33386,6 +34553,12 @@ function _fbCollectPayload() {
       out[ff] = isJson ? JSON.parse(raw) : raw;
     } catch(e) { /* skip clé corrompue */ }
   });
+  // Le chat est la seule clé dont la taille dépend de ce que le modèle
+  // écrit. On envoie la queue qui tient dans son budget d'octets, pour ne
+  // jamais faire grossir le document users/{uid} sans limite.
+  try {
+    if (out.titanChat) out.titanChat = _titanChatForSync(out.titanChat);
+  } catch(e) { delete out.titanChat; }
   // accessTier n'est PLUS émis ici : audit sécurité — ce champ est désormais
   // verrouillé côté serveur (firestore.rules lockedFields()), écrit
   // uniquement par check-code.js via Admin SDK. Le renvoyer ici ferait
@@ -33419,6 +34592,14 @@ function _fbApplyPayload(data) {
     var sk = entry[0], ff = entry[1], isJson = entry[2];
     if (data[ff] == null) return;
     try {
+      // La conversation est FUSIONNÉE, jamais écrasée : l'écrasement
+      // effacerait les messages écrits sur l'appareil qui se connecte.
+      if (sk === 'ah_titan_chat') {
+        var localChat = [];
+        try { localChat = JSON.parse(localStorage.getItem('ah_titan_chat') || '[]'); } catch(_) {}
+        localStorage.setItem(sk, JSON.stringify(_titanMergeChat(localChat, data[ff])));
+        return;
+      }
       var v = isJson ? JSON.stringify(data[ff]) : data[ff];
       localStorage.setItem(sk, v);
     } catch(e) {}
@@ -36989,6 +38170,8 @@ function scanSaveToJournal() {
   var journal = [];
   try { journal = JSON.parse(localStorage.getItem('ah_nutri_journal') || '[]'); } catch(e) {}
   journal.push({
+    id: _mealId(),
+    ts: Date.now(),
     date: new Date().toISOString(),
     foods: scanState.foods,
     totals: totals,
@@ -38489,7 +39672,10 @@ function _lsRestLabel(tech, isInterEx, circuit, tour, tours) {
   }
   if (tech === 'fractionne') return 'Récup active';
   if (isInterEx) return 'Transition';
-  return 'Repos entre séries';
+  // « Récupération complète » et « Récupération courte » (micro-récup d'une
+  // séquence) doivent se distinguer au premier coup d'œil : ce ne sont pas
+  // deux réglages du même repos, ce sont deux intentions différentes.
+  return 'Récupération complète';
 }
 
 // Affiche le bottom-sheet "Comment faire ?" pour la technique courante.
@@ -38595,12 +39781,47 @@ var AH_METHODS = {
     fields: ['sets', 'reps', 'tempoDown', 'rest'],
     cue: 'Contrôle la descente. C\'est elle qui fait le travail.'
   },
+  // Annexe p. 152 : « Squat : 4 s descente, 2 s pause en bas, 1 s montée
+  // (code 4-2-1) ». Le livre définit TROIS phases — pas les quatre de la
+  // notation courante en salle. On respecte sa convention, on n'en invente
+  // pas une autre.
+  tempo: {
+    id: 'tempo', label: 'Tempo',
+    fields: ['sets', 'reps', 'down', 'pause', 'up', 'rest'],
+    cue: 'Le tempo fait le travail. Ne triche pas sur la descente.'
+  },
+  // Annexe « Tableau des techniques d'intensification », p. 151 :
+  //   Cluster Set — « 5 reps découpées en 2+2+1 avec 10-15 s de pause
+  //   intra-série. Mini-pauses pour maintenir la qualité et l'intensité. »
+  //   Rest-Pause  — « Max reps > 10 s > max reps > 10 s > répéter le cycle.
+  //   Aller chercher des reps supplémentaires APRÈS l'échec musculaire. »
+  // Ce sont deux techniques distinctes : l'une préserve la fraîcheur, l'autre
+  // va chercher l'échec. Les confondre change la nature de la séance — et
+  // c'est ce que faisait `cluster → rest_pause`.
+  cluster: {
+    id: 'cluster', label: 'Cluster set',
+    fields: ['sets', 'blocks', 'microRest', 'rest'],
+    cue: 'Coupe la série en blocs. Chaque rep reste franche.',
+    expand: function (c) {
+      var blocks = Array.isArray(c.blocks) ? c.blocks : [];
+      var micro = _ahNum(c.microRest) || 12; // 10-15 s, milieu de la fourchette du livre
+      var out = [];
+      blocks.forEach(function (b) {
+        var n = _ahNum(b);
+        if (!n) return;
+        if (out.length) out.push({ kind: 'rest', sec: micro });
+        out.push({ kind: 'reps', reps: n });
+      });
+      // Un seul bloc n'est pas un cluster : c'est une série normale.
+      return out.length > 1 ? out : null;
+    }
+  },
   rest_pause: {
     id: 'rest_pause', label: 'Rest-pause',
     fields: ['reps', 'microRest', 'blocks'],
     cue: 'Va au bout, courte pause, repars.',
     expand: function (c) {
-      var reps = _ahNum(c.reps), micro = _ahNum(c.microRest) || 15;
+      var reps = _ahNum(c.reps), micro = _ahNum(c.microRest) || 10; // 10 s — valeur du livre
       var blocks = Array.isArray(c.blocks) ? c.blocks : [];
       if (!reps) return null;
       var out = [{ kind: 'reps', reps: reps }];
@@ -38651,7 +39872,7 @@ function _ahNum(v) {
 // les 826 exercices actuels gardent exactement le comportement qu'ils ont.
 var LS_TEXT_TO_METHOD = {
   isometrie: 'isometric', 'stato-dynamique': 'isometric',
-  cluster: 'rest_pause', circuit: 'circuit',
+  cluster: 'cluster', circuit: 'circuit',
   superset: 'superset', 'bi-set': 'superset'
 };
 function _ahResolveMethod(ex) {
@@ -38698,6 +39919,20 @@ var LS_JARGON = /\b(cluster(\s+set)?|circuit|superset|bi-?set)\b/ig;
 
 function _lsHasSide(str) { return /\/\s*(jambe|jbe|c[oô]t[eé]|bras|main|pied|[eé]paule)/i.test(str || ''); }
 
+// Décolle l'unité du nombre : "30s" → "30 s", "1mn" → "1 mn", "10m" → "10 m".
+// Toutes les détections d'unité s'appuient sur une frontière de mot (\bs\b),
+// et il n'y en a AUCUNE entre un chiffre et la lettre qui le suit — les deux
+// sont des caractères de mot. Conséquence : "30 s" était lu comme une durée,
+// "30s" tombait dans le mode « validation » (« Coche quand c'est fait »), sans
+// chronomètre. Les programmes du livre écrivent toujours "30 s", d'où
+// l'invisibilité du défaut ; le Workout Builder, lui, produit "30s" — c'est
+// la forme que le prompt serveur demande à Titan.
+// Normalisation À LA LECTURE uniquement : la donnée d'origine n'est pas
+// réécrite, et `txt` continue d'afficher la prescription telle qu'elle est.
+function _lsSpaceUnits(txt) {
+  return String(txt == null ? '' : txt).replace(/(\d)([a-zA-Zà-üÀ-Ü])/g, '$1 $2');
+}
+
 // Analyse la prescription (ex.r) en valeur exploitable.
 // "30-60 s" → {min:30,max:60,unite:'s'} | "12 reps (6/côté)" → {min:12,perSide:6}
 // "15 s → 90 s" → {min:15,max:90,progressif:true} | "10 mn minimum" → {floor:true}
@@ -38713,7 +39948,7 @@ function _lsParseValeur(raw) {
     body = r.replace(paren[0], ' ');
   }
   var side = _lsHasSide(r);
-  body = body.replace(/\/\s*(jambe|jbe|c[oô]t[eé]|bras|main|pied|[eé]paule)s?/ig, ' ');
+  body = _lsSpaceUnits(body.replace(/\/\s*(jambe|jbe|c[oô]t[eé]|bras|main|pied|[eé]paule)s?/ig, ' '));
   var unite = null;
   if (/\b(mn|min|minutes?)\b/i.test(body)) unite = 'mn';
   else if (/\b(s|sec|secondes?)\b/i.test(body)) unite = 's';
@@ -38748,7 +39983,7 @@ function _lsDetectMetrique(ex) {
   var r = String(ex.r || '').trim();
   var n = String(ex.n || '');
   var s = String(ex.s || '').trim();
-  var low = r.toLowerCase();
+  var low = _lsSpaceUnits(r.toLowerCase());
 
   // Les challenges du livre passent avant tout : "Suivre la chanson" est une
   // consigne, mais le score qui en sort est LA mesure de progression.
@@ -38780,6 +40015,14 @@ function _lsDetectMetrique(ex) {
     return _lsHasSide(r) ? 'duree_par_cote' : 'duree';
   }
   if (/reps?\b|r[ée]p[ée]titions?/i.test(low)) return _lsHasSide(r) ? 'reps_par_cote' : 'reps';
+  // Un nombre nu ("5", "8-10") avec une prescription derrière, c'est un nombre
+  // de répétitions. PROGRAMS_V2 écrit toujours l'unité ("5 reps") — aucun de
+  // ses 827 exercices n'est concerné — mais le Workout Builder produit "5",
+  // et l'athlète se retrouvait devant « Coche quand c'est fait » au lieu du
+  // compteur de reps.
+  if (/^\d+(?:[.,]\d+)?(?:\s*[-–—→]+\s*\d+(?:[.,]\d+)?)?$/.test(low)) {
+    return _lsHasSide(r) ? 'reps_par_cote' : 'reps';
+  }
   if (!r || r === '-') return 'bloc_libre';
   return 'validation';
 }
@@ -38952,6 +40195,37 @@ function _lsComplexSteps(ex) {
 // Modèle d'affichage complet d'un exercice. Fonction PURE : aucune lecture
 // du DOM, aucune écriture. C'est elle que testent les 710 cas de
 // scripts/test-live-screen.js.
+// Tempo affichable. Deux formes coexistent, volontairement :
+//   eccentric { tempoDown: 5 }          → 27 exercices existants, inchangés
+//   tempo     { down: 4, pause: 2, up: 1 } → code du livre (annexe p. 152)
+// La seconde n'invalide pas la première : un exercice qui ne déclare que la
+// descente continue d'afficher exactement ce qu'il affichait.
+function _lsTempoOf(method) {
+  if (!method || !method.config) return null;
+  var c = method.config;
+  if (method.id === 'tempo') {
+    var d = _ahNum(c.down), u = _ahNum(c.up);
+    var pz = c.pause == null ? null : parseFloat(String(c.pause).replace(',', '.'));
+    if (!d && !u && !pz) return null;
+    return { down: d, pause: (isFinite(pz) && pz >= 0) ? pz : null, up: u };
+  }
+  if (method.id === 'eccentric' && _ahNum(c.tempoDown)) return { down: _ahNum(c.tempoDown) };
+  return null;
+}
+
+// Phrase du tempo, en français d'athlète. « 4-2-1 » ne dit rien à personne :
+// on écrit ce que la personne doit faire, dans l'ordre où elle le fait.
+function _lsTempoTxt(t) {
+  if (!t) return '';
+  var parts = [];
+  if (t.down) parts.push('Descends en ' + t.down + ' s');
+  if (t.pause) parts.push('tiens ' + t.pause + ' s en bas');
+  else if (t.pause === 0) parts.push('sans pause en bas');
+  if (t.up) parts.push(t.up <= 1 ? 'remonte vite' : 'remonte en ' + t.up + ' s');
+  if (!parts.length) return '';
+  return parts.join(' → ');
+}
+
 function _lsNormalizeExo(ex, idx, exos, circuitMap) {
   ex = ex || {};
   var nomBrut = String(ex.n || '').trim();
@@ -38978,9 +40252,13 @@ function _lsNormalizeExo(ex, idx, exos, circuitMap) {
   //   « Fente isométrique — 30 s / jambe » perdait son « par côté » ;
   //   « Fente isométrique — À L'ÉCHEC » devenait un compte à rebours au lieu
   //   d'un chrono montant, et l'athlète perdait sa mesure.
+  // `validation` est volontairement ABSENT de cette liste : ce n'est pas un
+  // type d'exécution choisi, c'est le seau « je n'ai pas su lire la ligne ».
+  // Une isométrie déclarée par Titan doit l'emporter dessus, sinon la méthode
+  // ne rattrape jamais une prescription mal formée.
   var COMPATIBLE = {
     duree: ['duree', 'duree_par_cote', 'echec', 'intervalle', 'bloc_libre',
-            'score', 'validation', 'complexe', 'distance']
+            'score', 'complexe', 'distance']
   };
   if (method.steps && method.steps.length) metrique = 'sequence';
   else if (method.def.forceExecution && method.declared) {
@@ -39007,16 +40285,18 @@ function _lsNormalizeExo(ex, idx, exos, circuitMap) {
     method: method,
     circuit: circuit,
     videoId: vid,
-    tempo: (method.id === 'eccentric' && _ahNum(method.config.tempoDown))
-      ? { down: _ahNum(method.config.tempoDown) } : null,
+    tempo: _lsTempoOf(method),
     consigne: _lsCoachingCue(ex, tech, precision) || (method.declared ? method.def.cue : ''),
     raw: ex
   };
 }
 
 window._lsNormalizeExo = _lsNormalizeExo;
+window._lsTempoOf = _lsTempoOf;
+window._lsTempoTxt = _lsTempoTxt;
 window._lsDetectMetrique = _lsDetectMetrique;
 window._lsParseValeur = _lsParseValeur;
+window._lsSpaceUnits = _lsSpaceUnits;
 window._lsSeriesInfo = _lsSeriesInfo;
 window._lsCircuitMap = _lsCircuitMap;
 window._lsResolveVarSeries = _lsResolveVarSeries;
@@ -39030,11 +40310,15 @@ function _lsEsc(s) {
 }
 function _lsTimerStop() {
   if (_LS.tmr && _LS.tmr.id) { clearInterval(_LS.tmr.id); _LS.tmr.id = null; }
-  if (_LS.tmr) _LS.tmr.running = false;
+  if (_LS.tmr) { _LS.tmr.running = false; _LS.tmr.endsAt = 0; }
+  // Le chrono ne tourne plus : la notification système qu'il avait armée
+  // n'a plus de raison de sonner.
+  try { if (typeof window.tim_minutCancelNotif === 'function') window.tim_minutCancelNotif(); } catch (e) {}
 }
 function _lsTimerReset() {
   _lsTimerStop();
-  _LS.tmr = { id: null, running: false, dir: 'down', sec: 0, total: 0, onEnd: null, beeped: false };
+  _LS.tmr = { id: null, running: false, dir: 'down', sec: 0, total: 0, onEnd: null,
+              beeped: false, endsAt: 0, startedAt: 0 };
 }
 function _lsTimerPaint() {
   var t = _LS.tmr; if (!t) return;
@@ -39049,32 +40333,83 @@ function _lsTimerPaint() {
       ? Math.max(0, Math.min(100, (t.sec / t.total) * 100))
       : Math.max(0, Math.min(100, ((t.total - t.sec) / t.total) * 100))) + '%';
 }
+// Le chrono lit l'HORLOGE, il ne compte pas les ticks.
+// Un `setInterval` d'une seconde est étranglé dès que l'onglet passe en
+// arrière-plan sur mobile : le compteur décrémenté à chaque tick prenait du
+// retard sur le temps réel et ne le rattrapait jamais. Une échéance
+// (`endsAt`) donne le bon restant à chaque repeinture, quel que soit le
+// nombre de ticks reçus — et permet de rattraper d'un coup au retour d'écran.
+function _lsTimerRemaining(t) {
+  if (!t || !t.endsAt) return t ? t.sec : 0;
+  if (t.dir === 'down') return Math.max(0, Math.round((t.endsAt - Date.now()) / 1000));
+  return Math.max(0, Math.round((Date.now() - t.startedAt) / 1000));
+}
+function _lsTimerTick() {
+  var t = _LS.tmr; if (!t || !t.running) return;
+  t.sec = _lsTimerRemaining(t);
+  // Bip + vibration à 3 s de la fin, puis à 0. Le seuil est un "<=" : avec
+  // un onglet étranglé, la seconde exacte peut ne jamais être observée.
+  if (t.dir === 'down' && t.sec <= 3 && t.sec > 0 && !t.beeped) {
+    t.beeped = true;
+    try { if (typeof window.tim_sndTick === 'function') window.tim_sndTick(); } catch (e) {}
+    try { if (navigator.vibrate) navigator.vibrate(60); } catch (e) {}
+  }
+  _lsTimerPaint();
+  if (t.dir === 'down' && t.sec <= 0) {
+    var cb = t.onEnd;
+    _lsTimerStop();
+    try { if (typeof window.tim_sndFinish === 'function') window.tim_sndFinish(); } catch (e) {}
+    try { if (navigator.vibrate) navigator.vibrate([200, 80, 200]); } catch (e) {}
+    if (cb) cb();
+  }
+}
 function _lsTimerStart(sec, dir, onEnd) {
   _lsTimerStop();
-  _LS.tmr = { id: null, running: true, dir: dir || 'down', sec: sec, total: sec, onEnd: onEnd || null, beeped: false };
+  var now = Date.now();
+  // Chrono montant : `endsAt` sert de marqueur « ancré sur l'horloge » et le
+  // restant se lit depuis startedAt. Le laisser à 0 renverrait t.sec figé.
+  _LS.tmr = { id: null, running: true, dir: dir || 'down', sec: sec, total: sec,
+              onEnd: onEnd || null, beeped: false,
+              endsAt: (dir === 'up' ? 1 : now + sec * 1000),
+              startedAt: now - (dir === 'up' ? sec * 1000 : 0) };
   try { if (typeof window.tim_beepUnlock === 'function') window.tim_beepUnlock(); } catch (e) {}
+  // Téléphone en poche pendant une isométrie de 45 s : sans notification
+  // système, rien ne signale la fin. Le repos entre séries en armait déjà
+  // une ; les chronos d'exercice et les micro-récups, non.
+  if (_LS.tmr.dir === 'down') {
+    try {
+      if (typeof window.tim_minutScheduleNotif === 'function') {
+        window.tim_minutScheduleNotif(_LS.tmr.endsAt);
+      }
+    } catch (e) {}
+  }
   _lsTimerPaint();
-  _LS.tmr.id = setInterval(function () {
-    var t = _LS.tmr; if (!t || !t.running) return;
-    t.sec += (t.dir === 'down' ? -1 : 1);
-    // Bip + vibration à 3 s de la fin, puis à 0.
-    if (t.dir === 'down' && t.sec === 3 && !t.beeped) {
-      t.beeped = true;
-      try { if (typeof window.tim_sndTick === 'function') window.tim_sndTick(); } catch (e) {}
-      try { if (navigator.vibrate) navigator.vibrate(60); } catch (e) {}
-    }
-    _lsTimerPaint();
-    if (t.dir === 'down' && t.sec <= 0) {
-      _lsTimerStop();
-      try { if (typeof window.tim_sndFinish === 'function') window.tim_sndFinish(); } catch (e) {}
-      try { if (navigator.vibrate) navigator.vibrate([200, 80, 200]); } catch (e) {}
-      var cb = t.onEnd; if (cb) cb();
-    }
-  }, 1000);
+  // 250 ms : la repeinture reste au bon dixième après un retour d'arrière-plan,
+  // sans coûter davantage qu'un calcul de différence de dates.
+  _LS.tmr.id = setInterval(_lsTimerTick, 250);
 }
 function _lsTimerToggle() {
   var t = _LS.tmr; if (!t) return;
-  t.running = !t.running;
+  if (t.running) {
+    // Pause : on fige le restant, l'échéance n'a plus de sens.
+    t.sec = _lsTimerRemaining(t);
+    t.running = false;
+    t.endsAt = 0;
+    try { if (typeof window.tim_minutCancelNotif === 'function') window.tim_minutCancelNotif(); } catch (e) {}
+  } else {
+    var now = Date.now();
+    t.running = true;
+    if (t.dir === 'down') {
+      t.endsAt = now + t.sec * 1000;
+      try {
+        if (typeof window.tim_minutScheduleNotif === 'function') window.tim_minutScheduleNotif(t.endsAt);
+      } catch (e) {}
+    } else {
+      t.startedAt = now - t.sec * 1000;
+      t.endsAt = 1; // marqueur : le chrono montant lit startedAt
+    }
+    if (!t.id) t.id = setInterval(_lsTimerTick, 250);
+  }
   _lsPaintPrimary();
 }
 
@@ -39128,9 +40463,10 @@ function _lsSideTag() {
   return '<div class="ls-mode-kicker" style="color:var(--lv-rest)">Côté <b style="color:var(--lv-rest)">'
        + (_LS.side === 'G' ? 'gauche' : 'droit') + '</b></div>';
 }
-function _lsTimerBlock(sec) {
-  return '<div class="ls-big" id="lsBigVal">' + _lsFmt(sec) + '</div>'
-       + '<div class="ls-timerbar"><div class="ls-timerbar-fill" id="lsTimerFill"></div></div>';
+function _lsTimerBlock(sec, tone) {
+  var t = tone ? ' ls-tone-' + tone : '';
+  return '<div class="ls-big' + t + '" id="lsBigVal">' + _lsFmt(sec) + '</div>'
+       + '<div class="ls-timerbar"><div class="ls-timerbar-fill' + t + '" id="lsTimerFill"></div></div>';
 }
 
 function _lsRenderMode(vm) {
@@ -39180,7 +40516,13 @@ function _lsRenderMode(vm) {
         };
       }
       var mb = _LS.mb;
+      // Le tempo est une CONSIGNE D'EXÉCUTION : il vient avant la saisie, pas
+      // après. En queue de zone, il tombait 4 px sous le footer et n'a jamais
+      // été visible en 375×667 — ni pour le nouveau code à trois phases, ni
+      // pour les 27 excentriques qui l'affichaient déjà.
+      var tempoTxt = _lsTempoTxt(vm.tempo);
       h = _lsObjectifBar(vm, _lsObjectifTxt(v, 'reps'), last)
+        + (tempoTxt ? '<div class="ls-tempo">' + _lsEsc(tempoTxt) + '</div>' : '')
         + '<div class="ls-steppers">'
         +   _lsStepperHtml('reps', 'Reps', mb.reps, 1)
         // Le champ kg n'existe que si l'exercice se charge — pas de
@@ -39188,9 +40530,6 @@ function _lsRenderMode(vm) {
         +   (vm.charge ? _lsStepperHtml('load', 'Kg', mb.load, 2.5) : '')
         + '</div>'
         + _lsRpeBlock(mb.rpe);
-      if (vm.tempo && vm.tempo.down) {
-        h += '<div class="ls-tempo">' + vm.tempo.down + ' s de descente par répétition</div>';
-      }
       if (vm.charge && mb.best > 0 && mb.load > mb.best) h += '<div class="ls-prflag">🔥 Nouveau record</div>';
       break;
     }
@@ -39201,26 +40540,39 @@ function _lsRenderMode(vm) {
       if (!_LS.sq || _LS.sq.exo !== vm.nom) _LS.sq = { exo: vm.nom, i: 0 };
       if (_LS.sq.i >= steps.length) _LS.sq.i = 0;
       var cur = steps[_LS.sq.i] || {};
-      h = '<div class="ls-mode-kicker">' + _lsEsc(vm.method.def.label)
-        + (vm.series.n > 1 ? ' · série <b>' + _LS.setNum + '</b> / ' + (vm.series.label || vm.series.n) : '')
-        + '</div>'
-        + '<div class="ls-seq">' + steps.map(function (st, i) {
-            var cls = i < _LS.sq.i ? ' done' : (i === _LS.sq.i ? ' on' : '');
-            var lbl = st.kind === 'rest' ? _lsFmt(st.sec)
-                    : st.kind === 'drop' ? 'Allège'
-                    : st.reps + (st.load ? ' × ' + st.load + ' kg' : '');
-            return '<span class="ls-seq-step' + cls + ' k-' + st.kind + '">' + _lsEsc(lbl) + '</span>';
-          }).join('<span class="ls-seq-arrow">→</span>') + '</div>';
+      // ORDRE : où j'en suis → CE QUE JE FAIS MAINTENANT → la suite → le nom
+      // de la méthode. Le nom passait avant tout le reste ; l'athlète n'a pas
+      // besoin de savoir que ça s'appelle « rest-pause » pour l'exécuter.
+      var seqChain = '<div class="ls-seq">' + steps.map(function (st, i) {
+          var cls = i < _LS.sq.i ? ' done' : (i === _LS.sq.i ? ' on' : '');
+          var lbl = st.kind === 'rest' ? _lsFmt(st.sec)
+                  : st.kind === 'drop' ? 'Allège'
+                  : st.reps + (st.load ? ' × ' + st.load + ' kg' : '');
+          return '<span class="ls-seq-step' + cls + ' k-' + st.kind + '">' + _lsEsc(lbl) + '</span>';
+        }).join('<span class="ls-seq-arrow">→</span>') + '</div>';
+
       if (cur.kind === 'rest') {
-        h += _lsTimerBlock(_LS.tmr && _LS.tmr.total ? _LS.tmr.sec : cur.sec)
-           + '<div class="ls-mode-hint">Récup courte — repars dès que ça sonne.</div>';
+        // « Récupération courte » se distingue de la « Récupération complète »
+        // de fin de série par son nom ET par sa couleur : deux intentions
+        // différentes, pas deux réglages du même repos.
+        h = '<div class="ls-mode-kicker" style="color:var(--lv-rest)">Récupération courte</div>'
+          + _lsTimerBlock(_LS.tmr && _LS.tmr.total ? _LS.tmr.sec : cur.sec, 'rest')
+          + '<div class="ls-big-unit" style="color:var(--lv-rest)">avant le bloc suivant</div>';
       } else if (cur.kind === 'drop') {
-        h += '<div class="ls-big ls-big-sm">Allège</div>'
-           + '<div class="ls-big-unit">' + (cur.load ? 'passe à ' + cur.load + ' kg' : 'baisse la charge') + '</div>';
+        h = _lsKicker(vm)
+          + '<div class="ls-big ls-big-sm">Allège</div>'
+          + '<div class="ls-big-unit">' + (cur.load ? 'passe à ' + cur.load + ' kg' : 'baisse la charge') + '</div>';
       } else {
-        h += '<div class="ls-big">' + _lsEsc(String(cur.reps)) + '</div>'
-           + '<div class="ls-big-unit">reps' + (cur.load ? ' · ' + cur.load + ' kg' : '') + '</div>';
+        h = _lsKicker(vm)
+          + '<div class="ls-big">' + _lsEsc(String(cur.reps)) + '</div>'
+          + '<div class="ls-big-unit">'
+          +   (cur.reps === 1 ? 'répétition' : 'répétitions')
+          +   (cur.load ? ' · ' + cur.load + ' kg' : '') + '</div>';
       }
+      h += seqChain;
+      // La méthode reste accessible — en bas, en petit, jamais nécessaire
+      // pour comprendre quoi faire.
+      h += '<div class="ls-mode-hint">' + _lsEsc(vm.method.def.label) + '</div>';
       break;
     }
 
@@ -39509,8 +40861,14 @@ function _lsRenderEx() {
     dashes += '<div class="ls-dash' + (i < _LS.idx ? ' done' : (i === _LS.idx ? ' current' : '')) + '"></div>';
   }
   document.getElementById('lsDashes').innerHTML = dashes;
+  // Deux niveaux de progression coexistent à l'écran (la série dans la zone
+  // mode, l'exercice dans le footer). Un compteur nu — « 4 / 12 » — laissait
+  // deviner lequel des deux il représentait.
   var dn = document.getElementById('lsDashNum');
-  if (dn) dn.textContent = (_LS.idx + 1) + ' / ' + total;
+  if (dn) {
+    dn.innerHTML = '<span class="ls-dashnum-l">Exercice</span> '
+                 + (_LS.idx + 1) + ' / ' + total;
+  }
   var prevBtn = document.getElementById('lsPrevBtn'), nextBtn = document.getElementById('lsNextBtn');
   if (prevBtn) prevBtn.disabled = (_LS.idx === 0);
   if (nextBtn) nextBtn.disabled = (_LS.idx >= total - 1);
@@ -39571,9 +40929,23 @@ function _lsPrimaryLabel(vm) {
       return '✓ Fait';
   }
 }
+// Une micro-récup EST une récupération : elle doit dégriser le bouton comme
+// le repos entre séries. Sans ce prédicat, elle passait par _lsTimerStart,
+// _LS.restActive restait faux, et « Passer la récup » s'affichait en or plein
+// au centre de l'écran — l'élément le plus voyant invitait à sauter la
+// récupération prescrite.
+function _lsInRest() {
+  return !!(_LS.restActive || (_LS.sq && _LS.sq.resting));
+}
 function _lsPaintPrimary() {
   var btn = document.getElementById('lsBtnDone');
   if (!btn) return;
+  if (_LS.sq && _LS.sq.resting) {
+    btn.textContent = 'Passer la récup';
+    btn.classList.add('ls-btn-rest');
+    btn.classList.remove('ls-btn-run');
+    return;
+  }
   if (_LS.restActive) {
     btn.textContent = 'Passer le repos';
     btn.classList.add('ls-btn-rest');
@@ -39784,10 +41156,11 @@ function _lsSeqNext(vm) {
   // La micro-récup se décompte d'elle-même et enchaîne : c'est le moteur
   // qui joue la méthode, pas l'athlète qui la pilote.
   var nxt = (vm.method.steps || [])[_LS.sq.i];
-  if (nxt && nxt.kind === 'rest') {
+  _LS.sq.resting = !!(nxt && nxt.kind === 'rest');
+  if (_LS.sq.resting) {
     _lsTimerStart(nxt.sec, 'down', function () { _lsSeqNext(vm); });
-    _lsPaintPrimary();
   }
+  _lsPaintPrimary();
 }
 
 // Écriture d'une performance — même clé, même format que le tracker manuel,
@@ -40487,7 +41860,8 @@ function _lsFinalizeSession(feedback) {
     progName: _LS.progName,
     sessName: _LS.sessName,
     feedback: feedback,
-    builder:  !!_LS.builderMeta
+    builder:  !!_LS.builderMeta,
+    exos:     (_LS.exos || []).map(function (e) { return e && (e.n || e.name); })
   });
   // ── Célébration post-séance (brique 1) ──
   // Couche SECONDAIRE : entièrement isolée en try/catch, exécutée APRÈS
@@ -41099,5 +42473,29 @@ async function fbSaveProfile() {
   } else {
     setTimeout(maybeShow, 3000);
   }
+})();
+
+// ── Article Reader — open / close ──────────────────────────────────────────
+window.openArticle = function(slug) {
+  var el = document.getElementById('articleOverlay');
+  if (!el) return;
+  el.style.display = 'flex';
+  requestAnimationFrame(function() {
+    requestAnimationFrame(function() { el.classList.add('on'); });
+  });
+  var body = el.querySelector('.art-body');
+  if (body) body.scrollTop = 0;
+};
+window.closeArticle = function() {
+  var el = document.getElementById('articleOverlay');
+  if (!el) return;
+  el.classList.remove('on');
+  setTimeout(function() { el.style.display = 'none'; }, 320);
+};
+// Close on back gesture (popstate)
+(function(){
+  document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') { var el = document.getElementById('articleOverlay'); if (el && el.classList.contains('on')) window.closeArticle(); }
+  });
 })();
 </script>

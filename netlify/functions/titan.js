@@ -288,6 +288,17 @@ Style générique INTERDIT vs style Titan ATTENDU :
 - "Bienvenue !" → "T'es là. C'est déjà ça."
 
 ═══════════════════════════════
+CE QUE L'APP SAIT FAIRE POUR TOI
+═══════════════════════════════
+Quand l'athlète te décrit un repas, l'app affiche SOUS ta réponse une carte
+récapitulative (calories, protéines, glucides, lipides) avec un bouton
+« Enregistrer dans mon journal ».
+
+Tu n'écris jamais toi-même dans son journal — c'est lui qui valide d'un tap.
+Mais tu ne dis JAMAIS que c'est impossible, ni qu'il doit ressaisir chaque
+aliment à la main : tu lui dis de valider sur la carte juste en dessous.
+
+═══════════════════════════════
 FORME DES RÉPONSES
 ═══════════════════════════════
 Ce que tu dis ne change pas. La façon dont tu le poses, si : l'athlète te
@@ -680,7 +691,7 @@ Schéma EXACT :
     {
       "titre": "Échauffement" | "Bloc principal" | "Bloc secondaire" | "Finisher" | "Retour au calme",
       "exos": [
-        { "n": "NOM EXACT d'un exercice de la LIBRAIRIE fournie", "sets": number, "reps": "string (ex: 5, 30s, 10m, 2 min)", "rest": "string (ex: 30s, 90s, 2min, -)", "note": "string courte ou vide", "method": objet optionnel, voir MÉTHODES }
+        { "n": "NOM EXACT d'un exercice de la LIBRAIRIE fournie", "sets": number, "reps": "string, UNITÉ DÉTACHÉE (ex: \"8 reps\", \"30 s\", \"10 m\", \"2 mn\")", "rest": "string, même règle (ex: \"90 s\", \"2 mn\", \"-\" pour enchaîner)", "note": "string courte ou vide", "method": objet optionnel, voir MÉTHODES }
       ]
     }
   ]
@@ -700,12 +711,29 @@ forme sera retirée avant d'arriver à l'athlète :
       maintien d'une position. duration en SECONDES.
   { "id": "eccentric",  "tempoDown": 5 }
       descente contrôlée. tempoDown en SECONDES par répétition.
-  { "id": "rest_pause", "reps": 8, "microRest": 15, "blocks": [3, 2] }
-      série longue coupée : 8 reps, 15 s, 3 reps, 15 s, 2 reps.
+  { "id": "tempo",      "down": 4, "pause": 2, "up": 1 }
+      vitesse imposée à chaque phase : 4 s de descente, 2 s de pause en bas,
+      1 s de montée (le code 4-2-1 du livre). "pause": 0 = sans pause.
+  { "id": "cluster",    "blocks": [2, 2, 1], "microRest": 12 }
+      série DÉCOUPÉE pour garder la qualité : 2 reps, 12 s, 2 reps, 12 s,
+      1 rep. Micro-pause de 10 à 15 s. Ce n'est PAS un rest-pause : on
+      s'arrête AVANT l'échec, c'est tout l'intérêt.
+  { "id": "rest_pause", "reps": 8, "microRest": 10, "blocks": [3, 2] }
+      on va chercher des reps APRÈS l'échec : 8 reps, 10 s, 3 reps, 10 s,
+      2 reps. À l'opposé du cluster — ne confonds jamais les deux.
   { "id": "drop_set",   "drops": [{"reps":12,"load":60},{"reps":10,"load":45}] }
       on allège sans repos. load en KG, au moins 2 paliers.
   { "id": "superset" }   enchaîné avec l'exercice suivant, repos après les deux.
   { "id": "circuit", "rounds": 3 }   enchaînement de plusieurs exercices.
+
+FORMAT DES PRESCRIPTIONS (reps / rest) — l'unité est TOUJOURS séparée du
+nombre par une espace : "30 s" et non "30s", "2 mn" et non "2min", "8 reps" et
+non "8reps", "10 m" et non "10m". C'est la forme qu'utilisent les programmes du
+livre, et celle que l'écran de séance lit pour décider s'il affiche un
+chronomètre ou un compteur de répétitions. Une unité collée au nombre lui fait
+perdre la mesure. Un travail au temps s'écrit en secondes ("45 s"), un travail
+en répétitions porte le mot ("8 reps", "8-10 reps"), un repos vaut "-" quand il
+faut enchaîner sans pause.
 
 Règles d'emploi :
 - Le champ "reps" reste rempli normalement : la méthode ne le remplace pas.
@@ -734,8 +762,8 @@ STRUCTURE :
 SÉRIES / RÉPÉTITIONS / REPOS selon l'objectif (changer les reps = changer l'objectif) :
 - Force max : 3 à 5 reps lourdes, repos LONG 2-3 min.
 - Puissance / explosivité / détente : 3 à 5 reps de QUALITÉ maximale, repos COMPLETS 2-3 min (jamais à court de repos sur le travail explosif).
-- Hypertrophie : 8 à 12 reps, repos 60-90s.
-- Gainage / core / endurance : au temps (20-45s), repos courts.
+- Hypertrophie : 8 à 12 reps, repos 60-90 s.
+- Gainage / core / endurance : au temps (20-45 s), repos courts.
 - Mobilité / échauffement : 1-2 séries légères.
 
 VOLUME & INTENSITÉ :
@@ -761,6 +789,232 @@ SÉCURITÉ (priorités, dans l'ordre) : 1) qualité d'exécution, 2) prévention
 - Cohérence : si l'athlète suit déjà un programme, reste cohérent avec son objectif global.
 
 Sois concis dans les "note". Tu es un coach, pas un bavard. Réponds en français. JSON uniquement.`;
+
+// ════════════════════════════════════════════════════════════════════════════
+// MODE NUTRITION — analyse d'un repas décrit en langage naturel
+// ────────────────────────────────────────────────────────────────────────────
+// Troisième voie de la fonction, sur le modèle de `mode:'builder'` : mêmes
+// couches d'authentification, de quota et de modération, un système et un
+// budget de jetons propres, une sortie STRUCTURÉE.
+//
+// Un SEUL appel renvoie la réponse conversationnelle ET l'analyse. Deux
+// appels séparés doubleraient la consommation du quota (20/jour/uid) pour
+// une seule question de l'athlète.
+//
+// Ce mode n'écrit RIEN. Il décrit ce qui pourrait être écrit ; c'est le
+// client qui présente la carte, et l'athlète qui décide.
+// ════════════════════════════════════════════════════════════════════════════
+const NUTRITION_MAX_TOKENS = 3000;
+const NUTRITION_MAX_ITEMS = 25;
+
+const NUTRITION_SYSTEM = `Tu es TITAN. L'athlète te décrit ce qu'il a mangé, en langage courant.
+
+Tu réponds UNIQUEMENT par un objet JSON valide, sans texte autour, sans bloc de code.
+
+{
+  "reply": "ta réponse à l'athlète, dans ton ton habituel",
+  "nutrition": {
+    "items": [
+      { "name": "nom de l'aliment", "quantity": "quantité telle que tu la retiens (ex: 150 g, 1 unité, 2 tranches)",
+        "calories": number, "protein": number, "carbs": number, "fat": number,
+        "estimated": true|false }
+    ],
+    "totals": { "calories": number, "protein": number, "carbs": number, "fat": number },
+    "estimatedItems": ["ce dont la quantité n'était pas précisée"],
+    "confidence": "haute" | "moyenne" | "basse",
+    "wantsSave": true|false,
+    "question": "une seule question de précision, ou chaîne vide"
+  }
+}
+
+RÈGLES D'ANALYSE
+- Comprends les fautes, l'absence de ponctuation, les abréviations ("ojd", "smothie", "manger" pour "mangé").
+- Quantité donnée → tu l'utilises. Quantité absente → tu estimes une portion courante ET tu mets "estimated": true, et tu ajoutes l'aliment dans "estimatedItems".
+- "une poignée", "un peu", "un petit morceau", "une part", "un verre" : estime, mais marque TOUJOURS "estimated": true.
+- Les macros sont en GRAMMES, les calories en kcal. Nombres entiers, jamais de texte dans un champ numérique.
+- "totals" est la somme des items. Ne la fabrique pas séparément.
+
+COMPLÉMENTS ET BOISSONS — n'invente jamais une valeur
+- Eau, thé, café noir, glaçons : 0 partout.
+- Créatine, L-carnitine, BCAA, vitamines, électrolytes : 0 calorie (une dose de 5 g n'apporte rien de significatif). Tu peux les lister avec des zéros pour montrer que tu les as vus.
+- Un complément dont tu ne connais pas la composition : 0 partout, et tu le signales dans "reply".
+
+CONFIANCE
+- "haute" : toutes les quantités étaient données.
+- "moyenne" : quelques portions estimées.
+- "basse" : la plupart des quantités manquent, ou des aliments sont ambigus.
+
+"question" : à remplir UNIQUEMENT si une précision changerait vraiment le total (la quantité de viande, de féculent, la taille d'une part de gâteau). Une seule question, courte. Sinon chaîne vide.
+
+"wantsSave" : true SEULEMENT si l'athlète demande explicitement d'enregistrer, d'ajouter à son journal ou à son suivi — « enregistre ça », « ajoute-le », « oui vas-y », « mets-le dans mon journal ». Une simple question du type « combien ça fait ? » n'est PAS une demande d'enregistrement, et une intention future non plus (« je vais manger du riz ce soir » → false, toujours).
+Quand "wantsSave" vaut true, l'app ÉCRIT le repas dès ta réponse. Dis-le au passé dans "reply" — « C'est ajouté » — et rappelle ce qu'il lui reste sur la journée. Sinon, propose : « Je l'ajoute à ton journal ? »
+
+TA RÉPONSE ("reply")
+- Ton habituel : direct, tutoiement, pas de flatterie.
+- Donne le total, dis clairement ce qui est estimé.
+- N'écris JAMAIS que tu as enregistré quoi que ce soit : tu n'écris rien, c'est l'athlète qui valide sur sa carte.
+- Ne dis JAMAIS que tu ne peux pas enregistrer, ni qu'il faut tout ressaisir à la main. La carte sous ta réponse porte un bouton « Enregistrer dans mon journal » : si l'athlète demande à enregistrer, tu lui dis de valider là.
+- Ne répète pas le tableau des items ligne par ligne : le client l'affiche déjà.
+- Reste court : 2 à 5 phrases.
+
+QUAND TU REVIENS SUR UNE ANALYSE DÉJÀ FAITE
+L'athlète peut te relancer sur un repas déjà analysé plus haut : « pourquoi tu réponds comme ça », « refais le calcul », « et si j'ajoute une banane », « redonne-moi le total ». Dans ces cas tu REMPLIS "items" À NOUVEAU, en entier, avec les aliments de ce repas — corrigés si l'athlète a apporté une précision.
+Un total annoncé dans "reply" sans "items" en face laisse l'athlète sans rien à enregistrer. Si tu donnes un total, tu donnes les aliments.
+
+Si le message ne parle vraiment pas de nourriture (entraînement, sommeil, motivation…), renvoie "items": [], des totaux à zéro, et réponds normalement dans "reply".`;
+
+// Le modèle peut renvoyer n'importe quoi : on ne fait confiance à aucun champ.
+// Même esprit que sanitizeMethod — ce qui n'est pas conforme est retiré, et
+// une analyse vide vaut mieux qu'une analyse inventée.
+function nutNum(v, max) {
+  const n = typeof v === 'number' ? v : parseFloat(v);
+  if (!isFinite(n) || n < 0) return 0;
+  return Math.round(Math.min(n, max));
+}
+function nutStr(v, max) {
+  if (typeof v !== 'string') return '';
+  return v.trim().slice(0, max);
+}
+function sanitizeNutrition(n) {
+  if (!n || typeof n !== 'object') return null;
+  const rawItems = Array.isArray(n.items) ? n.items.slice(0, NUTRITION_MAX_ITEMS) : [];
+  const items = rawItems.map((it) => {
+    const name = nutStr(it && it.name, 80);
+    if (!name) return null;
+    return {
+      name,
+      quantity: nutStr(it && it.quantity, 40),
+      // Bornes hautes : un aliment isolé ne dépasse pas ces valeurs. Elles
+      // n'existent pas pour être justes, mais pour qu'une hallucination ne
+      // parte pas dans le journal de l'athlète.
+      calories: nutNum(it && it.calories, 5000),
+      protein: nutNum(it && it.protein, 500),
+      carbs: nutNum(it && it.carbs, 1000),
+      fat: nutNum(it && it.fat, 500),
+      estimated: !!(it && it.estimated),
+    };
+  }).filter(Boolean);
+
+  // Les totaux sont RECALCULÉS depuis les items, jamais repris du modèle :
+  // c'est la seule façon que le total affiché corresponde au détail affiché.
+  const totals = items.reduce((a, it) => ({
+    calories: a.calories + it.calories,
+    protein: a.protein + it.protein,
+    carbs: a.carbs + it.carbs,
+    fat: a.fat + it.fat,
+  }), { calories: 0, protein: 0, carbs: 0, fat: 0 });
+
+  const conf = ['haute', 'moyenne', 'basse'].indexOf(n.confidence) > -1 ? n.confidence : 'moyenne';
+  const estimatedItems = (Array.isArray(n.estimatedItems) ? n.estimatedItems : [])
+    .map((x) => nutStr(x, 60)).filter(Boolean).slice(0, 12);
+
+  return {
+    items,
+    totals,
+    estimatedItems,
+    confidence: conf,
+    wantsSave: n.wantsSave === true,
+    question: nutStr(n.question, 200),
+  };
+}
+
+// Un modèle entraîné à écrire en paragraphes met des RETOURS À LA LIGNE
+// LITTÉRAUX dans ses chaînes. C'est illégal en JSON, JSON.parse lève, et
+// l'athlète recevait alors le JSON brut dans sa bulle. On échappe donc les
+// caractères de contrôle À L'INTÉRIEUR des chaînes avant de réessayer.
+function nutEscapeControlChars(s) {
+  let out = '', inStr = false, esc = false;
+  for (let i = 0; i < s.length; i++) {
+    const c = s[i];
+    if (esc) { out += c; esc = false; continue; }
+    if (c === '\\') { out += c; esc = true; continue; }
+    if (c === '"') { inStr = !inStr; out += c; continue; }
+    if (inStr && c === '\n') { out += '\\n'; continue; }
+    if (inStr && c === '\r') { out += '\\r'; continue; }
+    if (inStr && c === '\t') { out += '\\t'; continue; }
+    out += c;
+  }
+  return out;
+}
+
+// Réponse coupée en cours de route (plafond de jetons atteint) : on referme
+// ce qui est resté ouvert, après avoir jeté le dernier élément incomplet.
+function nutCloseTruncated(s) {
+  const stack = [];
+  let inStr = false, esc = false, lastSafe = -1;
+  for (let i = 0; i < s.length; i++) {
+    const c = s[i];
+    if (esc) { esc = false; continue; }
+    if (c === '\\') { esc = true; continue; }
+    if (inStr) { if (c === '"') inStr = false; continue; }
+    if (c === '"') { inStr = true; continue; }
+    if (c === '{' || c === '[') stack.push(c === '{' ? '}' : ']');
+    else if (c === '}' || c === ']') { stack.pop(); lastSafe = i; }
+  }
+  if (!stack.length) return s;
+  // On coupe après le dernier élément COMPLET, sinon on refermerait autour
+  // d'une paire clé/valeur tronquée.
+  let body = lastSafe > -1 ? s.slice(0, lastSafe + 1) : s;
+  const stack2 = [];
+  inStr = false; esc = false;
+  for (let i = 0; i < body.length; i++) {
+    const c = body[i];
+    if (esc) { esc = false; continue; }
+    if (c === '\\') { esc = true; continue; }
+    if (inStr) { if (c === '"') inStr = false; continue; }
+    if (c === '"') { inStr = true; continue; }
+    if (c === '{' || c === '[') stack2.push(c === '{' ? '}' : ']');
+    else if (c === '}' || c === ']') stack2.pop();
+  }
+  return body + stack2.reverse().join('');
+}
+
+// Dernier recours : récupérer le TEXTE de la réponse, même si la structure
+// est irrécupérable. L'athlète doit toujours recevoir une phrase lisible —
+// jamais du JSON.
+function nutExtractReply(s) {
+  const k = s.indexOf('"reply"');
+  if (k < 0) return '';
+  const q = s.indexOf('"', s.indexOf(':', k) + 1);
+  if (q < 0) return '';
+  let out = '', esc = false;
+  for (let i = q + 1; i < s.length; i++) {
+    const c = s[i];
+    if (esc) {
+      out += (c === 'n' ? '\n' : c === 't' ? '\t' : c === 'r' ? '' : c);
+      esc = false; continue;
+    }
+    if (c === '\\') { esc = true; continue; }
+    if (c === '"') break;
+    out += c;
+  }
+  return out.trim();
+}
+
+function parseNutritionJson(text) {
+  if (!text) return null;
+  let s = String(text).trim().replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/i, '').trim();
+  const first = s.indexOf('{'), last = s.lastIndexOf('}');
+  if (first > -1 && last > first) s = s.slice(first, last + 1);
+  else if (first > -1) s = s.slice(first);   // sortie coupée : pas d'accolade finale
+
+  // Trois tentatives, de la plus fidèle à la plus permissive.
+  const essais = [s, nutEscapeControlChars(s), nutCloseTruncated(nutEscapeControlChars(s))];
+  for (let i = 0; i < essais.length; i++) {
+    try {
+      const obj = JSON.parse(essais[i]);
+      if (!obj || typeof obj !== 'object') continue;
+      const reply = nutStr(obj.reply, 2000);
+      if (!reply) continue;
+      return { reply, nutrition: sanitizeNutrition(obj.nutrition) };
+    } catch (e) { /* on tente la réparation suivante */ }
+  }
+
+  // Structure perdue : on sauve au moins la phrase.
+  const reply = nutStr(nutExtractReply(s), 2000);
+  if (reply) return { reply, nutrition: null };
+  return null;
+}
 
 function buildBuilderUserMessage(intent, library) {
   intent = intent || {};
@@ -791,6 +1045,8 @@ const BUILDER_METHODS = {
   classic:    [],
   isometric:  ['duration'],
   eccentric:  ['tempoDown'],
+  tempo:      ['down', 'pause', 'up'],
+  cluster:    ['blocks', 'microRest'],
   rest_pause: ['reps', 'microRest', 'blocks'],
   drop_set:   ['drops'],
   superset:   [],
@@ -815,6 +1071,11 @@ function sanitizeMethod(m) {
         return reps ? { reps, load: num(d && d.load) || undefined } : null;
       }).filter(Boolean).slice(0, 5);
       if (a.length >= 2) out.drops = a;
+    } else if (f === 'pause') {
+      // Seul paramètre où 0 a un sens : « sans pause en bas ». num() exige
+      // un nombre strictement positif et l'effacerait.
+      const n = parseFloat(v);
+      if (isFinite(n) && n >= 0 && n <= 10) out.pause = n;
     } else {
       const n = num(v);
       if (n) out[f] = n;
@@ -825,7 +1086,22 @@ function sanitizeMethod(m) {
   if (id === 'rest_pause' && !(out.reps && out.blocks)) return null;
   if (id === 'drop_set' && !out.drops) return null;
   if (id === 'isometric' && !out.duration) return null;
+  // Un cluster, c'est un découpage : un seul bloc n'en est pas un.
+  if (id === 'cluster' && !(out.blocks && out.blocks.length > 1)) return null;
+  // Un tempo sans aucune phase chiffrée ne prescrit rien.
+  if (id === 'tempo' && out.down == null && out.up == null && out.pause == null) return null;
   return out;
+}
+
+// Un prompt ne garantit rien : le modèle écrira "30s" de temps en temps.
+// On détache l'unité du nombre À LA FRONTIÈRE, là où le texte libre de Titan
+// devient une donnée de l'app — même endroit que sanitizeMethod(). L'écran
+// live normalise déjà à la lecture (_lsSpaceUnits), mais ce qui part en
+// Firestore doit être propre dès l'écriture : les séances Builder sauvegardées
+// sont relues plus tard, et par du code qui n'est pas forcément celui-là.
+function normalizePrescription(v) {
+  if (typeof v !== 'string') return v;
+  return v.replace(/(\d)([a-zA-Zà-üÀ-Ü])/g, '$1 $2').replace(/\s{2,}/g, ' ').trim();
 }
 
 function parseWorkoutJson(text) {
@@ -842,8 +1118,11 @@ function parseWorkoutJson(text) {
     if (!obj || !Array.isArray(obj.blocs)) return null;
     obj.blocs.forEach((b) => {
       (b && Array.isArray(b.exos) ? b.exos : []).forEach((e) => {
-        const m = sanitizeMethod(e && e.method);
-        if (m) e.method = m; else if (e) delete e.method;
+        if (!e) return;
+        e.reps = normalizePrescription(e.reps);
+        e.rest = normalizePrescription(e.rest);
+        const m = sanitizeMethod(e.method);
+        if (m) e.method = m; else delete e.method;
       });
     });
     return obj;
@@ -869,6 +1148,21 @@ function fmtVal(e, v) {
   return String(v);
 }
 
+// « il y a 0 jour(s) » est illisible pour dire « aujourd'hui ». Une séance
+// terminée il y a dix minutes doit se reconnaître comme telle.
+function daysAgoTxt(n) {
+  if (n == null) return 'date inconnue';
+  if (n === 0) return "AUJOURD'HUI";
+  if (n === 1) return 'hier';
+  return 'il y a ' + n + ' jours';
+}
+function frDate(iso) {
+  try {
+    return new Date(iso).toLocaleDateString('fr-FR',
+      { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric', timeZone: 'UTC' });
+  } catch (e) { return String(iso).slice(0, 10); }
+}
+
 function buildAthleteState(st) {
   if (!st || typeof st !== 'object') {
     return `DONNÉES D'ENTRAÎNEMENT
@@ -877,6 +1171,12 @@ Dis-le si l'athlète pose une question qui en dépend. N'invente rien.`;
   }
   const L = [];
   L.push('DONNÉES D\'ENTRAÎNEMENT RÉELLES (enregistrées dans l\'app)');
+  // Sans la date du jour, « il y a 0 jour(s) » ne veut rien dire et rien ne
+  // permet de raisonner temporellement. Elle n'était utilisée que pour la
+  // clé de quota.
+  if (st.generatedAt) {
+    L.push(`Nous sommes le ${frDate(st.generatedAt)}.`);
+  }
 
   if (st.program) {
     const p = st.program;
@@ -892,9 +1192,21 @@ Dis-le si l'athlète pose une question qui en dépend. N'invente rien.`;
   if (Array.isArray(st.recentSessions) && st.recentSessions.length) {
     L.push('\nSÉANCES RÉCENTES (de la plus récente à la plus ancienne)');
     st.recentSessions.forEach((s, i) => {
-      let line = `${i + 1}. ${s.name} — il y a ${s.daysAgo == null ? '?' : s.daysAgo} jour(s)`;
+      let line = `${i + 1}. ${s.name} — ${daysAgoTxt(s.daysAgo)}`;
+      // D'où vient la séance : le client l'envoyait déjà, le prompt ne
+      // l'imprimait pas. L'athlète qui dit « ma séance du Workout Builder »
+      // ne trouvait donc aucun de ces mots dans le contexte.
+      if (s.source === 'workout_builder') line += ' — créée avec le Workout Builder';
+      else if (s.program) line += ` — ${s.program}`;
+      if (s.exoCount) line += ` — ${s.exoCount} exercice${s.exoCount > 1 ? 's' : ''}`;
       if (s.score != null) line += ` — score de séance ${s.score}/100`;
       L.push(line);
+      // Le contenu, pour les deux séances les plus récentes seulement :
+      // au-delà, c'est du bruit qui dilue le reste du contexte.
+      if (i < 2 && Array.isArray(s.exoNames) && s.exoNames.length) {
+        L.push(`   exercices : ${s.exoNames.join(', ')}`
+             + (s.exoCount > s.exoNames.length ? `, +${s.exoCount - s.exoNames.length} autres` : ''));
+      }
       const f = s.feedback;
       if (f) {
         const bits = [];
@@ -985,19 +1297,45 @@ function buildNutritionContext(n) {
     if (a.repas > 0) {
       L.push("Aujourd'hui : " + a.repas + ' repas enregistré' + (a.repas > 1 ? 's' : '')
         + ' — ' + a.kcal + ' kcal · ' + a.prot + 'g prot · ' + a.gluc + 'g gluc · ' + a.lip + 'g lip');
-      if (a.noms && a.noms.length) L.push('  ' + a.noms.join(', '));
+      // Le détail, un repas par ligne. Titan peut ainsi commenter un repas
+      // précis, et le DÉSIGNER par son id pour une correction.
+      if (Array.isArray(a.liste) && a.liste.length) {
+        a.liste.forEach((m) => {
+          L.push('  · ' + (m.heure ? m.heure + ' — ' : '') + m.nom
+            + ' : ' + m.kcal + ' kcal · ' + m.prot + 'g prot · ' + m.gluc + 'g gluc · ' + m.lip + 'g lip'
+            + (m.id ? '   [' + m.id + ']' : '   [sans identifiant — enregistré avant la mise à jour]'));
+        });
+      } else if (a.noms && a.noms.length) {
+        L.push('  ' + a.noms.join(', '));
+      }
     } else {
       L.push("Aujourd'hui : aucun repas enregistré dans le journal.");
     }
   }
+  // CE QU'IL RESTE. C'est la réponse à « combien me reste-t-il ? », et elle
+  // n'était pas transmise alors qu'elle est calculée pour l'écran.
+  if (n.restantes) {
+    const r = n.restantes;
+    L.push('RESTE AUJOURD\'HUI : ' + r.kcal + ' kcal'
+      + (r.prot != null ? ' · ' + r.prot + 'g prot' : '')
+      + (r.gluc != null ? ' · ' + r.gluc + 'g gluc' : '')
+      + (r.lip  != null ? ' · ' + r.lip  + 'g lip'  : '')
+      + (r.kcal < 0 ? '  (cible dépassée)' : ''));
+  }
   if (n.moyenne7j) {
     L.push('Moyenne sur ' + n.moyenne7j.jours + ' jours : ' + n.moyenne7j.kcal + ' kcal/jour');
   }
+  // Règle du projet : pas de donnée → PAS de section. Une section vide
+  // laisserait croire à des champs non renseignés. La capacité d'enregistrer
+  // n'est pas une donnée de l'athlète : elle vit dans STATIC_SYSTEM.
   if (!L.length) return '';
   return '\n\nNUTRITION\n' + L.join('\n')
     + "\nCes chiffres viennent du profil et du journal de l'athlète. Tu ne redemandes"
     + "\njamais une donnée qui est écrite ici. Si une information manque et qu'elle"
-    + "\nte serait vraiment utile, tu la demandes une fois, sans insister.";
+    + "\nte serait vraiment utile, tu la demandes une fois, sans insister."
+    + "\nLes identifiants entre crochets servent à DÉSIGNER un repas déjà enregistré"
+    + "\nquand l'athlète veut le corriger ou le retirer. Ne les montre jamais à"
+    + "\nl'écran : ce sont des références techniques, pas une information pour lui.";
 }
 
 function buildAthleteContext(ctx) {
@@ -1252,6 +1590,62 @@ exports.handler = async function(event) {
       return { statusCode: 200, headers, body: JSON.stringify({ workout }) };
     } catch (err) {
       console.error('[titan] builder fetch error:', err.message);
+      return { statusCode: 502, headers, body: JSON.stringify({ error: 'Erreur de connexion au serveur Titan.' }) };
+    }
+  }
+
+  // ── Mode nutrition : même chaîne, sortie structurée ──
+  // Le contexte athlète (morphologie, cibles, journal du jour) est joint :
+  // sans lui Titan ne saurait pas si 2 200 kcal est beaucoup ou peu POUR CET
+  // athlète, et redemanderait un poids déjà saisi à l'onboarding.
+  if (body.mode === 'nutrition') {
+    // STATIC_SYSTEM D'ABORD. Sans lui, ce mode perdait toute la définition du
+    // personnage — ton, tutoiement, règles de coaching, exemples de style — et
+    // ne gardait que le « ton habituel : direct » de NUTRITION_SYSTEM. Les
+    // réponses en sortaient plus plates. Il est mis en cache, donc gratuit
+    // après le premier appel.
+    const nutSystem = [
+      { type: 'text', text: STATIC_SYSTEM, cache_control: { type: 'ephemeral' } },
+      { type: 'text', text: NUTRITION_SYSTEM },
+      { type: 'text', text: buildAthleteContext(ctx) },
+    ];
+    try {
+      const resp = await fetch('https://api.anthropic.com/v1/messages', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-api-key': process.env.ANTHROPIC_API_KEY,
+          'anthropic-version': '2023-06-01',
+        },
+        body: JSON.stringify({
+          model: MODEL,
+          max_tokens: NUTRITION_MAX_TOKENS,
+          system: nutSystem,
+          // 10, comme le chat normal. 6 ne laissait que trois échanges :
+          // « ajoute-le » perdait le repas mentionné plus haut.
+          messages: sanitizeMessages(messages.slice(-10)),
+        }),
+      });
+      const data = await resp.json();
+      if (!resp.ok) {
+        console.error('[titan] nutrition anthropic error', resp.status, data);
+        return { statusCode: 502, headers, body: JSON.stringify({ error: 'Erreur API Titan.' }) };
+      }
+      const raw = data.content && data.content[0] && data.content[0].text;
+      const parsed = parseNutritionJson(raw);
+      // Analyse illisible : on ne perd PAS la conversation pour autant. Le
+      // texte brut part comme une réponse normale, sans carte d'action.
+      // Irrécupérable : on renvoie une phrase, JAMAIS le brut. Déverser le
+      // JSON dans la bulle était pire que n'importe quel message d'erreur.
+      if (!parsed) {
+        console.error('[titan] nutrition parse failed', raw && raw.slice(0, 300));
+        return { statusCode: 200, headers, body: JSON.stringify({
+          reply: 'J\'ai calé sur ce message. Redis-moi ce que tu as mangé, plus simplement.'
+        }) };
+      }
+      return { statusCode: 200, headers, body: JSON.stringify(parsed) };
+    } catch (err) {
+      console.error('[titan] nutrition fetch error:', err.message);
       return { statusCode: 502, headers, body: JSON.stringify({ error: 'Erreur de connexion au serveur Titan.' }) };
     }
   }

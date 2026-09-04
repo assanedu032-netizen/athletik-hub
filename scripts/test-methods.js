@@ -2,12 +2,12 @@
 // sortie Titan, et le passage jusqu'au moteur d'exécution.
 // L'enjeu : les trois sources — programme standard, Workout Builder, Titan —
 // doivent produire la MÊME exécution pour la même méthode.
-//   node scripts/test-methods.js
+//   node scripts/test-methods.js [autre.html] [autre-titan.js]
 const fs = require('fs');
 const path = require('path');
 const ROOT = path.join(__dirname, '..');
 const html = fs.readFileSync(process.argv[2] || path.join(ROOT, 'index.html'), 'utf8');
-const srv  = fs.readFileSync(path.join(ROOT, 'netlify', 'functions', 'titan.js'), 'utf8');
+const srv  = fs.readFileSync(process.argv[3] || path.join(ROOT, 'netlify', 'functions', 'titan.js'), 'utf8');
 
 function grab(text, decl) {
   const s = text.indexOf(decl);
@@ -38,6 +38,7 @@ const AH = new Function(grab(html, 'function _ahNum(')
 const parse = new Function(
   grabObj(srv, 'const BUILDER_METHODS = ').replace(/^/, 'const BUILDER_METHODS = ') + ';\n'
   + grab(srv, 'function sanitizeMethod(') + '\n'
+  + grab(srv, 'function normalizePrescription(') + '\n'
   + grab(srv, 'function parseWorkoutJson(') + '\nreturn parseWorkoutJson;')();
 
 const R = [];
@@ -132,7 +133,10 @@ console.log('\n=== LES 64 MÉTHODES EN TEXTE LIBRE RESTENT COUVERTES ===\n');
     ['Squat stato-dynamique — Iso profonde puis explosion', '6 s min', 'isometric'],
     ['Nordic hamstring excentrique — freinage maximal', '8-12 reps', 'eccentric'],
     ['Dips excentrique', '5 reps', 'eccentric'],
-    ['Dips sur chaise / banc', '2-3 reps cluster', 'rest_pause'],
+    // Le livre (annexe p. 151) distingue Cluster Set et Rest-Pause : l'un
+    // découpe pour garder la qualité, l'autre va chercher l'échec. Cette
+    // ligne assertait la confusion — elle asserte maintenant la distinction.
+    ['Dips sur chaise / banc', '2-3 reps cluster', 'cluster'],
     ['Squat', '10 reps', 'classic'],
     ['Échauffement dynamique', '10 mn', 'classic']
   ];
@@ -142,6 +146,54 @@ console.log('\n=== LES 64 MÉTHODES EN TEXTE LIBRE RESTENT COUVERTES ===\n');
   });
   ok('aucune de ces 64 lignes n\'est marquée comme déclarée',
      cas.every(([n, r]) => api({ n, r }).declared === false));
+}
+
+console.log('\n=== LES PRESCRIPTIONS SORTENT DU SERVEUR EN FORME CANONIQUE ===\n');
+{
+  // L'écran de séance décide « chrono ou compteur de reps ? » en cherchant une
+  // frontière de mot avant l'unité — et il n'y en a aucune entre un chiffre et
+  // la lettre qui le suit. "30s" perdait donc sa mesure. Le prompt demande
+  // maintenant la forme détachée, mais un prompt ne garantit rien : le serveur
+  // normalise ce que le modèle a réellement écrit, avant Firestore et l'app.
+  const w = parse(JSON.stringify({
+    objectif: 'test', blocs: [{ titre: 'Bloc principal', exos: [
+      { n: 'Iso ischio', sets: 3, reps: '30s',   rest: '60s' },
+      { n: 'Squat',      sets: 4, reps: '8reps', rest: '2min' },
+      { n: 'Sprint',     sets: 5, reps: '10m',   rest: '-' },
+      { n: 'Gainage',    sets: 3, reps: '45 s',  rest: '30 s' },
+      { n: 'Pompes',     sets: 3, reps: '12',    rest: '90 s' }
+    ] }]
+  }));
+  const x = w.blocs[0].exos;
+  ok('"30s" ressort "30 s"',      x[0].reps === '30 s', x[0].reps);
+  ok('le repos aussi ("60s")',    x[0].rest === '60 s', x[0].rest);
+  ok('"8reps" ressort "8 reps"',  x[1].reps === '8 reps', x[1].reps);
+  ok('"2min" ressort "2 min"',    x[1].rest === '2 min', x[1].rest);
+  ok('"10m" ressort "10 m"',      x[2].reps === '10 m', x[2].reps);
+  ok('"-" reste "-"',             x[2].rest === '-', x[2].rest);
+  ok('la forme déjà correcte est laissée intacte',
+     x[3].reps === '45 s' && x[3].rest === '30 s', x[3].reps + ' / ' + x[3].rest);
+  ok('un nombre nu n\'est pas décoré d\'une unité inventée',
+     x[4].reps === '12', x[4].reps);
+  ok('le nom de l\'exercice n\'est pas touché', x[0].n === 'Iso ischio', x[0].n);
+
+  // Et la méthode continue d'être filtrée dans le même passage.
+  const w2 = parse(JSON.stringify({ blocs: [{ exos: [
+    { n: 'X', reps: '30s', method: { id: 'isometric', duration: 25 } },
+    { n: 'Y', reps: '5',   method: { id: 'inconnue' } }
+  ] }] }));
+  ok('normalisation et sanitizeMethod cohabitent',
+     w2.blocs[0].exos[0].reps === '30 s' &&
+     w2.blocs[0].exos[0].method.id === 'isometric' &&
+     w2.blocs[0].exos[1].method === undefined);
+
+  // Le prompt n'enseigne plus la forme collée — sinon on corrigerait en aval
+  // ce qu'on continuerait d'enseigner en amont.
+  const schema = /"reps": "([^"\\]|\\.)*"/.exec(srv);
+  ok('le schéma du prompt réclame l\'unité détachée',
+     /UNIT[ÉE] D[ÉE]TACH[ÉE]E/i.test(srv), schema && schema[0]);
+  ok('le prompt ne donne plus "30s" en exemple',
+     !/\bex:\s*5,\s*30s\b/.test(srv));
 }
 
 const failed = R.filter(x => !x).length;
