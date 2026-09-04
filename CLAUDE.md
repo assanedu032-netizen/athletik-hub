@@ -17,7 +17,7 @@ The app is the digital companion of the book *Les Secrets de la Détente Vertica
   - `sw.js` (cache-first for local assets, network-first for externals) + `manifest.json`. Cache name is `athletik-v271` — bump it when shipping CSS/HTML that must invalidate.
   - `firebase-messaging-sw.js` (root) — receives background push notifications (FCM).
 - **No linter, no build**. Validate changes by opening `index.html` in a browser (mobile-first, Android Chrome is the target). Before committing, sanity-check JS syntax by parsing the non-module `<script>` blocks with `node -e` (see Coding conventions).
-- **Tests**: `for f in scripts/test-*.js; do node "$f"; done` — 24 suites, ~1 275 assertions, pure
+- **Tests**: `for f in scripts/test-*.js; do node "$f"; done` — 24 suites, ~1 300 assertions, pure
   Node, zéro dépendance : chaque suite extrait les **vraies** fonctions d'`index.html` par
   équilibrage d'accolades et les rejoue contre des mocks. `scripts/test-live-layout.js` est la
   seule exception : elle ouvre un vrai Chromium (Playwright, hors `package.json`) pour mesurer la
@@ -292,9 +292,20 @@ completedPrograms, fcmToken, accessTier`.
   `foods`, `confidence` et `estimated` sont additifs. Clé `ah_nutri_journal`, déjà dans
   `FB_SYNC_KEYS` → `users/{uid}.nutriJournal`. **Aucune structure nouvelle, aucune règle
   Firestore à ajouter, aucun appel Firestore direct** — la synchro passe par `fbSaveProfile()`.
-  `_titanIsFoodMessage()` est le déclencheur, volontairement **strict** : chaque déclenchement
-  consomme un appel du quota, et un faux positif ferait répondre Titan en mode analyse à une
-  question d'entraînement.
+  `_titanIsFoodMessage()` est le déclencheur, volontairement **strict** : un faux positif ferait
+  répondre Titan en mode analyse à une question d'entraînement.
+  **La nutrition est un SUJET, pas un message isolé.** `_titanWantsNutrition()` pose un verrou de
+  3 échanges : après « calcule mes kilocal », les rebonds (« pk tu réponds comme ça », « refais le
+  calcul », « tu peux enregistrer ») repassaient en chat normal — Titan redonnait le total **en
+  texte**, sans aliments structurés, donc **aucune carte et journal à zéro**. Le verrou ne coûte
+  **aucun appel supplémentaire** (même appel, sortie structurée) et `TITAN_OFFTOPIC_RE` le relâche
+  dès qu'on parle séance, blessure ou sommeil. Un message resté verrouillé sans parler de
+  nourriture ne coûte rien : le prompt renvoie une liste vide, aucune carte n'est rendue.
+  Le prompt interdit explicitement **un total sans aliments en face**, et couvre le cas
+  « je reviens sur une analyse déjà faite » → réémettre `items` en entier.
+  **Le mode nutrition charge `STATIC_SYSTEM`** (en cache, donc gratuit ensuite) : sans lui il
+  perdait toute la définition du personnage — ton, tutoiement, règles de coaching — et ne gardait
+  que le « ton habituel : direct » de `NUTRITION_SYSTEM`. Les réponses en sortaient plus plates.
   **Le parseur doit survivre à un modèle qui écrit en paragraphes.** Titan met des retours à la
   ligne **littéraux** dans ses chaînes — illégal en JSON, `JSON.parse` lève. `parseNutritionJson`
   tente donc trois lectures : brute, puis `nutEscapeControlChars()` (échappe les caractères de
@@ -312,7 +323,7 @@ completedPrograms, fcmToken, accessTier`.
   `.tn-items[hidden]{display:none}` est **nécessaire** : `display:flex` d'une classe bat la règle
   navigateur `[hidden]{display:none}`, et le détail restait visible pendant que `el.hidden` valait
   `true` — un test qui lit la propriété ne voit pas la différence.
-  Tests : `scripts/test-titan-nutri-action.js` (107) et `scripts/test-nutri-card.js` (28, vrai
+  Tests : `scripts/test-titan-nutri-action.js` (128) et `scripts/test-nutri-card.js` (28, vrai
   Chromium).
 - **La conversation Titan se synchronise** (`ah_titan_chat` dans `FB_SYNC_KEYS`). C'est la
   seule clé synchronisée qui s'écrit à **chaque tour** et dont la taille dépend de ce que le

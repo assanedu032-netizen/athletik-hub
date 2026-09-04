@@ -47,19 +47,28 @@ const localStorage = {
 };
 const calls = { render: 0, save: 0 };
 const doc = { getElementById: () => null };
+const win = { _titanNutriTurns: 0 };
+const cst = (n) => {
+  const m = new RegExp('var ' + n + ' = [^\n]+;').exec(html);
+  if (!m) throw new Error('introuvable: ' + n);
+  return m[0];
+};
 const cli = new Function(
   'localStorage', 'document', 'window', 'navigator', 'console',
   'renderJournalToday', 'fbSaveProfile', '_lsEsc',
   grabTrigger() + '\n'
   + grab(html, 'function _titanIsFoodMessage(') + '\n'
+  + cst('TITAN_NUTRI_LATCH') + '\n' + cst('TITAN_OFFTOPIC_RE') + '\n'
+  + grab(html, 'function _titanWantsNutrition(') + '\n'
   + grab(html, 'function _titanNutriFmt(') + '\n'
   + grab(html, 'function _titanNutriLabel(') + '\n'
   + 'window._titanNutriPending = {};\n'
   + html.slice(html.indexOf('window._titanNutriSave = function'),
                html.indexOf('window._titanNutriOpenJournal =')) + '\n'
-  + 'return { isFood:_titanIsFoodMessage, label:_titanNutriLabel, save:window._titanNutriSave,'
+  + 'return { isFood:_titanIsFoodMessage, wants:_titanWantsNutrition,'
+  + '         label:_titanNutriLabel, save:window._titanNutriSave,'
   + '         pending:window._titanNutriPending };'
-)(localStorage, doc, {}, {}, console,
+)(localStorage, doc, win, {}, console,
   () => { calls.render++; }, () => { calls.save++; }, (t) => String(t));
 
 // ── Côté serveur ──
@@ -257,6 +266,72 @@ console.log('\n=== « TU PEUX ENREGISTRER » DOIT DÉCLENCHER L\'ACTION ===\n');
      /CE QUE L'APP SAIT FAIRE POUR TOI[\s\S]{0,400}Enregistrer dans mon journal/.test(srv));
   ok('  sans jamais prétendre écrire lui-même',
      /Tu n'écris jamais toi-même dans son journal/.test(srv));
+}
+
+console.log('\n=== LA NUTRITION EST UN SUJET, PAS UN MESSAGE ISOLÉ ===\n');
+{
+  // Le trou observé en production : après « calcule mes kilocal », l'athlète
+  // rebondit (« pk tu répond comme ça », « refais le calcul »). Ces messages
+  // ne matchent aucun motif alimentaire, repassaient en chat normal, et Titan
+  // redonnait le total EN TEXTE — l'app n'avait plus rien à enregistrer, et
+  // le journal restait à zéro.
+  win._titanNutriTurns = 0;
+  const suite = [
+    ["Ojd j'ai manger des cereal avec du lait d'amande, calcul mes kilocal", true],
+    ['Pk tu répond comme ça', true],
+    ['Tu peux enregistrer dans le journal', true],
+    ['refais le calcul', true]
+  ];
+  suite.forEach(([m, att]) => {
+    ok('  « ' + m.slice(0, 46) + ' » → ' + (att ? 'analyse' : 'chat'), cli.wants(m) === att, m);
+  });
+  ok('le verrou est bien armé après un message alimentaire', win._titanNutriTurns > 0);
+}
+{
+  // Un vrai changement de sujet relâche le verrou immédiatement.
+  win._titanNutriTurns = 0;
+  ok('un repas arme le verrou', cli.wants("j'ai mangé du poulet ce midi") === true);
+  ok('une question d\'entraînement le relâche', cli.wants('et ma séance de demain ?') === false);
+  ok('  et il reste relâché', cli.wants('combien de séries sur le squat') === false);
+  ok('  le compteur est remis à zéro', win._titanNutriTurns === 0, String(win._titanNutriTurns));
+}
+{
+  // Le verrou s'épuise seul : il ne colle pas à la conversation pour toujours.
+  win._titanNutriTurns = 0;
+  cli.wants("j'ai mangé une pomme et deux oeufs");
+  let n = 0;
+  while (cli.wants('et donc ?') && n < 10) n++;
+  ok('le verrou expire après quelques échanges', n > 0 && n <= 4, String(n) + ' rebonds');
+  ok('  puis on revient en chat normal', cli.wants('et donc ?') === false);
+}
+{
+  // Sans verrou armé, rien ne change pour les messages hors sujet.
+  win._titanNutriTurns = 0;
+  ['comment améliorer ma détente ?', 'je suis fatigué', 'ok', 'salut']
+    .forEach(m => ok('  « ' + m + ' » reste du chat', cli.wants(m) === false, m));
+}
+{
+  // Un message resté en mode analyse alors qu'il ne parle pas de nourriture
+  // ne coûte RIEN : le prompt renvoie une liste vide, donc aucune carte. On
+  // vérifie que la règle est bien écrite côté serveur.
+  ok('le prompt sait répondre normalement hors sujet',
+     /ne parle vraiment pas de nourriture[\s\S]{0,120}"items": \[\]/.test(srv));
+  ok('  et un total sans aliments est explicitement interdit',
+     /Si tu donnes un total, tu donnes les aliments/.test(srv));
+  ok('  le rebond sur une analyse déjà faite est couvert',
+     /QUAND TU REVIENS SUR UNE ANALYSE DÉJÀ FAITE/.test(srv)
+     && /REMPLIS "items" À NOUVEAU/.test(srv));
+}
+{
+  // Régression que j'avais introduite : le mode nutrition ne chargeait PAS
+  // STATIC_SYSTEM, donc Titan perdait sa personnalité complète.
+  const i = srv.indexOf("if (body.mode === 'nutrition')");
+  const bloc = srv.slice(i, i + 900);
+  ok('le mode nutrition garde la personnalité de Titan',
+     /text: STATIC_SYSTEM/.test(bloc), bloc.slice(0, 200));
+  ok('  et elle est mise en cache, donc gratuite ensuite',
+     /text: STATIC_SYSTEM, cache_control/.test(bloc));
+  ok('  le système nutrition vient ensuite', bloc.indexOf('STATIC_SYSTEM') < bloc.indexOf('NUTRITION_SYSTEM'));
 }
 
 console.log('\n=== TESTS 1 à 4 · ANALYSER N\'EST PAS ÉCRIRE ===\n');

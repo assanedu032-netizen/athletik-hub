@@ -856,7 +856,11 @@ TA RÉPONSE ("reply")
 - Ne répète pas le tableau des items ligne par ligne : le client l'affiche déjà.
 - Reste court : 2 à 5 phrases.
 
-Si le message ne parle finalement pas de nourriture, renvoie "items": [], des totaux à zéro, et réponds normalement dans "reply".`;
+QUAND TU REVIENS SUR UNE ANALYSE DÉJÀ FAITE
+L'athlète peut te relancer sur un repas déjà analysé plus haut : « pourquoi tu réponds comme ça », « refais le calcul », « et si j'ajoute une banane », « redonne-moi le total ». Dans ces cas tu REMPLIS "items" À NOUVEAU, en entier, avec les aliments de ce repas — corrigés si l'athlète a apporté une précision.
+Un total annoncé dans "reply" sans "items" en face laisse l'athlète sans rien à enregistrer. Si tu donnes un total, tu donnes les aliments.
+
+Si le message ne parle vraiment pas de nourriture (entraînement, sommeil, motivation…), renvoie "items": [], des totaux à zéro, et réponds normalement dans "reply".`;
 
 // Le modèle peut renvoyer n'importe quoi : on ne fait confiance à aucun champ.
 // Même esprit que sanitizeMethod — ce qui n'est pas conforme est retiré, et
@@ -1571,8 +1575,14 @@ exports.handler = async function(event) {
   // sans lui Titan ne saurait pas si 2 200 kcal est beaucoup ou peu POUR CET
   // athlète, et redemanderait un poids déjà saisi à l'onboarding.
   if (body.mode === 'nutrition') {
+    // STATIC_SYSTEM D'ABORD. Sans lui, ce mode perdait toute la définition du
+    // personnage — ton, tutoiement, règles de coaching, exemples de style — et
+    // ne gardait que le « ton habituel : direct » de NUTRITION_SYSTEM. Les
+    // réponses en sortaient plus plates. Il est mis en cache, donc gratuit
+    // après le premier appel.
     const nutSystem = [
-      { type: 'text', text: NUTRITION_SYSTEM, cache_control: { type: 'ephemeral' } },
+      { type: 'text', text: STATIC_SYSTEM, cache_control: { type: 'ephemeral' } },
+      { type: 'text', text: NUTRITION_SYSTEM },
       { type: 'text', text: buildAthleteContext(ctx) },
     ];
     try {

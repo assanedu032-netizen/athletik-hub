@@ -25798,6 +25798,39 @@ function _titanIsFoodMessage(text) {
 }
 window._titanIsFoodMessage = _titanIsFoodMessage;
 
+// La nutrition est un SUJET, pas un message isolé.
+// Le déclencheur ne lisait que le message courant. Après « calcule mes
+// calories », un simple « pourquoi tu réponds comme ça » ou « refais le
+// calcul » repassait en chat normal : Titan redonnait le total en texte, et
+// l'app n'avait plus rien à enregistrer — aucune carte, journal à zéro.
+// Le verrou garde le mode analyse quelques échanges. Il ne coûte AUCUN appel
+// supplémentaire : c'est le même appel, avec une sortie structurée. Et si le
+// message suivant parle vraiment d'autre chose, le prompt renvoie une liste
+// vide et aucune carte n'est rendue.
+var TITAN_NUTRI_LATCH = 3;
+window._titanNutriTurns = 0;
+
+// Changement franc de sujet → on relâche le verrou tout de suite, sans
+// attendre son expiration.
+var TITAN_OFFTOPIC_RE = /\b(s[ée]ance|entra[îi]nement|programme|squat|saut|d[ée]tente|muscu|blessure|genou|dos|[ée]paule|sommeil|dormir|motivation|repos|[ée]chauffement|pliom)/i;
+
+function _titanWantsNutrition(text) {
+  if (_titanIsFoodMessage(text)) {
+    window._titanNutriTurns = TITAN_NUTRI_LATCH;
+    return true;
+  }
+  if (window._titanNutriTurns > 0) {
+    if (TITAN_OFFTOPIC_RE.test(String(text || ''))) {
+      window._titanNutriTurns = 0;
+      return false;
+    }
+    window._titanNutriTurns--;
+    return true;
+  }
+  return false;
+}
+window._titanWantsNutrition = _titanWantsNutrition;
+
 // Analyses en attente de décision, indexées par un identifiant de carte.
 // Rien n'est écrit tant que l'athlète n'a pas tapé « Enregistrer ».
 window._titanNutriPending = window._titanNutriPending || {};
@@ -26298,6 +26331,7 @@ function resetTitanChat() {
   }
   // Les messages enregistrés SURVIVENT à l'effacement du chat : ils portent
   // leur propre texte. On rafraîchit seulement le compteur, qui ne change pas.
+  window._titanNutriTurns = 0;
   try { _titanDecorateStatic(); _titanSavedRefreshBadge(); } catch(e) {}
 }
 window.resetTitanChat = resetTitanChat;
@@ -26635,7 +26669,7 @@ async function sendMessage() {
   // Un message qui parle de nourriture part en mode nutrition : MÊME appel,
   // MÊME quota, mais la réponse rapporte en plus une analyse structurée.
   window._titanLastNutrition = null;
-  const isFood = _titanIsFoodMessage(text);
+  const isFood = _titanWantsNutrition(text);
   const reply = await callAnthropicAPI(text, photo, isFood ? { mode: 'nutrition' } : null);
   const nutrition = window._titanLastNutrition;
   window._titanLastNutrition = null;
