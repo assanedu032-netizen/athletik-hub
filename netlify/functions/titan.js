@@ -1016,6 +1016,68 @@ function parseNutritionJson(text) {
   return null;
 }
 
+// ════════════════════════════════════════════════════════════════════════════
+// MODE SCAN — analyse d'une photo de repas
+// ────────────────────────────────────────────────────────────────────────────
+// Ce mode existait déjà… CÔTÉ NAVIGATEUR. Le scan appelait api.anthropic.com
+// EN DIRECT (`anthropic-dangerous-direct-browser-access: true`) avec une clé
+// que l'athlète collait lui-même dans les réglages et qui dormait en clair
+// dans localStorage. Conséquences :
+//   · une clé Anthropic personnelle exposée à n'importe quel XSS ;
+//   · zéro authentification, zéro quota, zéro modération, zéro garde
+//     anti-injection — toutes les protections du projet contournées ;
+//   · et en pratique la fonctionnalité était MORTE : aucun athlète ne possède
+//     de clé API, d'où l'encart « configure ta clé » que personne ne remplit.
+//
+// Le prompt est celui qui tournait déjà côté client, déplacé tel quel : la
+// forme de sortie doit rester identique, l'écran de scan la consomme.
+const SCAN_MAX_TOKENS = 1000;
+const SCAN_MAX_FOODS = 20;
+
+const SCAN_SYSTEM = 'Tu es un expert en nutrition sportive. Analyse la photo et retourne UNIQUEMENT un JSON valide sans markdown ni backticks: {"foods":[{"name":"nom en minuscules","qty":quantite,"unit":"g ou unité","cal":pour100g,"p":proteines100g,"g":glucides100g,"l":lipides100g}],"note":"observation courte de Titan ton direct no-bullshit max 12 mots"} Pour les oeufs: unit="unité", qty=nombre, cal=155, p=13, g=1.1, l=11. Retourne UNIQUEMENT le JSON.';
+
+// Mêmes bornes d'esprit que sanitizeNutrition : ce qui n'est pas conforme est
+// écarté plutôt que transmis à l'écran de l'athlète.
+function sanitizeScan(obj) {
+  if (!obj || typeof obj !== 'object') return null;
+  const raw = Array.isArray(obj.foods) ? obj.foods.slice(0, SCAN_MAX_FOODS) : [];
+  const foods = raw.map((f) => {
+    const name = nutStr(f && f.name, 60);
+    if (!name) return null;
+    const unit = (f && f.unit === 'unité') ? 'unité' : 'g';
+    const qty = nutNum(f && f.qty, unit === 'unité' ? 50 : 5000) || (unit === 'unité' ? 1 : 100);
+    return {
+      name, unit, qty,
+      // Valeurs POUR 100 G (ou par unité) : c'est ce que l'écran de scan
+      // multiplie par la quantité. Une valeur au-delà de ces bornes n'est
+      // plus un aliment.
+      cal: nutNum(f && f.cal, 900),
+      p:   nutNum(f && f.p, 100),
+      g:   nutNum(f && f.g, 100),
+      l:   nutNum(f && f.l, 100),
+    };
+  }).filter(Boolean);
+  if (!foods.length) return null;
+  return { foods, note: nutStr(obj.note, 160) };
+}
+
+function parseScanJson(text) {
+  if (!text) return null;
+  let s = String(text).trim().replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/i, '').trim();
+  const first = s.indexOf('{'), last = s.lastIndexOf('}');
+  if (first > -1 && last > first) s = s.slice(first, last + 1);
+  // Mêmes réparations que le mode nutrition : le modèle écrit parfois des
+  // retours à la ligne littéraux dans ses chaînes.
+  const essais = [s, nutEscapeControlChars(s), nutCloseTruncated(nutEscapeControlChars(s))];
+  for (let i = 0; i < essais.length; i++) {
+    try {
+      const out = sanitizeScan(JSON.parse(essais[i]));
+      if (out) return out;
+    } catch (e) { /* réparation suivante */ }
+  }
+  return null;
+}
+
 function buildBuilderUserMessage(intent, library) {
   intent = intent || {};
   const libLines = (Array.isArray(library) ? library : [])
@@ -1480,8 +1542,12 @@ exports.handler = async function(event) {
   }
   const { messages, ctx } = body;
   const isBuilder = body.mode === 'builder';
-  if (!isBuilder && (!Array.isArray(messages) || messages.length === 0)) {
+  const isScan = body.mode === 'scan';
+  if (!isBuilder && !isScan && (!Array.isArray(messages) || messages.length === 0)) {
     return { statusCode: 400, headers, body: JSON.stringify({ error: 'messages array required' }) };
+  }
+  if (isScan && !(body.image && typeof body.image.data === 'string' && body.image.data.length > 100)) {
+    return { statusCode: 400, headers, body: JSON.stringify({ error: 'image required' }) };
   }
   if (isBuilder && (!body.intent || typeof body.intent !== 'object')) {
     return { statusCode: 400, headers, body: JSON.stringify({ error: 'intent required' }) };
@@ -1590,6 +1656,51 @@ exports.handler = async function(event) {
       return { statusCode: 200, headers, body: JSON.stringify({ workout }) };
     } catch (err) {
       console.error('[titan] builder fetch error:', err.message);
+      return { statusCode: 502, headers, body: JSON.stringify({ error: 'Erreur de connexion au serveur Titan.' }) };
+    }
+  }
+
+  // ── Mode scan : une photo entre, une liste d'aliments sort ──
+  if (isScan) {
+    const media = ['image/jpeg', 'image/png', 'image/webp', 'image/gif']
+      .indexOf(body.image.media_type) > -1 ? body.image.media_type : 'image/jpeg';
+    try {
+      const resp = await fetch('https://api.anthropic.com/v1/messages', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-api-key': process.env.ANTHROPIC_API_KEY,
+          'anthropic-version': '2023-06-01',
+        },
+        body: JSON.stringify({
+          model: MODEL,
+          max_tokens: SCAN_MAX_TOKENS,
+          system: SCAN_SYSTEM,
+          messages: [{
+            role: 'user',
+            content: [
+              { type: 'image', source: { type: 'base64', media_type: media, data: body.image.data } },
+              { type: 'text', text: 'Analyse ce repas.' },
+            ],
+          }],
+        }),
+      });
+      const data = await resp.json();
+      if (!resp.ok) {
+        console.error('[titan] scan anthropic error', resp.status, data);
+        return { statusCode: 502, headers, body: JSON.stringify({ error: 'Analyse impossible. Réessaie.' }) };
+      }
+      const raw = data.content && data.content[0] && data.content[0].text;
+      const parsed = parseScanJson(raw);
+      if (!parsed) {
+        console.error('[titan] scan parse failed', raw && raw.slice(0, 300));
+        return { statusCode: 502, headers, body: JSON.stringify({
+          error: 'Je n\'ai rien reconnu sur cette photo. Reprends-la de plus près.'
+        }) };
+      }
+      return { statusCode: 200, headers, body: JSON.stringify(parsed) };
+    } catch (err) {
+      console.error('[titan] scan fetch error:', err.message);
       return { statusCode: 502, headers, body: JSON.stringify({ error: 'Erreur de connexion au serveur Titan.' }) };
     }
   }

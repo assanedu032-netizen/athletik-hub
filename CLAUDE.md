@@ -17,7 +17,7 @@ The app is the digital companion of the book *Les Secrets de la Détente Vertica
   - `sw.js` (cache-first for local assets, network-first for externals) + `manifest.json`. Cache name is `athletik-v271` — bump it when shipping CSS/HTML that must invalidate.
   - `firebase-messaging-sw.js` (root) — receives background push notifications (FCM).
 - **No linter, no build**. Validate changes by opening `index.html` in a browser (mobile-first, Android Chrome is the target). Before committing, sanity-check JS syntax by parsing the non-module `<script>` blocks with `node -e` (see Coding conventions).
-- **Tests**: `for f in scripts/test-*.js; do node "$f"; done` — 24 suites, ~1 350 assertions, pure
+- **Tests**: `for f in scripts/test-*.js; do node "$f"; done` — 24 suites, ~1 372 assertions, pure
   Node, zéro dépendance : chaque suite extrait les **vraies** fonctions d'`index.html` par
   équilibrage d'accolades et les rejoue contre des mocks. `scripts/test-live-layout.js` est la
   seule exception : elle ouvre un vrai Chromium (Playwright, hors `package.json`) pour mesurer la
@@ -342,7 +342,7 @@ completedPrograms, fcmToken, accessTier`.
   **Annuler cet ajout** — qui retire l'entrée **par son id**. Sans `wantsSave`, la carte propose et
   seul le tap écrit. `_titanRemainingToday()` relit le journal **après** écriture : la valeur du
   contexte serveur date d'avant.
-  Tests : `scripts/test-titan-nutri-action.js` (170) et `scripts/test-nutri-card.js` (36, vrai
+  Tests : `scripts/test-titan-nutri-action.js` (198) et `scripts/test-nutri-card.js` (36, vrai
   Chromium).
 - **La conversation Titan se synchronise** (`ah_titan_chat` dans `FB_SYNC_KEYS`). C'est la
   seule clé synchronisée qui s'écrit à **chaque tour** et dont la taille dépend de ce que le
@@ -399,6 +399,17 @@ completedPrograms, fcmToken, accessTier`.
   - `{action:'verify', sessionId, answer, amazonOrder}` → vérifie HMAC + non-expiration, normalise + match timing-safe contre `BOOK.challenges[*].accepted`, hashe le numéro Amazon (`@netlify/blobs` store `book-access`, used-once), écrit Firestore `users/{uid}.hasBookAccess=true` via Admin SDK. Logs `accessRedemptions/`.
   - Auth Bearer requise (Firebase ID token), rate limiting 5/IP/15min.
 - `send-notif.js` — sends a push via **FCM v1 HTTP API**. Builds a JWT from the Service Account, exchanges it for an OAuth token (cached in-memory), POSTs to `messages:send`. The legacy Server Key was deprecated by Google (June 2024).
+- **`titan.js` porte AUSSI le scan photo** (`mode:'scan'`). Il appelait auparavant
+  `api.anthropic.com` **directement depuis le navigateur**
+  (`anthropic-dangerous-direct-browser-access: true`), avec une clé que l'athlète collait
+  lui-même et qui dormait en clair dans `localStorage.ah_anthropic_key` : clé personnelle
+  exposée à tout XSS, et **aucune** des protections du projet (auth, quota 20/j, modération,
+  garde anti-injection). En pratique la fonctionnalité était **morte** — le champ de saisie
+  avait disparu du HTML, seules les fonctions `apiKeySave` / `apiKeyRestore` / `scanScrollToApi`
+  survivaient en pointant vers des éléments inexistants. Le prompt est déplacé tel quel côté
+  serveur (`SCAN_SYSTEM`) pour que la forme de sortie reste celle qu'attend l'écran de scan ;
+  `sanitizeScan()` borne chaque valeur (900 kcal/100 g, 5000 g) et plafonne à 20 aliments.
+  `scanCheckApiKey()` **purge** la clé qu'un appareil pourrait encore porter.
 - `notif-config.js` — serves the public VAPID key to the client.
 - `scripts/gen-codes.js` — local script to generate N access codes per tier (needs `ACCESS_CODE_SECRET`).
 - `scripts/gen-book-challenges.js` — régénère `data/book-challenges.js` depuis le seed local. Mode `--hash` pour passer les `accepted` en `acceptedHash` HMAC en prod.
