@@ -443,9 +443,11 @@ console.log('\n=== TEST 5 · CLOISONNEMENT ENTRE UTILISATEURS ===\n');
   // n'est écrite dans le fichier, et que Titan n'en utilise jamais côté client.
   ok('aucune clé Anthropic RÉELLE n\'est écrite dans le fichier',
      !/sk-ant-[A-Za-z0-9_-]{20,}/.test(html));
-  ok('  les deux occurrences ne sont que des contrôles de format',
-     (html.match(/sk-ant-/g) || []).length === 2
-     && /startsWith\('sk-ant-'\)/.test(html));
+  // Le champ où l'athlète collait SA clé a été retiré : il ne reste plus la
+  // moindre mention du format d'une clé Anthropic dans la page.
+  ok('  et plus la moindre mention du format d\'une clé',
+     (html.match(/sk-ant-/g) || []).length === 0,
+     String((html.match(/sk-ant-/g) || []).length) + ' occurrence(s)');
   ok('  Titan appelle Anthropic uniquement côté serveur',
      /x-api-key': process\.env\.ANTHROPIC_API_KEY/.test(srv)
      && !/api\.anthropic\.com[\s\S]{0,200}_titanNutri/.test(html));
@@ -615,6 +617,95 @@ console.log('\n=== LES FENÊTRES DE CONTEXTE ===\n');
      (srv.match(/messages\.slice\(-\d+\)/g) || []).join(', '));
   ok('le fil garde 60 messages', /var TITAN_CHAT_KEEP = 60;/.test(html));
   ok('  et la synchro reste bornée en octets', /TITAN_CHAT_SYNC_BYTES = 60000/.test(html));
+}
+
+console.log('\n=== LE SCAN PHOTO PASSE PAR LE PROXY, PLUS PAR LE NAVIGATEUR ===\n');
+{
+  // Avant : le scan appelait api.anthropic.com EN DIRECT depuis la page, avec
+  // une clé que l'athlète collait dans les réglages et qui dormait en clair
+  // dans localStorage. Zéro auth, zéro quota, zéro modération — toutes les
+  // protections du projet contournées. Et le champ de saisie ayant disparu du
+  // HTML entre-temps, la fonctionnalité était de toute façon MORTE.
+  // Le nom du domaine subsiste dans un commentaire d'historique : ce qu'on
+  // vérifie, c'est qu'aucun FETCH ne le vise plus.
+  ok('plus aucun appel direct à Anthropic depuis la page',
+     !/fetch\(\s*['"`]https:\/\/api\.anthropic\.com/.test(html));
+  ok('  le domaine ne subsiste que dans un commentaire',
+     (html.match(/api\.anthropic\.com/g) || []).length <= 1
+     && /\/\/[^\n]*api\.anthropic\.com/.test(html));
+  ok('l\'en-tête d\'accès direct navigateur a disparu',
+     !/anthropic-dangerous-direct-browser-access/.test(html));
+  ok('aucune clé Anthropic n\'est plus lue', !/getItem\('ah_anthropic_key'\)/.test(html));
+  ok('  et la clé d\'un ancien appareil est purgée',
+     /removeItem\('ah_anthropic_key'\)/.test(html));
+  ok('le code mort du champ de saisie est retiré',
+     !/function apiKeySave\(/.test(html) && !/function apiKeyRestore\(/.test(html)
+     && !/function scanScrollToApi\(/.test(html));
+  ok('  et plus personne ne l\'appelle',
+     !/apiKeyRestore\(\)/.test(html) && !/scanScrollToApi/.test(html));
+  ok('l\'encart « ajoute ta clé API » est retiré',
+     !/ajoute ta clé API Anthropic/.test(html));
+
+  ok('le scan passe par la fonction Netlify',
+     /fetch\('\/\.netlify\/functions\/titan'[\s\S]{0,400}?mode: 'scan'/.test(html));
+  ok('  avec un jeton d\'authentification',
+     /mode: 'scan'/.test(html) && /Bearer ' \+ idToken/.test(html));
+  ok('  et il refuse de partir sans compte connecté',
+     /if \(!window\.fbUser\)[\s\S]{0,220}?Connecte-toi pour analyser une photo/.test(html));
+  ok('la raison d\'un échec vient du serveur, plus d\'un « vérifie ta clé »',
+     /parsed && parsed\.error/.test(html) && !/Vérifie ta clé API/.test(html));
+}
+{
+  // Côté serveur : le mode existe, il est borné, et il refuse une requête
+  // sans image.
+  ok('le serveur porte le mode scan', /body\.mode === 'scan'/.test(srv));
+  ok('  il exige une image', /isScan && !\(body\.image/.test(srv));
+  ok('  le prompt du scan a été déplacé côté serveur, à l\'identique',
+     /const SCAN_SYSTEM = 'Tu es un expert en nutrition sportive/.test(srv));
+  ok('  et la clé reste une variable d\'environnement',
+     /'x-api-key': process\.env\.ANTHROPIC_API_KEY/.test(srv));
+
+  const scan = new Function(
+    grabConst(srv, 'SCAN_MAX_FOODS') + '\n'
+    + grab(srv, 'function nutNum(') + '\n'
+    + grab(srv, 'function nutStr(') + '\n'
+    + grab(srv, 'function nutEscapeControlChars(') + '\n'
+    + grab(srv, 'function nutCloseTruncated(') + '\n'
+    + grab(srv, 'function sanitizeScan(') + '\n'
+    + grab(srv, 'function parseScanJson(') + '\n'
+    + 'return { san:sanitizeScan, parse:parseScanJson };'
+  )();
+
+  const bon = scan.san({ foods: [
+    { name: 'poulet grillé', qty: 150, unit: 'g', cal: 165, p: 31, g: 0, l: 4 },
+    { name: 'oeuf', qty: 2, unit: 'unité', cal: 155, p: 13, g: 1.1, l: 11 }
+  ], note: 'Correct.' });
+  ok('la forme attendue par l\'écran de scan est préservée',
+     bon.foods[0].name === 'poulet grillé' && bon.foods[0].unit === 'g'
+     && bon.foods[0].qty === 150 && bon.foods[0].cal === 165, JSON.stringify(bon.foods[0]));
+  ok('  l\'unité « unité » est reconnue', bon.foods[1].unit === 'unité' && bon.foods[1].qty === 2);
+  ok('  la note de Titan est conservée', bon.note === 'Correct.');
+
+  const sale = scan.san({ foods: [
+    { name: 'x', qty: 99999, unit: 'g', cal: 99999, p: -5, g: 'plein', l: NaN },
+    { qty: 100, cal: 200 },
+    { name: 'riz', qty: 200, unit: 'g', cal: 130, p: 2.7, g: 28, l: 0.3 }
+  ] });
+  ok('une valeur délirante est bornée', sale.foods[0].cal === 900, String(sale.foods[0].cal));
+  ok('  une quantité absurde aussi', sale.foods[0].qty === 5000, String(sale.foods[0].qty));
+  ok('  négatif, texte et NaN deviennent zéro',
+     sale.foods[0].p === 0 && sale.foods[0].g === 0 && sale.foods[0].l === 0);
+  ok('  un aliment sans nom est retiré', sale.foods.length === 2, String(sale.foods.length));
+  ok('la liste est plafonnée',
+     scan.san({ foods: Array.from({ length: 40 }, (_, i) => ({ name: 'a' + i, cal: 1 })) }).foods.length === 20);
+  ok('aucun aliment exploitable → rien plutôt qu\'une liste vide',
+     scan.san({ foods: [] }) === null && scan.san(null) === null);
+
+  ok('les balises de code sont retirées',
+     (scan.parse('```json\n{"foods":[{"name":"riz","qty":100,"unit":"g","cal":130}],"note":"ok"}\n```') || {}).note === 'ok');
+  ok('  et un retour à la ligne littéral ne fait pas échouer la lecture',
+     !!scan.parse('{"foods":[{"name":"riz","qty":100,"unit":"g","cal":130}],"note":"Deux\nlignes."}'));
+  ok('du texte sans JSON ne renvoie rien', scan.parse('désolé') === null);
 }
 
 const failed = R.filter(x => !x).length;

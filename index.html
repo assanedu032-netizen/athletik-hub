@@ -9190,9 +9190,8 @@ window.tiResetOnEnter = function(){ window.tiShowStep(1); };
             <div style="padding:12px 8px;background:var(--surface);border:1px solid var(--border);border-radius:10px;text-align:center;box-shadow:0 1px 2px rgba(15,23,42,0.03)"><div style="font-size:18px">📐</div><div style="font-size:10px;color:var(--text2);margin-top:4px;line-height:1.3;font-weight:600">Vue du dessus</div></div>
           </div>
 
-          <div id="scanApiNotice" style="display:none;padding:12px 14px;background:rgba(224,82,82,.08);border:1px solid rgba(224,82,82,.25);border-radius:10px;margin-bottom:12px;font-size:12px;color:var(--text2);line-height:1.5">
-            ⚠️ Pour activer le scanner IA, ajoute ta clé API Anthropic dans <strong style="color:var(--gold);cursor:pointer" onclick="switchTab('moi');setTimeout(scanScrollToApi,200)">Moi → Paramètres → Clé API</strong>.
-          </div>
+          <!-- L'encart « ajoute ta clé API » a disparu avec la clé : le scan
+               passe par le proxy Titan, comme le reste. -->
         </div>
 
         <!-- Mode Barcode -->
@@ -16219,7 +16218,7 @@ function switchTab(tab){
   }
   if (tab === 'moi') {
     try { renderProfileCard(); } catch(e) {}
-    try { apiKeyRestore(); fbRefreshAccountSection(window.fbUser); renderBadges(); refreshAccessTierUI(); renderProgression(); renderMoiPlanning(); renderHistory(); if (typeof window._renderGuidesList === 'function') window._renderGuidesList(); } catch(e) {}
+    try { fbRefreshAccountSection(window.fbUser); renderBadges(); refreshAccessTierUI(); renderProgression(); renderMoiPlanning(); renderHistory(); if (typeof window._renderGuidesList === 'function') window._renderGuidesList(); } catch(e) {}
     // Ancrage (brique 3) — try/catch séparé : le sous-titre est cosmétique,
     // il ne doit pas pouvoir empêcher le rendu du reste des Réglages.
     try { if (typeof window._ahRefreshAnchorSub === 'function') window._ahRefreshAnchorSub(); } catch(e) {}
@@ -35811,49 +35810,7 @@ function closeVideoModal() {
   document.body.style.overflow = '';
 }
 
-// Sauvegarde clé API
-function apiKeySave() {
-  var input = document.getElementById('apiKeyInput');
-  var status = document.getElementById('apiKeyStatus');
-  if (!input) return;
-  var val = input.value.trim();
-  if (!val) {
-    localStorage.removeItem('ah_anthropic_key');
-    if (status) { status.textContent = '⚠️ Aucune clé enregistrée'; status.style.color = 'var(--muted)'; }
-    return;
-  }
-  if (!val.startsWith('sk-ant-')) {
-    if (status) { status.textContent = '❌ Format invalide. La clé doit commencer par sk-ant-'; status.style.color = 'var(--red)'; }
-    return;
-  }
-  try {
-    localStorage.setItem('ah_anthropic_key', val);
-    if (status) {
-      status.textContent = '✓ Clé enregistrée localement. Scanner activé.';
-      status.style.color = 'var(--green)';
-    }
-    input.value = val.substring(0, 12) + '••••••••••••';
-    // Mettre à jour notice sur scan
-    var notice = document.getElementById('scanApiNotice');
-    if (notice) notice.style.display = 'none';
-  } catch(e) {
-    if (status) { status.textContent = '❌ Erreur d\'enregistrement'; status.style.color = 'var(--red)'; }
-  }
-}
 
-// Restaurer affichage clé masquée au chargement
-function apiKeyRestore() {
-  var key = localStorage.getItem('ah_anthropic_key') || '';
-  var input = document.getElementById('apiKeyInput');
-  var status = document.getElementById('apiKeyStatus');
-  if (input && key) {
-    input.value = key.substring(0, 12) + '••••••••••••';
-    if (status) { status.textContent = '✓ Clé active'; status.style.color = 'var(--green)'; }
-  } else if (status) {
-    status.textContent = '⚠️ Aucune clé enregistrée';
-    status.style.color = 'var(--muted)';
-  }
-}
 
 // ═══════════════════════════════════════════════
 // SET — Super Explosif Test (Tracks)
@@ -37993,10 +37950,13 @@ async function scanHandleFile(e) {
   var file = e.target.files && e.target.files[0];
   if (!file) return;
 
-  var apiKey = localStorage.getItem('ah_anthropic_key') || '';
-  if (!apiKey) {
-    document.getElementById('scanApiNotice').style.display = 'block';
-    var f = document.getElementById('scanFileInput'); if (f) f.value = '';
+  // Le scan passait par api.anthropic.com EN DIRECT, avec une clé que
+  // l'athlète collait lui-même dans les réglages. Il emprunte désormais le
+  // même proxy que Titan : authentification, quota et modération s'appliquent,
+  // et plus aucune clé ne vit dans le navigateur.
+  if (!window.fbUser) {
+    if (typeof showToast === 'function') showToast('Connecte-toi pour analyser une photo.', 'info');
+    var fi = document.getElementById('scanFileInput'); if (fi) fi.value = '';
     return;
   }
 
@@ -38009,42 +37969,36 @@ async function scanHandleFile(e) {
   document.getElementById('scanStatus').textContent = 'Identification des aliments...';
 
   try {
-    var response = await fetch('https://api.anthropic.com/v1/messages', {
+    var idToken = await window.fbUser.getIdToken();
+    var response = await fetch('/.netlify/functions/titan', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'x-api-key': apiKey,
-        'anthropic-version': '2023-06-01',
-        'anthropic-dangerous-direct-browser-access': 'true'
+        'Authorization': 'Bearer ' + idToken
       },
       body: JSON.stringify({
-        model: 'claude-sonnet-4-20250514',
-        max_tokens: 1000,
-        system: 'Tu es un expert en nutrition sportive. Analyse la photo et retourne UNIQUEMENT un JSON valide sans markdown ni backticks: {"foods":[{"name":"nom en minuscules","qty":quantite,"unit":"g ou unité","cal":pour100g,"p":proteines100g,"g":glucides100g,"l":lipides100g}],"note":"observation courte de Titan ton direct no-bullshit max 12 mots"} Pour les oeufs: unit="unité", qty=nombre, cal=155, p=13, g=1.1, l=11. Retourne UNIQUEMENT le JSON.',
-        messages: [{
-          role: 'user',
-          content: [
-            { type: 'image', source: { type: 'base64', media_type: file.type, data: base64 } },
-            { type: 'text', text: 'Analyse ce repas.' }
-          ]
-        }]
+        mode: 'scan',
+        image: { media_type: file.type, data: base64 }
       })
     });
 
-    var data = await response.json();
-    var textBlock = (data.content || []).find(function(b){ return b.type === 'text'; });
-    var text = textBlock ? textBlock.text : '';
-    var clean = text.replace(/```json|```/g, '').trim();
-    var parsed = JSON.parse(clean);
+    var parsed = await response.json();
+    if (!response.ok || !parsed || !Array.isArray(parsed.foods)) {
+      // Le serveur dit POURQUOI (quota atteint, photo illisible, réseau).
+      // On l'affiche plutôt qu'un « vérifie ta clé API » devenu faux.
+      throw new Error((parsed && parsed.error) || 'Analyse impossible. Réessaie.');
+    }
 
-    scanState.foods = (parsed.foods || []).map(function(f){
+    scanState.foods = parsed.foods.map(function(f){
       f.id = ++scanState.idCounter;
       return f;
     });
     scanRenderResult(parsed.note || '');
   } catch (err) {
-    console.error('Scan error:', err);
-    alert('Erreur de l\'analyse IA. Vérifie ta clé API et ta connexion.');
+    console.warn('[scan]', err);
+    if (typeof showToast === 'function') {
+      showToast(err && err.message ? err.message : 'Analyse impossible. Réessaie.', 'info');
+    }
     scanShowPhase('upload');
   }
 }
@@ -38194,10 +38148,6 @@ function scanFileToBase64(file) {
   });
 }
 
-function scanScrollToApi() {
-  var el = document.getElementById('apiKeySection');
-  if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
-}
 
 // Vérifier si une clé API est définie quand on ouvre le scan
 // ═══════════════════════════════════════════════
@@ -38614,10 +38564,11 @@ async function scanBarcodeSearch() {
 // SCAN BARCODE — Open Food Facts API — fin
 // ═══════════════════════════════════════════════
 
+// Appelée à l'ouverture de l'onglet Scan. Elle ne vérifie plus aucune clé —
+// il n'y en a plus — mais elle aligne toujours l'objectif sur le profil, et
+// purge la clé qu'un appareil pourrait encore porter d'une version d'avant.
 function scanCheckApiKey() {
-  var key = localStorage.getItem('ah_anthropic_key') || '';
-  var notice = document.getElementById('scanApiNotice');
-  if (notice) notice.style.display = key ? 'none' : 'block';
+  try { localStorage.removeItem('ah_anthropic_key'); } catch (e) {}
   // Synchroniser l'objectif scanner avec le profil 4 si défini
   try {
     var profile = JSON.parse(localStorage.getItem('ah_profile') || '{}');
