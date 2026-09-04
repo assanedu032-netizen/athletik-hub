@@ -841,7 +841,43 @@ body{background:var(--bg);color:var(--text);font-family:'Outfit',sans-serif;disp
 .jml-item{display:flex;align-items:center;gap:10px;padding:11px 14px;background:var(--surface);border:1px solid var(--border);border-left:3px solid var(--gold);border-radius:10px;margin-bottom:6px}
 .jml-ic{font-size:20px;flex-shrink:0}
 .jml-info{flex:1;min-width:0}
-.jml-name{font-size:13px;font-weight:700;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+/* Deux lignes plutôt qu'une troncature à mi-mot : « Gaufre (portion
+   découpée), Céréal… » ne dit pas ce qu'on a mangé. Le détail complet
+   s'ouvre au tap sur la ligne. */
+.jml-name{font-size:13px;font-weight:700;color:var(--text);line-height:1.35;
+  display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;overflow-wrap:anywhere}
+.jml-item{cursor:pointer}
+.jml-item:active{border-color:var(--gold)}
+.jml-chev{flex-shrink:0;color:var(--muted);font-size:15px;font-weight:700;line-height:1}
+
+/* ═══ FICHE D'UN REPAS DU JOURNAL ═══ */
+.jd-ov{position:fixed;inset:0;z-index:10000;background:rgba(10,17,34,.78);display:none;align-items:flex-end;justify-content:center;opacity:0;transition:opacity .2s}
+.jd-ov.on{display:flex;opacity:1}
+.jd-sheet{width:100%;max-width:430px;max-height:86vh;display:flex;flex-direction:column;background:var(--bg);border-radius:20px 20px 0 0;border-top:1px solid rgba(197,164,78,.25);animation:jdUp .26s cubic-bezier(.2,.8,.3,1) both}
+@keyframes jdUp{from{transform:translateY(40px)}to{transform:translateY(0)}}
+.jd-grab{width:42px;height:4px;border-radius:2px;background:var(--border2);margin:10px auto 6px;flex-shrink:0}
+.jd-head{padding:6px 20px 12px;flex-shrink:0}
+.jd-src{display:inline-flex;align-items:center;gap:6px;font-size:9px;font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:var(--gold);background:rgba(197,164,78,.13);border-radius:4px;padding:3px 7px}
+.jd-title{font-size:16px;font-weight:800;color:var(--text);line-height:1.35;margin-top:9px;overflow-wrap:anywhere}
+.jd-time{font-size:11px;color:var(--muted);font-weight:600;margin-top:4px}
+.jd-body{overflow-y:auto;padding:0 16px 20px;-webkit-overflow-scrolling:touch}
+.jd-totals{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-bottom:14px}
+.jd-t{background:var(--surface);border-radius:10px;padding:9px 4px;text-align:center;min-width:0}
+.jd-t-v{font-family:'Bebas Neue',sans-serif;font-size:22px;line-height:1;letter-spacing:.02em;color:var(--text);font-variant-numeric:tabular-nums}
+.jd-t-v i{font-style:normal;font-size:12px;opacity:.65}
+.jd-t-kcal .jd-t-v{color:var(--gold)}
+.jd-t-l{font-size:8.5px;font-weight:800;letter-spacing:.09em;text-transform:uppercase;color:var(--muted);margin-top:3px}
+.jd-sec{font-size:9.5px;font-weight:800;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);margin:0 0 8px}
+.jd-food{display:flex;align-items:baseline;justify-content:space-between;gap:10px;padding:9px 11px;background:var(--surface);border-radius:9px;margin-bottom:5px;font-size:12.5px}
+.jd-food-n{color:var(--text);min-width:0;overflow-wrap:anywhere;font-weight:600}
+.jd-food-q{color:var(--muted);font-weight:500;font-size:11.5px;margin-left:6px}
+.jd-food-m{color:var(--text2);white-space:nowrap;font-variant-numeric:tabular-nums;font-size:11.5px}
+.jd-est{font-size:8.5px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:#C4703A;background:rgba(196,112,58,.14);border-radius:3px;padding:1px 5px;margin-left:6px;white-space:nowrap}
+.jd-none{font-size:12.5px;color:var(--muted);line-height:1.55;background:var(--surface);border-radius:10px;padding:12px 13px}
+.jd-actions{display:flex;flex-direction:column;gap:8px;margin-top:16px}
+.jd-btn{width:100%;min-height:44px;border-radius:11px;font-family:'Outfit',sans-serif;font-size:13px;font-weight:700;cursor:pointer;border:1px solid var(--border);background:none;color:var(--text2)}
+.jd-btn-del{border-color:rgba(220,38,38,.35);color:#DC2626}
+.jd-btn-del:active{background:rgba(220,38,38,.08)}
 .jml-meta{font-size:11px;color:var(--muted);margin-top:2px}
 .jml-del{background:transparent;border:none;color:var(--muted);font-size:14px;cursor:pointer;padding:6px;flex-shrink:0;opacity:.55}
 .jml-del:hover,.jml-del:active{opacity:1;color:var(--red)}
@@ -8575,6 +8611,11 @@ window.tiResetOnEnter = function(){ window.tiShowStep(1); };
     </div>
     <div id="builderFavList"></div>
   </div>
+</div>
+
+<!-- Fiche d'un repas du journal — ouverte au tap sur une ligne de « Repas du jour ». -->
+<div class="jd-ov" id="journalMealOv" onclick="if(event.target===this)window.closeJournalMeal()">
+  <div class="jd-sheet" role="dialog" aria-label="Détail du repas"></div>
 </div>
 
 <div id="vChat" class="view">
@@ -38150,6 +38191,98 @@ function scanFileToBase64(file) {
 
 
 // Vérifier si une clé API est définie quand on ouvre le scan
+// ══════════════════════════════════════════════════════════════════════
+// FICHE D'UN REPAS DU JOURNAL
+// ─────────────────────────────────────────────────────────────────────
+// La liste ne peut montrer que deux lignes de titre : « Gaufre (portion
+// découpée), Céréal… » ne dit pas ce qu'on a mangé. Le détail existait
+// pourtant déjà dans la donnée — le champ `foods`, écrit par le scan photo
+// comme par l'analyse de Titan — il n'était simplement jamais affiché.
+// Aucune donnée nouvelle : on montre ce qui est déjà enregistré.
+// ══════════════════════════════════════════════════════════════════════
+var JD_SOURCES = {
+  titan:       { ic: '💬', label: 'Analysé par Titan' },
+  recipe:      { ic: '🍴', label: 'Recette' },
+  'meal-plan': { ic: '📋', label: 'Plan repas' }
+};
+
+function _jdNum(v) { return Math.round(Number(v) || 0); }
+
+window.openJournalMeal = function (ref) {
+  var arr = _journalRead();
+  var idx = _journalIndexOf(ref, arr);
+  if (idx < 0) { if (typeof showToast === 'function') showToast('Repas introuvable.', 'info'); return; }
+  var m = arr[idx];
+  var ov = document.getElementById('journalMealOv');
+  if (!ov) return;
+
+  var src = JD_SOURCES[m.source] || { ic: '📸', label: 'Scan photo' };
+  var t = m.totals || {};
+  var d = m.ts ? new Date(m.ts) : (m.date ? new Date(m.date) : null);
+  var quand = '';
+  if (d && !isNaN(d.getTime())) {
+    quand = d.toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' })
+          + ' · ' + ('0' + d.getHours()).slice(-2) + ':' + ('0' + d.getMinutes()).slice(-2);
+  }
+
+  var h = '<div class="jd-head">'
+    + '<span class="jd-src">' + src.ic + ' ' + _lsEsc(src.label) + '</span>'
+    + '<div class="jd-title">' + _lsEsc(m.name || 'Repas') + '</div>'
+    + (quand ? '<div class="jd-time">' + _lsEsc(quand) + '</div>' : '')
+    + '</div><div class="jd-body">'
+    + '<div class="jd-totals">'
+    +   '<div class="jd-t jd-t-kcal"><div class="jd-t-v">' + _jdNum(t.cal) + '</div><div class="jd-t-l">kcal</div></div>'
+    +   '<div class="jd-t"><div class="jd-t-v">' + _jdNum(t.p) + '<i>g</i></div><div class="jd-t-l">Protéines</div></div>'
+    +   '<div class="jd-t"><div class="jd-t-v">' + _jdNum(t.g) + '<i>g</i></div><div class="jd-t-l">Glucides</div></div>'
+    +   '<div class="jd-t"><div class="jd-t-v">' + _jdNum(t.l) + '<i>g</i></div><div class="jd-t-l">Lipides</div></div>'
+    + '</div>';
+
+  var foods = Array.isArray(m.foods) ? m.foods : [];
+  if (foods.length) {
+    h += '<div class="jd-sec">' + foods.length + ' aliment' + (foods.length > 1 ? 's' : '') + '</div>';
+    foods.forEach(function (f) {
+      // Deux formes cohabitent dans le journal, et il faut lire les deux :
+      //   scan photo   → valeurs POUR 100 G, à multiplier par la quantité
+      //   analyse Titan → valeurs ABSOLUES, déjà celles de la portion
+      var absolu = (f.calories != null);
+      var mult = absolu ? 1 : (f.unit === 'unité' ? (f.qty || 1) : (f.qty || 100) / 100);
+      var cal = _jdNum((absolu ? f.calories : f.cal) * mult);
+      var pr  = _jdNum((absolu ? f.protein  : f.p) * mult);
+      var gl  = _jdNum((absolu ? f.carbs    : f.g) * mult);
+      var li  = _jdNum((absolu ? f.fat      : f.l) * mult);
+      var qte = f.quantity || (f.qty != null ? (f.unit === 'unité' ? f.qty + ' u.' : f.qty + ' g') : '');
+      h += '<div class="jd-food"><div class="jd-food-n">' + _lsEsc(f.name || 'Aliment')
+         + (qte ? '<span class="jd-food-q">' + _lsEsc(String(qte)) + '</span>' : '')
+         + (f.estimated ? '<span class="jd-est">estimé</span>' : '')
+         + '</div><div class="jd-food-m">' + cal + ' kcal · ' + pr + 'g · ' + gl + 'g · ' + li + 'g</div></div>';
+    });
+  } else {
+    h += '<div class="jd-none">Le détail par aliment n\'a pas été enregistré pour ce repas — '
+       + 'seuls les totaux le sont. Les repas analysés par Titan et les scans photo, eux, gardent leur liste.</div>';
+  }
+
+  if (m.estimated) {
+    h += '<div class="jd-none" style="margin-top:8px">⚠️ Certaines quantités étaient estimées : le total est un ordre de grandeur.</div>';
+  }
+
+  h += '<div class="jd-actions">'
+    +   '<button type="button" class="jd-btn jd-btn-del" onclick="window.deleteJournalMealFromSheet(' + (m.id ? "'" + m.id + "'" : String(idx)) + ')">Retirer du journal</button>'
+    +   '<button type="button" class="jd-btn" onclick="window.closeJournalMeal()">Fermer</button>'
+    + '</div></div>';
+
+  ov.querySelector('.jd-sheet').innerHTML = '<div class="jd-grab"></div>' + h;
+  ov.classList.add('on');
+};
+
+window.closeJournalMeal = function () {
+  var ov = document.getElementById('journalMealOv');
+  if (ov) ov.classList.remove('on');
+};
+window.deleteJournalMealFromSheet = function (ref) {
+  removeJournalMeal(ref);
+  window.closeJournalMeal();
+};
+
 // ═══════════════════════════════════════════════
 // JOURNAL DASHBOARD — Today (style FatSecret)
 // ═══════════════════════════════════════════════
@@ -38220,13 +38353,16 @@ function renderJournalToday() {
         var prot = Math.round((m.totals && m.totals.p) || m.prot || 0);
         var time = m.ts ? new Date(m.ts) : null;
         var timeStr = time ? (('0'+time.getHours()).slice(-2) + ':' + ('0'+time.getMinutes()).slice(-2)) : '';
-        html += '<div class="jml-item">'
+        // La ligne ouvre la fiche du repas ; le ✕ garde son propre geste.
+        var ref = m.id ? "'" + m.id + "'" : String(idx);
+        html += '<div class="jml-item" onclick="window.openJournalMeal(' + ref + ')">'
           +   '<div class="jml-ic">' + sourceIc + '</div>'
           +   '<div class="jml-info">'
           +     '<div class="jml-name">' + nm + '</div>'
           +     '<div class="jml-meta">' + cal + ' kcal · ' + prot + 'g prot' + (timeStr ? ' · ' + timeStr : '') + '</div>'
           +   '</div>'
-          +   '<button class="jml-del" onclick="removeJournalMeal(' + idx + ')" aria-label="Retirer">✕</button>'
+          +   '<div class="jml-chev">›</div>'
+          +   '<button class="jml-del" onclick="event.stopPropagation();removeJournalMeal(' + ref + ')" aria-label="Retirer">✕</button>'
           + '</div>';
       });
       mealsList.innerHTML = html;

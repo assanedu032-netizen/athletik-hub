@@ -225,6 +225,127 @@ const MIME = { '.html':'text/html','.js':'text/javascript','.css':'text/css','.j
        ok2.done === true && ok2.n === 0, JSON.stringify(ok2));
   }
 
+  console.log('\n=== FICHE D\'UN REPAS DU JOURNAL ===\n');
+  {
+    // Le journal contient DEUX formes d'aliments, et la fiche doit lire les
+    // deux : le scan photo écrit des valeurs POUR 100 G (à multiplier par la
+    // quantité), l'analyse de Titan des valeurs ABSOLUES.
+    await page.evaluate(() => {
+      document.querySelectorAll('.scr').forEach(v => { v.style.display = 'none'; v.classList.remove('on'); });
+      const now = new Date().toISOString();
+      localStorage.setItem('ah_profile', JSON.stringify({ nutriCal: 2500 }));
+      localStorage.setItem('ah_nutri_journal', JSON.stringify([
+        { id: 'mA', ts: Date.now(), date: now, source: 'titan',
+          name: 'Gaufre (portion découpée), Céréales complètes, Lait d\'amande, Pain complet',
+          totals: { cal: 795, p: 18, g: 132, l: 25 }, estimated: true,
+          foods: [
+            { name: 'Gaufre', quantity: 'portion découpée', calories: 310, protein: 6, carbs: 42, fat: 13, estimated: true },
+            { name: 'Céréales complètes', quantity: '2 poignées', calories: 220, protein: 5, carbs: 44, fat: 2, estimated: true },
+            { name: 'Lait d\'amande', quantity: '250 ml', calories: 40, protein: 1, carbs: 2, fat: 3, estimated: false },
+            { name: 'Pain complet', quantity: '2 tranches', calories: 225, protein: 6, carbs: 44, fat: 7, estimated: false }
+          ] },
+        { id: 'mB', ts: Date.now(), date: now, source: 'photo',
+          name: 'Poulet riz', totals: { cal: 510, p: 40, g: 57, l: 12 },
+          // Forme du scan : POUR 100 G, à multiplier par la quantité.
+          foods: [{ name: 'poulet', qty: 150, unit: 'g', cal: 165, p: 31, g: 0, l: 4 }] },
+        { id: 'mC', ts: Date.now(), date: now, source: 'recipe',
+          name: 'Bowl protéiné', totals: { cal: 480, p: 35, g: 40, l: 15 } }
+      ]));
+      window.switchTab('nutri');
+      // Le rendu du journal n'est pas garanti par le simple switchTab dans ce
+      // harnais : on l'appelle explicitement.
+      if (typeof window.renderJournalToday === 'function') window.renderJournalToday();
+    });
+    await page.waitForTimeout(500);
+
+    const liste = await page.evaluate(() => {
+      const n = document.querySelector('.jml-name');
+      const cs = getComputedStyle(n);
+      return { lignes: cs.webkitLineClamp || cs.getPropertyValue('-webkit-line-clamp'),
+               nowrap: cs.whiteSpace === 'nowrap',
+               items: document.querySelectorAll('.jml-item').length,
+               chevrons: document.querySelectorAll('.jml-chev').length };
+    });
+    ok('le nom du repas tient sur deux lignes, plus une seule tronquée',
+       liste.nowrap === false && String(liste.lignes) === '2', JSON.stringify(liste));
+    ok('  chaque ligne annonce qu\'elle s\'ouvre', liste.chevrons === liste.items && liste.items === 3);
+
+    await page.evaluate(() => document.querySelectorAll('.jml-item')[0].click());
+    await page.waitForTimeout(350);
+    const f1 = await page.evaluate(() => {
+      const ov = document.getElementById('journalMealOv');
+      const foods = Array.from(document.querySelectorAll('.jd-food')).map(e => e.textContent.replace(/\s+/g, ' ').trim());
+      const r = document.querySelector('.jd-sheet').getBoundingClientRect();
+      return { open: ov.classList.contains('on'),
+               titre: (document.querySelector('.jd-title') || {}).textContent,
+               src: (document.querySelector('.jd-src') || {}).textContent,
+               totaux: Array.from(document.querySelectorAll('.jd-t-v')).map(e => e.textContent.trim()),
+               foods, est: document.querySelectorAll('.jd-est').length,
+               warn: !!Array.from(document.querySelectorAll('.jd-none')).find(e => /estimées/.test(e.textContent)),
+               dansEcran: r.bottom <= 667 + 1 };
+    });
+    ok('la fiche s\'ouvre au tap', f1.open === true);
+    ok('  le nom COMPLET est affiché, pas tronqué',
+       /Gaufre/.test(f1.titre) && /Pain complet/.test(f1.titre), f1.titre);
+    ok('  la source est nommée', /Analysé par Titan/.test(f1.src || ''), f1.src);
+    ok('  les 4 totaux sont là', f1.totaux.join(' ') === '795 18g 132g 25g', f1.totaux.join(' '));
+    ok('  les 4 aliments sont détaillés', f1.foods.length === 4, String(f1.foods.length));
+    // textContent colle les éléments inline sans espace : on ne suppose donc
+    // aucun séparateur entre le nom, la quantité et le marqueur.
+    ok('  chacun avec sa quantité et ses macros',
+       /Gaufre\s*portion découpée/.test(f1.foods[0])
+       && /310 kcal · 6g · 42g · 13g/.test(f1.foods[0]), f1.foods[0]);
+    ok('  les estimations sont marquées', f1.est === 2, String(f1.est));
+    ok('  et l\'avertissement d\'estimation est présent', f1.warn === true);
+    ok('  la fiche tient dans l\'écran', f1.dansEcran === true);
+    await shot('nutri-6-fiche.png');
+
+    // Forme du scan photo : valeurs pour 100 g × quantité.
+    await page.evaluate(() => { window.closeJournalMeal(); });
+    await page.waitForTimeout(200);
+    await page.evaluate(() => document.querySelectorAll('.jml-item')[1].click());
+    await page.waitForTimeout(300);
+    const f2 = await page.evaluate(() => ({
+      food: (document.querySelector('.jd-food') || {}).textContent.replace(/\s+/g, ' ').trim()
+    }));
+    // 165 kcal/100 g × 150 g = 248 ; 31 g/100 g × 1,5 = 47.
+    ok('un aliment du scan est converti depuis ses valeurs pour 100 g',
+       /poulet\s*150 g/.test(f2.food) && /248 kcal · 47g · 0g · 6g/.test(f2.food), f2.food);
+
+    // Repas sans détail (recette) : on le dit, on n'invente pas.
+    await page.evaluate(() => { window.closeJournalMeal(); });
+    await page.waitForTimeout(200);
+    await page.evaluate(() => document.querySelectorAll('.jml-item')[2].click());
+    await page.waitForTimeout(300);
+    const f3 = await page.evaluate(() => ({
+      foods: document.querySelectorAll('.jd-food').length,
+      none: (document.querySelector('.jd-none') || {}).textContent,
+      totaux: Array.from(document.querySelectorAll('.jd-t-v')).map(e => e.textContent.trim())
+    }));
+    ok('un repas sans détail le dit franchement',
+       f3.foods === 0 && /pas été enregistré/.test(f3.none || ''), f3.none);
+    ok('  mais ses totaux restent affichés', f3.totaux.join(' ') === '480 35g 40g 15g', f3.totaux.join(' '));
+
+    // Retirer depuis la fiche.
+    await page.evaluate(() => document.querySelector('.jd-btn-del').click());
+    await page.waitForTimeout(350);
+    const apres = await page.evaluate(() => ({
+      n: JSON.parse(localStorage.getItem('ah_nutri_journal') || '[]').length,
+      ouvert: document.getElementById('journalMealOv').classList.contains('on'),
+      reste: Array.from(document.querySelectorAll('.jml-name')).map(e => e.textContent.trim())
+    }));
+    ok('« Retirer » depuis la fiche supprime le bon repas',
+       apres.n === 2 && !apres.reste.some(x => /Bowl protéiné/.test(x)), JSON.stringify(apres));
+    ok('  et referme la fiche', apres.ouvert === false);
+
+    // Le ✕ de la liste ne doit pas ouvrir la fiche.
+    await page.evaluate(() => document.querySelector('.jml-del').click());
+    await page.waitForTimeout(300);
+    ok('le ✕ de la liste supprime sans ouvrir la fiche',
+       await page.evaluate(() => !document.getElementById('journalMealOv').classList.contains('on')
+         && JSON.parse(localStorage.getItem('ah_nutri_journal') || '[]').length === 1));
+  }
+
   ok('aucune exception JS', errs.filter(e => !/firebase|fetch|ServiceWorker/i.test(e)).length === 0,
      errs.slice(0,2).join(' | '));
 

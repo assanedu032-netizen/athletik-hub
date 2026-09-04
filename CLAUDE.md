@@ -17,7 +17,7 @@ The app is the digital companion of the book *Les Secrets de la Détente Vertica
   - `sw.js` (cache-first for local assets, network-first for externals) + `manifest.json`. Cache name is `athletik-v271` — bump it when shipping CSS/HTML that must invalidate.
   - `firebase-messaging-sw.js` (root) — receives background push notifications (FCM).
 - **No linter, no build**. Validate changes by opening `index.html` in a browser (mobile-first, Android Chrome is the target). Before committing, sanity-check JS syntax by parsing the non-module `<script>` blocks with `node -e` (see Coding conventions).
-- **Tests**: `for f in scripts/test-*.js; do node "$f"; done` — 24 suites, ~1 372 assertions, pure
+- **Tests**: `for f in scripts/test-*.js; do node "$f"; done` — 24 suites, ~1 400 assertions, pure
   Node, zéro dépendance : chaque suite extrait les **vraies** fonctions d'`index.html` par
   équilibrage d'accolades et les rejoue contre des mocks. `scripts/test-live-layout.js` est la
   seule exception : elle ouvre un vrai Chromium (Playwright, hors `package.json`) pour mesurer la
@@ -342,7 +342,21 @@ completedPrograms, fcmToken, accessTier`.
   **Annuler cet ajout** — qui retire l'entrée **par son id**. Sans `wantsSave`, la carte propose et
   seul le tap écrit. `_titanRemainingToday()` relit le journal **après** écriture : la valeur du
   contexte serveur date d'avant.
-  Tests : `scripts/test-titan-nutri-action.js` (198) et `scripts/test-nutri-card.js` (36, vrai
+  **Une réponse en PROSE est une réponse valide.** Le verrou de sujet garde le mode nutrition armé
+  plusieurs échanges, et toutes les questions qui y passent ne décrivent pas un repas :
+  « redis-moi ce que j'ai mangé » est une question de **lecture**, à laquelle Titan répond
+  naturellement sans JSON. Exiger l'enveloppe jetait cette réponse et affichait « J'ai calé sur ce
+  message ». `nutLooksLikeEnvelope()` distingue une enveloppe cassée (toujours refusée, règle de
+  v279) d'une prose contenant une accolade. Le prompt rappelle aussi que **le journal n'est pas la
+  seule source** : un repas décrit dans la conversation sans être enregistré est tout aussi réel.
+  **La fiche d'un repas** (`openJournalMeal`, feuille `#journalMealOv`) s'ouvre au tap sur une
+  ligne du journal : nom complet, source, totaux, et **le détail par aliment** — qui existait déjà
+  dans `foods` sans jamais être affiché. Elle lit les **deux formes** du champ : le scan photo
+  écrit des valeurs **pour 100 g** (multipliées par `qty`), l'analyse de Titan des valeurs
+  **absolues**. Un repas sans détail (recette, plan repas) le dit au lieu d'inventer. `.jml-name`
+  passe à **2 lignes** (`-webkit-line-clamp`) : « Gaufre (portion découpée), Céréal… » ne disait
+  pas ce qu'on avait mangé.
+  Tests : `scripts/test-titan-nutri-action.js` (209) et `scripts/test-nutri-card.js` (53, vrai
   Chromium).
 - **La conversation Titan se synchronise** (`ah_titan_chat` dans `FB_SYNC_KEYS`). C'est la
   seule clé synchronisée qui s'écrit à **chaque tour** et dont la taille dépend de ce que le
