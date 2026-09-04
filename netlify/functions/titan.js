@@ -861,6 +861,9 @@ QUAND TU REVIENS SUR UNE ANALYSE DÉJÀ FAITE
 L'athlète peut te relancer sur un repas déjà analysé plus haut : « pourquoi tu réponds comme ça », « refais le calcul », « et si j'ajoute une banane », « redonne-moi le total ». Dans ces cas tu REMPLIS "items" À NOUVEAU, en entier, avec les aliments de ce repas — corrigés si l'athlète a apporté une précision.
 Un total annoncé dans "reply" sans "items" en face laisse l'athlète sans rien à enregistrer. Si tu donnes un total, tu donnes les aliments.
 
+QUESTIONS SUR LE JOURNAL
+L'athlète peut te DEMANDER ce qu'il a mangé, ce qu'il lui reste, ou commenter sa journée — « redis-moi ce que j'ai mangé aujourd'hui », « combien me reste-t-il ? », « j'ai assez de protéines ? ». Ce ne sont pas des repas à analyser : réponds avec les chiffres de la section NUTRITION ci-dessus, renvoie "items": [] et des totaux à zéro. Tu restes dans le JSON, la réponse va dans "reply".
+
 Si le message ne parle vraiment pas de nourriture (entraînement, sommeil, motivation…), renvoie "items": [], des totaux à zéro, et réponds normalement dans "reply".`;
 
 // Le modèle peut renvoyer n'importe quoi : on ne fait confiance à aucun champ.
@@ -991,12 +994,31 @@ function nutExtractReply(s) {
   return out.trim();
 }
 
+// Une réponse en TEXTE SIMPLE est une réponse valide.
+// Ce mode reste armé plusieurs échanges (verrou de sujet), et toutes les
+// questions qui y passent ne décrivent pas un repas : « redis-moi ce que j'ai
+// mangé aujourd'hui » est une question de LECTURE, à laquelle Titan répond
+// naturellement en prose. Exiger du JSON jetait cette réponse et affichait
+// « J'ai calé sur ce message » — alors que la réponse était parfaite.
+// Pas de JSON → pas de carte, mais le texte passe.
+function nutLooksLikeEnvelope(s) {
+  return /"reply"\s*:/.test(s) || /"nutrition"\s*:/.test(s) || /"items"\s*:/.test(s);
+}
+
 function parseNutritionJson(text) {
   if (!text) return null;
-  let s = String(text).trim().replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/i, '').trim();
+  const brut = String(text).trim().replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/i, '').trim();
+  let s = brut;
   const first = s.indexOf('{'), last = s.lastIndexOf('}');
-  if (first > -1 && last > first) s = s.slice(first, last + 1);
-  else if (first > -1) s = s.slice(first);   // sortie coupée : pas d'accolade finale
+
+  // Aucune accolade : c'est de la prose, et c'est légitime.
+  if (first < 0) {
+    const prose = nutStr(brut, 2000);
+    return prose ? { reply: prose, nutrition: null } : null;
+  }
+
+  if (last > first) s = s.slice(first, last + 1);
+  else s = s.slice(first);   // sortie coupée : pas d'accolade finale
 
   // Trois tentatives, de la plus fidèle à la plus permissive.
   const essais = [s, nutEscapeControlChars(s), nutCloseTruncated(nutEscapeControlChars(s))];
@@ -1013,6 +1035,14 @@ function parseNutritionJson(text) {
   // Structure perdue : on sauve au moins la phrase.
   const reply = nutStr(nutExtractReply(s), 2000);
   if (reply) return { reply, nutrition: null };
+
+  // Le texte contenait une accolade sans être une enveloppe JSON — une
+  // accolade au fil d'une phrase, par exemple. C'est encore de la prose.
+  if (!nutLooksLikeEnvelope(brut)) {
+    const prose = nutStr(brut, 2000);
+    if (prose) return { reply: prose, nutrition: null };
+  }
+  // Enveloppe JSON réellement irrécupérable : on ne déverse RIEN à l'écran.
   return null;
 }
 

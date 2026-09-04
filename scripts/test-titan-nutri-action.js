@@ -90,6 +90,7 @@ const sanitize = new Function(
   + grab(srv, 'function nutEscapeControlChars(') + '\n'
   + grab(srv, 'function nutCloseTruncated(') + '\n'
   + grab(srv, 'function nutExtractReply(') + '\n'
+  + grab(srv, 'function nutLooksLikeEnvelope(') + '\n'
   + grab(srv, 'function sanitizeNutrition(') + '\n'
   + grab(srv, 'function parseNutritionJson(') + '\n'
   + 'return { san:sanitizeNutrition, parse:parseNutritionJson };'
@@ -184,7 +185,11 @@ console.log('\n=== LA RÉPONSE DU MODÈLE EST TOUJOURS DU TEXTE LISIBLE ===\n');
   const p = sanitize.parse('```json\n{"reply":"Voilà ton total.","nutrition":{"items":[{"name":"Riz","calories":200}]}}\n```');
   ok('les balises de code sont retirées', p && p.reply === 'Voilà ton total.', JSON.stringify(p));
   ok('  et l\'analyse est assainie', p.nutrition.items.length === 1 && p.nutrition.totals.calories === 200);
-  ok('du JSON invalide ne renvoie rien', sanitize.parse('pas du json') === null);
+  // Ces deux assertions encodaient la règle « pas de JSON → rien », qui est
+  // exactement ce qui affichait « J'ai calé sur ce message » sur une réponse
+  // parfaitement valide. Une prose est maintenant une réponse.
+  ok('du texte simple devient la réponse, sans carte',
+     (sanitize.parse('pas du json') || {}).reply === 'pas du json');
   ok('une réponse sans texte est refusée',
      sanitize.parse('{"nutrition":{"items":[]}}') === null);
   const sansNut = sanitize.parse('{"reply":"Je ne vois pas de repas ici."}');
@@ -230,7 +235,9 @@ console.log('\n=== AUCUN JSON NE DOIT ARRIVER DANS UNE BULLE ===\n');
   ok('une structure détruite laisse quand même une phrase',
      p !== null && p.reply === "J'ai fait le calcul.", p && p.reply);
   ok('  et aucune analyse inventée', p.nutrition === null);
-  ok('du texte sans aucun JSON ne renvoie rien', sanitize.parse('Salut, ça va ?') === null);
+  ok('une phrase sans JSON est transmise telle quelle',
+     (sanitize.parse('Salut, ça va ?') || {}).reply === 'Salut, ça va ?');
+  ok('  et sans analyse inventée', (sanitize.parse('Salut, ça va ?') || {}).nutrition === null);
 }
 {
   // Le repli serveur ne renvoie PLUS jamais le brut.
@@ -252,6 +259,43 @@ console.log('\n=== AUCUN JSON NE DOIT ARRIVER DANS UNE BULLE ===\n');
      unwrap('{ceci n\'est pas du json}') === '{ceci n\'est pas du json}');
   ok('le filet est branché sur les bulles de Titan',
      /if \(type === 'titan'\) text = _titanUnwrapJson\(text\);/.test(html));
+}
+
+console.log('\n=== UNE RÉPONSE EN PROSE EST UNE RÉPONSE VALIDE ===\n');
+{
+  // Le mode nutrition reste armé plusieurs échanges, et toutes les questions
+  // qui y passent ne décrivent pas un repas. « Redis-moi ce que j'ai mangé
+  // aujourd'hui » est une question de LECTURE : Titan y répond en prose.
+  // Exiger du JSON jetait cette réponse et affichait « J'ai calé sur ce
+  // message » — alors que la réponse était juste.
+  const prose = "Aujourd'hui tu as mangé des céréales avec du lait d'amande, "
+    + "un smoothie vert et deux tranches de pain complet. Environ 515 kcal.";
+  const p = sanitize.parse(prose);
+  ok('une réponse en texte simple passe', p !== null && p.reply === prose, p && p.reply);
+  ok('  et elle ne produit AUCUNE carte', p.nutrition === null);
+  ok('  le message d\'erreur ne s\'affiche plus à sa place',
+     !/calé sur ce message/.test(p.reply));
+
+  const avecAccolade = 'Tu as pris { deux } tranches de pain ce matin.';
+  const p2 = sanitize.parse(avecAccolade);
+  ok('une accolade au fil d\'une phrase ne fait pas tout jeter',
+     p2 !== null && p2.reply === avecAccolade, p2 && p2.reply);
+
+  // La règle de v279 tient toujours : une enveloppe JSON cassée ne se déverse
+  // JAMAIS à l'écran.
+  ok('une enveloppe JSON irrécupérable est toujours refusée',
+     sanitize.parse('{"nutrition":{"items":[{{{ !!!') === null);
+  ok('  reconnue comme enveloppe, pas comme prose',
+     /"reply"\s*:/.test('{"reply":"x"}') && /nutLooksLikeEnvelope/.test(srv));
+  ok('une enveloppe cassée dont on peut sauver la phrase la garde',
+     (sanitize.parse('{"reply":"Texte sauvé.","nutrition":{"items":[{{{') || {}).reply === 'Texte sauvé.');
+  ok('un texte vide ne renvoie rien', sanitize.parse('') === null && sanitize.parse('   ') === null);
+
+  ok('le prompt couvre les questions sur le journal',
+     /QUESTIONS SUR LE JOURNAL/.test(srv)
+     && /redis-moi ce que j'ai mangé aujourd'hui/.test(srv));
+  ok('  en restant dans l\'enveloppe JSON',
+     /Tu restes dans le JSON, la réponse va dans "reply"/.test(srv));
 }
 
 console.log('\n=== « TU PEUX ENREGISTRER » DOIT DÉCLENCHER L\'ACTION ===\n');
