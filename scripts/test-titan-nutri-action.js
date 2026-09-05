@@ -90,6 +90,7 @@ const sanitize = new Function(
   + grab(srv, 'function nutEscapeControlChars(') + '\n'
   + grab(srv, 'function nutCloseTruncated(') + '\n'
   + grab(srv, 'function nutExtractReply(') + '\n'
+  + grab(srv, 'function nutLooksLikeEnvelope(') + '\n'
   + grab(srv, 'function sanitizeNutrition(') + '\n'
   + grab(srv, 'function parseNutritionJson(') + '\n'
   + 'return { san:sanitizeNutrition, parse:parseNutritionJson };'
@@ -184,7 +185,11 @@ console.log('\n=== LA RÉPONSE DU MODÈLE EST TOUJOURS DU TEXTE LISIBLE ===\n');
   const p = sanitize.parse('```json\n{"reply":"Voilà ton total.","nutrition":{"items":[{"name":"Riz","calories":200}]}}\n```');
   ok('les balises de code sont retirées', p && p.reply === 'Voilà ton total.', JSON.stringify(p));
   ok('  et l\'analyse est assainie', p.nutrition.items.length === 1 && p.nutrition.totals.calories === 200);
-  ok('du JSON invalide ne renvoie rien', sanitize.parse('pas du json') === null);
+  // Ces deux assertions encodaient la règle « pas de JSON → rien », qui est
+  // exactement ce qui affichait « J'ai calé sur ce message » sur une réponse
+  // parfaitement valide. Une prose est maintenant une réponse.
+  ok('du texte simple devient la réponse, sans carte',
+     (sanitize.parse('pas du json') || {}).reply === 'pas du json');
   ok('une réponse sans texte est refusée',
      sanitize.parse('{"nutrition":{"items":[]}}') === null);
   const sansNut = sanitize.parse('{"reply":"Je ne vois pas de repas ici."}');
@@ -230,7 +235,9 @@ console.log('\n=== AUCUN JSON NE DOIT ARRIVER DANS UNE BULLE ===\n');
   ok('une structure détruite laisse quand même une phrase',
      p !== null && p.reply === "J'ai fait le calcul.", p && p.reply);
   ok('  et aucune analyse inventée', p.nutrition === null);
-  ok('du texte sans aucun JSON ne renvoie rien', sanitize.parse('Salut, ça va ?') === null);
+  ok('une phrase sans JSON est transmise telle quelle',
+     (sanitize.parse('Salut, ça va ?') || {}).reply === 'Salut, ça va ?');
+  ok('  et sans analyse inventée', (sanitize.parse('Salut, ça va ?') || {}).nutrition === null);
 }
 {
   // Le repli serveur ne renvoie PLUS jamais le brut.
@@ -254,6 +261,43 @@ console.log('\n=== AUCUN JSON NE DOIT ARRIVER DANS UNE BULLE ===\n');
      /if \(type === 'titan'\) text = _titanUnwrapJson\(text\);/.test(html));
 }
 
+console.log('\n=== UNE RÉPONSE EN PROSE EST UNE RÉPONSE VALIDE ===\n');
+{
+  // Le mode nutrition reste armé plusieurs échanges, et toutes les questions
+  // qui y passent ne décrivent pas un repas. « Redis-moi ce que j'ai mangé
+  // aujourd'hui » est une question de LECTURE : Titan y répond en prose.
+  // Exiger du JSON jetait cette réponse et affichait « J'ai calé sur ce
+  // message » — alors que la réponse était juste.
+  const prose = "Aujourd'hui tu as mangé des céréales avec du lait d'amande, "
+    + "un smoothie vert et deux tranches de pain complet. Environ 515 kcal.";
+  const p = sanitize.parse(prose);
+  ok('une réponse en texte simple passe', p !== null && p.reply === prose, p && p.reply);
+  ok('  et elle ne produit AUCUNE carte', p.nutrition === null);
+  ok('  le message d\'erreur ne s\'affiche plus à sa place',
+     !/calé sur ce message/.test(p.reply));
+
+  const avecAccolade = 'Tu as pris { deux } tranches de pain ce matin.';
+  const p2 = sanitize.parse(avecAccolade);
+  ok('une accolade au fil d\'une phrase ne fait pas tout jeter',
+     p2 !== null && p2.reply === avecAccolade, p2 && p2.reply);
+
+  // La règle de v279 tient toujours : une enveloppe JSON cassée ne se déverse
+  // JAMAIS à l'écran.
+  ok('une enveloppe JSON irrécupérable est toujours refusée',
+     sanitize.parse('{"nutrition":{"items":[{{{ !!!') === null);
+  ok('  reconnue comme enveloppe, pas comme prose',
+     /"reply"\s*:/.test('{"reply":"x"}') && /nutLooksLikeEnvelope/.test(srv));
+  ok('une enveloppe cassée dont on peut sauver la phrase la garde',
+     (sanitize.parse('{"reply":"Texte sauvé.","nutrition":{"items":[{{{') || {}).reply === 'Texte sauvé.');
+  ok('un texte vide ne renvoie rien', sanitize.parse('') === null && sanitize.parse('   ') === null);
+
+  ok('le prompt couvre les questions sur le journal',
+     /QUESTIONS SUR LE JOURNAL/.test(srv)
+     && /redis-moi ce que j'ai mangé aujourd'hui/.test(srv));
+  ok('  en restant dans l\'enveloppe JSON',
+     /Tu restes dans le JSON, la réponse va dans "reply"/.test(srv));
+}
+
 console.log('\n=== « TU PEUX ENREGISTRER » DOIT DÉCLENCHER L\'ACTION ===\n');
 {
   // La phrase exacte de la capture. Le déclencheur exigeait « \benregistre\b »,
@@ -273,10 +317,18 @@ console.log('\n=== « TU PEUX ENREGISTRER » DOIT DÉCLENCHER L\'ACTION ===\n');
   ok('mais « Pk tu répond comme ça » ne déclenche rien', cli.isFood('Pk tu répond comme ça') === false);
   ok('le prompt interdit à Titan de dire qu\'il ne peut pas enregistrer',
      /Ne dis JAMAIS que tu ne peux pas enregistrer/.test(srv));
-  ok('  et le prompt de base annonce la carte',
-     /CE QUE L'APP SAIT FAIRE POUR TOI[\s\S]{0,400}Enregistrer dans mon journal/.test(srv));
+  ok('  et le prompt de base annonce la capacité',
+     /CE QUE L'APP SAIT FAIRE POUR TOI[\s\S]{0,300}enregistrer un repas dans le journal/.test(srv));
   ok('  sans jamais prétendre écrire lui-même',
-     /Tu n'écris jamais toi-même dans son journal/.test(srv));
+     /Tu n'écris jamais toi-même/.test(srv));
+  // Titan promettait « la carte s'affiche juste en dessous » en conversation
+  // normale, où AUCUNE carte n'apparaît : l'app passait pour cassée. Il ne
+  // peut pas savoir si la carte sortira — il invite donc la phrase qui, elle,
+  // déclenche l'enregistrement à coup sûr.
+  ok('  et il lui est interdit de promettre une carte',
+     /NE PROMETS JAMAIS DE CARTE/.test(srv));
+  ok('  il invite plutôt la phrase qui déclenche vraiment l\'action',
+     /ajoute ça à mon journal[\s\S]{0,120}déclenche l'enregistrement/.test(srv));
 }
 
 console.log('\n=== LA NUTRITION EST UN SUJET, PAS UN MESSAGE ISOLÉ ===\n');
@@ -706,6 +758,42 @@ console.log('\n=== LE SCAN PHOTO PASSE PAR LE PROXY, PLUS PAR LE NAVIGATEUR ===\
   ok('  et un retour à la ligne littéral ne fait pas échouer la lecture',
      !!scan.parse('{"foods":[{"name":"riz","qty":100,"unit":"g","cal":130}],"note":"Deux\nlignes."}'));
   ok('du texte sans JSON ne renvoie rien', scan.parse('désolé') === null);
+}
+
+console.log('\n=== LE SCAN DE REPAS EST DISPONIBLE DANS LE CHAT ===\n');
+{
+  // Le bouton photo du chat existait, mais la photo partait en conversation
+  // normale : Titan décrivait l'assiette et l'athlète n'avait rien à
+  // enregistrer. Une entrée « Analyser un repas » force le mode nutrition.
+  ok('le menu photo porte une entrée « Analyser un repas »',
+     /_titanScanMeal\(\)[\s\S]{0,80}Analyser un repas/.test(html));
+  ok('  elle pose l\'intention avant d\'ouvrir l\'appareil photo',
+     /_titanScanMeal = function\s*\(\)\s*\{[\s\S]{0,160}_titanPhotoIsMeal = true/.test(html));
+  ok('  les deux entrées existantes la remettent à faux',
+     /_titanFromCamera\s*= function\(\) \{ window\._titanPhotoIsMeal = false/.test(html)
+     && /_titanFromGallery = function\(\) \{ window\._titanPhotoIsMeal = false/.test(html));
+  ok('l\'intention voyage avec la photo', /photo\.isMeal = !!window\._titanPhotoIsMeal/.test(html));
+  ok('  et force l\'analyse quel que soit le texte',
+     /const isFood = \(photo && photo\.isMeal\) \|\| _titanWantsNutrition\(text\)/.test(html));
+  ok('  en armant aussi le verrou de sujet pour les rebonds',
+     /if \(photo && photo\.isMeal\) window\._titanNutriTurns = TITAN_NUTRI_LATCH/.test(html));
+  ok('la consigne par défaut demande une analyse, pas un avis',
+     /photo\.isMeal[\s\S]{0,140}Analyse ce repas/.test(html));
+  // L'apostrophe est échappée dans la source JS : l\'analyser.
+  ok('l\'aperçu annonce ce qui va se passer',
+     /Repas prêt\. Titan va l\\?'analyser/.test(html));
+  ok('retirer la photo remet l\'intention à faux',
+     /_titanPendingPhoto = null;\s*\n\s*window\._titanPhotoIsMeal = false;/.test(html));
+
+  // Côté serveur : le prompt doit savoir lire une image.
+  ok('le prompt nutrition sait qu\'une photo peut arriver',
+     /ou il t'en envoie une PHOTO/.test(srv));
+  ok('  il marque tout en estimé sur une photo',
+     /Sur une photo[\s\S]{0,300}"estimated": true/.test(srv));
+  ok('  et refuse d\'inventer un repas sur une image illisible',
+     /trop floue ou trop sombre[\s\S]{0,120}"items": \[\]/.test(srv));
+  ok('les images survivent à la sanitisation des messages',
+     /b\.type === 'image' && b\.source && b\.source\.type === 'base64'/.test(srv));
 }
 
 const failed = R.filter(x => !x).length;

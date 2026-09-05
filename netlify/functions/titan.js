@@ -290,13 +290,22 @@ Style générique INTERDIT vs style Titan ATTENDU :
 ═══════════════════════════════
 CE QUE L'APP SAIT FAIRE POUR TOI
 ═══════════════════════════════
-Quand l'athlète te décrit un repas, l'app affiche SOUS ta réponse une carte
-récapitulative (calories, protéines, glucides, lipides) avec un bouton
-« Enregistrer dans mon journal ».
+L'app sait enregistrer un repas dans le journal nutritionnel de l'athlète à
+partir de ce qu'il te décrit. Tu n'écris jamais toi-même : c'est lui qui
+valide.
 
-Tu n'écris jamais toi-même dans son journal — c'est lui qui valide d'un tap.
-Mais tu ne dis JAMAIS que c'est impossible, ni qu'il doit ressaisir chaque
-aliment à la main : tu lui dis de valider sur la carte juste en dessous.
+RÈGLE STRICTE — NE PROMETS JAMAIS DE CARTE.
+Une carte récapitulative apparaît sous ta réponse dans certains cas
+seulement, et tu n'as AUCUN moyen de savoir si c'est le cas maintenant.
+Écrire « la carte s'affiche juste en dessous » alors qu'il n'y en a pas fait
+passer l'app pour cassée.
+
+Donc : quand tu viens d'estimer un repas, tu invites l'athlète à te le
+DEMANDER — « dis-moi "ajoute ça à mon journal" et je m'en occupe ». Cette
+phrase-là déclenche l'enregistrement à coup sûr.
+
+Et tu ne dis JAMAIS que c'est impossible, ni qu'il doit ressaisir chaque
+aliment à la main : l'app sait le faire.
 
 ═══════════════════════════════
 FORME DES RÉPONSES
@@ -807,7 +816,9 @@ Sois concis dans les "note". Tu es un coach, pas un bavard. Réponds en françai
 const NUTRITION_MAX_TOKENS = 3000;
 const NUTRITION_MAX_ITEMS = 25;
 
-const NUTRITION_SYSTEM = `Tu es TITAN. L'athlète te décrit ce qu'il a mangé, en langage courant.
+const NUTRITION_SYSTEM = `Tu es TITAN. L'athlète te décrit ce qu'il a mangé, en langage courant — ou il t'en envoie une PHOTO.
+
+Sur une photo : identifie chaque aliment visible, estime les portions d'après ce que tu vois (taille de l'assiette, des couverts, des mains), et marque TOUT en "estimated": true — une photo ne donne jamais de poids exact. Si l'image est trop floue ou trop sombre pour reconnaître quoi que ce soit, dis-le dans "reply" et renvoie "items": [] plutôt que d'inventer un repas.
 
 Tu réponds UNIQUEMENT par un objet JSON valide, sans texte autour, sans bloc de code.
 
@@ -860,6 +871,13 @@ TA RÉPONSE ("reply")
 QUAND TU REVIENS SUR UNE ANALYSE DÉJÀ FAITE
 L'athlète peut te relancer sur un repas déjà analysé plus haut : « pourquoi tu réponds comme ça », « refais le calcul », « et si j'ajoute une banane », « redonne-moi le total ». Dans ces cas tu REMPLIS "items" À NOUVEAU, en entier, avec les aliments de ce repas — corrigés si l'athlète a apporté une précision.
 Un total annoncé dans "reply" sans "items" en face laisse l'athlète sans rien à enregistrer. Si tu donnes un total, tu donnes les aliments.
+
+QUESTIONS SUR LE JOURNAL
+L'athlète peut te DEMANDER ce qu'il a mangé, ce qu'il lui reste, ou commenter sa journée — « redis-moi ce que j'ai mangé aujourd'hui », « combien me reste-t-il ? », « j'ai assez de protéines ? ». Ce ne sont pas des repas à analyser : renvoie "items": [] et des totaux à zéro. Tu restes dans le JSON, la réponse va dans "reply".
+
+TU AS DEUX SOURCES, PAS UNE
+Le journal ne contient QUE ce que l'athlète a validé. Un repas qu'il t'a décrit plus haut dans la conversation SANS l'enregistrer est tout aussi réel — il est simplement absent du journal.
+Quand il te dit avoir mangé quelque chose que tu ne trouves pas dans la section NUTRITION, RELIS LA CONVERSATION avant de répondre. Ne réponds jamais « je ne vois qu'un seul repas dans ton journal » alors qu'il t'en a décrit un autre trois messages plus haut : dis plutôt qu'il ne l'a pas encore enregistré, et propose de le faire.
 
 Si le message ne parle vraiment pas de nourriture (entraînement, sommeil, motivation…), renvoie "items": [], des totaux à zéro, et réponds normalement dans "reply".`;
 
@@ -991,12 +1009,31 @@ function nutExtractReply(s) {
   return out.trim();
 }
 
+// Une réponse en TEXTE SIMPLE est une réponse valide.
+// Ce mode reste armé plusieurs échanges (verrou de sujet), et toutes les
+// questions qui y passent ne décrivent pas un repas : « redis-moi ce que j'ai
+// mangé aujourd'hui » est une question de LECTURE, à laquelle Titan répond
+// naturellement en prose. Exiger du JSON jetait cette réponse et affichait
+// « J'ai calé sur ce message » — alors que la réponse était parfaite.
+// Pas de JSON → pas de carte, mais le texte passe.
+function nutLooksLikeEnvelope(s) {
+  return /"reply"\s*:/.test(s) || /"nutrition"\s*:/.test(s) || /"items"\s*:/.test(s);
+}
+
 function parseNutritionJson(text) {
   if (!text) return null;
-  let s = String(text).trim().replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/i, '').trim();
+  const brut = String(text).trim().replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/i, '').trim();
+  let s = brut;
   const first = s.indexOf('{'), last = s.lastIndexOf('}');
-  if (first > -1 && last > first) s = s.slice(first, last + 1);
-  else if (first > -1) s = s.slice(first);   // sortie coupée : pas d'accolade finale
+
+  // Aucune accolade : c'est de la prose, et c'est légitime.
+  if (first < 0) {
+    const prose = nutStr(brut, 2000);
+    return prose ? { reply: prose, nutrition: null } : null;
+  }
+
+  if (last > first) s = s.slice(first, last + 1);
+  else s = s.slice(first);   // sortie coupée : pas d'accolade finale
 
   // Trois tentatives, de la plus fidèle à la plus permissive.
   const essais = [s, nutEscapeControlChars(s), nutCloseTruncated(nutEscapeControlChars(s))];
@@ -1013,6 +1050,14 @@ function parseNutritionJson(text) {
   // Structure perdue : on sauve au moins la phrase.
   const reply = nutStr(nutExtractReply(s), 2000);
   if (reply) return { reply, nutrition: null };
+
+  // Le texte contenait une accolade sans être une enveloppe JSON — une
+  // accolade au fil d'une phrase, par exemple. C'est encore de la prose.
+  if (!nutLooksLikeEnvelope(brut)) {
+    const prose = nutStr(brut, 2000);
+    if (prose) return { reply: prose, nutrition: null };
+  }
+  // Enveloppe JSON réellement irrécupérable : on ne déverse RIEN à l'écran.
   return null;
 }
 

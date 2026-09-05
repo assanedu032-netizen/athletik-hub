@@ -17,7 +17,7 @@ The app is the digital companion of the book *Les Secrets de la Détente Vertica
   - `sw.js` (cache-first for local assets, network-first for externals) + `manifest.json`. Cache name is `athletik-v271` — bump it when shipping CSS/HTML that must invalidate.
   - `firebase-messaging-sw.js` (root) — receives background push notifications (FCM).
 - **No linter, no build**. Validate changes by opening `index.html` in a browser (mobile-first, Android Chrome is the target). Before committing, sanity-check JS syntax by parsing the non-module `<script>` blocks with `node -e` (see Coding conventions).
-- **Tests**: `for f in scripts/test-*.js; do node "$f"; done` — 24 suites, ~1 372 assertions, pure
+- **Tests**: `for f in scripts/test-*.js; do node "$f"; done` — 25 suites, ~1 460 assertions, pure
   Node, zéro dépendance : chaque suite extrait les **vraies** fonctions d'`index.html` par
   équilibrage d'accolades et les rejoue contre des mocks. `scripts/test-live-layout.js` est la
   seule exception : elle ouvre un vrai Chromium (Playwright, hors `package.json`) pour mesurer la
@@ -260,6 +260,25 @@ completedPrograms, fcmToken, accessTier`.
   inconnu s'affiche brut plutôt que d'être effacé. Le texte est **échappé avant `innerHTML`**.
   Test : `scripts/test-notif-diag.js` (35).
 - **Workout Builder**: `pgBuilder` page (3e sous-onglet de `vTrain`, à côté de Programmes/Librairie). Locked until `programsDone >= 2` (`BUILDER_UNLOCK_PROGRAMS`) OR VIP/MASTER tier OR compte fondateur (`BUILDER_FOUNDER_EMAILS` / `_builderIsDev()`). `_builderCheckUnlock()`. **Piloté par Titan** : l'utilisateur exprime une intention (objectif/durée/matériel/état via chips + phrase libre/vocal `builderToggleMic`), `builderGenerate()` POST `/.netlify/functions/titan` avec `mode:'builder'` + la librairie compacte (`_builderLibraryPayload`) → Titan renvoie une séance **JSON structurée** (blocs échauffement→principal→secondaire→finisher→retour au calme) programmée selon la méthode Athletic Hub (`BUILDER_SYSTEM` côté serveur). `_builderReconcile()` rattache vidéos/catégories depuis `catData`. `builderStartGenerated()` lance via `launchSession` (marquée `_LS.builderMeta`). En fin de séance, `_lsShowComplete` injecte un panneau de ressenti (`_builderInjectFeedback`) et **sauvegarde dans Firestore `users/{uid}/builderSessions`** (cloud, pas localStorage) — `_builderSaveSession`/`_builderSaveFeedback`.
+- **Suivi › Progrès** (`renderSuiviOverview`) — hiérarchie **état → progression → Titan →
+  priorité → action → historique**, quatre niveaux de carte pour distinguer information ≠
+  observation ≠ priorité ≠ action. Rien n'est inventé : `_suiviDimensions()` lit les **4
+  composantes réelles** du score (`detente` 40 %, `squat` 25 %, `sprint30` 20 %, `fms` 15 %) via
+  `ascValueToPercent`, une dimension non mesurée s'affiche `—` sans barre à zéro ;
+  `_suiviProgression()` ne compare que **deux tests** et renvoie `null` sinon ;
+  `_suiviInsights()` exige un minimum de mesures (écart ≥ 15 pts, RPE sur ≥ 4 relevés,
+  ≥ 3 séances/7 j) et plafonne à 3 observations.
+  **Bug corrigé — `_trProgressionDelta` prenait les deux dernières entrées de `ah_set_history`
+  sans filtrer.** Cette clé mélange tests (qui portent `values`) et séances (qui n'en portent
+  pas) : **une seule séance enregistrée après un test suffisait à annuler toute la progression**.
+  Autant dire toujours. Le filtre `type !== 'session' && e.values` la ressuscite.
+  L'onglet « Vue d'ensemble » devient **« Progrès »** et `.sub-tab` passe de `flex:1` à
+  `flex:1 1 auto` + `min-width:0` : les quatre étaient forcés à la même largeur, « Exercices »
+  se faisait couper de 9 px, et la rangée débordait de 3 px en 320 px (défaut **préexistant**).
+  Attention : `.sub-tab` est défini **quatre fois** dans le fichier — c'est la version « design
+  system » (pleine de `!important`, vers la ligne 3700) qui gagne.
+  Test : `scripts/test-suivi-overview.js` (39, vrai Chromium, les 3 états réels : rien mesuré,
+  un seul test, deux tests + séances).
 - **Progression**: `renderProgression()` fills `#progressionCard` in the Moi tab — current score, 8-week sessions bar graph, personal records. Helper `_progressionWeeklySessions(8)`.
 - **Habits**: `activeHabits` array, persisted to `ah_active_habits` via `_persistActiveHabits()`. `checkHabit()` resets the streak on a day gap. `renderActiveHabits()` renders Home + Moi.
 - **Exercise library**: `catData` is the flat exercise database (198 exercises). `_LIB_CAT_MAP` maps the chip filters to `catData` keys. Schema `{name, diff:'easy'|'med'|'hard', muscles, desc, mat, tag?, video?}`. Videos: per-exo `video` field OR `_LIB_VIDEO_MAP` lookup by name. The library has a "🎯 Mon programme" filter (`_libFlatExos('myprogram')`).
@@ -342,7 +361,30 @@ completedPrograms, fcmToken, accessTier`.
   **Annuler cet ajout** — qui retire l'entrée **par son id**. Sans `wantsSave`, la carte propose et
   seul le tap écrit. `_titanRemainingToday()` relit le journal **après** écriture : la valeur du
   contexte serveur date d'avant.
-  Tests : `scripts/test-titan-nutri-action.js` (198) et `scripts/test-nutri-card.js` (36, vrai
+  **Une réponse en PROSE est une réponse valide.** Le verrou de sujet garde le mode nutrition armé
+  plusieurs échanges, et toutes les questions qui y passent ne décrivent pas un repas :
+  « redis-moi ce que j'ai mangé » est une question de **lecture**, à laquelle Titan répond
+  naturellement sans JSON. Exiger l'enveloppe jetait cette réponse et affichait « J'ai calé sur ce
+  message ». `nutLooksLikeEnvelope()` distingue une enveloppe cassée (toujours refusée, règle de
+  v279) d'une prose contenant une accolade. Le prompt rappelle aussi que **le journal n'est pas la
+  seule source** : un repas décrit dans la conversation sans être enregistré est tout aussi réel.
+  **La fiche d'un repas** (`openJournalMeal`, feuille `#journalMealOv`) s'ouvre au tap sur une
+  ligne du journal : nom complet, source, totaux, et **le détail par aliment** — qui existait déjà
+  dans `foods` sans jamais être affiché. Elle lit les **deux formes** du champ : le scan photo
+  écrit des valeurs **pour 100 g** (multipliées par `qty`), l'analyse de Titan des valeurs
+  **absolues**. Un repas sans détail (recette, plan repas) le dit au lieu d'inventer. `.jml-name`
+  passe à **2 lignes** (`-webkit-line-clamp`) : « Gaufre (portion découpée), Céréal… » ne disait
+  pas ce qu'on avait mangé.
+  **Le scan de repas vit aussi dans le chat.** Le bouton photo existait, mais l'image partait en
+  conversation normale : Titan décrivait l'assiette et l'athlète n'avait **rien à enregistrer**.
+  Le menu photo porte une entrée **« 🍽️ Analyser un repas »** qui pose `_titanPhotoIsMeal` ;
+  `photo.isMeal` force alors `mode:'nutrition'` **quel que soit le texte** et arme le verrou de
+  sujet pour les rebonds. On ne devine PAS : une photo peut aussi être un contrôle de posture,
+  et « Prendre une photo » / « galerie » remettent l'intention à faux. `NUTRITION_SYSTEM` sait
+  lire une image — tout y est marqué `estimated: true` (une photo ne donne jamais un poids), et
+  une image illisible renvoie `items: []` plutôt qu'un repas inventé. Les blocs image survivent
+  à `sanitizeMessages`, donc aucune plomberie nouvelle.
+  Tests : `scripts/test-titan-nutri-action.js` (224) et `scripts/test-nutri-card.js` (57, vrai
   Chromium).
 - **La conversation Titan se synchronise** (`ah_titan_chat` dans `FB_SYNC_KEYS`). C'est la
   seule clé synchronisée qui s'écrit à **chaque tour** et dont la taille dépend de ce que le

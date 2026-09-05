@@ -809,8 +809,17 @@ body{background:var(--bg);color:var(--text);font-family:'Outfit',sans-serif;disp
 /* ═══ SUB-TABS ═══ */
 .sub-tabs{display:flex;gap:4px;padding:16px 22px 0;position:sticky;top:0;background:var(--bg);z-index:50}
 .sub-tab{
-  flex:1;padding:10px 0;text-align:center;
-  font-size:12px;font-weight:700;letter-spacing:.5px;
+  /* Les quatre libellés doivent TENIR, pas être coupés : un onglet
+     « Progre… » est pire qu'un onglet un peu plus petit. On resserre donc
+     le suivi typographique plutôt que de tronquer, et min-width:0 empêche
+     le plus long d'imposer sa largeur (3 px de débordement en 320). */
+  /* `flex:1 1 auto` au lieu de `flex:1` : chaque onglet part de la largeur
+     de SON mot, et l'espace restant se répartit ensuite. Avec `flex:1`, les
+     quatre étaient forcés à la même largeur et « Exercices » se faisait
+     couper de 9 px pendant que « Tests » gardait de la place inutilisée. */
+  flex:1 1 auto;min-width:0;padding:10px 6px;text-align:center;
+  white-space:nowrap;
+  font-size:11.5px;font-weight:700;letter-spacing:0;
   color:var(--muted);background:var(--surface);
   border:1px solid var(--border);border-radius:12px;
   cursor:pointer;transition:all .2s;
@@ -841,7 +850,43 @@ body{background:var(--bg);color:var(--text);font-family:'Outfit',sans-serif;disp
 .jml-item{display:flex;align-items:center;gap:10px;padding:11px 14px;background:var(--surface);border:1px solid var(--border);border-left:3px solid var(--gold);border-radius:10px;margin-bottom:6px}
 .jml-ic{font-size:20px;flex-shrink:0}
 .jml-info{flex:1;min-width:0}
-.jml-name{font-size:13px;font-weight:700;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+/* Deux lignes plutôt qu'une troncature à mi-mot : « Gaufre (portion
+   découpée), Céréal… » ne dit pas ce qu'on a mangé. Le détail complet
+   s'ouvre au tap sur la ligne. */
+.jml-name{font-size:13px;font-weight:700;color:var(--text);line-height:1.35;
+  display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;overflow-wrap:anywhere}
+.jml-item{cursor:pointer}
+.jml-item:active{border-color:var(--gold)}
+.jml-chev{flex-shrink:0;color:var(--muted);font-size:15px;font-weight:700;line-height:1}
+
+/* ═══ FICHE D'UN REPAS DU JOURNAL ═══ */
+.jd-ov{position:fixed;inset:0;z-index:10000;background:rgba(10,17,34,.78);display:none;align-items:flex-end;justify-content:center;opacity:0;transition:opacity .2s}
+.jd-ov.on{display:flex;opacity:1}
+.jd-sheet{width:100%;max-width:430px;max-height:86vh;display:flex;flex-direction:column;background:var(--bg);border-radius:20px 20px 0 0;border-top:1px solid rgba(197,164,78,.25);animation:jdUp .26s cubic-bezier(.2,.8,.3,1) both}
+@keyframes jdUp{from{transform:translateY(40px)}to{transform:translateY(0)}}
+.jd-grab{width:42px;height:4px;border-radius:2px;background:var(--border2);margin:10px auto 6px;flex-shrink:0}
+.jd-head{padding:6px 20px 12px;flex-shrink:0}
+.jd-src{display:inline-flex;align-items:center;gap:6px;font-size:9px;font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:var(--gold);background:rgba(197,164,78,.13);border-radius:4px;padding:3px 7px}
+.jd-title{font-size:16px;font-weight:800;color:var(--text);line-height:1.35;margin-top:9px;overflow-wrap:anywhere}
+.jd-time{font-size:11px;color:var(--muted);font-weight:600;margin-top:4px}
+.jd-body{overflow-y:auto;padding:0 16px 20px;-webkit-overflow-scrolling:touch}
+.jd-totals{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-bottom:14px}
+.jd-t{background:var(--surface);border-radius:10px;padding:9px 4px;text-align:center;min-width:0}
+.jd-t-v{font-family:'Bebas Neue',sans-serif;font-size:22px;line-height:1;letter-spacing:.02em;color:var(--text);font-variant-numeric:tabular-nums}
+.jd-t-v i{font-style:normal;font-size:12px;opacity:.65}
+.jd-t-kcal .jd-t-v{color:var(--gold)}
+.jd-t-l{font-size:8.5px;font-weight:800;letter-spacing:.09em;text-transform:uppercase;color:var(--muted);margin-top:3px}
+.jd-sec{font-size:9.5px;font-weight:800;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);margin:0 0 8px}
+.jd-food{display:flex;align-items:baseline;justify-content:space-between;gap:10px;padding:9px 11px;background:var(--surface);border-radius:9px;margin-bottom:5px;font-size:12.5px}
+.jd-food-n{color:var(--text);min-width:0;overflow-wrap:anywhere;font-weight:600}
+.jd-food-q{color:var(--muted);font-weight:500;font-size:11.5px;margin-left:6px}
+.jd-food-m{color:var(--text2);white-space:nowrap;font-variant-numeric:tabular-nums;font-size:11.5px}
+.jd-est{font-size:8.5px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:#C4703A;background:rgba(196,112,58,.14);border-radius:3px;padding:1px 5px;margin-left:6px;white-space:nowrap}
+.jd-none{font-size:12.5px;color:var(--muted);line-height:1.55;background:var(--surface);border-radius:10px;padding:12px 13px}
+.jd-actions{display:flex;flex-direction:column;gap:8px;margin-top:16px}
+.jd-btn{width:100%;min-height:44px;border-radius:11px;font-family:'Outfit',sans-serif;font-size:13px;font-weight:700;cursor:pointer;border:1px solid var(--border);background:none;color:var(--text2)}
+.jd-btn-del{border-color:rgba(220,38,38,.35);color:#DC2626}
+.jd-btn-del:active{background:rgba(220,38,38,.08)}
 .jml-meta{font-size:11px;color:var(--muted);margin-top:2px}
 .jml-del{background:transparent;border:none;color:var(--muted);font-size:14px;cursor:pointer;padding:6px;flex-shrink:0;opacity:.55}
 .jml-del:hover,.jml-del:active{opacity:1;color:var(--red)}
@@ -1197,6 +1242,73 @@ body{background:var(--bg);color:var(--text);font-family:'Outfit',sans-serif;disp
 .msg-time{font-size:9px;color:var(--muted);margin-top:3px;font-weight:600}
 .msg.titan .msg-time{margin-left:4px}
 .msg.user .msg-time{margin-right:4px;text-align:right}
+
+/* ═══ SUIVI — VUE D'ENSEMBLE ═══
+   Quatre niveaux de carte, pour que l'athlète distingue au premier regard
+   information ≠ observation ≠ priorité ≠ action. Aucune couleur nouvelle :
+   navy, or, et les surfaces déjà en place. */
+.sv-kick{font-family:'JetBrains Mono',monospace;font-size:9px;font-weight:700;letter-spacing:.22em;text-transform:uppercase;color:var(--muted)}
+.sv-kick-gold{color:var(--gold)}
+.sv-sec{font-family:'JetBrains Mono',monospace;font-size:9px;font-weight:700;letter-spacing:.20em;text-transform:uppercase;color:var(--muted);margin:16px 0 8px}
+
+/* ① État actuel — la seule carte à dégradé, c'est le sommet de la page. */
+.sv-hero{background:linear-gradient(135deg,var(--navy),#0F1B33);border-radius:16px;padding:18px 20px;color:#fff;position:relative;overflow:hidden}
+/* Le halo ne dépasse jamais à droite : à 320 px il poussait la largeur de
+   la page de 3 px, et un débordement horizontal se voit au doigt. */
+.sv-hero-glow{position:absolute;top:-30%;right:0;width:220px;height:220px;max-width:100%;background:radial-gradient(circle,rgba(197,164,78,.18),transparent 60%);pointer-events:none}
+/* Le badge de niveau peut être long (« SURHUMAIN ») : sur écran étroit il
+   passe à la ligne au lieu de pousser le score hors cadre. */
+.sv-hero-top{position:relative;z-index:1;display:flex;align-items:flex-end;justify-content:space-between;gap:10px 14px;flex-wrap:wrap}
+.sv-hero .sv-kick{color:var(--gold)}
+.sv-score{font-family:'Bebas Neue',sans-serif;font-size:54px;line-height:1;color:#fff;letter-spacing:.02em;margin-top:2px;font-variant-numeric:tabular-nums}
+.sv-score span{font-size:20px;color:rgba(255,255,255,.4);margin-left:2px}
+.sv-lvl{padding:6px 12px;background:rgba(197,164,78,.18);border:1px solid rgba(197,164,78,.55);border-radius:999px;font-family:'Bebas Neue',sans-serif;font-size:12px;letter-spacing:.16em;white-space:nowrap;max-width:100%;overflow:hidden;text-overflow:ellipsis}
+.sv-dims{position:relative;z-index:1;display:grid;grid-template-columns:1fr 1fr;gap:10px 14px;margin-top:16px}
+.sv-dim-top{display:flex;align-items:baseline;justify-content:space-between;gap:8px;margin-bottom:4px}
+.sv-dim-l{font-size:10.5px;font-weight:700;color:rgba(255,255,255,.72)}
+.sv-dim-v{font-family:'Bebas Neue',sans-serif;font-size:15px;color:#fff;font-variant-numeric:tabular-nums}
+.sv-dim-bar{height:4px;border-radius:4px;background:rgba(255,255,255,.14);overflow:hidden}
+.sv-dim-fill{height:100%;border-radius:4px;background:var(--gold);transition:width .5s ease}
+.sv-hero-note{position:relative;z-index:1;font-size:10.5px;color:rgba(255,255,255,.5);margin-top:12px;line-height:1.45}
+.sv-hero-lock{padding:20px}
+.sv-lock-t{font-family:'Bebas Neue',sans-serif;font-size:28px;line-height:1.1;letter-spacing:.02em;color:#fff;margin:8px 0 6px}
+.sv-lock-s{font-size:13px;color:rgba(255,255,255,.75);line-height:1.55;max-width:34ch}
+.sv-lock-cta{margin-top:14px;width:100%;min-height:46px;border:0;border-radius:12px;background:linear-gradient(135deg,var(--gold),var(--gold2));color:var(--navy);font-family:'Outfit',sans-serif;font-size:14px;font-weight:800;cursor:pointer}
+
+/* ② Progression — information neutre. */
+.sv-prog{display:flex;flex-direction:column;gap:1px;background:var(--border);border:1px solid var(--border);border-radius:12px;overflow:hidden}
+.sv-prog-i{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:11px 14px;background:var(--surface)}
+.sv-prog-l{font-size:13px;font-weight:600;color:var(--text);min-width:0;overflow-wrap:anywhere}
+.sv-prog-v{font-family:'Bebas Neue',sans-serif;font-size:19px;letter-spacing:.03em;white-space:nowrap;font-variant-numeric:tabular-nums}
+.sv-prog-v.up{color:#2F7D52}.sv-prog-v.down{color:#B4692A}
+.sv-note{font-size:10.5px;color:var(--muted);margin-top:6px}
+.sv-empty{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:14px;font-size:12.5px;color:var(--text2);line-height:1.55}
+
+/* ③ Titan — accent doré subtil, jamais une carte pleine. */
+.sv-titan{margin-top:16px;background:rgba(197,164,78,.06);border:1px solid rgba(197,164,78,.30);border-radius:14px;padding:14px 16px}
+.sv-titan-h{font-family:'Outfit',sans-serif;font-size:12.5px;font-weight:800;color:var(--gold);margin-bottom:10px;letter-spacing:.01em}
+.sv-titan-i{display:flex;gap:9px;align-items:flex-start;font-size:12.5px;line-height:1.5;color:var(--text);margin-bottom:8px}
+.sv-titan-ic{flex-shrink:0;font-size:13px;line-height:1.4}
+.sv-titan-cta{margin-top:4px;background:none;border:0;padding:6px 0;color:var(--gold);font-family:'Outfit',sans-serif;font-size:12px;font-weight:700;cursor:pointer}
+
+/* ④ Priorité — carte premium, plus affirmée que l'information. */
+.sv-prio{margin-top:16px;background:linear-gradient(135deg,rgba(197,164,78,.13),transparent);border:1px solid rgba(197,164,78,.42);border-radius:14px;padding:15px 16px}
+.sv-prio-t{font-family:'Bebas Neue',sans-serif;font-size:24px;letter-spacing:.04em;color:var(--text);line-height:1.1;margin-top:5px}
+.sv-prio-s{font-size:12px;color:var(--text2);margin-top:5px;line-height:1.5}
+
+/* ⑤ Action — la seule navy pleine du bas de page. Une par écran. */
+.sv-act{margin-top:12px;background:linear-gradient(135deg,var(--navy),#0F1B33);color:#fff;border-radius:14px;padding:15px 16px;cursor:pointer;display:flex;align-items:center;gap:12px;box-shadow:0 6px 18px rgba(20,30,60,.18);min-height:74px}
+.sv-act:active{filter:brightness(1.08)}
+.sv-act-t{font-family:'Outfit',sans-serif;font-size:15.5px;font-weight:800;color:#fff;line-height:1.25;margin-top:4px}
+.sv-act-s{font-size:11.5px;color:rgba(255,255,255,.66);margin-top:4px;line-height:1.5}
+.sv-act-go{font-size:19px;color:var(--gold);flex-shrink:0}
+
+/* ⑥ Historique — le plus discret, tout en bas. */
+.sv-hist{display:flex;gap:10px;margin-top:14px}
+.sv-hist-i{flex:1;min-width:0;background:var(--surface);border:1px solid var(--border);border-radius:11px;padding:11px 13px;cursor:pointer}
+.sv-hist-i:active{border-color:var(--gold)}
+.sv-hist-l{font-family:'JetBrains Mono',monospace;font-size:8.5px;font-weight:700;letter-spacing:.16em;text-transform:uppercase;color:var(--muted)}
+.sv-hist-v{font-size:12.5px;font-weight:700;color:var(--text);margin-top:3px}
 
 /* ═══ CARTE NUTRITION DE TITAN ═══
    Navy + or du design system, aucune couleur nouvelle. Elle occupe toute la
@@ -3592,12 +3704,25 @@ html body #thinking{
   margin:16px 20px 0 !important;
 }
 .sub-tab{
-  flex:1; padding:9px 6px !important; text-align:center !important;
+  /* `flex:1 1 auto` : chaque onglet part de la largeur de SON mot, l'espace
+     restant se répartit ensuite. Avec `flex:1`, les quatre étaient forcés à
+     la même largeur et « Exercices » se faisait couper de 9 px pendant que
+     « Tests » gardait de la place inutilisée. min-width:0 empêche en plus le
+     plus long d'imposer sa largeur à toute la rangée (3 px de débordement
+     horizontal en 320 px, présent avant ce chantier). */
+  flex:1 1 auto; min-width:0; white-space:nowrap;
+  padding:9px 6px !important; text-align:center !important;
   border-radius:calc(var(--ah-r-md) - 2px) !important;
   font-size:12px !important; font-weight:600 !important;
   color:var(--ah-text2) !important; cursor:pointer;
   background:transparent !important; box-shadow:none !important;
   border:none !important;
+}
+/* Sous 400 px, la marge de 20 px coûte 40 px de largeur utile : on la
+   resserre plutôt que de couper les mots. */
+@media (max-width:400px){
+  .sub-tabs{ margin-left:12px !important; margin-right:12px !important; gap:3px; }
+  .sub-tab{ font-size:11px !important; padding-left:4px !important; padding-right:4px !important; }
 }
 .sub-tab.on{
   background:var(--ah-navy) !important; color:#fff !important;
@@ -7872,7 +7997,10 @@ window.tiResetOnEnter = function(){ window.tiShowStep(1); };
        SAT et SET ne sont plus directement dans les sub-tabs : on y accède via
        le landing "Tests" pour éviter de mélanger formulaires et bilans. -->
   <div class="sub-tabs">
-    <div class="sub-tab on" onclick="showSec('overview',this)">Vue d'ensemble</div>
+    <!-- « Progrès » plutôt que « Progression » : à quatre onglets, le mot
+         long ne tient pas en 375 px sans être coupé, et un onglet tronqué
+         est pire qu'un mot plus court. Même sens, même intention. -->
+    <div class="sub-tab on" onclick="showSec('overview',this)">Progrès</div>
     <div class="sub-tab" onclick="showSec('tests',this)">Tests</div>
     <div class="sub-tab" onclick="showSec('track',this)">Exercices</div>
     <div class="sub-tab" onclick="showSec('sessions',this)">Journal</div>
@@ -8577,6 +8705,11 @@ window.tiResetOnEnter = function(){ window.tiShowStep(1); };
   </div>
 </div>
 
+<!-- Fiche d'un repas du journal — ouverte au tap sur une ligne de « Repas du jour ». -->
+<div class="jd-ov" id="journalMealOv" onclick="if(event.target===this)window.closeJournalMeal()">
+  <div class="jd-sheet" role="dialog" aria-label="Détail du repas"></div>
+</div>
+
 <div id="vChat" class="view">
 <!-- Chat Header — DS v1.0 mascotte 88px -->
   <div class="chat-header" style="flex-direction:column;align-items:center;padding:18px 16px 16px;gap:8px;position:relative">
@@ -8642,7 +8775,11 @@ window.tiResetOnEnter = function(){ window.tiShowStep(1); };
          pour que les photos iPhone au format HEIC restent sélectionnables. -->
     <input type="file" id="ciPhotoInput" accept="image/*" style="display:none" onchange="window._titanOnPhoto(this)">
     <input type="file" id="ciCameraInput" accept="image/*" capture="environment" style="display:none" onchange="window._titanOnPhoto(this)">
+    <!-- Une photo envoyée à Titan peut être un REPAS (à analyser) ou un
+         contrôle de posture (à commenter). On ne devine pas : l'athlète
+         choisit, et le choix tient en un tap de plus. -->
     <div class="ci-sheet" id="ciPhotoSheet">
+      <button type="button" onclick="window._titanScanMeal()"><span class="cis-ic">🍽️</span>Analyser un repas</button>
       <button type="button" onclick="window._titanFromCamera()"><span class="cis-ic">📷</span>Prendre une photo</button>
       <button type="button" onclick="window._titanFromGallery()"><span class="cis-ic">🖼️</span>Choisir dans la galerie</button>
     </div>
@@ -25721,7 +25858,9 @@ async function callAnthropicAPI(userMessage, photo, opts) {
       role: 'user', t: Date.now(),
       content: [
         { type: 'image', source: { type: 'base64', media_type: photo.media_type, data: photo.data } },
-        { type: 'text', text: userMessage || 'Regarde cette image et dis-moi ce que tu en penses.' }
+        { type: 'text', text: userMessage || (photo.isMeal
+            ? 'Analyse ce repas : identifie les aliments, estime les quantités, donne calories et macros.'
+            : 'Regarde cette image et dis-moi ce que tu en penses.') }
       ]
     });
   } else {
@@ -26722,8 +26861,18 @@ function _titanOpenInput(id) {
   // menu en est un) : pas de setTimeout ici, iOS bloquerait l'ouverture.
   if (el) { el.value = ''; el.click(); }
 }
-window._titanFromCamera  = function() { _titanOpenInput('ciCameraInput'); };
-window._titanFromGallery = function() { _titanOpenInput('ciPhotoInput'); };
+window._titanFromCamera  = function() { window._titanPhotoIsMeal = false; _titanOpenInput('ciCameraInput'); };
+window._titanFromGallery = function() { window._titanPhotoIsMeal = false; _titanOpenInput('ciPhotoInput'); };
+
+// « Analyser un repas » : même prise de photo, mais la réponse passera par
+// le mode nutrition — donc avec la carte « Enregistrer dans mon journal ».
+// Sans ce drapeau, une photo de repas partait en conversation normale : Titan
+// décrivait l'assiette, et l'athlète n'avait rien à enregistrer.
+window._titanPhotoIsMeal = false;
+window._titanScanMeal = function() {
+  window._titanPhotoIsMeal = true;
+  _titanOpenInput('ciCameraInput');
+};
 
 // Referme le menu si on tape ailleurs.
 document.addEventListener('click', function(e) {
@@ -26737,6 +26886,7 @@ document.addEventListener('click', function(e) {
 
 window._titanClearPhoto = function() {
   window._titanPendingPhoto = null;
+  window._titanPhotoIsMeal = false;
   var p = document.getElementById('ciPreview');
   var b = document.getElementById('photoBtn');
   if (p) p.classList.remove('on');
@@ -26793,10 +26943,13 @@ window._titanOnPhoto = async function(input) {
   if (txt) txt.textContent = 'Préparation de la photo…';
   try {
     var photo = await _titanCompressPhoto(file);
+    photo.isMeal = !!window._titanPhotoIsMeal;
     window._titanPendingPhoto = photo;
     var im = document.getElementById('ciPreviewImg');
     if (im) im.src = photo.dataUrl;
-    if (txt) txt.textContent = 'Photo prête. Ajoute une question si tu veux.';
+    if (txt) txt.textContent = window._titanPhotoIsMeal
+      ? 'Repas prêt. Titan va l\'analyser et te proposer de l\'enregistrer.'
+      : 'Photo prête. Ajoute une question si tu veux.';
     var b = document.getElementById('photoBtn'); if (b) b.classList.add('on');
   } catch (e) {
     console.warn('[titan photo]', e);
@@ -26831,7 +26984,10 @@ async function sendMessage() {
   // Un message qui parle de nourriture part en mode nutrition : MÊME appel,
   // MÊME quota, mais la réponse rapporte en plus une analyse structurée.
   window._titanLastNutrition = null;
-  const isFood = _titanWantsNutrition(text);
+  // Une photo annoncée comme repas force l'analyse, quel que soit le texte :
+  // l'athlète a déjà dit son intention en choisissant « Analyser un repas ».
+  const isFood = (photo && photo.isMeal) || _titanWantsNutrition(text);
+  if (photo && photo.isMeal) window._titanNutriTurns = TITAN_NUTRI_LATCH;
   const reply = await callAnthropicAPI(text, photo, isFood ? { mode: 'nutrition' } : null);
   const nutrition = window._titanLastNutrition;
   window._titanLastNutrition = null;
@@ -36554,6 +36710,12 @@ function _trTitanAnalysis(score, weakLabel) {
 function _trProgressionDelta() {
   var h = [];
   try { h = JSON.parse(localStorage.getItem('ah_set_history') || '[]'); } catch(e) {}
+  // FILTRER LES SÉANCES. `ah_set_history` mélange les tests (qui portent
+  // `values`) et les séances terminées (qui n'en portent pas). Prendre les
+  // deux DERNIÈRES entrées sans filtrer suffisait à tuer la progression :
+  // une seule séance enregistrée après un test, et tous les deltas
+  // retombaient à null. Autant dire : toujours.
+  h = h.filter(function (e) { return e && e.type !== 'session' && e.values; });
   if (h.length < 2) return null;
   var cur = h[h.length-1].values || {};
   var prev = h[h.length-2].values || {};
@@ -36764,6 +36926,128 @@ function _suiviRelDate(iso) {
   } catch(e) { return '—'; }
 }
 
+// ══════════════════════════════════════════════════════════════════════
+// SUIVI — LECTURE DE LA PERFORMANCE
+// ─────────────────────────────────────────────────────────────────────
+// Règle qui gouverne tout ce bloc : AUCUNE DONNÉE INVENTÉE.
+// Chaque fonction renvoie `null` quand la donnée manque, et l'affichage dit
+// alors ce qui manque et comment l'obtenir. Mieux vaut « données
+// insuffisantes » qu'un pourcentage fabriqué.
+// ══════════════════════════════════════════════════════════════════════
+
+// Les 4 dimensions du score, avec leur poids réel dans ascCalcGlobalScore.
+// Ce ne sont pas des catégories inventées pour l'affichage : ce sont
+// exactement les composantes du calcul.
+var SUIVI_DIMS = [
+  { key: 'detente',  label: 'Explosivité', poids: 40, unite: 'cm' },
+  { key: 'squat',    label: 'Force',       poids: 25, unite: '× poids' },
+  { key: 'sprint30', label: 'Vitesse',     poids: 20, unite: 's' },
+  { key: 'fms',      label: 'Mobilité',    poids: 15, unite: '/21' }
+];
+
+// Score 0-100 par dimension, tel que le calcul le voit. Null si la mesure
+// n'a pas été faite — on n'affiche pas une barre à zéro pour un test absent.
+function _suiviDimensions(metrics, sexe) {
+  if (!metrics || typeof ascValueToPercent !== 'function') return [];
+  return SUIVI_DIMS.map(function (d) {
+    var v = metrics[d.key];
+    if (v == null) return { key: d.key, label: d.label, poids: d.poids, pct: null };
+    var pct = ascValueToPercent(d.key, v, sexe);
+    return {
+      key: d.key, label: d.label, poids: d.poids,
+      pct: (typeof pct === 'number' && isFinite(pct)) ? Math.round(pct) : null
+    };
+  });
+}
+
+// Progression mesurée entre les DEUX DERNIERS TESTS. Rien d'autre : un seul
+// test ne permet aucune évolution, et le dire est plus utile que d'afficher
+// un zéro trompeur.
+function _suiviProgression() {
+  var d = (typeof _trProgressionDelta === 'function') ? _trProgressionDelta() : null;
+  if (!d) return null;
+  var out = [];
+  // La détente se lit comme (saut − reach) : c'est ainsi qu'elle est mesurée.
+  if (d.jump != null && d.reach != null) {
+    var cm = +(d.jump - d.reach).toFixed(1);
+    if (cm !== 0) out.push({ label: 'Détente verticale', valeur: (cm > 0 ? '+' : '') + cm + ' cm', bon: cm > 0 });
+  }
+  // Sprint : plus court = mieux.
+  if (d.sprint != null && d.sprint !== 0) {
+    out.push({ label: 'Sprint 60 m', valeur: (d.sprint > 0 ? '+' : '') + d.sprint.toFixed(2) + ' s', bon: d.sprint < 0 });
+  }
+  [['squat1RM', 'Squat'], ['sdt1RM', 'Soulevé de terre'], ['ht1RM', 'Hip thrust'], ['dc1RM', 'Développé couché']]
+    .forEach(function (p) {
+      var v = d[p[0]];
+      if (v != null && v !== 0) out.push({ label: p[1], valeur: (v > 0 ? '+' : '') + v + ' kg', bon: v > 0 });
+    });
+  return out.length ? out : null;
+}
+
+// Observations de Titan. Chacune s'appuie sur une donnée VÉRIFIABLE et cite
+// le nombre de mesures sur lequel elle repose. Aucune n'est produite sans le
+// minimum de données qui la rend honnête.
+function _suiviInsights(dims, prog) {
+  var out = [];
+
+  // 1. L'écart entre deux dimensions mesurées — le signal le plus lisible.
+  var mesurees = (dims || []).filter(function (d) { return d.pct != null; });
+  if (mesurees.length >= 2) {
+    var tri = mesurees.slice().sort(function (a, b) { return b.pct - a.pct; });
+    var haut = tri[0], bas = tri[tri.length - 1];
+    if (haut.pct - bas.pct >= 15) {
+      out.push({ ic: '⚖️', txt: 'Ta ' + haut.label.toLowerCase() + ' (' + haut.pct + '/100) a '
+        + (haut.pct - bas.pct) + ' points d\'avance sur ta ' + bas.label.toLowerCase()
+        + ' (' + bas.pct + '/100).' });
+    }
+  }
+
+  // 2. Ce qui a bougé entre les deux derniers tests.
+  if (prog && prog.length) {
+    var gains = prog.filter(function (p) { return p.bon; });
+    var pertes = prog.filter(function (p) { return !p.bon; });
+    if (gains.length) {
+      out.push({ ic: '📈', txt: gains.map(function (g) { return g.label.toLowerCase(); }).join(', ')
+        + ' : en progrès depuis ton dernier test.' });
+    }
+    if (pertes.length && out.length < 3) {
+      out.push({ ic: '⚠️', txt: pertes.map(function (g) { return g.label.toLowerCase(); }).join(', ')
+        + ' : en recul depuis ton dernier test.' });
+    }
+  }
+
+  // 3. Tendance du RPE — la fatigue perçue, sur au moins 4 mesures.
+  try {
+    var th = JSON.parse(localStorage.getItem('ah_track_history') || '[]');
+    var rpes = (Array.isArray(th) ? th : [])
+      .filter(function (h) { return h && typeof h.rpe === 'number' && h.rpe > 0; })
+      .slice(-6);
+    if (rpes.length >= 4 && out.length < 3) {
+      var moitie = Math.floor(rpes.length / 2);
+      var avg = function (a) { return a.reduce(function (x, h) { return x + h.rpe; }, 0) / a.length; };
+      var av = avg(rpes.slice(0, moitie)), ap = avg(rpes.slice(moitie));
+      if (ap - av >= 1) {
+        out.push({ ic: '🔋', txt: 'Ton RPE moyen monte (' + av.toFixed(1) + ' → ' + ap.toFixed(1)
+          + ' sur tes ' + rpes.length + ' dernières mesures). Surveille ta récupération.' });
+      }
+    }
+  } catch (e) {}
+
+  // 4. Régularité — comptée, jamais estimée.
+  try {
+    var hist = JSON.parse(localStorage.getItem('ah_set_history') || '[]');
+    var s7 = (Array.isArray(hist) ? hist : []).filter(function (h) {
+      if (!h || h.type !== 'session' || !h.date) return false;
+      return (Date.now() - new Date(h.date).getTime()) <= 7 * 86400000;
+    }).length;
+    if (s7 >= 3 && out.length < 3) {
+      out.push({ ic: '🔥', txt: s7 + ' séances sur les 7 derniers jours. La régularité est là.' });
+    }
+  } catch (e) {}
+
+  return out.slice(0, 3);
+}
+
 // ─────────── SECTION : VUE D'ENSEMBLE ───────────
 function renderSuiviOverview() {
   var c = document.getElementById('overviewBody'); if (!c) return;
@@ -36778,111 +37062,144 @@ function renderSuiviOverview() {
   var sessions= _suiviSessions();
   var lastTest    = tests[tests.length - 1];
   var lastSession = sessions[sessions.length - 1];
+  var dims    = _suiviDimensions(metrics, sexe);
+  var prog    = _suiviProgression();
+  var insights= _suiviInsights(dims, prog);
 
+  // Hiérarchie de l'écran, du plus important au plus détaillé :
+  //   ① où j'en suis  ② ce qui progresse  ③ ce que Titan observe
+  //   ④ ce qui me limite  ⑤ ce que je fais maintenant  ⑥ l'historique
   var html = '';
 
-  // Bouton "?" guide en haut à droite de la Vue d'ensemble
-  // (apparaît UNIQUEMENT si l'user n'a pas encore complété ses tests
-  // — c'est là qu'il a besoin d'aide).
   if (!hasAnyMetric) {
     html += '<div style="display:flex;justify-content:flex-end;margin-bottom:6px">';
     html += '<button type="button" onclick="window.openGuide && window.openGuide(\'tests\')" style="display:inline-flex;align-items:center;gap:6px;padding:6px 12px;border-radius:999px;background:rgba(197,164,78,.10);border:1px solid rgba(197,164,78,.35);color:var(--ah-gold);font-family:\'Outfit\',sans-serif;font-size:11.5px;font-weight:700;cursor:pointer">▶ Guide rapide</button>';
     html += '</div>';
   }
 
-  // ── 1) ATHLETIK SCORE — hero ou empty state ──
+  // ── ① ÉTAT ACTUEL — le score et ses quatre dimensions réelles ──
   if (score != null) {
-    html += '<div style="background:linear-gradient(135deg,var(--navy),#0F1B33);border-radius:16px;padding:18px 20px;color:#fff;margin-bottom:10px;position:relative;overflow:hidden">';
-    html += '<div aria-hidden="true" style="position:absolute;top:-30%;right:-10%;width:220px;height:220px;background:radial-gradient(circle,rgba(197,164,78,.18),transparent 60%);pointer-events:none"></div>';
-    html += '<div style="position:relative;z-index:1;display:flex;align-items:flex-end;justify-content:space-between;gap:14px">';
-    html += '<div><div style="font-family:\'JetBrains Mono\',monospace;font-size:10px;letter-spacing:.24em;color:var(--gold);text-transform:uppercase">Athletik Score</div>';
-    html += '<div style="font-family:\'Bebas Neue\',sans-serif;font-size:54px;line-height:1;color:#fff;letter-spacing:.02em;margin-top:2px">' + score + '<span style="font-size:22px;color:rgba(255,255,255,.4)"> / 100</span></div></div>';
-    html += '<div style="padding:6px 12px;background:rgba(197,164,78,.18);border:1px solid rgba(197,164,78,.55);border-radius:999px;font-family:\'Bebas Neue\',sans-serif;font-size:12px;letter-spacing:.16em;color:' + lvl.color + ';white-space:nowrap">' + lvl.name.toUpperCase() + '</div>';
-    html += '</div></div>';
+    html += '<div class="sv-hero">';
+    html += '<div aria-hidden="true" class="sv-hero-glow"></div>';
+    html += '<div class="sv-hero-top">';
+    html += '<div><div class="sv-kick">Athletik Score</div>';
+    html += '<div class="sv-score">' + score + '<span>/100</span></div></div>';
+    html += '<div class="sv-lvl" style="color:' + lvl.color + '">' + lvl.name.toUpperCase() + '</div>';
+    html += '</div>';
+    // Les dimensions viennent du calcul lui-même, avec leur poids réel.
+    var mes = dims.filter(function (d) { return d.pct != null; });
+    if (mes.length) {
+      html += '<div class="sv-dims">';
+      dims.forEach(function (d) {
+        var connu = d.pct != null;
+        html += '<div class="sv-dim">'
+          + '<div class="sv-dim-top"><span class="sv-dim-l">' + d.label + '</span>'
+          + '<span class="sv-dim-v">' + (connu ? d.pct : '—') + '</span></div>'
+          + '<div class="sv-dim-bar"><div class="sv-dim-fill" style="width:' + (connu ? d.pct : 0) + '%"></div></div>'
+          + '</div>';
+      });
+      html += '</div>';
+      var manquantes = dims.filter(function (d) { return d.pct == null; });
+      if (manquantes.length) {
+        html += '<div class="sv-hero-note">Non mesuré : '
+          + manquantes.map(function (d) { return d.label.toLowerCase(); }).join(', ') + '.</div>';
+      }
+    }
+    html += '</div>';
   } else {
-    // Empty state : pas encore de score
-    html += '<div style="background:linear-gradient(135deg,var(--navy),#0F1B33);border-radius:16px;padding:18px 20px;color:#fff;margin-bottom:10px">';
-    html += '<div style="font-family:\'JetBrains Mono\',monospace;font-size:10px;letter-spacing:.24em;color:var(--gold);text-transform:uppercase;margin-bottom:6px">Athletik Score</div>';
-    html += '<div style="font-family:\'Bebas Neue\',sans-serif;font-size:30px;line-height:1.05;color:#fff;letter-spacing:.02em;margin-bottom:8px">Score verrouillé</div>';
-    html += '<div style="font-size:13px;color:rgba(255,255,255,.75);line-height:1.55">Fais tes tests physiques pour débloquer ton Athletik Score.</div>';
+    // Verrouillé — mais on donne envie, on n'annonce pas une panne.
+    html += '<div class="sv-hero sv-hero-lock">';
+    html += '<div class="sv-kick">Athletik Score</div>';
+    html += '<div class="sv-lock-t">🔒 Ton score t\'attend</div>';
+    html += '<div class="sv-lock-s">Passe tes tests pour découvrir ce qui limite le plus ta progression — explosivité, force, vitesse, mobilité.</div>';
+    html += '<button type="button" class="sv-lock-cta" onclick="window.showSec && window.showSec(\'tests\')">Faire mes tests →</button>';
     html += '</div>';
   }
 
-  // ── 2) DERNIER TEST + DERNIÈRE SÉANCE (cartes côte à côte) ──
-  function _ovCard(kicker, title, sub, isCta) {
-    var style = 'background:var(--ah-surface);border:1px solid var(--ah-border);border-radius:12px;padding:12px;flex:1;min-width:0' + (isCta ? ';border-style:dashed;border-color:rgba(197,164,78,.45)' : '');
-    var titleColor = isCta ? 'var(--ah-gold)' : 'var(--ah-text)';
-    return '<div style="' + style + '">'
-      + '<div style="font-family:\'JetBrains Mono\',monospace;font-size:9px;letter-spacing:.18em;color:var(--ah-muted);text-transform:uppercase;margin-bottom:4px">' + kicker + '</div>'
-      + '<div style="font-family:\'Outfit\',sans-serif;font-size:13px;font-weight:700;color:' + titleColor + ';line-height:1.3">' + (title || '—') + '</div>'
-      + (sub ? '<div style="font-size:11px;color:var(--ah-muted);margin-top:2px">' + sub + '</div>' : '')
+  // ── ② PROGRESSION — mesurée entre deux tests, ou rien ──
+  html += '<div class="sv-sec">Ta progression</div>';
+  if (prog) {
+    html += '<div class="sv-prog">';
+    prog.forEach(function (p) {
+      html += '<div class="sv-prog-i"><div class="sv-prog-l">' + _trkEsc(p.label) + '</div>'
+        + '<div class="sv-prog-v' + (p.bon ? ' up' : ' down') + '">' + _trkEsc(p.valeur) + '</div></div>';
+    });
+    html += '</div>';
+    html += '<div class="sv-note">Écart entre tes deux derniers tests.</div>';
+  } else {
+    html += '<div class="sv-empty">'
+      + (tests.length >= 1
+          ? 'Un seul test enregistré : il n\'y a pas encore d\'écart à mesurer. Refais un test dans 4 à 6 semaines.'
+          : 'Aucun test enregistré. C\'est lui qui pose ta référence de départ.')
       + '</div>';
   }
-  html += '<div style="display:flex;gap:10px;margin-bottom:10px">';
-  if (lastTest) {
-    html += '<div onclick="window.showSec && window.showSec(\'tests\')" style="cursor:pointer;flex:1">';
-    html += _ovCard('Dernier test', 'SAT · ' + _suiviFmtDate(lastTest.date), _suiviRelDate(lastTest.date));
-    html += '</div>';
-  } else {
-    html += '<div onclick="window.showSec && window.showSec(\'tests\')" style="cursor:pointer;flex:1">';
-    html += _ovCard('Dernier test', 'Faire un test maintenant', null, true);
+
+  // ── ③ CE QUE TITAN OBSERVE — uniquement sur données suffisantes ──
+  if (insights.length) {
+    html += '<div class="sv-titan">';
+    html += '<div class="sv-titan-h">🧠 Titan a lu ta progression</div>';
+    insights.forEach(function (i) {
+      html += '<div class="sv-titan-i"><span class="sv-titan-ic">' + i.ic + '</span><span>' + _trkEsc(i.txt) + '</span></div>';
+    });
+    html += '<button type="button" class="sv-titan-cta" onclick="window.switchTab && window.switchTab(\'chat\')">En parler à Titan →</button>';
     html += '</div>';
   }
-  if (lastSession) {
-    html += '<div onclick="window.switchTab && window.switchTab(\'train\')" style="cursor:pointer;flex:1">';
-    html += _ovCard('Dernière séance', _trkEsc(lastSession.sessName || 'Séance'), _suiviRelDate(lastSession.date));
-    html += '</div>';
+
+  // ── ④ PRIORITÉ — le maillon faible, avec son chiffre ──
+  html += '<div class="sv-prio">';
+  html += '<div class="sv-kick sv-kick-gold">Ta priorité</div>';
+  if (weak) {
+    var wDim = dims.filter(function (d) { return d.key === weak.key; })[0];
+    html += '<div class="sv-prio-t">' + _trMetricLabel(weak.key) + '</div>';
+    html += '<div class="sv-prio-s">'
+      + (wDim && wDim.pct != null
+          ? 'C\'est ta dimension la plus basse (' + wDim.pct + '/100). C\'est là que les gains arrivent le plus vite.'
+          : 'C\'est ta dimension la plus basse. C\'est là que les gains arrivent le plus vite.')
+      + '</div>';
+  } else if (hasAnyMetric) {
+    html += '<div class="sv-prio-t">Profil équilibré</div>';
+    html += '<div class="sv-prio-s">Aucune dimension ne décroche. Continue, et remesure dans 4 à 6 semaines.</div>';
   } else {
-    html += '<div onclick="window.switchTab && window.switchTab(\'train\')" style="cursor:pointer;flex:1">';
-    html += _ovCard('Dernière séance', 'Lance ta première séance', null, true);
-    html += '</div>';
+    html += '<div class="sv-prio-t">Analyse en cours</div>';
+    html += '<div class="sv-prio-s">Passe tes tests et enregistre quelques séances : Titan pourra alors identifier ton principal levier.</div>';
   }
   html += '</div>';
 
-  // ── 3) PRIORITÉ ACTUELLE (toujours affichée, contextualisée) ──
-  var priorityLabel = weak ? _trMetricLabel(weak.key) : (hasAnyMetric ? 'Score global équilibré' : 'À déterminer');
-  var priorityHint  = weak ? 'Maillon faible à travailler en priorité.'
-                           : (hasAnyMetric ? 'Bon équilibre — maintiens tes mesures à jour.'
-                                           : 'Complète tes tests pour qu\'on identifie ta priorité.');
-  html += '<div style="background:linear-gradient(135deg,rgba(197,164,78,.10),transparent);border:1px solid rgba(197,164,78,.35);border-radius:14px;padding:14px 16px;margin-bottom:10px">';
-  html += '<div style="font-family:\'JetBrains Mono\',monospace;font-size:9px;letter-spacing:.20em;color:var(--ah-gold);text-transform:uppercase;margin-bottom:4px">Priorité actuelle</div>';
-  html += '<div style="font-family:\'Bebas Neue\',sans-serif;font-size:22px;letter-spacing:.04em;color:var(--ah-text);line-height:1.1">' + priorityLabel + '</div>';
-  html += '<div style="font-size:11.5px;color:var(--ah-text2);margin-top:4px;line-height:1.5">' + priorityHint + '</div>';
-  html += '</div>';
-
-  // ── 4) PROCHAINE ACTION RECOMMANDÉE (CTA actionnable) ──
-  // Logique :
-  // - Pas de test → "Faire mon premier test"
-  // - Pas de séance → "Lancer ma première séance"
-  // - Pas d'activité récente (>= 4 jours) → "Tracker un exercice"
-  // - Sinon : "Travaille ton [maillon faible]"
+  // ── ⑤ ACTION — la seule carte navy pleine de l'écran ──
   var nextAction = { label: '', hint: '', click: '' };
   var daysSinceLast = null;
   if (lastSession || lastTest) {
     var lastDate = new Date((lastSession && lastSession.date) || (lastTest && lastTest.date));
-    if (!isNaN(lastDate.getTime())) {
-      daysSinceLast = Math.floor((Date.now() - lastDate.getTime()) / 86400000);
-    }
+    if (!isNaN(lastDate.getTime())) daysSinceLast = Math.floor((Date.now() - lastDate.getTime()) / 86400000);
   }
   if (!lastTest) {
-    nextAction = { label: 'Faire mon premier test', hint: 'Ça pose ta baseline et débloque ton Athletik Score.', click: "window.showSec && window.showSec('tests')" };
+    nextAction = { label: 'Passer mes tests', hint: 'Ça pose ta référence et débloque ton score.', click: "window.showSec && window.showSec('tests')" };
   } else if (!lastSession) {
     nextAction = { label: 'Lancer ma première séance', hint: 'Tes tests sont posés. Maintenant on bosse.', click: "window.switchTab && window.switchTab('train')" };
   } else if (daysSinceLast != null && daysSinceLast >= 4) {
-    nextAction = { label: 'Tracker un exercice', hint: daysSinceLast + ' jours sans activité — un exo court suffit pour relancer.', click: "window.showSec && window.showSec('track')" };
+    nextAction = { label: 'Relancer la machine', hint: daysSinceLast + ' jours sans rien enregistrer. Un exercice court suffit.', click: "window.showSec && window.showSec('track')" };
   } else if (weak) {
-    var weakLbl = _trMetricLabel(weak.key).toLowerCase();
-    nextAction = { label: 'Travaille ta ' + weakLbl, hint: "C'est ton maillon faible — c'est là que les gains sont les plus rapides.", click: "window.switchTab && window.switchTab('train')" };
+    nextAction = { label: 'Travailler ta ' + _trMetricLabel(weak.key).toLowerCase(),
+                   hint: 'C\'est ton point le plus bas — le meilleur rendement de ton temps.',
+                   click: "window.switchTab && window.switchTab('train')" };
   } else {
-    nextAction = { label: 'Continue à mesurer régulièrement', hint: 'Refais un test dans 4-6 semaines pour mesurer ta progression.', click: "window.showSec && window.showSec('tests')" };
+    nextAction = { label: 'Mesurer ta progression', hint: 'Refais un test : 4 à 6 semaines séparent deux mesures utiles.', click: "window.showSec && window.showSec('tests')" };
   }
-  html += '<div onclick="' + nextAction.click + '" style="background:linear-gradient(135deg,var(--ah-navy),#0F1B33);color:#fff;border-radius:14px;padding:14px 16px;cursor:pointer;display:flex;align-items:center;gap:12px;box-shadow:0 6px 18px rgba(20,30,60,.18)">';
+  html += '<div class="sv-act" onclick="' + nextAction.click + '">';
   html += '<div style="flex:1;min-width:0">';
-  html += '<div style="font-family:\'JetBrains Mono\',monospace;font-size:9px;letter-spacing:.20em;color:var(--ah-gold);text-transform:uppercase;margin-bottom:4px">Prochaine action</div>';
-  html += '<div style="font-family:\'Outfit\',sans-serif;font-size:15px;font-weight:800;color:#fff;line-height:1.25">' + nextAction.label + '</div>';
-  html += '<div style="font-size:11.5px;color:rgba(255,255,255,.65);margin-top:4px;line-height:1.5">' + nextAction.hint + '</div>';
-  html += '</div>';
-  html += '<div style="font-size:18px;color:var(--ah-gold);flex-shrink:0">→</div>';
+  html += '<div class="sv-kick sv-kick-gold">Maintenant</div>';
+  html += '<div class="sv-act-t">' + nextAction.label + '</div>';
+  html += '<div class="sv-act-s">' + nextAction.hint + '</div>';
+  html += '</div><div class="sv-act-go">→</div></div>';
+
+  // ── ⑥ HISTORIQUE — au fond, en discret ──
+  html += '<div class="sv-hist">';
+  html += '<div class="sv-hist-i" onclick="window.showSec && window.showSec(\'tests\')">'
+    + '<div class="sv-hist-l">Dernier test</div><div class="sv-hist-v">'
+    + (lastTest ? _suiviRelDate(lastTest.date) : 'Aucun') + '</div></div>';
+  html += '<div class="sv-hist-i" onclick="window.showSec && window.showSec(\'sessions\')">'
+    + '<div class="sv-hist-l">Dernière séance</div><div class="sv-hist-v">'
+    + (lastSession ? _suiviRelDate(lastSession.date) : 'Aucune') + '</div></div>';
   html += '</div>';
 
   c.innerHTML = html;
@@ -38150,6 +38467,98 @@ function scanFileToBase64(file) {
 
 
 // Vérifier si une clé API est définie quand on ouvre le scan
+// ══════════════════════════════════════════════════════════════════════
+// FICHE D'UN REPAS DU JOURNAL
+// ─────────────────────────────────────────────────────────────────────
+// La liste ne peut montrer que deux lignes de titre : « Gaufre (portion
+// découpée), Céréal… » ne dit pas ce qu'on a mangé. Le détail existait
+// pourtant déjà dans la donnée — le champ `foods`, écrit par le scan photo
+// comme par l'analyse de Titan — il n'était simplement jamais affiché.
+// Aucune donnée nouvelle : on montre ce qui est déjà enregistré.
+// ══════════════════════════════════════════════════════════════════════
+var JD_SOURCES = {
+  titan:       { ic: '💬', label: 'Analysé par Titan' },
+  recipe:      { ic: '🍴', label: 'Recette' },
+  'meal-plan': { ic: '📋', label: 'Plan repas' }
+};
+
+function _jdNum(v) { return Math.round(Number(v) || 0); }
+
+window.openJournalMeal = function (ref) {
+  var arr = _journalRead();
+  var idx = _journalIndexOf(ref, arr);
+  if (idx < 0) { if (typeof showToast === 'function') showToast('Repas introuvable.', 'info'); return; }
+  var m = arr[idx];
+  var ov = document.getElementById('journalMealOv');
+  if (!ov) return;
+
+  var src = JD_SOURCES[m.source] || { ic: '📸', label: 'Scan photo' };
+  var t = m.totals || {};
+  var d = m.ts ? new Date(m.ts) : (m.date ? new Date(m.date) : null);
+  var quand = '';
+  if (d && !isNaN(d.getTime())) {
+    quand = d.toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' })
+          + ' · ' + ('0' + d.getHours()).slice(-2) + ':' + ('0' + d.getMinutes()).slice(-2);
+  }
+
+  var h = '<div class="jd-head">'
+    + '<span class="jd-src">' + src.ic + ' ' + _lsEsc(src.label) + '</span>'
+    + '<div class="jd-title">' + _lsEsc(m.name || 'Repas') + '</div>'
+    + (quand ? '<div class="jd-time">' + _lsEsc(quand) + '</div>' : '')
+    + '</div><div class="jd-body">'
+    + '<div class="jd-totals">'
+    +   '<div class="jd-t jd-t-kcal"><div class="jd-t-v">' + _jdNum(t.cal) + '</div><div class="jd-t-l">kcal</div></div>'
+    +   '<div class="jd-t"><div class="jd-t-v">' + _jdNum(t.p) + '<i>g</i></div><div class="jd-t-l">Protéines</div></div>'
+    +   '<div class="jd-t"><div class="jd-t-v">' + _jdNum(t.g) + '<i>g</i></div><div class="jd-t-l">Glucides</div></div>'
+    +   '<div class="jd-t"><div class="jd-t-v">' + _jdNum(t.l) + '<i>g</i></div><div class="jd-t-l">Lipides</div></div>'
+    + '</div>';
+
+  var foods = Array.isArray(m.foods) ? m.foods : [];
+  if (foods.length) {
+    h += '<div class="jd-sec">' + foods.length + ' aliment' + (foods.length > 1 ? 's' : '') + '</div>';
+    foods.forEach(function (f) {
+      // Deux formes cohabitent dans le journal, et il faut lire les deux :
+      //   scan photo   → valeurs POUR 100 G, à multiplier par la quantité
+      //   analyse Titan → valeurs ABSOLUES, déjà celles de la portion
+      var absolu = (f.calories != null);
+      var mult = absolu ? 1 : (f.unit === 'unité' ? (f.qty || 1) : (f.qty || 100) / 100);
+      var cal = _jdNum((absolu ? f.calories : f.cal) * mult);
+      var pr  = _jdNum((absolu ? f.protein  : f.p) * mult);
+      var gl  = _jdNum((absolu ? f.carbs    : f.g) * mult);
+      var li  = _jdNum((absolu ? f.fat      : f.l) * mult);
+      var qte = f.quantity || (f.qty != null ? (f.unit === 'unité' ? f.qty + ' u.' : f.qty + ' g') : '');
+      h += '<div class="jd-food"><div class="jd-food-n">' + _lsEsc(f.name || 'Aliment')
+         + (qte ? '<span class="jd-food-q">' + _lsEsc(String(qte)) + '</span>' : '')
+         + (f.estimated ? '<span class="jd-est">estimé</span>' : '')
+         + '</div><div class="jd-food-m">' + cal + ' kcal · ' + pr + 'g · ' + gl + 'g · ' + li + 'g</div></div>';
+    });
+  } else {
+    h += '<div class="jd-none">Le détail par aliment n\'a pas été enregistré pour ce repas — '
+       + 'seuls les totaux le sont. Les repas analysés par Titan et les scans photo, eux, gardent leur liste.</div>';
+  }
+
+  if (m.estimated) {
+    h += '<div class="jd-none" style="margin-top:8px">⚠️ Certaines quantités étaient estimées : le total est un ordre de grandeur.</div>';
+  }
+
+  h += '<div class="jd-actions">'
+    +   '<button type="button" class="jd-btn jd-btn-del" onclick="window.deleteJournalMealFromSheet(' + (m.id ? "'" + m.id + "'" : String(idx)) + ')">Retirer du journal</button>'
+    +   '<button type="button" class="jd-btn" onclick="window.closeJournalMeal()">Fermer</button>'
+    + '</div></div>';
+
+  ov.querySelector('.jd-sheet').innerHTML = '<div class="jd-grab"></div>' + h;
+  ov.classList.add('on');
+};
+
+window.closeJournalMeal = function () {
+  var ov = document.getElementById('journalMealOv');
+  if (ov) ov.classList.remove('on');
+};
+window.deleteJournalMealFromSheet = function (ref) {
+  removeJournalMeal(ref);
+  window.closeJournalMeal();
+};
+
 // ═══════════════════════════════════════════════
 // JOURNAL DASHBOARD — Today (style FatSecret)
 // ═══════════════════════════════════════════════
@@ -38220,13 +38629,16 @@ function renderJournalToday() {
         var prot = Math.round((m.totals && m.totals.p) || m.prot || 0);
         var time = m.ts ? new Date(m.ts) : null;
         var timeStr = time ? (('0'+time.getHours()).slice(-2) + ':' + ('0'+time.getMinutes()).slice(-2)) : '';
-        html += '<div class="jml-item">'
+        // La ligne ouvre la fiche du repas ; le ✕ garde son propre geste.
+        var ref = m.id ? "'" + m.id + "'" : String(idx);
+        html += '<div class="jml-item" onclick="window.openJournalMeal(' + ref + ')">'
           +   '<div class="jml-ic">' + sourceIc + '</div>'
           +   '<div class="jml-info">'
           +     '<div class="jml-name">' + nm + '</div>'
           +     '<div class="jml-meta">' + cal + ' kcal · ' + prot + 'g prot' + (timeStr ? ' · ' + timeStr : '') + '</div>'
           +   '</div>'
-          +   '<button class="jml-del" onclick="removeJournalMeal(' + idx + ')" aria-label="Retirer">✕</button>'
+          +   '<div class="jml-chev">›</div>'
+          +   '<button class="jml-del" onclick="event.stopPropagation();removeJournalMeal(' + ref + ')" aria-label="Retirer">✕</button>'
           + '</div>';
       });
       mealsList.innerHTML = html;
