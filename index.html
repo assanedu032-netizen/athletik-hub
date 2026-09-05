@@ -8775,7 +8775,11 @@ window.tiResetOnEnter = function(){ window.tiShowStep(1); };
          pour que les photos iPhone au format HEIC restent sélectionnables. -->
     <input type="file" id="ciPhotoInput" accept="image/*" style="display:none" onchange="window._titanOnPhoto(this)">
     <input type="file" id="ciCameraInput" accept="image/*" capture="environment" style="display:none" onchange="window._titanOnPhoto(this)">
+    <!-- Une photo envoyée à Titan peut être un REPAS (à analyser) ou un
+         contrôle de posture (à commenter). On ne devine pas : l'athlète
+         choisit, et le choix tient en un tap de plus. -->
     <div class="ci-sheet" id="ciPhotoSheet">
+      <button type="button" onclick="window._titanScanMeal()"><span class="cis-ic">🍽️</span>Analyser un repas</button>
       <button type="button" onclick="window._titanFromCamera()"><span class="cis-ic">📷</span>Prendre une photo</button>
       <button type="button" onclick="window._titanFromGallery()"><span class="cis-ic">🖼️</span>Choisir dans la galerie</button>
     </div>
@@ -25854,7 +25858,9 @@ async function callAnthropicAPI(userMessage, photo, opts) {
       role: 'user', t: Date.now(),
       content: [
         { type: 'image', source: { type: 'base64', media_type: photo.media_type, data: photo.data } },
-        { type: 'text', text: userMessage || 'Regarde cette image et dis-moi ce que tu en penses.' }
+        { type: 'text', text: userMessage || (photo.isMeal
+            ? 'Analyse ce repas : identifie les aliments, estime les quantités, donne calories et macros.'
+            : 'Regarde cette image et dis-moi ce que tu en penses.') }
       ]
     });
   } else {
@@ -26855,8 +26861,18 @@ function _titanOpenInput(id) {
   // menu en est un) : pas de setTimeout ici, iOS bloquerait l'ouverture.
   if (el) { el.value = ''; el.click(); }
 }
-window._titanFromCamera  = function() { _titanOpenInput('ciCameraInput'); };
-window._titanFromGallery = function() { _titanOpenInput('ciPhotoInput'); };
+window._titanFromCamera  = function() { window._titanPhotoIsMeal = false; _titanOpenInput('ciCameraInput'); };
+window._titanFromGallery = function() { window._titanPhotoIsMeal = false; _titanOpenInput('ciPhotoInput'); };
+
+// « Analyser un repas » : même prise de photo, mais la réponse passera par
+// le mode nutrition — donc avec la carte « Enregistrer dans mon journal ».
+// Sans ce drapeau, une photo de repas partait en conversation normale : Titan
+// décrivait l'assiette, et l'athlète n'avait rien à enregistrer.
+window._titanPhotoIsMeal = false;
+window._titanScanMeal = function() {
+  window._titanPhotoIsMeal = true;
+  _titanOpenInput('ciCameraInput');
+};
 
 // Referme le menu si on tape ailleurs.
 document.addEventListener('click', function(e) {
@@ -26870,6 +26886,7 @@ document.addEventListener('click', function(e) {
 
 window._titanClearPhoto = function() {
   window._titanPendingPhoto = null;
+  window._titanPhotoIsMeal = false;
   var p = document.getElementById('ciPreview');
   var b = document.getElementById('photoBtn');
   if (p) p.classList.remove('on');
@@ -26926,10 +26943,13 @@ window._titanOnPhoto = async function(input) {
   if (txt) txt.textContent = 'Préparation de la photo…';
   try {
     var photo = await _titanCompressPhoto(file);
+    photo.isMeal = !!window._titanPhotoIsMeal;
     window._titanPendingPhoto = photo;
     var im = document.getElementById('ciPreviewImg');
     if (im) im.src = photo.dataUrl;
-    if (txt) txt.textContent = 'Photo prête. Ajoute une question si tu veux.';
+    if (txt) txt.textContent = window._titanPhotoIsMeal
+      ? 'Repas prêt. Titan va l\'analyser et te proposer de l\'enregistrer.'
+      : 'Photo prête. Ajoute une question si tu veux.';
     var b = document.getElementById('photoBtn'); if (b) b.classList.add('on');
   } catch (e) {
     console.warn('[titan photo]', e);
@@ -26964,7 +26984,10 @@ async function sendMessage() {
   // Un message qui parle de nourriture part en mode nutrition : MÊME appel,
   // MÊME quota, mais la réponse rapporte en plus une analyse structurée.
   window._titanLastNutrition = null;
-  const isFood = _titanWantsNutrition(text);
+  // Une photo annoncée comme repas force l'analyse, quel que soit le texte :
+  // l'athlète a déjà dit son intention en choisissant « Analyser un repas ».
+  const isFood = (photo && photo.isMeal) || _titanWantsNutrition(text);
+  if (photo && photo.isMeal) window._titanNutriTurns = TITAN_NUTRI_LATCH;
   const reply = await callAnthropicAPI(text, photo, isFood ? { mode: 'nutrition' } : null);
   const nutrition = window._titanLastNutrition;
   window._titanLastNutrition = null;

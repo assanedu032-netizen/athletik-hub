@@ -760,6 +760,42 @@ console.log('\n=== LE SCAN PHOTO PASSE PAR LE PROXY, PLUS PAR LE NAVIGATEUR ===\
   ok('du texte sans JSON ne renvoie rien', scan.parse('désolé') === null);
 }
 
+console.log('\n=== LE SCAN DE REPAS EST DISPONIBLE DANS LE CHAT ===\n');
+{
+  // Le bouton photo du chat existait, mais la photo partait en conversation
+  // normale : Titan décrivait l'assiette et l'athlète n'avait rien à
+  // enregistrer. Une entrée « Analyser un repas » force le mode nutrition.
+  ok('le menu photo porte une entrée « Analyser un repas »',
+     /_titanScanMeal\(\)[\s\S]{0,80}Analyser un repas/.test(html));
+  ok('  elle pose l\'intention avant d\'ouvrir l\'appareil photo',
+     /_titanScanMeal = function\s*\(\)\s*\{[\s\S]{0,160}_titanPhotoIsMeal = true/.test(html));
+  ok('  les deux entrées existantes la remettent à faux',
+     /_titanFromCamera\s*= function\(\) \{ window\._titanPhotoIsMeal = false/.test(html)
+     && /_titanFromGallery = function\(\) \{ window\._titanPhotoIsMeal = false/.test(html));
+  ok('l\'intention voyage avec la photo', /photo\.isMeal = !!window\._titanPhotoIsMeal/.test(html));
+  ok('  et force l\'analyse quel que soit le texte',
+     /const isFood = \(photo && photo\.isMeal\) \|\| _titanWantsNutrition\(text\)/.test(html));
+  ok('  en armant aussi le verrou de sujet pour les rebonds',
+     /if \(photo && photo\.isMeal\) window\._titanNutriTurns = TITAN_NUTRI_LATCH/.test(html));
+  ok('la consigne par défaut demande une analyse, pas un avis',
+     /photo\.isMeal[\s\S]{0,140}Analyse ce repas/.test(html));
+  // L'apostrophe est échappée dans la source JS : l\'analyser.
+  ok('l\'aperçu annonce ce qui va se passer',
+     /Repas prêt\. Titan va l\\?'analyser/.test(html));
+  ok('retirer la photo remet l\'intention à faux',
+     /_titanPendingPhoto = null;\s*\n\s*window\._titanPhotoIsMeal = false;/.test(html));
+
+  // Côté serveur : le prompt doit savoir lire une image.
+  ok('le prompt nutrition sait qu\'une photo peut arriver',
+     /ou il t'en envoie une PHOTO/.test(srv));
+  ok('  il marque tout en estimé sur une photo',
+     /Sur une photo[\s\S]{0,300}"estimated": true/.test(srv));
+  ok('  et refuse d\'inventer un repas sur une image illisible',
+     /trop floue ou trop sombre[\s\S]{0,120}"items": \[\]/.test(srv));
+  ok('les images survivent à la sanitisation des messages',
+     /b\.type === 'image' && b\.source && b\.source\.type === 'base64'/.test(srv));
+}
+
 const failed = R.filter(x => !x).length;
 console.log('\n' + '='.repeat(62));
 console.log(failed ? 'RÉSULTAT : ' + failed + ' ÉCHEC(S) sur ' + R.length

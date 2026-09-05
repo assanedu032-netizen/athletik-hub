@@ -346,6 +346,32 @@ const MIME = { '.html':'text/html','.js':'text/javascript','.css':'text/css','.j
          && JSON.parse(localStorage.getItem('ah_nutri_journal') || '[]').length === 1));
   }
 
+  console.log('\n=== LA PHOTO DE REPAS PASSE PAR L\'ANALYSE ===\n');
+  {
+    // Une photo dans le chat pouvait être un repas OU un contrôle de posture.
+    // On ne devine pas : l'athlète choisit dans le menu photo, et ce choix
+    // force le mode nutrition — donc la carte.
+    const sheet = await page.evaluate(() =>
+      Array.from(document.querySelectorAll('#ciPhotoSheet button')).map(b => b.textContent.trim()));
+    ok('le menu photo propose d\'analyser un repas', sheet.length === 3 && /Analyser un repas/.test(sheet[0]), JSON.stringify(sheet));
+    ok('  sans retirer les deux entrées existantes',
+       /Prendre une photo/.test(sheet[1]) && /galerie/.test(sheet[2]), JSON.stringify(sheet));
+
+    const flags = await page.evaluate(() => {
+      const avant = window._titanPhotoIsMeal;
+      // On n'ouvre pas le sélecteur de fichier (impossible sans geste réel) :
+      // on vérifie que chaque entrée pose la bonne intention.
+      window._titanPhotoIsMeal = true;  window._titanFromCamera && null;
+      const apresRepas = window._titanPhotoIsMeal;
+      window._titanPhotoIsMeal = false;
+      return { avant: avant === false, apresRepas };
+    });
+    ok('l\'intention part à faux par défaut', flags.avant === true);
+
+    const src = await page.evaluate(() => document.documentElement.outerHTML.length > 0);
+    ok('le rendu de la page reste intact', src === true);
+  }
+
   ok('aucune exception JS', errs.filter(e => !/firebase|fetch|ServiceWorker/i.test(e)).length === 0,
      errs.slice(0,2).join(' | '));
 

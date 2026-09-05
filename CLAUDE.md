@@ -17,7 +17,7 @@ The app is the digital companion of the book *Les Secrets de la Détente Vertica
   - `sw.js` (cache-first for local assets, network-first for externals) + `manifest.json`. Cache name is `athletik-v271` — bump it when shipping CSS/HTML that must invalidate.
   - `firebase-messaging-sw.js` (root) — receives background push notifications (FCM).
 - **No linter, no build**. Validate changes by opening `index.html` in a browser (mobile-first, Android Chrome is the target). Before committing, sanity-check JS syntax by parsing the non-module `<script>` blocks with `node -e` (see Coding conventions).
-- **Tests**: `for f in scripts/test-*.js; do node "$f"; done` — 25 suites, ~1 440 assertions, pure
+- **Tests**: `for f in scripts/test-*.js; do node "$f"; done` — 25 suites, ~1 460 assertions, pure
   Node, zéro dépendance : chaque suite extrait les **vraies** fonctions d'`index.html` par
   équilibrage d'accolades et les rejoue contre des mocks. `scripts/test-live-layout.js` est la
   seule exception : elle ouvre un vrai Chromium (Playwright, hors `package.json`) pour mesurer la
@@ -375,7 +375,16 @@ completedPrograms, fcmToken, accessTier`.
   **absolues**. Un repas sans détail (recette, plan repas) le dit au lieu d'inventer. `.jml-name`
   passe à **2 lignes** (`-webkit-line-clamp`) : « Gaufre (portion découpée), Céréal… » ne disait
   pas ce qu'on avait mangé.
-  Tests : `scripts/test-titan-nutri-action.js` (209) et `scripts/test-nutri-card.js` (53, vrai
+  **Le scan de repas vit aussi dans le chat.** Le bouton photo existait, mais l'image partait en
+  conversation normale : Titan décrivait l'assiette et l'athlète n'avait **rien à enregistrer**.
+  Le menu photo porte une entrée **« 🍽️ Analyser un repas »** qui pose `_titanPhotoIsMeal` ;
+  `photo.isMeal` force alors `mode:'nutrition'` **quel que soit le texte** et arme le verrou de
+  sujet pour les rebonds. On ne devine PAS : une photo peut aussi être un contrôle de posture,
+  et « Prendre une photo » / « galerie » remettent l'intention à faux. `NUTRITION_SYSTEM` sait
+  lire une image — tout y est marqué `estimated: true` (une photo ne donne jamais un poids), et
+  une image illisible renvoie `items: []` plutôt qu'un repas inventé. Les blocs image survivent
+  à `sanitizeMessages`, donc aucune plomberie nouvelle.
+  Tests : `scripts/test-titan-nutri-action.js` (224) et `scripts/test-nutri-card.js` (57, vrai
   Chromium).
 - **La conversation Titan se synchronise** (`ah_titan_chat` dans `FB_SYNC_KEYS`). C'est la
   seule clé synchronisée qui s'écrit à **chaque tour** et dont la taille dépend de ce que le

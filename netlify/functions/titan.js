@@ -816,7 +816,9 @@ Sois concis dans les "note". Tu es un coach, pas un bavard. Réponds en françai
 const NUTRITION_MAX_TOKENS = 3000;
 const NUTRITION_MAX_ITEMS = 25;
 
-const NUTRITION_SYSTEM = `Tu es TITAN. L'athlète te décrit ce qu'il a mangé, en langage courant.
+const NUTRITION_SYSTEM = `Tu es TITAN. L'athlète te décrit ce qu'il a mangé, en langage courant — ou il t'en envoie une PHOTO.
+
+Sur une photo : identifie chaque aliment visible, estime les portions d'après ce que tu vois (taille de l'assiette, des couverts, des mains), et marque TOUT en "estimated": true — une photo ne donne jamais de poids exact. Si l'image est trop floue ou trop sombre pour reconnaître quoi que ce soit, dis-le dans "reply" et renvoie "items": [] plutôt que d'inventer un repas.
 
 Tu réponds UNIQUEMENT par un objet JSON valide, sans texte autour, sans bloc de code.
 
