@@ -280,27 +280,33 @@ completedPrograms, fcmToken, accessTier`.
   Test : `scripts/test-suivi-overview.js` (39, vrai Chromium, les 3 états réels : rien mesuré,
   un seul test, deux tests + séances).
 - **Mission Titan (Home)** — `renderTitanSmartCards()` remplit `#titanSmartCards`. Ce n'est pas
-  un tableau de bord : c'est une **notification de coach**. Repliée, elle dit **qui parle, quand,
-  ce qu'il dit** et porte un bouton ; la mission se **déplie au tap**. `178 px` repliée, `290`
-  dépliée dans le pire cas à quatre étapes. Elle mesurait **590 px sur 667** — 88 % de l'écran.
-  Deux passes intermédiaires (364 puis 287) n'allaient pas assez loin : ce qui coûtait le reste,
-  c'était que la mission était **toujours ouverte**, quatre pavés pleine largeur qui relisaient la
-  carte comme une **checklist** alors que les étapes sont *secondaires*.
+  un tableau de bord : c'est une **notification**, et rien de plus. Une ligne : avatar, `Titan ●`,
+  **l'heure** à droite, le message, puis `Mission 0/3 ▾` et une **pilule** d'action.
+  **129 px** repliée (19 % de l'écran), **220** dépliée à trois étapes, 248 à quatre.
+  Elle mesurait **590 px sur 667** — 88 %. Quatre passes ont été nécessaires (364 → 287 → 178 →
+  129) et chacune butait sur la même chose : **le pavé doré pleine largeur**. À 178 px il restait
+  l'élément le plus voyant de l'écran, **devant le message**, qui est pourtant l'objet même de la
+  notification. Une pilule de 14 px de padding le remplace — `.mtn-cta` fait ≤ 45 % de la largeur
+  de la carte, c'est testé.
   Le message vient de `getTitanDailyRecommendation().engagement` (moteur `TITAN_RECO_RULES`,
   cache journalier) — **jamais un texte figé**, et le fallback `titanGetSmartMessage` reste en
-  place. Le message est écrêté à **2 lignes** et se déplie aussi au tap.
+  place. Écrêté à **3 lignes**, il se déplie au tap.
   **L'heure affichée est vraie.** `reco.at` est posé à l'instant du **calcul** — le cache
   journalier fait qu'une reco lue à 18 h peut dater de 7 h du matin, et une notification qui
-  mentirait sur son heure serait pire que muette. `_msnAgo()` écrit « à l'instant » / « il y a
-  2 h » ; une reco venue du fallback legacy n'a pas de `at` et alors **aucune heure n'est écrite**.
-  **Masquer ne détruit rien.** La croix pose `hidden` et laisse une **ligne de rappel de 40 px**
-  (`.mtn-restore`, « Message de Titan masqué · 0/3 · Afficher ») : un tap accidentel ne doit pas
-  coûter la mission de la journée. `open` et `hidden` vivent dans `ah_titan_mission`
-  (`{date, done:{}, open, hidden}`), donc **remis à zéro chaque matin** avec la mission.
-  L'avatar est **`images/titan-mascot.png`** — le vrai, celui de la barre du bas ; un « T » dessiné
-  à la main donnait un autre personnage que celui que l'athlète connaît. Le compteur est **inline**
-  avec le libellé qu'il compte (`MISSION DU JOUR · 0/3 ▾`), et **il n'y a pas de barre de
-  progression** : `0/3` le dit déjà, et une notification n'en porte pas.
+  mentirait sur son heure serait pire que muette. `_msnClock()` l'écrit en `HH:MM` ; une reco
+  venue du fallback legacy n'a pas de `at` et alors **aucune heure n'est écrite**.
+  La mission est **repliée par défaut** ; `open` vit dans `ah_titan_mission`
+  (`{date, done:{}, open}`), donc remis à zéro chaque matin avec la mission.
+  **La pilule dit ce que le tap va faire** en un mot (`Lire` / `Séance` / `SAT` / `Titan`) — la
+  règle du bouton unique de l'écran séance, tenue dans la place d'une pilule.
+  **Contraste** : le texte navy de la pilule sur le bout **sombre** du dégradé doré ne donnait que
+  **4,03:1**, sous le seuil AA. Le dégradé remonte à `#D9BE72 → #C5A44E` (5,6:1). Le test le voyait
+  mal : il composait la couleur du texte sur le fond de la **carte**, pas sur celui de l'élément.
+  `fondDe()` remonte maintenant jusqu'au premier fond opaque — sans ça la mesure annonçait 1,3 sur
+  un bouton parfaitement lisible, et aurait manqué le vrai 4,03.
+  L'avatar est **`images/titan-mascot.png`** — le vrai, celui de la barre du bas.
+  **Pas de barre de progression, pas de croix pour masquer** : `0/3` dit déjà l'avancement, et
+  l'état « masquée » était un état de plus à maintenir pour un besoin que personne n'avait.
   Une étape = **une ligne** de 26 px ; le chapitre recommandé vit **dans** l'étape lecture
   (`Lire : <chapitre>` + `p.301`) — la seule place où il est actionnable. La mini-carte « lecture
   détaillée » qui répétait le chapitre annoncé au-dessus est supprimée.
@@ -313,9 +319,9 @@ completedPrograms, fcmToken, accessTier`.
   et l'étape se coche seule comme le fait déjà `seance` via `_msnSeanceDoneToday()`.
   CSS `.mtn-*` (à côté de `.art-teaser-*`) : le rendu était 100 % inline, il ne l'est plus.
   Navy = le token `--ah-navy-deep` (#243B6B, navy unifié), **pas** un hex local.
-  Test : `scripts/test-mission-titan.js` (86, vrai Chromium en 375×667 et 320×568 : hauteur
-  plafonnée à 190 px repliée et 292 dépliée, pli mémorisé, masquer/réafficher, heure réelle,
-  avatar réel, contraste AA calculé, les 4 états et le reste de la Home intact).
+  Test : `scripts/test-mission-titan.js` (80, vrai Chromium en 375×667 et 320×568 : hauteur
+  plafonnée à 140 px repliée et 255 dépliée, largeur de la pilule, pli mémorisé, heure réelle,
+  avatar réel, contraste AA sur le fond réel de chaque élément, les 4 états et la Home intacte).
 - **Progression**: `renderProgression()` fills `#progressionCard` in the Moi tab — current score, 8-week sessions bar graph, personal records. Helper `_progressionWeeklySessions(8)`.
 - **Habits**: `activeHabits` array, persisted to `ah_active_habits` via `_persistActiveHabits()`. `checkHabit()` resets the streak on a day gap. `renderActiveHabits()` renders Home + Moi.
 - **Exercise library**: `catData` is the flat exercise database (198 exercises). `_LIB_CAT_MAP` maps the chip filters to `catData` keys. Schema `{name, diff:'easy'|'med'|'hard', muscles, desc, mat, tag?, video?}`. Videos: per-exo `video` field OR `_LIB_VIDEO_MAP` lookup by name. The library has a "🎯 Mon programme" filter (`_libFlatExos('myprogram')`).
