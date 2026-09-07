@@ -6299,6 +6299,40 @@ body.ah-lib-open .tim-fab{display:none!important}
 .art-teaser-title{font-family:'Bebas Neue',sans-serif;font-size:17px;letter-spacing:.05em;color:var(--ah-text);line-height:1.2;margin-bottom:6px}
 .art-teaser-sub{font-family:'Outfit',sans-serif;font-size:12px;line-height:1.5;color:var(--ah-text2);margin-bottom:12px}
 .art-teaser-cta{font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:.16em;color:var(--ah-gold);text-transform:uppercase;font-weight:700;display:flex;align-items:center;gap:5px}
+/* ── MISSION TITAN — boîte de message du coach (Home) ─────────────────────
+   Refonte 2026-09-07 : la carte faisait 590 px sur 667 (mesure Chromium),
+   soit 88 % de l'écran, dont une seconde carte qui répétait le chapitre
+   déjà annoncé au-dessus. Elle redevient ce qu'elle est : un message de
+   Titan + les 3 gestes du jour + un bouton. Le moteur de reco est inchangé.
+   Navy = le token unifié du projet (--ah-navy-deep), pas un hex local. */
+.mtn{margin:14px 16px 0;background:var(--ah-navy-deep);border:1px solid rgba(197,164,78,.28);border-radius:16px;overflow:hidden;box-shadow:0 4px 20px rgba(0,0,0,.2)}
+.mtn-head{display:flex;align-items:center;gap:9px;padding:7px 13px;background:linear-gradient(135deg,rgba(197,164,78,.16),rgba(197,164,78,.04));border-bottom:1px solid rgba(197,164,78,.16)}
+.mtn-av{width:30px;height:30px;min-width:30px;border-radius:50%;object-fit:cover;display:block;background:#243B6B;border:1.5px solid rgba(197,164,78,.55);box-shadow:0 2px 8px rgba(197,164,78,.28)}
+.mtn-id{flex:1;min-width:0}
+.mtn-name{font-family:'Bebas Neue',sans-serif;font-size:15px;letter-spacing:.11em;color:#fff;line-height:1.05}
+.mtn-state{display:flex;align-items:center;gap:5px;font-family:'JetBrains Mono',monospace;font-size:8.5px;letter-spacing:.19em;font-weight:700;color:var(--ah-gold);text-transform:uppercase;margin-top:2px}
+.mtn-dot{width:5px;height:5px;border-radius:50%;background:var(--ah-gold);animation:mtnPulse 2s ease-in-out infinite}
+@keyframes mtnPulse{0%,100%{opacity:1}50%{opacity:.25}}
+.mtn-count{font-family:'JetBrains Mono',monospace;font-size:11px;font-weight:700;color:var(--ah-gold);opacity:.85;flex-shrink:0}
+.mtn-count.done{color:#10B981;opacity:1}
+.mtn-bar{height:2px;background:rgba(255,255,255,.07)}
+.mtn-bar>i{display:block;height:100%;background:linear-gradient(90deg,#C5A44E,#F0C060)}
+.mtn-body{padding:10px 13px 12px}
+.mtn-msg{font-family:'Outfit',sans-serif;font-size:12.5px;line-height:1.45;color:rgba(255,255,255,.8);padding-left:9px;border-left:2px solid rgba(197,164,78,.45);display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;cursor:pointer}
+.mtn-msg.open{-webkit-line-clamp:99}
+.mtn-lab{display:flex;align-items:center;gap:7px;font-family:'JetBrains Mono',monospace;font-size:8.5px;letter-spacing:.19em;font-weight:700;color:rgba(255,255,255,.34);text-transform:uppercase;margin:9px 0 5px}
+.mtn-lab b{color:var(--ah-gold);font-weight:700;font-size:9.5px;letter-spacing:.1em}
+.mtn-lab.done b{color:#10B981}
+.mtn-step{display:flex;align-items:center;gap:8px;padding:3px 8px;margin-bottom:3px;border-radius:8px;background:rgba(255,255,255,.035);border:1px solid rgba(255,255,255,.07);cursor:pointer;min-height:26px;-webkit-tap-highlight-color:rgba(197,164,78,.12)}
+.mtn-step.on{background:rgba(16,185,129,.07);border-color:rgba(16,185,129,.22)}
+.mtn-ck{width:16px;height:16px;min-width:16px;border-radius:50%;background:rgba(255,255,255,.07);border:1.5px solid rgba(255,255,255,.18);display:flex;align-items:center;justify-content:center;font-size:8px;font-weight:900;color:#fff;line-height:1}
+.mtn-step.on .mtn-ck{background:#10B981;border-color:#10B981}
+.mtn-txt{flex:1;min-width:0;font-family:'Outfit',sans-serif;font-size:12px;font-weight:600;color:rgba(255,255,255,.88);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.mtn-step.on .mtn-txt{color:rgba(255,255,255,.36);text-decoration:line-through}
+.mtn-sfx{flex-shrink:0;font-family:'Outfit',sans-serif;font-size:9.5px;color:rgba(255,255,255,.4)}
+.mtn-step.on .mtn-sfx{color:rgba(16,185,129,.75);text-decoration:none}
+.mtn-cta{margin-top:8px;padding:9px;border-radius:9px;background:linear-gradient(135deg,#C5A44E,#8B6914);font-family:'Bebas Neue',sans-serif;font-size:14px;letter-spacing:1.2px;color:#fff;text-align:center;cursor:pointer;box-shadow:0 3px 12px rgba(197,164,78,.3);-webkit-tap-highlight-color:transparent}
+.mtn-cta.done{background:rgba(16,185,129,.1);border:1px solid rgba(16,185,129,.28);color:#10B981;box-shadow:none;cursor:default}
 </style>
 
 <template id="__bundler_thumbnail" data-bg-color="#243B6B">
@@ -12509,24 +12543,33 @@ function renderTitanSmartCards() {
   // ── Objectifs de la mission ────────────────────────────────────────────────
   var objectives = [];
 
+  // Une étape = UNE ligne : un libellé qui dit le geste, un suffixe court qui
+  // dit l'état ou la référence. Le chapitre recommandé vit ici — c'est la
+  // seule place où il est actionnable.
   if (reco && reco.lecture) {
-    var chapSub = reco.chapitre ? (reco.chapitre + (reco.page ? ' — p.' + reco.page : '')) : null;
-    objectives.push({ id:'lecture', icon:'📖', label:'Lire le chapitre recommandé', sub:chapSub, action:'lecture' });
+    var chapT = reco.chapitre
+      ? reco.chapitre.replace(/^Cours \d+ — /, '').replace(/^Chapitre \d+ — /, '').replace(/^Programme /, '')
+      : null;
+    objectives.push({
+      id:'lecture', icon:'📖',
+      label: chapT ? ('Lire : ' + chapT) : 'Lire le chapitre recommandé',
+      sfx: reco.page ? ('p.' + reco.page) : null,
+      action:'lecture'
+    });
   }
 
   var seanceFaite = _msnSeanceDoneToday();
-  objectives.push({ id:'seance', icon:'💪', label:'Réaliser ta séance du jour', sub: seanceFaite ? 'Séance complétée aujourd\'hui' : null, action:'seance', auto: seanceFaite });
+  objectives.push({ id:'seance', icon:'💪', label:'Ta séance du jour', sfx: seanceFaite ? 'Faite' : null, action:'seance', auto: seanceFaite });
 
   if (!satDone) {
-    objectives.push({ id:'test', icon:'📊', label:'Compléter ton test ' + testLabel, sub:'Indispensable pour progresser', action:'test' });
+    objectives.push({ id:'test', icon:'📊', label:'Compléter ton test ' + testLabel, sfx:'à faire', action:'test' });
   }
 
   // Question Titan toutes les 48h
   var lastQ = 0;
   try { lastQ = parseInt(localStorage.getItem('ah_titan_q_last')||'0',10); } catch(e) {}
-  if (Date.now() - lastQ > 172800000) {
-    objectives.push({ id:'titan', icon:'🤖', label:'Partager ta progression à Titan', sub:'Message rapide — 1 min', action:'titan' });
-  }
+  var titanParle = (Date.now() - lastQ <= 172800000);
+  objectives.push({ id:'titan', icon:'🤖', label:'Partager ta progression à Titan', sfx: titanParle ? 'Fait' : '1 min', action:'titan', auto: titanParle });
 
   // ── État de complétion ────────────────────────────────────────────────────
   var state = _msnLoad();
@@ -12554,76 +12597,55 @@ function renderTitanSmartCards() {
     if (firstName) titanMsg = firstName + ', ' + titanMsg.charAt(0).toLowerCase() + titanMsg.slice(1);
   }
 
-  // ── Rendu ─────────────────────────────────────────────────────────────────
+  // ── Rendu ──────────────────────────────────────────────────
+  // Une boîte de message de coach, pas un tableau de bord : identité → message
+  // → les gestes du jour → un bouton. Le chapitre recommandé est porté par
+  // l'étape « lecture » elle-même — la seconde carte qui le répétait faisait
+  // à elle seule un tiers des 590 px mesurés.
+  var esc = function(t) {
+    return String(t == null ? '' : t)
+      .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;');
+  };
   var h = '';
+  h += '<div class="mtn">';
 
-  // Carte principale Mission Titan
-  h += '<div style="margin:14px 16px 0;background:var(--ah-navy-deep);border:1px solid rgba(197,164,78,.28);border-radius:16px;overflow:hidden;box-shadow:0 4px 24px rgba(0,0,0,.22)">';
-
-  // En-tête
-  h += '<div style="background:linear-gradient(135deg,rgba(197,164,78,.16),rgba(197,164,78,.05));border-bottom:1px solid rgba(197,164,78,.18);padding:12px 16px;display:flex;align-items:center;justify-content:space-between">';
-  h += '<div style="display:flex;align-items:center;gap:9px">';
-  h += '<div style="width:28px;height:28px;min-width:28px;border-radius:50%;background:linear-gradient(135deg,#C5A44E,#8B6914);display:flex;align-items:center;justify-content:center;font-family:\'Bebas Neue\',sans-serif;font-size:13px;color:#fff;letter-spacing:.05em;box-shadow:0 2px 8px rgba(197,164,78,.4)">T</div>';
-  h += '<div>';
-  h += '<div style="font-family:\'JetBrains Mono\',monospace;font-size:9.5px;letter-spacing:.2em;font-weight:700;color:var(--ah-gold);text-transform:uppercase">Mission Titan</div>';
-  h += '<div style="font-size:10px;color:rgba(255,255,255,.38);font-family:\'Outfit\',sans-serif;margin-top:1px">du jour</div>';
-  h += '</div></div>';
-  if (allDone) {
-    h += '<div style="background:rgba(16,185,129,.15);border:1px solid rgba(16,185,129,.35);border-radius:20px;padding:3px 10px;font-size:10px;font-weight:700;color:#10B981;font-family:\'Outfit\',sans-serif">Accomplie ✓</div>';
-  } else {
-    h += '<div style="font-family:\'JetBrains Mono\',monospace;font-size:11px;font-weight:700;color:var(--ah-gold);opacity:.8">' + totalDone + '/' + total + '</div>';
-  }
+  // Le vrai avatar de Titan — le même que la barre du bas. Un « T » dessiné
+  // à la main donnait un autre personnage que celui que l'athlète connaît.
+  h += '<div class="mtn-head">';
+  h += '<img class="mtn-av" src="images/titan-mascot.png" alt="Titan">';
+  h += '<div class="mtn-id"><div class="mtn-name">TITAN</div>';
+  h += '<div class="mtn-state">' + (allDone ? 'Mission accomplie' : '<span class="mtn-dot"></span>Nouveau message') + '</div></div>';
   h += '</div>';
 
-  // Barre de progression
-  h += '<div style="height:3px;background:rgba(255,255,255,.06)">';
-  h += '<div style="height:100%;width:' + pct + '%;background:linear-gradient(90deg,#C5A44E,#F0C060);border-radius:0 2px 2px 0"></div>';
-  h += '</div>';
+  h += '<div class="mtn-bar"><i style="width:' + pct + '%"></i></div>';
 
-  // Corps
-  h += '<div style="padding:14px 16px 16px">';
+  h += '<div class="mtn-body">';
 
-  // Message Titan (citation italique)
+  // Le message peut faire quatre lignes : il est écrêté à trois, et le tap
+  // le déplie. Rien n'est perdu, la hauteur reste bornée.
   if (titanMsg) {
-    h += '<div style="padding:10px 12px;background:rgba(255,255,255,.025);border-left:2px solid rgba(197,164,78,.45);border-radius:0 8px 8px 0;margin-bottom:14px">';
-    h += '<div style="font-family:\'Outfit\',sans-serif;font-size:12.5px;line-height:1.55;color:rgba(255,255,255,.72);font-style:italic">' + titanMsg + '</div>';
-    h += '</div>';
+    h += '<div class="mtn-msg" onclick="this.classList.toggle(\'open\')">' + esc(titanMsg) + '</div>';
   }
 
-  // Checklist objectifs
+  h += '<div class="mtn-lab' + (allDone ? ' done' : '') + '">Mission du jour · <b class="mtn-count' + (allDone ? ' done' : '') + '">' + totalDone + '/' + total + '</b></div>';
+
   objectives.forEach(function(obj) {
     var done = !!state.done[obj.id];
-    h += '<div onclick="_missionMarkDone(\'' + obj.id + '\')" style="display:flex;align-items:flex-start;gap:10px;padding:9px 10px;margin-bottom:6px;border-radius:10px;background:' + (done ? 'rgba(16,185,129,.07)' : 'rgba(255,255,255,.035)') + ';border:1px solid ' + (done ? 'rgba(16,185,129,.22)' : 'rgba(255,255,255,.07)') + ';cursor:pointer">';
-    // Checkbox circulaire
-    h += '<div style="width:20px;height:20px;min-width:20px;border-radius:50%;background:' + (done ? '#10B981' : 'rgba(255,255,255,.07)') + ';border:1.5px solid ' + (done ? '#10B981' : 'rgba(255,255,255,.18)') + ';display:flex;align-items:center;justify-content:center;margin-top:2px">';
-    if (done) h += '<div style="color:#fff;font-size:9px;font-weight:900;line-height:1">✓</div>';
-    h += '</div>';
-    // Texte
-    h += '<div style="flex:1;min-width:0">';
-    h += '<div style="font-family:\'Outfit\',sans-serif;font-size:13px;font-weight:600;color:' + (done ? 'rgba(255,255,255,.35)' : 'rgba(255,255,255,.88)') + ';' + (done ? 'text-decoration:line-through;' : '') + '">' + obj.icon + ' ' + obj.label + '</div>';
-    if (obj.sub) h += '<div style="font-size:10.5px;color:' + (done ? 'rgba(16,185,129,.7)' : 'rgba(255,255,255,.38)') + ';margin-top:2px;font-family:\'Outfit\',sans-serif">' + obj.sub + '</div>';
-    h += '</div>';
+    h += '<div class="mtn-step' + (done ? ' on' : '') + '" onclick="_missionMarkDone(\'' + obj.id + '\')">';
+    h += '<div class="mtn-ck">' + (done ? '✓' : '') + '</div>';
+    h += '<div class="mtn-txt">' + obj.icon + ' ' + esc(obj.label) + '</div>';
+    if (obj.sfx) h += '<div class="mtn-sfx">' + esc(obj.sfx) + '</div>';
     h += '</div>';
   });
 
-  // Bouton CTA
   if (allDone) {
-    h += '<div style="margin-top:10px;padding:11px;background:rgba(16,185,129,.1);border:1px solid rgba(16,185,129,.28);border-radius:10px;font-family:\'Bebas Neue\',sans-serif;font-size:15px;letter-spacing:1.5px;color:#10B981;text-align:center">' + ctaLabel + '</div>';
+    h += '<div class="mtn-cta done">' + esc(ctaLabel) + '</div>';
   } else if (nextObj) {
-    h += '<div onclick="_missionCTA(\'' + nextObj.action + '\')" style="margin-top:10px;padding:11px;background:linear-gradient(135deg,#C5A44E,#8B6914);border-radius:10px;font-family:\'Bebas Neue\',sans-serif;font-size:15px;letter-spacing:1.5px;color:#fff;text-align:center;cursor:pointer;box-shadow:0 3px 12px rgba(197,164,78,.3)">' + ctaLabel + ' →</div>';
+    h += '<div class="mtn-cta" onclick="_missionCTA(\'' + nextObj.action + '\')">' + esc(ctaLabel) + ' →</div>';
   }
 
-  h += '</div></div>'; // corps + card
-
-  // Mini-carte lecture détaillée (affichée sous la mission si chapitre non encore lu)
-  if (reco && reco.lecture && reco.chapitre && !state.done.lecture) {
-    var shortT = reco.chapitre.replace(/^Cours \d+ — /, '').replace(/^Chapitre \d+ — /, '').replace(/^Programme /, '');
-    h += '<div style="margin:10px 16px 0;padding:13px 15px;background:linear-gradient(135deg,rgba(197,164,78,.07),rgba(197,164,78,.02));border:1px solid rgba(197,164,78,.22);border-radius:13px">';
-    h += '<div style="font-family:\'JetBrains Mono\',monospace;font-size:9.5px;letter-spacing:.18em;font-weight:700;color:var(--ah-gold);text-transform:uppercase;margin-bottom:6px">📖 ' + (shortT.length > 28 ? shortT.slice(0,28)+'…' : shortT) + '</div>';
-    h += '<div style="font-family:\'Outfit\',sans-serif;font-size:13px;line-height:1.5;color:var(--ah-text)">' + reco.lecture + '</div>';
-    h += '<div style="margin-top:8px;font-size:11px;color:var(--ah-gold);font-weight:600">' + reco.chapitre + (reco.page ? ' — p.' + reco.page : '') + '</div>';
-    h += '</div>';
-  }
+  h += '</div></div>';
 
   wrap.innerHTML = h;
 }
@@ -25869,6 +25891,12 @@ async function callAnthropicAPI(userMessage, photo, opts) {
     // entrelacer une conversation tenue sur le téléphone et sur la tablette.
     conversationHistory.push({ role: 'user', content: userMessage, t: Date.now() });
   }
+  // L'étape « Partager ta progression à Titan » de la Mission du jour se lit
+  // dans `ah_titan_q_last`. Personne ne l'écrivait : `Date.now() - 0` dépasse
+  // toujours 48 h, donc l'étape était PERMANENTE et parler à Titan ne la
+  // validait pas — seule la case cochée à la main y arrivait.
+  try { localStorage.setItem('ah_titan_q_last', String(Date.now())); } catch(e) {}
+  try { if (typeof renderTitanSmartCards === 'function') renderTitanSmartCards(); } catch(e) {}
   // L'image RESTE en memoire : sans ca, a la question suivante ("tu as recu
   // ca ?"), Titan ne la voyait plus et repondait qu'il ne recoit pas les
   // images. C'est persistTitanChat qui retire le base64 avant l'ecriture
