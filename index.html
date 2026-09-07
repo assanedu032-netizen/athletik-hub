@@ -6306,8 +6306,8 @@ body.ah-lib-open .tim-fab{display:none!important}
    Titan + les 3 gestes du jour + un bouton. Le moteur de reco est inchangé.
    Navy = le token unifié du projet (--ah-navy-deep), pas un hex local. */
 .mtn{margin:14px 16px 0;background:var(--ah-navy-deep);border:1px solid rgba(197,164,78,.28);border-radius:16px;overflow:hidden;box-shadow:0 4px 20px rgba(0,0,0,.2)}
-.mtn-head{display:flex;align-items:center;gap:10px;padding:11px 14px;background:linear-gradient(135deg,rgba(197,164,78,.16),rgba(197,164,78,.04));border-bottom:1px solid rgba(197,164,78,.16)}
-.mtn-av{width:32px;height:32px;min-width:32px;border-radius:50%;background:linear-gradient(135deg,#C5A44E,#8B6914);display:flex;align-items:center;justify-content:center;font-family:'Bebas Neue',sans-serif;font-size:15px;color:#fff;letter-spacing:.05em;box-shadow:0 2px 8px rgba(197,164,78,.4)}
+.mtn-head{display:flex;align-items:center;gap:9px;padding:7px 13px;background:linear-gradient(135deg,rgba(197,164,78,.16),rgba(197,164,78,.04));border-bottom:1px solid rgba(197,164,78,.16)}
+.mtn-av{width:30px;height:30px;min-width:30px;border-radius:50%;object-fit:cover;display:block;background:#243B6B;border:1.5px solid rgba(197,164,78,.55);box-shadow:0 2px 8px rgba(197,164,78,.28)}
 .mtn-id{flex:1;min-width:0}
 .mtn-name{font-family:'Bebas Neue',sans-serif;font-size:15px;letter-spacing:.11em;color:#fff;line-height:1.05}
 .mtn-state{display:flex;align-items:center;gap:5px;font-family:'JetBrains Mono',monospace;font-size:8.5px;letter-spacing:.19em;font-weight:700;color:var(--ah-gold);text-transform:uppercase;margin-top:2px}
@@ -6317,19 +6317,21 @@ body.ah-lib-open .tim-fab{display:none!important}
 .mtn-count.done{color:#10B981;opacity:1}
 .mtn-bar{height:2px;background:rgba(255,255,255,.07)}
 .mtn-bar>i{display:block;height:100%;background:linear-gradient(90deg,#C5A44E,#F0C060)}
-.mtn-body{padding:12px 14px 13px}
-.mtn-msg{font-family:'Outfit',sans-serif;font-size:12.5px;line-height:1.5;color:rgba(255,255,255,.78);padding-left:9px;border-left:2px solid rgba(197,164,78,.45);display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden;cursor:pointer}
+.mtn-body{padding:10px 13px 12px}
+.mtn-msg{font-family:'Outfit',sans-serif;font-size:12.5px;line-height:1.45;color:rgba(255,255,255,.8);padding-left:9px;border-left:2px solid rgba(197,164,78,.45);display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;cursor:pointer}
 .mtn-msg.open{-webkit-line-clamp:99}
-.mtn-lab{font-family:'JetBrains Mono',monospace;font-size:8.5px;letter-spacing:.19em;font-weight:700;color:rgba(255,255,255,.34);text-transform:uppercase;margin:12px 0 6px}
-.mtn-step{display:flex;align-items:center;gap:9px;padding:6px 9px;margin-bottom:4px;border-radius:9px;background:rgba(255,255,255,.035);border:1px solid rgba(255,255,255,.07);cursor:pointer;min-height:34px;-webkit-tap-highlight-color:rgba(197,164,78,.12)}
+.mtn-lab{display:flex;align-items:center;gap:7px;font-family:'JetBrains Mono',monospace;font-size:8.5px;letter-spacing:.19em;font-weight:700;color:rgba(255,255,255,.34);text-transform:uppercase;margin:9px 0 5px}
+.mtn-lab b{color:var(--ah-gold);font-weight:700;font-size:9.5px;letter-spacing:.1em}
+.mtn-lab.done b{color:#10B981}
+.mtn-step{display:flex;align-items:center;gap:8px;padding:3px 8px;margin-bottom:3px;border-radius:8px;background:rgba(255,255,255,.035);border:1px solid rgba(255,255,255,.07);cursor:pointer;min-height:26px;-webkit-tap-highlight-color:rgba(197,164,78,.12)}
 .mtn-step.on{background:rgba(16,185,129,.07);border-color:rgba(16,185,129,.22)}
-.mtn-ck{width:18px;height:18px;min-width:18px;border-radius:50%;background:rgba(255,255,255,.07);border:1.5px solid rgba(255,255,255,.18);display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:900;color:#fff;line-height:1}
+.mtn-ck{width:16px;height:16px;min-width:16px;border-radius:50%;background:rgba(255,255,255,.07);border:1.5px solid rgba(255,255,255,.18);display:flex;align-items:center;justify-content:center;font-size:8px;font-weight:900;color:#fff;line-height:1}
 .mtn-step.on .mtn-ck{background:#10B981;border-color:#10B981}
-.mtn-txt{flex:1;min-width:0;font-family:'Outfit',sans-serif;font-size:12.5px;font-weight:600;color:rgba(255,255,255,.88);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.mtn-txt{flex:1;min-width:0;font-family:'Outfit',sans-serif;font-size:12px;font-weight:600;color:rgba(255,255,255,.88);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .mtn-step.on .mtn-txt{color:rgba(255,255,255,.36);text-decoration:line-through}
-.mtn-sfx{flex-shrink:0;font-family:'Outfit',sans-serif;font-size:10px;color:rgba(255,255,255,.4)}
+.mtn-sfx{flex-shrink:0;font-family:'Outfit',sans-serif;font-size:9.5px;color:rgba(255,255,255,.4)}
 .mtn-step.on .mtn-sfx{color:rgba(16,185,129,.75);text-decoration:none}
-.mtn-cta{margin-top:9px;padding:11px;border-radius:10px;background:linear-gradient(135deg,#C5A44E,#8B6914);font-family:'Bebas Neue',sans-serif;font-size:15px;letter-spacing:1.4px;color:#fff;text-align:center;cursor:pointer;box-shadow:0 3px 12px rgba(197,164,78,.3);-webkit-tap-highlight-color:transparent}
+.mtn-cta{margin-top:8px;padding:9px;border-radius:9px;background:linear-gradient(135deg,#C5A44E,#8B6914);font-family:'Bebas Neue',sans-serif;font-size:14px;letter-spacing:1.2px;color:#fff;text-align:center;cursor:pointer;box-shadow:0 3px 12px rgba(197,164,78,.3);-webkit-tap-highlight-color:transparent}
 .mtn-cta.done{background:rgba(16,185,129,.1);border:1px solid rgba(16,185,129,.28);color:#10B981;box-shadow:none;cursor:default}
 </style>
 
@@ -12608,11 +12610,12 @@ function renderTitanSmartCards() {
   var h = '';
   h += '<div class="mtn">';
 
+  // Le vrai avatar de Titan — le même que la barre du bas. Un « T » dessiné
+  // à la main donnait un autre personnage que celui que l'athlète connaît.
   h += '<div class="mtn-head">';
-  h += '<div class="mtn-av">T</div>';
+  h += '<img class="mtn-av" src="images/titan-mascot.png" alt="Titan">';
   h += '<div class="mtn-id"><div class="mtn-name">TITAN</div>';
   h += '<div class="mtn-state">' + (allDone ? 'Mission accomplie' : '<span class="mtn-dot"></span>Nouveau message') + '</div></div>';
-  h += '<div class="mtn-count' + (allDone ? ' done' : '') + '">' + totalDone + '/' + total + '</div>';
   h += '</div>';
 
   h += '<div class="mtn-bar"><i style="width:' + pct + '%"></i></div>';
@@ -12625,7 +12628,7 @@ function renderTitanSmartCards() {
     h += '<div class="mtn-msg" onclick="this.classList.toggle(\'open\')">' + esc(titanMsg) + '</div>';
   }
 
-  h += '<div class="mtn-lab">Mission du jour</div>';
+  h += '<div class="mtn-lab' + (allDone ? ' done' : '') + '">Mission du jour · <b class="mtn-count' + (allDone ? ' done' : '') + '">' + totalDone + '/' + total + '</b></div>';
 
   objectives.forEach(function(obj) {
     var done = !!state.done[obj.id];

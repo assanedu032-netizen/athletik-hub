@@ -286,10 +286,19 @@ completedPrograms, fcmToken, accessTier`.
   cache journalier) — **jamais un texte figé**, et le fallback `titanGetSmartMessage` reste en
   place. La carte mesurait **590 px sur 667** (88 % de l'écran) : quatre objectifs en blocs de
   deux lignes **plus** une seconde carte « lecture » qui répétait le chapitre déjà annoncé
-  au-dessus. Elle en fait **364**. Le chapitre recommandé vit désormais **dans** l'étape lecture
+  au-dessus. Elle en fait **287** (43 % en 375×667 dans le pire cas à quatre étapes, **258** dans
+  le cas courant à trois). Une première passe s'était arrêtée à 364 — encore la moitié de l'écran
+  pour une boîte de message. Ce qui coûtait le reste : trois pavés de 34 px pleine largeur qui
+  relisaient la carte comme une **checklist** alors que les étapes sont *secondaires*, un CTA de
+  39 px qui écrasait le message, et un compteur relégué dans un coin du header. L'avatar est
+  **`images/titan-mascot.png`** — le vrai, celui de la barre du bas ; un « T » dessiné à la main
+  donnait un autre personnage que celui que l'athlète connaît. Le compteur est **inline**
+  (`MISSION DU JOUR · 0/3`), avec le libellé qu'il compte.
+  Le chapitre recommandé vit désormais **dans** l'étape lecture
   (`Lire : <chapitre>` + `p.301`) — la seule place où il est actionnable ; la mini-carte qui le
   redisait est supprimée. Le message est écrêté à **3 lignes** et se déplie au tap : la hauteur
-  est bornée sans rien perdre.
+  est bornée sans rien perdre — **deux** lignes, pas trois : l'accroche suffit, le doigt fait le
+  reste.
   **Le compteur ne compte que des étapes réelles** (2 à 4 selon `satDone` et la reco), pas un
   `0/3` de maquette. Les cases vivent dans `ah_titan_mission` (`{date, done:{}}`, remis à zéro
   chaque jour).
@@ -300,8 +309,9 @@ completedPrograms, fcmToken, accessTier`.
   et l'étape se coche seule comme le fait déjà `seance` via `_msnSeanceDoneToday()`.
   CSS `.mtn-*` (à côté de `.art-teaser-*`) : le rendu était 100 % inline, il ne l'est plus.
   Navy = le token `--ah-navy-deep` (#243B6B, navy unifié), **pas** un hex local.
-  Test : `scripts/test-mission-titan.js` (65, vrai Chromium en 375×667 et 320×568 : hauteur
-  plafonnée à 400 px, contraste AA calculé, les 4 états réels, et le reste de la Home intact).
+  Test : `scripts/test-mission-titan.js` (70, vrai Chromium en 375×667 et 320×568 : hauteur
+  plafonnée à 290 px dans le pire cas et 265 dans le cas courant, avatar réel vérifié, contraste
+  AA calculé, les 4 états réels, et le reste de la Home intact).
 - **Progression**: `renderProgression()` fills `#progressionCard` in the Moi tab — current score, 8-week sessions bar graph, personal records. Helper `_progressionWeeklySessions(8)`.
 - **Habits**: `activeHabits` array, persisted to `ah_active_habits` via `_persistActiveHabits()`. `checkHabit()` resets the streak on a day gap. `renderActiveHabits()` renders Home + Moi.
 - **Exercise library**: `catData` is the flat exercise database (198 exercises). `_LIB_CAT_MAP` maps the chip filters to `catData` keys. Schema `{name, diff:'easy'|'med'|'hard', muscles, desc, mat, tag?, video?}`. Videos: per-exo `video` field OR `_LIB_VIDEO_MAP` lookup by name. The library has a "🎯 Mon programme" filter (`_libFlatExos('myprogram')`).

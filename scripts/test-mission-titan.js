@@ -15,9 +15,11 @@ try { chromium = require('playwright').chromium; }
 catch (e) { console.log('Playwright absent — npm i -D playwright --no-save'); process.exit(0); }
 const MIME = { '.html':'text/html','.js':'text/javascript','.css':'text/css','.json':'application/json','.webp':'image/webp','.png':'image/png' };
 
-// La carte tenait 590 px. On borne à 400 : au-delà, la section suivante de la
-// Home ne respire plus. Le chiffre est un plafond, pas une cible.
-const PLAFOND = 400;
+// La carte tenait 590 px sur 667 — 88 % de l'écran. Une première passe l'a
+// mise à 364, soit encore 46 % : la moitié de la Home pour une boîte de
+// message. On borne à 290, mesuré dans le cas le PLUS HAUT (quatre étapes,
+// test non fait). Le cas courant à trois étapes tourne autour de 260.
+const PLAFOND = 290;
 
 (async () => {
   const server = http.createServer((req, res) => {
@@ -86,6 +88,10 @@ const PLAFOND = 400;
       hauteur: Math.round(wrap.getBoundingClientRect().height),
       cartes:  wrap.querySelectorAll('.mtn').length,
       nom:     q('.mtn-name'),
+      avatar:  (() => { const a = wrap.querySelector('.mtn-av'); return a ? { tag: a.tagName, src: a.getAttribute('src') || '', h: Math.round(a.getBoundingClientRect().height) } : null; })(),
+      compteDansLabel: !!wrap.querySelector('.mtn-lab .mtn-count'),
+      compteDansHead:  !!wrap.querySelector('.mtn-head .mtn-count'),
+      labelTxt: q('.mtn-lab'),
       etat:    q('.mtn-state'),
       compte:  q('.mtn-count'),
       compteDone: !!wrap.querySelector('.mtn-count.done'),
@@ -118,6 +124,13 @@ const PLAFOND = 400;
   ok('une SEULE carte — la mini-carte lecture qui répétait le chapitre a disparu', v.cartes === 1);
   ok('hauteur ≤ ' + PLAFOND + ' px (était 590)', v.hauteur <= PLAFOND, v.hauteur + 'px');
   ok('l\'identité est « TITAN »', v.nom === 'TITAN', v.nom);
+  // Le vrai avatar existe (images/titan-mascot.png, celui de la barre du bas) :
+  // un « T » dessiné à la main donnait un autre personnage.
+  ok('l\'avatar est la VRAIE image de Titan', !!v.avatar && v.avatar.tag === 'IMG' && /titan-mascot\.png$/.test(v.avatar.src), JSON.stringify(v.avatar));
+  ok('l\'avatar est chargé (hauteur non nulle)', !!v.avatar && v.avatar.h >= 24, v.avatar && v.avatar.h);
+  ok('le compteur est inline avec « Mission du jour »', v.compteDansLabel === true, v.labelTxt);
+  ok('le compteur n\'est plus dans un coin du header', v.compteDansHead === false);
+  ok('le libellé lit « Mission du jour · n/n »', /mission du jour\s*·\s*\d+\/\d+/i.test(v.labelTxt || ''), v.labelTxt);
   ok('l\'état dit « Nouveau message »', /nouveau message/i.test(v.etat || ''), v.etat);
   ok('la pastille de notification pulse', v.pulse === true);
   ok('le compteur est à 0 sur le total réel', /^0\/\d+$/.test(v.compte || ''), v.compte);
@@ -125,9 +138,13 @@ const PLAFOND = 400;
   ok('la barre de progression est à 0%', v.barre === '0%', v.barre);
   ok('un message de Titan est affiché', !!v.message && v.message.length > 20, v.message);
   ok('le message vient du moteur, pas d\'un texte figé', /Alassane/.test(v.message || ''), v.message);
-  ok('le message est écrêté à 3 lignes', v.msgLignes <= 3, v.msgLignes + ' lignes');
+  // Deux lignes suffisent à l'accroche ; le tap donne la suite. Trois lignes
+  // coûtaient 20 px pour une phrase que l'athlète peut ouvrir d'un doigt.
+  ok('le message est écrêté à 2 lignes', v.msgLignes <= 2, v.msgLignes + ' lignes');
   ok('il y a des étapes', v.etapes.length >= 2, v.etapes.length);
-  ok('chaque étape tient sur une ligne (≤ 40 px)', v.etapes.every(e => e.h <= 40), JSON.stringify(v.etapes.map(e => e.h)));
+  // Les étapes sont SECONDAIRES : trois pavés de 34 px pleine largeur
+  // relisaient la carte comme une checklist, ce qu'elle ne doit plus être.
+  ok('chaque étape tient sur une ligne basse (≤ 30 px)', v.etapes.every(e => e.h <= 30), JSON.stringify(v.etapes.map(e => e.h)));
   ok('l\'étape lecture porte le chapitre recommandé', /Lire\s*:/.test((v.etapes[0]||{}).txt || ''), (v.etapes[0]||{}).txt);
   ok('l\'étape lecture porte la page du livre', /^p\.\d+$/.test((v.etapes[0]||{}).sfx || ''), (v.etapes[0]||{}).sfx);
   ok('l\'étape séance existe', v.etapes.some(e => /séance/i.test(e.txt)), JSON.stringify(v.etapes.map(e => e.txt)));
@@ -211,7 +228,8 @@ const PLAFOND = 400;
   ok('la barre est pleine', v.barre === '100%', v.barre);
   ok('le CTA passe en état accompli', v.ctaDone === true, v.cta);
   ok('le CTA accompli n\'est plus cliquable', v.ctaClic === false);
-  ok('hauteur ≤ ' + PLAFOND, v.hauteur <= PLAFOND, v.hauteur + 'px');
+  // Trois étapes : le cas courant, celui qu'a l'athlète dès que son test est fait.
+  ok('à 3 étapes, la carte tient sous 265 px', v.hauteur <= 265, v.hauteur + 'px pour ' + v.etapes.length + ' étapes');
 
   // ── Le tap sur une étape la bascule ─────────────────────────────────────
   console.log('\n── Cocher / décocher une étape ──');
@@ -259,7 +277,7 @@ const PLAFOND = 400;
   const p320 = await lire(); await shot('04-320.png');
   ok('rien ne déborde en 320 px', p320.debordeX === 0, p320.debordeX);
   ok('la carte tient dans la largeur en 320 px', p320.largeurOk === true);
-  ok('les étapes tiennent encore sur une ligne', p320.etapes.every(e => e.h <= 44), JSON.stringify(p320.etapes.map(e => e.h)));
+  ok('les étapes tiennent encore sur une ligne', p320.etapes.every(e => e.h <= 34), JSON.stringify(p320.etapes.map(e => e.h)));
   ok('hauteur ≤ ' + PLAFOND + ' en 320 px', p320.hauteur <= PLAFOND, p320.hauteur + 'px');
 
   // ── Contraste — le texte doit rester lisible sur le navy ────────────────
@@ -298,8 +316,10 @@ const PLAFOND = 400;
 
   // ── La preuve du gain ───────────────────────────────────────────────────
   console.log('\n── Hauteur ──');
-  console.log('  INFO  journée neuve, 4 étapes : ' + H_NEUVE + ' px (avant refonte : 590 px)');
-  ok('la carte a bien maigri (< 500 px)', H_NEUVE < 500, H_NEUVE + 'px');
+  console.log('  INFO  journée neuve, 4 étapes : ' + H_NEUVE + ' px — ' + Math.round(H_NEUVE / 667 * 100) + ' % de l\'écran (avant : 590 px, 88 %)');
+  // La carte doit rester une boîte de MESSAGE : moins de 40 % de l'écran,
+  // pour que la carte article et le scoreboard soient visibles sans scroller.
+  ok('la carte a fondu de plus de moitié (590 → ≤ 290)', H_NEUVE <= PLAFOND, H_NEUVE + 'px');
 
   const echecs = R.filter(x => !x).length;
   console.log('\n' + '='.repeat(58));
