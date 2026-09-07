@@ -16,10 +16,12 @@ catch (e) { console.log('Playwright absent — npm i -D playwright --no-save'); 
 const MIME = { '.html':'text/html','.js':'text/javascript','.css':'text/css','.json':'application/json','.webp':'image/webp','.png':'image/png' };
 
 // La carte tenait 590 px sur 667 — 88 % de l'écran. Une première passe l'a
-// mise à 364, soit encore 46 % : la moitié de la Home pour une boîte de
-// message. On borne à 290, mesuré dans le cas le PLUS HAUT (quatre étapes,
-// test non fait). Le cas courant à trois étapes tourne autour de 260.
-const PLAFOND = 290;
+// mise à 364, une deuxième à 287. La carte est maintenant une NOTIFICATION :
+// repliée elle montre qui parle, quand, ce qu'il dit et un bouton — la mission
+// se déplie au tap. On borne la forme repliée à 190 px (mesuré : 180), et la
+// forme dépliée, cas le plus haut à quatre étapes, à 290.
+const PLAFOND = 190;
+const PLAFOND_OUVERT = 292;
 
 (async () => {
   const server = http.createServer((req, res) => {
@@ -87,9 +89,18 @@ const PLAFOND = 290;
     return {
       hauteur: Math.round(wrap.getBoundingClientRect().height),
       cartes:  wrap.querySelectorAll('.mtn').length,
-      nom:     q('.mtn-name'),
+      // Le nom porte maintenant l'heure à côté : on lit le nœud texte direct.
+      nom:     (() => { const e = wrap.querySelector('.mtn-name'); if (!e) return null;
+                        return Array.from(e.childNodes).filter(n => n.nodeType === 3).map(n => n.textContent).join('').trim(); })(),
       avatar:  (() => { const a = wrap.querySelector('.mtn-av'); return a ? { tag: a.tagName, src: a.getAttribute('src') || '', h: Math.round(a.getBoundingClientRect().height) } : null; })(),
       compteDansLabel: !!wrap.querySelector('.mtn-lab .mtn-count'),
+      temps:   q('.mtn-time'),
+      croix:   !!wrap.querySelector('.mtn-x'),
+      chevron: !!wrap.querySelector('.mtn-chev'),
+      chevronHaut: !!wrap.querySelector('.mtn-chev.up'),
+      // Le [hidden] d'une classe en display:flex ne suffit pas : on mesure.
+      etapesVisibles: (() => { const b = wrap.querySelector('.mtn-steps'); return !!b && b.getBoundingClientRect().height > 0; })(),
+      restore: q('.mtn-restore'),
       compteDansHead:  !!wrap.querySelector('.mtn-head .mtn-count'),
       labelTxt: q('.mtn-lab'),
       etat:    q('.mtn-state'),
@@ -98,7 +109,6 @@ const PLAFOND = 290;
       pulse:   !!wrap.querySelector('.mtn-dot'),
       message: msg ? msg.textContent.replace(/\s+/g, ' ').trim() : null,
       msgLignes: msg ? Math.round(msg.getBoundingClientRect().height / parseFloat(getComputedStyle(msg).lineHeight)) : 0,
-      barre:   (() => { const b = wrap.querySelector('.mtn-bar > i'); return b ? b.style.width : null; })(),
       etapes:  Array.from(wrap.querySelectorAll('.mtn-step')).map(e => ({
         txt: (e.querySelector('.mtn-txt') || { textContent: '' }).textContent.trim(),
         sfx: e.querySelector('.mtn-sfx') ? e.querySelector('.mtn-sfx').textContent.trim() : null,
@@ -122,7 +132,13 @@ const PLAFOND = 290;
 
   ok('la carte est rendue', v.cartes === 1, v.cartes);
   ok('une SEULE carte — la mini-carte lecture qui répétait le chapitre a disparu', v.cartes === 1);
-  ok('hauteur ≤ ' + PLAFOND + ' px (était 590)', v.hauteur <= PLAFOND, v.hauteur + 'px');
+  ok('repliée, hauteur ≤ ' + PLAFOND + ' px (était 590)', v.hauteur <= PLAFOND, v.hauteur + 'px');
+  ok('la mission est REPLIÉE par défaut', v.etapesVisibles === false);
+  ok('un chevron annonce qu\'elle se déplie', v.chevron === true);
+  ok('le chevron pointe vers le bas quand c\'est replié', v.chevronHaut === false);
+  ok('une croix permet de masquer', v.croix === true);
+  // Une notification dit QUAND elle est arrivée — mais l'heure doit être vraie.
+  ok('l\'heure du message est affichée', /à l\'instant|il y a \d+ (min|h)/.test(v.temps || ''), v.temps);
   ok('l\'identité est « TITAN »', v.nom === 'TITAN', v.nom);
   // Le vrai avatar existe (images/titan-mascot.png, celui de la barre du bas) :
   // un « T » dessiné à la main donnait un autre personnage.
@@ -135,12 +151,18 @@ const PLAFOND = 290;
   ok('la pastille de notification pulse', v.pulse === true);
   ok('le compteur est à 0 sur le total réel', /^0\/\d+$/.test(v.compte || ''), v.compte);
   ok('le compteur n\'est pas en état « accompli »', v.compteDone === false);
-  ok('la barre de progression est à 0%', v.barre === '0%', v.barre);
   ok('un message de Titan est affiché', !!v.message && v.message.length > 20, v.message);
   ok('le message vient du moteur, pas d\'un texte figé', /Alassane/.test(v.message || ''), v.message);
   // Deux lignes suffisent à l'accroche ; le tap donne la suite. Trois lignes
   // coûtaient 20 px pour une phrase que l'athlète peut ouvrir d'un doigt.
   ok('le message est écrêté à 2 lignes', v.msgLignes <= 2, v.msgLignes + ' lignes');
+  ok('replié, le message reste l\'objet de la notification', v.msgLignes >= 1);
+  // On déplie pour vérifier le contenu de la mission.
+  try { await page.click('#titanSmartCards .mtn-lab', { timeout: 2000 }); } catch (e) {} await page.waitForTimeout(250);
+  v = await lire(); await shot('01b-depliee.png');
+  ok('le tap sur la ligne mission déplie les étapes', v.etapesVisibles === true);
+  ok('le chevron se retourne', v.chevronHaut === true);
+  ok('dépliée, hauteur ≤ ' + PLAFOND_OUVERT + ' px', v.hauteur <= PLAFOND_OUVERT, v.hauteur + 'px');
   ok('il y a des étapes', v.etapes.length >= 2, v.etapes.length);
   // Les étapes sont SECONDAIRES : trois pavés de 34 px pleine largeur
   // relisaient la carte comme une checklist, ce qu'elle ne doit plus être.
@@ -157,7 +179,33 @@ const PLAFOND = 290;
   ok('la carte tient dans la largeur', v.largeurOk === true);
   ok('aucune erreur JS', errs.length === 0, errs.join(' | '));
 
+  const H_OUVERTE = v.hauteur;
+
+  // ── Le pli est mémorisé pour la journée ─────────────────────────────────
+  console.log('\n── Le pli tient d\'un rendu à l\'autre ──');
+  await page.evaluate(() => window.renderTitanSmartCards());
+  await page.waitForTimeout(200);
+  v = await lire();
+  ok('rester déplié survit à un re-rendu', v.etapesVisibles === true);
+  ok('le pli est écrit dans ah_titan_mission',
+    await page.evaluate(() => { try { return JSON.parse(localStorage.getItem('ah_titan_mission')).open === true; } catch(e) { return false; } }));
+  try { await page.click('#titanSmartCards .mtn-lab', { timeout: 2000 }); } catch (e) {} await page.waitForTimeout(250);
+  v = await lire();
+  ok('re-taper replie', v.etapesVisibles === false);
   const H_NEUVE = v.hauteur;
+
+  // ── Masquer ne détruit pas la mission ───────────────────────────────────
+  // Un tap accidentel sur la croix ne doit pas coûter la mission de la journée.
+  console.log('\n── Masquer, puis réafficher ──');
+  try { await page.click('#titanSmartCards .mtn-x', { timeout: 2000 }); } catch (e) {} await page.waitForTimeout(250);
+  v = await lire(); await shot('01c-masquee.png');
+  ok('la notification disparaît', (await page.evaluate(() => !document.querySelector('#titanSmartCards .mtn'))) === true);
+  ok('une ligne de rappel reste — la mission n\'est pas perdue', !!v.restore && /masqué/i.test(v.restore), v.restore);
+  ok('le rappel porte le compteur', /\d+\/\d+/.test(v.restore || ''), v.restore);
+  ok('le rappel est très bas (≤ 55 px)', v.hauteur <= 55, v.hauteur + 'px');
+  try { await page.click('#titanSmartCards .mtn-restore', { timeout: 2000 }); } catch (e) {} await page.waitForTimeout(250);
+  v = await lire();
+  ok('un tap la réaffiche', v.cartes === 1 && !v.restore);
 
   // ── Le message se déplie au tap ─────────────────────────────────────────
   console.log('\n── Le message long se déplie ──');
@@ -175,28 +223,27 @@ const PLAFOND = 290;
   // ── ÉTAT 2 — séance faite aujourd'hui ───────────────────────────────────
   console.log('\n── Séance faite aujourd\'hui ──');
   const today = new Date().toISOString().slice(0, 10);
-  await etat(PROFIL, [{ date: today + 'T10:00:00.000Z', type: 'session', name: 'Séance 1' }], null, null);
+  await etat(PROFIL, [{ date: today + 'T10:00:00.000Z', type: 'session', name: 'Séance 1' }], { date: today, done: {}, open: true }, null);
   v = await lire(); await shot('02-seance.png');
   const seance = v.etapes.filter(e => /séance/i.test(e.txt))[0];
   ok('l\'étape séance se coche toute seule', !!seance && seance.faite === true, JSON.stringify(seance));
   ok('elle porte le suffixe « Faite »', !!seance && /faite/i.test(seance.sfx || ''), seance && seance.sfx);
   ok('le compteur l\'a comptée', /^[1-9]\/\d+$/.test(v.compte || ''), v.compte);
-  ok('la barre a bougé', v.barre !== '0%', v.barre);
-  ok('hauteur toujours ≤ ' + PLAFOND, v.hauteur <= PLAFOND, v.hauteur + 'px');
+  ok('dépliée, hauteur toujours ≤ ' + PLAFOND_OUVERT, v.hauteur <= PLAFOND_OUVERT, v.hauteur + 'px');
 
   // ── ÉTAT 3 — l'athlète a parlé à Titan il y a une heure ─────────────────
   // C'est le défaut réparé : `ah_titan_q_last` n'était écrit NULLE PART, donc
   // `Date.now() - 0 > 48 h` était toujours vrai et l'étape ne pouvait jamais
   // se satisfaire d'autre chose qu'une case cochée à la main.
   console.log('\n── L\'athlète a parlé à Titan il y a 1 h ──');
-  await etat(PROFIL, [], null, Date.now() - 3600000);
+  await etat(PROFIL, [], { date: today, done: {}, open: true }, Date.now() - 3600000);
   v = await lire();
   const etTitan = v.etapes.filter(e => /Titan/i.test(e.txt))[0];
   ok('l\'étape Titan est cochée toute seule', !!etTitan && etTitan.faite === true, JSON.stringify(etTitan));
   ok('elle porte le suffixe « Fait »', !!etTitan && /fait/i.test(etTitan.sfx || ''), etTitan && etTitan.sfx);
 
   console.log('\n── … et il y a 3 jours (> 48 h) ──');
-  await etat(PROFIL, [], null, Date.now() - 3 * 86400000);
+  await etat(PROFIL, [], { date: today, done: {}, open: true }, Date.now() - 3 * 86400000);
   v = await lire();
   const etTitan2 = v.etapes.filter(e => /Titan/i.test(e.txt))[0];
   ok('au-delà de 48 h, l\'étape Titan revient à faire', !!etTitan2 && etTitan2.faite === false, JSON.stringify(etTitan2));
@@ -214,7 +261,7 @@ const PLAFOND = 290;
   console.log('\n── Mission accomplie ──');
   await etat({ ...PROFIL, satDone: true, vertJump: 62 },
     [{ date: today + 'T10:00:00.000Z', type: 'session', name: 'Séance 1' }],
-    null, Date.now() - 3600000);
+    { date: today, done: {}, open: true }, Date.now() - 3600000);
   v = await lire();
   // Il reste l'étape lecture : on la coche comme l'athlète le ferait.
   await page.evaluate(() => window._missionMarkDone('lecture'));
@@ -225,11 +272,12 @@ const PLAFOND = 290;
   ok('le compteur passe en état accompli', v.compteDone === true);
   ok('l\'état devient « Mission accomplie »', /accomplie/i.test(v.etat || ''), v.etat);
   ok('la pastille « nouveau message » disparaît', v.pulse === false);
-  ok('la barre est pleine', v.barre === '100%', v.barre);
+  ok('pas de barre de progression — « n/n » le dit déjà',
+    (await page.evaluate(() => !document.querySelector('#titanSmartCards .mtn-bar'))) === true);
   ok('le CTA passe en état accompli', v.ctaDone === true, v.cta);
   ok('le CTA accompli n\'est plus cliquable', v.ctaClic === false);
   // Trois étapes : le cas courant, celui qu'a l'athlète dès que son test est fait.
-  ok('à 3 étapes, la carte tient sous 265 px', v.hauteur <= 265, v.hauteur + 'px pour ' + v.etapes.length + ' étapes');
+  ok('à 3 étapes dépliée, la carte tient sous 270 px', v.hauteur <= 270, v.hauteur + 'px pour ' + v.etapes.length + ' étapes');
 
   // ── Le tap sur une étape la bascule ─────────────────────────────────────
   console.log('\n── Cocher / décocher une étape ──');
@@ -278,7 +326,7 @@ const PLAFOND = 290;
   ok('rien ne déborde en 320 px', p320.debordeX === 0, p320.debordeX);
   ok('la carte tient dans la largeur en 320 px', p320.largeurOk === true);
   ok('les étapes tiennent encore sur une ligne', p320.etapes.every(e => e.h <= 34), JSON.stringify(p320.etapes.map(e => e.h)));
-  ok('hauteur ≤ ' + PLAFOND + ' en 320 px', p320.hauteur <= PLAFOND, p320.hauteur + 'px');
+  ok('hauteur ≤ ' + PLAFOND_OUVERT + ' en 320 px', p320.hauteur <= PLAFOND_OUVERT, p320.hauteur + 'px');
 
   // ── Contraste — le texte doit rester lisible sur le navy ────────────────
   console.log('\n── Contraste sur navy ──');
@@ -316,10 +364,12 @@ const PLAFOND = 290;
 
   // ── La preuve du gain ───────────────────────────────────────────────────
   console.log('\n── Hauteur ──');
-  console.log('  INFO  journée neuve, 4 étapes : ' + H_NEUVE + ' px — ' + Math.round(H_NEUVE / 667 * 100) + ' % de l\'écran (avant : 590 px, 88 %)');
+  console.log('  INFO  repliée : ' + H_NEUVE + ' px (' + Math.round(H_NEUVE / 667 * 100) + ' % de l\'écran) — avant refonte : 590 px, 88 %');
+  console.log('  INFO  dépliée, 4 étapes : ' + H_OUVERTE + ' px (' + Math.round(H_OUVERTE / 667 * 100) + ' %)');
   // La carte doit rester une boîte de MESSAGE : moins de 40 % de l'écran,
   // pour que la carte article et le scoreboard soient visibles sans scroller.
-  ok('la carte a fondu de plus de moitié (590 → ≤ 290)', H_NEUVE <= PLAFOND, H_NEUVE + 'px');
+  ok('repliée, la notification occupe moins du tiers de l\'écran', H_NEUVE / 667 < 0.33, Math.round(H_NEUVE / 667 * 100) + '%');
+  ok('dépliée, elle reste sous ' + PLAFOND_OUVERT + ' px', H_OUVERTE <= PLAFOND_OUVERT, H_OUVERTE + 'px');
 
   const echecs = R.filter(x => !x).length;
   console.log('\n' + '='.repeat(58));
