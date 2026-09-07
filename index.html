@@ -6299,39 +6299,34 @@ body.ah-lib-open .tim-fab{display:none!important}
 .art-teaser-title{font-family:'Bebas Neue',sans-serif;font-size:17px;letter-spacing:.05em;color:var(--ah-text);line-height:1.2;margin-bottom:6px}
 .art-teaser-sub{font-family:'Outfit',sans-serif;font-size:12px;line-height:1.5;color:var(--ah-text2);margin-bottom:12px}
 .art-teaser-cta{font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:.16em;color:var(--ah-gold);text-transform:uppercase;font-weight:700;display:flex;align-items:center;gap:5px}
-/* ── MISSION TITAN — boîte de message du coach (Home) ─────────────────────
-   Refonte 2026-09-07 : la carte faisait 590 px sur 667 (mesure Chromium),
-   soit 88 % de l'écran, dont une seconde carte qui répétait le chapitre
-   déjà annoncé au-dessus. Elle redevient ce qu'elle est : un message de
-   Titan + les 3 gestes du jour + un bouton. Le moteur de reco est inchangé.
+/* ── MISSION TITAN — une NOTIFICATION, rien de plus (Home) ────────────────
+   Refonte 2026-09-07, 4ᵉ passe. La carte faisait 590 px sur 667 (88 % de
+   l'écran). Trois passes l'ont ramenée à 364, 287, 178 — et à 178 elle avait
+   encore un pavé doré pleine largeur qui écrasait le message, l'objet même
+   de la notification. Forme finale : une ligne, avatar à gauche, liseré doré,
+   le message ENTIER, et une action discrète en pilule. 128 px.
    Navy = le token unifié du projet (--ah-navy-deep), pas un hex local. */
-.mtn{margin:14px 16px 0;background:var(--ah-navy-deep);border:1px solid rgba(197,164,78,.28);border-radius:16px;overflow:hidden;box-shadow:0 4px 20px rgba(0,0,0,.2)}
-.mtn-head{display:flex;align-items:center;gap:9px;padding:7px 8px 7px 13px;background:linear-gradient(135deg,rgba(197,164,78,.16),rgba(197,164,78,.04));border-bottom:1px solid rgba(197,164,78,.16)}
-.mtn-av{width:30px;height:30px;min-width:30px;border-radius:50%;object-fit:cover;display:block;background:#243B6B;border:1.5px solid rgba(197,164,78,.55);box-shadow:0 2px 8px rgba(197,164,78,.28)}
-.mtn-id{flex:1;min-width:0}
-.mtn-name{display:flex;align-items:baseline;gap:6px;font-family:'Bebas Neue',sans-serif;font-size:15px;letter-spacing:.11em;color:#fff;line-height:1.05}
-.mtn-time{font-family:'Outfit',sans-serif;font-size:9.5px;font-weight:400;letter-spacing:0;color:rgba(255,255,255,.38)}
-.mtn-x{flex-shrink:0;width:30px;height:30px;border:0;background:transparent;color:rgba(255,255,255,.34);font-size:13px;line-height:1;cursor:pointer;border-radius:50%;padding:0;-webkit-tap-highlight-color:rgba(255,255,255,.1)}
-.mtn-x:active{background:rgba(255,255,255,.08)}
-.mtn-state{display:flex;align-items:center;gap:5px;font-family:'JetBrains Mono',monospace;font-size:8.5px;letter-spacing:.19em;font-weight:700;color:var(--ah-gold);text-transform:uppercase;margin-top:2px}
+.mtn{display:flex;gap:11px;margin:14px 16px 0;padding:12px 13px;background:var(--ah-navy-deep);border:1px solid rgba(197,164,78,.24);border-left:3px solid var(--ah-gold);border-radius:14px}
+.mtn-av{width:34px;height:34px;min-width:34px;border-radius:50%;object-fit:cover;display:block;background:#243B6B;border:1px solid rgba(197,164,78,.45)}
+.mtn-c{flex:1;min-width:0}
+.mtn-l1{display:flex;align-items:center;gap:6px;margin-bottom:4px}
+.mtn-name{font-family:'JetBrains Mono',monospace;font-size:9px;letter-spacing:.2em;font-weight:700;color:var(--ah-gold);text-transform:uppercase}
 .mtn-dot{width:5px;height:5px;border-radius:50%;background:var(--ah-gold);animation:mtnPulse 2s ease-in-out infinite}
-@keyframes mtnPulse{0%,100%{opacity:1}50%{opacity:.25}}
-.mtn-count{font-family:'JetBrains Mono',monospace;font-size:11px;font-weight:700;color:var(--ah-gold);opacity:.85;flex-shrink:0}
-.mtn-count.done{color:#10B981;opacity:1}
-.mtn-body{padding:10px 13px 12px}
-.mtn-msg{font-family:'Outfit',sans-serif;font-size:12.5px;line-height:1.45;color:rgba(255,255,255,.8);padding-left:9px;border-left:2px solid rgba(197,164,78,.45);display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;cursor:pointer}
+@keyframes mtnPulse{0%,100%{opacity:1}50%{opacity:.2}}
+.mtn-state{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+.mtn-time{margin-left:auto;flex-shrink:0;font-family:'Outfit',sans-serif;font-size:10px;color:rgba(255,255,255,.34)}
+.mtn-msg{font-family:'Outfit',sans-serif;font-size:12.5px;line-height:1.45;color:rgba(255,255,255,.82);display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden;cursor:pointer}
 .mtn-msg.open{-webkit-line-clamp:99}
-.mtn-lab{display:flex;align-items:center;justify-content:space-between;gap:7px;font-family:'JetBrains Mono',monospace;font-size:8.5px;letter-spacing:.19em;font-weight:700;color:rgba(255,255,255,.4);text-transform:uppercase;margin:9px 0 0;padding:5px 0;border-top:1px solid rgba(255,255,255,.07);cursor:pointer;-webkit-tap-highlight-color:rgba(197,164,78,.12)}
-.mtn-chev{font-size:11px;color:rgba(255,255,255,.4);transition:transform .18s;line-height:1}
+.mtn-f{display:flex;align-items:center;gap:10px;margin-top:9px}
+.mtn-lab{display:flex;align-items:center;gap:5px;font-family:'JetBrains Mono',monospace;font-size:9px;letter-spacing:.14em;font-weight:700;text-transform:uppercase;color:rgba(255,255,255,.42);cursor:pointer;padding:4px 0;-webkit-tap-highlight-color:rgba(197,164,78,.12)}
+.mtn-lab b{color:var(--ah-gold);font-weight:700}
+.mtn-lab.done,.mtn-lab.done b{color:#10B981}
+.mtn-chev{font-size:10px;line-height:1;transition:transform .18s}
 .mtn-chev.up{transform:rotate(180deg)}
-.mtn-steps{padding-top:2px}
+.mtn-cta{margin-left:auto;flex-shrink:0;padding:7px 14px;border-radius:999px;background:linear-gradient(135deg,#D9BE72,#C5A44E);font-family:'JetBrains Mono',monospace;font-size:9.5px;letter-spacing:.1em;font-weight:700;text-transform:uppercase;color:#1B2A4A;cursor:pointer;-webkit-tap-highlight-color:transparent}
+.mtn-cta.done{background:none;border:1px solid rgba(16,185,129,.4);color:#10B981;cursor:default}
+.mtn-steps{margin-top:7px}
 .mtn-steps[hidden]{display:none}
-.mtn-restore{display:flex;align-items:center;gap:9px;margin:14px 16px 0;padding:8px 12px;background:var(--ah-navy-deep);border:1px solid rgba(197,164,78,.22);border-radius:12px;font-family:'Outfit',sans-serif;font-size:11.5px;color:rgba(255,255,255,.6);cursor:pointer;-webkit-tap-highlight-color:rgba(197,164,78,.12)}
-.mtn-restore b{color:var(--ah-gold);font-weight:700}
-.mtn-restore-av{width:22px;height:22px;min-width:22px;border-radius:50%;object-fit:cover;opacity:.6}
-.mtn-restore-a{margin-left:auto;flex-shrink:0;font-family:'JetBrains Mono',monospace;font-size:8.5px;letter-spacing:.16em;text-transform:uppercase;font-weight:700;color:var(--ah-gold)}
-.mtn-lab b{color:var(--ah-gold);font-weight:700;font-size:9.5px;letter-spacing:.1em}
-.mtn-lab.done b{color:#10B981}
 .mtn-step{display:flex;align-items:center;gap:8px;padding:3px 8px;margin-bottom:2px;border-radius:8px;background:rgba(255,255,255,.035);border:1px solid rgba(255,255,255,.07);cursor:pointer;min-height:26px;-webkit-tap-highlight-color:rgba(197,164,78,.12)}
 .mtn-step.on{background:rgba(16,185,129,.07);border-color:rgba(16,185,129,.22)}
 .mtn-ck{width:16px;height:16px;min-width:16px;border-radius:50%;background:rgba(255,255,255,.07);border:1.5px solid rgba(255,255,255,.18);display:flex;align-items:center;justify-content:center;font-size:8px;font-weight:900;color:#fff;line-height:1}
@@ -6340,8 +6335,6 @@ body.ah-lib-open .tim-fab{display:none!important}
 .mtn-step.on .mtn-txt{color:rgba(255,255,255,.36);text-decoration:line-through}
 .mtn-sfx{flex-shrink:0;font-family:'Outfit',sans-serif;font-size:9.5px;color:rgba(255,255,255,.4)}
 .mtn-step.on .mtn-sfx{color:rgba(16,185,129,.75);text-decoration:none}
-.mtn-cta{margin-top:8px;padding:9px;border-radius:9px;background:linear-gradient(135deg,#C5A44E,#8B6914);font-family:'Bebas Neue',sans-serif;font-size:14px;letter-spacing:1.2px;color:#fff;text-align:center;cursor:pointer;box-shadow:0 3px 12px rgba(197,164,78,.3);-webkit-tap-highlight-color:transparent}
-.mtn-cta.done{background:rgba(16,185,129,.1);border:1px solid rgba(16,185,129,.28);color:#10B981;box-shadow:none;cursor:default}
 </style>
 
 <template id="__bundler_thumbnail" data-bg-color="#243B6B">
@@ -12514,34 +12507,21 @@ function _msnSeanceDoneToday() {
   } catch(e) { return false; }
 }
 
-// Une notification dit QUAND elle est arrivée. `reco.at` est l'instant réel du
-// calcul ; une reco venue du fallback legacy n'en a pas, et alors on n'écrit
-// aucune heure plutôt qu'une heure inventée.
-function _msnAgo(ts) {
+// Une notification affiche l'HEURE à laquelle elle est arrivée. `reco.at` est
+// l'instant réel du calcul : le cache journalier fait qu'une reco lue à 18 h
+// peut dater de 7 h du matin. Une reco venue du fallback legacy n'a pas de
+// `at`, et alors on n'écrit AUCUNE heure plutôt qu'une heure inventée.
+function _msnClock(ts) {
   if (!ts) return '';
-  var d = Date.now() - ts;
-  if (d < 0) return '';
-  if (d < 120000) return 'à l\'instant';
-  if (d < 3600000) return 'il y a ' + Math.round(d / 60000) + ' min';
-  if (d < 86400000) return 'il y a ' + Math.round(d / 3600000) + ' h';
-  return '';
+  var d = new Date(ts);
+  if (isNaN(d.getTime())) return '';
+  return _msnPad(d.getHours()) + ':' + _msnPad(d.getMinutes());
 }
 
 // Repliée par défaut, comme une notification. Le choix vit dans la mémoire du
 // jour : il se remet à zéro demain matin, avec la mission.
 window._missionToggleSteps = function() {
   var st = _msnLoad(); st.open = !st.open; _msnSave(st);
-  renderTitanSmartCards();
-};
-// « Masquer » ne détruit pas la mission : une ligne de rappel reste, sinon un
-// tap accidentel coûterait la mission de la journée entière.
-window._missionHide = function(ev) {
-  if (ev && ev.stopPropagation) ev.stopPropagation();
-  var st = _msnLoad(); st.hidden = true; _msnSave(st);
-  renderTitanSmartCards();
-};
-window._missionShow = function() {
-  var st = _msnLoad(); st.hidden = false; _msnSave(st);
   renderTitanSmartCards();
 };
 
@@ -12632,8 +12612,10 @@ function renderTitanSmartCards() {
   for (var i = 0; i < objectives.length; i++) {
     if (!state.done[objectives[i].id]) { nextObj = objectives[i]; break; }
   }
-  var ctaMap = { lecture:'Ouvrir la lecture', seance:'Lancer la séance', test:'Faire mon ' + testLabel, titan:'Parler à Titan' };
-  var ctaLabel = allDone ? 'Mission accomplie !' : (nextObj ? (ctaMap[nextObj.action] || 'Commencer') : 'Commencer');
+  // Une pilule n'a pas la place d'une phrase, mais elle doit quand même dire
+  // ce que le tap va faire — la règle du bouton unique de l'écran séance.
+  var ctaMap = { lecture:'Lire', seance:'Séance', test:testLabel, titan:'Titan' };
+  var ctaLabel = allDone ? 'Fait' : (nextObj ? (ctaMap[nextObj.action] || 'Ouvrir') : 'Ouvrir');
 
   // ── Message Titan ────────────────────────────────────────────────────────
   var titanMsg = '';
@@ -12643,50 +12625,44 @@ function renderTitanSmartCards() {
   }
 
   // ── Rendu ──────────────────────────────────────────────────
-  // Une NOTIFICATION, pas un tableau de bord. Repliée : qui parle, quand, ce
-  // qu'il dit, et un bouton. La mission se déplie au tap — 4 objectifs en
-  // blocs de deux lignes faisaient 590 px sur un écran de 667.
+  // Une notification, une ligne : avatar, qui parle, quand, ce qu'il dit, et
+  // UNE action en pilule. Le pavé doré pleine largeur des passes précédentes
+  // était l'élément le plus voyant de l'écran — devant le message, qui est
+  // pourtant l'objet même de la notification.
   var esc = function(t) {
     return String(t == null ? '' : t)
       .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
       .replace(/"/g, '&quot;');
   };
-
-  // Masquée : on garde une ligne de rappel. Un tap sur la croix ne doit pas
-  // coûter la mission de la journée.
-  if (state.hidden) {
-    wrap.innerHTML = '<div class="mtn-restore" onclick="_missionShow()">'
-      + '<img class="mtn-restore-av" src="images/titan-mascot.png" alt="">'
-      + '<span>Message de Titan masqué · <b>' + totalDone + '/' + total + '</b></span>'
-      + '<span class="mtn-restore-a">Afficher</span></div>';
-    return;
-  }
-
   var ouvert = !!state.open;
-  var quand  = _msnAgo(reco && reco.at);
+  var heure  = _msnClock(reco && reco.at);
+
   var h = '';
   h += '<div class="mtn">';
-
-  // En-tête de notification : avatar, expéditeur, quand, fermer.
-  h += '<div class="mtn-head">';
   h += '<img class="mtn-av" src="images/titan-mascot.png" alt="Titan">';
-  h += '<div class="mtn-id"><div class="mtn-name">TITAN'
-     + (quand ? '<span class="mtn-time">· ' + esc(quand) + '</span>' : '') + '</div>';
-  h += '<div class="mtn-state">' + (allDone ? 'Mission accomplie' : '<span class="mtn-dot"></span>Nouveau message') + '</div></div>';
-  h += '<button class="mtn-x" onclick="_missionHide(event)" aria-label="Masquer">✕</button>';
+  h += '<div class="mtn-c">';
+
+  h += '<div class="mtn-l1"><span class="mtn-name">Titan</span>';
+  if (!allDone) h += '<span class="mtn-dot"></span>';
+  // Le lecteur d'écran a besoin du mot ; l'œil a la pastille.
+  h += '<span class="mtn-state">' + (allDone ? 'Mission accomplie' : 'Nouveau message') + '</span>';
+  if (heure) h += '<span class="mtn-time">' + esc(heure) + '</span>';
   h += '</div>';
 
-  h += '<div class="mtn-body">';
-
-  // Le message est l'objet de la notification. Deux lignes, le tap déplie.
+  // Trois lignes, et le tap donne la suite. Rien n'est perdu.
   if (titanMsg) {
     h += '<div class="mtn-msg" onclick="this.classList.toggle(\'open\')">' + esc(titanMsg) + '</div>';
   }
 
-  // Ligne de mission repliable — le compteur vit avec le libellé qu'il compte.
-  h += '<div class="mtn-lab' + (allDone ? ' done' : '') + '" onclick="_missionToggleSteps()" role="button" aria-expanded="' + (ouvert ? 'true' : 'false') + '">';
-  h += '<span>Mission du jour · <b class="mtn-count' + (allDone ? ' done' : '') + '">' + totalDone + '/' + total + '</b></span>';
-  h += '<span class="mtn-chev' + (ouvert ? ' up' : '') + '">▾</span>';
+  h += '<div class="mtn-f">';
+  h += '<span class="mtn-lab' + (allDone ? ' done' : '') + '" onclick="_missionToggleSteps()" role="button" aria-expanded="' + (ouvert ? 'true' : 'false') + '">';
+  h += 'Mission <b class="mtn-count' + (allDone ? ' done' : '') + '">' + totalDone + '/' + total + '</b>';
+  h += '<span class="mtn-chev' + (ouvert ? ' up' : '') + '">▾</span></span>';
+  if (allDone) {
+    h += '<span class="mtn-cta done">Fait ✓</span>';
+  } else if (nextObj) {
+    h += '<span class="mtn-cta" onclick="_missionCTA(\'' + nextObj.action + '\')">' + esc(ctaLabel) + ' →</span>';
+  }
   h += '</div>';
 
   h += '<div class="mtn-steps"' + (ouvert ? '' : ' hidden') + '>';
@@ -12699,12 +12675,6 @@ function renderTitanSmartCards() {
     h += '</div>';
   });
   h += '</div>';
-
-  if (allDone) {
-    h += '<div class="mtn-cta done">' + esc(ctaLabel) + '</div>';
-  } else if (nextObj) {
-    h += '<div class="mtn-cta" onclick="_missionCTA(\'' + nextObj.action + '\')">' + esc(ctaLabel) + ' →</div>';
-  }
 
   h += '</div></div>';
 
