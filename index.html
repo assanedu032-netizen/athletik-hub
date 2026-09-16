@@ -6299,42 +6299,36 @@ body.ah-lib-open .tim-fab{display:none!important}
 .art-teaser-title{font-family:'Bebas Neue',sans-serif;font-size:17px;letter-spacing:.05em;color:var(--ah-text);line-height:1.2;margin-bottom:6px}
 .art-teaser-sub{font-family:'Outfit',sans-serif;font-size:12px;line-height:1.5;color:var(--ah-text2);margin-bottom:12px}
 .art-teaser-cta{font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:.16em;color:var(--ah-gold);text-transform:uppercase;font-weight:700;display:flex;align-items:center;gap:5px}
-/* ── MISSION TITAN — une NOTIFICATION, rien de plus (Home) ────────────────
-   Refonte 2026-09-07, 4ᵉ passe. La carte faisait 590 px sur 667 (88 % de
-   l'écran). Trois passes l'ont ramenée à 364, 287, 178 — et à 178 elle avait
-   encore un pavé doré pleine largeur qui écrasait le message, l'objet même
-   de la notification. Forme finale : une ligne, avatar à gauche, liseré doré,
-   le message ENTIER, et une action discrète en pilule. 128 px.
-   Navy = le token unifié du projet (--ah-navy-deep), pas un hex local. */
-.mtn{display:flex;gap:11px;margin:14px 16px 0;padding:12px 13px;background:var(--ah-navy-deep);border:1px solid rgba(197,164,78,.24);border-left:3px solid var(--ah-gold);border-radius:14px}
-.mtn-av{width:34px;height:34px;min-width:34px;border-radius:50%;object-fit:cover;display:block;background:#243B6B;border:1px solid rgba(197,164,78,.45)}
-.mtn-c{flex:1;min-width:0}
-.mtn-l1{display:flex;align-items:center;gap:6px;margin-bottom:4px}
-.mtn-name{font-family:'JetBrains Mono',monospace;font-size:9px;letter-spacing:.2em;font-weight:700;color:var(--ah-gold);text-transform:uppercase}
-.mtn-dot{width:5px;height:5px;border-radius:50%;background:var(--ah-gold);animation:mtnPulse 2s ease-in-out infinite}
-@keyframes mtnPulse{0%,100%{opacity:1}50%{opacity:.2}}
-.mtn-state{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
-.mtn-time{margin-left:auto;flex-shrink:0;font-family:'Outfit',sans-serif;font-size:10px;color:rgba(255,255,255,.34)}
-.mtn-msg{font-family:'Outfit',sans-serif;font-size:12.5px;line-height:1.45;color:rgba(255,255,255,.82);display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden;cursor:pointer}
-.mtn-msg.open{-webkit-line-clamp:99}
-.mtn-f{display:flex;align-items:center;gap:10px;margin-top:9px}
-.mtn-lab{display:flex;align-items:center;gap:5px;font-family:'JetBrains Mono',monospace;font-size:9px;letter-spacing:.14em;font-weight:700;text-transform:uppercase;color:rgba(255,255,255,.42);cursor:pointer;padding:4px 0;-webkit-tap-highlight-color:rgba(197,164,78,.12)}
-.mtn-lab b{color:var(--ah-gold);font-weight:700}
-.mtn-lab.done,.mtn-lab.done b{color:#10B981}
-.mtn-chev{font-size:10px;line-height:1;transition:transform .18s}
-.mtn-chev.up{transform:rotate(180deg)}
-.mtn-cta{margin-left:auto;flex-shrink:0;padding:7px 14px;border-radius:999px;background:linear-gradient(135deg,#D9BE72,#C5A44E);font-family:'JetBrains Mono',monospace;font-size:9.5px;letter-spacing:.1em;font-weight:700;text-transform:uppercase;color:#1B2A4A;cursor:pointer;-webkit-tap-highlight-color:transparent}
-.mtn-cta.done{background:none;border:1px solid rgba(16,185,129,.4);color:#10B981;cursor:default}
-.mtn-steps{margin-top:7px}
-.mtn-steps[hidden]{display:none}
-.mtn-step{display:flex;align-items:center;gap:8px;padding:3px 8px;margin-bottom:2px;border-radius:8px;background:rgba(255,255,255,.035);border:1px solid rgba(255,255,255,.07);cursor:pointer;min-height:26px;-webkit-tap-highlight-color:rgba(197,164,78,.12)}
-.mtn-step.on{background:rgba(16,185,129,.07);border-color:rgba(16,185,129,.22)}
-.mtn-ck{width:16px;height:16px;min-width:16px;border-radius:50%;background:rgba(255,255,255,.07);border:1.5px solid rgba(255,255,255,.18);display:flex;align-items:center;justify-content:center;font-size:8px;font-weight:900;color:#fff;line-height:1}
-.mtn-step.on .mtn-ck{background:#10B981;border-color:#10B981}
-.mtn-txt{flex:1;min-width:0;font-family:'Outfit',sans-serif;font-size:12px;font-weight:600;color:rgba(255,255,255,.88);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.mtn-step.on .mtn-txt{color:rgba(255,255,255,.36);text-decoration:line-through}
-.mtn-sfx{flex-shrink:0;font-family:'Outfit',sans-serif;font-size:9.5px;color:rgba(255,255,255,.4)}
-.mtn-step.on .mtn-sfx{color:rgba(16,185,129,.75);text-decoration:none}
+/* ── CENTRE DE NOTIFICATIONS ──────────────────────────────────────────────
+   Le message de Titan et la mission du jour vivaient en carte pleine largeur
+   sur la Home : 590 px sur un écran de 667 au départ, 129 après quatre passes
+   de réduction. Une carte, si petite soit-elle, reste une carte. Ils passent
+   derrière une CLOCHE — une pastille suffit à dire qu'il y a quelque chose.
+   La feuille réutilise le motif .tsv-* de « Messages enregistrés ». */
+.nc-dot{position:absolute;top:8px;right:9px;width:9px;height:9px;border-radius:50%;background:#EF4444;border:2px solid var(--ah-bg);box-shadow:0 0 0 1px rgba(239,68,68,.35)}
+.nc-dot[hidden]{display:none}
+.nc-item{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:12px 13px;text-align:left;font-family:'Outfit',sans-serif}
+.nc-item.unread{border-color:rgba(197,164,78,.45);background:linear-gradient(135deg,rgba(197,164,78,.06),transparent)}
+.nc-top{display:flex;align-items:center;gap:7px;margin-bottom:6px}
+.nc-av{width:22px;height:22px;min-width:22px;border-radius:50%;object-fit:cover;border:1px solid rgba(197,164,78,.45)}
+.nc-ic{width:22px;height:22px;min-width:22px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;background:rgba(197,164,78,.14)}
+.nc-item{--nc-from:#8A6A16}
+[data-theme="dark"] .nc-item{--nc-from:#D4B86A}
+.nc-from{font-family:'JetBrains Mono',monospace;font-size:9px;letter-spacing:.18em;font-weight:700;color:var(--nc-from);text-transform:uppercase}
+.nc-time{margin-left:auto;flex-shrink:0;font-size:10px;color:var(--muted);font-weight:600}
+.nc-txt{font-size:12.5px;line-height:1.5;color:var(--text);font-weight:500;overflow-wrap:anywhere}
+.nc-act{margin-top:10px;display:inline-block;padding:7px 14px;border-radius:999px;background:linear-gradient(135deg,#D9BE72,#C5A44E);font-family:'JetBrains Mono',monospace;font-size:9.5px;letter-spacing:.1em;font-weight:700;text-transform:uppercase;color:#1B2A4A;cursor:pointer;border:0;-webkit-tap-highlight-color:transparent}
+.nc-act.done{background:none;border:1px solid rgba(16,185,129,.4);color:#10B981;cursor:default}
+.nc-steps{margin-top:9px;display:flex;flex-direction:column;gap:4px}
+.nc-step{display:flex;align-items:center;gap:8px;padding:5px 9px;border-radius:9px;background:var(--surface2);border:1px solid var(--border);cursor:pointer;min-height:32px;-webkit-tap-highlight-color:rgba(197,164,78,.12)}
+.nc-step.on{background:rgba(16,185,129,.07);border-color:rgba(16,185,129,.25)}
+.nc-ck{width:17px;height:17px;min-width:17px;border-radius:50%;background:var(--surface);border:1.5px solid var(--border2);display:flex;align-items:center;justify-content:center;font-size:8px;font-weight:900;color:#fff;line-height:1}
+.nc-step.on .nc-ck{background:#10B981;border-color:#10B981}
+.nc-stxt{flex:1;min-width:0;font-size:12px;font-weight:600;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.nc-step.on .nc-stxt{color:var(--muted);text-decoration:line-through}
+.nc-sfx{flex-shrink:0;font-size:9.5px;color:var(--muted)}
+.nc-step.on .nc-sfx{color:#10B981;text-decoration:none}
+.nc-empty{padding:30px 16px 40px;text-align:center;font-family:'Outfit',sans-serif;font-size:13px;color:var(--muted);line-height:1.55}
 </style>
 
 <template id="__bundler_thumbnail" data-bg-color="#243B6B">
@@ -7691,6 +7685,17 @@ window.tiResetOnEnter = function(){ window.tiShowStep(1); };
             <span id="userName" style="color:var(--ah-gold)">ATHLÈTE.</span>
           </div>
         </div>
+        <!-- Cloche de notifications. Le message de Titan et la mission du jour
+             vivaient en carte pleine largeur sur la Home — 590 px au pire, puis
+             129 après quatre passes. Ils vivent maintenant DERRIÈRE la cloche :
+             une pastille dit qu'il y a quelque chose, le tap l'ouvre. -->
+        <button onclick="openNotifCenter()" aria-label="Notifications" id="notifBell" style="position:relative;width:44px;height:44px;border-radius:50%;background:var(--ah-surface);border:1.5px solid var(--ah-border2);cursor:pointer;flex-shrink:0;display:flex;align-items:center;justify-content:center;padding:0;color:var(--ah-text);-webkit-tap-highlight-color:rgba(197,164,78,.15);transition:border-color .15s,transform .1s" onmousedown="this.style.transform='scale(.96)'" onmouseup="this.style.transform=''" onmouseleave="this.style.transform=''">
+          <svg viewBox="0 0 24 24" width="21" height="21" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/>
+            <path d="M13.73 21a2 2 0 0 1-3.46 0"/>
+          </svg>
+          <span id="notifDot" class="nc-dot" hidden></span>
+        </button>
         <!-- Bouton paramètres (icône engrenage) → onglet Moi. La tête de Titan
              était redondante avec celle de la nav (sub-tab Titan) et confusait
              les utilisateurs. Une vraie icône paramètres est plus claire. -->
@@ -9815,6 +9820,26 @@ window.tiResetOnEnter = function(){ window.tiShowStep(1); };
     <button onclick="closeMenerQuiz()" style="width:38px;height:38px;border-radius:50%;background:var(--surface2);border:1px solid var(--border);color:var(--text2);font-size:17px;cursor:pointer;font-family:'Outfit',sans-serif">✕</button>
   </div>
   <div id="menerQuizBody" style="flex:1;overflow-y:auto;padding:18px 16px 24px"></div>
+</div>
+
+<!-- ═══ CENTRE DE NOTIFICATIONS ═══
+     Feuille du bas ouverte par la cloche de la Home. Elle vit à la RACINE, à
+     côté des autres overlays : placée dans la vue Chat (le motif de
+     #titanSavedOv, qui ne s'ouvre QUE depuis le chat), elle héritait du
+     `display:none` de la vue et ne s'affichait jamais depuis la Home —
+     `position:fixed` ne sauve pas un élément dont un ancêtre est masqué.
+     Ne contient QUE des signaux réels : le message de Titan du jour, la
+     mission du jour et les badges débloqués. Un badge n'ayant pas de date en
+     base, aucune heure ne s'affiche dessus plutôt qu'une heure fabriquée. -->
+<div class="tsv-ov" id="notifCenter" onclick="if(event.target===this)closeNotifCenter()">
+  <div class="tsv-sheet" role="dialog" aria-label="Notifications">
+    <div class="tsv-grab"></div>
+    <div class="tsv-head">
+      <div class="tsv-title">NOTIFICATIONS</div>
+      <div class="tsv-count" id="ncCount"></div>
+    </div>
+    <div class="tsv-list" id="ncList"></div>
+  </div>
 </div>
 
 <!-- ═══ POPUP PREMIUM — apparait après expiration du trial 3 jours ═══
@@ -12539,7 +12564,17 @@ window._missionCTA = function(action) {
 function renderTitanSmartCards() {
   var wrap = document.getElementById('titanSmartCards');
   if (!wrap) return;
-  if (!_titanGetProgramKey()) { wrap.innerHTML = ''; return; }
+  if (!_titanGetProgramKey()) {
+    // Sans programme, il n'y a rien à notifier — et surtout, le modèle doit
+    // être VIDÉ : sinon les notifications de l'état précédent survivaient au
+    // changement de profil et la cloche montrait le message de quelqu'un
+    // d'autre.
+    wrap.innerHTML = '';
+    _NOTIF_TITAN = null;
+    try { renderNotifBell(); } catch (e) {}
+    try { if (_notifOuvert()) _notifRenderList(); } catch (e) {}
+    return;
+  }
 
   var pk = _titanGetProgramKey();
   var firstName = _titanGetFirstName();
@@ -12624,63 +12659,208 @@ function renderTitanSmartCards() {
     if (firstName) titanMsg = firstName + ', ' + titanMsg.charAt(0).toLowerCase() + titanMsg.slice(1);
   }
 
-  // ── Rendu ──────────────────────────────────────────────────
-  // Une notification, une ligne : avatar, qui parle, quand, ce qu'il dit, et
-  // UNE action en pilule. Le pavé doré pleine largeur des passes précédentes
-  // était l'élément le plus voyant de l'écran — devant le message, qui est
-  // pourtant l'objet même de la notification.
-  var esc = function(t) {
+  // ── Sortie ─────────────────────────────────────────────────
+  // Plus aucune carte sur la Home : le message et la mission partent dans le
+  // centre de notifications, derrière la cloche. On expose le modèle pour
+  // `_notifBuild()` et on met la pastille à jour.
+  _NOTIF_TITAN = {
+    message:   titanMsg || null,
+    at:        (reco && reco.at) || null,
+    total:     total,
+    faites:    totalDone,
+    toutFait:  allDone,
+    etapes:    objectives.map(function (o) {
+      return { id: o.id, icon: o.icon, label: o.label, sfx: o.sfx || null, faite: !!state.done[o.id] };
+    }),
+    action:      nextObj ? nextObj.action : null,
+    actionLabel: ctaLabel
+  };
+  wrap.innerHTML = '';
+  try { renderNotifBell(); } catch (e) {}
+  try { if (_notifOuvert()) _notifRenderList(); } catch (e) {}
+  return;
+
+  // (le `wrap.innerHTML = h` historique est remplacé par la ligne ci-dessus)
+  wrap.innerHTML = h;
+}
+window.renderTitanSmartCards = renderTitanSmartCards;
+
+// ═══ CENTRE DE NOTIFICATIONS ═══════════════════════════════════════════════
+// Trois règles tenues ici :
+//   1. AUCUNE donnée inventée. Une notification qui n'a pas d'heure en base
+//      s'affiche SANS heure — jamais avec une heure fabriquée.
+//   2. La cloche ne ment pas : la pastille n'apparaît que s'il existe vraiment
+//      une notification que l'athlète n'a pas encore ouverte.
+//   3. Aucune source nouvelle. On expose ce qui existait déjà sur la Home.
+var _NOTIF_TITAN = null;              // rempli par renderTitanSmartCards()
+var AH_NOTIF_READ = 'ah_notif_read';  // { id: instant de lecture }
+var NOTIF_READ_MAX = 60;              // le journal de lecture ne grossit pas sans fin
+
+function _notifReadMap() {
+  try {
+    var m = JSON.parse(localStorage.getItem(AH_NOTIF_READ) || '{}');
+    return (m && typeof m === 'object' && !Array.isArray(m)) ? m : {};
+  } catch (e) { return {}; }
+}
+function _notifSaveRead(m) {
+  try {
+    var ids = Object.keys(m);
+    if (ids.length > NOTIF_READ_MAX) {
+      ids.sort(function (a, b) { return (m[b] || 0) - (m[a] || 0); });
+      var gard = {};
+      ids.slice(0, NOTIF_READ_MAX).forEach(function (k) { gard[k] = m[k]; });
+      m = gard;
+    }
+    localStorage.setItem(AH_NOTIF_READ, JSON.stringify(m));
+  } catch (e) {}
+}
+
+// Construit la liste. Chaque entrée porte un id STABLE : le même jour produit
+// le même id, donc une notification déjà lue ne se rallume pas à chaque rendu.
+function _notifBuild() {
+  var out = [];
+  var jour = _msnToday();
+
+  if (_NOTIF_TITAN && _NOTIF_TITAN.message) {
+    out.push({
+      id: 'titan-' + jour,
+      from: 'Titan',
+      avatar: true,
+      heure: _msnClock(_NOTIF_TITAN.at),   // '' si la reco n'a pas d'instant réel
+      texte: _NOTIF_TITAN.message
+    });
+  }
+
+  if (_NOTIF_TITAN && _NOTIF_TITAN.total) {
+    var t = _NOTIF_TITAN;
+    out.push({
+      id: 'mission-' + jour,
+      from: 'Mission du jour',
+      icon: '🎯',
+      heure: '',                            // une mission n'a pas d'heure d'arrivée
+      texte: t.toutFait
+        ? 'Mission accomplie — ' + t.faites + '/' + t.total + '.'
+        : t.faites + ' sur ' + t.total + ' fait' + (t.faites > 1 ? 's' : '') + '.',
+      etapes: t.etapes,
+      action: t.toutFait ? null : t.action,
+      actionLabel: t.actionLabel,
+      toutFait: t.toutFait
+    });
+  }
+
+  // Badges : `ah_badges_earned` est un tableau d'ids, SANS date. On peut donc
+  // dire qu'un badge est débloqué, jamais quand — d'où l'absence d'heure.
+  try {
+    var ids = JSON.parse(localStorage.getItem('ah_badges_earned') || '[]');
+    if (ids && ids.length && typeof BADGES_DEF !== 'undefined') {
+      var lus = _notifReadMap();
+      ids.slice(-5).reverse().forEach(function (bid) {
+        var b = BADGES_DEF.filter(function (x) { return x.id === bid; })[0];
+        if (!b) return;
+        var nid = 'badge-' + bid;
+        // Un badge déjà lu n'encombre pas la liste : il a été vu une fois.
+        if (lus[nid]) return;
+        out.push({ id: nid, from: 'Badge débloqué', icon: b.icon || '🎖️', heure: '', texte: b.name });
+      });
+    }
+  } catch (e) {}
+
+  return out;
+}
+
+function _notifOuvert() {
+  var ov = document.getElementById('notifCenter');
+  return !!(ov && ov.classList.contains('on'));
+}
+
+function renderNotifBell() {
+  var dot = document.getElementById('notifDot');
+  if (!dot) return 0;
+  var lus = _notifReadMap();
+  var n = 0;
+  try {
+    n = _notifBuild().filter(function (x) { return !lus[x.id]; }).length;
+  } catch (e) { n = 0; }
+  dot.hidden = (n === 0);
+  return n;
+}
+window.renderNotifBell = renderNotifBell;
+
+function _notifRenderList() {
+  var box = document.getElementById('ncList');
+  var cnt = document.getElementById('ncCount');
+  if (!box) return;
+  var esc = function (t) {
     return String(t == null ? '' : t)
       .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
       .replace(/"/g, '&quot;');
   };
-  var ouvert = !!state.open;
-  var heure  = _msnClock(reco && reco.at);
+  var lus = _notifBuild.__lusAvant || {};
+  var list = _notifBuild();
+  if (cnt) cnt.textContent = list.length ? (list.length + (list.length > 1 ? ' messages' : ' message')) : '';
+
+  if (!list.length) {
+    box.innerHTML = '<div class="nc-empty">Rien de neuf.<br>Titan t\'écrira quand il aura quelque chose à te dire.</div>';
+    return;
+  }
 
   var h = '';
-  h += '<div class="mtn">';
-  h += '<img class="mtn-av" src="images/titan-mascot.png" alt="Titan">';
-  h += '<div class="mtn-c">';
+  list.forEach(function (n) {
+    h += '<div class="nc-item' + (lus[n.id] ? '' : ' unread') + '">';
+    h += '<div class="nc-top">';
+    h += n.avatar
+      ? '<img class="nc-av" src="images/titan-mascot.png" alt="">'
+      : '<div class="nc-ic">' + esc(n.icon || '•') + '</div>';
+    h += '<span class="nc-from">' + esc(n.from) + '</span>';
+    if (n.heure) h += '<span class="nc-time">' + esc(n.heure) + '</span>';
+    h += '</div>';
+    h += '<div class="nc-txt">' + esc(n.texte) + '</div>';
 
-  h += '<div class="mtn-l1"><span class="mtn-name">Titan</span>';
-  if (!allDone) h += '<span class="mtn-dot"></span>';
-  // Le lecteur d'écran a besoin du mot ; l'œil a la pastille.
-  h += '<span class="mtn-state">' + (allDone ? 'Mission accomplie' : 'Nouveau message') + '</span>';
-  if (heure) h += '<span class="mtn-time">' + esc(heure) + '</span>';
-  h += '</div>';
+    if (n.etapes && n.etapes.length) {
+      h += '<div class="nc-steps">';
+      n.etapes.forEach(function (e) {
+        h += '<div class="nc-step' + (e.faite ? ' on' : '') + '" onclick="_missionMarkDone(\'' + e.id + '\')">';
+        h += '<div class="nc-ck">' + (e.faite ? '✓' : '') + '</div>';
+        h += '<div class="nc-stxt">' + esc(e.icon + ' ' + e.label) + '</div>';
+        if (e.sfx) h += '<div class="nc-sfx">' + esc(e.sfx) + '</div>';
+        h += '</div>';
+      });
+      h += '</div>';
+    }
 
-  // Trois lignes, et le tap donne la suite. Rien n'est perdu.
-  if (titanMsg) {
-    h += '<div class="mtn-msg" onclick="this.classList.toggle(\'open\')">' + esc(titanMsg) + '</div>';
-  }
-
-  h += '<div class="mtn-f">';
-  h += '<span class="mtn-lab' + (allDone ? ' done' : '') + '" onclick="_missionToggleSteps()" role="button" aria-expanded="' + (ouvert ? 'true' : 'false') + '">';
-  h += 'Mission <b class="mtn-count' + (allDone ? ' done' : '') + '">' + totalDone + '/' + total + '</b>';
-  h += '<span class="mtn-chev' + (ouvert ? ' up' : '') + '">▾</span></span>';
-  if (allDone) {
-    h += '<span class="mtn-cta done">Fait ✓</span>';
-  } else if (nextObj) {
-    h += '<span class="mtn-cta" onclick="_missionCTA(\'' + nextObj.action + '\')">' + esc(ctaLabel) + ' →</span>';
-  }
-  h += '</div>';
-
-  h += '<div class="mtn-steps"' + (ouvert ? '' : ' hidden') + '>';
-  objectives.forEach(function(obj) {
-    var done = !!state.done[obj.id];
-    h += '<div class="mtn-step' + (done ? ' on' : '') + '" onclick="_missionMarkDone(\'' + obj.id + '\')">';
-    h += '<div class="mtn-ck">' + (done ? '✓' : '') + '</div>';
-    h += '<div class="mtn-txt">' + obj.icon + ' ' + esc(obj.label) + '</div>';
-    if (obj.sfx) h += '<div class="mtn-sfx">' + esc(obj.sfx) + '</div>';
+    if (n.toutFait) {
+      h += '<span class="nc-act done">Fait ✓</span>';
+    } else if (n.action) {
+      h += '<button class="nc-act" onclick="closeNotifCenter();_missionCTA(\'' + n.action + '\')">' + esc(n.actionLabel) + ' →</button>';
+    }
     h += '</div>';
   });
-  h += '</div>';
-
-  h += '</div></div>';
-
-  wrap.innerHTML = h;
+  box.innerHTML = h;
 }
-window.renderTitanSmartCards = renderTitanSmartCards;
+
+window.openNotifCenter = function () {
+  var ov = document.getElementById('notifCenter');
+  if (!ov) return;
+  // On fige l'état « non lu » AVANT de marquer, sinon tout s'ouvrirait déjà lu
+  // et l'athlète ne verrait jamais ce qui était nouveau.
+  _notifBuild.__lusAvant = _notifReadMap();
+  ov.style.display = '';
+  ov.classList.add('on');
+  _notifRenderList();
+  // Ouvrir, c'est lire : la pastille s'éteint.
+  var m = _notifReadMap(), t = Date.now();
+  _notifBuild().forEach(function (n) { if (!m[n.id]) m[n.id] = t; });
+  _notifSaveRead(m);
+  renderNotifBell();
+};
+
+window.closeNotifCenter = function () {
+  var ov = document.getElementById('notifCenter');
+  if (!ov) return;
+  ov.classList.remove('on');
+  setTimeout(function () { if (!ov.classList.contains('on')) ov.style.display = 'none'; }, 200);
+};
+
 
 // Auto-rendu au chargement de la home
 if (document.readyState === 'loading') {
