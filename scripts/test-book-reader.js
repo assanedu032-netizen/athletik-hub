@@ -214,6 +214,44 @@ const MIME = { '.html':'text/html','.js':'text/javascript','.css':'text/css','.j
       return getComputedStyle(document.getElementById('bkInner')).fontSize === a;
     }));
 
+  // ── Fermer le lecteur ne doit PAS laisser une page blanche ────────────
+  // Défaut constaté sur un vrai téléphone : en quittant la lecture, l'écran
+  // devenait blanc. `go()` remettait `display:''` sur TOUTES les .scr, dont
+  // #splash — la seule qui porte `position:relative` en inline, donc la seule
+  // qui soit DANS LE FLUX. Ressuscité, il écrasait la vue courante à 90 px.
+  console.log('\n── Ouvrir puis fermer le lecteur laisse la Home intacte ──');
+  await etat(PROFIL, null);
+  const avantH = await page.evaluate(() => Math.round(document.getElementById('vHome').getBoundingClientRect().height));
+  ok('la Home occupe bien l\'écran au départ', avantH > 400, avantH + 'px');
+
+  await page.evaluate(() => window.openBookReader()); await page.waitForTimeout(400);
+  const pendant = await page.evaluate(() => ({
+    hVHome: Math.round(document.getElementById('vHome').getBoundingClientRect().height),
+    splash: (() => { const sp = document.getElementById('splash');
+      return sp ? { disp: getComputedStyle(sp).display, h: Math.round(sp.getBoundingClientRect().height) } : null; })()
+  }));
+  ok('le splash reste masqué quand le lecteur s\'ouvre',
+    !pendant.splash || pendant.splash.disp === 'none' || pendant.splash.h === 0, JSON.stringify(pendant.splash));
+  ok('la Home ne s\'effondre pas derrière le lecteur', pendant.hVHome === avantH, pendant.hVHome + ' vs ' + avantH);
+
+  await page.evaluate(() => window.closeBookReader()); await page.waitForTimeout(700);
+  const apresF = await page.evaluate(() => {
+    const app = document.getElementById('app');
+    return {
+      hVHome: Math.round(document.getElementById('vHome').getBoundingClientRect().height),
+      lecteurFerme: !document.getElementById('bookReader').classList.contains('on'),
+      // Tout ce qui occupe le flux de #app en plus de la vue est suspect.
+      enFlux: [...app.children].filter((e) => {
+        const c = getComputedStyle(e);
+        return c.position !== 'absolute' && c.position !== 'fixed' && c.display !== 'none'
+          && e.getBoundingClientRect().height > 20;
+      }).map((e) => e.id || e.tagName)
+    };
+  });
+  ok('le lecteur est bien fermé', apresF.lecteurFerme === true);
+  ok('la Home retrouve toute sa hauteur — PAS de page blanche', apresF.hVHome === avantH, apresF.hVHome + ' vs ' + avantH);
+  ok('rien d\'autre n\'occupe le flux de l\'app', apresF.enFlux.length === 1 && apresF.enFlux[0] === 'vHome', apresF.enFlux.join(', '));
+
   // ── Le bouton dans le chat ─────────────────────────────────────────────
   console.log('\n── Le bouton dans le chat ──');
   const chat = await page.evaluate(() => {

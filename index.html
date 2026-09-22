@@ -6329,6 +6329,19 @@ body.ah-lib-open .tim-fab{display:none!important}
 .nc-sfx{flex-shrink:0;font-size:9.5px;color:var(--muted)}
 .nc-step.on .nc-sfx{color:#10B981;text-decoration:none}
 .nc-empty{padding:30px 16px 40px;text-align:center;font-family:'Outfit',sans-serif;font-size:13px;color:var(--muted);line-height:1.55}
+/* ── CARTE LIVRE DANS LE CHAT ─────────────────────────────────────────────
+   Elle vit SOUS la bulle de Titan, jamais dedans. Le client seul décide de
+   l'afficher : demander au modèle de vendre, c'est l'autoriser à inventer un
+   prix, une promotion ou une disponibilité. */
+.tb-wrap{margin:2px 0 10px}
+.tb-card{background:var(--surface);border:1px solid rgba(197,164,78,.32);border-left:3px solid var(--ah-gold);border-radius:12px;padding:11px 12px;font-family:'Outfit',sans-serif;max-width:86%}
+.tb-top{display:flex;align-items:center;gap:6px;margin-bottom:5px}
+.tb-eyebrow{font-family:'JetBrains Mono',monospace;font-size:8.5px;letter-spacing:.18em;font-weight:700;color:#8A6A16;text-transform:uppercase}
+[data-theme="dark"] .tb-eyebrow{color:#D4B86A}
+.tb-x{margin-left:auto;flex-shrink:0;width:26px;height:26px;border:0;background:transparent;color:var(--muted);font-size:13px;line-height:1;cursor:pointer;border-radius:50%;padding:0}
+.tb-txt{font-size:12.5px;line-height:1.5;color:var(--text);margin-bottom:10px}
+.tb-ref{font-family:'JetBrains Mono',monospace;font-size:9.5px;color:var(--muted);letter-spacing:.06em;margin-bottom:9px}
+.tb-go{display:inline-block;padding:8px 15px;border-radius:999px;background:linear-gradient(135deg,#D9BE72,#C5A44E);color:#1B2A4A;font-family:'JetBrains Mono',monospace;font-size:9.5px;letter-spacing:.1em;font-weight:700;text-transform:uppercase;border:0;cursor:pointer}
 /* ── LECTEUR DU LIVRE ─────────────────────────────────────────────────────
    Les 44 premières pages vivent dans l'app comme du TEXTE (data/book-excerpt.js,
    56 Ko), pas comme un PDF de 1,3 Mo. On y gagne le reflow, la taille de police,
@@ -13107,6 +13120,141 @@ function renderBookCard() {
   w.innerHTML = h;
 }
 window.renderBookCard = renderBookCard;
+
+// ═══ TITAN PEUT PROPOSER LE LIVRE — RAREMENT, ET SANS MENTIR ═══════════════
+// Sept règles, toutes arrêtées avec l'auteur avant d'écrire une ligne
+// (openspec/changes/extrait-livre-gratuit/specs/titan-promotion-livre).
+//
+// La plus importante : LA CARTE NE PROMET QUE CE QUE L'EXTRAIT CONTIENT.
+// L'extrait s'arrête page 44. Les 8 Lois y sont en entier ; aucun Cours,
+// aucun Chapitre, aucun Programme n'y est. Dire « la réponse est dans
+// l'extrait » sur une question de pliométrie serait faux — et un coach qui
+// ment une fois n'est plus cru ensuite.
+// `BOOK_CHAPTERS` porte déjà la page de chaque section : elle suffit à
+// trancher, sans liste de mots-clés à maintenir en parallèle.
+var TB_KEY = 'ah_book_promo';
+var TB_FENETRE = 24 * 3600 * 1000;   // une carte par 24 h, pas plus
+
+function _tbEtat() {
+  try {
+    var e = JSON.parse(localStorage.getItem(TB_KEY) || '{}');
+    return (e && typeof e === 'object') ? e : {};
+  } catch (e) { return {}; }
+}
+function _tbSave(e) { try { localStorage.setItem(TB_KEY, JSON.stringify(e)); } catch (x) {} }
+
+function _tbALeLivre() {
+  try { return JSON.parse(localStorage.getItem('ah_profile') || '{}').hasBookAccess === true; }
+  catch (e) { return false; }
+}
+
+// Normalise pour comparer : sans accents, sans ponctuation, en minuscules.
+function _tbMots(t) {
+  return String(t || '').toLowerCase()
+    .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^a-z0-9]+/g, ' ').trim().split(' ').filter(function (m) { return m.length >= 4; });
+}
+
+// Le sujet est-il traité par le livre, et à quelle page ? On lit les titres
+// de BOOK_CHAPTERS — pas une liste écrite à la main, qui divergerait du livre
+// au premier chapitre renommé sans que personne ne le voie.
+function _tbSujet(question) {
+  if (typeof BOOK_CHAPTERS === 'undefined') return null;
+  var mq = _tbMots(question);
+  if (!mq.length) return null;
+  var best = null;
+  Object.keys(BOOK_CHAPTERS).forEach(function (k) {
+    var ch = BOOK_CHAPTERS[k];
+    var mt = _tbMots(ch.titre).filter(function (m) {
+      // « cours », « chapitre », « programme » sont dans tous les titres :
+      // les garder ferait matcher n'importe quelle question.
+      return ['cours', 'chapitre', 'programme', 'partie'].indexOf(m) === -1;
+    });
+    var n = mt.filter(function (m) { return mq.indexOf(m) !== -1; }).length;
+    if (n > 0 && (!best || n > best.n)) best = { n: n, cle: k, titre: ch.titre, page: ch.page };
+  });
+  return best;
+}
+
+// Peut-on proposer quelque chose ? Renvoie la carte, ou null.
+function _tbChoisir(question) {
+  if (_tbALeLivre()) return null;                       // il l'a déjà : lui vendre serait une faute
+  var pages = _bkPages(); if (!pages) return null;
+
+  var st = _tbEtat(), maintenant = Date.now();
+  if (st.lastAt && maintenant - st.lastAt < TB_FENETRE) return null;     // une par 24 h
+  if (st.dismissedAt && maintenant - st.dismissedAt < TB_FENETRE) return null; // écartée : on se tait
+  if (st.lastTurn === window._tbTour) return null;      // jamais deux réponses de suite
+
+  // Extrait terminé → on peut parler d'acheter. Sinon, on propose de lire :
+  // on ne demande pas d'acheter un livre qu'on n'a pas laissé feuilleter.
+  if (_bkEtat().done) {
+    return { kind: 'buy', eyebrow: 'Le livre',
+      txt: 'Tu as lu l\'extrait en entier. La suite — les 12 Cours, la méthode MENER, les 6 programmes — est dans le livre.',
+      ref: null, cta: 'Obtenir le livre' };
+  }
+
+  var suj = _tbSujet(question);
+  if (!suj) return null;                                 // hors sujet : rien
+
+  var dansExtrait = suj.page <= pages.length;
+  return dansExtrait
+    // Vrai : les 8 Lois sont dans l'extrait, on peut le dire.
+    ? { kind: 'read', eyebrow: 'Dans l\'extrait gratuit',
+        txt: 'Ce sujet est développé dans « ' + suj.titre +' », et c\'est dans l\'extrait que tu peux lire ici.',
+        ref: 'p. ' + suj.page + ' · gratuit', cta: 'Lire ce passage', page: suj.page }
+    // Faux de dire que c'est dans l'extrait : on situe la réponse DANS LE LIVRE.
+    : { kind: 'read', eyebrow: 'Dans le livre',
+        txt: '« ' + suj.titre + ' » développe ce sujet. L\'extrait gratuit ne va pas jusque-là, mais il te montre la méthode.',
+        ref: 'p. ' + suj.page + ' · hors extrait', cta: 'Lire l\'extrait', page: 1 };
+}
+
+window._tbTour = 0;
+
+window.tbFermer = function (el) {
+  var st = _tbEtat(); st.dismissedAt = Date.now(); _tbSave(st);
+  var w = el && el.closest ? el.closest('.tb-wrap') : null;
+  if (w && w.parentNode) w.parentNode.removeChild(w);
+};
+
+window.tbOuvrir = function (page) {
+  var st = _tbEtat(); st.lastAt = Date.now(); _tbSave(st);
+  if (page) window.openBookReader(page); else window.openAmazonBook();
+};
+
+// Rend la carte SOUS la réponse. Le texte de Titan n'est pas touché : il ne
+// sait même pas que cette carte existe.
+function _titanRenderBookCard(question) {
+  var body = document.getElementById('chatBody'); if (!body) return;
+  var c;
+  try { c = _tbChoisir(question); } catch (e) { return; }
+  if (!c) return;
+
+  var esc = function (t) {
+    return String(t == null ? '' : t).replace(/&/g, '&amp;').replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+  };
+  var w = document.createElement('div');
+  w.className = 'msg titan tb-wrap';
+  var h = '<div class="tb-card">';
+  h += '<div class="tb-top"><span class="tb-eyebrow">📖 ' + esc(c.eyebrow) + '</span>';
+  h += '<button class="tb-x" onclick="tbFermer(this)" aria-label="Masquer">✕</button></div>';
+  h += '<div class="tb-txt">' + esc(c.txt) + '</div>';
+  if (c.ref) h += '<div class="tb-ref">' + esc(c.ref) + '</div>';
+  h += '<button class="tb-go" onclick="tbOuvrir(' + (c.page || 0) + ')">' + esc(c.cta) + ' →</button>';
+  h += '</div>';
+  w.innerHTML = h;
+  body.appendChild(w);
+  body.scrollTop = body.scrollHeight;
+
+  var st = _tbEtat();
+  st.lastAt = Date.now();
+  st.lastTurn = window._tbTour;
+  _tbSave(st);
+}
+window._titanRenderBookCard = _titanRenderBookCard;
+window._tbChoisir = _tbChoisir;
+window._tbSujet = _tbSujet;
 if (document.readyState === 'loading') {
   document.addEventListener('DOMContentLoaded', function () { try { renderBookCard(); } catch (e) {} });
 } else {
@@ -17088,7 +17236,21 @@ function go(id) {
   if (!nxt || (cur && cur.id === id)) return;
   // Clear any inline display='none' left over by home/nutrition reset code on every .scr,
   // otherwise inline style beats the .scr.on CSS rule and the next screen stays hidden.
-  document.querySelectorAll('.scr').forEach(function(s){ s.style.display = ''; });
+  //
+  // SAUF #splash. C'est la seule .scr qui porte `position:relative` en inline :
+  // elle est donc DANS LE FLUX, contrairement à toutes les autres qui sont
+  // absolues. Elle n'est masquée après le démarrage que par un
+  // `style.display='none'` inline — que cette boucle effaçait. Résultat : tout
+  // appel à go() depuis l'app ressuscitait le splash, qui reprenait sa place
+  // dans le flux, écrasait la vue courante à 90 px et laissait une PAGE
+  // BLANCHE. Le défaut dormait depuis toujours : les écrans d'onboarding
+  // appellent go() juste après le démarrage, quand le splash est encore
+  // légitime. Le lecteur du livre est le premier .scr ouvert depuis l'app
+  // longtemps après, et l'a réveillé.
+  document.querySelectorAll('.scr').forEach(function(s){
+    if (s.id === 'splash' && id !== 'splash') return;
+    s.style.display = '';
+  });
   if (cur) { cur.classList.remove('on'); cur.classList.add('out'); setTimeout(() => cur.classList.remove('out'), 500); }
   // CRITIQUE : reset l'inline display:none mis par discoveryGoTo() sur toutes les .scr,
   // sinon l'inline gagne sur le CSS de .scr (display:flex) et l'écran reste blanc.
@@ -27503,6 +27665,7 @@ async function sendMessage() {
   // l'athlète a déjà dit son intention en choisissant « Analyser un repas ».
   const isFood = (photo && photo.isMeal) || _titanWantsNutrition(text);
   if (photo && photo.isMeal) window._titanNutriTurns = TITAN_NUTRI_LATCH;
+  window._tbTour = (window._tbTour || 0) + 1;
   const reply = await callAnthropicAPI(text, photo, isFood ? { mode: 'nutrition' } : null);
   const nutrition = window._titanLastNutrition;
   window._titanLastNutrition = null;
@@ -27516,6 +27679,11 @@ async function sendMessage() {
     // la conversation reste intacte.
     if (nutrition) {
       try { _titanRenderNutriCard(nutrition); } catch (e) { console.warn('[titan nutri card]', e); }
+    }
+    // Carte livre : jamais en même temps qu'une carte nutrition — deux cartes
+    // sous une réponse, c'est une réclame, plus un coach.
+    if (!nutrition) {
+      try { _titanRenderBookCard(text); } catch (e) { console.warn('[titan book card]', e); }
     }
   }, delay);
 }
