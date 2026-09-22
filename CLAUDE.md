@@ -321,6 +321,37 @@ completedPrograms, fcmToken, accessTier`.
   pastille réellement peinte, feuille réellement peinte, heure réelle, badge sans heure, état de
   lecture persisté, état vide honnête, contraste AA sur le fond réel, et la Home intacte).
   Remplace `scripts/test-mission-titan.js`, qui testait la carte supprimée.
+- **Le livre se lit DANS l'app** (`#bookReader`, `openBookReader()`) — les **44 premières pages**
+  des *Secrets de la Détente Verticale*, jusqu'à la fin des 8 Lois, juste avant le Cours 1.
+  Elles ne sont **pas servies en PDF** : le texte est extrait et vit dans
+  `data/book-excerpt.js` (**56 Ko**, contre 1,3 Mo pour le PDF). On y gagne le reflow, la taille
+  de police réglable (`A−`/`A+`, 4 paliers), le thème sombre, le lecteur d'écran et le hors-ligne
+  — sans **aucune** dépendance externe. Et le livre complet n'est nulle part : **il n'existe pas
+  de page 45 à aller chercher**, la limite est portée par la donnée, pas par une règle d'affichage.
+  **Le PDF source ne doit JAMAIS entrer dans le dépôt** — c'est le motif de
+  `bookChallengesSeed.json`. `.gitignore` refuse `*.pdf` et `book/`.
+  Régénération : `node scripts/gen-book-excerpt.js <extrait.pdf>`, avec
+  `npm i --no-save pdfjs-dist@4.0.379` (hors `package.json`, même parti pris que Playwright).
+  **Deux pièges que le générateur traite, à connaître avant d'y toucher :**
+  **(1) l'encodage du PDF est cassé DANS LES DEUX SENS.** Il vient d'un Mac : selon les polices,
+  le même fichier expose ses octets MacRoman comme du Latin-1 (`DÈtente`) **ou** l'inverse
+  (`D…TENTE`). Une partie du texte est **déjà correcte** — une conversion appliquée partout
+  casserait celle-là. Le générateur essaie les deux sens sur **chaque fragment** et garde celui
+  qui produit le plus de français : **561 fragments réparés sur 2278**.
+  **(2) pdf.js découpe les mots.** Recoller sans séparateur donne `C'estelle` ; on insère une
+  espace quand l'écart horizontal dépasse 0,22 em.
+  L'appel à l'achat (`openAmazonBook()`, jamais une seconde URL) n'apparaît **qu'à la page 44**,
+  et **jamais** si `hasBookAccess` est vrai — on ne vend pas à quelqu'un ce qu'il possède : on le
+  renvoie vers son programme. Position, état « terminé » et taille de police dans
+  `ah_book_excerpt` (local à l'appareil). `window.bookExcerptDone()` expose l'état pour les
+  futures cartes de Titan.
+  **Deux accès, et la barre du bas n'est PAS touchée** : un bouton 📖 dans l'en-tête du chat
+  (4ᵉ, à côté de `⋮ ? ★`) et une carte sur la Home (`renderBookCard()`, `#bookCardWrap`) qui
+  annonce **où en est la lecture**, pas un slogan figé.
+  Test : `scripts/test-book-reader.js` (39, vrai Chromium en 375×667 et 320×568 : les 44 pages
+  présentes, aucun Cours qui fuite, texte sans charabia, les deux butées, achat seulement en
+  page 44, rien pour qui a le livre, reprise de lecture, taille persistée, état vide honnête,
+  contraste ≥ 7:1 pour de la lecture longue).
 - **Progression**: `renderProgression()` fills `#progressionCard` in the Moi tab — current score, 8-week sessions bar graph, personal records. Helper `_progressionWeeklySessions(8)`.
 - **Habits**: `activeHabits` array, persisted to `ah_active_habits` via `_persistActiveHabits()`. `checkHabit()` resets the streak on a day gap. `renderActiveHabits()` renders Home + Moi.
 - **Exercise library**: `catData` is the flat exercise database (198 exercises). `_LIB_CAT_MAP` maps the chip filters to `catData` keys. Schema `{name, diff:'easy'|'med'|'hard', muscles, desc, mat, tag?, video?}`. Videos: per-exo `video` field OR `_LIB_VIDEO_MAP` lookup by name. The library has a "🎯 Mon programme" filter (`_libFlatExos('myprogram')`).

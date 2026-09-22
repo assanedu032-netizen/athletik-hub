@@ -87,3 +87,11 @@ undefined/
 .tmp-nutri-card/
 .tmp-suivi/
 .tmp-mission/
+
+# Le PDF source de l'extrait du livre vit HORS du dépôt — même motif que
+# bookChallengesSeed.json. Seul le texte extrait (data/book-excerpt.js) est
+# commité : 56 Ko au lieu de 1,3 Mo, et le livre complet n'est jamais servi.
+# La règle est large À DESSEIN : elle refuse aussi un livre entier déposé par
+# mégarde dans le dossier.
+*.pdf
+book/

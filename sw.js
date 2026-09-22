@@ -1,4 +1,4 @@
-const CACHE = 'athletik-v291';
+const CACHE = 'athletik-v292';
 const ASSETS = [
   '/',
   '/index.html',
@@ -9,6 +9,7 @@ const ASSETS = [
   '/data/explose-plus-program.js',
   '/data/triphasique-program.js',
   '/data/microtraining-program.js',
+  '/data/book-excerpt.js',
   '/icons/icon-192.png',
   '/icons/icon-512.png',
   '/assets/sounds/timer-beep.mp3'
