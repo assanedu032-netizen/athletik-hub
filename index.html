@@ -6351,6 +6351,18 @@ body.ah-lib-open .tim-fab{display:none!important}
 .bk-inner h3{font-family:'Outfit',sans-serif;font-size:1.02em;font-weight:800;line-height:1.35;margin:1.3em 0 .4em;color:var(--ah-gold)}
 .bk-inner p{margin:0 0 .85em;text-align:justify;hyphens:auto;-webkit-hyphens:auto}
 .bk-inner .bk-s{font-family:'Outfit',sans-serif;font-size:.8em;color:var(--bk-ink2);margin:0 0 .6em}
+/* Sommaire : un titre à gauche, sa page à droite, des points entre les deux.
+   Recollé en paragraphe, ça donnait « Copyright 4 Préface - Loïc 5 » d'un
+   trait — illisible. Les entrées DANS l'extrait sont cliquables ; celles
+   au-delà sont estompées : l'athlète voit ce qu'il n'a pas encore. */
+.bk-inner .bk-toc{display:flex;align-items:baseline;gap:6px;font-family:'Outfit',sans-serif;font-size:.86em;line-height:1.5;padding:5px 0;border:0;background:none;width:100%;text-align:left;color:var(--bk-ink)}
+.bk-inner .bk-toc .bk-toc-t{flex-shrink:1;min-width:0}
+.bk-inner .bk-toc .bk-toc-d{flex:1;border-bottom:1px dotted var(--bk-rule);transform:translateY(-3px);min-width:14px}
+.bk-inner .bk-toc .bk-toc-n{flex-shrink:0;font-family:'JetBrains Mono',monospace;font-size:.85em;color:var(--bk-ink2)}
+.bk-inner button.bk-toc{cursor:pointer;-webkit-tap-highlight-color:rgba(197,164,78,.15)}
+.bk-inner button.bk-toc .bk-toc-t{color:var(--ah-gold);font-weight:600}
+.bk-inner .bk-toc.bk-toc-off{opacity:.45}
+.bk-inner .bk-toc.bk-toc-off .bk-toc-n::after{content:' 🔒';font-size:.85em}
 .bk-inner>*:first-child{margin-top:0}
 .bk-end{margin-top:26px;padding-top:20px;border-top:1px solid var(--bk-rule);text-align:center;font-family:'Outfit',sans-serif}
 .bk-end-t{font-family:'Bebas Neue',sans-serif;font-size:19px;letter-spacing:.04em;color:var(--bk-ink);margin-bottom:6px}
@@ -12972,6 +12984,15 @@ window.bkGo = function (d) {
   var z = document.getElementById('bkPage'); if (z) z.scrollTop = 0;
 };
 
+window.bkAller = function (n) {
+  var pages = _bkPages(); if (!pages) return;
+  var st = _bkEtat();
+  st.page = Math.min(pages.length, Math.max(1, n));
+  if (st.page >= pages.length) st.done = true;
+  _bkSave(st); _bkRender();
+  var z = document.getElementById('bkPage'); if (z) z.scrollTop = 0;
+};
+
 window.bkFont = function (d) {
   var st = _bkEtat();
   st.fs = Math.min(BK_TAILLES.length - 1, Math.max(0, st.fs + d));
@@ -12999,7 +13020,20 @@ function _bkRender() {
   var h = '';
   (pages[n - 1].b || []).forEach(function (b) {
     var t = esc(b.t);
-    if (b.k === 'h1') h += '<h1>' + t + '</h1>';
+    if (b.k === 'toc') {
+      // Une entrée du sommaire pointant DANS l'extrait devient un raccourci.
+      // Au-delà, elle reste affichée mais estompée : on montre ce qui manque
+      // sans prétendre qu'on peut l'ouvrir.
+      var np = parseInt(b.n, 10);
+      var dedans = np >= 1 && np <= pages.length;
+      var corps = '<span class="bk-toc-t">' + t + '</span>'
+                + '<span class="bk-toc-d"></span>'
+                + '<span class="bk-toc-n">' + esc(b.n) + '</span>';
+      h += dedans
+        ? '<button class="bk-toc" onclick="bkAller(' + np + ')">' + corps + '</button>'
+        : '<div class="bk-toc bk-toc-off">' + corps + '</div>';
+    }
+    else if (b.k === 'h1') h += '<h1>' + t + '</h1>';
     else if (b.k === 'h2') h += '<h2>' + t + '</h2>';
     else if (b.k === 'h3') h += '<h3>' + t + '</h3>';
     else if (b.k === 's') h += '<div class="bk-s">' + t + '</div>';
