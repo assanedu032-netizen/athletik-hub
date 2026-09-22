@@ -340,6 +340,19 @@ completedPrograms, fcmToken, accessTier`.
   qui produit le plus de français : **561 fragments réparés sur 2278**.
   **(2) pdf.js découpe les mots.** Recoller sans séparateur donne `C'estelle` ; on insère une
   espace quand l'écart horizontal dépasse 0,22 em.
+  **(3) TOUT ce qui a la même taille de police n'est PAS un paragraphe.** Recoller les lignes sur
+  ce seul critère rendait la **table des matières** et la page de **copyright** illisibles : un
+  pavé justifié où « Copyright 4 Préface - Loïc 5 Avant-Propos 7 » se lisait d'un trait. Deux
+  signaux de la page le règlent — **l'écart vertical** (16-17 dans un paragraphe, 35-39 entre
+  deux sur la page de copyright ; on coupe au-delà de **1,35 × l'écart médian de la page**) et
+  **la forme « titre … numéro »** (un sommaire a des interlignes parfaitement réguliers, donc
+  l'écart ne le trahit pas — mais chaque ligne finit par un numéro de page ; quand la page en
+  aligne ≥ 4, chaque entrée devient un bloc `toc` portant son `n`). **163 → 344 blocs**, prose
+  inchangée.
+  **Le sommaire est un raccourci qui dit ce qui manque** : une entrée dont la page est ≤ 44 est
+  **cliquable** (`bkAller(n)`) ; au-delà elle reste affichée mais **estompée avec un 🔒**.
+  L'athlète voit exactement ce qu'il n'a pas — plus honnête qu'un sommaire muet, et meilleur
+  argument que n'importe quel slogan.
   L'appel à l'achat (`openAmazonBook()`, jamais une seconde URL) n'apparaît **qu'à la page 44**,
   et **jamais** si `hasBookAccess` est vrai — on ne vend pas à quelqu'un ce qu'il possède : on le
   renvoie vers son programme. Position, état « terminé » et taille de police dans
@@ -348,10 +361,11 @@ completedPrograms, fcmToken, accessTier`.
   **Deux accès, et la barre du bas n'est PAS touchée** : un bouton 📖 dans l'en-tête du chat
   (4ᵉ, à côté de `⋮ ? ★`) et une carte sur la Home (`renderBookCard()`, `#bookCardWrap`) qui
   annonce **où en est la lecture**, pas un slogan figé.
-  Test : `scripts/test-book-reader.js` (39, vrai Chromium en 375×667 et 320×568 : les 44 pages
-  présentes, aucun Cours qui fuite, texte sans charabia, les deux butées, achat seulement en
-  page 44, rien pour qui a le livre, reprise de lecture, taille persistée, état vide honnête,
-  contraste ≥ 7:1 pour de la lecture longue).
+  Test : `scripts/test-book-reader.js` (51, vrai Chromium en 375×667 et 320×568 : les 44 pages
+  présentes, aucun Cours qui fuite, texte sans charabia, **sommaire découpé et jamais recollé,
+  copyright en plusieurs paragraphes, aucun bloc > 1 400 caractères**, entrées hors extrait non
+  cliquables, les deux butées, achat seulement en page 44, rien pour qui a le livre, reprise de
+  lecture, taille persistée, état vide honnête, contraste ≥ 7:1 pour de la lecture longue).
 - **Progression**: `renderProgression()` fills `#progressionCard` in the Moi tab — current score, 8-week sessions bar graph, personal records. Helper `_progressionWeeklySessions(8)`.
 - **Habits**: `activeHabits` array, persisted to `ah_active_habits` via `_persistActiveHabits()`. `checkHabit()` resets the streak on a day gap. `renderActiveHabits()` renders Home + Moi.
 - **Exercise library**: `catData` is the flat exercise database (198 exercises). `_LIB_CAT_MAP` maps the chip filters to `catData` keys. Schema `{name, diff:'easy'|'med'|'hard', muscles, desc, mat, tag?, video?}`. Videos: per-exo `video` field OR `_LIB_VIDEO_MAP` lookup by name. The library has a "🎯 Mon programme" filter (`_libFlatExos('myprogram')`).

@@ -120,21 +120,60 @@ const ENTETE = /^\s*Les Secrets de la D[ée]tente Verticale\s*$/i;
       }
       txt = txt.replace(/[ \t]+/g, ' ').trim();
       if (!txt || ENTETE.test(txt) || /^\d{1,3}$/.test(txt)) continue;
-      lignes.push({ t: txt, h: Math.max(...its.map((i) => i.h)) });
+      lignes.push({ t: txt, y, h: Math.max(...its.map((i) => i.h)) });
     }
 
-    // Lignes → blocs typés. Les paragraphes consécutifs se recollent.
+    // Lignes → blocs typés.
+    //
+    // Recoller toutes les lignes de même taille en un seul paragraphe rendait
+    // la TABLE DES MATIÈRES et la page de COPYRIGHT illisibles : un pavé
+    // justifié de 40 lignes où « Copyright 4 Préface - Loïc 5 Avant-Propos 7 »
+    // se lisait d'un trait. Deux signaux de la page évitent ça.
+    //
+    // 1. L'ÉCART VERTICAL. Dans un paragraphe il vaut l'interligne ; entre deux
+    //    paragraphes il double. Sur la page de copyright : 16-17 à l'intérieur,
+    //    35-39 entre. On coupe au-delà de 1,35 × l'écart médian de la page.
+    // 2. LA FORME « titre … numéro ». Une table des matières a des interlignes
+    //    parfaitement réguliers — l'écart ne la trahit pas. Mais chacune de ses
+    //    lignes finit par un numéro de page. Quand la page en aligne au moins
+    //    quatre, c'est un sommaire : chaque entrée devient son propre bloc.
+    const ENTREE_SOMMAIRE = /^(.{2,}?)[\s.]+(\d{1,3})$/;
+    const nEntrees = lignes.filter((l) => ENTREE_SOMMAIRE.test(l.t)).length;
+    const estSommaire = nEntrees >= 4;
+
+    const ecarts = [];
+    for (let i = 1; i < lignes.length; i++) ecarts.push(lignes[i - 1].y - lignes[i].y);
+    const tries = ecarts.slice().sort((a, b) => a - b);
+    const median = tries.length ? tries[Math.floor(tries.length / 2)] : 0;
+    const SEUIL = median * 1.35;
+
     const blocs = [];
-    for (const l of lignes) {
+    for (let i = 0; i < lignes.length; i++) {
+      const l = lignes[i];
       const k = l.h >= 20 ? 'h1' : l.h >= 14.5 ? 'h2' : l.h >= 12.8 ? 'h3' : l.h >= 10.5 ? 'p' : 's';
+
+      if (estSommaire) {
+        const m = l.t.match(ENTREE_SOMMAIRE);
+        if (m && k !== 'h1' && k !== 'h2') { blocs.push({ k: 'toc', t: m[1].trim(), n: m[2] }); continue; }
+      }
+
       const prec = blocs[blocs.length - 1];
-      if (prec && prec.k === k && (k === 'p' || k === 's')) {
+      const ecart = i > 0 ? lignes[i - 1].y - l.y : 0;
+      const memeParagraphe = prec && prec.k === k && (k === 'p' || k === 's')
+        && median > 0 && ecart <= SEUIL;
+
+      if (memeParagraphe) {
         prec.t = /-$/.test(prec.t) ? prec.t.slice(0, -1) + l.t : prec.t + ' ' + l.t;
       } else {
         blocs.push({ k, t: l.t });
       }
     }
-    pages.push({ p: n, b: blocs.map((b) => ({ k: b.k, t: b.t.replace(/\s+/g, ' ').trim() })).filter((b) => b.t) });
+    pages.push({
+      p: n,
+      b: blocs
+        .map((b) => { const o = { k: b.k, t: b.t.replace(/\s+/g, ' ').trim() }; if (b.n) o.n = b.n; return o; })
+        .filter((b) => b.t)
+    });
   }
 
   const json = JSON.stringify(pages);

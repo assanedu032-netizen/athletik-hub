@@ -89,7 +89,56 @@ const MIME = { '.html':'text/html','.js':'text/javascript','.css':'text/css','.j
     await page.evaluate(() => !/Cours 1\s*—\s*La Périodisation/.test(
       window.BOOK_EXCERPT.slice(-3).map(p => p.b.map(b => b.t).join(' ')).join(' '))));
 
+  // ── La mise en page : le défaut qu'on a vu sur un vrai téléphone ──────
+  // Recoller toutes les lignes de même taille donnait un pavé justifié où
+  // « Copyright 4 Préface - Loïc 5 Avant-Propos 7 » se lisait d'un trait.
+  console.log('\n── Le texte est découpé, pas recollé en un pavé ──');
+  const mep = await page.evaluate(() => {
+    const B = window.BOOK_EXCERPT;
+    const p2 = B[1].b, p4 = B[3].b, p5 = B[4].b;
+    return {
+      tocBlocs: p2.filter(b => b.k === 'toc').length,
+      tocAvecNum: p2.filter(b => b.k === 'toc' && b.n).length,
+      // Le pavé d'avant : une seule ligne qui contenait plusieurs entrées.
+      tocRecolle: p2.some(b => b.k !== 'toc' && /Copyright.*Préface.*Avant-Propos/.test(b.t)),
+      copyBlocs: p4.length,
+      copyRecolle: p4.some(b => /droits réservés.*Toute reproduction.*Dépôt légal/.test(b.t)),
+      prefaceParas: p5.filter(b => b.k === 'p').length,
+      prefaceRecolle: p5.some(b => b.t.length > 1400)
+    };
+  });
+  ok('la table des matières est découpée en entrées', mep.tocBlocs >= 20, mep.tocBlocs);
+  ok('chaque entrée porte son numéro de page', mep.tocAvecNum === mep.tocBlocs, mep.tocAvecNum + '/' + mep.tocBlocs);
+  ok('elle n\'est PLUS recollée en un seul pavé', mep.tocRecolle === false);
+  ok('la page de copyright est en plusieurs paragraphes', mep.copyBlocs >= 5, mep.copyBlocs);
+  ok('elle n\'est PLUS un bloc unique', mep.copyRecolle === false);
+  ok('la préface garde ses paragraphes', mep.prefaceParas >= 4, mep.prefaceParas);
+  ok('aucun paragraphe monstre n\'est recollé', mep.prefaceRecolle === false);
+
+  // ── Le sommaire est un raccourci, et il montre ce qui manque ──────────
+  console.log('\n── Le sommaire ──');
+  await page.evaluate(() => window.openBookReader(2)); await page.waitForTimeout(320);
+  const toc = await page.evaluate(() => ({
+    lignes: document.querySelectorAll('#bkInner .bk-toc').length,
+    cliquables: document.querySelectorAll('#bkInner button.bk-toc').length,
+    estompees: document.querySelectorAll('#bkInner .bk-toc-off').length,
+    premierNum: (document.querySelector('#bkInner button.bk-toc .bk-toc-n') || {}).textContent
+  }));
+  ok('les entrées sont rendues en lignes de sommaire', toc.lignes >= 20, toc.lignes);
+  // Une entrée DANS l'extrait s'ouvre ; au-delà, elle se voit sans mentir.
+  ok('celles qui sont dans l\'extrait sont cliquables', toc.cliquables >= 5, toc.cliquables);
+  ok('celles qui sont hors extrait sont estompées', toc.estompees >= 10, toc.estompees);
+  ok('aucune entrée hors extrait n\'est cliquable',
+    await page.evaluate(() => [...document.querySelectorAll('#bkInner button.bk-toc')]
+      .every(b => parseInt(b.querySelector('.bk-toc-n').textContent, 10) <= window.BOOK_EXCERPT.length)));
+  await page.click('#bkInner button.bk-toc:nth-of-type(1)').catch(() => {});
+  await page.waitForTimeout(300);
+  ok('taper une entrée saute à sa page',
+    (await lire()).cnt === (toc.premierNum || '').trim() + ' / 44', (await lire()).cnt + ' attendu ' + toc.premierNum);
+
   // ── La carte de la Home ────────────────────────────────────────────────
+  await etat(PROFIL, null);
+  v = await lire();
   console.log('\n── La carte sur la Home ──');
   ok('la carte est présente', !!v.carte, v.carte);
   ok('elle annonce un extrait gratuit', /gratuit/i.test(v.carte || ''), v.carte);
