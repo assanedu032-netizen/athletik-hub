@@ -46,6 +46,20 @@ Two parallel UI systems live in the same file and must not conflict:
 
 **Critical pitfall — the inline-display bug**: `discoveryGoTo()` (and a few onboarding finalizers) set `element.style.display = 'none'` inline on every `.scr` and `.view`. Any later code that only toggles a CSS class (`.on`) will lose to the inline style and render a blank screen. The fix everywhere is to explicitly reset `el.style.display = ''` before adding `.on`. `go()`, `switchTab()`, `obFinish()`, and `discoveryReturnToHome()` already do this — preserve that when editing those functions, and apply the same pattern in any new navigation code.
 
+**Le revers du même piège — `#splash` doit rester masqué.** `go()` remet
+`display:''` sur **toutes** les `.scr`. Or `#splash` est déclaré
+`class="scr on"` avec **`position:relative` en inline** : c'est la **seule**
+`.scr` qui soit **dans le flux**, toutes les autres sont absolues. Après le
+démarrage, rien ne la masque qu'un `style.display='none'` inline — que cette
+boucle effaçait. Le splash reprenait donc sa place dans le flux, écrasait la
+vue courante à **90 px** et laissait une **page blanche**. Le défaut dormait
+depuis toujours : les écrans d'onboarding appellent `go()` juste après le
+démarrage, quand le splash est encore légitime. Le **lecteur du livre** est le
+premier `.scr` ouvert depuis l'app longtemps après le boot, et l'a réveillé.
+`go()` saute désormais `#splash` sauf si c'est lui qu'on ouvre. Régression
+verrouillée par `scripts/test-book-reader.js` (ouvrir → fermer → la Home
+retrouve sa hauteur, et rien d'autre n'occupe le flux de `#app`).
+
 ## Onboarding flow
 
 `welcome → titanIntro → obQ1 (objectif) → Home (discovery mode)`. The discovery banner on Home
@@ -361,11 +375,36 @@ completedPrograms, fcmToken, accessTier`.
   **Deux accès, et la barre du bas n'est PAS touchée** : un bouton 📖 dans l'en-tête du chat
   (4ᵉ, à côté de `⋮ ? ★`) et une carte sur la Home (`renderBookCard()`, `#bookCardWrap`) qui
   annonce **où en est la lecture**, pas un slogan figé.
-  Test : `scripts/test-book-reader.js` (51, vrai Chromium en 375×667 et 320×568 : les 44 pages
+  Test : `scripts/test-book-reader.js` (57, vrai Chromium en 375×667 et 320×568 : les 44 pages
   présentes, aucun Cours qui fuite, texte sans charabia, **sommaire découpé et jamais recollé,
   copyright en plusieurs paragraphes, aucun bloc > 1 400 caractères**, entrées hors extrait non
   cliquables, les deux butées, achat seulement en page 44, rien pour qui a le livre, reprise de
   lecture, taille persistée, état vide honnête, contraste ≥ 7:1 pour de la lecture longue).
+- **Titan peut proposer le livre — rarement, et sans mentir** (`_titanRenderBookCard`,
+  `_tbChoisir`). Sept règles, toutes arrêtées avec l'auteur **avant** d'écrire une ligne
+  (`openspec/changes/extrait-livre-gratuit/specs/titan-promotion-livre`).
+  **La plus importante : la carte ne promet que ce que l'extrait CONTIENT.** L'extrait s'arrête
+  page 44 — les 8 Lois y sont en entier, **aucun Cours, Chapitre ni Programme** n'y est. Dire
+  « la réponse est dans l'extrait » sur une question de pliométrie serait **faux**, et un coach
+  qui ment une fois n'est plus cru ensuite. D'où **deux formulations**, arbitrées par la page de
+  `BOOK_CHAPTERS` : page **≤ 44** → « Dans l'extrait gratuit · p. 35 · Lire ce passage » (vrai) ;
+  page **≥ 45** → « Dans le livre · p. 101 · hors extrait », avec « l'extrait ne va pas
+  jusque-là, mais il te montre la méthode ». Vérifié exhaustivement : **aucun des 24 chapitres
+  hors extrait ne peut produire une carte « dans l'extrait »**.
+  La détection du sujet lit les **titres de `BOOK_CHAPTERS`** — pas une liste de mots-clés écrite
+  à la main, qui divergerait du livre au premier chapitre renommé sans que personne ne le voie.
+  Les mots `cours`, `chapitre`, `programme`, `partie` en sont retirés : présents dans tous les
+  titres, ils feraient matcher n'importe quelle question.
+  **La carte vit HORS de la bulle** et le client seul décide de l'afficher. Demander au modèle de
+  vendre, c'est l'autoriser à inventer un prix, une promotion ou une disponibilité — et le prompt
+  serveur n'est pas touché.
+  **Elle est rare** : une par **24 h** (`ah_book_promo.lastAt`), **jamais deux réponses de suite**
+  (`lastTurn` vs `window._tbTour`), **jamais** si `hasBookAccess`, **jamais** hors sujet, et
+  **jamais en même temps qu'une carte nutrition** — deux cartes sous une réponse, c'est une
+  réclame, plus un coach. La fermer fait taire 24 h (`dismissedAt`).
+  **L'achat ne se propose qu'après l'extrait terminé** (`bookExcerptDone()`) : on ne demande pas
+  d'acheter un livre qu'on n'a pas laissé feuilleter.
+  Test : `scripts/test-titan-book-card.js` (36, vrai Chromium).
 - **Progression**: `renderProgression()` fills `#progressionCard` in the Moi tab — current score, 8-week sessions bar graph, personal records. Helper `_progressionWeeklySessions(8)`.
 - **Habits**: `activeHabits` array, persisted to `ah_active_habits` via `_persistActiveHabits()`. `checkHabit()` resets the streak on a day gap. `renderActiveHabits()` renders Home + Moi.
 - **Exercise library**: `catData` is the flat exercise database (198 exercises). `_LIB_CAT_MAP` maps the chip filters to `catData` keys. Schema `{name, diff:'easy'|'med'|'hard', muscles, desc, mat, tag?, video?}`. Videos: per-exo `video` field OR `_LIB_VIDEO_MAP` lookup by name. The library has a "🎯 Mon programme" filter (`_libFlatExos('myprogram')`).
