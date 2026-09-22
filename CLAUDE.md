@@ -335,6 +335,19 @@ completedPrograms, fcmToken, accessTier`.
   pastille réellement peinte, feuille réellement peinte, heure réelle, badge sans heure, état de
   lecture persisté, état vide honnête, contraste AA sur le fond réel, et la Home intacte).
   Remplace `scripts/test-mission-titan.js`, qui testait la carte supprimée.
+- **L'article « Résistance mentale » est SUPPRIMÉ** (sept. 2026) — carte de la Home, écran
+  `#articleOverlay`, CSS et `openArticle`/`closeArticle` : **16 357 caractères** retirés, zéro
+  référence restante. Il n'y avait **qu'un seul article** : `openArticle(slug)` ignorait son
+  argument et ouvrait toujours le même écran câblé en dur. Il n'y avait donc aucun système
+  d'articles à démonter.
+  **Les classes `.art-teaser-*` SURVIVENT** : la carte du livre (`renderBookCard`) les réutilise.
+  Le préfixe `art-` ne renvoie plus à rien — un commentaire le dit à l'endroit de leur
+  définition, pour que personne n'aille chercher un article qui n'existe plus. Les renommer
+  toucherait deux suites de tests pour un gain cosmétique.
+  **Piège du nettoyage** : `test-notif-center.js` vérifiait « la carte article est toujours là »
+  via `#vHome .art-teaser-card`. Ce sélecteur matche désormais la **carte du livre** — le test
+  serait resté vert **pour une mauvaise raison**. Il vise maintenant `#bookCardWrap` et vérifie
+  en plus que `#articleOverlay` a bien disparu.
 - **Le livre se lit DANS l'app** (`#bookReader`, `openBookReader()`) — les **44 premières pages**
   des *Secrets de la Détente Verticale*, jusqu'à la fin des 8 Lois, juste avant le Cours 1.
   Elles ne sont **pas servies en PDF** : le texte est extrait et vit dans

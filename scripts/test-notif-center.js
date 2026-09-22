@@ -256,14 +256,16 @@ const MIME = { '.html':'text/html','.js':'text/javascript','.css':'text/css','.j
   console.log('\n── Le reste de la Home est intact ──');
   await etat(PROFIL, [], null, null, []);
   const home = await page.evaluate(() => ({
-    teaser: !!document.querySelector('#vHome .art-teaser-card'),
+    livre: !!document.querySelector('#bookCardWrap'),
+    plusDArticle: !document.getElementById('articleOverlay'),
     score: !!document.getElementById('homeScoreboard'),
     journey: !!document.getElementById('journeyCardWrap'),
     trial: !!document.getElementById('trialBanner'),
     resume: !!document.getElementById('resumeSessionBanner'),
     gear: !!document.querySelector('#vHome [aria-label="Paramètres"]')
   }));
-  ok('la carte article est toujours là', home.teaser === true);
+  ok('la carte du livre est toujours là', home.livre === true);
+  ok('l\'article « Résistance mentale » a bien disparu', home.plusDArticle === true);
   ok('le scoreboard est toujours là', home.score === true);
   ok('« Mon parcours » est toujours là', home.journey === true);
   ok('la bannière essai est toujours là', home.trial === true);
