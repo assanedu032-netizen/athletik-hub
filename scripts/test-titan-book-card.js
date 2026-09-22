@@ -125,7 +125,7 @@ const MIME = { '.html':'text/html','.js':'text/javascript','.css':'text/css','.j
     const body = document.getElementById('chatBody');
     const avant = body.querySelectorAll('.msg').length;
     window._titanRenderBookCard('c\'est quoi les 8 lois ?');
-    const carte = body.querySelector('.tb-card');
+    const carte = body.querySelector('.tb-card:not(.tb-hello)');
     const bulles = [...body.querySelectorAll('.msg-bubble')].map((b) => b.textContent).join(' ');
     return {
       rendue: !!carte,
@@ -151,16 +151,102 @@ const MIME = { '.html':'text/html','.js':'text/javascript','.css':'text/css','.j
   const ferme = await page.evaluate(() => {
     document.querySelector('.tb-x').click();
     const st = JSON.parse(localStorage.getItem('ah_book_promo') || '{}');
-    return { partie: !document.querySelector('.tb-card'), note: !!st.dismissedAt };
+    return { partie: !document.querySelector('.tb-card:not(.tb-hello)'), note: !!st.dismissedAt };
   });
   ok('la fermer la retire', ferme.partie === true);
   ok('la fermeture est mémorisée', ferme.note === true);
 
+  // ── Deux moments de plus, tous les deux réels ─────────────────────────
+  // Le bouton 📖 de l'en-tête fait 24 px parmi quatre icônes et les cartes
+  // contextuelles sont plafonnées à une par 24 h : sans ces deux moments,
+  // l'extrait est en pratique invisible depuis le chat.
+  console.log('\n── Le chat s\'ouvre sur un fil vierge ──');
+  const hello = await page.evaluate(() => {
+    localStorage.setItem('ah_profile', '{}');
+    localStorage.removeItem('ah_titan_chat'); localStorage.removeItem('ah_book_excerpt');
+    document.querySelectorAll('.tb-wrap').forEach((e) => e.remove());
+    window.switchTab('home'); window.switchTab('chat');
+    const c = document.querySelector('.tb-hello');
+    return c ? { txt: c.textContent.replace(/\s+/g, ' ').trim(), croix: !!c.querySelector('.tb-x'),
+                 h: Math.round(c.getBoundingClientRect().height) } : null;
+  });
+  await page.waitForTimeout(250);
+  ok('une carte d\'accueil propose l\'extrait', !!hello, hello);
+  ok('elle est réellement peinte', !!hello && hello.h > 60, hello && hello.h);
+  ok('elle annonce que c\'est gratuit', !!hello && /gratuit/i.test(hello.txt), hello && hello.txt.slice(0, 60));
+  // Pas de croix : elle n'encombre rien, elle remonte avec le fil au premier
+  // message. Une croix demanderait un état à mémoriser pour rien.
+  ok('elle n\'a pas de croix — elle remonte avec le fil', !!hello && hello.croix === false);
+
+  const reprise = await page.evaluate(() => {
+    localStorage.setItem('ah_book_excerpt', JSON.stringify({ page: 17, done: false, fs: 1 }));
+    document.querySelectorAll('.tb-wrap').forEach((e) => e.remove());
+    window.switchTab('home'); window.switchTab('chat');
+    const c = document.querySelector('.tb-hello');
+    return c ? { txt: c.textContent.replace(/\s+/g, ' ').trim(), barre: !!c.querySelector('.tb-bar > i') } : null;
+  });
+  ok('lecture entamée : elle dit où on en est', !!reprise && /page 17 sur 44/.test(reprise.txt), reprise && reprise.txt);
+  ok('et montre la progression', !!reprise && reprise.barre === true);
+
+  // Le fil est entamé → la carte d'accueil n'a plus lieu d'être.
+  const filEntame = await page.evaluate(() => {
+    localStorage.setItem('ah_titan_chat', JSON.stringify([
+      { role: 'user', content: 'salut', t: Date.now() - 60000 },
+      { role: 'assistant', content: 'Yo.', t: Date.now() }]));
+    document.querySelectorAll('.tb-wrap').forEach((e) => e.remove());
+    window.switchTab('home'); window.switchTab('chat');
+    return !document.querySelector('.tb-hello');
+  });
+  await page.waitForTimeout(250);
+  ok('sur un fil déjà entamé, aucune carte d\'accueil', filEntame === true);
+  await page.evaluate(() => localStorage.removeItem('ah_titan_chat'));
+
+  console.log('\n── Le quota est atteint ──');
+  // Le meilleur moment de toute l'app : l'athlète en veut plus, Titan n'a plus
+  // rien. Avant, on répondait « Reviens demain » et on ne proposait RIEN.
+  const quota = await page.evaluate(() => {
+    localStorage.setItem('ah_profile', '{}');
+    localStorage.removeItem('ah_book_excerpt');
+    localStorage.setItem('ah_book_promo', JSON.stringify({ lastAt: Date.now() }));  // plafond armé
+    document.querySelectorAll('.tb-wrap').forEach((e) => e.remove());
+    if (window._titanRenderQuotaCard) window._titanRenderQuotaCard(); else return null;
+    const c = document.querySelector('.tb-card');
+    return c ? { txt: c.textContent.replace(/\s+/g, ' ').trim(), cta: (c.querySelector('.tb-go') || {}).textContent } : null;
+  });
+  ok('une carte est proposée quand le quota tombe', !!quota, quota);
+  // Elle ignore VOLONTAIREMENT le plafond de 24 h : ce n'est pas une réclame,
+  // c'est une réponse à « je veux plus » quand Titan ne peut plus donner.
+  ok('elle passe outre le plafond de 24 h', !!quota);
+  ok('elle nomme la limite de Titan', !!quota && /limite/i.test(quota.txt), quota && quota.txt.slice(0, 70));
+  ok('elle oppose le livre, qui n\'en a pas', !!quota && /n'en a pas|pas de limite/i.test(quota.txt), quota && quota.txt);
+  ok('elle propose de lire', !!quota && /lire/i.test(quota.cta || ''), quota && quota.cta);
+
+  const quotaLivre = await page.evaluate(() => {
+    localStorage.setItem('ah_profile', JSON.stringify({ hasBookAccess: true }));
+    document.querySelectorAll('.tb-wrap').forEach((e) => e.remove());
+    if (window._titanRenderQuotaCard) window._titanRenderQuotaCard(); else return null;
+    return !document.querySelector('.tb-card');
+  });
+  ok('rien pour qui possède déjà le livre, même à quota épuisé', quotaLivre === true);
+
+  const quotaFini = await page.evaluate(() => {
+    localStorage.setItem('ah_profile', '{}');
+    localStorage.setItem('ah_book_excerpt', JSON.stringify({ page: 44, done: true, fs: 1 }));
+    document.querySelectorAll('.tb-wrap').forEach((e) => e.remove());
+    if (window._titanRenderQuotaCard) window._titanRenderQuotaCard(); else return null;
+    const c = document.querySelector('.tb-card');
+    return c ? (c.querySelector('.tb-go') || {}).textContent : null;
+  });
+  ok('extrait déjà lu : on propose le livre, pas de le relire', /obtenir/i.test(quotaFini || ''), quotaFini);
+
   // ── Contraste ──────────────────────────────────────────────────────────
   console.log('\n── Contraste ──');
   await page.evaluate(() => {
+    localStorage.setItem('ah_profile', '{}'); localStorage.removeItem('ah_book_excerpt');
     localStorage.removeItem('ah_book_promo'); window._tbTour = 99;
+    document.querySelectorAll('.tb-wrap').forEach((e) => e.remove());
     window._titanRenderBookCard('les 8 lois');
+    if (window._titanRenderHelloCard) window._titanRenderHelloCard();
   });
   const c = await page.evaluate(() => {
     const lum = (col) => { const m = col.match(/[\d.]+/g).map(Number);
@@ -177,11 +263,25 @@ const MIME = { '.html':'text/html','.js':'text/javascript','.css':'text/css','.j
       fonds.forEach((bg) => { const l1 = lum(st.color), l2 = lum(bg);
         pire = Math.min(pire, (Math.max(l1, l2) + .05) / (Math.min(l1, l2) + .05)); });
       return Math.round(pire * 100) / 100; };
-    return { eyebrow: r('.tb-eyebrow'), txt: r('.tb-txt'), cta: r('.tb-go') };
+    const hello = document.querySelector('.tb-hello');
+    const rh = (sel) => { const e = hello && hello.querySelector(sel); if (!e) return null;
+      const st = getComputedStyle(e); let fonds = [solide(e)];
+      if (st.backgroundImage && st.backgroundImage !== 'none')
+        (st.backgroundImage.match(/rgba?\([^)]+\)/g) || []).forEach((x) => fonds.push(x));
+      let pire = Infinity;
+      fonds.forEach((bg) => { const l1 = lum(st.color), l2 = lum(bg);
+        pire = Math.min(pire, (Math.max(l1, l2) + .05) / (Math.min(l1, l2) + .05)); });
+      return Math.round(pire * 100) / 100; };
+    return { eyebrow: r('.tb-eyebrow'), txt: r('.tb-txt'), cta: r('.tb-go'),
+             helloTxt: rh('.tb-txt'), helloEye: rh('.tb-eyebrow') };
   });
   ok('l\'en-tête ≥ 4.5:1', c.eyebrow >= 4.5, c.eyebrow);
   ok('le texte ≥ 4.5:1', c.txt >= 4.5, c.txt);
   ok('le bouton ≥ 4.5:1', c.cta >= 4.5, c.cta);
+  // La variante d'accueil a son propre fond : `background: <dégradé>` écrasait
+  // la surface opaque et laissait du texte sombre sur le navy du chat.
+  ok('le texte de la carte d\'accueil ≥ 4.5:1', c.helloTxt === null || c.helloTxt >= 4.5, c.helloTxt);
+  ok('son en-tête ≥ 4.5:1', c.helloEye === null || c.helloEye >= 4.5, c.helloEye);
 
   ok('aucune erreur JS sur tout le parcours', errs.length === 0, errs.join(' | '));
 
