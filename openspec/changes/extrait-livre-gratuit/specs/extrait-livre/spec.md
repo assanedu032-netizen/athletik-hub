@@ -2,25 +2,28 @@
 
 ## Purpose
 
-L'écran de lecture des 30 premières pages du livre *Les Secrets de la Détente
-Verticale*, la mémoire de l'endroit où l'athlète s'est arrêté, et l'appel à
-l'achat une fois l'extrait parcouru.
+L'écran de lecture des 44 premières pages du livre *Les Secrets de la Détente
+Verticale* — jusqu'à la fin des 8 Lois, juste avant le Cours 1 — la mémoire de
+l'endroit où l'athlète s'est arrêté, et l'appel à l'achat une fois l'extrait
+parcouru.
 
 ## ADDED Requirements
 
-### Requirement: L'extrait ne contient que 30 pages, et c'est le fichier qui le garantit
+### Requirement: L'extrait ne contient que 44 pages, et c'est le fichier qui le garantit
 
-Le fichier servi par l'application SHALL contenir **exactement** les 30
-premières pages du livre. La limite SHALL être portée par le **contenu du
-fichier**, jamais par une règle d'affichage côté client.
+Le fichier servi par l'application SHALL contenir **exactement** les 44
+premières pages du livre — la dernière page de l'extrait SHALL être celle qui
+précède le Cours 1. La limite SHALL être portée par le **contenu du fichier**,
+jamais par une règle d'affichage côté client.
 
 Le livre complet SHALL NOT être déposé dans le dépôt, ni servi par
 l'application, sous aucune forme.
 
 #### Scenario: Le fichier est récupéré directement
 - **WHEN** quelqu'un télécharge le fichier servi par l'application
-- **THEN** il obtient 30 pages
-- **AND** aucune page 31 ou au-delà n'est accessible
+- **THEN** il obtient 44 pages
+- **AND** aucune page 45 ou au-delà n'est accessible
+- **AND** aucun Cours n'est accessible
 
 #### Scenario: Quelqu'un contourne l'interface
 - **WHEN** quelqu'un modifie le code de la page dans son navigateur pour lever
@@ -57,7 +60,7 @@ réouverture de l'écran. Cette mémoire SHALL être locale à l'appareil.
 ### Requirement: La page atteinte est toujours annoncée
 
 L'écran SHALL afficher en permanence la position de lecture sous la forme
-« page courante / 30 », et SHALL permettre d'aller à la page suivante et
+« page courante / 44 », et SHALL permettre d'aller à la page suivante et
 précédente.
 
 La position affichée SHALL correspondre à la page réellement à l'écran.
@@ -65,11 +68,11 @@ La position affichée SHALL correspondre à la page réellement à l'écran.
 #### Scenario: Avancer
 - **WHEN** l'athlète est à la page 5 et demande la suivante
 - **THEN** la page 6 s'affiche
-- **AND** le compteur affiche 6 / 30
+- **AND** le compteur affiche 6 / 44
 
 #### Scenario: Butée haute
-- **WHEN** l'athlète est à la page 30 et demande la suivante
-- **THEN** il reste à la page 30
+- **WHEN** l'athlète est à la page 44 et demande la suivante
+- **THEN** il reste à la page 44
 - **AND** aucune page vide n'est affichée
 
 #### Scenario: Butée basse
@@ -88,12 +91,12 @@ Il SHALL NOT être affiché avant la dernière page : l'extrait doit d'abord
 tenir sa promesse.
 
 #### Scenario: Fin de l'extrait
-- **WHEN** la page 30 est affichée
+- **WHEN** la page 44 est affichée
 - **THEN** l'appel à l'achat est visible
 - **AND** il ouvre la fiche Amazon dans un nouvel onglet
 
 #### Scenario: Milieu de l'extrait
-- **WHEN** une page entre 1 et 29 est affichée
+- **WHEN** une page entre 1 et 43 est affichée
 - **THEN** aucun appel à l'achat pleine largeur n'est affiché
 
 ### Requirement: L'athlète qui a déjà le livre ne se voit pas vendre le livre
@@ -105,7 +108,7 @@ Proposer d'acheter un livre déjà acheté est une faute, pas une occasion
 manquée.
 
 #### Scenario: Le livre est déjà acquis
-- **WHEN** `hasBookAccess` vaut `true` et la page 30 est affichée
+- **WHEN** `hasBookAccess` vaut `true` et la page 44 est affichée
 - **THEN** aucun bouton d'achat n'est affiché
 
 ### Requirement: Le poids de l'extrait ne pèse pas sur le démarrage
