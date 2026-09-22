@@ -6324,6 +6324,12 @@ body.ah-lib-open .tim-fab{display:none!important}
 .tb-txt{font-size:12.5px;line-height:1.5;color:var(--text);margin-bottom:10px}
 .tb-ref{font-family:'JetBrains Mono',monospace;font-size:9.5px;color:var(--muted);letter-spacing:.06em;margin-bottom:9px}
 .tb-go{display:inline-block;padding:8px 15px;border-radius:999px;background:linear-gradient(135deg,#D9BE72,#C5A44E);color:#1B2A4A;font-family:'JetBrains Mono',monospace;font-size:9.5px;letter-spacing:.1em;font-weight:700;text-transform:uppercase;border:0;cursor:pointer}
+/* Variante d'ACCUEIL : même carte, sans croix ni plafond. Elle ne s'affiche
+   qu'à l'ouverture d'un chat vierge, et disparaît au premier message — elle
+   remonte avec le fil. Elle ne coûte donc aucune place permanente. */
+.tb-card.tb-hello{border-left-color:rgba(197,164,78,.55);background:linear-gradient(135deg,rgba(197,164,78,.07),transparent),var(--surface)}
+.tb-bar{height:3px;border-radius:2px;background:var(--border);margin:0 0 9px;overflow:hidden}
+.tb-bar>i{display:block;height:100%;background:var(--ah-gold)}
 /* ── LECTEUR DU LIVRE ─────────────────────────────────────────────────────
    Les 44 premières pages vivent dans l'app comme du TEXTE (data/book-excerpt.js,
    56 Ko), pas comme un PDF de 1,3 Mo. On y gagne le reflow, la taille de police,
@@ -13093,6 +13099,71 @@ function _titanRenderBookCard(question) {
 }
 window._titanRenderBookCard = _titanRenderBookCard;
 window._tbChoisir = _tbChoisir;
+
+// ── DEUX MOMENTS DE PLUS, TOUS LES DEUX RÉELS ────────────────────────────
+// Le bouton 📖 de l'en-tête fait 24 px parmi quatre icônes, et les cartes
+// contextuelles sont plafonnées à une par 24 h : en pratique, l'extrait était
+// invisible depuis le chat. On l'expose donc à deux instants où il a vraiment
+// sa place, sans rien occuper en permanence.
+
+// A. LE QUOTA EST ATTEINT. C'est le meilleur moment de toute l'app : l'athlète
+//    veut plus de coaching et Titan n'en a plus. Jusqu'ici l'app répondait
+//    « Reviens demain » et ne proposait RIEN. Cette carte ignore volontairement
+//    le plafond de 24 h : ce n'est pas une réclame, c'est une réponse.
+function _titanRenderQuotaCard() {
+  var body = document.getElementById('chatBody'); if (!body) return;
+  if (_tbALeLivre()) return;              // il a le livre : il sait déjà où lire
+  if (!_bkPages()) return;
+  var st = _bkEtat();
+  var w = document.createElement('div');
+  w.className = 'msg titan tb-wrap';
+  w.innerHTML =
+    '<div class="tb-card">'
+    + '<div class="tb-top"><span class="tb-eyebrow">📖 En attendant demain</span></div>'
+    + '<div class="tb-txt">Titan a atteint sa limite pour aujourd\'hui. Le livre, lui, n\'en a pas : '
+    + (st.done ? 'tu as déjà lu l\'extrait en entier.' : '44 pages t\'attendent, dont les 8 Lois.')
+    + '</div>'
+    + '<button class="tb-go" onclick="tbOuvrir(' + (st.done ? 0 : (st.page || 1)) + ')">'
+    + (st.done ? 'Obtenir le livre' : 'Lire l\'extrait') + ' →</button>'
+    + '</div>';
+  body.appendChild(w);
+  body.scrollTop = body.scrollHeight;
+}
+window._titanRenderQuotaCard = _titanRenderQuotaCard;
+
+// B. LE CHAT S'OUVRE SUR UNE CONVERSATION VIERGE. L'athlète vient d'arriver et
+//    n'a encore rien demandé : c'est le moment de lui dire ce qu'il a déjà.
+//    Elle disparaît au premier message — elle remonte simplement avec le fil.
+function _titanRenderHelloCard() {
+  var body = document.getElementById('chatBody'); if (!body) return;
+  if (body.querySelector('.tb-hello')) return;                 // déjà posée
+  if (conversationHistory && conversationHistory.length) return; // fil entamé
+  if (_tbALeLivre()) return;
+  var pages = _bkPages(); if (!pages) return;
+
+  var st = _bkEtat();
+  var commence = st.page > 1 || st.done;
+  var txt = st.done
+    ? 'Tu as lu l\'extrait en entier. La suite est dans le livre.'
+    : commence
+      ? 'Tu en es à la page ' + st.page + ' sur ' + pages.length + ' de l\'extrait.'
+      : 'Avant de me demander quoi que ce soit : les 44 premières pages du livre sont lisibles ici, gratuitement.';
+  var w = document.createElement('div');
+  w.className = 'msg titan tb-wrap';
+  var h = '<div class="tb-card tb-hello">';
+  h += '<div class="tb-top"><span class="tb-eyebrow">📖 Extrait du livre · gratuit</span></div>';
+  h += '<div class="tb-txt">' + txt + '</div>';
+  if (commence && !st.done) {
+    h += '<div class="tb-bar"><i style="width:' + Math.round(st.page / pages.length * 100) + '%"></i></div>';
+  }
+  h += '<button class="tb-go" onclick="tbOuvrir(' + (st.done ? 0 : (st.page || 1)) + ')">'
+     + (st.done ? 'Obtenir le livre' : commence ? 'Reprendre' : 'Commencer à lire') + ' →</button>';
+  h += '</div>';
+  w.innerHTML = h;
+  body.appendChild(w);
+  body.scrollTop = body.scrollHeight;
+}
+window._titanRenderHelloCard = _titanRenderHelloCard;
 window._tbSujet = _tbSujet;
 if (document.readyState === 'loading') {
   document.addEventListener('DOMContentLoaded', function () { try { renderBookCard(); } catch (e) {} });
@@ -16800,6 +16871,8 @@ function switchTab(tab){
     try { restoreTitanChat(); } catch(e) {}
     // Après restauration : le message d'accueil statique n'a pas d'identifiant.
     try { _titanDecorateStatic(); _titanSavedRefreshBadge(); } catch(e) {}
+    // Chat vierge : on montre ce qu'il a déjà, avant qu'il ne demande.
+    try { _titanRenderHelloCard(); } catch(e) {}
   }
   // Init SAT step-by-step quand on entre dans Tracks
   if (tab === 'tracks') {
@@ -26468,6 +26541,9 @@ async function callAnthropicAPI(userMessage, photo, opts) {
 
     if (resp.status === 429) {
       conversationHistory.pop(); persistTitanChat();
+      // Le moment où l'athlète en veut le plus, et où Titan n'a plus rien à
+      // donner. On ne le laisse pas les mains vides.
+      window._titanQuotaAtteint = true;
       return data.error || 'Limite journalière atteinte. Reviens demain.';
     }
 
@@ -27521,7 +27597,10 @@ async function sendMessage() {
     }
     // Carte livre : jamais en même temps qu'une carte nutrition — deux cartes
     // sous une réponse, c'est une réclame, plus un coach.
-    if (!nutrition) {
+    if (window._titanQuotaAtteint) {
+      window._titanQuotaAtteint = false;
+      try { _titanRenderQuotaCard(); } catch (e) { console.warn('[titan quota card]', e); }
+    } else if (!nutrition) {
       try { _titanRenderBookCard(text); } catch (e) { console.warn('[titan book card]', e); }
     }
   }, delay);

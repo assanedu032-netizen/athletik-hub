@@ -417,7 +417,24 @@ completedPrograms, fcmToken, accessTier`.
   réclame, plus un coach. La fermer fait taire 24 h (`dismissedAt`).
   **L'achat ne se propose qu'après l'extrait terminé** (`bookExcerptDone()`) : on ne demande pas
   d'acheter un livre qu'on n'a pas laissé feuilleter.
-  Test : `scripts/test-titan-book-card.js` (36, vrai Chromium).
+  **Quatre moments, aucun ne prend de place permanente.** Le bouton 📖 de l'en-tête fait 24 px
+  parmi quatre icônes et les cartes contextuelles sont plafonnées à une par 24 h : à eux deux,
+  l'extrait restait **introuvable** depuis le chat. Deux instants de plus l'exposent :
+  **(1) l'ouverture d'un fil vierge** (`_titanRenderHelloCard`) — l'athlète vient d'arriver et n'a
+  rien demandé ; la carte dit où en est sa lecture, n'a **pas de croix** (elle remonte avec le fil
+  au premier message, donc rien à mémoriser) et ne s'affiche **jamais** si `conversationHistory`
+  n'est pas vide. Attention : `conversationHistory` est un `let` de bloc, **pas** sur `window` —
+  un test qui écrit `window.conversationHistory` ne touche rien ; passer par `restoreTitanChat()`.
+  **(2) le QUOTA ATTEINT** (`_titanRenderQuotaCard`) — le meilleur moment de toute l'app :
+  l'athlète en veut plus et Titan n'a plus rien. Le 429 répondait « Reviens demain » et ne
+  proposait **rien**. Cette carte **ignore volontairement le plafond de 24 h** : ce n'est pas une
+  réclame, c'est une réponse. Extrait déjà lu → elle propose le livre, pas de le relire.
+  **Piège CSS corrigé** : `.tb-hello` posait `background: <dégradé>`, ce qui **écrasait** le fond
+  opaque `var(--surface)` de `.tb-card` — la carte devenait transparente sur le navy du chat, avec
+  du texte sombre dessus, illisible. Le dégradé est **empilé** (`<dégradé>, var(--surface)`). Le
+  test de contraste ne visait que la carte promo et l'avait laissée passer : il mesure désormais
+  **les deux variantes séparément**.
+  Test : `scripts/test-titan-book-card.js` (52, vrai Chromium).
 - **Progression**: `renderProgression()` fills `#progressionCard` in the Moi tab — current score, 8-week sessions bar graph, personal records. Helper `_progressionWeeklySessions(8)`.
 - **Habits**: `activeHabits` array, persisted to `ah_active_habits` via `_persistActiveHabits()`. `checkHabit()` resets the streak on a day gap. `renderActiveHabits()` renders Home + Moi.
 - **Exercise library**: `catData` is the flat exercise database (198 exercises). `_LIB_CAT_MAP` maps the chip filters to `catData` keys. Schema `{name, diff:'easy'|'med'|'hard', muscles, desc, mat, tag?, video?}`. Videos: per-exo `video` field OR `_LIB_VIDEO_MAP` lookup by name. The library has a "🎯 Mon programme" filter (`_libFlatExos('myprogram')`).
