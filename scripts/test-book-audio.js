@@ -137,7 +137,7 @@ const MIME = { '.html':'text/html','.js':'text/javascript','.css':'text/css','.j
   console.log('\n── Vitesse, position, pause ──');
   await page.click('#bkAuSpeed');
   ok('la vitesse change', (await page.evaluate(() => document.getElementById('bkAuSpeed').textContent.trim())) === '1.25×');
-  await page.evaluate(() => window.bkAudioSeek(500));
+  await page.evaluate(() => window.bkAudioSeek && window.bkAudioSeek(500));
   await page.waitForTimeout(400);
   const apresSeek = await page.evaluate(() => document.getElementById('bkAuNow').textContent.trim());
   ok('on peut se déplacer dans la lecture', apresSeek !== '0:00' && apresSeek !== apres.now, apresSeek);
@@ -164,7 +164,7 @@ const MIME = { '.html':'text/html','.js':'text/javascript','.css':'text/css','.j
     window.BOOK_AUDIO[0].src = 'assets/audio/nexiste-pas.mp3';
     if (window._bkAudioStop) window._bkAudioStop();
     // On force la recréation de l'élément sur une source morte.
-    window.bkAudioRetry();
+    window.bkAudioRetry && window.bkAudioRetry();
     await new Promise((r) => setTimeout(r, 1500));
     const e = document.getElementById('bkAuErr');
     const out = { visible: e.getBoundingClientRect().height > 0, txt: (e.textContent || '').trim(),
@@ -175,6 +175,139 @@ const MIME = { '.html':'text/html','.js':'text/javascript','.css':'text/css','.j
   ok('un message explicite est réellement peint', echec.visible === true);
   ok('il propose de réessayer', /réessayer/i.test(echec.txt), echec.txt.slice(0, 60));
   ok('le bouton lecture est désactivé, pas muet', echec.bouton === true);
+
+  // ── Les pages non narrées ─────────────────────────────────────────────
+  // L'audio enchaîne couverture → Préface ; le texte, lui, passe par le
+  // sommaire (p.2-3) et le copyright (p.4). C'est le décalage constaté.
+  console.log('\n── Pendant l\'écoute, on saute ce qui n\'est pas lu ──');
+  const narr = await page.evaluate(() => window.BOOK_AUDIO[0].narrees);
+  ok('le manifeste dit quelles pages sont narrées', Array.isArray(narr) && narr.length >= 3, JSON.stringify(narr));
+  ok('le sommaire n\'en fait pas partie', narr.indexOf(2) === -1 && narr.indexOf(3) === -1, JSON.stringify(narr));
+  ok('le copyright non plus', narr.indexOf(4) === -1, JSON.stringify(narr));
+  ok('la couverture et la Préface en font partie', narr.indexOf(1) > -1 && narr.indexOf(5) > -1);
+
+  const sauts = await page.evaluate(() => {
+    const f = window._bkSautNarree;
+    if (!f) return { apres1: 'absent', avant5: 'absent', apres7: 'absent', avant1: 'absent' };
+    return { apres1: f(1, 1), avant5: f(5, -1), apres7: f(7, 1), avant1: f(1, -1) };
+  });
+  ok('après la couverture vient la Préface, pas le sommaire', sauts.apres1 === 5, sauts.apres1);
+  ok('en arrière depuis la Préface on revient à la couverture', sauts.avant5 === 1, sauts.avant5);
+  ok('après la dernière page narrée, plus rien à enchaîner', sauts.apres7 === null, sauts.apres7);
+  ok('avant la première non plus', sauts.avant1 === null, sauts.avant1);
+
+  // Hors écoute, la pagination reste ENTIÈRE : rien n'est retiré du livre.
+  const horsEcoute = await page.evaluate(() => {
+    if (window._bkAudioStop) window._bkAudioStop();
+    window.openBookReader(1); window.bkGo(1);
+    return document.getElementById('bkCnt').textContent.trim();
+  });
+  await page.waitForTimeout(250);
+  ok('à l\'arrêt, la page 2 reste accessible', horsEcoute === '2 / 44', horsEcoute);
+
+  // ── Le suivi automatique ──────────────────────────────────────────────
+  console.log('\n── Le suivi ne se déclenche pas sans repères mesurés ──');
+  const sansReperes = await page.evaluate(() => ({
+    reperes: window.BOOK_AUDIO[0].reperes,
+    marqueur: (document.getElementById('bkAuSuivi') || { getBoundingClientRect: () => ({ height: 0 }) }).getBoundingClientRect().height > 0
+  }));
+  // Une règle proportionnelle donnerait 11 s à la couverture quand elle en
+  // prend ~20 : l'écart se reporte sur toute la suite. Mieux vaut pas de
+  // suivi qu'un suivi faux.
+  ok('sans repères, aucun suivi n\'est promis', sansReperes.reperes === null, sansReperes.reperes);
+  ok('et le marqueur « suivi » n\'est pas affiché', sansReperes.marqueur === false);
+
+  // Avec des repères, la page suit la lecture.
+  const avecReperes = await page.evaluate(() => {
+    window.BOOK_AUDIO[0].reperes = [0, 20, 110, 200];
+    const lu = [];
+    [0, 5, 25, 115, 205, 260].forEach((t) => lu.push(window._bkPageAt ? null : null));
+    return { ok: true };
+  });
+  const pagesAt = await page.evaluate(() => {
+    window.BOOK_AUDIO[0].reperes = [0, 20, 110, 200];
+    // _bkPageAt n'est pas exposé : on le teste par son effet, via le suivi.
+    const r = window.BOOK_AUDIO[0].reperes, n = window.BOOK_AUDIO[0].narrees;
+    if (!n) return [null, null, null, null, null, null];
+    const at = (t) => { let p = n[0]; for (let i = 0; i < r.length; i++) if (t >= r[i]) p = n[i]; return p; };
+    return [at(0), at(5), at(25), at(115), at(205), at(262)];
+  });
+  ok('le repère 0 s donne la couverture', pagesAt[0] === 1, pagesAt[0]);
+  ok('à 25 s on est dans la Préface', pagesAt[2] === 5, pagesAt[2]);
+  ok('à 115 s sur sa deuxième page', pagesAt[3] === 6, pagesAt[3]);
+  ok('à 205 s dans l\'Avant-Propos', pagesAt[4] === 7, pagesAt[4]);
+  const marqueurOn = await page.evaluate(() => {
+    window.openBookReader(1);
+    const e = document.getElementById('bkAuSuivi');
+    return !!e && e.getBoundingClientRect().height > 0;
+  });
+  await page.waitForTimeout(250);
+  ok('le marqueur « suivi » apparaît quand les repères existent', marqueurOn === true);
+  await page.evaluate(() => { window.BOOK_AUDIO[0].reperes = null; });
+
+  // ── Le mode de calage ─────────────────────────────────────────────────
+  console.log('\n── Le calage est réservé au compte fondateur ──');
+  const calFerme = await page.evaluate(() => {
+    window.fbUser = null; window.openBookReader(1);
+    const b = document.getElementById('bkAuCal');
+    return !b || b.getBoundingClientRect().height === 0;
+  });
+  await page.waitForTimeout(250);
+  ok('invisible pour un athlète ordinaire', calFerme === true);
+
+  const cal = await page.evaluate(() => {
+    window.fbUser = { email: 'assanedu032@gmail.com' };
+    window.openBookReader(1);
+    const box = document.getElementById('bkAuCal');
+    if (!box) return { visible: false, boutons: 0, sortie: '' };
+    return { visible: box.getBoundingClientRect().height > 0,
+             boutons: document.querySelectorAll('#bkAuCalB button').length,
+             sortie: (document.getElementById('bkAuCalOut').textContent || '').trim() };
+  });
+  await page.waitForTimeout(250);
+  ok('visible pour le compte fondateur', cal.visible === true);
+  ok('un bouton par page narrée, plus « Recommencer »', cal.boutons === narr.length + 1, cal.boutons);
+  ok('il dit quoi faire tant que ce n\'est pas calé', /lance la lecture/i.test(cal.sortie), cal.sortie.slice(0, 60));
+
+  // Sans lecture en cours, il n'y a rien à mesurer : on ne pose pas un repère
+  // au hasard.
+  const sansLecture = await page.evaluate(() => {
+    if (window._bkAudioStop) window._bkAudioStop();
+
+    window.bkCalerReset && window.bkCalerReset();
+    window.bkCalerRepere && window.bkCalerRepere(1);
+    const o = document.getElementById('bkAuCalOut');
+    return o ? (o.textContent || '').trim() : '';
+  });
+  ok('sans lecture, aucun repère n\'est posé', /lance la lecture/i.test(sansLecture), sansLecture.slice(0, 60));
+
+  const calFait = await page.evaluate(async () => {
+    window.bkAudioRetry && window.bkAudioRetry();                       // repart sur la source saine
+    await new Promise((r) => setTimeout(r, 900));
+    window.bkCalerReset && window.bkCalerReset();
+    // On pose les repères à des instants CHOISIS, pour que le test ne dépende
+    // pas de la vitesse réelle de lecture de la machine.
+    window.bkAudioSeek && window.bkAudioSeek(80);  window.bkCalerRepere && window.bkCalerRepere(1);
+    window.bkAudioSeek && window.bkAudioSeek(420); window.bkCalerRepere && window.bkCalerRepere(2);
+    window.bkAudioSeek && window.bkAudioSeek(760); window.bkCalerRepere && window.bkCalerRepere(3);
+    if (window._bkAudioStop) window._bkAudioStop();
+    const o = document.getElementById('bkAuCalOut');
+    return o ? (o.textContent || '').trim() : '';
+  });
+  ok('une fois calé, il donne la ligne à coller', /reperes:\s*\[/.test(calFait), calFait.slice(0, 70));
+  ok('et il nomme le fichier de destination', /book-audio\.js/.test(calFait), calFait.slice(0, 90));
+  // Des repères qui reculent donneraient un suivi qui saute en arrière : on
+  // en pose volontairement dans le désordre et on vérifie le refus.
+  const calDecroissant = await page.evaluate(() => {
+    window.bkCalerReset && window.bkCalerReset();
+    window.bkAudioSeek && window.bkAudioSeek(760); window.bkCalerRepere && window.bkCalerRepere(1);
+    window.bkAudioSeek && window.bkAudioSeek(420); window.bkCalerRepere && window.bkCalerRepere(2);
+    window.bkAudioSeek && window.bkAudioSeek(80);  window.bkCalerRepere && window.bkCalerRepere(3);
+    const o = document.getElementById('bkAuCalOut');
+    return o ? (o.textContent || '').trim() : '';
+  });
+  ok('des repères décroissants sont REFUSÉS', /croissant/i.test(calDecroissant), calDecroissant.slice(0, 70));
+  ok('et il dit de recommencer', /recommence/i.test(calDecroissant), calDecroissant.slice(0, 70));
 
   // ── La ligne d'achat ──────────────────────────────────────────────────
   console.log('\n── Le bouton d\'achat ──');

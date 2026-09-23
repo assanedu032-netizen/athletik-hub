@@ -424,11 +424,32 @@ completedPrograms, fcmToken, accessTier`.
   `el.hidden` valait `true`. D'où `.bk-au-err[hidden]{display:none}`, exactement comme
   `.tn-items`. Et le test lisait la **propriété** : il ne pouvait pas le voir. Il mesure
   désormais la **hauteur rendue**, ici comme pour la ligne d'achat.
+  **SUIVRE LA LECTURE — deux choses distinctes, à garder distinctes.**
+  **(1) Les pages non narrées.** L'audio enchaîne couverture → Préface ; le texte, lui, passe par
+  le sommaire (p. 2-3) et le copyright (p. 4). Pendant l'écoute, `bkGo()` **saute** aux pages de
+  `narrees` (`_bkSautNarree`). **Rien n'est retiré** : audio à l'arrêt, la pagination reste
+  entière. Ça ne demande **aucun repère de temps**.
+  **(2) Le suivi automatique** (`_bkSuivrePage`), qui en demande. Les repères sont **MESURÉS**,
+  jamais estimés. Une règle proportionnelle au nombre de caractères donne **11 s** à la couverture
+  (186 caractères) quand elle en prend ~20 avec ses silences de carte-titre — et **l'écart se
+  reporte sur toutes les pages suivantes**. Tant que `reperes` vaut `null`, le suivi est
+  **ÉTEINT** et le marqueur « · suivi » ne s'affiche pas : une page qui tourne au mauvais moment
+  est pire que pas de suivi, et promettre un suivi qu'on ne tient pas est pire encore.
+  Le suivi **ne reprend pas la main** si l'athlète a feuilleté ailleurs pendant l'écoute.
+  **MODE DE CALAGE** (`_bkCalageInit`, compte fondateur seul via `_builderIsDev()`) : l'auteur
+  écoute une fois et tape au début de chaque page narrée — **3 taps** ici. Le mode affiche alors
+  `reperes: [0, 18.4, …]` **à coller dans `data/book-audio.js`** : les repères sont **commités**,
+  pas gardés sur un téléphone, sinon seul celui qui a calé profiterait du suivi. Des repères
+  **décroissants sont refusés** (ils feraient sauter la lecture en arrière), et aucun repère n'est
+  posé sans lecture en cours — il n'y aurait rien à mesurer.
+  *Alternative si besoin un jour* : l'API ElevenLabs (`with-timestamps`) renvoie un alignement
+  **caractère par caractère**, qui permettrait un surlignage mot à mot. Le site seul ne le donne
+  pas.
   Position et vitesse (1×, 1.25×, 1.5×, 0.85×) dans `ah_book_excerpt.audio`. Fermer le lecteur
   **coupe la voix** — une lecture qui continue derrière un écran fermé est une mauvaise surprise.
   **Ligne d'achat** `#bkBuyRow` sous la pagination, `openAmazonBook()` (jamais une seconde URL),
   masquée si `hasBookAccess`.
-  Test : `scripts/test-book-audio.js` (35, vrai Chromium). **Son serveur gère les requêtes
+  Test : `scripts/test-book-audio.js` (60, vrai Chromium). **Son serveur gère les requêtes
   `Range` à dessein** : sans ça il renvoyait tout le fichier à une requête partielle, le `<audio>`
   tombait en erreur, et le test mesurait le harnais au lieu de l'application.
 - **Titan peut proposer le livre — rarement, et sans mentir** (`_titanRenderBookCard`,
