@@ -6397,6 +6397,17 @@ body.ah-lib-open .tim-fab{display:none!important}
 .bk-au-range::-moz-range-thumb{width:15px;height:15px;border-radius:50%;background:var(--ah-gold);cursor:pointer;border:0}
 .bk-au-err{font-family:'Outfit',sans-serif;font-size:11.5px;color:var(--bk-ink2);margin-top:7px;display:flex;align-items:center;gap:8px}
 .bk-au-err[hidden]{display:none}
+.bk-au-cal{margin-top:8px;padding-top:8px;border-top:1px dashed var(--bk-rule)}
+.bk-au-cal[hidden]{display:none}
+.bk-au-cal-t{font-family:'JetBrains Mono',monospace;font-size:8.5px;letter-spacing:.16em;text-transform:uppercase;font-weight:700;color:var(--bk-ink2);margin-bottom:6px}
+.bk-au-cal-b{display:flex;flex-wrap:wrap;gap:6px}
+.bk-au-cal-b button{border:1px solid var(--bk-rule);background:transparent;color:var(--bk-ink);border-radius:8px;font-family:'Outfit',sans-serif;font-size:11px;font-weight:700;padding:6px 9px;cursor:pointer}
+.bk-au-cal-b button.ok{border-color:#10B981;color:#10B981}
+.bk-au-cal-out{margin-top:7px;font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--bk-ink);background:var(--bk-rule);border-radius:7px;padding:7px 8px;word-break:break-all;user-select:all;-webkit-user-select:all}
+.bk-au-cal-out[hidden]{display:none}
+/* La page narrée en cours, quand le suivi est actif. */
+.bk-au-suivi{font-family:'Outfit',sans-serif;font-size:9.5px;color:var(--ah-gold);font-weight:700;margin-left:6px}
+.bk-au-suivi[hidden]{display:none}
 .bk-au-err button{border:1px solid var(--bk-rule);background:transparent;color:var(--ah-gold);border-radius:8px;font-family:'Outfit',sans-serif;font-size:11px;font-weight:700;padding:5px 10px;cursor:pointer}
 /* Achat : une ligne fine tout en bas, sous la pagination. Demandée
    explicitement par l'auteur. Masquée pour qui possède déjà le livre. */
@@ -6505,7 +6516,7 @@ body.ah-lib-open .tim-fab{display:none!important}
     <div class="bk-au-row">
       <button class="bk-au-play" id="bkAuPlay" onclick="bkAudioToggle()" aria-label="Écouter">▶</button>
       <div class="bk-au-id">
-        <div class="bk-au-t" id="bkAuTitre">—</div>
+        <div class="bk-au-t"><span id="bkAuTitre">—</span><span class="bk-au-suivi" id="bkAuSuivi" hidden>· suivi</span></div>
         <div class="bk-au-s" id="bkAuSous">—</div>
       </div>
       <button class="bk-au-x" id="bkAuSpeed" onclick="bkAudioSpeed()" aria-label="Vitesse de lecture">1×</button>
@@ -6515,6 +6526,11 @@ body.ah-lib-open .tim-fab{display:none!important}
       <input class="bk-au-range" id="bkAuRange" type="range" min="0" max="1000" value="0"
              oninput="bkAudioSeek(this.value)" aria-label="Position dans la lecture">
       <span class="bk-au-time" id="bkAuTot">—</span>
+    </div>
+    <div class="bk-au-cal" id="bkAuCal" hidden>
+      <div class="bk-au-cal-t">Calage des repères — compte fondateur</div>
+      <div class="bk-au-cal-b" id="bkAuCalB"></div>
+      <div class="bk-au-cal-out" id="bkAuCalOut" hidden></div>
     </div>
     <div class="bk-au-err" id="bkAuErr" hidden>
       <span id="bkAuErrTxt">La lecture audio n'a pas pu être chargée.</span>
@@ -12890,6 +12906,13 @@ window.bkGo = function (d) {
   var pages = _bkPages(); if (!pages) return;
   var st = _bkEtat();
   var n = Math.min(pages.length, Math.max(1, st.page + d));
+  // Pendant l'écoute, on enchaîne les pages RÉELLEMENT lues : tomber sur le
+  // sommaire pendant que la voix lit la Préface, c'est le décalage qu'on
+  // corrige ici. Hors écoute, la pagination reste entière.
+  if (_bkEnEcoute()) {
+    var saut = window._bkSautNarree(st.page, d);
+    if (saut) n = saut;
+  }
   if (n === st.page) return;          // butée : on ne sort jamais de [1, n]
   st.page = n;
   if (n >= pages.length) st.done = true;
@@ -13037,6 +13060,11 @@ function _bkAudioInit() {
   var st = _bkAuEtat();
   var sp = document.getElementById('bkAuSpeed');
   if (sp) sp.textContent = BK_VITESSES[st.v || 0] + '×';
+  // Le marqueur n'apparaît que si le suivi est VRAIMENT possible : sans
+  // repères mesurés, promettre un suivi serait mentir.
+  var sv = document.getElementById('bkAuSuivi');
+  if (sv) sv.hidden = !_bkReperes();
+  try { _bkCalageInit(); } catch (e) {}
   _bkAudioPaint();
 }
 
@@ -13057,6 +13085,7 @@ function _bkAudioCreer() {
   });
   _bkAu.addEventListener('timeupdate', function () {
     _bkAudioPaint();
+    _bkSuivrePage();
     // On écrit au plus une fois par seconde : inutile d'inonder localStorage.
     var n = Math.floor(_bkAu.currentTime);
     if (n !== _bkAu._dernier) { _bkAu._dernier = n; _bkAuSave({ t: _bkAu.currentTime }); }
@@ -13129,6 +13158,137 @@ window.bkAudioRetry = function () {
 
 // Fermer le lecteur arrête la lecture : une voix qui continue derrière un
 // écran fermé est une surprise désagréable.
+// ── SUIVRE LA LECTURE ─────────────────────────────────────────────────────
+// Deux choses distinctes, et il faut les garder distinctes.
+//
+// 1. LES PAGES NON NARRÉES. L'audio enchaîne couverture → Préface. Le texte,
+//    lui, passe par le sommaire (p. 2-3) et le copyright (p. 4). Pendant
+//    l'écoute on les saute : rien n'est retiré, ils restent lisibles quand
+//    l'audio est à l'arrêt. Ça ne demande AUCUN repère de temps.
+//
+// 2. LE SUIVI AUTOMATIQUE. Il demande, lui, de savoir à quelle seconde
+//    commence chaque page. Ces repères sont MESURÉS par l'auteur (mode de
+//    calage ci-dessous), jamais estimés : une règle proportionnelle au nombre
+//    de caractères donne 11 s à la couverture quand elle en prend ~20 avec ses
+//    silences, et l'écart se reporte sur toute la suite. Tant que
+//    `reperes` est `null`, le suivi reste ÉTEINT — une page qui tourne au
+//    mauvais moment est pire que pas de suivi.
+function _bkNarrees() {
+  var part = _bkAudioPart();
+  return (part && Array.isArray(part.narrees) && part.narrees.length) ? part.narrees : null;
+}
+function _bkReperes() {
+  var part = _bkAudioPart(), n = _bkNarrees();
+  if (!part || !n) return null;
+  var r = part.reperes;
+  return (Array.isArray(r) && r.length === n.length) ? r : null;
+}
+function _bkEnEcoute() { return !!(_bkAu && !_bkAu.paused && !_bkAu.ended); }
+
+// Page narrée correspondant à un instant donné. null si pas de repères.
+function _bkPageAt(t) {
+  var n = _bkNarrees(), r = _bkReperes();
+  if (!n || !r) return null;
+  var p = n[0];
+  for (var i = 0; i < r.length; i++) if (t >= r[i]) p = n[i];
+  return p;
+}
+
+// Page narrée suivante / précédente — sert à sauter le sommaire et le
+// copyright pendant l'écoute.
+// Tourne la page quand la lecture franchit un repère. Ne fait RIEN sans
+// repères mesurés, et ne se déclenche que si l'athlète est déjà sur la page
+// que l'audio vient de quitter : s'il a feuilleté ailleurs pendant l'écoute,
+// on ne lui reprend pas la main.
+var _bkDernierePageSuivie = null;
+function _bkSuivrePage() {
+  if (!_bkReperes() || !_bkEnEcoute()) return;
+  var cible = _bkPageAt(_bkAu.currentTime);
+  if (!cible) return;
+  if (_bkDernierePageSuivie === cible) return;
+  var courante = _bkEtat().page;
+  var n = _bkNarrees();
+  // On ne bouge que si l'athlète suivait effectivement la lecture.
+  var suivait = (_bkDernierePageSuivie === null) || (courante === _bkDernierePageSuivie);
+  _bkDernierePageSuivie = cible;
+  if (!suivait || courante === cible) return;
+  if (n.indexOf(courante) === -1) return;   // il est parti lire ailleurs
+  window.bkAller(cible);
+}
+window._bkSuivrePage = _bkSuivrePage;
+
+window._bkSautNarree = function (courante, sens) {
+  var n = _bkNarrees(); if (!n) return null;
+  if (sens > 0) { for (var i = 0; i < n.length; i++) if (n[i] > courante) return n[i]; return null; }
+  for (var j = n.length - 1; j >= 0; j--) if (n[j] < courante) return n[j];
+  return null;
+};
+
+// ── MODE DE CALAGE (compte fondateur uniquement) ──────────────────────────
+// L'auteur écoute une fois et tape un bouton au début de chaque page narrée.
+// Les instants sont alors MESURÉS. Le mode affiche ensuite la ligne à recopier
+// dans `data/book-audio.js` : les repères sont COMMITÉS, pas gardés sur un
+// seul téléphone — sinon seul celui qui a calé profiterait du suivi.
+var _bkCal = null;
+
+function _bkCalageInit() {
+  var box = document.getElementById('bkAuCal');
+  if (!box) return;
+  var dev = false;
+  try { dev = (typeof _builderIsDev === 'function') && _builderIsDev(); } catch (e) {}
+  var n = _bkNarrees();
+  box.hidden = !(dev && n);
+  if (box.hidden) return;
+  if (!_bkCal) _bkCal = n.map(function (p, i) { return { page: p, t: (i === 0 ? 0 : null) }; });
+  var b = document.getElementById('bkAuCalB');
+  if (!b) return;
+  var h = '';
+  _bkCal.forEach(function (r, i) {
+    var pose = (r.t != null);
+    h += '<button class="' + (pose ? 'ok' : '') + '" onclick="bkCalerRepere(' + i + ')">'
+       + (pose ? '✓ ' : '') + 'p.' + r.page + (pose ? ' · ' + r.t.toFixed(1) + 's' : '')
+       + '</button>';
+  });
+  h += '<button onclick="bkCalerReset()">Recommencer</button>';
+  b.innerHTML = h;
+  _bkCalageSortie();
+}
+
+window.bkCalerRepere = function (i) {
+  if (!_bkCal || !_bkCal[i]) return;
+  // On mesure l'instant RÉEL de la lecture. Sans lecture en cours, il n'y a
+  // rien à mesurer : on ne pose pas un repère au hasard.
+  if (!_bkAu || !isFinite(_bkAu.currentTime)) return;
+  _bkCal[i].t = Math.round(_bkAu.currentTime * 10) / 10;
+  _bkCalageInit();
+};
+
+window.bkCalerReset = function () {
+  var n = _bkNarrees(); if (!n) return;
+  _bkCal = n.map(function (p, i) { return { page: p, t: (i === 0 ? 0 : null) }; });
+  _bkCalageInit();
+};
+
+function _bkCalageSortie() {
+  var o = document.getElementById('bkAuCalOut'); if (!o || !_bkCal) return;
+  var complet = _bkCal.every(function (r) { return r.t != null; });
+  if (!complet) {
+    o.hidden = false;
+    o.textContent = 'Lance la lecture, puis tape p.' +
+      (_bkCal.filter(function (r) { return r.t == null; })[0] || {}).page +
+      ' au moment où cette page commence.';
+    return;
+  }
+  // Ordre croissant obligatoire : des repères qui reculent donneraient un
+  // suivi qui saute en arrière.
+  var ts = _bkCal.map(function (r) { return r.t; });
+  var croissant = ts.every(function (t, i) { return i === 0 || t > ts[i - 1]; });
+  o.hidden = false;
+  o.textContent = croissant
+    ? 'reperes: [' + ts.join(', ') + ']   ← à coller dans data/book-audio.js'
+    : '⚠ Les repères doivent aller en croissant. Recommence : ' + ts.join(', ');
+}
+
 window._bkAudioStop = function () {
   if (_bkAu) {
     if (isFinite(_bkAu.currentTime) && _bkAu.currentTime > 0) _bkAuSave({ t: _bkAu.currentTime });
