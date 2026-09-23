@@ -1,4 +1,4 @@
-const CACHE = 'athletik-v297';
+const CACHE = 'athletik-v299';
 const ASSETS = [
   '/',
   '/index.html',
@@ -10,6 +10,7 @@ const ASSETS = [
   '/data/triphasique-program.js',
   '/data/microtraining-program.js',
   '/data/book-excerpt.js',
+  '/data/book-audio.js',
   '/icons/icon-192.png',
   '/icons/icon-512.png',
   '/assets/sounds/timer-beep.mp3'
@@ -145,13 +146,38 @@ self.addEventListener('fetch', e => {
     return;
   }
 
+  // L'AUDIO DU LIVRE NE PASSE PAS PAR LE SERVICE WORKER.
+  //
+  // Un <audio> ne télécharge pas son fichier d'un bloc : il envoie des
+  // requêtes portant un en-tête `Range`, auxquelles le serveur répond 206
+  // (Partial Content). Trois choses cassent si on les intercepte :
+  //   1. `cache.put()` REFUSE une réponse 206 — la promesse est rejetée, et
+  //      comme elle n'est pas attendue ici, le rejet part en silence ;
+  //   2. à la toute première requête (sans Range), on mettrait les 4 Mo du
+  //      MP3 dans le cache, sur le téléphone de l'athlète, sans qu'il ait
+  //      rien demandé ;
+  //   3. `caches.match()` renverrait ensuite une réponse COMPLÈTE à une
+  //      requête PARTIELLE — Chrome s'en accommode, Safari non : la lecture
+  //      s'arrête.
+  //
+  // La règle est volontairement PAR CHEMIN, pas par extension : le son du
+  // timer (`/assets/sounds/timer-beep.mp3`) est pré-caché EXPRÈS pour sonner
+  // hors ligne, en salle. Une règle sur `.mp3` l'aurait sorti du cache et
+  // cassé ce cas d'usage.
+  if (new URL(req.url).pathname.startsWith('/assets/audio/')) return;
+
   // Cache first pour les autres assets locaux (icônes, ciqual-data.js…)
   e.respondWith(
     caches.match(req).then(cached => {
       if (cached) return cached;
       return fetch(req).then(res => {
-        const clone = res.clone();
-        caches.open(CACHE).then(c => c.put(req, clone));
+        // `cache.put()` lève sur une réponse partielle (206) ou une erreur :
+        // on ne met en cache QUE des 200 pleins. Sans ce garde-fou, une
+        // requête Range sur n'importe quel asset produirait un rejet muet.
+        if (res && res.status === 200) {
+          const clone = res.clone();
+          caches.open(CACHE).then(c => c.put(req, clone)).catch(() => {});
+        }
         return res;
       });
     })

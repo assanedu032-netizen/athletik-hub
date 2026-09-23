@@ -393,6 +393,44 @@ completedPrograms, fcmToken, accessTier`.
   copyright en plusieurs paragraphes, aucun bloc > 1 400 caractères**, entrées hors extrait non
   cliquables, les deux butées, achat seulement en page 44, rien pour qui a le livre, reprise de
   lecture, taille persistée, état vide honnête, contraste ≥ 7:1 pour de la lecture longue).
+- **Le livre s'ÉCOUTE aussi** (`.bk-audio` dans `#bookReader`) — voix générée sur ElevenLabs,
+  voix choisie par l'auteur. **Le livre est mis en audio par parties, au fur et à mesure** :
+  `data/book-audio.js` est un **manifeste**, ajouter une partie = **une entrée + un fichier**
+  dans `assets/audio/`, aucun code à toucher.
+  Partie 1 : `livre-01-preface.mp3`, **4 min 23 s**, 4,0 Mo, mono 128 kbps — couverture, Préface
+  de Loïc, Avant-Propos jusqu'aux trois piliers. La barre annonce **« pages 1–7 »**, pas
+  « le livre » : le reste n'est pas encore lu, et le taire serait mentir.
+  **La borne 7 est VÉRIFIÉE, pas estimée.** La table des matières m'avait fait écrire 9 à tort.
+  La transcription s'arrête sur « Troisièmement, répétition » ; ce passage est cherché dans
+  `data/book-excerpt.js` **en ignorant les blocs `toc` de la page 2**, qui contiennent tous les
+  titres du livre et produisent des faux positifs sur n'importe quelle recherche. Il tombe
+  page 7, et la page 8 enchaîne sur du texte absent de la transcription. Durée vérifiée par le calcul (263 s) **et** par le
+  décodeur (263,31 s), pas estimée.
+  **Les 4 Mo ne se téléchargent qu'au PREMIER ▶** : l'élément `<audio>` est créé à la demande et
+  le fichier n'est **pas** dans `ASSETS`. À l'installation, personne ne paie le poids d'un audio
+  qu'il n'écoutera peut-être jamais.
+  **Bug corrigé — le Service Worker aurait cassé la lecture.** Il interceptait *tous* les assets
+  locaux en cache-first. Or un `<audio>` demande des **plages d'octets** (`Range`) et reçoit du
+  **206**, que `cache.put()` **refuse** ; à la première requête sans `Range`, il aurait mis
+  **4 Mo en cache** sur le téléphone sans rien demander ; puis `caches.match()` aurait servi une
+  réponse **complète** à une requête **partielle** — Chrome s'en accommode, **Safari non**. Le SW
+  contourne désormais `/assets/audio/`, **par CHEMIN et non par extension** : une règle sur
+  `.mp3` aurait sorti `/assets/sounds/timer-beep.mp3` du cache et cassé le son du timer hors
+  ligne, en salle. En ceinture et bretelles, le cache n'accepte plus que des réponses **200**.
+  **Bug corrigé — `_bkEtat()` ne renvoyait pas `audio`.** Chaque écriture repartait donc d'un
+  état vide : la vitesse effaçait la position, et inversement.
+  **Piège maison, et on y est retombé** : `.bk-au-err` a `display:flex`, ce qui **bat la règle
+  navigateur `[hidden]{display:none}`** — le bandeau d'erreur restait **peint** alors que
+  `el.hidden` valait `true`. D'où `.bk-au-err[hidden]{display:none}`, exactement comme
+  `.tn-items`. Et le test lisait la **propriété** : il ne pouvait pas le voir. Il mesure
+  désormais la **hauteur rendue**, ici comme pour la ligne d'achat.
+  Position et vitesse (1×, 1.25×, 1.5×, 0.85×) dans `ah_book_excerpt.audio`. Fermer le lecteur
+  **coupe la voix** — une lecture qui continue derrière un écran fermé est une mauvaise surprise.
+  **Ligne d'achat** `#bkBuyRow` sous la pagination, `openAmazonBook()` (jamais une seconde URL),
+  masquée si `hasBookAccess`.
+  Test : `scripts/test-book-audio.js` (35, vrai Chromium). **Son serveur gère les requêtes
+  `Range` à dessein** : sans ça il renvoyait tout le fichier à une requête partielle, le `<audio>`
+  tombait en erreur, et le test mesurait le harnais au lieu de l'application.
 - **Titan peut proposer le livre — rarement, et sans mentir** (`_titanRenderBookCard`,
   `_tbChoisir`). Sept règles, toutes arrêtées avec l'auteur **avant** d'écrire une ligne
   (`openspec/changes/extrait-livre-gratuit/specs/titan-promotion-livre`).
