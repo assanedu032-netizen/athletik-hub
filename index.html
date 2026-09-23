@@ -6376,6 +6376,33 @@ body.ah-lib-open .tim-fab{display:none!important}
 .bk-nav button{flex-shrink:0;min-width:44px;height:40px;border:1px solid var(--bk-rule);background:transparent;color:var(--bk-ink);border-radius:10px;font-size:17px;cursor:pointer;padding:0}
 .bk-nav button:disabled{opacity:.28;cursor:default}
 .bk-cnt{flex:1;text-align:center;font-family:'JetBrains Mono',monospace;font-size:11px;font-weight:700;color:var(--bk-ink2);letter-spacing:.08em}
+/* ── LECTURE AUDIO ────────────────────────────────────────────────────────
+   Une barre sous l'en-tête du lecteur. Le fichier (4 Mo) n'est PAS dans le
+   pré-cache du Service Worker : il ne se télécharge qu'au premier ▶, et
+   surtout pas à l'installation de l'app, où il ferait payer son poids à tout
+   le monde — y compris à ceux qui n'écouteront jamais. */
+.bk-audio{flex-shrink:0;padding:9px 13px;border-bottom:1px solid var(--bk-rule);background:var(--bk-paper)}
+.bk-audio[hidden]{display:none}
+.bk-au-row{display:flex;align-items:center;gap:10px}
+.bk-au-play{width:38px;height:38px;min-width:38px;border-radius:50%;border:0;background:linear-gradient(135deg,#D9BE72,#C5A44E);color:#1B2A4A;font-size:14px;line-height:1;cursor:pointer;display:flex;align-items:center;justify-content:center;padding:0}
+.bk-au-play:disabled{opacity:.45;cursor:default}
+.bk-au-id{flex:1;min-width:0}
+.bk-au-t{font-family:'Outfit',sans-serif;font-size:12.5px;font-weight:700;color:var(--bk-ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.bk-au-s{font-family:'Outfit',sans-serif;font-size:10px;color:var(--bk-ink2);margin-top:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.bk-au-x{flex-shrink:0;min-width:42px;height:28px;border:1px solid var(--bk-rule);background:transparent;color:var(--bk-ink2);border-radius:8px;font-family:'JetBrains Mono',monospace;font-size:10px;font-weight:700;cursor:pointer;padding:0 6px}
+.bk-au-seek{display:flex;align-items:center;gap:8px;margin-top:7px}
+.bk-au-time{flex-shrink:0;font-family:'JetBrains Mono',monospace;font-size:9.5px;color:var(--bk-ink2);min-width:34px;text-align:center}
+.bk-au-range{flex:1;-webkit-appearance:none;appearance:none;height:4px;border-radius:2px;background:var(--bk-rule);outline:none;padding:0;margin:0}
+.bk-au-range::-webkit-slider-thumb{-webkit-appearance:none;width:15px;height:15px;border-radius:50%;background:var(--ah-gold);cursor:pointer;border:0}
+.bk-au-range::-moz-range-thumb{width:15px;height:15px;border-radius:50%;background:var(--ah-gold);cursor:pointer;border:0}
+.bk-au-err{font-family:'Outfit',sans-serif;font-size:11.5px;color:var(--bk-ink2);margin-top:7px;display:flex;align-items:center;gap:8px}
+.bk-au-err[hidden]{display:none}
+.bk-au-err button{border:1px solid var(--bk-rule);background:transparent;color:var(--ah-gold);border-radius:8px;font-family:'Outfit',sans-serif;font-size:11px;font-weight:700;padding:5px 10px;cursor:pointer}
+/* Achat : une ligne fine tout en bas, sous la pagination. Demandée
+   explicitement par l'auteur. Masquée pour qui possède déjà le livre. */
+.bk-buyrow{display:flex;align-items:center;justify-content:center;gap:7px;padding:10px 14px;border-top:1px solid var(--bk-rule);background:var(--bk-paper);font-family:'JetBrains Mono',monospace;font-size:9.5px;letter-spacing:.1em;font-weight:700;text-transform:uppercase;color:#8A6A16;cursor:pointer;border-left:0;border-right:0;border-bottom:0;width:100%}
+[data-theme="dark"] .bk-buyrow{color:#D4B86A}
+.bk-buyrow[hidden]{display:none}
 </style>
 
 <template id="__bundler_thumbnail" data-bg-color="#243B6B">
@@ -6474,6 +6501,26 @@ body.ah-lib-open .tim-fab{display:none!important}
       <button onclick="bkFont(1)" id="bkFplus" aria-label="Agrandir le texte">A+</button>
     </div>
   </div>
+  <div class="bk-audio" id="bkAudio" hidden>
+    <div class="bk-au-row">
+      <button class="bk-au-play" id="bkAuPlay" onclick="bkAudioToggle()" aria-label="Écouter">▶</button>
+      <div class="bk-au-id">
+        <div class="bk-au-t" id="bkAuTitre">—</div>
+        <div class="bk-au-s" id="bkAuSous">—</div>
+      </div>
+      <button class="bk-au-x" id="bkAuSpeed" onclick="bkAudioSpeed()" aria-label="Vitesse de lecture">1×</button>
+    </div>
+    <div class="bk-au-seek">
+      <span class="bk-au-time" id="bkAuNow">0:00</span>
+      <input class="bk-au-range" id="bkAuRange" type="range" min="0" max="1000" value="0"
+             oninput="bkAudioSeek(this.value)" aria-label="Position dans la lecture">
+      <span class="bk-au-time" id="bkAuTot">—</span>
+    </div>
+    <div class="bk-au-err" id="bkAuErr" hidden>
+      <span id="bkAuErrTxt">La lecture audio n'a pas pu être chargée.</span>
+      <button onclick="bkAudioRetry()">Réessayer</button>
+    </div>
+  </div>
   <div class="bk-page" id="bkPage"><div class="bk-inner" id="bkInner"></div></div>
   <div class="bk-bot">
     <div class="bk-bar"><i id="bkBar" style="width:0%"></i></div>
@@ -6482,6 +6529,7 @@ body.ah-lib-open .tim-fab{display:none!important}
       <div class="bk-cnt" id="bkCnt">— / —</div>
       <button onclick="bkGo(1)" id="bkNext" aria-label="Page suivante">›</button>
     </div>
+    <button class="bk-buyrow" id="bkBuyRow" onclick="openAmazonBook()" hidden>📕 Obtenir le livre complet sur Amazon →</button>
   </div>
 </div>
 
@@ -10774,6 +10822,7 @@ window.tiResetOnEnter = function(){ window.tiShowStep(1); };
 <script src="data/triphasique-program.js"></script>
 <script src="data/microtraining-program.js"></script>
 <script src="data/book-excerpt.js"></script>
+<script src="data/book-audio.js"></script>
 <script>
 function showNutriTab(el, tab) {
   document.querySelectorAll('#vNutri .sub-tab').forEach(function(t){ t.classList.remove('on'); });
@@ -12806,8 +12855,13 @@ function _bkEtat() {
   try {
     var e = JSON.parse(localStorage.getItem(BK_KEY) || '{}');
     if (!e || typeof e !== 'object') e = {};
-    return { page: e.page || 1, done: !!e.done, fs: (e.fs == null ? 1 : e.fs) };
-  } catch (e) { return { page: 1, done: false, fs: 1 }; }
+    return {
+      page: e.page || 1,
+      done: !!e.done,
+      fs: (e.fs == null ? 1 : e.fs),
+      audio: (e.audio && typeof e.audio === 'object') ? e.audio : null
+    };
+  } catch (e) { return { page: 1, done: false, fs: 1, audio: null }; }
 }
 function _bkSave(e) { try { localStorage.setItem(BK_KEY, JSON.stringify(e)); } catch (x) {} }
 function _bkPages() { return (window.BOOK_EXCERPT && window.BOOK_EXCERPT.length) ? window.BOOK_EXCERPT : null; }
@@ -12822,11 +12876,13 @@ window.openBookReader = function (page) {
   _bkSave(st);
   try { go('bookReader'); } catch (e) {}
   _bkRender();
+  try { _bkAudioInit(); } catch (e) {}
 };
 
 window.closeBookReader = function () {
   var z = document.getElementById('bookReader');
   if (z) { z.classList.remove('on'); z.classList.add('out'); setTimeout(function () { z.classList.remove('out'); }, 500); }
+  try { window._bkAudioStop(); } catch (e) {}
   try { renderBookCard(); } catch (e) {}
 };
 
@@ -12931,8 +12987,155 @@ function _bkRender() {
   var fm = document.getElementById('bkFmoins'), fp = document.getElementById('bkFplus');
   if (fm) fm.disabled = (st.fs <= 0);
   if (fp) fp.disabled = (st.fs >= BK_TAILLES.length - 1);
+  // Vendre le livre à qui le possède déjà serait une faute — ici comme ailleurs.
+  var buy = document.getElementById('bkBuyRow');
+  if (buy) {
+    var aLeLivre2 = false;
+    try { aLeLivre2 = JSON.parse(localStorage.getItem('ah_profile') || '{}').hasBookAccess === true; } catch (e) {}
+    buy.hidden = aLeLivre2;
+  }
 }
 window._bkRender = _bkRender;
+
+// ═══ LECTURE AUDIO DU LIVRE ════════════════════════════════════════════════
+// Le fichier fait 4 Mo. Il n'est PAS dans le pré-cache du Service Worker et
+// l'élément <audio> est créé au PREMIER ▶, jamais avant : rien ne se
+// télécharge tant que l'athlète n'a pas demandé à écouter.
+var _bkAu = null;            // l'élément <audio>, créé à la demande
+var BK_VITESSES = [1, 1.25, 1.5, 0.85];
+
+function _bkAudioPart() {
+  var L = window.BOOK_AUDIO;
+  return (L && L.length) ? L[0] : null;   // une seule partie aujourd'hui
+}
+function _bkFmt(s) {
+  if (!isFinite(s) || s < 0) return '—';
+  var m = Math.floor(s / 60), r = Math.floor(s % 60);
+  return m + ':' + (r < 10 ? '0' : '') + r;
+}
+function _bkAuEtat() {
+  var e = _bkEtat();
+  return (e.audio && typeof e.audio === 'object') ? e.audio : { t: 0, v: 0 };
+}
+function _bkAuSave(patch) {
+  var e = _bkEtat(); e.audio = Object.assign(_bkAuEtat(), patch); _bkSave(e);
+}
+
+function _bkAudioInit() {
+  var box = document.getElementById('bkAudio');
+  var part = _bkAudioPart();
+  if (!box) return;
+  if (!part) { box.hidden = true; return; }   // pas d'audio → pas de barre
+  box.hidden = false;
+  var t = document.getElementById('bkAuTitre'), su = document.getElementById('bkAuSous');
+  // On annonce ce que la partie couvre VRAIMENT. Le reste du livre n'est pas
+  // encore lu : le dire est plus honnête que de laisser croire le contraire.
+  if (t) t.textContent = part.titre;
+  if (su) su.textContent = part.sous + ' · pages ' + part.pages[0] + '–' + part.pages[1];
+  var tot = document.getElementById('bkAuTot');
+  if (tot) tot.textContent = _bkFmt((_bkAu && isFinite(_bkAu.duration)) ? _bkAu.duration : part.sec);
+  var st = _bkAuEtat();
+  var sp = document.getElementById('bkAuSpeed');
+  if (sp) sp.textContent = BK_VITESSES[st.v || 0] + '×';
+  _bkAudioPaint();
+}
+
+function _bkAudioCreer() {
+  if (_bkAu) return _bkAu;
+  var part = _bkAudioPart(); if (!part) return null;
+  _bkAu = new Audio();
+  _bkAu.preload = 'metadata';
+  _bkAu.src = part.src;
+  var st = _bkAuEtat();
+  _bkAu.playbackRate = BK_VITESSES[st.v || 0];
+  _bkAu.addEventListener('loadedmetadata', function () {
+    var tot = document.getElementById('bkAuTot');
+    if (tot && isFinite(_bkAu.duration)) tot.textContent = _bkFmt(_bkAu.duration);
+    // Reprise là où l'écoute s'est arrêtée — mais pas si on était à la fin.
+    if (st.t > 1 && st.t < _bkAu.duration - 2) { try { _bkAu.currentTime = st.t; } catch (e) {} }
+    _bkAudioPaint();
+  });
+  _bkAu.addEventListener('timeupdate', function () {
+    _bkAudioPaint();
+    // On écrit au plus une fois par seconde : inutile d'inonder localStorage.
+    var n = Math.floor(_bkAu.currentTime);
+    if (n !== _bkAu._dernier) { _bkAu._dernier = n; _bkAuSave({ t: _bkAu.currentTime }); }
+  });
+  _bkAu.addEventListener('ended', function () { _bkAuSave({ t: 0 }); _bkAudioPaint(); });
+  _bkAu.addEventListener('play', _bkAudioPaint);
+  _bkAu.addEventListener('pause', function () {
+    if (isFinite(_bkAu.currentTime)) _bkAuSave({ t: _bkAu.currentTime });
+    _bkAudioPaint();
+  });
+  // Réseau coupé, fichier absent, format refusé : on le DIT, on ne laisse pas
+  // un bouton qui ne réagit à rien.
+  _bkAu.addEventListener('error', function () { _bkAudioErreur(true); });
+  return _bkAu;
+}
+
+function _bkAudioErreur(on) {
+  var e = document.getElementById('bkAuErr');
+  if (e) e.hidden = !on;
+  var b = document.getElementById('bkAuPlay');
+  if (b) { b.disabled = !!on; b.textContent = '▶'; }
+}
+
+function _bkAudioPaint() {
+  var part = _bkAudioPart(); if (!part) return;
+  var dur = (_bkAu && isFinite(_bkAu.duration) && _bkAu.duration > 0) ? _bkAu.duration : part.sec;
+  var cur = _bkAu ? _bkAu.currentTime : (_bkAuEtat().t || 0);
+  var b = document.getElementById('bkAuPlay');
+  if (b) b.textContent = (_bkAu && !_bkAu.paused && !_bkAu.ended) ? '❚❚' : '▶';
+  var n = document.getElementById('bkAuNow');
+  if (n) n.textContent = _bkFmt(cur);
+  var r = document.getElementById('bkAuRange');
+  if (r && document.activeElement !== r) r.value = Math.round(Math.min(1, cur / dur) * 1000);
+}
+
+window.bkAudioToggle = function () {
+  var a = _bkAudioCreer(); if (!a) return;
+  _bkAudioErreur(false);
+  if (a.paused || a.ended) {
+    var p = a.play();
+    if (p && p.catch) p.catch(function () { _bkAudioErreur(true); });
+  } else { a.pause(); }
+  _bkAudioPaint();
+};
+
+window.bkAudioSeek = function (v) {
+  var part = _bkAudioPart(); if (!part) return;
+  var a = _bkAudioCreer(); if (!a) return;
+  var dur = (isFinite(a.duration) && a.duration > 0) ? a.duration : part.sec;
+  var t = (Number(v) / 1000) * dur;
+  try { a.currentTime = t; } catch (e) {}
+  _bkAuSave({ t: t });
+  _bkAudioPaint();
+};
+
+window.bkAudioSpeed = function () {
+  var st = _bkAuEtat();
+  var i = ((st.v || 0) + 1) % BK_VITESSES.length;
+  _bkAuSave({ v: i });
+  if (_bkAu) _bkAu.playbackRate = BK_VITESSES[i];
+  var sp = document.getElementById('bkAuSpeed');
+  if (sp) sp.textContent = BK_VITESSES[i] + '×';
+};
+
+window.bkAudioRetry = function () {
+  if (_bkAu) { try { _bkAu.pause(); } catch (e) {} _bkAu = null; }
+  _bkAudioErreur(false);
+  window.bkAudioToggle();
+};
+
+// Fermer le lecteur arrête la lecture : une voix qui continue derrière un
+// écran fermé est une surprise désagréable.
+window._bkAudioStop = function () {
+  if (_bkAu) {
+    if (isFinite(_bkAu.currentTime) && _bkAu.currentTime > 0) _bkAuSave({ t: _bkAu.currentTime });
+    if (!_bkAu.paused) { try { _bkAu.pause(); } catch (e) {} }
+  }
+  _bkAudioPaint();
+};
 
 // Carte de la Home. Elle dit où en est la lecture — pas un slogan figé.
 function renderBookCard() {
