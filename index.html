@@ -6435,6 +6435,54 @@ body.ah-lib-open .tim-fab{display:none!important}
 .bk-au-suivi{font-family:'Outfit',sans-serif;font-size:9.5px;color:var(--ah-gold);font-weight:700;margin-left:6px}
 .bk-au-suivi[hidden]{display:none}
 .bk-au-err button{border:1px solid var(--bk-rule);background:transparent;color:var(--ah-gold);border-radius:8px;font-family:'Outfit',sans-serif;font-size:11px;font-weight:700;padding:5px 10px;cursor:pointer}
+/* ── PASSAGES ENREGISTRÉS ──────────────────────────────────────────────
+   « Presque invisible jusqu'au moment où on en a besoin » : un bouton de
+   24 px dans l'en-tête, une barre qui n'apparaît QUE sur une sélection, et
+   un filet doré discret sur les paragraphes déjà gardés. Aucune icône
+   permanente devant les paragraphes. */
+.bk-mk-btn{position:relative;flex-shrink:0;width:36px;height:34px;border:1px solid var(--bk-rule);background:transparent;border-radius:9px;cursor:pointer;font-size:14px;line-height:1;padding:0}
+.bk-mk-btn::after{content:'';position:absolute;left:50%;top:50%;width:44px;height:44px;transform:translate(-50%,-50%)}
+.bk-mk-n{position:absolute;top:-5px;right:-5px;min-width:15px;height:15px;border-radius:8px;background:var(--ah-gold);color:#1B2A4A;font-family:'JetBrains Mono',monospace;font-size:8.5px;font-weight:700;line-height:15px;padding:0 3px}
+.bk-mk-n[hidden]{display:none}
+/* Le filet dit « gardé » sans rien ajouter devant le texte, et la marge
+   négative compense le retrait : la colonne ne bouge pas d'un pixel. */
+.bk-inner .bk-kept{padding-left:10px;margin-left:-10px;border-left:2px solid rgba(197,164,78,.55)}
+.bk-inner .bk-hit{animation:bkHit 2.4s ease-out both}
+@keyframes bkHit{0%,58%{background:rgba(197,164,78,.20)}100%{background:transparent}}
+/* La barre reste ANCRÉE au lecteur (`absolute`) : `.scr.on` porte un
+   `transform`, donc un `fixed` ici se placerait de travers. `bottom` est
+   calculé en JS depuis la hauteur réelle du pied. */
+.bk-selbar{position:absolute;left:12px;right:12px;z-index:5;display:flex;gap:8px}
+.bk-selbar[hidden]{display:none}
+.bk-selbtn{flex:1;min-height:48px;border:0;border-radius:13px;background:linear-gradient(135deg,#D9BE72,#C5A44E);color:#1B2A4A;font-family:'Outfit',sans-serif;font-size:14px;font-weight:800;cursor:pointer;box-shadow:0 8px 22px rgba(0,0,0,.26);padding:0 14px}
+.bk-selbtn.deja{background:var(--bk-paper);color:var(--bk-ink2);border:1px solid var(--bk-rule);box-shadow:0 6px 18px rgba(0,0,0,.16)}
+
+/* Feuille « Mes passages ». Elle vit à la racine, donc elle ne peut pas
+   hériter des tokens de #bookReader : ils sont redéclarés ici pour qu'elle
+   garde le papier du livre et pas le chrome de l'app. */
+.bkm-ov{position:fixed;inset:0;z-index:10000;background:rgba(10,17,34,.78);display:none;align-items:flex-end;justify-content:center;
+  --bkm-paper:#FBF7EF;--bkm-ink:#2A2620;--bkm-ink2:#6B6353;--bkm-rule:rgba(0,0,0,.10)}
+[data-theme="dark"] .bkm-ov{--bkm-paper:#141C30;--bkm-ink:#E8EBF2;--bkm-ink2:#9AA5BC;--bkm-rule:rgba(255,255,255,.12)}
+.bkm-ov.on{display:flex}
+.bkm-sheet{width:100%;max-width:430px;max-height:84vh;display:flex;flex-direction:column;background:var(--bkm-paper);border-radius:20px 20px 0 0;border-top:1px solid rgba(197,164,78,.30);animation:bkmUp .26s cubic-bezier(.2,.8,.3,1) both}
+@keyframes bkmUp{from{transform:translateY(24px);opacity:.4}to{transform:translateY(0);opacity:1}}
+.bkm-grab{width:42px;height:4px;border-radius:2px;background:var(--bkm-rule);margin:10px auto 2px;flex-shrink:0}
+.bkm-head{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:6px 16px 0;flex-shrink:0}
+.bkm-title{font-family:'Bebas Neue',sans-serif;font-size:20px;letter-spacing:.8px;color:var(--bkm-ink)}
+.bkm-x{position:relative;width:36px;height:36px;border:0;background:transparent;color:var(--bkm-ink2);font-size:17px;cursor:pointer;border-radius:50%;padding:0}
+.bkm-x::after{content:'';position:absolute;left:50%;top:50%;width:44px;height:44px;transform:translate(-50%,-50%)}
+.bkm-count{flex-shrink:0;padding:0 16px 10px;font-family:'JetBrains Mono',monospace;font-size:9.5px;letter-spacing:.12em;text-transform:uppercase;font-weight:700;color:var(--bkm-ink2)}
+.bkm-list{overflow-y:auto;-webkit-overflow-scrolling:touch;padding:0 14px 20px;display:flex;flex-direction:column;gap:10px}
+.bkm-item{position:relative;border:1px solid var(--bkm-rule);border-radius:14px;background:transparent;padding:13px 13px 11px;display:flex;flex-direction:column;gap:9px}
+.bkm-quote{font-family:Georgia,'Times New Roman',serif;font-size:14px;line-height:1.6;color:var(--bkm-ink);border-left:2px solid rgba(197,164,78,.55);padding-left:11px;margin:0}
+.bkm-meta{font-family:'Outfit',sans-serif;font-size:11px;color:var(--bkm-ink2);font-weight:600}
+.bkm-acts{display:flex;align-items:center;gap:8px}
+.bkm-read{flex:1;min-height:42px;border:1px solid rgba(197,164,78,.45);border-radius:11px;background:rgba(197,164,78,.10);color:#8A6A16;font-family:'Outfit',sans-serif;font-size:13px;font-weight:800;cursor:pointer;padding:0}
+[data-theme="dark"] .bkm-read{color:#D4B86A}
+.bkm-del{min-width:44px;min-height:42px;border:1px solid var(--bkm-rule);border-radius:11px;background:transparent;color:var(--bkm-ink2);font-family:'Outfit',sans-serif;font-size:13px;font-weight:700;cursor:pointer;padding:0 12px}
+.bkm-del.sur{border-color:#D9534F;color:#D9534F}
+.bkm-vide{padding:22px 18px 30px;text-align:center;font-family:'Outfit',sans-serif;font-size:13px;line-height:1.6;color:var(--bkm-ink2)}
+
 /* Achat : une ligne fine tout en bas, sous la pagination. Demandée
    explicitement par l'auteur. Masquée pour qui possède déjà le livre. */
 .bk-buyrow{display:flex;align-items:center;justify-content:center;gap:7px;padding:7px 14px;border-top:1px solid var(--bk-rule);background:var(--bk-paper);font-family:'JetBrains Mono',monospace;font-size:9.5px;letter-spacing:.1em;font-weight:700;text-transform:uppercase;color:#8A6A16;cursor:pointer;border-left:0;border-right:0;border-bottom:0;width:100%}
@@ -6533,6 +6581,7 @@ body.ah-lib-open .tim-fab{display:none!important}
   <div class="bk-top">
     <button class="bk-x" onclick="closeBookReader()" aria-label="Fermer">✕</button>
     <div class="bk-ttl">LES SECRETS DE LA DÉTENTE VERTICALE</div>
+    <button class="bk-mk-btn" id="bkMarksBtn" onclick="openBookMarks()" aria-label="Mes passages">🔖<span class="bk-mk-n" id="bkMarksN" hidden>0</span></button>
     <div class="bk-az">
       <button class="bk-aa" id="bkAaBtn" onclick="bkAa()" aria-label="Taille du texte" aria-expanded="false">Aa</button>
       <div class="bk-aa-veil" id="bkAaVeil" hidden onclick="bkAa(0)"></div>
@@ -6577,6 +6626,9 @@ body.ah-lib-open .tim-fab{display:none!important}
       <button onclick="bkGo(1)" id="bkNext" aria-label="Page suivante">›</button>
     </div>
     <button class="bk-buyrow" id="bkBuyRow" onclick="openAmazonBook()" hidden>📕 Obtenir le livre complet sur Amazon →</button>
+  </div>
+  <div class="bk-selbar" id="bkSelBar" hidden>
+    <button class="bk-selbtn" id="bkSelSave" onclick="bkMarkSave()">🔖 Enregistrer</button>
   </div>
 </div>
 
@@ -9878,6 +9930,24 @@ window.tiResetOnEnter = function(){ window.tiShowStep(1); };
      fade-in + scale. Pas une simple alerte : 3 CTA hiérarchisés
      (Activer / Acheter / J'ai un code). Fermable mais le contenu premium
      reste bloqué tant que hasBookAccess n'est pas true. -->
+<!-- ═══ MES PASSAGES — les extraits que le lecteur a gardés ═══
+     À la RACINE, et pas dans #bookReader : `.scr.on` porte un `transform`,
+     qui fait d'un `position:fixed` descendant un positionnement relatif au
+     lecteur au lieu de l'écran — et `.scr` a `overflow-y:auto`, qui
+     rognerait la feuille. C'est la famille du piège d'affichage documenté
+     dans CLAUDE.md. Les couleurs du livre sont donc redéclarées ici. -->
+<div id="bkMarksOv" class="bkm-ov" onclick="if(event.target===this)closeBookMarks()">
+  <div class="bkm-sheet" role="dialog" aria-labelledby="bkmTitle">
+    <div class="bkm-grab"></div>
+    <div class="bkm-head">
+      <div class="bkm-title" id="bkmTitle">MES PASSAGES</div>
+      <button class="bkm-x" onclick="closeBookMarks()" aria-label="Fermer">✕</button>
+    </div>
+    <div class="bkm-count" id="bkmCount">—</div>
+    <div class="bkm-list" id="bkmList"></div>
+  </div>
+</div>
+
 <div id="premiumOverlay" class="prem-ov" style="display:none">
   <div class="prem-card" role="dialog" aria-labelledby="premTitle">
     <button class="prem-close" onclick="window._closePremiumOverlay()" aria-label="Fermer">×</button>
@@ -12930,6 +13000,8 @@ window.closeBookReader = function () {
   var z = document.getElementById('bookReader');
   if (z) { z.classList.remove('on'); z.classList.add('out'); setTimeout(function () { z.classList.remove('out'); }, 500); }
   try { window.bkAa(0); } catch (e) {}
+  try { window.closeBookMarks(); } catch (e) {}
+  try { var sb = document.getElementById('bkSelBar'); if (sb) sb.hidden = true; } catch (e) {}
   try { window._bkAudioStop(); } catch (e) {}
   try { renderBookCard(); } catch (e) {}
 };
@@ -12951,6 +13023,7 @@ window.bkGo = function (d) {
   _bkSave(st);
   _bkRender();
   var z = document.getElementById('bkPage'); if (z) z.scrollTop = 0;
+  var sb = document.getElementById('bkSelBar'); if (sb) sb.hidden = true;
 };
 
 window.bkAller = function (n) {
@@ -13044,6 +13117,7 @@ function _bkRender() {
 
   inner.innerHTML = h;
   inner.style.setProperty('--bk-fs', BK_TAILLES[st.fs] + 'px');
+  try { _bkPaintKept(inner, n); } catch (e) {}
 
   var cnt = document.getElementById('bkCnt');
   if (cnt) cnt.textContent = n + ' / ' + pages.length;
@@ -13064,8 +13138,256 @@ function _bkRender() {
     try { aLeLivre2 = JSON.parse(localStorage.getItem('ah_profile') || '{}').hasBookAccess === true; } catch (e) {}
     buy.hidden = aLeLivre2;
   }
+  try { _bkMarksBadge(); _bkConsommerCible(inner, n); } catch (e) {}
 }
 window._bkRender = _bkRender;
+
+// ═══ PASSAGES ENREGISTRÉS ══════════════════════════════════════════════════
+// LIRE → ENREGISTRER → RETROUVER → REVENIR. Rien de plus dans cette version.
+//
+// Aucune structure nouvelle : le passage est repéré par la PAGE (la seule
+// unité que le lecteur manipule déjà) et l'INDICE DU BLOC dans `pages[n-1].b`
+// — les blocs de `data/book-excerpt.js` ne portent pas d'identifiant, et leur
+// en inventer un obligerait à regénérer la donnée. L'indice est donc doublé
+// d'une recherche par le texte : si la donnée est regénérée et que les blocs
+// se décalent, le passage se retrouve quand même.
+var BK_MARKS_KEY = 'ah_book_marks';
+var BK_MARKS_MAX = 200;
+var BK_MARK_MAXLEN = 600;     // un passage, pas un chapitre
+
+function _bkNorm(t) { return String(t == null ? '' : t).replace(/\s+/g, ' ').trim(); }
+
+// Même idiome que `_titanMsgId` : le contenu EST l'identifiant, donc deux
+// enregistrements du même passage ne peuvent pas produire deux entrées.
+function _bkMarkId(t) {
+  var str = _bkNorm(t), h = 5381;
+  for (var i = 0; i < str.length; i++) h = ((h << 5) + h + str.charCodeAt(i)) | 0;
+  return 'p' + (h >>> 0).toString(36) + '-' + str.length.toString(36);
+}
+
+function _bkMarksGet() {
+  try {
+    var a = JSON.parse(localStorage.getItem(BK_MARKS_KEY) || '[]');
+    if (!Array.isArray(a)) return [];
+    return a.filter(function (m) { return m && m.id && m.texte && m.page; });
+  } catch (e) { return []; }
+}
+function _bkMarksSet(arr) {
+  try {
+    localStorage.setItem(BK_MARKS_KEY, JSON.stringify(arr.slice(0, BK_MARKS_MAX)));
+    // Le passage suit l'athlète, pas l'appareil : ah_book_marks est dans
+    // FB_SYNC_KEYS, donc fbSaveProfile() l'emporte dans users/{uid}.
+    if (typeof fbSaveProfile === 'function') fbSaveProfile();
+  } catch (e) {}
+}
+window._bkMarksGet = _bkMarksGet;
+
+// La section vient du SOMMAIRE du livre (blocs `toc` des pages 2-3) : c'est
+// la donnée de l'ouvrage, pas une liste écrite à la main qui divergerait.
+var _bkSecs = null;
+function _bkSections() {
+  if (_bkSecs) return _bkSecs;
+  _bkSecs = [];
+  var pages = _bkPages(); if (!pages) return _bkSecs;
+  pages.forEach(function (pg) {
+    (pg.b || []).forEach(function (b) {
+      if (b.k !== 'toc') return;
+      var n = parseInt(b.n, 10);
+      if (n >= 1 && b.t) _bkSecs.push({ n: n, t: _bkNorm(b.t) });
+    });
+  });
+  _bkSecs.sort(function (a, b) { return a.n - b.n; });
+  return _bkSecs;
+}
+function _bkSectionDe(page) {
+  var l = _bkSections(), s = null;
+  for (var i = 0; i < l.length; i++) { if (l[i].n <= page) s = l[i].t; else break; }
+  return s;
+}
+
+// ── La sélection ─────────────────────────────────────────────────────────
+function _bkSelInfo() {
+  var inner = document.getElementById('bkInner'); if (!inner) return null;
+  var sel = window.getSelection && window.getSelection();
+  if (!sel || !sel.rangeCount || sel.isCollapsed) return null;
+  var txt = _bkNorm(sel.toString());
+  if (txt.length < 8) return null;      // un mot isolé n'est pas un passage
+  var r = sel.getRangeAt(0);
+  if (!inner.contains(r.commonAncestorContainer)) return null;
+  var node = r.startContainer;
+  while (node && node.parentNode && node.parentNode !== inner) node = node.parentNode;
+  var bloc = (node && node.parentNode === inner)
+    ? Array.prototype.indexOf.call(inner.children, node) : -1;
+  return { texte: txt.slice(0, BK_MARK_MAXLEN), page: _bkEtat().page, bloc: bloc };
+}
+
+// La barre n'existe QUE pendant une sélection. Le reste du temps, le lecteur
+// est un lecteur. « Copier » n'est pas repris : le menu natif le fait déjà,
+// et mieux.
+function _bkSelPaint() {
+  var bar = document.getElementById('bkSelBar');
+  var z = document.getElementById('bookReader');
+  if (!bar || !z || !z.classList.contains('on')) { if (bar) bar.hidden = true; return; }
+  var info = _bkSelInfo();
+  if (!info) { bar.hidden = true; return; }
+  var btn = document.getElementById('bkSelSave');
+  var deja = _bkMarksGet().some(function (m) { return m.id === _bkMarkId(info.texte); });
+  if (btn) {
+    btn.textContent = deja ? '✓ Déjà enregistré' : '🔖 Enregistrer';
+    btn.classList.toggle('deja', deja);
+    btn.disabled = false;
+  }
+  var bot = z.querySelector('.bk-bot');
+  bar.style.bottom = ((bot ? bot.offsetHeight : 60) + 12) + 'px';
+  bar.hidden = false;
+}
+window._bkSelPaint = _bkSelPaint;
+
+window.bkMarkSave = function () {
+  var info = _bkSelInfo(); if (!info) return;
+  var id = _bkMarkId(info.texte);
+  var list = _bkMarksGet();
+  if (list.some(function (m) { return m.id === id; })) {
+    if (typeof showToast === 'function') showToast('Passage déjà enregistré', 'ok');
+    return;
+  }
+  // `note` est réservée dès maintenant — la suite pourra l'écrire sans
+  // toucher au format. Elle n'a volontairement aucune interface en V1.
+  list.unshift({ id: id, page: info.page, bloc: info.bloc, texte: info.texte, note: '', at: Date.now() });
+  _bkMarksSet(list);
+  try { window.getSelection().removeAllRanges(); } catch (e) {}
+  _bkSelPaint();
+  _bkMarksBadge();
+  var inner = document.getElementById('bkInner');
+  if (inner) { try { _bkPaintKept(inner, info.page); } catch (e) {} }
+  if (typeof showToast === 'function') showToast('Passage enregistré', 'ok');
+};
+
+// ── Le filet doré, et le retour au passage ───────────────────────────────
+function _bkChercheBloc(inner, texte) {
+  var kids = inner.children, cible = _bkNorm(texte);
+  for (var i = 0; i < kids.length; i++) {
+    if (_bkNorm(kids[i].textContent).indexOf(cible) > -1) return kids[i];
+  }
+  return null;
+}
+// « Enregistré » se voit, mais rien ne s'ajoute DEVANT le paragraphe : un
+// filet de 2 px, et une marge négative qui l'empêche de décaler la colonne.
+function _bkPaintKept(inner, page) {
+  Array.prototype.forEach.call(inner.children, function (el) { el.classList.remove('bk-kept'); });
+  _bkMarksGet().forEach(function (m) {
+    if (m.page !== page) return;
+    var el = (m.bloc >= 0 && inner.children[m.bloc]) ? inner.children[m.bloc] : null;
+    if (!el || _bkNorm(el.textContent).indexOf(_bkNorm(m.texte)) === -1) el = _bkChercheBloc(inner, m.texte);
+    if (el) el.classList.add('bk-kept');
+  });
+}
+var _bkCible = null;
+function _bkConsommerCible(inner, page) {
+  if (!_bkCible || _bkCible.page !== page) return;
+  var m = _bkCible; _bkCible = null;
+  var el = (m.bloc >= 0 && inner.children[m.bloc]) ? inner.children[m.bloc] : null;
+  if (!el || _bkNorm(el.textContent).indexOf(_bkNorm(m.texte)) === -1) el = _bkChercheBloc(inner, m.texte);
+  // Bloc introuvable (donnée regénérée) : on ouvre la bonne page et on s'en
+  // tient là, plutôt que de faire défiler vers un endroit au hasard.
+  if (!el) return;
+  el.classList.add('bk-hit');
+  try { el.scrollIntoView({ block: 'center' }); } catch (e) { el.scrollIntoView(); }
+  setTimeout(function () { el.classList.remove('bk-hit'); }, 2600);
+}
+
+// ── La feuille « Mes passages » ──────────────────────────────────────────
+function _bkMarksBadge() {
+  var n = _bkMarksGet().length;
+  var b = document.getElementById('bkMarksN');
+  if (b) { b.textContent = n > 99 ? '99+' : String(n); b.hidden = (n === 0); }
+}
+function _bkQuand(ts) {
+  var d = new Date(ts || 0);
+  if (!ts || isNaN(d.getTime())) return '';
+  var j = Math.floor((Date.now() - ts) / 86400000);
+  if (j <= 0) return "aujourd'hui";
+  if (j === 1) return 'hier';
+  if (j < 7) return 'il y a ' + j + ' jours';
+  return d.toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' });
+}
+var _bkDelArme = null;
+function _bkMarksRender() {
+  var box = document.getElementById('bkmList'), cnt = document.getElementById('bkmCount');
+  if (!box) return;
+  var esc = function (t) {
+    return String(t == null ? '' : t).replace(/&/g, '&amp;').replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+  };
+  // Les plus récents d'abord — c'est le seul ordre de cette version.
+  var l = _bkMarksGet().slice().sort(function (a, b) { return (b.at || 0) - (a.at || 0); });
+  if (cnt) cnt.textContent = l.length
+    ? (l.length + (l.length > 1 ? ' passages enregistrés' : ' passage enregistré') + ' · plus récents d\'abord')
+    : 'Rien pour l\'instant';
+  if (!l.length) {
+    // État vide honnête : il dit quoi faire, il n'invente pas un contenu.
+    box.innerHTML = '<div class="bkm-vide">Pendant ta lecture, sélectionne un passage qui te parle '
+      + 'et touche <strong>🔖 Enregistrer</strong>.<br>Tu le retrouveras ici, et tu reviendras dessus en un tap.</div>';
+    return;
+  }
+  var h = '';
+  l.forEach(function (m) {
+    var sec = _bkSectionDe(m.page);
+    var arme = (_bkDelArme === m.id);
+    h += '<div class="bkm-item">'
+       + '<p class="bkm-quote">« ' + esc(m.texte) + ' »</p>'
+       + '<div class="bkm-meta">' + (sec ? esc(sec) + ' · ' : '') + 'page ' + m.page
+       + (_bkQuand(m.at) ? ' · ' + _bkQuand(m.at) : '') + '</div>'
+       + '<div class="bkm-acts">'
+       + '<button class="bkm-read" onclick="bkMarkOpen(\'' + m.id + '\')">Lire ce passage</button>'
+       + '<button class="bkm-del' + (arme ? ' sur' : '') + '" onclick="bkMarkDel(\'' + m.id + '\')" aria-label="Supprimer">'
+       + (arme ? 'Supprimer ?' : '✕') + '</button>'
+       + '</div></div>';
+  });
+  box.innerHTML = h;
+}
+
+window.openBookMarks = function () {
+  var o = document.getElementById('bkMarksOv'); if (!o) return;
+  _bkDelArme = null;
+  _bkMarksRender();
+  o.classList.add('on');
+};
+window.closeBookMarks = function () {
+  var o = document.getElementById('bkMarksOv'); if (o) o.classList.remove('on');
+  _bkDelArme = null;
+};
+
+// L'athlète ne doit JAMAIS avoir à rechercher son passage à la main.
+window.bkMarkOpen = function (id) {
+  var m = _bkMarksGet().filter(function (x) { return x.id === id; })[0];
+  if (!m) return;
+  window.closeBookMarks();
+  _bkCible = m;
+  window.openBookReader(m.page);
+};
+
+// Suppression en deux taps : ✕ puis « Supprimer ? ». Assez léger pour ne pas
+// être un popup, assez explicite pour ne pas effacer sur un frôlement.
+window.bkMarkDel = function (id) {
+  if (_bkDelArme !== id) { _bkDelArme = id; _bkMarksRender(); return; }
+  _bkDelArme = null;
+  _bkMarksSet(_bkMarksGet().filter(function (m) { return m.id !== id; }));
+  _bkMarksRender();
+  _bkMarksBadge();
+  var inner = document.getElementById('bkInner');
+  if (inner) { try { _bkPaintKept(inner, _bkEtat().page); } catch (e) {} }
+  _bkSelPaint();
+  if (typeof showToast === 'function') showToast('Passage supprimé', 'ok');
+};
+
+// Un seul écouteur, posé une fois. `selectionchange` est l'événement que le
+// tactile ET la souris déclenchent — un `mouseup` ne suffirait pas sur
+// mobile, où la poignée de sélection se déplace sans relâchement.
+document.addEventListener('selectionchange', function () {
+  clearTimeout(window._bkSelT);
+  window._bkSelT = setTimeout(function () { try { _bkSelPaint(); } catch (e) {} }, 120);
+});
 
 // ═══ LECTURE AUDIO DU LIVRE ════════════════════════════════════════════════
 // Le fichier fait 4 Mo. Il n'est PAS dans le pré-cache du Service Worker et
@@ -35714,7 +36036,10 @@ var FB_SYNC_KEYS = [
   ['ah_track_history',             'trackHistory',        true],
   // Jalons déjà annoncés (brique 2) — synchronisé pour qu'un jalon ne soit
   // pas rejoué en changeant d'appareil.
-  ['ah_milestones_shown',          'milestonesShown',     true]
+  ['ah_milestones_shown',          'milestonesShown',     true],
+  // Passages du livre gardés par l'athlète. Même motif que ah_titan_saved :
+  // une entrée ici suffit, aucune lecture Firestore ni règle en plus.
+  ['ah_book_marks',                'bookMarks',           true]
 ];
 
 function _fbCollectPayload() {

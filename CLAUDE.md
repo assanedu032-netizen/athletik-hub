@@ -14,10 +14,10 @@ The app is the digital companion of the book *Les Secrets de la Détente Vertica
 
 - **Hosting**: Netlify (`netlify.toml` SPA-rewrites everything to `/index.html`). No build command; the file is served as-is. Production URL: `athletikhub.netlify.app`.
 - **PWA**: two Service Workers —
-  - `sw.js` (cache-first for local assets, network-first for externals) + `manifest.json`. Cache name is `athletik-v301` — bump it when shipping CSS/HTML that must invalidate.
+  - `sw.js` (cache-first for local assets, network-first for externals) + `manifest.json`. Cache name is `athletik-v302` — bump it when shipping CSS/HTML that must invalidate.
   - `firebase-messaging-sw.js` (root) — receives background push notifications (FCM).
 - **No linter, no build**. Validate changes by opening `index.html` in a browser (mobile-first, Android Chrome is the target). Before committing, sanity-check JS syntax by parsing the non-module `<script>` blocks with `node -e` (see Coding conventions).
-- **Tests**: `for f in scripts/test-*.js; do node "$f"; done` — 29 suites, 1 692 assertions, pure
+- **Tests**: `for f in scripts/test-*.js; do node "$f"; done` — 30 suites, 1 754 assertions, pure
   Node, zéro dépendance : chaque suite extrait les **vraies** fonctions d'`index.html` par
   équilibrage d'accolades et les rejoue contre des mocks. `scripts/test-live-layout.js` est la
   seule exception : elle ouvre un vrai Chromium (Playwright, hors `package.json`) pour mesurer la
@@ -431,6 +431,54 @@ completedPrograms, fcmToken, accessTier`.
   `false` pour un élément qui n'existe pas — le test du repli serait passé sur l'ancienne base.
   Les deux helpers renvoient donc trois états (`absent` / `replié` / `ouvert`). Contre-épreuve sur
   le commit précédent : **8 échecs** côté lecteur, **2** côté audio.
+
+- **Les PASSAGES ENREGISTRÉS** (sept. 2026) — `ah_book_marks`. Quatre gestes, pas un de plus :
+  **sélectionner → enregistrer → retrouver → revenir**.
+  **Aucune structure de données nouvelle.** Les blocs de `data/book-excerpt.js` **ne portent
+  pas d'identifiant**, et leur en donner obligerait à regénérer le fichier depuis le PDF. Un
+  passage est donc repéré par la **page** (la seule unité que le lecteur manipule déjà) et
+  l'**indice du bloc** dans `pages[n-1].b` — doublé d'une **recherche par le texte**
+  (`_bkChercheBloc`) : si la donnée est un jour regénérée et que les blocs se décalent, le
+  passage se retrouve quand même, et s'il reste introuvable on ouvre la bonne page sans faire
+  défiler au hasard. **L'identifiant EST le contenu** (`_bkMarkId`, l'idiome de `_titanMsgId`) :
+  le doublon est donc **impossible par construction**, pas rattrapé par une vérification.
+  **La section affichée vient du SOMMAIRE du livre** (`_bkSections()` lit les blocs `toc` des
+  pages 2-3) — pas d'une liste écrite à la main qui divergerait au premier chapitre renommé.
+  `BOOK_CHAPTERS` ne commence qu'à la page 35 et ne couvrirait pas l'extrait.
+  **La feuille `#bkMarksOv` vit à la RACINE**, à côté de `#premiumOverlay`. Posée dans
+  `#bookReader`, elle aurait été doublement piégée : `.scr.on` porte un `transform`, **ce qui
+  fait d'un `position:fixed` descendant un positionnement relatif au lecteur** au lieu de
+  l'écran, et `.scr` a `overflow-y:auto`, qui l'aurait rognée. Même famille que le piège
+  d'affichage documenté plus haut. Elle **redéclare donc les couleurs du livre**
+  (`--bkm-*`) : les tokens `--bk-*` sont scopés à `#bookReader`.
+  **La barre d'action, elle, reste ANCRÉE au lecteur** (`position:absolute`, `bottom` calculé
+  depuis la hauteur réelle de `.bk-bot`) — pour la même raison, en sens inverse.
+  **Elle n'existe que pendant une sélection**, et l'écouteur est `selectionchange` : un
+  `mouseup` ne suffirait pas sur mobile, où la poignée de sélection se déplace sans qu'on
+  relâche. En dessous de **8 caractères**, on ne propose rien — un mot isolé n'est pas un
+  passage. **« Copier » n'est pas repris** : le menu natif le fait déjà, et mieux.
+  **`note: ''` est réservée dans le format** dès la V1, sans aucune interface : la suite pourra
+  l'écrire sans migration.
+  **« Enregistré » se voit sans rien ajouter devant le texte** : un filet doré de 2 px
+  (`.bk-kept`) avec `margin-left:-10px` qui compense le retrait — **la colonne ne bouge pas
+  d'un pixel**, sinon la page sauterait à chaque enregistrement. Aucune icône, aucun bouton
+  permanent par paragraphe.
+  **Suppression en deux taps** (`✕` → `Supprimer ?`) : assez léger pour ne pas être un popup,
+  assez explicite pour ne pas effacer sur un frôlement — et ça n'a demandé **aucun** système de
+  confirmation ni d'annulation nouveau.
+  **Le passage suit l'athlète, pas l'appareil** : `ah_book_marks` est dans `FB_SYNC_KEYS` →
+  `users/{uid}.bookMarks`, écrit par `fbSaveProfile()`. C'est le motif de `ah_titan_saved` :
+  **aucune lecture Firestore en plus, aucun listener, aucune règle à ajouter** (`validProfileShape`
+  utilise `hasAny`). Plafond 200 entrées, passage écrêté à 600 caractères.
+  La confirmation réutilise `showToast` (`#toastContainer` est à la racine en `z-index:9999`,
+  donc au-dessus du lecteur) — **aucun système de toast nouveau**.
+  **Le découpage audio n'est PAS touché** : la partie 1 couvre les pages 1–7 et s'y arrête.
+  Test : `scripts/test-book-marks.js` (62, vrai Chromium en 375×667 et 320×568 : sélection
+  réelle par l'API Range, barre peinte, toast peint, doublon refusé, filet sans décalage de
+  colonne mesuré, section + page justes, **retour au passage réellement À L'ÉCRAN**, persistance
+  après rechargement, suppression en deux taps, état vide honnête, et la preuve que pagination,
+  A−/A+, CTA Amazon, barre audio et Home sont intacts). Contre-épreuve sur le commit précédent :
+  **42 échecs sur 62** — les 20 qui passent sont les garde-fous de l'existant, et c'est voulu.
 
 - **Le livre s'ÉCOUTE aussi** (`.bk-audio` dans `#bookReader`) — voix générée sur ElevenLabs,
   voix choisie par l'auteur. **Le livre est mis en audio par parties, au fur et à mesure** :
