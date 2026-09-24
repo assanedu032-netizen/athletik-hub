@@ -7,8 +7,9 @@
 // Ce qu'on protège :
 //   1. Les 4 Mo ne se téléchargent QU'AU PREMIER ▶ — jamais à l'ouverture du
 //      lecteur, jamais à l'installation de l'app.
-//   2. La barre annonce ce que l'audio couvre VRAIMENT (pages 1–9), pas « le
-//      livre » : le reste n'est pas encore lu.
+//   2. La barre annonce ce que l'audio couvre VRAIMENT (pages 1–7), pas « le
+//      livre » : le reste n'est pas encore lu. La borne 7 est VÉRIFIÉE dans le
+//      texte, pas estimée depuis la table des matières.
 //   3. Le Service Worker NE DOIT PAS intercepter /assets/audio/ — `cache.put`
 //      refuse un 206, et servir une réponse complète à une requête partielle
 //      casse la lecture sur iOS.
@@ -101,15 +102,26 @@ const MIME = { '.html':'text/html','.js':'text/javascript','.css':'text/css','.j
       titre: document.getElementById('bkAuTitre').textContent.trim(),
       sous: document.getElementById('bkAuSous').textContent.trim(),
       tot: document.getElementById('bkAuTot').textContent.trim(),
+      // On mesure ce qui est PEINT : `[hidden]` ne suffit pas à le prouver.
+      totPeint: document.getElementById('bkAuTot').getBoundingClientRect().height > 0,
+      // « absent » n'est PAS « replié » : sans cette nuance, une base qui
+      // n'a pas la ligne de position passerait le test du repli.
+      seek: (function (e) { return !e ? 'absente' : (e.getBoundingClientRect().height > 0 ? 'dépliée' : 'repliée'); })(document.getElementById('bkAuSeek')),
       now: document.getElementById('bkAuNow').textContent.trim(),
       vitesse: document.getElementById('bkAuSpeed').textContent.trim(),
       err: document.getElementById('bkAuErr').getBoundingClientRect().height > 0 };
   });
-  ok('la barre est visible', !!barre && barre.h > 60, barre && barre.h);
+  ok('la barre est visible', !!barre && barre.h > 40, barre && barre.h);
+  // Avant le premier ▶, le curseur ne commande rien : il reste replié, et ces
+  // 22 px reviennent au texte. La durée, elle, reste annoncée.
+  ok('la ligne de position existe et est repliée avant la lecture',
+    !!barre && barre.seek === 'repliée', barre && barre.seek);
   ok('elle nomme la partie lue', !!barre && /Préface/i.test(barre.titre), barre && barre.titre);
   // Le reste du livre n'est pas encore lu : le dire vaut mieux que le taire.
   ok('elle annonce les pages couvertes, pas « le livre »', !!barre && /pages\s*1[–-]\d+/.test(barre.sous), barre && barre.sous);
-  ok('la durée est affichée avant même de lancer', !!barre && barre.tot === '4:23', barre && barre.tot);
+  ok('la durée est affichée avant même de lancer',
+    !!barre && barre.tot === '4:23' && barre.totPeint === true,
+    barre && (barre.tot + ' peint=' + barre.totPeint));
   // On mesure la hauteur PEINTE, pas `el.hidden` : `display:flex` d'une classe
   // bat `[hidden]{display:none}`, et la propriété ne le dit pas.
   ok('aucun bandeau d\'erreur peint au repos', !!barre && barre.err === false);
@@ -127,6 +139,11 @@ const MIME = { '.html':'text/html','.js':'text/javascript','.css':'text/css','.j
   }));
   const mp3 = demandes.filter((d) => d.url.indexOf('/assets/audio/') > -1);
   ok('le MP3 est demandé APRÈS le tap', mp3.length > 0, mp3.length);
+  ok('la ligne de position se déplie une fois la lecture lancée',
+    await page.evaluate(() => { const e = document.getElementById('bkAuSeek');
+      return !!e && e.getBoundingClientRect().height > 0; }));
+  ok('et la barre reprend sa taille pleine',
+    await page.evaluate(() => document.getElementById('bkAudio').getBoundingClientRect().height > 60));
   ok('aucune erreur pendant la lecture', apres.err === false);
   ok('le bouton passe en pause', apres.bouton === '❚❚', apres.bouton);
   // La durée annoncée par le manifeste est confirmée par le décodeur.

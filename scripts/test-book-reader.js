@@ -199,7 +199,24 @@ const MIME = { '.html':'text/html','.js':'text/javascript','.css':'text/css','.j
     await page.evaluate(() => { try { return JSON.parse(localStorage.getItem('ah_book_excerpt')).page === 17; } catch (e) { return false; } }));
 
   // ── Taille du texte ────────────────────────────────────────────────────
+  // A− / A+ vivent maintenant derrière « Aa ». Ils n'ont pas disparu : ce sont
+  // les MÊMES boutons, aux mêmes ids, appelant le même bkFont().
   console.log('\n── Régler la taille du texte ──');
+  // Trois états distincts, et « absent » n'est PAS « replié » : sans cette
+  // nuance, une base qui n'a pas le panneau passerait le test du repli.
+  const popEtat = () => page.evaluate(() => {
+    const e = document.getElementById('bkAaPop');
+    if (!e) return 'absent';
+    return e.getBoundingClientRect().height > 0 ? 'ouvert' : 'replié';
+  });
+  ok('le panneau de taille existe et est replié au repos', (await popEtat()) === 'replié', await popEtat());
+  await clic('#bkAaBtn');
+  ok('« Aa » l\'ouvre', (await popEtat()) === 'ouvert', await popEtat());
+  ok('il annonce le palier courant',
+    /^[1-4] \/ 4$/.test(await page.evaluate(() => {
+      const e = document.getElementById('bkAaLvl');
+      return e ? e.textContent.trim() : '';
+    })));
   const t0 = (await lire()).fs;
   await clic('#bkFplus'); await clic('#bkFplus');
   const t1 = (await lire()).fs;
@@ -207,6 +224,49 @@ const MIME = { '.html':'text/html','.js':'text/javascript','.css':'text/css','.j
   await clic('#bkFmoins'); await clic('#bkFmoins'); await clic('#bkFmoins');
   const t2 = (await lire()).fs;
   ok('A− le réduit', parseFloat(t2) < parseFloat(t1), t1 + ' → ' + t2);
+  await clic('#bkAaVeil');
+  ok('un tap à côté le referme', (await popEtat()) === 'replié', await popEtat());
+  // Sans ça, le panneau resterait ouvert au-dessus de la Home au retour.
+  await page.evaluate(() => { if (window.bkAa) window.bkAa(1); window.closeBookReader(); });
+  await page.waitForTimeout(240);
+  ok('fermer le lecteur le referme aussi', (await popEtat()) === 'replié', await popEtat());
+  await page.evaluate(() => window.openBookReader()); await page.waitForTimeout(280);
+
+  // ── Confort de lecture ─────────────────────────────────────────────────
+  // En colonne de 36-43 signes, la justification injectait 53 px de blanc dans
+  // une ligne au 9e décile — des rivières — et `hyphens:auto` ne coupait aucun
+  // mot pour les rattraper. Drapeau à droite.
+  console.log('\n── Confort de lecture ──');
+  const typo = await page.evaluate(() => {
+    const q = document.querySelector('#bkInner p');
+    const cs = q ? getComputedStyle(q) : null;
+    const zone = document.getElementById('bkPage');
+    const scr = document.getElementById('bookReader');
+    return { align: cs && cs.textAlign, cesure: cs && (cs.hyphens || cs.webkitHyphens),
+      hZone: zone ? Math.round(zone.getBoundingClientRect().height) : 0,
+      hEcran: scr ? Math.round(scr.getBoundingClientRect().height) : 1 };
+  });
+  ok('le texte n\'est pas justifié', typo.align === 'left' || typo.align === 'start', typo.align);
+  ok('la césure reste demandée', typo.cesure === 'auto', typo.cesure);
+  // Le texte est le héros de la page : il occupe la plus grande part de l'écran.
+  ok('la zone de texte prend plus des deux tiers de l\'écran',
+    typo.hZone / typo.hEcran > 0.68,
+    typo.hZone + ' / ' + typo.hEcran + ' = ' + Math.round(typo.hZone / typo.hEcran * 100) + ' %');
+  // Le bas de la zone s'estompe : on voit que le texte CONTINUE, au lieu
+  // d'une ligne tranchée net qui ressemble à une fin de page. Et arrivé en
+  // bas, le dégradé ne doit manger aucune ligne — seulement de la marge.
+  const fondu = await page.evaluate(() => {
+    const z = document.getElementById('bkPage');
+    if (!z) return null;
+    const m = getComputedStyle(z).webkitMaskImage || getComputedStyle(z).maskImage;
+    z.scrollTop = z.scrollHeight;
+    const blocs = [...document.querySelectorAll('#bkInner > *')];
+    const dernier = blocs[blocs.length - 1];
+    return { masque: m, marge: dernier
+      ? Math.round(z.getBoundingClientRect().bottom - dernier.getBoundingClientRect().bottom) : -1 };
+  });
+  ok('le bas du texte s\'estompe', !!fondu && /gradient/.test(fondu.masque || ''), fondu && fondu.masque);
+  ok('et en fin de page il ne masque aucune ligne', !!fondu && fondu.marge >= 16, fondu && fondu.marge);
   ok('la taille survit à une réouverture',
     await page.evaluate(async () => {
       const a = getComputedStyle(document.getElementById('bkInner')).fontSize;

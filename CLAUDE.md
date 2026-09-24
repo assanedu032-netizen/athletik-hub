@@ -14,10 +14,10 @@ The app is the digital companion of the book *Les Secrets de la Détente Vertica
 
 - **Hosting**: Netlify (`netlify.toml` SPA-rewrites everything to `/index.html`). No build command; the file is served as-is. Production URL: `athletikhub.netlify.app`.
 - **PWA**: two Service Workers —
-  - `sw.js` (cache-first for local assets, network-first for externals) + `manifest.json`. Cache name is `athletik-v271` — bump it when shipping CSS/HTML that must invalidate.
+  - `sw.js` (cache-first for local assets, network-first for externals) + `manifest.json`. Cache name is `athletik-v301` — bump it when shipping CSS/HTML that must invalidate.
   - `firebase-messaging-sw.js` (root) — receives background push notifications (FCM).
 - **No linter, no build**. Validate changes by opening `index.html` in a browser (mobile-first, Android Chrome is the target). Before committing, sanity-check JS syntax by parsing the non-module `<script>` blocks with `node -e` (see Coding conventions).
-- **Tests**: `for f in scripts/test-*.js; do node "$f"; done` — 25 suites, ~1 460 assertions, pure
+- **Tests**: `for f in scripts/test-*.js; do node "$f"; done` — 29 suites, 1 692 assertions, pure
   Node, zéro dépendance : chaque suite extrait les **vraies** fonctions d'`index.html` par
   équilibrage d'accolades et les rejoue contre des mocks. `scripts/test-live-layout.js` est la
   seule exception : elle ouvre un vrai Chromium (Playwright, hors `package.json`) pour mesurer la
@@ -393,6 +393,45 @@ completedPrograms, fcmToken, accessTier`.
   copyright en plusieurs paragraphes, aucun bloc > 1 400 caractères**, entrées hors extrait non
   cliquables, les deux butées, achat seulement en page 44, rien pour qui a le livre, reprise de
   lecture, taille persistée, état vide honnête, contraste ≥ 7:1 pour de la lecture longue).
+- **Le lecteur laisse la place au TEXTE** (sept. 2026) — le chrome mangeait **231 px sur 667**
+  (34,6 %), et **40,7 % en 320 px**. Mesuré au navigateur, pas estimé. Six retouches
+  chirurgicales, **aucun composant refait**, ramènent le chrome à **195 px** : la zone de texte
+  passe de 436 à **472 px** (432 px de texte utile, **14,8 lignes** contre 13,3 — et 11,5 contre
+  9,9 en 320 px).
+  **(1) Le texte n'est plus justifié.** En colonne de 36-43 signes, la justification injectait
+  **26 px de blanc au médian et 53 px au 9ᵉ décile** dans les espaces d'une ligne de sept mots —
+  les espaces triplaient, et `hyphens:auto` **ne coupait aucun mot** pour rattraper (hauteur
+  identique avec `hyphens:none`, mesurée). Des rivières blanches en plein milieu de la page.
+  Drapeau à droite ; la césure reste demandée pour les navigateurs qui savent la faire.
+  **(2) A− / A+ passent derrière « Aa »**, comme dans une liseuse. Ils n'ont **pas disparu** :
+  mêmes ids (`bkFmoins`/`bkFplus`), même `bkFont()`, un panneau `#bkAaPop` qui affiche en plus le
+  palier courant (`2 / 4`). Fermeture par un **voile plein écran** (`#bkAaVeil`) — aucun écouteur
+  global à poser ni à retirer — et `closeBookReader()` le referme, sinon il resterait ouvert
+  au-dessus de la Home au retour.
+  **(3) La ligne de position audio ne s'ouvre qu'au premier ▶.** Avant, un curseur qui ne
+  commandait rien occupait **22 px sur chaque page**, y compris page 30. La **durée totale**
+  (`#bkAuTot`) rejoint la ligne d'identité — elle reste donc annoncée avant la lecture, et le test
+  mesure sa **hauteur peinte**, pas son `textContent`. La barre passe de 75 px à **55 px** au
+  repos, reprend sa taille pleine à la lecture. **Le découpage audio n'est pas touché** : la
+  partie 1 couvre toujours les pages 1–7 et s'y arrête.
+  **(4) Le bas de la zone s'estompe** (`mask-image`, 16 px) : on voit que le texte continue au
+  lieu d'une ligne tranchée net. La marge basse (20-22 px) garantit qu'arrivé en bas, le dégradé
+  ne mange **aucune ligne** — 37 px mesurés sous la dernière.
+  **(5) Cibles tactiles à 44 px sans grossir le visuel** : un `::after` absolu de 44×44 sur `.bk-x`
+  (36 px), `.bk-aa`, `.bk-nav button` (40 px de haut), `.bk-au-play` (38 px) et `.bk-au-x` (28 px
+  de haut). Le pseudo déborde, l'en-tête et le pied ne gagnent **pas un pixel**.
+  **(6) Marges resserrées** : `.bk-page` 22/20/26 → 18/18/22 (14 px de côté sous 360 px),
+  `.bk-top` 12 → 9, `.bk-nav` 9 → 7, `.bk-buyrow` 10 → 7 et le titre du livre en `--bk-ink2`
+  (il situe, il ne crie pas).
+  **Rien n'est supprimé** : ‹ n/44 ›, A−/A+, la barre de progression, le CTA Amazon
+  (`#bkBuyRow`, toujours sous la pagination, toujours masqué si `hasBookAccess`) et l'appel fort
+  de la page 44 sont tous là. Le **texte du livre est inchangé**, octet pour octet.
+  Test : `scripts/test-book-reader.js` passe de 57 à **67**, `test-book-audio.js` de 60 à **63**.
+  **Piège évité dans les tests** : « absent » n'est pas « replié ». Un `!!e && peint` renvoie
+  `false` pour un élément qui n'existe pas — le test du repli serait passé sur l'ancienne base.
+  Les deux helpers renvoient donc trois états (`absent` / `replié` / `ouvert`). Contre-épreuve sur
+  le commit précédent : **8 échecs** côté lecteur, **2** côté audio.
+
 - **Le livre s'ÉCOUTE aussi** (`.bk-audio` dans `#bookReader`) — voix générée sur ElevenLabs,
   voix choisie par l'auteur. **Le livre est mis en audio par parties, au fur et à mesure** :
   `data/book-audio.js` est un **manifeste**, ajouter une partie = **une entrée + un fichier**
