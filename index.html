@@ -3643,6 +3643,15 @@ html body #thinking{
 }
 .ah-scoreboard .val.empty{ color:rgba(255,255,255,.3); }
 .ah-scoreboard .div{ width:1px; height:36px; background:rgba(255,255,255,.08); }
+/* Rien de mesuré : trois tirets ne valent pas un bloc navy pleine largeur,
+   qui pèse alors autant que la carte séance. Le bloc s'efface — cadre fin,
+   valeurs plus petites — et reprend son navy dès qu'il a un chiffre à dire.
+   La classe est posée par renderUserData(). */
+.ah-scoreboard.sb-vide{ background:transparent !important; border:1px solid var(--ah-border) !important;
+  box-shadow:none !important; padding:9px 14px !important; }
+.ah-scoreboard.sb-vide .lbl{ color:var(--ah-text2); }
+.ah-scoreboard.sb-vide .val, .ah-scoreboard.sb-vide .val.empty{ font-size:15px; color:var(--ah-text2); }
+.ah-scoreboard.sb-vide .div{ background:var(--ah-border); height:20px; }
 .ah-scoreboard .live{
   font-family:var(--ah-font-mono); font-size:8px; color:var(--ah-gold);
   letter-spacing:.2em; text-transform:uppercase; animation:ah-pulse 1.6s infinite;
@@ -6275,7 +6284,7 @@ body.ah-lib-open .tim-fab{display:none!important}
    du livre (renderBookCard). Renommer toucherait deux suites de tests pour
    un gain cosmétique — le commentaire suffit à ce que personne ne cherche
    un article qui n'existe plus. */
-.art-teaser-card{margin:10px 16px 0;background:linear-gradient(135deg,rgba(197,164,78,.09),rgba(197,164,78,.02));border:1px solid rgba(197,164,78,.28);border-radius:14px;padding:16px;cursor:pointer;-webkit-tap-highlight-color:rgba(197,164,78,.08);transition:transform .12s}
+.art-teaser-card{margin:14px 20px 0;background:linear-gradient(135deg,rgba(197,164,78,.09),rgba(197,164,78,.02));border:1px solid rgba(197,164,78,.28);border-radius:14px;padding:16px;cursor:pointer;-webkit-tap-highlight-color:rgba(197,164,78,.08);transition:transform .12s}
 .art-teaser-card:active{transform:scale(.975)}
 .art-teaser-eyebrow{font-family:'JetBrains Mono',monospace;font-size:9px;letter-spacing:.22em;color:var(--ah-gold);text-transform:uppercase;font-weight:700;margin-bottom:8px}
 .art-teaser-title{font-family:'Bebas Neue',sans-serif;font-size:17px;letter-spacing:.05em;color:var(--ah-text);line-height:1.2;margin-bottom:6px}
@@ -7894,11 +7903,11 @@ window.tiResetOnEnter = function(){ window.tiShowStep(1); };
   <div class="main" style="padding-bottom:90px">
 
     <!-- ═══ HEADER LIGHT (date + greeting + avatar) — DS v1.0 ═══ -->
-    <div style="padding:18px 20px 12px;background:var(--ah-bg)">
+    <div style="padding:14px 20px 8px;background:var(--ah-bg)">
       <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:14px">
         <div style="flex:1;min-width:0">
-          <div id="homeDateLine" style="font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:.22em;color:var(--ah-gold);text-transform:uppercase;margin-bottom:8px"></div>
-          <div style="font-family:'Bebas Neue',sans-serif;font-size:36px;letter-spacing:.04em;line-height:1;color:var(--ah-text)">
+          <div id="homeDateLine" style="font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:.22em;color:var(--ah-gold);text-transform:uppercase;margin-bottom:5px"></div>
+          <div style="font-family:'Bebas Neue',sans-serif;font-size:30px;letter-spacing:.04em;line-height:1.05;color:var(--ah-text)">
             <span id="greetText">BONJOUR</span>,<br>
             <span id="userName" style="color:var(--ah-gold)">ATHLÈTE.</span>
           </div>
@@ -7950,13 +7959,8 @@ window.tiResetOnEnter = function(){ window.tiShowStep(1); };
          Rempli par renderTitanSmartCards() en fonction du programme + phase. -->
     <div id="titanSmartCards"></div>
 
-    <!-- ═══ EXTRAIT DU LIVRE — 44 pages lisibles dans l'app ═══
-         Pas dans la barre du bas : c'est une lecture qu'on ouvre, pas une
-         destination permanente. Rempli par renderBookCard(). -->
-    <div id="bookCardWrap"></div>
-
     <!-- ═══ SCOREBOARD navy-deep DS v1.0 ═══ -->
-    <div class="ah-scoreboard" id="homeScoreboard" style="margin:6px 20px 0;background:var(--ah-navy-deep);padding:14px 18px;border-radius:14px">
+    <div class="ah-scoreboard" id="homeScoreboard" style="margin:10px 20px 0;background:var(--ah-navy-deep);padding:14px 18px;border-radius:14px">
       <div class="grp"><span class="lbl">SCORE</span><span class="val empty" id="sbSet">—</span></div>
       <div class="div"></div>
       <div class="grp"><span class="lbl">DÉTENTE</span><span class="val empty" id="sbCmj">—</span></div>
@@ -7966,7 +7970,7 @@ window.tiResetOnEnter = function(){ window.tiShowStep(1); };
 
     <!-- ═══ CARTE PROFIL ATHLETIK (mode discovery — locked) ═══
          Wrapping div + id="todayCard" préservés (renderUserData() lit pcName/pcObj/pcDur). -->
-    <div id="todayCardFrame" style="margin:14px 18px 0">
+    <div id="todayCardFrame" style="margin:12px 20px 0">
     <div id="todayCard" style="background:var(--ah-navy-deep);border-radius:14px;padding:18px 18px;color:#fff;border-left:3px solid var(--ah-gold);position:relative;overflow:hidden">
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;gap:8px">
         <div style="font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:.22em;color:var(--ah-gold);text-transform:uppercase" id="pcDur">PROFIL ATHLETIK · 0/3</div>
@@ -8024,6 +8028,13 @@ window.tiResetOnEnter = function(){ window.tiShowStep(1); };
         </div>
       </div>
     </div>
+
+    <!-- ═══ EXTRAIT DU LIVRE — 44 pages lisibles dans l'app ═══
+         Pas dans la barre du bas : c'est une lecture qu'on ouvre, pas une
+         destination permanente. Rempli par renderBookCard().
+         Placé APRÈS la séance : c'est une proposition, pas la tâche du jour.
+         Au-dessus, il repoussait l'action principale à 390 px sur 667. -->
+    <div id="bookCardWrap"></div>
 
     <!-- ═══ MON PLANNING ═══ -->
     <div style="padding:18px 20px;border-bottom:1px solid var(--border)">
@@ -18317,6 +18328,12 @@ function renderUserData() {
         sbJ.textContent = user.streak;
         sbJ.classList.remove('empty');
       } else { sbJ.textContent='—'; sbJ.classList.add('empty'); }
+    }
+    // Rien de mesuré → le bloc s'efface au lieu de crier trois tirets.
+    var sbBox = document.getElementById('homeScoreboard');
+    if (sbBox) {
+      var vide = sbBox.querySelectorAll('.val').length === sbBox.querySelectorAll('.val.empty').length;
+      sbBox.classList.toggle('sb-vide', vide);
     }
   }catch(e){}
 

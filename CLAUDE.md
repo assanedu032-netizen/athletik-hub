@@ -14,10 +14,10 @@ The app is the digital companion of the book *Les Secrets de la Détente Vertica
 
 - **Hosting**: Netlify (`netlify.toml` SPA-rewrites everything to `/index.html`). No build command; the file is served as-is. Production URL: `athletikhub.netlify.app`.
 - **PWA**: two Service Workers —
-  - `sw.js` (cache-first for local assets, network-first for externals) + `manifest.json`. Cache name is `athletik-v302` — bump it when shipping CSS/HTML that must invalidate.
+  - `sw.js` (cache-first for local assets, network-first for externals) + `manifest.json`. Cache name is `athletik-v303` — bump it when shipping CSS/HTML that must invalidate.
   - `firebase-messaging-sw.js` (root) — receives background push notifications (FCM).
 - **No linter, no build**. Validate changes by opening `index.html` in a browser (mobile-first, Android Chrome is the target). Before committing, sanity-check JS syntax by parsing the non-module `<script>` blocks with `node -e` (see Coding conventions).
-- **Tests**: `for f in scripts/test-*.js; do node "$f"; done` — 30 suites, 1 754 assertions, pure
+- **Tests**: `for f in scripts/test-*.js; do node "$f"; done` — 31 suites, 1 775 assertions, pure
   Node, zéro dépendance : chaque suite extrait les **vraies** fonctions d'`index.html` par
   équilibrage d'accolades et les rejoue contre des mocks. `scripts/test-live-layout.js` est la
   seule exception : elle ouvre un vrai Chromium (Playwright, hors `package.json`) pour mesurer la
@@ -348,6 +348,40 @@ completedPrograms, fcmToken, accessTier`.
   via `#vHome .art-teaser-card`. Ce sélecteur matche désormais la **carte du livre** — le test
   serait resté vert **pour une mauvaise raison**. Il vise maintenant `#bookCardWrap` et vérifie
   en plus que `#articleOverlay` a bien disparu.
+- **La Home laisse la place à L'ACTION** (sept. 2026) — quatre retouches, mesurées au
+  navigateur en 375×667, **aucun bloc refait**.
+  **(1) La séance passe AVANT le livre.** La carte de lecture s'intercalait entre l'en-tête et
+  la séance : **159 px d'optionnel** avant la tâche du jour, qui ne commençait qu'à **390 px sur
+  667** — et dont le bouton tombait à **573 px sur un écran de 568** en 320 px, donc **sous la
+  ligne de flottaison**. Le bloc `#bookCardWrap` est **déplacé tel quel**, sous la séance :
+  rien dans `renderBookCard()` ne change. Séance à **182 px**, bouton à **413 px**.
+  **(2) Des stats vides ne méritent pas un bloc plein.** Trois tirets occupaient **69 px de navy
+  pleine largeur** — le même poids visuel que la carte séance, pour zéro information, et deux
+  blocs navy qui se disputaient l'œil. `renderUserData()` pose `.sb-vide` quand les trois
+  valeurs sont vides : fond transparent, cadre fin, valeurs en 15 px → **48 px**. Dès qu'un
+  chiffre existe, le bandeau **reprend exactement son apparence d'avant** (navy `#243B6B`,
+  69 px, chiffres 28 px or) — vérifié avant/après dans les deux thèmes.
+  **(3) L'en-tête rend 20 px** : « BON APRÈS-MIDI, » passait sur **trois lignes** en 36 px
+  (108 px pour dire bonjour) ; 30 px le tient sur deux. Paddings 18/12 → 14/8.
+  **(4) Une seule gouttière** : 16, 18 et 20 px de marge latérale se suivaient — les cartes ne
+  s'alignaient pas. Tout à 20 px.
+  **Le piège du projet, encore lui : `.ah-scoreboard` est défini DEUX FOIS**, et c'est la
+  version « design system » (ligne ~3634) qui gagne — exactement comme `.sub-tab`. Ma première
+  version stylait la définition morte : le fond restait navy et la valeur tombait à **1,04:1**
+  de contraste, invisible. Les règles `.sb-vide` vivent donc **après** la définition gagnante,
+  et portent `!important` sur fond/bordure/ombre/padding parce qu'il faut battre **trois
+  couches** : le style **inline** de l'élément, cette seconde définition, et la règle
+  `[data-theme="dark"] .ah-scoreboard` qui force déjà un dégradé et une ombre en `!important`.
+  Sans le `box-shadow:none`, le bandeau « vide » gardait son ombre de carte en thème sombre.
+  Contraste vérifié contre le **fond réellement peint** (remontée au premier ancêtre opaque) :
+  **7,24:1** en clair, AA dans les deux thèmes.
+  **Rien n'est supprimé** : carte séance, navigation, bloc livre, statistiques, planning, cloche
+  et engrenage sont tous là, et aucune fonction n'a changé.
+  Test : `scripts/test-home-layout.js` (21, vrai Chromium en 375×667 et 320×568 : l'ordre
+  séance → livre, le bouton au-dessus de la ligne de flottaison, le bandeau vide discret **et
+  lisible**, le bandeau rempli **identique à avant**, le dégradé sombre neutralisé, zéro
+  débordement). Contre-épreuve sur le commit précédent : **8 échecs sur 21**.
+
 - **Le livre se lit DANS l'app** (`#bookReader`, `openBookReader()`) — les **44 premières pages**
   des *Secrets de la Détente Verticale*, jusqu'à la fin des 8 Lois, juste avant le Cours 1.
   Elles ne sont **pas servies en PDF** : le texte est extrait et vit dans
