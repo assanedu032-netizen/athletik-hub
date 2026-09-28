@@ -1,4 +1,4 @@
-const CACHE = 'athletik-v303';
+const CACHE = 'athletik-v304';
 const ASSETS = [
   '/',
   '/index.html',
@@ -17,14 +17,19 @@ const ASSETS = [
 ];
 
 self.addEventListener('install', e => {
+  // La nouvelle version prend la main D'ELLE-MÊME, dès qu'elle est installée.
+  //
+  // Avant, elle attendait un message 'skipWaiting' envoyé par la page. Or
+  // c'est l'ANCIENNE page qui l'envoie — et si cette ancienne page ne l'envoie
+  // pas, la nouvelle version reste « en attente » tant que l'app n'est pas
+  // complètement fermée. Une PWA qu'on met en arrière-plan sans jamais la
+  // tuer ne se ferme jamais : l'athlète restait des jours sur une vieille
+  // version (c'est ainsi qu'un article supprimé le 23/09 s'affichait encore
+  // le 27). Le rechargement, lui, reste piloté par la page : 'controllerchange'
+  // → _swDoReload(), qui attend un moment sûr (jamais en pleine séance).
   e.waitUntil(
-    caches.open(CACHE).then(c => c.addAll(ASSETS))
+    caches.open(CACHE).then(c => c.addAll(ASSETS)).then(() => self.skipWaiting())
   );
-  // self.skipWaiting() ici activerait le nouveau SW dès la fin de l'install,
-  // mais alors le user reste sur l'ancienne page (CSS legacy) jusqu'au prochain
-  // reload manuel. On préfère attendre le message 'skipWaiting' envoyé depuis
-  // la page (voir le bloc registration dans index.html) : il déclenche un
-  // 'controllerchange' que la page intercepte pour faire window.location.reload().
 });
 
 // Activation : nettoie les anciens caches puis claim tous les clients ouverts.

@@ -14,16 +14,50 @@ The app is the digital companion of the book *Les Secrets de la Détente Vertica
 
 - **Hosting**: Netlify (`netlify.toml` SPA-rewrites everything to `/index.html`). No build command; the file is served as-is. Production URL: `athletikhub.netlify.app`.
 - **PWA**: two Service Workers —
-  - `sw.js` (cache-first for local assets, network-first for externals) + `manifest.json`. Cache name is `athletik-v303` — bump it when shipping CSS/HTML that must invalidate.
+  - `sw.js` (cache-first for local assets, network-first for externals) + `manifest.json`. Cache name is `athletik-v304` — bump it when shipping CSS/HTML that must invalidate.
   - `firebase-messaging-sw.js` (root) — receives background push notifications (FCM).
 - **No linter, no build**. Validate changes by opening `index.html` in a browser (mobile-first, Android Chrome is the target). Before committing, sanity-check JS syntax by parsing the non-module `<script>` blocks with `node -e` (see Coding conventions).
-- **Tests**: `for f in scripts/test-*.js; do node "$f"; done` — 31 suites, 1 775 assertions, pure
+- **Tests**: `for f in scripts/test-*.js; do node "$f"; done` — 32 suites, 1 787 assertions, pure
   Node, zéro dépendance : chaque suite extrait les **vraies** fonctions d'`index.html` par
   équilibrage d'accolades et les rejoue contre des mocks. `scripts/test-live-layout.js` est la
   seule exception : elle ouvre un vrai Chromium (Playwright, hors `package.json`) pour mesurer la
   mise en page de l'écran séance en 375×667. Un test doit échouer sur le commit précédent — sinon
   il ne prouve rien.
 - The previous-turn summary often contains the user's outstanding tasks — read it before starting new work.
+
+- **Les mises à jour ne doivent JAMAIS rester bloquées sur un téléphone** (sept. 2026).
+  Symptôme : un article supprimé le 23/09 s'affichait encore le 27 sur le téléphone de l'auteur,
+  avec l'**ancienne** Home — alors que le site en production (`athletikfondation`, commit
+  `253c328`) ne le contenait plus. Le code était propre ; c'est la **livraison** qui échouait.
+  **Deux causes, toutes deux corrigées dans le code :**
+  **(1) Deux service workers se disputaient la portée `/`.** `sw.js` s'y enregistre au
+  démarrage, et `_registerFCMToken()` y enregistrait AUSSI `firebase-messaging-sw.js` (sans
+  option = portée `/`) — à **chaque démarrage** avec les notifications actives. Un navigateur
+  ne tient **qu'un** service worker par portée : les deux se remplaçaient mutuellement. Firebase
+  vit désormais sur **`/firebase-cloud-messaging-push-scope`**, la portée qu'il utilise quand il
+  s'enregistre seul ; le push n'a pas besoin de contrôler les pages pour être reçu.
+  **(2) Une nouvelle version attendait un message de l'ANCIENNE page.** `sw.js` ne s'activait
+  qu'au `postMessage({action:'skipWaiting'})` envoyé par la page. Sans lui, la nouvelle version
+  restait « en attente » tant que l'app n'était pas **tuée** — jamais, pour une PWA qu'on met
+  en arrière-plan. `install` appelle maintenant `self.skipWaiting()` après le pré-cache. Le
+  **rechargement** reste piloté par la page (`controllerchange` → `_swDoReload()`), qui attend
+  un moment sûr : jamais en pleine séance.
+  **Conséquence à connaître** : les appareils déjà abonnés au push ont un token lié à l'ancien
+  enregistrement (`/`). `_registerFCMToken()` tourne à **chaque démarrage** quand les
+  notifications sont actives, donc le token est **remplacé à la prochaine ouverture** de l'app.
+  Entre le déploiement et cette ouverture, un push envoyé à l'ancien token peut ne pas
+  s'afficher.
+  **Un téléphone déjà bloqué sur une vieille version ne reçoit pas ce correctif** — il faut
+  qu'il charge le nouveau `sw.js` au moins une fois. Remède ponctuel : désinstaller l'app de
+  l'écran d'accueil et la réinstaller depuis **`https://athletikfondation.netlify.app`**.
+  **Attention à l'URL de production** : ce fichier annonçait `athletikhub.netlify.app`. Le seul
+  projet Netlify branché sur ce dépôt s'appelle **`athletikfondation`** ; aucun projet
+  `athletikhub` n'existe dans le compte Netlify connecté. Une app installée depuis une autre
+  adresse ne recevra **jamais** rien de ce dépôt.
+  Test : `scripts/test-sw-update.js` (12, vrai Chromium, vrais service workers, sur une **page
+  vierge** — la page de l'app envoie elle-même `skipWaiting`, ce qui masquerait le défaut).
+  Contre-épreuve sur le commit précédent : **un seul** enregistrement pour `/`, et la nouvelle
+  version **reste en attente** pendant que l'ancienne garde la main — le symptôme exact.
 
 ### Netlify environment variables (required)
 

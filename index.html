@@ -29518,8 +29518,16 @@ async function _registerFCMToken() {
       console.warn(window._fcmLastError);
       return null;
     }
-    // Service Worker doit être enregistré à la racine
-    var reg = await navigator.serviceWorker.register('/firebase-messaging-sw.js');
+    // SA PROPRE PORTÉE, jamais '/'. Un navigateur ne tient qu'UN service
+    // worker par portée : enregistré sur '/', ce fichier REMPLAÇAIT sw.js
+    // (celui du cache, du hors-ligne et des alarmes du timer) à chaque
+    // démarrage avec les notifications actives — puis sw.js le remplaçait à
+    // son tour au démarrage suivant. Les deux se chassaient mutuellement, et
+    // une mise à jour de l'app pouvait rester bloquée derrière ce va-et-vient.
+    // Cette portée est celle qu'utilise Firebase quand il s'enregistre seul ;
+    // le push n'a pas besoin de contrôler les pages pour être reçu.
+    var reg = await navigator.serviceWorker.register('/firebase-messaging-sw.js',
+      { scope: '/firebase-cloud-messaging-push-scope' });
     var token = await window.fb.getToken(window.fb.messaging, {
       vapidKey: vapidKey,
       serviceWorkerRegistration: reg
