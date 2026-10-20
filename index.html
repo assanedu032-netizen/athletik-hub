@@ -7,6 +7,26 @@
 <meta name="theme-color" content="#243B6B" id="themeColor">
 <title>ATHLETIK HUB</title>
 
+<!-- ═══ APP NATIVE (Capacitor) — détection, avant tout autre script ═══
+     Dans l'app Android/iOS, l'interface est lue DEPUIS LE TÉLÉPHONE
+     (https://localhost sur Android, capacitor://localhost sur iOS). Un appel
+     relatif « /.netlify/functions/titan » viserait alors le téléphone lui-même :
+     ahApi() le préfixe par l'adresse du serveur. Sur le web, AH_API_BASE est
+     vide et rien ne change. Capacitor injecte window.Capacitor avant les
+     scripts de la page ; le protocole capacitor: sert de filet sur iOS. -->
+<script>
+(function () {
+  var cap = window.Capacitor;
+  window.AH_NATIVE = !!((cap && typeof cap.isNativePlatform === 'function' && cap.isNativePlatform()) ||
+                        location.protocol === 'capacitor:');
+  // Une seule adresse à changer si le domaine de production change — mais
+  // elle est gravée dans l'app publiée : la changer demande une nouvelle
+  // version sur les stores.
+  window.AH_API_BASE = window.AH_NATIVE ? 'https://athletikfondation.netlify.app' : '';
+  window.ahApi = function (chemin) { return window.AH_API_BASE + chemin; };
+})();
+</script>
+
 <link rel="manifest" href="/manifest.json">
 <link rel="icon" type="image/png" sizes="32x32" href="/icons/favicon-32.png">
 <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png">
@@ -19859,6 +19879,9 @@ function _bfDrawChart(data) {
   var _tim_fcmTimerId = null;
   var TIM_FCM_MAX_DELAY = 14 * 60 * 1000;
   function _tim_fcmGetToken(){
+    // Dans l'app native, ce jeton synchronisé appartient à un AUTRE appareil
+    // (la version web) : l'alerte partirait là-bas. Pas de push serveur ici.
+    if (window.AH_NATIVE) return null;
     try { return (JSON.parse(localStorage.getItem('ah_profile') || '{}').fcmToken) || null; }
     catch(_) { return null; }
   }
@@ -19939,7 +19962,7 @@ function _bfDrawChart(data) {
           return;
         }
         if (endsAt - Date.now() <= 0) return;
-        fetch('/.netlify/functions/timer-alert-background', {
+        fetch(ahApi('/.netlify/functions/timer-alert-background'), {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ token: token, endsAt: endsAt, timerId: id, body: 'Le minuteur a sonné' })
@@ -19965,7 +19988,7 @@ function _bfDrawChart(data) {
     var id = _tim_fcmTimerId;
     _tim_fcmTimerId = null;
     try {
-      fetch('/.netlify/functions/timer-alert-cancel', {
+      fetch(ahApi('/.netlify/functions/timer-alert-cancel'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ timerId: id })
@@ -27281,7 +27304,7 @@ async function callAnthropicAPI(userMessage, photo, opts) {
   }
 
   try {
-    var resp = await fetch('/.netlify/functions/titan', {
+    var resp = await fetch(ahApi('/.netlify/functions/titan'), {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -29487,6 +29510,13 @@ async function toggleNotif() {
 // définie côté HTML (utile en dev local).
 async function _registerFCMToken() {
   window._fcmLastError = '';
+  // Le push web (service worker + Push API) n'existe pas dans une vue d'app
+  // Android/iOS. Les notifications natives sont une étape à part ; d'ici là,
+  // on le dit au lieu d'échouer en silence.
+  if (window.AH_NATIVE) {
+    window._fcmLastError = 'Les notifications ne sont pas encore disponibles dans l\u2019application mobile.';
+    return null;
+  }
   if (!window.fb || !window.fb.messaging || !window.fb.getToken) {
     window._fcmLastError = 'Firebase Messaging non initialisé (navigateur non supporté, ou app pas prête).';
     console.log('FCM pas dispo (navigateur non supporté ou pas encore init).');
@@ -29497,7 +29527,7 @@ async function _registerFCMToken() {
     if (!vapidKey) {
       // Tente de récupérer la clé publique depuis la Netlify function
       try {
-        var r = await fetch('/.netlify/functions/notif-config?t=' + Date.now(), { cache: 'no-store' });
+        var r = await fetch(ahApi('/.netlify/functions/notif-config?t=') + Date.now(), { cache: 'no-store' });
         if (r.ok) {
           var j = await r.json();
           vapidKey = (j.vapidKey || '').trim() || null;
@@ -29586,7 +29616,7 @@ window.sendTestNotif = async function() {
     try { prof = JSON.parse(localStorage.getItem('ah_profile') || '{}'); } catch(e) {}
   }
   try {
-    var r = await fetch('/.netlify/functions/send-notif', {
+    var r = await fetch(ahApi('/.netlify/functions/send-notif'), {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -30559,7 +30589,7 @@ async function _bGenerate() {
 
   try {
     var idToken = await window.fbUser.getIdToken();
-    var resp = await fetch('/.netlify/functions/titan', {
+    var resp = await fetch(ahApi('/.netlify/functions/titan'), {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + idToken },
       body: JSON.stringify(payload)
@@ -31258,7 +31288,7 @@ async function submitAccessCode() {
   try { idToken = await window.fbUser.getIdToken(); }
   catch(e) { if (btn) btn.disabled = false; showMsg('Session expirée. Reconnecte-toi.', false); return; }
 
-  fetch('/.netlify/functions/check-code', {
+  fetch(ahApi('/.netlify/functions/check-code'), {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + idToken },
     body: JSON.stringify({ code: code })
@@ -31420,7 +31450,7 @@ window._bootstrapAccessFromServer = async function(fbUser) {
   window._bootstrapInflight = true;
   try {
     var idToken = await fbUser.getIdToken();
-    var res = await fetch('/.netlify/functions/init-user', {
+    var res = await fetch(ahApi('/.netlify/functions/init-user'), {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + idToken },
       body: JSON.stringify({})
@@ -31612,7 +31642,7 @@ window._bookActivationNext = async function() {
   catch(e) { _bookActMsg('Session expirée. Reconnecte-toi.', 'err'); return; }
 
   try {
-    var res = await fetch('/.netlify/functions/book-challenge', {
+    var res = await fetch(ahApi('/.netlify/functions/book-challenge'), {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + idToken },
       body: JSON.stringify({ action: 'start' })
@@ -31648,7 +31678,7 @@ window._bookActivationValidate = async function() {
   catch(e) { _bookActMsg('Session expirée. Reconnecte-toi.', 'err'); if (btn){btn.disabled=false;btn.style.opacity='1';} return; }
 
   try {
-    var res = await fetch('/.netlify/functions/book-challenge', {
+    var res = await fetch(ahApi('/.netlify/functions/book-challenge'), {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + idToken },
       body: JSON.stringify({
@@ -39656,7 +39686,7 @@ async function scanHandleFile(e) {
 
   try {
     var idToken = await window.fbUser.getIdToken();
-    var response = await fetch('/.netlify/functions/titan', {
+    var response = await fetch(ahApi('/.netlify/functions/titan'), {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -44056,6 +44086,10 @@ async function fbSaveProfile() {
 <script>
 (function(){
   if (!('serviceWorker' in navigator)) return;
+  // Dans l'app native, les fichiers sont DANS le paquet : un service worker
+  // n'aurait rien à mettre en cache, et les vues web natives le gèrent mal.
+  // Les mises à jour passent par les stores.
+  if (window.AH_NATIVE) return;
 
   // On ne re-recharge qu'une fois par cycle d'update (évite boucle infinie).
   var refreshing = false;
@@ -44161,6 +44195,8 @@ async function fbSaveProfile() {
 // Croix → dismiss permanent (localStorage ah_install_dismissed).
 // ═══════════════════════════════════════
 (function initInstallPrompt(){
+  // Dans l'app native, l'app EST installée : la bannière n'a rien à proposer.
+  if (window.AH_NATIVE) return;
   var DISMISS_KEY = 'ah_install_dismissed';
 
   function isStandalone(){

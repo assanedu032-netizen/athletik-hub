@@ -17,7 +17,7 @@ The app is the digital companion of the book *Les Secrets de la Détente Vertica
   - `sw.js` (cache-first for local assets, network-first for externals) + `manifest.json`. Cache name is `athletik-v304` — bump it when shipping CSS/HTML that must invalidate.
   - `firebase-messaging-sw.js` (root) — receives background push notifications (FCM).
 - **No linter, no build**. Validate changes by opening `index.html` in a browser (mobile-first, Android Chrome is the target). Before committing, sanity-check JS syntax by parsing the non-module `<script>` blocks with `node -e` (see Coding conventions).
-- **Tests**: `for f in scripts/test-*.js; do node "$f"; done` — 33 suites, 1 830 assertions, pure
+- **Tests**: `for f in scripts/test-*.js; do node "$f"; done` — 34 suites, 1 852 assertions, pure
   Node, zéro dépendance : chaque suite extrait les **vraies** fonctions d'`index.html` par
   équilibrage d'accolades et les rejoue contre des mocks. `scripts/test-live-layout.js` est la
   seule exception : elle ouvre un vrai Chromium (Playwright, hors `package.json`) pour mesurer la
@@ -86,6 +86,38 @@ The app is the digital companion of the book *Les Secrets de la Détente Vertica
   garde-fou vu en train d'échouer** sur une page cassée, l'app chargée dans Chromium depuis le
   seul `www/` sans aucun 404, et le parseur de `ACCESS_LEGACY_CODES`). Contre-épreuve sur le
   commit précédent : **22 échecs sur 35**.
+
+- **L'app mobile (Capacitor 8)** — Android et iOS embarquent l'interface **dans le paquet** :
+  rien ne s'affiche depuis Netlify, seules les **fonctions** (Titan, codes, activation, essai)
+  y sont appelées. `capacitor.config.json` : `appId` **`com.athletikhub.app`** (définitif dès
+  la première publication), `webDir` **`www`** — le dossier publié, **jamais** la racine du
+  dépôt. Projets natifs commités dans `android/` et `ios/` ; les copies du web qu'ils
+  contiennent sont ignorées par git. Icônes et écrans de démarrage générés depuis
+  `resources/` (logo 1024 px, fond blanc extérieur rendu transparent **par remplissage depuis
+  les coins** : la bordure dorée arrête le remplissage, les lettres blanches restent intactes).
+  Mise à jour : `npm run cap:sync` (= `build-www` puis `cap sync`).
+  **`window.AH_NATIVE` / `ahApi()`** — définis par le **premier script** de `index.html`.
+  Dans l'app, la page est lue depuis le téléphone (`https://localhost`, `capacitor://localhost`) :
+  un `fetch('/.netlify/functions/titan')` viserait **le téléphone lui-même**. Tous les appels
+  passent donc par `ahApi('/.netlify/functions/…')`, qui préfixe `AH_API_BASE` en natif et rend
+  le chemin **tel quel sur le web**. **Tout nouvel appel à une fonction doit passer par
+  `ahApi()`** — le test le vérifie. L'adresse de production est **gravée dans l'app publiée** :
+  la changer demande une nouvelle version sur les stores.
+  **En natif, désactivés volontairement** : le service worker (les fichiers sont déjà dans le
+  paquet), la bannière « Installe l'app », le push web (`_registerFCMToken` le dit
+  explicitement) et l'alerte timer par push serveur — `_tim_fcmGetToken()` renvoie `null`, car
+  le jeton synchronisé du profil appartient à **un autre appareil** (la version web) : l'alerte
+  partirait là-bas. Notifications natives, connexion Google native et modules (vibrations,
+  partage, export, micro) sont les étapes suivantes.
+  **Les tests qui rejouent des fonctions dans un bac à sable** (`test-timer`, `test-notif-diag`)
+  doivent y définir `ahApi` (identité, comme sur le web) — sinon `ReferenceError`.
+  Test : `scripts/test-native-shell.js` (22, vrai Chromium, Capacitor **simulé** en posant
+  `window.Capacitor` avant les scripts, comme le fait Capacitor : sur le web rien ne bouge, le
+  service worker s'enregistre et la bannière s'affiche ; en natif, l'activation d'un code part
+  vers la **production** et jamais vers le téléphone). Contre-épreuve sur le commit précédent :
+  **13 échecs sur 18** — dont l'appel qui partait vers le téléphone lui-même.
+  **Compilation** : le SDK Android se télécharge depuis `dl.google.com`, **bloqué** par la
+  politique réseau de l'environnement cloud. iOS exige macOS + Xcode.
 
 ### Netlify environment variables (required)
 

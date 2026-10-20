@@ -68,6 +68,7 @@ function makeEnv(opts) {
     grabFn('_fcmDiagOk') + '\n' +
     'var FCM_UNAVAILABLE_MSG = ' + JSON.stringify(GENERIC) + ';\n' +
     'var window = ENV;\n' +
+    'var ahApi = function (p) { return p; };\n' +   // 1er script de la page, version web
     grabAssign('window.sendTestNotif') + '\n' +
     'return { _fcmDiag: _fcmDiag, _fcmDiagOk: _fcmDiagOk, _fcmEsc: _fcmEsc,' +
     '         ERRORS: FCM_SERVER_ERRORS, sendTestNotif: window.sendTestNotif };';

@@ -55,6 +55,7 @@ function build(opts) {
                  '_tim_announceAlert', 'tim_fcmSchedulePush', 'tim_fcmCancelPush'];
   const srcs = names.map(extract).filter(Boolean);
   const preamble = `
+    var ahApi = function (p) { return p; };   // 1er script de la page, version web
     var _tim_fcmTimerId = null;
     var TIM_FCM_MAX_DELAY = 14 * 60 * 1000;
     var _tim_alertState = null, _tim_alertReason = '';

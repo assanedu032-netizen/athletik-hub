@@ -699,7 +699,7 @@ console.log('\n=== LE SCAN PHOTO PASSE PAR LE PROXY, PLUS PAR LE NAVIGATEUR ===\
      !/ajoute ta clé API Anthropic/.test(html));
 
   ok('le scan passe par la fonction Netlify',
-     /fetch\('\/\.netlify\/functions\/titan'[\s\S]{0,400}?mode: 'scan'/.test(html));
+     /fetch\(ahApi\('\/\.netlify\/functions\/titan'\)[\s\S]{0,400}?mode: 'scan'/.test(html));
   ok('  avec un jeton d\'authentification',
      /mode: 'scan'/.test(html) && /Bearer ' \+ idToken/.test(html));
   ok('  et il refuse de partir sans compte connecté',
