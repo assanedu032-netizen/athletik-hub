@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">Athletik Hub</string>
+    <string name="title_activity_main">Athletik Hub</string>
+    <string name="package_name">com.athletikhub.app</string>
+    <string name="custom_url_scheme">com.athletikhub.app</string>
+</resources>

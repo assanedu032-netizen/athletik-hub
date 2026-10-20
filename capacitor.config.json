@@ -1,0 +1,12 @@
+{
+  "appId": "com.athletikhub.app",
+  "appName": "Athletik Hub",
+  "webDir": "www",
+  "backgroundColor": "#243B6B",
+  "android": {
+    "allowMixedContent": false
+  },
+  "ios": {
+    "contentInset": "never"
+  }
+}

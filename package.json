@@ -5,10 +5,18 @@
   "description": "Athletik Hub PWA + Netlify Functions (dépendances installées au niveau racine pour que Netlify les bundle automatiquement avec les fonctions).",
   "scripts": {
     "rebuild-rag": "node scripts/rebuild-rag.js",
-    "gen-codes": "node scripts/gen-codes.js"
+    "gen-codes": "node scripts/gen-codes.js",
+    "build:www": "node scripts/build-www.js",
+    "cap:sync": "node scripts/build-www.js && cap sync"
   },
   "dependencies": {
     "@netlify/blobs": "^8.1.0",
     "firebase-admin": "^13.0.0"
+  },
+  "devDependencies": {
+    "@capacitor/android": "^8.5.3",
+    "@capacitor/cli": "^8.5.3",
+    "@capacitor/core": "^8.5.3",
+    "@capacitor/ios": "^8.5.3"
   }
 }
