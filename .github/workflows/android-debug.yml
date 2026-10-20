@@ -1,0 +1,82 @@
+# Compile l'APK Android de DÉBOGAGE et le dépose comme artefact téléchargeable.
+#
+# Rien n'est publié : ni Google Play, ni ailleurs. Aucun secret n'est utilisé —
+# un APK de débogage est signé avec la clé de débogage que Gradle génère sur
+# la machine de compilation. L'APK de PUBLICATION (AAB signé avec ta clé
+# d'envoi) sera un workflow à part, avec des secrets GitHub.
+name: Android — APK de débogage
+
+on:
+  push:
+    branches: [main, claude/continue-project-W12qw]
+    paths:
+      - index.html
+      - ciqual-data.js
+      - manifest.json
+      - data/**
+      - images/**
+      - icons/**
+      - assets/**
+      - android/**
+      - capacitor.config.json
+      - package.json
+      - scripts/build-www.js
+      - scripts/check-apk.sh
+      - .github/workflows/android-debug.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: android-debug-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  apk:
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v4
+
+      # Capacitor 8 exige Node 22 ou plus.
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      # Le plugin Android de Gradle utilisé par Capacitor 8 exige Java 21.
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+
+      - uses: gradle/actions/setup-gradle@v4
+
+      # Pas de fichier de verrouillage dans ce dépôt (choix du projet) :
+      # npm install, pas npm ci.
+      - name: Dépendances
+        run: npm install --no-audit --no-fund
+
+      # Le MÊME dossier que celui publié sur le web : liste d'autorisation,
+      # jamais la racine du dépôt (le livre complet et les réponses
+      # d'activation n'entrent pas dans l'APK).
+      - name: Dossier web embarqué (www/)
+        run: node scripts/build-www.js
+
+      - name: Copie dans le projet Android
+        run: npx cap sync android
+
+      - name: Compilation (assembleDebug)
+        working-directory: android
+        run: ./gradlew assembleDebug --no-daemon --stacktrace
+
+      - name: Vérification du fichier produit
+        run: bash scripts/check-apk.sh android/app/build/outputs/apk/debug/app-debug.apk
+
+      - name: Artefact téléchargeable
+        uses: actions/upload-artifact@v4
+        with:
+          name: athletik-hub-debug-${{ github.sha }}
+          path: android/app/build/outputs/apk/debug/app-debug.apk
+          if-no-files-found: error
+          retention-days: 14

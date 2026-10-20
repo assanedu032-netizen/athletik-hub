@@ -1,0 +1,37 @@
+# iOS — compilation de CONTRÔLE pour le simulateur, sans signature.
+#
+# MANUEL UNIQUEMENT (onglet Actions → « iOS — compilation simulateur » → Run).
+# Il prouve que le projet iOS compile sur macOS + Xcode, sans compte Apple ni
+# secret : une compilation simulateur n'a pas besoin d'être signée. Il ne
+# produit PAS d'application installable sur un iPhone, et ne publie rien.
+# GitHub n'affiche un workflow manuel qu'une fois présent sur la branche par
+# défaut (main). Voir docs/MOBILE-BUILD.md pour la version signée (TestFlight).
+name: iOS — compilation simulateur
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  simulateur:
+    runs-on: macos-15
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Dépendances
+        run: npm install --no-audit --no-fund
+      - name: Dossier web embarqué (www/)
+        run: node scripts/build-www.js
+      - name: Copie dans le projet iOS
+        run: npx cap sync ios
+      - name: Compilation simulateur (non signée)
+        run: |
+          xcodebuild -project ios/App/App.xcodeproj -scheme App -configuration Debug \
+            -sdk iphonesimulator -destination 'generic/platform=iOS Simulator' \
+            CODE_SIGNING_ALLOWED=NO build | tail -40
+          test "${PIPESTATUS[0]}" -eq 0

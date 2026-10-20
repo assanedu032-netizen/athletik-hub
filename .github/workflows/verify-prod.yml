@@ -1,0 +1,25 @@
+# Vérifie la production DEPUIS L'EXTÉRIEUR : fichiers sensibles non servis,
+# fichiers de l'app bien servis, fonctions serveur actives et protégées.
+# Lecture seule : ne déploie rien, ne modifie rien, n'appelle pas l'IA.
+name: Vérification de la production
+
+on:
+  push:
+    branches: [main, claude/continue-project-W12qw]
+    paths:
+      - scripts/verify-prod.sh
+      - .github/workflows/verify-prod.yml
+      - netlify.toml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - name: Contrôles
+        run: bash scripts/verify-prod.sh https://athletikfondation.netlify.app
