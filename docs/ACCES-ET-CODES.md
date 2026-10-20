@@ -154,7 +154,7 @@ Il n'en reste qu'un, en dur dans `check-code.js` :
 
 | Code | Niveau | État |
 |------|--------|------|
-| `KEVIN-JEAN2478` | VIP | encore actif |
+| `l’ancien code VIP fixe (retiré — il était public)` | VIP | encore actif |
 | ~~`AL-88ND89`~~ | BETA | **retiré** — était affiché comme exemple dans l'app, donc public de fait |
 | ~~`ONANDULU78`~~ | MASTER | **retiré** — MASTER à vie non révocable, et MASTER vaut maintenant 200 msg Titan/jour |
 
@@ -162,7 +162,7 @@ Retirer un code ne révoque **pas** les accès déjà accordés : `grantAccessTi
 a écrit `accessTier` dans Firestore, qui reste la source de vérité. Les
 personnes ayant déjà utilisé ces codes gardent leur accès.
 
-> Il reste à retirer `KEVIN-JEAN2478` une fois les bêta-testeurs actuels
+> Il reste à retirer `l’ancien code VIP fixe (retiré — il était public)` une fois les bêta-testeurs actuels
 > activés. Ensuite, ne distribuer que des codes HMAC (`scripts/gen-codes.js`) :
 > eux sont révocables en bloc, en changeant `ACCESS_CODE_SECRET`.
 
@@ -318,7 +318,7 @@ Aucune ne doit apparaître dans le code. Site config → Environment variables.
 1. ~~MASTER n'apporte rien de plus que VIP.~~ **Réglé** — quotas Titan
    différenciés (200 / 60 / 20) et messages alignés sur la réalité.
 2. ~~`ONANDULU78` donne MASTER à vie.~~ **Réglé** — retiré de `LEGACY_CODES`,
-   comme `AL-88ND89`. Reste `KEVIN-JEAN2478`, à retirer après les bêta-testeurs.
+   comme `AL-88ND89`. Reste `l’ancien code VIP fixe (retiré — il était public)`, à retirer après les bêta-testeurs.
 3. **Aucune traçabilité par code.** On sait *qu'un* code a été utilisé
    (collection `accessRedemptions`) mais pas *lequel* — impossible de savoir si
    un code a fuité et circule.

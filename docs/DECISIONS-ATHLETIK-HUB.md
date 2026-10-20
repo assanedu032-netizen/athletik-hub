@@ -209,7 +209,7 @@ bilan de séance (18 août) et sur la Mission Titan (7 septembre).
 | **Publication App Store / Play Store** | Écartée du périmètre MVP. Décision à reprendre. |
 | **« Titan-cerveau » (base de connaissances)** | Écartée du périmètre MVP. |
 | **Croix « masquer » sur la notification Titan** | Supprimée le 7 septembre. Peut être rétablie. |
-| **Code d'accès historique `KEVIN-JEAN2478`** | À retirer une fois les bêta-testeurs activés. |
+| **Code d'accès historique `l’ancien code VIP fixe (retiré — il était public)`** | À retirer une fois les bêta-testeurs activés. |
 | **Configuration hors code** | Variables d'environnement, règles Firestore et domaines autorisés : à appliquer côté propriétaire. |
 
 ---

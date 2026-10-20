@@ -12,12 +12,12 @@ The app is the digital companion of the book *Les Secrets de la Détente Vertica
 
 ## Deploying / serving
 
-- **Hosting**: Netlify (`netlify.toml` SPA-rewrites everything to `/index.html`). No build command; the file is served as-is. Production URL: `athletikhub.netlify.app`.
+- **Hosting**: Netlify (`netlify.toml` SPA-rewrites everything to `/index.html`). **Build : `node scripts/build-www.js` → publie `www/`** (liste d'autorisation, voir plus bas) — l'app elle-même n'a toujours aucune compilation. Production : **`athletikfondation.netlify.app`** (le seul projet Netlify branché sur ce dépôt ; `athletikhub.netlify.app` n'existe pas dans le compte).
 - **PWA**: two Service Workers —
   - `sw.js` (cache-first for local assets, network-first for externals) + `manifest.json`. Cache name is `athletik-v304` — bump it when shipping CSS/HTML that must invalidate.
   - `firebase-messaging-sw.js` (root) — receives background push notifications (FCM).
 - **No linter, no build**. Validate changes by opening `index.html` in a browser (mobile-first, Android Chrome is the target). Before committing, sanity-check JS syntax by parsing the non-module `<script>` blocks with `node -e` (see Coding conventions).
-- **Tests**: `for f in scripts/test-*.js; do node "$f"; done` — 32 suites, 1 787 assertions, pure
+- **Tests**: `for f in scripts/test-*.js; do node "$f"; done` — 33 suites, 1 830 assertions, pure
   Node, zéro dépendance : chaque suite extrait les **vraies** fonctions d'`index.html` par
   équilibrage d'accolades et les rejoue contre des mocks. `scripts/test-live-layout.js` est la
   seule exception : elle ouvre un vrai Chromium (Playwright, hors `package.json`) pour mesurer la
@@ -58,6 +58,34 @@ The app is the digital companion of the book *Les Secrets de la Détente Vertica
   vierge** — la page de l'app envoie elle-même `skipWaiting`, ce qui masquerait le défaut).
   Contre-épreuve sur le commit précédent : **un seul** enregistrement pour `/`, et la nouvelle
   version **reste en attente** pendant que l'ancienne garde la main — le symptôme exact.
+
+- **Ce qui est publié — et seulement ça** (oct. 2026). Netlify publiait la **racine du dépôt**
+  (`publish = "."`), et le dépôt GitHub est **public**. Étaient donc téléchargeables par
+  n'importe qui : **le livre complet** (`data/livre.md`, 70 589 mots, de la Préface à la
+  Bibliographie — contrairement à ce que ce fichier affirmait plus bas, il est bien dans le
+  dépôt), **les 17 réponses d'activation en clair** (`data/book-challenges.js` — et le numéro
+  Amazon n'est vérifié que sur sa **forme**, donc l'accès premium s'ouvrait sans acheter le
+  livre), un **code VIP à vie** écrit dans `check-code.js`, et toutes les notes internes.
+  **(1) `scripts/build-www.js`** copie une **liste d'autorisation** dans `www/` (non commité),
+  que Netlify publie. **Jamais une liste d'exclusion** : un fichier ajouté demain n'est pas
+  publié tant qu'on ne l'a pas listé. Deux garde-fous font **échouer** la construction — et
+  Netlify ne publie pas une construction en échec : un fichier interdit présent, ou une page
+  qui référence un fichier non publié (**ajouter le fichier à `FICHIERS`** s'il doit être public).
+  `data/` est listé **fichier par fichier** : il abrite aussi le livre et les réponses. Les
+  fonctions lisent ces deux fichiers dans **leur propre paquet** (`included_files`), jamais via
+  le site : rien ne change pour elles. Ce même `www/` servira de `webDir` à l'app mobile.
+  **(2) Plus aucun code d'accès dans le code.** Le code VIP fixe est retiré (considéré comme
+  **brûlé** ; les accès déjà accordés restent, Firestore fait foi). S'il en faut encore un :
+  variable d'env **`ACCESS_LEGACY_CODES`** = `CODE:TIER,…`. Mieux : des codes HMAC
+  (`scripts/gen-codes.js`).
+  **Ce qui reste à faire, hors du code** : le dépôt GitHub est **public**, donc le livre et les
+  réponses y restent lisibles, **historique compris**. Seule la mise en **privé** du dépôt
+  ferme cette porte (Netlify fonctionne avec un dépôt privé). Les réponses ayant été publiques,
+  la question d'activation ne protège plus vraiment tant qu'elle n'est pas renouvelée.
+  Test : `scripts/test-www-build.js` (43 : construction réelle, interdits absents, **le
+  garde-fou vu en train d'échouer** sur une page cassée, l'app chargée dans Chromium depuis le
+  seul `www/` sans aucun 404, et le parseur de `ACCESS_LEGACY_CODES`). Contre-épreuve sur le
+  commit précédent : **22 échecs sur 35**.
 
 ### Netlify environment variables (required)
 

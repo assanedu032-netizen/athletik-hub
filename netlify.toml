@@ -1,6 +1,12 @@
 [build]
-  command = ""
-  publish = "."
+  # On ne publie plus la racine du dépôt : elle contenait le livre complet et
+  # les réponses d'activation, que seules les fonctions doivent lire. Le
+  # script copie une LISTE D'AUTORISATION dans www/ et échoue si une page
+  # référence un fichier non publié — Netlify ne publie alors pas, et le site
+  # reste sur la version précédente. Les fonctions, elles, lisent leurs
+  # fichiers dans leur propre paquet (included_files) : rien ne change pour elles.
+  command = "node scripts/build-www.js"
+  publish = "www"
   functions = "netlify/functions"
 
 # Embarque le livre dans le bundle de la fonction qui en a besoin

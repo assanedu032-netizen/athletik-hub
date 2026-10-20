@@ -5,7 +5,9 @@
 //   M-XXXXXX-YYYY   → MASTER (à vie + tout débloqué)
 // CHECK4 = 4 premiers chars de HMAC-SHA256(TIER-RANDOM, ACCESS_CODE_SECRET) en hex maj
 //
-// Codes "legacy" (3 codes fixes hérités) toujours acceptés pour rétro-compat.
+// Codes « hérités » : plus aucun n'est écrit dans ce fichier. Le dépôt est
+// public — un code écrit ici est un code donné à tout le monde. S'il en faut
+// encore un, il vit dans la variable d'env ACCESS_LEGACY_CODES (voir plus bas).
 // Le secret HMAC vit UNIQUEMENT dans la variable d'env Netlify ACCESS_CODE_SECRET.
 //
 // ── Auth + persistance serveur (Phase 3 — durcissement) ──
@@ -38,12 +40,25 @@ const TIER_MAP = { B: 'BETA', V: 'VIP', M: 'MASTER' };
 //                          que personne ne pouvait fermer.
 // Retirer un code ne révoque PAS les accès déjà accordés : grantAccessTier a
 // écrit accessTier dans Firestore, qui reste la source de vérité.
-// TODO : retirer aussi KEVIN-JEAN2478 une fois les bêta-testeurs actuels
-// activés, et ne plus distribuer que des codes HMAC (scripts/gen-codes.js),
-// eux révocables en changeant ACCESS_CODE_SECRET.
-const LEGACY_CODES = {
-  'KEVIN-JEAN2478': 'VIP',
-};
+// Le dernier code fixe était écrit ICI, dans un dépôt public : n'importe qui
+// pouvait le lire et s'ouvrir un accès VIP à vie. Il est retiré — considère-le
+// comme brûlé. Les accès déjà accordés ne bougent pas (Firestore fait foi).
+// Pour en accepter un malgré tout, sans l'écrire dans le code :
+//   ACCESS_LEGACY_CODES = "CODE1:VIP,CODE2:BETA"   (variable d'env Netlify)
+// Mieux : ne distribuer que des codes HMAC (scripts/gen-codes.js), révocables
+// en changeant ACCESS_CODE_SECRET.
+function parseLegacyCodes(raw) {
+  var out = {};
+  String(raw || '').split(',').forEach(function (paire) {
+    var i = paire.lastIndexOf(':');
+    if (i < 1) return;
+    var code = paire.slice(0, i).trim().toUpperCase();
+    var tier = paire.slice(i + 1).trim().toUpperCase();
+    if (code && (tier === 'BETA' || tier === 'VIP' || tier === 'MASTER')) out[code] = tier;
+  });
+  return out;
+}
+const LEGACY_CODES = parseLegacyCodes(process.env.ACCESS_LEGACY_CODES);
 
 const TIER_META = {
   BETA:   { label: 'BETA',   color: '#10B981', valid: 14,   msg: 'Accès BETA — 14 jours d\'essai.' },
@@ -233,8 +248,8 @@ exports.handler = async function(event) {
   if (!auth.ok) return resp(auth.code, { ok: false, error: 'unauthenticated', message: auth.msg });
   const uid = auth.uid;
 
-  // 1) Codes legacy fixes (toujours acceptés)
-  if (LEGACY_CODES[code]) {
+  // 1) Codes hérités — uniquement ceux déclarés dans ACCESS_LEGACY_CODES
+  if (Object.prototype.hasOwnProperty.call(LEGACY_CODES, code)) {
     const tier = LEGACY_CODES[code];
     const meta = TIER_META[tier];
     try {

@@ -95,3 +95,6 @@ undefined/
 # mégarde dans le dossier.
 *.pdf
 book/
+
+# Dossier publié, reconstruit à chaque déploiement par scripts/build-www.js.
+www/
