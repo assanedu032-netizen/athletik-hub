@@ -1,5 +1,4 @@
-# Diagnostic ponctuel, lecture seule : que répondent les sites du compte
-# Netlify vus de l'extérieur ? (À supprimer après usage.)
+# Diagnostic ponctuel, lecture seule (à supprimer après usage).
 name: Diagnostic hébergement
 on:
   push:
@@ -10,19 +9,17 @@ permissions:
 jobs:
   diag:
     runs-on: ubuntu-latest
-    timeout-minutes: 5
+    timeout-minutes: 10
     steps:
-      - name: Sites du compte
+      - uses: actions/checkout@v4
+      - name: Quelle version sert athletikhub.netlify.app ?
         run: |
-          for u in \
-            https://athletikfondation.netlify.app/ \
-            https://6aba45b800b5fb00083ea700--athletikfondation.netlify.app/ \
-            https://claude-continue-project-w12qw--athletikfondation.netlify.app/ \
-            https://alassanecoaching.com/ \
-            https://lucent-granita-2ade60.netlify.app/ \
-            https://athletikhub.netlify.app/ ; do
-            echo "════ $u"
-            curl -sS -m 30 -o /tmp/b -D /tmp/h -w 'HTTP %{http_code}\n' "$u" || true
-            grep -iE '^(server|x-nf-request-id|content-type|cache-status|x-nf-.*):' /tmp/h | tr -d '\r' || true
-            echo "--- début du corps :"; head -c 300 /tmp/b | tr '\n' ' '; echo; echo
+          B=https://athletikhub.netlify.app
+          curl -sS -m 30 "$B/index.html" -o /tmp/i
+          echo "taille index.html : $(wc -c < /tmp/i)"
+          for m in 'RÉSISTANCE MENTALE' 'AH_API_BASE' 'bkMarksOv' 'sb-vide' 'firebase-cloud-messaging-push-scope'; do
+            printf '%-40s %s\n' "$m" "$(grep -c "$m" /tmp/i)"
           done
+          curl -sS -m 30 "$B/sw.js" | grep -m1 "const CACHE" || echo "(sw.js sans CACHE)"
+      - name: Contrôle complet de athletikhub.netlify.app
+        run: bash scripts/verify-prod.sh https://athletikhub.netlify.app || true
