@@ -1,0 +1,28 @@
+# Diagnostic ponctuel, lecture seule : que répondent les sites du compte
+# Netlify vus de l'extérieur ? (À supprimer après usage.)
+name: Diagnostic hébergement
+on:
+  push:
+    branches: [claude/continue-project-W12qw]
+    paths: [.github/workflows/diag-hebergement.yml]
+permissions:
+  contents: read
+jobs:
+  diag:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Sites du compte
+        run: |
+          for u in \
+            https://athletikfondation.netlify.app/ \
+            https://6aba45b800b5fb00083ea700--athletikfondation.netlify.app/ \
+            https://claude-continue-project-w12qw--athletikfondation.netlify.app/ \
+            https://alassanecoaching.com/ \
+            https://lucent-granita-2ade60.netlify.app/ \
+            https://athletikhub.netlify.app/ ; do
+            echo "════ $u"
+            curl -sS -m 30 -o /tmp/b -D /tmp/h -w 'HTTP %{http_code}\n' "$u" || true
+            grep -iE '^(server|x-nf-request-id|content-type|cache-status|x-nf-.*):' /tmp/h | tr -d '\r' || true
+            echo "--- début du corps :"; head -c 300 /tmp/b | tr '\n' ' '; echo; echo
+          done
