@@ -143,7 +143,7 @@ async function t(name, fn) {
     assert.ok(await p.$('.video iframe[src*="dQw4w9WgXcQ"]'));
     const txt = await p.textContent('main');
     assert.ok(txt.includes('Bienvenue : les règles en 2 minutes'));
-    assert.ok(txt.includes('Texte pédagogique écrit par Alassane.') && txt.includes('Les consignes'));
+    assert.ok(txt.includes('Texte pédagogique écrit par Alassane.') && txt.includes('Consignes'));
     // le moteur de la démo utilise les vraies questions et réponses publiées
     const ok = await p.evaluate(() => {
       const m = AMApp.engine.mission('boss-a2');
@@ -156,11 +156,22 @@ async function t(name, fn) {
 
   await t('revenir au contenu d\'origine', async () => {
     await goto('#/contenu/m0.1');
+    await p.click('details.more summary');
     await p.click('[data-act=edRevert]');
     assert.ok(await p.$('.ask'), 'confirmation dans la page');
     await p.click('.ask [data-ask="1"]');
     await p.waitForTimeout(150);
     assert.strictEqual(await p.inputValue('[data-ed=video]'), '');
+  });
+
+  await t('publier directement depuis l\'éditeur, puis retour sur la mission', async () => {
+    await goto('#/contenu/m0.2');
+    await p.fill('[data-ed=body]', 'Texte publié en un geste.');
+    await p.click('[data-act=edPublish]');
+    await p.click('.ask [data-ask="1"]');
+    await p.waitForTimeout(250);
+    assert.ok((await p.evaluate(() => location.hash)).includes('#/mission/m0.2'));
+    assert.ok((await p.textContent('main')).includes('Texte publié en un geste.'));
   });
 
   await t('annuler une confirmation ne fait rien', async () => {

@@ -48,8 +48,12 @@ async function t(name, fn) {
     await p.click('[data-act=startProgram]');
     await p.waitForTimeout(100);
     assert.ok((await p.evaluate(() => location.hash)).includes('m0.1'));
-    assert.ok(await p.$('.video.empty'), 'emplacement vidéo'); assert.ok((await p.textContent('.video.empty')).includes('Vidéo bientôt disponible')); assert.ok((await p.textContent('.video-title')).includes('Bienvenue dans Athletik Master'), 'titre de la vidéo');
-    assert.ok((await p.textContent('main')).includes('Contenu pédagogique bientôt disponible'));
+    assert.ok(await p.$('.video.empty'), 'emplacement vidéo'); assert.ok((await p.textContent('.video.empty')).includes('Vidéo bientôt disponible')); 
+    // Côté participant : aucun badge « à compléter » ; seule la barre admin signale ce qui manque
+    assert.strictEqual(await p.$$eval('main .placeholder', e => e.length), 0, 'aucun badge à compléter');
+    assert.ok((await p.textContent('.admin-bar')).includes('À compléter'), 'barre admin');
+    assert.ok(await p.$('.admin-bar a[href="#/contenu/m0.1"]'), 'lien Modifier vers l\'éditeur');
+    assert.strictEqual(await p.$$eval('.action-card [data-act=validate]', e => e.length), 1, 'un seul bouton, dans la carte action');
     await noOverflow();
   });
 
@@ -75,7 +79,7 @@ async function t(name, fn) {
     await p.waitForTimeout(900);
     await validate();
     await goto('#/mission/m0.5');
-    assert.ok((await p.textContent('main')).includes('Lien WhatsApp à configurer'), 'pas de faux lien WhatsApp');
+    assert.ok(!(await p.$('.btn.wa')), 'pas de faux lien WhatsApp');
     await p.fill('textarea[data-field=smart]', 'Gagner 10 cm de détente en 90 jours');
     await p.click('[data-act=ficheCheck][data-item=sent]');
     await p.waitForTimeout(150);
@@ -87,7 +91,8 @@ async function t(name, fn) {
     assert.ok(await p.$('.overlay'), 'écran de félicitations');
     assert.ok((await p.textContent('.overlay')).includes('Carte Rookie'));
     await closeOverlays();
-    assert.ok((await p.textContent('.topbar')).includes('Rookie'));
+    await goto('#/');
+    assert.ok((await p.textContent('.prog-line')).includes('Rang Rookie'));
   });
 
   await t('arène 1 : 1.1 bloquée 24 h, ouverte après', async () => {

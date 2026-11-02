@@ -388,7 +388,7 @@
       "video": "",
       "description": "Ta vidéo d'engagement, envoyée sur WhatsApp. Alassane la regarde. Elle présente : ta situation actuelle, tes objectifs, tes motivations et ton engagement sur les 90 jours.",
       "body": "",
-      "instructions": "",
+      "instructions": "Ta vidéo d'engagement, envoyée sur WhatsApp. Alassane la regarde. Elle présente : ta situation actuelle, tes objectifs, tes motivations et ton engagement sur les 90 jours.",
       "action": "Envoyer ta vidéo d'engagement avec ton objectif SMART",
       "whatsapp": "engagement",
       "support": {
@@ -2144,7 +2144,7 @@
       "video": "",
       "description": "Le boss final n'est pas un examen : il est gagné dès que tes tests sont refaits et ta vidéo envoyée, quels que soient les chiffres. Ta vidéo de fin sera comparée à celle du départ.",
       "body": "",
-      "instructions": "",
+      "instructions": "Le boss final n'est pas un examen : il est gagné dès que tes tests sont refaits et ta vidéo envoyée, quels que soient les chiffres. Ta vidéo de fin sera comparée à celle du départ.",
       "action": "Refaire tes tests physiques et envoyer ta vidéo de fin",
       "whatsapp": "final",
       "links": [

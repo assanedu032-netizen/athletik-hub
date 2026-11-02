@@ -242,19 +242,26 @@
     if ((r.name === 'contenu' || r.name === 'apercu') && !APP.contentData && !APP.contentLoading) loadContentAdmin();
   }
 
+  // Icônes au trait (barre de navigation)
+  var ICON = {
+    accueil: '<path d="M3 11.5 12 4l9 7.5"/><path d="M5.5 10v9.5h13V10"/>',
+    carte: '<path d="M9 4 3 6.5v13L9 17l6 2.5 6-2.5v-13L15 6.5 9 4z"/><path d="M9 4v13M15 6.5v13"/>',
+    habitudes: '<rect x="4" y="4" width="16" height="16" rx="4"/><path d="m8.5 12.5 2.5 2.5 4.5-5"/>',
+    recompenses: '<path d="M8 4h8v5a4 4 0 0 1-8 0V4z"/><path d="M8 6H5a3 3 0 0 0 3 4M16 6h3a3 3 0 0 1-3 4M12 13v4M8.5 20h7"/>',
+    profil: '<circle cx="12" cy="8.5" r="3.5"/><path d="M5 20a7 7 0 0 1 14 0"/>'
+  };
+  function icon(n) { return '<svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">' + ICON[n] + '</svg>'; }
+
   function shell(body, tab) {
     var v = APP.view;
     var day = Math.min(Math.max(v.day, 1), v.programDays);
-    var tabs = [
-      ['accueil', '🏠', 'Accueil'], ['carte', '🗺️', 'Carte'], ['habitudes', '✅', 'Habitudes'],
-      ['recompenses', '🏆', 'Récompenses'], ['profil', '👤', 'Profil']
-    ];
-    return (APP.store.demo ? '<div class="demo-bar">MODE DÉMO — données fictives, enregistrées sur cet appareil uniquement · <button data-act="travel" data-ms="86400000">+24 h</button><button data-act="goProfile">outils</button></div>' : '') +
-      '<header class="topbar"><img class="logo" src="icons/icon-192.png" alt="">' +
-      '<div class="brand">ATHLETIK MASTER<small>' + esc(v.rank ? 'Rang ' + v.rank : 'Niveau 0 en cours') + '</small></div>' +
-      '<div class="spacer"></div><span class="daypill">Jour ' + day + ' / ' + v.programDays + '</span></header>' +
+    var tabs = [['accueil', 'Accueil'], ['carte', 'Carte'], ['habitudes', 'Habitudes'], ['recompenses', 'Récompenses'], ['profil', 'Profil']];
+    return (APP.store.demo ? '<div class="demo-bar">Démo · données fictives <button data-act="travel" data-ms="86400000">+24 h</button><button data-act="goProfile">Outils</button></div>' : '') +
+      '<header class="topbar"><img class="logo" src="icons/icon-192.png" alt=""><span class="brand">Athletik Master</span>' +
+      '<span class="spacer"></span><span class="daypill" title="Jour du programme">J' + day + '<small>/' + v.programDays + '</small></span></header>' +
       '<nav class="tabbar" aria-label="Navigation principale">' + tabs.map(function (t) {
-        return '<a href="#/' + (t[0] === 'accueil' ? '' : t[0]) + '" class="' + (tab === t[0] ? 'on' : '') + '"' + (tab === t[0] ? ' aria-current="page"' : '') + '><span class="ic" aria-hidden="true">' + t[1] + '</span>' + t[2] + '</a>';
+        var on = tab === t[0];
+        return '<a href="#/' + (t[0] === 'accueil' ? '' : t[0]) + '" class="' + (on ? 'on' : '') + '"' + (on ? ' aria-current="page"' : '') + '>' + icon(t[0]) + '<span>' + t[1] + '</span></a>';
       }).join('') + '</nav>' +
       '<main class="page">' + body + '</main>';
   }
@@ -313,42 +320,35 @@
   // ─── Début / fin de programme ─────────────────────────────────────────────
   function viewStart() {
     var name = (APP.session.profile && APP.session.profile.name) || '';
-    return '<div class="stack">' +
-      '<div class="card hero stack">' +
-      '<div class="eyebrow">Début du programme</div>' +
-      '<h1 class="h-display">Bienvenue' + (name ? ', ' + esc(name.split(' ')[0]) : '') + ' !</h1>' +
-      '<p class="muted" style="font-size:17px">Deviens l\'athlète dont tu as toujours rêvé. 90 jours pour passer d\'athlète qui stagne à athlète explosif.</p>' +
-      '<div class="steps"><span>Regarder</span><em>→</em><span>Comprendre</span><em>→</em><span>Passer à l\'action</span><em>→</em><span>Valider</span><em>→</em><span>Débloquer la suite</span></div>' +
-      '</div>' +
-      '<div class="card stack"><h3>Ton parcours</h3><ul style="margin:0;padding-left:20px">' +
-      '<li><b>Niveau 0 — Préparation</b> : 6 étapes à faire dès aujourd\'hui.</li>' +
-      '<li><b>8 arènes</b>, une mission par jour, un boss à battre par arène.</li>' +
-      '<li><b>Des rangs</b> : Rookie au départ, on monte en battant les boss.</li>' +
-      '<li><b>8 habitudes</b> qui s\'installent une à une et restent jusqu\'au 90ᵉ jour.</li></ul></div>' +
-      '<div class="card stack"><h3>La seule règle à retenir</h3><p class="muted" style="margin:0">Regarde, fais l\'action, valide : la suite se débloque le lendemain.</p>' +
-      '<a class="small" href="#/regles">Lire les règles du jeu</a></div>' +
-      '<div class="card stack"><h3>Ta vidéo d\'engagement</h3><p class="muted" style="margin:0">Pendant le niveau 0 (étape 0.5), tu enverras à Alassane une vidéo sur WhatsApp : ta situation actuelle, tes objectifs, tes motivations et ton engagement sur les 90 jours. Il la regarde.</p></div>' +
+    return '<div class="stack-lg">' +
+      '<section class="intro"><div class="eyebrow">Début du programme</div>' +
+      '<h1 class="h-display">Bienvenue' + (name ? ', ' + esc(name.split(' ')[0]) : '') + '</h1>' +
+      '<p class="lead">90 jours pour devenir l\'athlète dont tu as toujours rêvé.</p></section>' +
+      '<ol class="facts">' +
+      '<li><b>Niveau 0</b><span>6 étapes, toutes ouvertes aujourd\'hui.</span></li>' +
+      '<li><b>8 arènes</b><span>Une mission par jour, un boss à la fin de chacune.</span></li>' +
+      '<li><b>8 habitudes</b><span>Une par arène. Elles restent jusqu\'au 90ᵉ jour.</span></li></ol>' +
+      '<p class="muted">La seule règle : regarde, fais l\'action, valide. La suite s\'ouvre le lendemain.</p>' +
       '<button class="btn primary block" data-act="startProgram">' + (st().introSeenAt ? 'Aller au niveau 0' : 'Commencer le niveau 0') + '</button>' +
-      '</div>';
+      '<a class="btn ghost block" href="#/regles">Règles du jeu</a></div>';
   }
 
   function viewEnd() {
     var v = APP.view;
     if (!v.finished) {
-      return '<div class="stack"><div class="eyebrow">Fin du programme</div><h1 class="h-display">La ligne d\'arrivée</h1>' +
-        '<div class="card stack"><p class="muted" style="margin:0">Le boss final « Deviens Athletik Master » t\'attend au bout de l\'arène 8 : refaire tes tests physiques et envoyer ta vidéo de fin. Il est gagné dès que c\'est fait, quels que soient les chiffres.</p>' +
-        '<div class="progress"><i style="width:' + v.progress + '%"></i></div><p class="small muted" style="margin:0">' + v.validatedCount + ' / ' + v.totalCount + ' missions validées</p></div>' +
+      return '<div class="stack-lg"><section class="intro"><div class="eyebrow">Fin du programme</div><h1 class="h-display">La ligne d\'arrivée</h1>' +
+        '<p class="lead">Au bout de l\'arène 8 : refais tes tests physiques et envoie ta vidéo de fin. C\'est gagné dès que c\'est fait.</p></section>' +
+        '<div class="progress"><i style="width:' + v.progress + '%"></i></div><p class="small muted">' + v.validatedCount + ' / ' + v.totalCount + ' missions validées</p>' +
         '<a class="btn block" href="#/carte">Voir la carte</a></div>';
     }
     var wa = waLink('final');
-    return '<div class="stack">' +
-      '<div class="card gold stack" style="text-align:center"><div class="eyebrow">Fin du programme</div>' +
-      '<div class="bigart" style="margin:6px auto;width:110px;height:146px;border-radius:14px;display:flex;align-items:center;justify-content:center;font-family:var(--display);font-size:22px;color:var(--gold-ink);background:linear-gradient(160deg,var(--gold2),var(--gold) 60%,#9C7A25)">ATHLETIK MASTER</div>' +
-      '<h1 class="h-display">Tu es Athletik Master</h1><p class="muted">90 jours, 8 arènes, 8 habitudes installées. Bravo.</p></div>' +
-      '<div class="card stack"><h3>Ta vidéo de fin</h3><p class="muted" style="margin:0">Envoie-la à Alassane sur WhatsApp : elle sera comparée à ta vidéo du départ.</p>' +
-      (wa ? '<a class="btn wa block" href="' + attr(wa) + '" target="_blank" rel="noopener">Envoyer ma vidéo sur WhatsApp</a>' : '<span class="placeholder">Lien WhatsApp à configurer</span>') + '</div>' +
-      '<div class="card stack"><h3>Et maintenant ?</h3><p class="muted" style="margin:0">Athletik Master est un entraînement, pas un cours qu\'on termine. Pioche librement dans les missions pour retravailler un concept, ou recommence le parcours. Tout reste accessible, et tes habitudes continuent.</p>' +
-      '<a class="btn block" href="#/carte">Piocher dans les missions</a>' +
+    return '<div class="stack-lg">' +
+      '<section class="intro center"><div class="trophy-card">ATHLETIK<br>MASTER</div><div class="eyebrow">Fin du programme</div>' +
+      '<h1 class="h-display">Tu es Athletik Master</h1><p class="lead">90 jours, 8 arènes, 8 habitudes installées.</p></section>' +
+      '<div class="card stack"><h3>Ta vidéo de fin</h3><p class="muted">Envoie-la à Alassane : elle sera comparée à celle du départ.</p>' +
+      (wa ? '<a class="btn wa block" href="' + attr(wa) + '" target="_blank" rel="noopener">Envoyer sur WhatsApp</a>' : '<p class="tiny">Lien WhatsApp bientôt disponible.</p>') + '</div>' +
+      '<div class="card stack"><h3>Et maintenant ?</h3><p class="muted">Tout reste ouvert. Reprends une mission quand tu veux, ou recommence le parcours.</p>' +
+      '<a class="btn block" href="#/carte">Revoir les missions</a>' +
       '<button class="btn ghost block" data-act="restart" data-ok="Recommencer" data-confirm="Recommencer le parcours ? Tes récompenses, tes habitudes et tes droits restent acquis.">Recommencer le parcours</button></div></div>';
   }
 
@@ -357,64 +357,46 @@
     var v = APP.view, s = APP.session;
     var name = (s.profile && s.profile.name) || 'athlète';
     var arena = v.currentArena ? A(v.currentArena) : null;
-    var h = '<div class="stack">';
-    h += '<div><div class="eyebrow">Jour ' + Math.min(Math.max(v.day, 1), v.programDays) + ' sur ' + v.programDays + '</div><h1 class="h-display">Salut ' + esc(name.split(' ')[0]) + ' !</h1></div>';
-
-    // Prochaine mission
+    var h = '<div class="stack-lg">';
+    h += '<section class="hello"><div class="eyebrow">' + esc(arena ? arena.label + ' · ' + arena.name : 'Parcours terminé') + '</div><h1 class="h-display">Salut ' + esc(name.split(' ')[0]) + '</h1></section>';
     h += nextCard();
-
-    // Rang + progression
-    h += '<div class="card hero"><div class="rankcard">' +
-      '<div class="rank-badge ' + (v.rank ? '' : 'none') + '">' + esc(v.rank || 'À VENIR') + '</div>' +
-      '<div class="grow"><div class="tiny">Ton rang</div><div style="font-weight:800;font-size:19px">' + esc(v.rank || 'Termine le niveau 0 pour devenir Rookie') + '</div>' +
-      '<div class="progress" style="margin-top:10px" role="progressbar" aria-valuenow="' + v.progress + '" aria-valuemin="0" aria-valuemax="100"><i style="width:' + v.progress + '%"></i></div>' +
-      '<div class="small muted" style="margin-top:6px">' + v.validatedCount + ' / ' + v.totalCount + ' missions terminées · ' + v.progress + ' %</div></div></div></div>';
-
-    h += '<div class="grid2"><div class="card stat"><b>' + v.validatedCount + '</b><span>missions terminées</span></div>' +
-      '<a class="card stat card-link" href="' + (arena ? '#/arene/' + arena.id : '#/carte') + '"><b>' + (arena ? arena.num : '★') + '</b><span>' + (arena ? esc(arena.label + ' — ' + arena.name) : 'Parcours terminé') + '</span></a></div>';
-
-    if (s.access && s.access.parcel) {
-      h += '<div class="card gold row"><span style="font-size:30px" aria-hidden="true">📦</span><div><b>Un colis est en route</b><div class="small muted">Surprise…</div></div></div>';
+    h += '<a class="prog-line" href="#/carte"><span class="ring" style="--p:' + v.progress + '" role="img" aria-label="' + v.progress + ' % du parcours"><span>' + v.progress + '%</span></span>' +
+      '<span class="grow"><b>' + v.validatedCount + ' / ' + v.totalCount + ' missions</b><span class="small muted">' + esc(v.rank ? 'Rang ' + v.rank : 'Rookie à la fin du niveau 0') + '</span></span><span class="chev" aria-hidden="true">›</span></a>';
+    if (s.access && s.access.parcel) h += '<div class="parcel">📦 <b>Un colis est en route</b></div>';
+    if (v.habits.length) {
+      h += '<section><div class="section-title"><h2>Habitudes du jour</h2><a href="#/habitudes">Tout voir</a></div><div class="list">' + v.habits.map(habitRow).join('') + '</div></section>';
     }
-
-    // Habitudes du jour
-    h += '<div class="section-title"><h2>Mes habitudes du jour</h2><a href="#/habitudes">Tout voir</a></div>';
-    if (!v.habits.length) h += '<div class="notice">Ta première habitude se débloque dans l\'arène 1. Elles s\'additionnent ensuite, une par arène.</div>';
-    else h += '<div class="stack">' + v.habits.map(habitCard).join('') + '</div>';
-
-    // Récompenses
-    h += '<div class="section-title"><h2>Dernières récompenses</h2><a href="#/recompenses">Toutes</a></div>';
-    var last = v.rewards.slice(-3).reverse();
-    h += last.length ? '<div class="rewards">' + last.map(function (r) { return rewardTile(r, true); }).join('') + '</div>' :
-      '<div class="notice">Ta première récompense : la carte Rookie, à la fin du niveau 0.</div>';
-
-    h += '<div class="section-title"><h2>Ton parcours</h2></div>';
-    h += '<a class="btn primary block" href="#/carte">🗺️ Voir la carte des 8 arènes</a>';
-    h += '<a class="btn ghost block" href="#/regles">Règles du jeu</a>';
+    var last = v.rewards[v.rewards.length - 1];
+    if (last) h += '<a class="prog-line" href="#/recompenses"><span class="medal" aria-hidden="true">★</span><span class="grow"><b>' + esc(last.title) + '</b><span class="small muted">Dernière récompense</span></span><span class="chev" aria-hidden="true">›</span></a>';
     return h + '</div>';
+  }
+
+  function habitRow(hv) {
+    var h = APP.engine.habitById[hv.id];
+    var b = function (val, label) {
+      return '<button class="' + val + (hv.today === val ? ' on' : '') + '" aria-pressed="' + (hv.today === val) + '" data-act="habit" data-id="' + h.id + '" data-val="' + val + '">' + label + '</button>';
+    };
+    return '<div class="hrow"><span class="grow"><b>' + esc(h.title) + '</b><span class="tiny">🔥 ' + hv.streak + ' · ' + esc(h.frequency) + '</span></span>' +
+      (hv.dueToday ? '<span class="yn sm">' + b('yes', 'Oui') + b('no', 'Non') + '</span>' : '<span class="tiny">Dimanche</span>') + '</div>';
   }
 
   function nextCard() {
     var v = APP.view;
     if (v.finished) {
-      return '<a class="card gold card-link" href="#/fin"><div class="eyebrow">Parcours terminé</div><h3 style="font-size:20px;margin-top:4px">Tu es Athletik Master 🏆</h3><p class="small muted" style="margin:4px 0 0">Recommence ou pioche dans les missions.</p></a>';
+      return '<a class="next-card done card-link" href="#/fin"><div class="eyebrow">Parcours terminé</div><h2>Tu es Athletik Master</h2><span class="btn primary sm">Voir la suite</span></a>';
     }
     if (!v.next) return '';
-    var m = M(v.next), it = v.items[m.id], a = A(m.arena);
+    var m = M(v.next), it = v.items[m.id];
     var label = m.kind === 'boss' ? (m.final ? 'Boss final' : 'Boss') : 'Mission ' + m.num;
-    var cta, extra = '';
+    var href = '#/mission/' + encodeURIComponent(m.id);
     if (it.status === 'waiting') {
-      cta = '<span class="chip wait">🔒 Se débloque ' + esc(fmtWhen(it.unlockAt)) + '</span>';
-      extra = '<p class="small muted" style="margin:8px 0 0">Bien joué pour aujourd\'hui. La suite arrive dans ' + esc(fmtIn(it.unlockAt)) + '.</p>';
-    } else {
-      var started = rec(m.id).checkins || rec(m.id).support;
-      cta = '<span class="btn primary sm">' + (started ? 'Continuer' : 'Commencer') + ' →</span>';
-      if (it.run) extra = '<p class="small muted" style="margin:8px 0 0">Jour ' + Math.min(it.run.current + (it.run.todayDone ? 0 : 1), m.durationDays) + ' / ' + m.durationDays + (it.run.todayDone ? ' · déjà coché aujourd\'hui ✓' : '') + '</p>';
+      return '<a class="next-card wait card-link" href="' + href + '"><div class="eyebrow">Prochaine mission</div><h2>' + esc(m.title) + '</h2>' +
+        '<p class="small">🔒 Se débloque ' + esc(fmtWhen(it.unlockAt)) + '</p></a>';
     }
-    return '<a class="card next-card card-link ' + (it.status === 'open' ? 'gold' : '') + '" href="#/mission/' + encodeURIComponent(m.id) + '">' +
-      '<div class="eyebrow">' + (it.status === 'open' ? 'Ta prochaine mission' : 'Prochaine mission') + '</div>' +
-      '<div class="num" style="margin-top:6px">' + esc(a.label + ' · ' + label) + '</div>' +
-      '<h3>' + esc(m.title) + '</h3><p class="small muted" style="margin:0 0 10px">' + esc(m.action) + '</p>' + cta + extra + '</a>';
+    var started = rec(m.id).checkins || rec(m.id).support;
+    var day = it.run ? '<span class="tiny">Jour ' + Math.min(it.run.current + (it.run.todayDone ? 0 : 1), m.durationDays) + '/' + m.durationDays + (it.run.todayDone ? ' · fait aujourd\'hui ✓' : '') + '</span>' : '';
+    return '<a class="next-card card-link" href="' + href + '"><div class="eyebrow">Ta mission du jour · ' + esc(label) + '</div><h2>' + esc(m.title) + '</h2>' +
+      '<div class="row wrap"><span class="btn primary sm">' + (started ? 'Continuer' : 'Commencer') + '</span>' + day + '</div></a>';
   }
 
   // ─── Carte des arènes ─────────────────────────────────────────────────────
@@ -422,18 +404,14 @@
 
   function viewMap() {
     var v = APP.view;
-    var h = '<div class="row" style="justify-content:space-between;align-items:flex-end"><div><div class="eyebrow">Ton parcours</div><h1 class="h-display">La carte</h1></div><a class="btn sm" href="#/regles">Règles du jeu</a></div>';
-    h += '<p class="small muted">' + v.validatedCount + ' / ' + v.totalCount + ' missions · un boss à battre dans chaque arène.</p>';
-    h += '<div class="map" style="margin-top:8px">';
+    var h = '<div class="page-head"><h1 class="h-display">La carte</h1><a class="small" href="#/regles">Règles du jeu</a></div>';
+    h += '<div class="map">';
     v.arenas.forEach(function (av) {
       var a = A(av.id);
-      var reward = APP.program.rewards.filter(function (r) { return r.trigger === 'boss:' + a.id || r.trigger === 'section:' + a.id; })[0];
+      var stTxt = av.status === 'done' ? 'Terminée' : av.status === 'current' ? 'En cours · ' + av.done + '/' + av.total : 'Verrouillée';
       h += '<a class="map-node ' + av.status + '" href="#/arene/' + a.id + '">' +
-        '<div class="map-dot"><span>' + (av.status === 'done' ? '✓' : a.num) + '</span></div>' +
-        '<div class="map-body"><div class="row" style="justify-content:space-between;gap:6px"><span class="lbl">' + esc(a.label) + ' · ' + esc(a.theme) + '</span>' + CHIP[av.status] + '</div>' +
-        '<h3>' + esc(a.name) + '</h3>' +
-        '<div class="progress" style="height:6px"><i style="width:' + (av.total ? Math.round(av.done * 100 / av.total) : 0) + '%"></i></div>' +
-        '<div class="tiny" style="margin-top:6px">' + av.done + ' / ' + av.total + (reward ? ' · 🏆 ' + esc(reward.title) : '') + '</div></div></a>';
+        '<span class="map-dot"><span>' + (av.status === 'done' ? '✓' : a.num) + '</span></span>' +
+        '<span class="map-body"><span class="lbl">' + esc(a.label) + '</span><b>' + esc(a.name) + '</b><span class="tiny">' + esc(stTxt) + '</span></span></a>';
     });
     return h + '</div>';
   }
@@ -443,35 +421,27 @@
     if (!a) return notFound();
     var av = APP.view.arenas.filter(function (x) { return x.id === id; })[0];
     var habit = APP.program.habits.filter(function (x) { return x.arena === id; })[0];
-    var h = '<div class="crumb"><a href="#/carte">Carte</a> › ' + esc(a.label) + '</div>';
-    h += '<div class="row" style="justify-content:space-between;margin-top:6px"><div><div class="eyebrow">' + esc(a.label) + ' · ' + esc(a.theme) + '</div><h1 class="h-display">' + esc(a.name) + '</h1></div>' + CHIP[av.status] + '</div>';
-    h += '<div class="card stack" style="margin-top:12px">' +
-      (a.blocage ? '<div><div class="tiny">Le blocage</div><b>' + esc(a.blocage) + '</b></div>' : '') +
-      '<div><div class="tiny">Objectif</div>' + esc(a.objectif) + '</div>' +
-      '<div><div class="tiny">Livrable</div>' + esc(a.livrable) + '</div>' +
-      (habit ? '<div><div class="tiny">Habitude qui reste</div>✅ ' + esc(habit.title) + ' <span class="muted small">(' + esc(habit.frequency) + ')</span></div>' : '') +
-      '</div>';
-    if (av.status === 'locked') {
-      h += '<div class="notice" style="margin-top:12px">🔒 Arène verrouillée : bats le boss de l\'arène précédente pour l\'ouvrir. Tu peux déjà voir ce qui t\'attend.</div>';
-    }
-    h += '<div class="mlist" style="margin-top:14px">' + av.items.map(missionRow).join('') + '</div>';
-    return h;
+    var h = '<div class="crumb"><a href="#/carte">‹ Carte</a></div>';
+    h += '<section class="intro"><div class="eyebrow">' + esc(a.label) + ' · ' + av.done + '/' + av.total + '</div><h1 class="h-display">' + esc(a.name) + '</h1>' +
+      '<p class="lead">' + esc(a.objectif) + '</p>' + (habit ? '<p class="small muted">Habitude : ' + esc(habit.title) + '</p>' : '') + '</section>';
+    if (av.status === 'locked') h += '<p class="small muted">🔒 Bats le boss de l\'arène précédente pour ouvrir celle-ci.</p>';
+    return h + '<div class="mlist">' + av.items.map(missionRow).join('') + '</div>';
   }
 
   function missionRow(id) {
     var m = M(id), it = APP.view.items[id];
     var right = {
       validated: '<span class="chip done">✓</span>',
-      open: '<span class="chip cur">Ouverte</span>',
+      open: '<span class="chip cur">À faire</span>',
       waiting: '<span class="chip wait">' + esc(it.unlockAt ? fmtWhen(it.unlockAt) : '') + '</span>',
       locked: '<span class="chip lock">🔒</span>',
-      draft: '<span class="chip todo">Contenu à venir</span>'
+      draft: '<span class="chip lock">Bientôt</span>'
     }[it.status];
     var clickable = it.status === 'validated' || it.status === 'open';
     var tag = clickable ? 'a' : 'div';
     return '<' + tag + ' class="mrow ' + it.status + (m.kind === 'boss' ? ' boss' : '') + '"' + (clickable ? ' href="#/mission/' + encodeURIComponent(id) + '"' : ' aria-disabled="true"') + '>' +
-      '<div class="n">' + (m.kind === 'boss' ? '⚔️' : esc(m.num)) + '</div>' +
-      '<div class="grow"><div class="t">' + (m.kind === 'boss' ? esc(m.num) + ' · ' : '') + esc(m.title) + '</div><div class="a">' + esc(m.action) + '</div></div>' + right + '</' + tag + '>';
+      '<span class="n">' + (m.kind === 'boss' ? '⚔' : esc(m.num)) + '</span>' +
+      '<span class="t grow">' + esc(m.kind === 'boss' ? 'Boss · ' + m.title : m.title) + '</span>' + right + '</' + tag + '>';
   }
 
   // ─── Page mission / boss ──────────────────────────────────────────────────
@@ -479,68 +449,57 @@
     var m;
     try { m = M(id); } catch (e) { return notFound(); }
     var it = APP.view.items[id], a = A(m.arena), boss = m.kind === 'boss';
-    var h = '<div class="crumb"><a href="#/carte">Carte</a> › <a href="#/arene/' + a.id + '">' + esc(a.label + ' · ' + a.name) + '</a></div>';
-    h += '<div class="mhead ' + (boss ? 'boss' : '') + '" style="margin-top:10px"><span class="num">' + esc(boss ? (m.final ? 'BOSS FINAL' : 'BOSS') : 'MISSION ' + m.num) + '</span>' +
-      '<h1 class="h-display">' + esc(m.title) + '</h1></div>';
+    var h = '<div class="crumb"><a href="#/arene/' + a.id + '">‹ ' + esc(a.label + ' · ' + a.name) + '</a></div>';
+    if (!preview) h += adminBar(m);
+    h += '<section class="mhead' + (boss ? ' boss' : '') + '"><span class="num">' + esc(boss ? (m.final ? 'Boss final' : 'Boss') : 'Mission ' + m.num) + '</span>' +
+      '<h1 class="h-display">' + esc(m.title) + '</h1>' +
+      (boss && !m.final ? '<p class="small muted">1 défi + 5 questions. 4 bonnes réponses pour gagner, sinon nouvel essai demain.</p>' : '') +
+      (it.status === 'validated' ? '<p class="small ok-txt">✓ ' + (boss ? 'Boss vaincu' : 'Mission validée') + ' le ' + esc(fmtDate(it.validatedAt)) + '</p>' : '') + '</section>';
 
     if (it.status === 'locked' || it.status === 'waiting' || it.status === 'draft') {
-      h += '<div class="card stack" style="margin-top:14px"><p style="margin:0"><b>Ton action :</b> ' + esc(m.action) + '</p>' +
-        (it.status === 'waiting' ? '<div class="notice info">🔒 Cette mission se débloque ' + esc(fmtWhen(it.unlockAt)) + '.</div>' :
-          it.status === 'draft' ? '<div class="notice warn">Contenu à venir : cette mission est en préparation.</div>' :
-            '<div class="notice">🔒 Termine les missions précédentes pour ouvrir celle-ci.</div>') + '</div>';
-      return h + progressBlock(m, it) + missionNav(m);
+      h += '<div class="card stack"><p class="big-action">' + esc(m.action) + '</p>' +
+        '<p class="small muted">' + (it.status === 'waiting' ? '🔒 Se débloque ' + esc(fmtWhen(it.unlockAt)) + '.' :
+          it.status === 'draft' ? 'Cette mission arrive bientôt.' : '🔒 Termine les missions précédentes pour l\'ouvrir.') + '</p></div>';
+      return h + missionNav(m);
     }
 
-    if (it.status === 'validated') {
-      h += '<div class="notice ok" style="margin-top:12px">✓ ' + (boss ? 'Boss vaincu' : 'Mission validée') + ' le ' + esc(fmtDate(it.validatedAt)) + '. Elle reste accessible à tout moment.</div>';
-    }
-
-    h += '<div class="stack" style="margin-top:14px">';
-    if (boss && (m.rulesIntro || !m.final)) h += bossRules(m);
+    h += '<div class="stack-lg">';
     h += videoBlock(m);
-    h += '<div class="card stack"><div class="eyebrow">La notion</div>' +
-      (m.description ? '<p style="margin:0" class="muted">' + esc(m.description) + '</p>' : '') +
-      (m.body ? '<div class="prose">' + esc(m.body) + '</div>' : '<div><span class="placeholder">Contenu pédagogique bientôt disponible</span></div>') + '</div>';
-    if (m.instructions) h += '<div class="card stack"><div class="eyebrow">Les consignes</div><div class="prose">' + esc(m.instructions) + '</div></div>';
-    if (m.caution) h += '<div class="notice warn">⚠️ Prudence : demande l\'avis d\'un professionnel de santé avant tout changement, et c\'est obligatoire si tu es mineur.</div>';
-    h += '<div class="card action-card"><div class="eyebrow">' + (boss ? 'Le défi pratique' : 'Ton action') + '</div><div class="big" style="margin-top:4px">' + esc(m.action) + '</div>' + linksBlock(m) + '</div>';
+    if (m.body) h += '<div class="prose">' + esc(m.body) + '</div>';
+    if (m.instructions) h += '<div class="instructions"><div class="eyebrow">Consignes</div><div class="prose">' + esc(m.instructions) + '</div></div>';
+    if (m.caution) h += '<p class="caution">⚠️ Demande l\'avis d\'un professionnel de santé avant tout changement — obligatoire si tu es mineur.</p>';
+
+    h += '<section class="card action-card"><div class="eyebrow">' + (boss ? 'Le défi' : 'Ton action') + '</div><p class="big-action">' + esc(m.action) + '</p>' + linksBlock(m);
     h += supportBlock(m, it);
     if (m.durationDays) h += daysBlock(m, it);
-    h += '<div id="mfoot">' + footBlock(m, it) + '</div>';
+    h += '<div id="mfoot">' + footBlock(m, it) + '</div></section>';
     if (boss && !m.final) h += bossQuizBlock(m, it, preview);
-    h += progressBlock(m, it);
+    if (it.status === 'validated' && !preview) h += nextLine(m);
     h += '</div>';
     return h + (preview ? '' : missionNav(m));
   }
 
-  // Informations de progression et de déblocage de la mission
-  function progressBlock(m, it) {
-    var list = E().playable, pos = list.indexOf(m), a = A(m.arena);
-    var av = (APP.view.arenas || []).filter(function (x) { return x.id === a.id; })[0];
-    var rows = [];
-    if (pos >= 0) rows.push(['Étape', (pos + 1) + ' sur ' + list.length + ' du parcours']);
-    if (av) rows.push([a.label, esc(a.name) + ' — ' + av.done + ' / ' + av.total + ' validées']);
-    var prev = list[pos - 1];
-    if (a.instantUnlock) rows.push(['Déblocage', 'Ouverte dès le premier jour, sans attente']);
-    else if (m.kind === 'boss') rows.push(['Déblocage', '24 h après la dernière mission de l\'arène']);
-    else if (prev && prev.arena !== m.arena) rows.push(['Déblocage', '24 h après la fin de « ' + esc(A(prev.arena).name) + ' »']);
-    else if (prev) rows.push(['Déblocage', '24 h après la validation de ' + esc(prev.kind === 'boss' ? 'boss' : 'la mission ' + prev.num)]);
-    if (m.durationDays) rows.push(['Durée', m.durationDays + ' jours' + (m.consecutive ? ' d\'affilée' : '') + ', une coche par jour']);
-    if (m.kind === 'boss' && !m.final) rows.push(['Pour gagner', 'défi validé + 4 bonnes réponses sur 5']);
-    var nx = list[pos + 1];
-    if (nx) {
-      var nit = APP.view.items[nx.id] || {};
-      var when = nit.status === 'waiting' ? 'se débloque ' + fmtWhen(nit.unlockAt) : nit.status === 'open' || nit.status === 'validated' ? 'déjà ouverte' : '24 h après la validation de celle-ci';
-      rows.push(['Ensuite', esc((nx.kind === 'boss' ? 'Boss « ' : nx.num + ' « ') + nx.title + ' »') + ' — ' + esc(when)]);
-    }
-    return '<div class="card"><div class="eyebrow">Progression et déblocage</div><dl class="kv">' + rows.map(function (r) { return '<dt>' + esc(r[0]) + '</dt><dd>' + r[1] + '</dd>'; }).join('') + '</dl></div>';
+  // Une ligne, pas un bloc : ce qui vient après cette mission.
+  function nextLine(m) {
+    var list = E().playable, nx = list[list.indexOf(m) + 1];
+    if (!nx) return '';
+    var nit = APP.view.items[nx.id] || {};
+    var when = nit.status === 'waiting' ? 'se débloque ' + fmtWhen(nit.unlockAt) : (nit.status === 'open' || nit.status === 'validated') ? 'est ouverte' : 'arrive bientôt';
+    return '<p class="small muted center">Suite : « ' + esc(nx.title) + ' » ' + esc(when) + '.</p>';
   }
 
-  function bossRules(m) {
-    return '<div class="card" style="border-color:rgba(240,106,106,.35)"><div class="eyebrow" style="color:var(--bad)">Battre un boss</div>' +
-      (m.final ? '<p style="margin:6px 0 0">Le boss final n\'est pas un examen : refais tes tests physiques et envoie ta vidéo de fin. Il est gagné dès que c\'est fait, quels que soient les chiffres.</p>' :
-        '<p style="margin:6px 0 0">1 défi pratique + 5 questions sur les notions de l\'arène. Le boss est battu quand le défi est validé <b>et</b> qu\'au moins 4 réponses sur 5 sont justes. Sinon : nouvel essai le lendemain, sans pénalité.</p>') + '</div>';
+  // Visible seulement par l'admin : ce qu'il reste à remplir + accès direct à l'éditeur.
+  function adminBar(m) {
+    if (!APP.session.roles || !APP.session.roles.admin) return '';
+    var s = AMContent.missionStatus(m, {});
+    var todo = s.todo.filter(function (x) { return x.indexOf('réponses') !== 0; });
+    return '<div class="admin-bar"><span class="grow">' + (todo.length ? 'À compléter : ' + esc(todo.join(', ')) : 'Contenu complet') + '</span>' +
+      '<a class="btn sm" href="#/contenu/' + encodeURIComponent(m.id) + '">Modifier</a></div>';
   }
+
+
+
+
 
   function videoEmbed(url, title, mid) {
     var c = AMContent.checkVideoUrl(url);
@@ -553,39 +512,35 @@
 
   function videoBlock(m) {
     var title = m.videoTitle || m.title;
-    var head = '<div class="video-title"><span aria-hidden="true">🎬</span> ' + esc(title) + '</div>';
     var emb = m.video ? videoEmbed(m.video, title, m.id) : null;
-    if (!emb) return '<div>' + head + '<div class="video empty"><div class="play" aria-hidden="true">▶</div><b>Vidéo bientôt disponible</b></div></div>';
+    if (!emb) return '<div class="video empty"><span class="play" aria-hidden="true">▶</span><span>Vidéo bientôt disponible</span></div>';
     var watched = !!rec(m.id).videoWatchedAt;
-    return '<div>' + head + '<div class="video">' + emb + '</div>' +
-      '<div class="row" style="margin-top:8px;justify-content:space-between">' +
-      (watched ? '<span class="chip done">✓ Vidéo regardée</span>' : '<span class="small muted">Regarde la vidéo jusqu\'au bout.</span><button class="btn sm" data-act="videoDone" data-id="' + attr(m.id) + '">J\'ai regardé la vidéo</button>') +
-      '</div></div>';
+    return '<div><div class="video">' + emb + '</div>' +
+      '<div class="row video-meta"><span class="video-title grow">' + esc(title) + '</span>' +
+      (watched ? '<span class="chip done">✓ Vue</span>' : '<button class="btn sm ghost" data-act="videoDone" data-id="' + attr(m.id) + '">J\'ai regardé</button>') + '</div></div>';
   }
 
   function linksBlock(m) {
     var out = '';
     (m.links || []).forEach(function (l) {
-      if (l.type === 'hub') out += '<a class="btn sm" href="' + attr(CFG.hubUrl) + '" target="_blank" rel="noopener">↗ ' + esc(l.label) + '</a>';
+      if (l.type === 'hub') out += '<a class="btn sm ghost" href="' + attr(CFG.hubUrl) + '" target="_blank" rel="noopener">' + esc(l.label) + ' ↗</a>';
     });
     if (m.whatsapp) {
       var wa = waLink(m.whatsapp);
-      out += wa ? '<a class="btn wa sm" href="' + attr(wa) + '" target="_blank" rel="noopener">Envoyer ma vidéo sur WhatsApp</a>' : '<span class="placeholder">Lien WhatsApp à configurer</span>';
+      if (wa) out += '<a class="btn wa sm" href="' + attr(wa) + '" target="_blank" rel="noopener">Envoyer ma vidéo sur WhatsApp</a>';
     }
-    return out ? '<div class="row wrap" style="margin-top:12px">' + out + '</div>' : '';
+    return out ? '<div class="row wrap">' + out + '</div>' : '';
   }
 
   // ─── Supports génériques ──────────────────────────────────────────────────
   function supportBlock(m, it) {
     var sup = E().supportOf(m);
-    if (!sup || sup.type === 'undefined') return '<div class="notice warn">Support à définir.</div>';
+    if (!sup || sup.type === 'undefined') return '';
     if (sup.type === 'checklist' && sup.daily) return '';
-    var title = { checklist: 'Ta checklist', fiche: 'Ta fiche', quiz: 'Ton quiz' }[sup.type];
-    var h = '<div class="card"><div class="eyebrow">' + (m.kind === 'boss' ? 'Défi pratique · ' : '') + title + '</div>';
-    if (sup.type === 'checklist') h += checklistBlock(m, sup);
-    else if (sup.type === 'fiche') h += ficheBlock(m, sup);
-    else if (sup.type === 'quiz') h += quizBlock(m, sup, it);
-    return h + '</div>';
+    if (sup.type === 'checklist') return '<div class="support">' + checklistBlock(m, sup) + '</div>';
+    if (sup.type === 'fiche') return '<div class="support">' + ficheBlock(m, sup) + '</div>';
+    if (sup.type === 'quiz') return '<div class="support">' + quizBlock(m, sup, it) + '</div>';
+    return '';
   }
 
   function checklistBlock(m, sup) {
@@ -602,10 +557,9 @@
     }).join('');
   }
 
-  function labelHtml(x) {
-    var l = String(x.label || '').trim();
-    return (l ? esc(l) : '<span class="muted">Intitulé</span>') + (x.pending || !l ? ' <span class="placeholder">intitulé à compléter</span>' : '');
-  }
+  // Les intitulés provisoires ne portent plus de badge côté participant :
+  // c'est la barre admin qui les signale.
+  function labelHtml(x) { return esc(String(x.label || '').trim() || '—'); }
 
   function recallHtml(f) {
     var rows = [];
@@ -643,7 +597,7 @@
         default: inner = '<input class="input' + (f.strike ? ' strike' : '') + '" type="text"' + base + ' placeholder="' + attr(f.placeholder || ' ') + '" value="' + attr(val || '') + '" maxlength="2000">';
       }
       return '<div class="field"><label for="' + id + '">' + labelHtml(f) + req + '</label>' + inner + '</div>';
-    }).join('') + '<div class="saved" id="saved_' + attr(m.id) + '" aria-live="polite">' + (rec(m.id).savedAt ? 'Réponses enregistrées' : '') + '</div>';
+    }).join('') + '<div class="saved" id="saved_' + attr(m.id) + '" aria-live="polite">' + (rec(m.id).savedAt ? 'Enregistré ✓' : '') + '</div>';
   }
 
   function quizBlock(m, sup, it) {
@@ -652,8 +606,8 @@
     var sel = APP.quizSel[m.id] || (submitted ? Object.assign({}, r.quiz.answers) : {});
     APP.quizSel[m.id] = sel;
     var review = submitted && APP.retrying !== m.id;
-    var h = sup.scored ? '' : '<p class="small muted" style="margin:6px 0 0">Pas de bonne ou de mauvaise réponse : ce quiz t\'aide à te situer.</p>';
-    if (!sup.questions.length || !sup.questions.every(E().questionWritten)) return h + questionSlots(sup.questions) + '<div class="notice warn" style="margin-top:10px">Les questions de ce quiz sont en cours de rédaction. La mission pourra être validée dès qu\'elles seront publiées.</div>';
+    var h = sup.scored ? '' : '<p class="small muted">Pas de bonne ou de mauvaise réponse.</p>';
+    if (!sup.questions.length || !sup.questions.every(E().questionWritten)) return h + '<p class="small muted">Les questions de ce quiz arrivent bientôt.</p>';
     sup.questions.forEach(function (q, qi) {
       h += '<div class="quiz-q"><div class="q">' + (qi + 1) + '. ' + esc(q.q) + '</div>';
       q.options.forEach(function (o, oi) {
@@ -668,10 +622,10 @@
     });
     if (review) {
       var score = res && res.total ? res.score + ' / ' + res.total : (r.quiz.total ? r.quiz.score + ' / ' + r.quiz.total : null);
-      h += '<div class="notice ok" style="margin-top:14px">✓ Quiz terminé' + (score ? ' — score : ' + score : '') + '. Tes réponses sont enregistrées.</div>';
+      h += '<p class="small ok-txt">✓ Quiz terminé' + (score ? ' — ' + score : '') + '</p>';
       if (it.status === 'open') h += '<button class="linkbtn small" data-act="quizRetry" data-id="' + attr(m.id) + '">Refaire le quiz</button>';
     } else {
-      h += '<button class="btn primary block" style="margin-top:14px" data-act="quizSubmit" data-id="' + attr(m.id) + '">Valider mes réponses</button>';
+      h += '<button class="btn block" data-act="quizSubmit" data-id="' + attr(m.id) + '">Valider mes réponses</button>';
     }
     return h;
   }
@@ -679,16 +633,14 @@
   function daysBlock(m, it) {
     var r = rec(m.id), run = it.run, sup = E().supportOf(m);
     var n = m.durationDays, cur = Math.min(run.current, n);
-    var h = '<div class="card"><div class="eyebrow">' + n + ' jours' + (m.consecutive ? ' d\'affilée' : '') + '</div>';
+    var h = '<div class="support"><div class="row"><span class="small grow"><b>Jour ' + Math.min(cur + (run.todayDone || run.done ? 0 : 1), n) + ' / ' + n + '</b>' + (m.consecutive ? ' · d\'affilée' : '') + '</span></div>';
     h += '<div class="days" aria-label="' + cur + ' jours sur ' + n + '">';
-    for (var i = 0; i < n; i++) h += '<i class="' + (i < cur ? 'on' : (i === cur && !run.todayDone && it.status === 'open' ? 'today' : '')) + '">' + (i < cur ? '✓' : i + 1) + '</i>';
+    for (var i = 0; i < n; i++) h += '<i class="' + (i < cur ? 'on' : (i === cur && !run.todayDone && it.status === 'open' ? 'today' : '')) + '"></i>';
     h += '</div>';
-    if (run.broken) h += '<div class="notice warn">Série interrompue : pas grave, on repart de zéro aujourd\'hui.</div>';
-    if (it.status === 'validated' || run.done) {
-      h += '<p class="small muted" style="margin:0">' + (it.status === 'validated' ? 'Durée tenue ✓' : 'Durée atteinte ✓ — tu peux valider.') + '</p>';
-    } else if (it.status === 'open' && run.todayDone) {
-      h += '<div class="notice ok">✓ Journée validée. Reviens demain pour le jour ' + Math.min(cur + 1, n) + '.</div>';
-    } else if (it.status === 'open') {
+    if (run.broken) h += '<p class="small warn-txt">Série interrompue : on repart de zéro aujourd\'hui.</p>';
+    if (it.status === 'open' && run.todayDone && !run.done) {
+      h += '<p class="small ok-txt">✓ Fait aujourd\'hui. À demain.</p>';
+    } else if (it.status === 'open' && !run.done) {
       if (sup && sup.type === 'checklist' && sup.daily) {
         var sel = APP.pending['day_' + m.id] || {};
         sup.items.forEach(function (item) {
@@ -697,55 +649,38 @@
           h += '<div class="check-item ' + (sel[item.id] ? 'on' : '') + '" role="checkbox" tabindex="0" aria-checked="' + !!sel[item.id] + '" data-act="dayCheck" data-id="' + attr(m.id) + '" data-item="' + attr(item.id) + '"><span class="check-box" aria-hidden="true">✓</span><span>' + esc(label) + '</span></div>';
         });
         if (sup.items.some(function (x) { return x.note; })) {
-          h += '<div class="field"><label for="note_' + attr(m.id) + '">Note du jour <span class="muted small">(facultatif)</span></label><textarea class="input" id="note_' + attr(m.id) + '" maxlength="2000" placeholder="Écris ici…"></textarea></div>';
+          h += '<label class="sr" for="note_' + attr(m.id) + '">Note du jour</label><textarea class="input" id="note_' + attr(m.id) + '" maxlength="2000" placeholder="Note du jour (facultatif)"></textarea>';
         }
       }
-      h += '<button class="btn ok block" style="margin-top:12px" data-act="checkin" data-id="' + attr(m.id) + '">' + esc(m.dailyLabel || 'Valider ma journée') + ' — jour ' + (cur + 1) + ' / ' + n + '</button>';
+      h += '<button class="btn ok block" data-act="checkin" data-id="' + attr(m.id) + '">' + esc(m.dailyLabel || 'Valider ma journée') + '</button>';
     }
     var hist = (r.checkins || []).filter(function (c) { return c.note; });
-    if (hist.length) h += '<details style="margin-top:10px"><summary>Mes notes (' + hist.length + ')</summary>' + hist.map(function (c) { return '<p class="small"><b>' + esc(c.day) + '</b> — ' + esc(c.note) + '</p>'; }).join('') + '</details>';
+    if (hist.length) h += '<details><summary>Mes notes (' + hist.length + ')</summary>' + hist.map(function (c) { return '<p class="small"><b>' + esc(c.day) + '</b> — ' + esc(c.note) + '</p>'; }).join('') + '</details>';
     return h + '</div>';
   }
 
   function footBlock(m, it) {
     if (it.status !== 'open') return '';
-    var boss = m.kind === 'boss' && !m.final;
-    var list = (it.checks || []).map(function (c) {
-      return '<li class="' + (c.ok ? 'ok' : '') + '">' + (c.ok ? '✓' : '○') + ' ' + esc(c.label) + '</li>';
-    }).join('');
-    var h = '<div class="card"><div class="eyebrow">' + (boss ? 'Avant d\'affronter le boss' : 'Pour valider') + '</div><ul class="checks">' + list + '</ul>';
-    if (!boss) {
-      h += '<button class="btn ' + (it.canValidate ? 'primary' : '') + ' block" style="margin-top:12px" data-act="validate" data-id="' + attr(m.id) + '"' + (it.canValidate ? '' : ' disabled') + '>' + (m.final ? 'Valider le boss final' : 'Valider la mission') + '</button>';
-      if (!it.canValidate) h += '<p class="tiny" style="margin:8px 0 0;text-align:center">Complète les éléments ci-dessus pour valider.</p>';
+    var missing = (it.checks || []).filter(function (c) { return !c.ok; }).map(function (c) { return c.contentMissing ? 'contenu bientôt disponible' : c.label.replace(/ \(\d+\/\d+\)$/, ''); });
+    if (m.kind === 'boss' && !m.final) {
+      return missing.length ? '<p class="tiny center">Pour débloquer les questions : ' + esc(missing.join(', ').toLowerCase()) + '</p>' : '';
     }
-    return h + '</div>';
+    return '<button class="btn ' + (it.canValidate ? 'primary' : '') + ' block" data-act="validate" data-id="' + attr(m.id) + '"' + (it.canValidate ? '' : ' disabled') + '>' + (m.final ? 'Valider le boss final' : 'Valider la mission') + '</button>' +
+      (missing.length ? '<p class="tiny center">Il reste : ' + esc(missing.join(', ').toLowerCase()) + '</p>' : '');
   }
 
-  // Emplacements de questions : rédigées ou « à rédiger » (jamais inventées)
-  function questionSlots(qs) {
-    return '<ol class="slots">' + (qs || []).map(function (q, i) {
-      return '<li>' + (E().questionWritten(q) ? esc(q.q) : '<span class="muted">Question ' + (i + 1) + '</span> <span class="placeholder">à rédiger</span>') + '</li>';
-    }).join('') + '</ol>';
-  }
+
 
   function bossQuizBlock(m, it, preview) {
-    var h = '<div class="card"><div class="eyebrow" style="color:var(--bad)">Les 5 questions</div>';
+    var h = '<section class="card"><div class="eyebrow">Les 5 questions</div>';
     var res = APP.quizRes[m.id];
-    if (it.status === 'validated') {
-      return h + '<p style="margin:6px 0 0">Boss vaincu' + (res ? ' — ' + res.score + ' / ' + res.total : '') + ' 🏆</p></div>';
-    }
-    if (res && !res.won) {
-      h += '<div class="notice warn" style="margin-top:8px"><b>Pas cette fois : ' + res.score + ' / ' + res.total + '.</b> Il en faut 4. Nouvel essai ' + esc(fmtWhen(res.retryAt)) + ', sans pénalité. Ton défi pratique reste acquis.</div>';
-    }
+    if (it.status === 'validated') return h + '<p>Boss vaincu' + (res ? ' — ' + res.score + ' / ' + res.total : '') + ' 🏆</p></section>';
+    if (res && !res.won) h += '<p class="warn-txt"><b>' + res.score + ' / ' + res.total + '.</b> Il en faut 4. Nouvel essai ' + esc(fmtWhen(res.retryAt)) + ', sans pénalité. Ton défi reste acquis.</p>';
     var challengeOk = (it.checks || []).every(function (c) { return c.ok; });
     var allW = m.quiz.questions.length && m.quiz.questions.every(E().questionWritten);
-    if (!allW) return h + questionSlots(m.quiz.questions) + '<div class="notice warn" style="margin-top:8px">Les questions de ce boss sont en cours de rédaction : il pourra être affronté dès leur publication.</div></div>';
-    if (!it.quizReady) return h + '<div class="notice warn" style="margin-top:8px">Les réponses de ce boss ne sont pas encore renseignées.</div></div>';
-    if (it.retryAt) {
-      if (!res) h += '<div class="notice info" style="margin-top:8px">Nouvel essai ' + esc(fmtWhen(it.retryAt)) + ', sans pénalité.</div>';
-      return h + '</div>';
-    }
-    if (!challengeOk && !preview) return h + '<div class="notice" style="margin-top:8px">🔒 Termine le défi pratique pour débloquer les questions.</div></div>';
+    if (!allW || !it.quizReady) return h + '<p class="small muted">Les questions de ce boss arrivent bientôt.</p></section>';
+    if (it.retryAt) return h + (res ? '' : '<p class="small muted">Nouvel essai ' + esc(fmtWhen(it.retryAt)) + ', sans pénalité.</p>') + '</section>';
+    if (!challengeOk && !preview) return h + '<p class="small muted">🔒 Termine le défi pratique pour débloquer les questions.</p></section>';
     var sel = APP.quizSel[m.id] = APP.quizSel[m.id] || {};
     m.quiz.questions.forEach(function (q, qi) {
       h += '<div class="quiz-q"><div class="q">' + (qi + 1) + '. ' + esc(q.q) + '</div>';
@@ -754,8 +689,7 @@
       });
       h += '</div>';
     });
-    h += '<button class="btn primary block" style="margin-top:14px" data-act="bossSubmit" data-id="' + attr(m.id) + '">⚔️ Affronter le boss</button>';
-    return h + '</div>';
+    return h + '<button class="btn primary block" data-act="bossSubmit" data-id="' + attr(m.id) + '">Affronter le boss</button></section>';
   }
 
   function missionNav(m) {
@@ -763,14 +697,11 @@
     var i = list.indexOf(m);
     var prev = list[i - 1], next = list[i + 1];
     var ok = function (x) { var s = APP.view.items[x.id].status; return s === 'open' || s === 'validated'; };
-    var h = '<div class="mnav">';
-    h += prev && ok(prev) ? '<a class="btn" href="#/mission/' + encodeURIComponent(prev.id) + '">← ' + esc(prev.kind === 'boss' ? 'Boss' : prev.num) + '</a>' : '<span></span>';
-    if (next) {
-      var nit = APP.view.items[next.id];
-      if (ok(next)) h += '<a class="btn" href="#/mission/' + encodeURIComponent(next.id) + '">' + esc(next.kind === 'boss' ? 'Boss' : next.num) + ' →</a>';
-      else h += '<span class="btn disabled" aria-disabled="true">' + (nit.status === 'waiting' ? '🔒 ' + esc(fmtWhen(nit.unlockAt)) : '🔒 Suivante') + '</span>';
-    }
-    return h + '</div>';
+    var lbl = function (x) { return x.kind === 'boss' ? 'Boss' : x.num; };
+    var h = '<nav class="mnav" aria-label="Missions">';
+    h += prev && ok(prev) ? '<a href="#/mission/' + encodeURIComponent(prev.id) + '">‹ ' + esc(lbl(prev)) + '</a>' : '<span></span>';
+    if (next) h += ok(next) ? '<a href="#/mission/' + encodeURIComponent(next.id) + '">' + esc(lbl(next)) + ' ›</a>' : '<span class="muted">' + esc(lbl(next)) + ' 🔒</span>';
+    return h + '</nav>';
   }
 
   // ─── Habitudes ────────────────────────────────────────────────────────────
@@ -787,19 +718,17 @@
 
   function viewHabits() {
     var v = APP.view;
-    var h = '<div class="eyebrow">Une coche par jour</div><h1 class="h-display">Mes habitudes du jour</h1>';
-    h += '<div class="notice info" style="margin-top:10px">Suivi provisoire dans Athletik Master. À terme, ces coches se feront dans Athletik Hub, qui partagera les mêmes séries.</div>';
-    h += '<div class="stack" style="margin-top:14px">';
-    if (!v.habits.length) h += '<div class="notice">Aucune habitude débloquée pour l\'instant. La première arrive avec la mission 1.1.</div>';
+    var h = '<div class="page-head"><h1 class="h-display">Habitudes</h1></div>';
+    h += '<div class="stack">';
+    if (!v.habits.length) h += '<p class="muted">Ta première habitude arrive avec la mission 1.1.</p>';
     h += v.habits.map(habitCard).join('');
     var locked = APP.program.habits.filter(function (x) { return !st().habits[x.id]; });
     if (locked.length) {
-      h += '<div class="section-title"><h2>À débloquer</h2></div>';
-      h += locked.map(function (x) {
-        var by = M(x.unlockedBy), a = A(x.arena);
-        return '<div class="card habit locked"><div class="row"><div class="grow"><b>' + esc(x.title) + '</b><div class="tiny">' + esc(x.frequency) + ' · ' + esc(a.label + ' — ' + a.name) + ', mission ' + esc(by.num) + '</div></div><span aria-hidden="true">🔒</span></div></div>';
-      }).join('');
+      h += '<div class="section-title"><h2>À venir</h2></div><div class="list">' + locked.map(function (x) {
+        return '<div class="hrow locked"><span class="grow"><b>' + esc(x.title) + '</b><span class="tiny">' + esc(A(x.arena).name) + '</span></span><span aria-hidden="true">🔒</span></div>';
+      }).join('') + '</div>';
     }
+    h += '<p class="tiny">Suivi provisoire : il passera dans Athletik Hub.</p>';
     return h + '</div>';
   }
 
@@ -832,21 +761,20 @@
 
   // ─── Règles du jeu ────────────────────────────────────────────────────────
   function viewRules() {
-    return '<div class="crumb"><a href="#/carte">Carte</a> › Règles du jeu</div>' +
-      '<h1 class="h-display" style="margin-top:6px">Règles du jeu</h1>' +
-      '<div class="stack rules" style="margin-top:12px">' +
-      '<div class="card"><h2>🎯 L\'objectif : 90 jours</h2><p>Devenir Athletik Master : traverser les 8 arènes, battre leurs boss et repartir avec 8 habitudes installées.</p>' +
-      '<div class="steps"><span>Regarde</span><em>→</em><span>Fais l\'action</span><em>→</em><span>Valide</span><em>→</em><span>La suite se débloque le lendemain</span></div></div>' +
-      '<div class="card"><h2>📋 Les missions</h2><ul><li>Chaque mission = une notion + une action concrète.</li><li>Valider une mission = regarder la vidéo + compléter son support (checklist, fiche ou quiz).</li><li>Certaines missions se pratiquent sur plusieurs jours (« tenir 7 jours »…) : elles se valident à la fin de leur durée.</li><li>Toute mission validée reste consultable, pendant et après les 90 jours.</li></ul></div>' +
-      '<div class="card"><h2>🔓 Le déblocage</h2><ul><li><b>Niveau 0</b> : les 6 étapes sont ouvertes tout de suite. Tu démarres le jour même.</li><li><b>Ensuite</b> : une seule mission ouverte à la fois. La suivante se débloque <b>24 h</b> après la validation de la précédente.</li></ul></div>' +
-      '<div class="card"><h2>⚔️ Les boss</h2><ul><li>Le boss s\'ouvre quand toutes les missions de l\'arène sont validées.</li><li>Chaque boss = 1 défi pratique + 5 questions sur les notions de l\'arène.</li><li>Battu quand le défi est validé <b>et</b> qu\'au moins 4 réponses sur 5 sont justes.</li><li>Sinon : nouvel essai le lendemain, sans pénalité.</li><li>Le battre ouvre l\'arène suivante.</li><li><b>Boss final</b> : refaire tes tests physiques + envoyer ta vidéo de fin. Gagné dès que c\'est fait, quels que soient les chiffres.</li></ul></div>' +
-      '<div class="card"><h2>🏆 Rangs et récompenses</h2><ul>' + APP.program.rewards.map(function (r) {
-        var trig = r.trigger.split(':'), a = A(trig[1]);
-        return '<li><b>' + esc(trig[0] === 'section' ? 'Fin du niveau 0' : 'Boss ' + a.name) + '</b> : ' + esc(r.title.replace(/ — .*/, '')) + (r.grant ? ' + ' + esc(r.grant.label) : '') + '</li>';
-      }).join('') + '</ul><p class="small muted">Rookie au départ, on monte en battant les boss.</p></div>' +
-      '<div class="card"><h2>✅ Les habitudes</h2><p>Savoir ne change pas un comportement, répéter le change. Chaque arène laisse une habitude qui continue jusqu\'à la fin du programme : une coche par jour, oui ou non, et une série par habitude. Elles s\'additionnent, une à la fois.</p></div>' +
-      '<div class="card"><h2>🤝 Les moments humains</h2><ul><li>Au départ : ta vidéo d\'engagement sur WhatsApp. Alassane la regarde.</li><li>Vers le 30ᵉ et le 60ᵉ jour : Alassane reprend contact avec toi.</li><li>À la fin : ta vidéo de fin, comparée à celle du départ.</li></ul></div>' +
-      '</div>';
+    var ranks = APP.program.rewards.filter(function (r) { return r.rank; }).map(function (r) { return r.rank; }).join(' → ');
+    var rows = [
+      ['La règle', 'Regarde, fais l\'action, valide. La suite s\'ouvre le lendemain.'],
+      ['Niveau 0', '6 étapes, toutes ouvertes dès le premier jour.'],
+      ['Missions', 'Une à la fois. La suivante s\'ouvre 24 h après ta validation. Certaines durent plusieurs jours.'],
+      ['Boss', '1 défi + 5 questions. 4 bonnes réponses pour gagner. Raté ? Nouvel essai demain, sans pénalité.'],
+      ['Boss final', 'Refais tes tests et envoie ta vidéo de fin. C\'est gagné, quels que soient les chiffres.'],
+      ['Rangs', ranks + '.'],
+      ['Habitudes', 'Une par arène, une coche par jour. Elles restent jusqu\'au 90ᵉ jour.'],
+      ['Alassane', 'Il regarde ta vidéo de départ et te recontacte vers le 30ᵉ et le 60ᵉ jour.'],
+      ['Après', 'Tout reste accessible, pendant et après les 90 jours.']
+    ];
+    return '<div class="crumb"><a href="#/carte">‹ Carte</a></div><div class="page-head"><h1 class="h-display">Règles du jeu</h1></div>' +
+      '<dl class="rules">' + rows.map(function (r) { return '<dt>' + esc(r[0]) + '</dt><dd>' + esc(r[1]) + '</dd>'; }).join('') + '</dl>';
   }
 
   // ─── Profil ───────────────────────────────────────────────────────────────
@@ -1062,37 +990,16 @@
     h += '<div id="edDirty" class="notice warn" style="margin-top:10px;' + (APP.edit.dirty ? '' : 'display:none') + '">Modifications non enregistrées.</div>';
     h += '<div class="stack" style="margin-top:12px">';
 
-    // Identité (non modifiable : elle porte la progression des participants)
-    h += '<div class="card"><div class="eyebrow">Place dans le parcours</div><dl class="kv">' +
-      '<dt>Arène</dt><dd>' + esc((a.label || '') + ' — ' + (a.name || '')) + '</dd>' +
-      '<dt>Type</dt><dd>' + esc(boss ? 'Boss' : 'Mission') + ' · support ' + esc(({ checklist: 'checklist', fiche: 'fiche', quiz: 'quiz', undefined: 'à définir' })[(boss ? d.challenge : d.support || {}).type] || '—') + '</dd>' +
-      '<dt>Déblocage</dt><dd>' + (a.instantUnlock ? 'immédiat (niveau 0)' : '24 h après l\'étape précédente') + '</dd>' +
-      (d.draft ? '<dt>Statut</dt><dd>Hors parcours (contenu à définir dans program.json)</dd>' : '') +
-      '</dl><p class="tiny" style="margin:6px 0 0">L\'identifiant, l\'ordre, le type de support et les règles de déblocage ne se modifient pas ici : ils portent la progression des participants.</p></div>';
-
-    // Textes
-    h += '<div class="card"><div class="eyebrow">Textes</div>' +
-      edInput('Titre de la mission', 'title', d.title, { max: 120 }) +
-      edInput('Action concrète', 'action', d.action, { max: 300, rows: 2 }) +
-      edInput('Sujets (court texte sous « La notion »)', 'description', d.description, { max: 2000, rows: 2 }) +
-      edInput('Contenu pédagogique et explications', 'body', d.body, { max: 20000, rows: 10, ph: 'Le texte de la notion. Les retours à la ligne sont conservés.' }) +
-      edInput('Consignes', 'instructions', d.instructions, { max: 5000, rows: 4, ph: 'Facultatif : comment réaliser l\'action, étape par étape.' }) +
-      edCheck('Afficher la mention de prudence (santé, mineurs)', 'caution', d.caution) + '</div>';
-
-    // Vidéo
+    // L'essentiel : ce qu'on remplit après avoir tourné la vidéo
     var emb = d.video ? videoEmbed(d.video, d.videoTitle, null) : null;
-    h += '<div class="card"><div class="eyebrow">Vidéo</div>' +
+    h += '<div class="card"><div class="eyebrow">L\'essentiel</div>' +
+      edInput('Titre de la mission', 'title', d.title, { max: 120 }) +
+      edInput('Lien de la vidéo YouTube', 'video', d.video, { type: 'url', ph: 'https://youtu.be/…', hint: videoHint(d.video), hintId: 'vidHint' }) +
+      '<div id="vidPrev">' + (emb ? '<div class="video">' + emb + '</div>' : '') + '</div>' +
       edInput('Titre de la vidéo', 'videoTitle', d.videoTitle, { max: 160 }) +
-      edInput('Lien YouTube', 'video', d.video, { type: 'url', ph: 'https://www.youtube.com/watch?v=…', hint: videoHint(d.video), hintId: 'vidHint' }) +
-      '<div id="vidPrev" style="margin-top:10px">' + (emb ? '<div class="video">' + emb + '</div>' : '') + '</div></div>';
-
-    // Durée
-    if (orig.durationDays) {
-      h += '<div class="card"><div class="eyebrow">Pratique sur plusieurs jours</div>' +
-        edInput('Nombre de jours', 'durationDays', d.durationDays, { type: 'number', kind: 'int' }) +
-        edCheck('Jours consécutifs (une absence remet le compteur à zéro)', 'consecutive', d.consecutive) +
-        edInput('Libellé du bouton du jour', 'dailyLabel', d.dailyLabel || '', { max: 120, ph: 'Valider ma journée' }) + '</div>';
-    }
+      edInput('Texte de la mission (affiché sous la vidéo)', 'body', d.body, { max: 20000, rows: 8, ph: 'Laisse vide si la vidéo suffit.' }) +
+      edInput('Action concrète', 'action', d.action, { max: 300, rows: 2 }) +
+      edInput('Consignes (facultatif)', 'instructions', d.instructions, { max: 5000, rows: 3, ph: 'Étapes pour réaliser l\'action.' }) + '</div>';
 
     // Support
     var supPath = boss ? 'challenge' : 'support', sup = getPath(d, supPath);
@@ -1100,10 +1007,20 @@
     else h += '<div class="notice warn">Support à définir : il se choisit dans program.json (checklist, fiche ou quiz).</div>';
     if (boss && !d.final) h += quizEditor(d.quiz.questions, 'quiz.questions', true, true);
 
+    // Le reste, replié
+    h += '<details class="card more"><summary>Plus d\'options</summary>' +
+      edInput('Note interne (jamais affichée aux participants)', 'description', d.description, { max: 2000, rows: 2 }) +
+      edCheck('Afficher la mention de prudence (santé, mineurs)', 'caution', d.caution) +
+      (orig.durationDays ? edInput('Nombre de jours', 'durationDays', d.durationDays, { type: 'number', kind: 'int' }) +
+        edCheck('Jours consécutifs (une absence remet à zéro)', 'consecutive', d.consecutive) +
+        edInput('Bouton du jour', 'dailyLabel', d.dailyLabel || '', { max: 120, ph: 'Valider ma journée' }) : '') +
+      '<p class="tiny">' + esc((a.label || '') + ' · ' + (boss ? 'boss' : 'mission ' + d.num)) + '. L\'ordre, l\'arène, le type de support et le déblocage ne se modifient pas ici : ils portent la progression des participants.</p>' +
+      '<button class="linkbtn small" data-act="edRevert" data-ok="Revenir à l&#39;origine" data-confirm="Revenir au contenu d&#39;origine pour cette mission ? Les modifications du brouillon seront perdues.">Revenir au contenu d\'origine</button></details>';
+
     h += '</div>';
-    h += '<div class="editor-actions"><button class="btn primary" data-act="edSave">Enregistrer le brouillon</button>' +
+    h += '<div class="editor-actions"><button class="btn" data-act="edSave">Enregistrer</button>' +
       '<button class="btn" data-act="edPreview">Aperçu</button>' +
-      '<button class="btn ghost sm" data-act="edRevert" data-ok="Revenir à l&#39;origine" data-confirm="Revenir au contenu d&#39;origine pour cette mission ? Les modifications du brouillon seront perdues.">Revenir au contenu d\'origine</button></div>';
+      '<button class="btn primary" data-act="edPublish" data-ok="Publier" data-confirm="Enregistrer et publier ? Les participants verront la mise à jour à leur prochaine ouverture.">Publier</button></div>';
     return h;
   }
 
@@ -1117,7 +1034,7 @@
           edInput('Intitulé', p + '.label', it.label, { max: 300 }) +
           edInput('Choix proposés (séparés par des virgules, sinon simple case à cocher)', p + '.choices', (it.choices || []).join(', '), { kind: 'list' }) +
           (sup.daily ? edCheck('Proposer une note du jour', p + '.note', it.note) : '') +
-          edCheck('Intitulé encore provisoire (badge « à compléter »)', p + '.pending', it.pending) + '</div>';
+          edCheck('Intitulé provisoire (signalé dans la barre admin)', p + '.pending', it.pending) + '</div>';
       });
       h += '<button class="btn sm" data-act="edAdd" data-path="' + attr(path + '.items') + '" data-kind="item">+ Ajouter un élément</button>';
     } else if (sup.type === 'fiche') {
@@ -1130,7 +1047,7 @@
           h += edInput('Type de réponse', p + '.type', f.type, { select: [['textarea', 'Texte long'], ['text', 'Texte court'], ['number', 'Nombre'], ['date', 'Date'], ['check', 'Case à cocher'], ['scale', 'Note de 1 à 10']] }) +
             edInput('Texte d\'aide dans le champ', p + '.placeholder', f.placeholder || '', { max: 200 }) +
             edCheck('Réponse obligatoire pour valider', p + '.required', f.required) +
-            edCheck('Intitulé encore provisoire (badge « à compléter »)', p + '.pending', f.pending);
+            edCheck('Intitulé provisoire (signalé dans la barre admin)', p + '.pending', f.pending);
         }
         h += '</div>';
       });
@@ -1262,7 +1179,7 @@
     delete APP.pending[mid];
     return act({ type: 'support', id: mid, data: data }, { silent: true }).then(function () {
       var el = document.getElementById('saved_' + mid);
-      if (el) el.textContent = 'Réponses enregistrées ✓';
+      if (el) el.textContent = 'Enregistré ✓';
       var foot = document.getElementById('mfoot');
       if (foot && route().name === 'mission' && route().arg === mid) foot.innerHTML = footBlock(M(mid), APP.view.items[mid]);
     }).catch(function () {
@@ -1407,6 +1324,13 @@
     edKey: function (d) { APP.edit.keys[d.q] = Number(d.o); APP.edit.dirty = true; var dz = document.getElementById('edDirty'); if (dz) dz.style.display = ''; },
     edSave: function () { return saveEdit().then(function () { toast('Brouillon enregistré. Publie pour le mettre en ligne.'); }).catch(function (e) { toast(e.message, true); }); },
     edSaveArena: function () { return HANDLERS.edSave(); },
+    edPublish: function () {
+      return saveEdit().then(function () { return APP.store.contentCall('publish'); }).then(function (r) {
+        var id = APP.edit && APP.edit.id;
+        APP.contentData = null; APP.edit = null;
+        return reloadContent().then(function () { toast('Publié (version ' + r.version + ').'); if (id && id.indexOf('arena:') !== 0) go('#/mission/' + encodeURIComponent(id)); else refresh(); });
+      }).catch(function (e) { toast(e.message, true); });
+    },
     edPreview: function () { return saveEdit().then(function () { go('#/apercu/' + encodeURIComponent(APP.edit.id)); }).catch(function (e) { toast(e.message, true); }); },
     edRevert: function () {
       var id = APP.edit.id;
