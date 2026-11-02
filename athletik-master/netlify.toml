@@ -1,0 +1,33 @@
+# ════════════════════════════════════════════════════════════════════════════
+# Athletik Master — site Netlify INDÉPENDANT d'Athletik Hub.
+# Dans Netlify : « Add new site » → même dépôt → Base directory = athletik-master
+# (ce fichier est alors lu à la place de celui de la racine, qui reste celui du Hub).
+# ════════════════════════════════════════════════════════════════════════════
+[build]
+  base = "athletik-master"
+  publish = "public"
+  functions = "netlify/functions"
+  command = ""
+
+# Le moteur, le contenu et les bonnes réponses des quiz sont embarqués dans
+# les fonctions. server-data/ n'est PAS dans public/ : jamais servi au client.
+[functions]
+  node_bundler = "esbuild"
+  included_files = ["public/content/program.json", "server-data/quiz-keys.json"]
+
+[[headers]]
+  for = "/sw.js"
+  [headers.values]
+    Cache-Control = "no-cache"
+
+[[headers]]
+  for = "/content/*"
+  [headers.values]
+    Cache-Control = "no-cache"
+
+[[headers]]
+  for = "/*"
+  [headers.values]
+    X-Frame-Options = "SAMEORIGIN"
+    X-Content-Type-Options = "nosniff"
+    Referrer-Policy = "strict-origin-when-cross-origin"

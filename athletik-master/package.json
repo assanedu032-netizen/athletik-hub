@@ -1,0 +1,13 @@
+{
+  "name": "athletik-master",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Athletik Master — PWA de formation (90 jours). Aucune étape de build : public/ est servi tel quel ; netlify/functions/ porte l'API.",
+  "scripts": {
+    "start": "node tests/serve.js 8788",
+    "test": "node tests/test-engine.js && node tests/test-access.js && node tests/test-functions.js"
+  },
+  "dependencies": {
+    "firebase-admin": "^13.0.0"
+  }
+}

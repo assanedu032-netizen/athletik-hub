@@ -6,6 +6,8 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 Athletik Hub is a French-language PWA for athletic training, built as a **single-file vanilla HTML/CSS/JS monolith** in `index.html` (~15K lines, ~850KB). There is no build step, no framework, no package manager. Edit the file, commit, push, deploy.
 
+`athletik-master/` est un **produit séparé** (PWA de formation 90 jours, site Netlify à part, base directory `athletik-master`) — voir `athletik-master/README.md`. Il ne modifie ni `index.html` ni la config Firebase du Hub : il écrit seulement dans les collections `master*` via ses propres fonctions.
+
 `athletik_hub_modular/` is a separate modular variant (split css/js folders) — **not the active codebase**. All work happens in the root `index.html`.
 
 The app is the digital companion of the book *Les Secrets de la Détente Verticale* (Alassane Dia). Buyers of the book get an access code to unlock the app.

@@ -1,0 +1,3 @@
+{
+  "_comment": "DEV LOCAL UNIQUEMENT — ne JAMAIS mettre de vraies réponses ici : le site Athletik Hub publie tout le dépôt. Les vraies réponses vont dans Firestore, document masterConfig/quizKeys, au format { \"<id mission>\": { \"<id question>\": <index de la bonne option, 0 = première> } }. Voir README § Contenu."
+}
