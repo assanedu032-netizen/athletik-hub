@@ -173,7 +173,7 @@
         var sub = rw.type === 'card' ? 'Nouveau rang : ' + rw.rank : 'Boss vaincu !';
         var extra = '';
         if (rw.grant) extra = '+ ' + rw.grant.label + ' — enregistré sur ton compte. Son activation dans Athletik Hub sera faite dès que le lien entre les deux apps est branché.';
-        if (rw.physical && APP.session.access && APP.session.access.parcel) extra = '📬 ' + rw.physical + ' : un colis est en route.';
+        if (rw.physical && APP.session.access && APP.session.access.parcel) extra = '📬 ' + rw.physical + ' : ton kit Athletik Master est en route.';
         APP.celebrations.push({ art: rw.type === 'badge' ? '🏆' : (rw.rank || rw.title), kind: rw.type, eyebrow: 'Récompense obtenue', title: rw.title, sub: sub, extra: extra });
       } else if (ev.type === 'habit') {
         var h = APP.engine.habitById[ev.id];
@@ -398,12 +398,12 @@
     if (!s.access || !s.access.parcel) return '';
     var sh = s.shipping || null, link = deliveryLink();
     if (sh && sh.confirmedAt) {
-      return '<section class="parcel"><span class="parcel-ic" aria-hidden="true">📦</span><div class="grow"><b>Un colis est en route</b>' +
+      return '<section class="parcel"><span class="parcel-ic" aria-hidden="true">📦</span><div class="grow"><b>Ton kit Athletik Master est en route</b>' +
         '<p class="small ok-txt">✓ Livraison confirmée le ' + esc(fmtDate(sh.confirmedAt)) + '</p>' +
         (link ? '<a class="small" href="' + attr(link) + '" target="_blank" rel="noopener">Modifier mes informations ↗</a>' : '') + '</div></section>';
     }
-    return '<section class="parcel"><span class="parcel-ic" aria-hidden="true">📦</span><div class="grow"><b>Un colis est en route</b>' +
-      '<p class="small muted">Dis-nous où le recevoir : on l\'envoie dans un point relais près de chez toi.</p>' +
+    return '<section class="parcel"><span class="parcel-ic" aria-hidden="true">📦</span><div class="grow"><b>Ton kit Athletik Master est en route</b>' +
+      '<p class="small muted">Dis-nous où le recevoir : on te l\'envoie dans un point relais près de chez toi.</p>' +
       (link ? '<a class="btn primary sm" href="' + attr(link) + '" target="_blank" rel="noopener" data-act="deliveryOpened">Confirmer ma livraison ↗</a>' : '<p class="tiny">Formulaire bientôt disponible.</p>') +
       (APP.deliveryOpened ? '<p class="tiny">Formulaire envoyé ? La confirmation s\'affiche ici dès que nous la recevons.</p>' +
         (APP.store.demo ? '<button class="btn sm ghost" data-act="demoDelivery">Simuler la confirmation (démo)</button>' : '<button class="linkbtn small" data-act="retry">Actualiser</button>') : '') +

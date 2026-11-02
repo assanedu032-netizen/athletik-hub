@@ -111,7 +111,7 @@ dans le navigateur.
 
 **Kit physique** : paiement complet (1 fois, ou 3 échéances) **et** 14 jours après le
 premier paiement **et** pas de remboursement. Le participant ne voit qu'un
-« Un colis est en route » le moment venu ; l'admin voit le statut exact.
+« Ton kit Athletik Master est en route » le moment venu ; l'admin voit le statut exact.
 
 ## 4. Compléter le contenu (sans toucher au code)
 
@@ -176,7 +176,7 @@ apparaît automatiquement.
 
 ## 4 bis. Livraison du kit (formulaire Tally)
 
-Quand le kit est dû (paiement complet + 14 jours), la carte « Un colis est en route » propose
+Quand le kit est dû (paiement complet + 14 jours), la carte « Ton kit Athletik Master est en route » propose
 **Confirmer ma livraison**. Ce bouton ouvre le formulaire Tally **https://tally.so/r/4aQp4o**
 (prénom, nom, email, téléphone, adresse, point relais préféré facultatif, case de confirmation),
 avec `uid`, `email` et `prenom` passés en champs cachés.
