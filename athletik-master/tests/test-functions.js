@@ -53,11 +53,13 @@ process.env.FIREBASE_SERVICE_ACCOUNT = '{}';
 process.env.SYSTEMEIO_WEBHOOK_SECRET = 'sekret';
 process.env.MASTER_ADMIN_EMAILS = 'boss@athletik.fr';
 process.env.MASTER_OFFER_PLANS = '{"77":"one_time"}';
+process.env.TALLY_SIGNING_SECRET = 'tally-sekret';
 
 const api = require('../netlify/functions/master-api.js').handler;
 const adm = require('../netlify/functions/master-admin.js').handler;
 const hook = require('../netlify/functions/systemeio-webhook.js').handler;
 const content = require('../netlify/functions/master-content.js').handler;
+const tally = require('../netlify/functions/tally-webhook.js').handler;
 const program = require('../public/content/program.json');
 
 TOKENS.alice = { uid: 'u-alice', email: 'Alice@Ex.com', email_verified: true, name: 'Alice' };
@@ -194,6 +196,39 @@ async function t(n, f) { try { await f(); passed++; } catch (e) { failed++; cons
     assert.strictEqual(r.status, 200, JSON.stringify(r.body));
     assert.strictEqual(r.body.result.won, true);
     assert.strictEqual(r.body.result.score, 4);
+  });
+
+  // ─── Livraison du kit (webhook Tally) ─────────────────────────────────────
+  const tallyBody = (uid, email, formId) => JSON.stringify({ eventType: 'FORM_RESPONSE', data: { formId: formId || '4aQp4o', responseId: 'r1', submissionId: 's1', fields: [
+    { key: 'h1', label: 'uid', type: 'HIDDEN_FIELDS', value: uid },
+    { key: 'h2', label: 'email', type: 'HIDDEN_FIELDS', value: email },
+    { key: 'q1', label: 'Adresse', type: 'INPUT_TEXT', value: '12 rue du Test' }] } });
+  const sign = (b, k) => require('crypto').createHmac('sha256', k || 'tally-sekret').update(b).digest('base64');
+  const tallyCall = (b, sig) => tally({ httpMethod: 'POST', headers: { 'Tally-Signature': sig }, body: b }).then(r => ({ status: r.statusCode, body: JSON.parse(r.body) }));
+
+  await t('Tally : signature invalide → 401, rien d\'écrit', async () => {
+    const b = tallyBody('u-alice', 'alice@ex.com');
+    assert.strictEqual((await tallyCall(b, sign(b, 'mauvais'))).status, 401);
+    assert.ok(!DB['masterParticipants/u-alice'].shipping);
+  });
+  await t('Tally : uid sans le bon email → ignoré', async () => {
+    const b = tallyBody('u-alice', 'pirate@ex.com');
+    assert.strictEqual((await tallyCall(b, sign(b))).body.ignored, 'unknown_participant');
+    assert.ok(!DB['masterParticipants/u-alice'].shipping);
+  });
+  await t('Tally : autre formulaire → ignoré', async () => {
+    const b = tallyBody('u-alice', 'alice@ex.com', 'autre');
+    assert.strictEqual((await tallyCall(b, sign(b))).body.ignored, true);
+  });
+  await t('Tally : envoi valide → livraison confirmée, adresse NON stockée', async () => {
+    const b = tallyBody('u-alice', 'Alice@Ex.com');
+    assert.strictEqual((await tallyCall(b, sign(b))).status, 200);
+    const sh = DB['masterParticipants/u-alice'].shipping;
+    assert.ok(sh.confirmedAt && sh.submissionId === 's1');
+    assert.ok(!JSON.stringify(DB['masterParticipants/u-alice']).includes('rue du Test'), 'adresse jamais copiée');
+    const r = await call(api, 'alice', { action: 'state' });
+    assert.ok(r.body.shipping.confirmedAt, 'renvoyé au participant');
+    assert.strictEqual(r.body.uid, 'u-alice');
   });
   await t('aucune écriture hors des collections master*', async () => {
     const bad = WRITES.filter(p => !/^master(Participants|Access|PaymentEvents|Content|Config)\//.test(p));

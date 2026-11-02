@@ -36,7 +36,7 @@ exports.handler = async function (event) {
         const p = d.data();
         seen[p.email] = true;
         rows.push(C.Access.participantSummary(engine, {
-          uid: d.id, name: p.name, email: p.email, state: p.state, access: access[p.email] || null, contacted: p.contacted
+          uid: d.id, name: p.name, email: p.email, state: p.state, access: access[p.email] || null, contacted: p.contacted, shipping: p.shipping || null
         }, now));
       });
       // Acheteurs qui ne se sont pas encore connectés

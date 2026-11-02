@@ -69,7 +69,8 @@
     return {
       profile: this.data.profile, state: this.data.state,
       access: { status: acc.status, plan: acc.plan, paid: acc.paid, needed: acc.needed, fullyPaid: acc.fullyPaid, parcel: acc.kit.eligible },
-      roles: AMAccess.roles({ now: this.now(), access: this.data.access, hubDoc: null, grants: this.data.state.grants, isAdmin: true })
+      roles: AMAccess.roles({ now: this.now(), access: this.data.access, hubDoc: null, grants: this.data.state.grants, isAdmin: true }),
+      shipping: this.data.shipping || null, uid: 'demo-me'
     };
   };
   DemoStore.prototype.init = function () {
@@ -104,10 +105,11 @@
     if (now < first + 14 * 864e5) this.travel(first + 14 * 864e5 - now + 1000);
     this.save();
   };
+  DemoStore.prototype.simulateDelivery = function () { this.data.shipping = { confirmedAt: this.now(), demo: true }; this.save(); };
   DemoStore.prototype.admin = function (action, payload) {
     var now = this.now();
     if (action === 'list') {
-      var me = { uid: 'demo-me', name: this.data.profile.name + ' (toi)', email: this.data.profile.email, state: this.data.state, access: this.data.access, contacted: this.data.contacted };
+      var me = { uid: 'demo-me', name: this.data.profile.name + ' (toi)', email: this.data.profile.email, state: this.data.state, access: this.data.access, contacted: this.data.contacted, shipping: this.data.shipping };
       var people = [me].concat(AMDemo.demoParticipants(this.engine, now));
       var eng = this.engine;
       return Promise.resolve({ serverNow: now, participants: people.map(function (p) { return AMAccess.participantSummary(eng, p, now); }) });

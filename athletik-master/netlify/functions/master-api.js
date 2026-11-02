@@ -93,6 +93,8 @@ exports.handler = async function (event) {
       events: out.events,
       result: out.result,
       profile: { name: out.name != null ? out.name : (p.name || user.name || ''), email: user.email },
+      uid: user.uid,
+      shipping: p.shipping || null,
       access: {
         status: acc.status, plan: acc.plan, paid: acc.paid, needed: acc.needed, fullyPaid: acc.fullyPaid,
         // Le kit est une surprise : on n'envoie qu'un booléen « colis en route ».

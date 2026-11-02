@@ -17,5 +17,9 @@ window.AM_CONFIG = {
   // ni espace (ex. '33612345678'). Vide = bouton « Lien WhatsApp à configurer ».
   whatsappNumber: '',
   // À COMPLÉTER — page de vente Systeme.io (affichée si l'accès n'est pas actif).
-  salesUrl: ''
+  salesUrl: '',
+  // Formulaire Tally de confirmation de livraison (kit physique).
+  // Le participant y arrive avec uid / email / prénom en paramètres cachés.
+  deliveryFormUrl: 'https://tally.so/r/4aQp4o',
+  deliveryFormAdminUrl: 'https://tally.so/forms/4aQp4o/submissions'
 };

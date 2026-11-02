@@ -244,6 +244,29 @@ async function t(name, fn) {
     await noOverflow();
   });
 
+  await t('colis : formulaire de livraison, puis « livraison confirmée »', async () => {
+    await goto('#/recompenses');
+    assert.ok(!(await p.$('.parcel')), 'pas de colis avant paiement complet + 14 jours');
+    await p.evaluate(() => { AMApp.store.simulateFullPayment(); });
+    await p.reload(); await p.waitForSelector('.page');
+    await goto('#/recompenses');
+    const href = await p.getAttribute('.parcel a[data-act=deliveryOpened]', 'href');
+    assert.ok(href.startsWith('https://tally.so/r/4aQp4o?'), href);
+    assert.ok(href.includes('uid=demo-me') && href.includes('email='), 'identité transmise au formulaire');
+    await p.context().route('https://tally.so/**', r => r.fulfill({ status: 200, body: 'ok' }));
+    const [popup] = await Promise.all([p.waitForEvent('popup'), p.click('.parcel a[data-act=deliveryOpened]')]);
+    await popup.close();
+    await p.waitForTimeout(400);
+    assert.ok((await p.textContent('.parcel')).includes('dès que nous la recevons'), 'pas de faux « confirmé » sur un simple clic');
+    await p.click('[data-act=demoDelivery]');
+    await p.waitForTimeout(150);
+    assert.ok((await p.textContent('.parcel')).includes('Livraison confirmée'));
+    await goto('#/');
+    assert.ok((await p.textContent('.parcel')).includes('Livraison confirmée'), 'aussi sur l\'accueil');
+    await goto('#/admin'); await p.waitForTimeout(150);
+    assert.ok((await p.textContent('main')).includes('Livraison : confirmée'), 'visible côté admin');
+  });
+
   await t('règles du jeu : chaque chiffre vient des réglages du moteur', async () => {
     const st = require('../public/content/program.json').settings;
     await goto('#/regles');

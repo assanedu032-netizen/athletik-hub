@@ -136,7 +136,7 @@
   }
 
   function fromServer(j) {
-    return { profile: j.profile, state: j.state, access: j.access, roles: j.roles };
+    return { profile: j.profile, state: j.state, access: j.access, roles: j.roles, shipping: j.shipping || null, uid: j.uid || null };
   }
 
   function refresh() {
@@ -153,6 +153,7 @@
       if (r.access) APP.session.access = r.access;
       if (r.roles) APP.session.roles = r.roles;
       if (r.profile) APP.session.profile = r.profile;
+      if (r.shipping !== undefined) APP.session.shipping = r.shipping;
       APP.view = APP.engine.view(APP.session.state, APP.store.now());
       handleEvents(r.events || []);
       if (!opts.silent) render();
@@ -374,13 +375,39 @@
     h += nextCard();
     h += '<a class="prog-line" href="#/carte"><span class="ring" style="--p:' + v.progress + '" role="img" aria-label="' + v.progress + ' % du parcours"><span>' + v.progress + '%</span></span>' +
       '<span class="grow"><b>' + v.validatedCount + ' / ' + v.totalCount + ' missions</b><span class="small muted">' + esc(v.rank ? 'Rang ' + v.rank : 'Rookie à la fin du niveau 0') + '</span></span><span class="chev" aria-hidden="true">›</span></a>';
-    if (s.access && s.access.parcel) h += '<div class="parcel">📦 <b>Un colis est en route</b></div>';
+    h += parcelCard();
     if (v.habits.length) {
       h += '<section><div class="section-title"><h2>Habitudes du jour</h2><a href="#/habitudes">Tout voir</a></div><div class="list">' + v.habits.map(habitRow).join('') + '</div></section>';
     }
     var last = v.rewards[v.rewards.length - 1];
     if (last) h += '<a class="prog-line" href="#/recompenses"><span class="medal" aria-hidden="true">★</span><span class="grow"><b>' + esc(last.title) + '</b><span class="small muted">Dernière récompense</span></span><span class="chev" aria-hidden="true">›</span></a>';
     return h + '</div>';
+  }
+
+  // ─── Colis : le participant confirme où le recevoir (formulaire Tally) ────
+  // La confirmation fait foi quand Tally la renvoie au serveur (tally-webhook) :
+  // on n'affiche « confirmée » que sur cette preuve, jamais sur un simple clic.
+  function deliveryLink() {
+    if (!CFG.deliveryFormUrl) return null;
+    var pr = APP.session.profile || {};
+    var q = 'uid=' + encodeURIComponent(APP.session.uid || '') + '&email=' + encodeURIComponent(pr.email || '') + '&prenom=' + encodeURIComponent((pr.name || '').split(' ')[0]);
+    return CFG.deliveryFormUrl + (CFG.deliveryFormUrl.indexOf('?') < 0 ? '?' : '&') + q;
+  }
+  function parcelCard() {
+    var s = APP.session;
+    if (!s.access || !s.access.parcel) return '';
+    var sh = s.shipping || null, link = deliveryLink();
+    if (sh && sh.confirmedAt) {
+      return '<section class="parcel"><span class="parcel-ic" aria-hidden="true">📦</span><div class="grow"><b>Un colis est en route</b>' +
+        '<p class="small ok-txt">✓ Livraison confirmée le ' + esc(fmtDate(sh.confirmedAt)) + '</p>' +
+        (link ? '<a class="small" href="' + attr(link) + '" target="_blank" rel="noopener">Modifier mes informations ↗</a>' : '') + '</div></section>';
+    }
+    return '<section class="parcel"><span class="parcel-ic" aria-hidden="true">📦</span><div class="grow"><b>Un colis est en route</b>' +
+      '<p class="small muted">Dis-nous où le recevoir : on l\'envoie dans un point relais près de chez toi.</p>' +
+      (link ? '<a class="btn primary sm" href="' + attr(link) + '" target="_blank" rel="noopener" data-act="deliveryOpened">Confirmer ma livraison ↗</a>' : '<p class="tiny">Formulaire bientôt disponible.</p>') +
+      (APP.deliveryOpened ? '<p class="tiny">Formulaire envoyé ? La confirmation s\'affiche ici dès que nous la recevons.</p>' +
+        (APP.store.demo ? '<button class="btn sm ghost" data-act="demoDelivery">Simuler la confirmation (démo)</button>' : '<button class="linkbtn small" data-act="retry">Actualiser</button>') : '') +
+      '</div></section>';
   }
 
   function habitRow(hv) {
@@ -756,7 +783,7 @@
     v.rewards.forEach(function (r) { earned[r.id] = r; });
     var h = '<div class="eyebrow">Rangs et récompenses</div><h1 class="h-display">Ma vitrine</h1>';
     h += '<div class="card hero rankcard" style="margin-top:12px"><div class="rank-badge ' + (v.rank ? '' : 'none') + '">' + esc(v.rank || 'À VENIR') + '</div><div><div class="tiny">Rang actuel</div><b style="font-size:19px">' + esc(v.rank || 'Pas encore de rang') + '</b><div class="small muted">' + v.rewards.length + ' / ' + APP.program.rewards.length + ' récompenses</div></div></div>';
-    if (APP.session.access && APP.session.access.parcel) h += '<div class="card gold row" style="margin-top:12px"><span style="font-size:30px" aria-hidden="true">📦</span><div><b>Un colis est en route</b><div class="small muted">Surprise…</div></div></div>';
+    h += parcelCard();
     h += '<div class="rewards" style="margin-top:14px">' + APP.program.rewards.map(function (r) {
       var trig = r.trigger.split(':'), a = A(trig[1]);
       var tile = rewardTile(earned[r.id] || r, !!earned[r.id]);
@@ -889,6 +916,10 @@
           '</div></details>';
       }
       var ac = p.access || {};
+      if (ac.kit && ac.kit.eligible) {
+        h += '<div class="small">Livraison : ' + (p.shipping && p.shipping.confirmedAt ? '<span class="ok-txt">confirmée le ' + esc(fmtDate(p.shipping.confirmedAt)) + '</span>' : '<span class="warn-txt">à confirmer</span>') +
+          (CFG.deliveryFormAdminUrl ? ' · <a href="' + attr(CFG.deliveryFormAdminUrl) + '" target="_blank" rel="noopener">adresses dans Tally ↗</a>' : '') + '</div>';
+      }
       h += '<div class="tiny">Accès : ' + esc(ac.status || '—') + ' · ' + esc(ac.plan === 'one_time' ? '1 fois' : ac.plan === 'installments' ? ac.paid + ' / ' + ac.needed + ' échéances' : 'formule inconnue') +
         ' · Kit : ' + esc(ac.kit ? (ac.kit.eligible ? 'à expédier' : ({ installments_pending: 'paiement incomplet', retractation: 'délai de rétractation (' + fmtDate(ac.kit.eligibleAt) + ')', plan_unknown: 'formule à préciser', refunded: 'remboursé', no_access: '—' }[ac.kit.reason] || ac.kit.reason)) : '—') + '</div>';
       h += '</div>';
@@ -1374,6 +1405,8 @@
       return APP.store.contentCall('discard').then(function () { APP.contentData = null; APP.edit = null; render(); });
     },
     habit: function (d) { return act({ type: 'habit', id: d.id, value: d.val }); },
+    deliveryOpened: function () { APP.deliveryOpened = true; setTimeout(render, 300); },
+    demoDelivery: function () { APP.store.simulateDelivery(); return APP.store.init().then(function (s) { APP.session = s; toast('Livraison confirmée (démo).'); refresh(); }); },
     saveName: function () { var v = document.getElementById('pName').value; return act({ type: 'profile', name: v }).then(function () { toast('Prénom enregistré.'); }); },
     restart: function () {
       return act({ type: 'restart' }).then(function () { go('#/'); });
@@ -1428,7 +1461,8 @@
     if (!el) return;
     var name = el.dataset.act, fn = HANDLERS[name];
     if (!fn) return;
-    if (el.tagName === 'A' && name !== 'closeCelebrate') e.preventDefault();
+    // Un vrai lien externe (nouvel onglet) doit s'ouvrir : on ne bloque que les liens internes.
+    if (el.tagName === 'A' && name !== 'closeCelebrate' && el.target !== '_blank') e.preventDefault();
     if (el.disabled) return;
     if (el.dataset.confirm) {
       if (APP.busy) return;

@@ -192,6 +192,7 @@
       grants: st.grants || [],
       lastActivityAt: lastAt || null,
       touch: humanTouch(st.startedAt, engine.settings.humanTouchDays, p.contacted, now),
+      shipping: p.shipping || null,
       access: acc
     };
   }

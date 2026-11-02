@@ -49,6 +49,8 @@ Une fois déployé sur Netlify, la démo marche de la même façon depuis l'URL 
 | `MASTER_INSTALLMENTS` | Nombre d'échéances du paiement fractionné (défaut 3). |
 | `SYSTEMEIO_SIGNING_SECRET` | *Facultatif* : si Systeme.io signe ses envois (`X-Webhook-Signature`). |
 | `MASTER_ALLOWED_ORIGIN` | *Facultatif* : origine autorisée (CORS), sinon `*`. |
+| `TALLY_SIGNING_SECRET` | Secret de signature du webhook Tally (formulaire de livraison). |
+| `TALLY_DELIVERY_FORM_ID` | *Facultatif* : id du formulaire de livraison (défaut `4aQp4o`). |
 
 3. Firebase Console → Authentication → **Authorized domains** : ajouter le domaine
    du nouveau site (sinon la connexion Google est refusée).
@@ -73,7 +75,8 @@ athletik-master/
 │  ├─ master-api.js           ← toutes les actions du participant
 │  ├─ master-admin.js         ← espace admin (participants)
 │  ├─ master-content.js       ← éditeur de contenu (brouillon / publication)
-│  └─ systemeio-webhook.js    ← preuve de paiement
+│  ├─ systemeio-webhook.js    ← preuve de paiement
+│  └─ tally-webhook.js        ← confirmation de livraison du kit
 ├─ server-data/quiz-keys.json ← dev local uniquement (voir § 4)
 └─ tests/
 ```
@@ -170,6 +173,22 @@ lisible en ligne. Après une publication, les serveurs prennent le nouveau conte
 On peut toujours éditer `program.json` à la main (pour ajouter une mission, par
 exemple). Les surcouches s'appliquent par-dessus, et une mission ajoutée dans le fichier
 apparaît automatiquement.
+
+## 4 bis. Livraison du kit (formulaire Tally)
+
+Quand le kit est dû (paiement complet + 14 jours), la carte « Un colis est en route » propose
+**Confirmer ma livraison**. Ce bouton ouvre le formulaire Tally **https://tally.so/r/4aQp4o**
+(prénom, nom, email, téléphone, adresse, point relais préféré facultatif, case de confirmation),
+avec `uid`, `email` et `prenom` passés en champs cachés.
+
+- **Brancher la confirmation** : dans Tally → formulaire → *Integrations* → *Webhooks*, ajouter
+  `https://<site>/.netlify/functions/tally-webhook` avec un *signing secret*, et mettre ce secret
+  dans `TALLY_SIGNING_SECRET`. Tant que ce n'est pas fait, la carte reste « à confirmer » : elle
+  n'affiche jamais « confirmée » sur un simple clic.
+- **Données** : l'app n'enregistre que la date de confirmation (`masterParticipants/{uid}.shipping`).
+  **L'adresse reste dans Tally** (une seule copie) : l'admin la lit dans les réponses du formulaire,
+  et l'espace admin indique qui a confirmé ou non.
+- Les informations de paiement ne sont pas redemandées : elles restent chez Systeme.io.
 
 ## 5. Ce qui fonctionne
 
