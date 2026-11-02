@@ -282,10 +282,10 @@ details summary { cursor: pointer; color: var(--gold2); font-size: 14px; font-we
 .facts li { display: flex; flex-direction: column; padding: 14px 16px; }
 .facts li + li { border-top: 1px solid var(--line); }
 .facts span { color: var(--text2); font-size: 14px; }
-.rules { display: grid; grid-template-columns: 1fr; margin: 0; background: var(--surface); border-radius: var(--r); }
-.rules dt { padding: 14px 16px 0; font-weight: 800; color: var(--gold2); font-size: 14px; }
-.rules dd { margin: 0; padding: 2px 16px 14px; color: var(--text2); }
-.rules dd + dt { border-top: 1px solid var(--line); }
+.rules { list-style: none; margin: 0; padding: 0; background: var(--surface); border-radius: var(--r); }
+.rules li { padding: 13px 16px 13px 38px; position: relative; color: var(--text); }
+.rules li::before { content: ''; position: absolute; left: 18px; top: 22px; width: 7px; height: 7px; border-radius: 50%; background: var(--gold); }
+.rules li + li { border-top: 1px solid var(--line); }
 
 /* ─── Admin ─────────────────────────────────────────────────────────────── */
 .adm-row { gap: 10px; }

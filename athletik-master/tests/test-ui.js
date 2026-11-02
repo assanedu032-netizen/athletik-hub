@@ -244,9 +244,21 @@ async function t(name, fn) {
     await noOverflow();
   });
 
+  await t('règles du jeu : chaque chiffre vient des réglages du moteur', async () => {
+    const st = require('../public/content/program.json').settings;
+    await goto('#/regles');
+    const txt = await p.textContent('main');
+    assert.ok(txt.includes('s\'ouvre ' + st.defaultUnlockDelayHours + ' h après ta validation'), 'délai');
+    assert.ok(txt.includes(st.bossPassMin + ' bonnes réponses sur ' + st.bossQuestionCount), 'seuil du boss');
+    assert.ok(txt.includes('après minuit'), 'nouvel essai = jour suivant, comme le moteur');
+    assert.ok(txt.includes('Rookie → Titulaire → All-Star → MVP → Athletik Master'), 'rangs dans l\'ordre');
+    assert.ok(!/lendemain/.test(txt), 'une seule façon de dire chaque délai');
+    assert.ok(txt.split(/\s+/).length < 260, 'court : ' + txt.split(/\s+/).length + ' mots');
+  });
+
   await t('320 px : aucun débordement', async () => {
     await p.setViewportSize({ width: 320, height: 568 });
-    for (const h of ['#/', '#/carte', '#/mission/m3.2', '#/mission/boss-a1', '#/habitudes', '#/recompenses', '#/admin']) { await goto(h); await p.waitForTimeout(60); await noOverflow(); }
+    for (const h of ['#/regles', '#/', '#/carte', '#/mission/m3.2', '#/mission/boss-a1', '#/habitudes', '#/recompenses', '#/admin']) { await goto(h); await p.waitForTimeout(60); await noOverflow(); }
   });
 
   await t('aucune erreur JavaScript', async () => {

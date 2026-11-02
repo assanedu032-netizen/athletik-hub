@@ -60,6 +60,18 @@
   function st() { return APP.session.state; }
   function rec(id) { return st().missions[id] || {}; }
 
+  // Règles du jeu : chaque chiffre est lu dans les réglages du moteur.
+  function R() {
+    var st = APP.program.settings || {};
+    return {
+      delay: st.defaultUnlockDelayHours != null ? st.defaultUnlockDelayHours : 24,
+      q: st.bossQuestionCount || 5,
+      pass: st.bossPassMin || 4,
+      days: st.programDays || 90
+    };
+  }
+  function bossLine() { var r = R(); return '1 défi + ' + r.q + ' questions. ' + r.pass + ' bonnes réponses sur ' + r.q + ' pour gagner.'; }
+
   function waLink(kind) {
     var num = String(CFG.whatsappNumber || '').replace(/\D/g, '');
     if (!num) return null;
@@ -328,7 +340,7 @@
       '<li><b>Niveau 0</b><span>6 étapes, toutes ouvertes aujourd\'hui.</span></li>' +
       '<li><b>8 arènes</b><span>Une mission par jour, un boss à la fin de chacune.</span></li>' +
       '<li><b>8 habitudes</b><span>Une par arène. Elles restent jusqu\'au 90ᵉ jour.</span></li></ol>' +
-      '<p class="muted">La seule règle : regarde, fais l\'action, valide. La suite s\'ouvre le lendemain.</p>' +
+      '<p class="muted">La seule règle : regarde, fais l\'action, valide. La mission suivante s\'ouvre ' + R().delay + ' h plus tard.</p>' +
       '<button class="btn primary block" data-act="startProgram">' + (st().introSeenAt ? 'Aller au niveau 0' : 'Commencer le niveau 0') + '</button>' +
       '<a class="btn ghost block" href="#/regles">Règles du jeu</a></div>';
   }
@@ -453,7 +465,7 @@
     if (!preview) h += adminBar(m);
     h += '<section class="mhead' + (boss ? ' boss' : '') + '"><span class="num">' + esc(boss ? (m.final ? 'Boss final' : 'Boss') : 'Mission ' + m.num) + '</span>' +
       '<h1 class="h-display">' + esc(m.title) + '</h1>' +
-      (boss && !m.final ? '<p class="small muted">1 défi + 5 questions. 4 bonnes réponses pour gagner, sinon nouvel essai demain.</p>' : '') +
+      (boss && !m.final ? '<p class="small muted">' + esc(bossLine()) + ' Raté ? Tu réessaies après minuit.</p>' : '') +
       (it.status === 'validated' ? '<p class="small ok-txt">✓ ' + (boss ? 'Boss vaincu' : 'Mission validée') + ' le ' + esc(fmtDate(it.validatedAt)) + '</p>' : '') + '</section>';
 
     if (it.status === 'locked' || it.status === 'waiting' || it.status === 'draft') {
@@ -760,21 +772,37 @@
   }
 
   // ─── Règles du jeu ────────────────────────────────────────────────────────
+  // Règles du jeu : courtes, utiles, fiables. Une règle = ce que fait vraiment le moteur.
   function viewRules() {
-    var ranks = APP.program.rewards.filter(function (r) { return r.rank; }).map(function (r) { return r.rank; }).join(' → ');
-    var rows = [
-      ['La règle', 'Regarde, fais l\'action, valide. La suite s\'ouvre le lendemain.'],
-      ['Niveau 0', '6 étapes, toutes ouvertes dès le premier jour.'],
-      ['Missions', 'Une à la fois. La suivante s\'ouvre 24 h après ta validation. Certaines durent plusieurs jours.'],
-      ['Boss', '1 défi + 5 questions. 4 bonnes réponses pour gagner. Raté ? Nouvel essai demain, sans pénalité.'],
-      ['Boss final', 'Refais tes tests et envoie ta vidéo de fin. C\'est gagné, quels que soient les chiffres.'],
-      ['Rangs', ranks + '.'],
-      ['Habitudes', 'Une par arène, une coche par jour. Elles restent jusqu\'au 90ᵉ jour.'],
-      ['Alassane', 'Il regarde ta vidéo de départ et te recontacte vers le 30ᵉ et le 60ᵉ jour.'],
-      ['Après', 'Tout reste accessible, pendant et après les 90 jours.']
+    var r = R();
+    var ranks = APP.program.rewards.filter(function (x) { return x.rank; }).map(function (x) { return x.rank; }).join(' → ');
+    var groups = [
+      ['Avancer', [
+        'Regarde la vidéo, fais l\'action, valide.',
+        'Le niveau 0 est ouvert en entier dès le premier jour.',
+        'Ensuite, une mission à la fois : la suivante s\'ouvre ' + r.delay + ' h après ta validation.',
+        'Certaines missions durent plusieurs jours : une coche par jour. Si c\'est « d\'affilée », un jour manqué remet le compteur à zéro.'
+      ]],
+      ['Battre un boss', [
+        'Il s\'ouvre ' + r.delay + ' h après la dernière mission de l\'arène.',
+        bossLine(),
+        'Raté ? Tu réessaies après minuit, sans pénalité. Ton défi reste acquis.',
+        'Le boss final : refais tes tests et envoie ta vidéo de fin. C\'est gagné, quels que soient tes chiffres.'
+      ]],
+      ['Ce que tu gagnes', [
+        'Ton rang monte en avançant : ' + ranks + '. Les autres boss donnent un badge de victoire.',
+        'Une habitude par arène. Elle reste jusqu\'au ' + r.days + 'ᵉ jour : réponds oui ou non chaque jour, ta série monte.'
+      ]],
+      ['Toujours vrai', [
+        'Une mission validée reste ouverte, pendant et après les ' + r.days + ' jours.',
+        'Alassane regarde ta vidéo de départ et te recontacte vers le 30ᵉ et le 60ᵉ jour.'
+      ]]
     ];
     return '<div class="crumb"><a href="#/carte">‹ Carte</a></div><div class="page-head"><h1 class="h-display">Règles du jeu</h1></div>' +
-      '<dl class="rules">' + rows.map(function (r) { return '<dt>' + esc(r[0]) + '</dt><dd>' + esc(r[1]) + '</dd>'; }).join('') + '</dl>';
+      '<div class="stack-lg">' + groups.map(function (g) {
+        return '<section><div class="section-title"><h2>' + esc(g[0]) + '</h2></div><ul class="rules">' +
+          g[1].map(function (x) { return '<li>' + esc(x) + '</li>'; }).join('') + '</ul></section>';
+      }).join('') + '</div>';
   }
 
   // ─── Profil ───────────────────────────────────────────────────────────────
