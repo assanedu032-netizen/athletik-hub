@@ -3,11 +3,11 @@
  * (stale-while-revalidate). L'API (/.netlify/) et tout ce qui n'est pas du
  * même domaine ne passent JAMAIS par le cache. Incrémenter VERSION à chaque
  * livraison qui doit invalider la coquille. */
-var VERSION = 'am-v2';
+var VERSION = 'am-v3';
 var SHELL = [
   './', 'index.html', 'manifest.webmanifest', 'css/app.css',
   'js/config.js', 'js/engine.js', 'js/access.js', 'js/content-tools.js', 'js/demo.js', 'js/store.js', 'js/app.js',
-  'content/program.json', 'icons/logo-mark.png', 'icons/icon-192.png', 'icons/favicon-32.png'
+  'content/program.json', 'icons/icon-192.png', 'icons/icon-192.png', 'icons/favicon-32.png'
 ];
 self.addEventListener('install', function (e) {
   e.waitUntil(caches.open(VERSION).then(function (c) { return c.addAll(SHELL); }).then(function () { return self.skipWaiting(); }));

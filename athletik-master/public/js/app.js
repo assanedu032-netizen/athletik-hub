@@ -69,12 +69,14 @@
 
   // ─── Démarrage ────────────────────────────────────────────────────────────
   function boot() {
-    fetch('content/program.json', { cache: 'no-cache' }).then(function (r) { return r.json(); }).then(function (p) {
+    var src = window.AM_PROGRAM ? Promise.resolve(window.AM_PROGRAM) :
+      fetch('content/program.json', { cache: 'no-cache' }).then(function (r) { return r.json(); });
+    src.then(function (p) {
       APP.base = p;
       APP.program = p;
       var mode = null;
       try { mode = localStorage.getItem(MODE_KEY); } catch (e) {}
-      if (/[?&]demo\b/.test(location.search)) mode = 'demo';
+      if (/[?&]demo\b/.test(location.search) || CFG.demoOnly) mode = 'demo';
       if (mode === 'demo') return startDemo(false);
       if (mode === 'remote') return startRemote();
       APP.session = null; render();
@@ -248,7 +250,7 @@
       ['recompenses', '🏆', 'Récompenses'], ['profil', '👤', 'Profil']
     ];
     return (APP.store.demo ? '<div class="demo-bar">MODE DÉMO — données fictives, enregistrées sur cet appareil uniquement · <button data-act="travel" data-ms="86400000">+24 h</button><button data-act="goProfile">outils</button></div>' : '') +
-      '<header class="topbar"><img class="logo" src="icons/logo-mark.png" alt="">' +
+      '<header class="topbar"><img class="logo" src="icons/icon-192.png" alt="">' +
       '<div class="brand">ATHLETIK MASTER<small>' + esc(v.rank ? 'Rang ' + v.rank : 'Niveau 0 en cours') + '</small></div>' +
       '<div class="spacer"></div><span class="daypill">Jour ' + day + ' / ' + v.programDays + '</span></header>' +
       '<nav class="tabbar" aria-label="Navigation principale">' + tabs.map(function (t) {
@@ -261,7 +263,7 @@
   function renderLogin() {
     var signup = APP.loginTab === 'signup';
     return '<div class="login">' +
-      '<img class="logo" src="icons/logo-mark.png" alt="">' +
+      '<img class="logo" src="icons/icon-192.png" alt="">' +
       '<h1 class="h-display" style="font-size:42px">ATHLETIK MASTER</h1>' +
       '<p class="tag">Deviens l\'athlète dont tu as toujours rêvé.</p>' +
       '<div class="card stack">' +
@@ -302,7 +304,7 @@
       title = 'Connexion impossible';
       text = 'Une erreur est survenue (' + esc(code) + ').';
     }
-    return '<div class="login"><img class="logo" src="icons/logo-mark.png" alt=""><div class="card stack">' +
+    return '<div class="login"><img class="logo" src="icons/icon-192.png" alt=""><div class="card stack">' +
       '<h2 class="h-display">' + esc(title) + '</h2><p class="muted">' + esc(text) + '</p>' +
       '<button class="btn block" data-act="retry">Réessayer</button>' + btns +
       '<button class="linkbtn small" data-act="signout">Se déconnecter</button></div></div>';
@@ -347,7 +349,7 @@
       (wa ? '<a class="btn wa block" href="' + attr(wa) + '" target="_blank" rel="noopener">Envoyer ma vidéo sur WhatsApp</a>' : '<span class="placeholder">Lien WhatsApp à configurer</span>') + '</div>' +
       '<div class="card stack"><h3>Et maintenant ?</h3><p class="muted" style="margin:0">Athletik Master est un entraînement, pas un cours qu\'on termine. Pioche librement dans les missions pour retravailler un concept, ou recommence le parcours. Tout reste accessible, et tes habitudes continuent.</p>' +
       '<a class="btn block" href="#/carte">Piocher dans les missions</a>' +
-      '<button class="btn ghost block" data-act="restart">Recommencer le parcours</button></div></div>';
+      '<button class="btn ghost block" data-act="restart" data-ok="Recommencer" data-confirm="Recommencer le parcours ? Tes récompenses, tes habitudes et tes droits restent acquis.">Recommencer le parcours</button></div></div>';
   }
 
   // ─── Tableau de bord ──────────────────────────────────────────────────────
@@ -868,8 +870,8 @@
       h += '<div class="card stack" style="border-color:#6a4800"><h3>Outils de démonstration</h3><p class="small muted" style="margin:0">Pour tester les délais sans attendre. Horloge démo : ' + esc(fmtShort(APP.store.now()) + ' ' + hm(APP.store.now())) + '</p>' +
         '<div class="row wrap"><button class="btn sm" data-act="travel" data-ms="3600000">+1 h</button><button class="btn sm" data-act="travel" data-ms="86400000">+24 h</button><button class="btn sm" data-act="travel" data-ms="604800000">+7 jours</button></div>' +
         '<button class="btn block sm" data-act="demoPay">Simuler le paiement complet (+ délai de 14 jours)</button>' +
-        '<button class="btn block sm" data-act="demoReset">Remettre la démo à zéro</button>' +
-        '<button class="btn block sm" data-act="demoResetContent">Effacer le contenu édité en démo</button></div>';
+        '<button class="btn block sm" data-act="demoReset" data-ok="Remettre à zéro" data-confirm="Remettre la démo à zéro ? Toute ta progression de démo sera effacée.">Remettre la démo à zéro</button>' +
+        '<button class="btn block sm" data-act="demoResetContent" data-ok="Effacer" data-confirm="Effacer le contenu édité dans la démo (retour au contenu d&#39;origine) ?">Effacer le contenu édité en démo</button></div>';
     }
     h += '<button class="btn ghost block" data-act="signout">' + (APP.store.demo ? 'Quitter le mode démo' : 'Se déconnecter') + '</button>';
     return h + '</div>';
@@ -975,7 +977,7 @@
     var pub = d.published;
     return '<div class="card publish-bar ' + (changed ? 'gold' : '') + '"><div class="row wrap" style="justify-content:space-between">' +
       '<div><b>' + (changed ? 'Brouillon : modifications non publiées' : 'Tout est publié') + '</b><div class="tiny">Version en ligne : ' + (pub.version ? 'n° ' + pub.version + (pub.publishedAt ? ' du ' + esc(fmtDate(pub.publishedAt)) + ' à ' + hm(pub.publishedAt) : '') : 'contenu d\'origine') + '</div></div>' +
-      (changed ? '<div class="row"><button class="btn sm ghost" data-act="cDiscard">Annuler le brouillon</button><button class="btn sm primary" data-act="cPublish">Publier</button></div>' : '') +
+      (changed ? '<div class="row"><button class="btn sm ghost" data-act="cDiscard" data-ok="Annuler le brouillon" data-confirm="Annuler toutes les modifications non publiées ?">Annuler le brouillon</button><button class="btn sm primary" data-act="cPublish" data-ok="Publier" data-confirm="Publier le contenu ? Les participants verront ces changements dès leur prochaine ouverture de l&#39;application.">Publier</button></div>' : '') +
       '</div></div>';
   }
 
@@ -1015,6 +1017,7 @@
   }
 
   // ─── Éditeur de mission ──────────────────────────────────────────────────
+  var DEL_CONFIRM = ' data-confirm="Supprimer cet élément ? Les réponses déjà données par les participants ne seront plus affichées." data-ok="Supprimer"';
   function getPath(o, path) { return path.split('.').reduce(function (x, k) { return x == null ? x : x[k]; }, o); }
   function setPath(o, path, v) {
     var ks = path.split('.'), last = ks.pop();
@@ -1100,7 +1103,7 @@
     h += '</div>';
     h += '<div class="editor-actions"><button class="btn primary" data-act="edSave">Enregistrer le brouillon</button>' +
       '<button class="btn" data-act="edPreview">Aperçu</button>' +
-      '<button class="btn ghost sm" data-act="edRevert">Revenir au contenu d\'origine</button></div>';
+      '<button class="btn ghost sm" data-act="edRevert" data-ok="Revenir à l&#39;origine" data-confirm="Revenir au contenu d&#39;origine pour cette mission ? Les modifications du brouillon seront perdues.">Revenir au contenu d\'origine</button></div>';
     return h;
   }
 
@@ -1110,7 +1113,7 @@
       sup.items.forEach(function (it, i) {
         var p = path + '.items.' + i;
         h += '<div class="ed-block"><div class="row" style="justify-content:space-between"><b class="small">Élément ' + (i + 1) + '</b>' +
-          (sup.items.length > 1 ? '<button class="linkbtn small" data-act="edDel" data-path="' + attr(path + '.items') + '" data-idx="' + i + '">Supprimer</button>' : '') + '</div>' +
+          (sup.items.length > 1 ? '<button class="linkbtn small" data-act="edDel"' + (it.label ? DEL_CONFIRM : '') + ' data-path="' + attr(path + '.items') + '" data-idx="' + i + '">Supprimer</button>' : '') + '</div>' +
           edInput('Intitulé', p + '.label', it.label, { max: 300 }) +
           edInput('Choix proposés (séparés par des virgules, sinon simple case à cocher)', p + '.choices', (it.choices || []).join(', '), { kind: 'list' }) +
           (sup.daily ? edCheck('Proposer une note du jour', p + '.note', it.note) : '') +
@@ -1121,7 +1124,7 @@
       sup.fields.forEach(function (f, i) {
         var p = path + '.fields.' + i;
         h += '<div class="ed-block"><div class="row" style="justify-content:space-between"><b class="small">Champ ' + (i + 1) + (f.type === 'recall' ? ' · rappel des réponses précédentes' : '') + '</b>' +
-          (sup.fields.length > 1 ? '<button class="linkbtn small" data-act="edDel" data-path="' + attr(path + '.fields') + '" data-idx="' + i + '">Supprimer</button>' : '') + '</div>' +
+          (sup.fields.length > 1 ? '<button class="linkbtn small" data-act="edDel"' + (f.label ? DEL_CONFIRM : '') + ' data-path="' + attr(path + '.fields') + '" data-idx="' + i + '">Supprimer</button>' : '') + '</div>' +
           edInput('Question / intitulé', p + '.label', f.label, { max: 300 });
         if (f.type !== 'recall') {
           h += edInput('Type de réponse', p + '.type', f.type, { select: [['textarea', 'Texte long'], ['text', 'Texte court'], ['number', 'Nombre'], ['date', 'Date'], ['check', 'Case à cocher'], ['scale', 'Note de 1 à 10']] }) +
@@ -1146,7 +1149,7 @@
     qs.forEach(function (q, i) {
       var p = path + '.' + i;
       h += '<div class="ed-block"><div class="row" style="justify-content:space-between"><b class="small">Question ' + (i + 1) + (AMContent.questionWritten(q) ? ' ✓' : ' · à rédiger') + '</b>' +
-        (!fixed && qs.length > 1 ? '<button class="linkbtn small" data-act="edDel" data-path="' + attr(path) + '" data-idx="' + i + '">Supprimer</button>' : '') + '</div>' +
+        (!fixed && qs.length > 1 ? '<button class="linkbtn small" data-act="edDel"' + (q.q ? DEL_CONFIRM : '') + ' data-path="' + attr(path) + '" data-idx="' + i + '">Supprimer</button>' : '') + '</div>' +
         edInput('Énoncé', p + '.q', q.q, { rows: 2, max: 600 });
       q.options.forEach(function (o, oi) {
         h += '<div class="row" style="margin-top:8px;gap:8px">' +
@@ -1325,12 +1328,10 @@
     travel: function (d) { APP.store.travel(Number(d.ms)); toast('Horloge démo avancée.'); refresh(); },
     demoPay: function () { APP.store.simulateFullPayment(); return APP.store.init().then(function (s) { APP.session = s; toast('Paiement complet simulé.'); refresh(); }); },
     demoReset: function () {
-      if (!confirm('Remettre la démo à zéro ? Toute ta progression de démo sera effacée.')) return;
       APP.store.reset(); APP.quizSel = {}; APP.quizRes = {}; APP.pending = {};
       return startDemo(true).then(function () { go('#/debut'); });
     },
     demoResetContent: function () {
-      if (!confirm('Effacer le contenu édité dans la démo (retour au contenu d\'origine) ?')) return;
       APP.store.resetContent(); APP.contentData = null; APP.edit = null;
       return reloadContent().then(function () { toast('Contenu de démo remis à l\'origine.'); refresh(); });
     },
@@ -1393,7 +1394,6 @@
     },
     edDel: function (d) {
       var list = getPath(APP.edit.data, d.path), gone = list[Number(d.idx)];
-      if (gone && (gone.label || gone.q) && !confirm('Supprimer cet élément ? Les réponses déjà données par les participants ne seront plus affichées.')) return;
       list.splice(Number(d.idx), 1);
       if (gone && gone.q !== undefined) delete APP.edit.keys[gone.id];
       APP.edit.dirty = true; render();
@@ -1409,25 +1409,21 @@
     edSaveArena: function () { return HANDLERS.edSave(); },
     edPreview: function () { return saveEdit().then(function () { go('#/apercu/' + encodeURIComponent(APP.edit.id)); }).catch(function (e) { toast(e.message, true); }); },
     edRevert: function () {
-      if (!confirm('Revenir au contenu d\'origine pour cette mission ? Les modifications du brouillon seront perdues.')) return;
       var id = APP.edit.id;
       return APP.store.contentCall('revertMission', { id: id }).then(function () { APP.edit = null; return loadContentAdmin(); }).then(function () { toast('Mission remise au contenu d\'origine (brouillon).'); });
     },
     cPublish: function () {
-      if (!confirm('Publier le contenu ? Les participants verront ces changements dès leur prochaine ouverture de l\'application.')) return;
       return APP.store.contentCall('publish').then(function (r) {
         APP.contentData = null; APP.edit = null;
         return reloadContent().then(function () { toast('Contenu publié (version ' + r.version + ').'); refresh(); });
       }).catch(function (e) { toast(e.message, true); });
     },
     cDiscard: function () {
-      if (!confirm('Annuler toutes les modifications non publiées ?')) return;
       return APP.store.contentCall('discard').then(function () { APP.contentData = null; APP.edit = null; render(); });
     },
     habit: function (d) { return act({ type: 'habit', id: d.id, value: d.val }); },
     saveName: function () { var v = document.getElementById('pName').value; return act({ type: 'profile', name: v }).then(function () { toast('Prénom enregistré.'); }); },
     restart: function () {
-      if (!confirm('Recommencer le parcours ? Tes récompenses, tes habitudes et tes droits restent acquis.')) return;
       return act({ type: 'restart' }).then(function () { go('#/'); });
     },
     install: function () { if (APP.installEvt) { APP.installEvt.prompt(); APP.installEvt = null; } },
@@ -1452,20 +1448,48 @@
     return (e && e.message) || 'Erreur de connexion.';
   }
 
+  // Confirmation dans la page : confirm() est bloqué dans certaines vues intégrées
+  // (application installée, aperçus) et y renvoie « non » sans rien afficher.
+  function ask(message, okLabel) {
+    return new Promise(function (resolve) {
+      var o = document.createElement('div');
+      o.className = 'overlay ask';
+      o.setAttribute('role', 'alertdialog');
+      o.setAttribute('aria-modal', 'true');
+      o.innerHTML = '<div class="celebrate" style="text-align:left"><p style="margin:0 0 16px;font-size:16px">' + esc(message) + '</p>' +
+        '<div class="row"><button class="btn grow" data-ask="0">Annuler</button><button class="btn primary grow" data-ask="1">' + esc(okLabel || 'Confirmer') + '</button></div></div>';
+      document.body.appendChild(o);
+      o.querySelector('[data-ask="1"]').focus();
+      o.addEventListener('click', function (ev) {
+        var b = ev.target.closest('[data-ask]');
+        if (!b && ev.target !== o) return;
+        o.remove();
+        resolve(!!b && b.dataset.ask === '1');
+      });
+    });
+  }
+  window.AMAsk = ask;
+
   document.addEventListener('click', function (e) {
+    if (e.target.closest('.ask')) return;
     var el = e.target.closest('[data-act]');
     if (!el) return;
     var name = el.dataset.act, fn = HANDLERS[name];
     if (!fn) return;
     if (el.tagName === 'A' && name !== 'closeCelebrate') e.preventDefault();
     if (el.disabled) return;
+    if (el.dataset.confirm) {
+      if (APP.busy) return;
+      ask(el.dataset.confirm, el.dataset.ok).then(function (ok) { if (ok) busy(function () { return fn(el.dataset, el); }); });
+      return;
+    }
     busy(function () { return fn(el.dataset, el); });
   });
   document.addEventListener('keydown', function (e) {
     if ((e.key === 'Enter' || e.key === ' ') && e.target.matches && e.target.matches('[role="checkbox"][data-act]')) {
       e.preventDefault(); e.target.click();
     }
-    if (e.key === 'Escape') { var o = document.querySelector('.overlay'); if (o) HANDLERS.closeCelebrate(); }
+    if (e.key === 'Escape') { var a = document.querySelector('.ask'); if (a) { a.click(); return; } var o = document.querySelector('.overlay'); if (o) HANDLERS.closeCelebrate(); }
   });
   document.addEventListener('submit', function (e) {
     if (e.target.id !== 'loginForm') return;

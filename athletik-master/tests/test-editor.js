@@ -137,6 +137,7 @@ async function t(name, fn) {
     await goto('#/contenu');
     assert.ok((await p.textContent('main')).includes('modifications non publiées'));
     await p.click('[data-act=cPublish]');
+    await p.click('.ask [data-ask="1"]');
     await p.waitForTimeout(200);
     await goto('#/mission/m0.1');
     assert.ok(await p.$('.video iframe[src*="dQw4w9WgXcQ"]'));
@@ -156,8 +157,23 @@ async function t(name, fn) {
   await t('revenir au contenu d\'origine', async () => {
     await goto('#/contenu/m0.1');
     await p.click('[data-act=edRevert]');
+    assert.ok(await p.$('.ask'), 'confirmation dans la page');
+    await p.click('.ask [data-ask="1"]');
     await p.waitForTimeout(150);
     assert.strictEqual(await p.inputValue('[data-ed=video]'), '');
+  });
+
+  await t('annuler une confirmation ne fait rien', async () => {
+    await goto('#/contenu/m0.3');
+    await p.fill('[data-ed=body]', 'brouillon');
+    await p.click('[data-act=edSave]'); await p.waitForTimeout(150);
+    await goto('#/contenu');
+    await p.click('[data-act=cDiscard]');
+    await p.click('.ask [data-ask="0"]'); await p.waitForTimeout(100);
+    assert.ok((await p.textContent('main')).includes('modifications non publiées'));
+    await p.click('[data-act=cDiscard]');
+    await p.click('.ask [data-ask="1"]'); await p.waitForTimeout(150);
+    assert.ok((await p.textContent('main')).includes('Tout est publié'));
   });
 
   await t('320 px : éditeur sans débordement', async () => {
