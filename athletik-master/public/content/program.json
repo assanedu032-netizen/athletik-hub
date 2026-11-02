@@ -1,5 +1,5 @@
 {
-  "_comment": "SOURCE DE VÉRITÉ DU CONTENU d'Athletik Master. Transcription du document « Athletik Master — Plan du contenu » (2 nov. 2026). Titres et actions sont repris mot pour mot : ne pas les modifier sans l'accord d'Alassane. Pour compléter une mission : remplir 'video' (URL YouTube, Vimeo ou .mp4) et 'body' (texte de la notion). Les questions de quiz se mettent dans 'support.questions' / 'quiz.questions' ; les BONNES RÉPONSES ne vont PAS ici (ce fichier est public) mais dans server-data/quiz-keys.json. Les champs '_todo' signalent ce que le document source ne fournit pas encore. Voir README.md § Contenu.",
+  "_comment": "SOURCE DE VÉRITÉ DU CONTENU d'Athletik Master. Transcription du document « Athletik Master — Plan du contenu » (2 nov. 2026). Titres et actions sont repris mot pour mot : ne pas les modifier sans l'accord d'Alassane. Le plus simple pour compléter le contenu : l'ÉDITEUR de l'espace admin (Profil → Admin → Contenu), qui publie sans redéploiement. Ce fichier est la base ; l'éditeur enregistre des surcouches. Champs d'une mission : videoTitle, video (URL YouTube), body (contenu pédagogique), instructions (consignes), support. Une question avec q vide = emplacement « à rédiger ». Les questions de quiz se mettent dans 'support.questions' / 'quiz.questions' ; les BONNES RÉPONSES ne vont PAS ici (ce fichier est public) mais dans server-data/quiz-keys.json. Les champs '_todo' signalent ce que le document source ne fournit pas encore. Voir README.md § Contenu.",
   "version": 1,
   "settings": {
     "programDays": 90,
@@ -13,635 +13,2184 @@
       "windowDays": 7,
       "_todo": "Le document dit aussi « défi pratique du boss = avoir tenu l'habitude de l'arène 5 jours sur 7 ». Désactivé par défaut : le défi retenu est l'action du boss (tableau des missions). À activer quand le suivi d'habitudes d'Athletik Hub sera relié."
     },
-    "humanTouchDays": [30, 60],
+    "humanTouchDays": [
+      30,
+      60
+    ],
     "whatsappMessages": {
       "engagement": "Salut Alassane, voici ma vidéo d'engagement Athletik Master.",
       "final": "Salut Alassane, voici ma vidéo de fin Athletik Master."
     }
   },
-
   "arenas": [
     {
-      "id": "n0", "num": 0, "name": "Préparation", "label": "Niveau 0", "theme": "Démarrer",
+      "id": "n0",
+      "num": 0,
+      "name": "Préparation",
+      "label": "Niveau 0",
+      "theme": "Démarrer",
       "blocage": "",
       "objectif": "Démarrer avec le bon programme, son point de départ mesuré et son engagement.",
       "livrable": "Ses résultats de tests + sa vidéo d'engagement.",
       "instantUnlock": true
     },
     {
-      "id": "a1", "num": 1, "name": "Le Départ", "label": "Arène 1", "theme": "Comprendre (Knowledge)",
+      "id": "a1",
+      "num": 1,
+      "name": "Le Départ",
+      "label": "Arène 1",
+      "theme": "Comprendre (Knowledge)",
       "blocage": "« Je ne sais pas par où commencer. »",
       "objectif": "Comprendre sa méthode et connaître ses priorités.",
       "livrable": "Son auto-évaluation MENER et sa priorité écrite."
     },
     {
-      "id": "a2", "num": 2, "name": "Dans la Zone", "label": "Arène 2", "theme": "Focus",
+      "id": "a2",
+      "num": 2,
+      "name": "Dans la Zone",
+      "label": "Arène 2",
+      "theme": "Focus",
       "blocage": "« Je m'entraîne distrait. »",
       "objectif": "Se mettre en concentration à volonté.",
       "livrable": "Son rituel d'avant-séance (respiration + flow)."
     },
     {
-      "id": "a3", "num": 3, "name": "Zéro Excuse", "label": "Arène 3", "theme": "Régularité (Consistency)",
+      "id": "a3",
+      "num": 3,
+      "name": "Zéro Excuse",
+      "label": "Arène 3",
+      "theme": "Régularité (Consistency)",
       "blocage": "« Je lâche au bout de quelques jours. »",
       "objectif": "Tenir le rythme sans dépendre de la motivation.",
       "livrable": "Son planning de la semaine + une série de 7 jours."
     },
     {
-      "id": "a4", "num": 4, "name": "Mental d'Acier", "label": "Arène 4", "theme": "Mental",
+      "id": "a4",
+      "num": 4,
+      "name": "Mental d'Acier",
+      "label": "Arène 4",
+      "theme": "Mental",
       "blocage": "« Je doute de moi. »",
       "objectif": "Remplacer ses croyances limitantes par des croyances qui le font avancer.",
       "livrable": "Sa croyance reformulée + son journal de victoires."
     },
     {
-      "id": "a5", "num": 5, "name": "Tout Donner", "label": "Arène 5", "theme": "Engagement",
+      "id": "a5",
+      "num": 5,
+      "name": "Tout Donner",
+      "label": "Arène 5",
+      "theme": "Engagement",
       "blocage": "« J'ai peur du regard des autres. »",
       "objectif": "Passer à l'action malgré la peur.",
       "livrable": "Son partenaire d'entraînement + un premier défi relevé."
     },
     {
-      "id": "a6", "num": 6, "name": "Le Carburant", "label": "Arène 6", "theme": "Nutrition",
+      "id": "a6",
+      "num": 6,
+      "name": "Le Carburant",
+      "label": "Arène 6",
+      "theme": "Nutrition",
       "blocage": "« Je mange sans savoir. »",
       "objectif": "Nourrir sa performance au quotidien.",
       "livrable": "Une semaine de nutrition tenue selon son choix."
     },
     {
-      "id": "a7", "num": 7, "name": "L'Explosion", "label": "Arène 7", "theme": "Entraînement",
+      "id": "a7",
+      "num": 7,
+      "name": "L'Explosion",
+      "label": "Arène 7",
+      "theme": "Entraînement",
       "blocage": "« Je m'entraîne sans comprendre. »",
       "objectif": "Comprendre et optimiser son entraînement.",
       "livrable": "Son test d'explosivité comparé à son point de départ."
     },
     {
-      "id": "a8", "num": 8, "name": "Le Rebond", "label": "Arène 8", "theme": "Récupération",
+      "id": "a8",
+      "num": 8,
+      "name": "Le Rebond",
+      "label": "Arène 8",
+      "theme": "Récupération",
       "blocage": "« Je récupère mal, je me blesse. »",
       "objectif": "Récupérer pour durer et progresser.",
       "livrable": "Sa routine du soir + son plan anti-blessure."
     }
   ],
-
   "habits": [
-    { "id": "h1", "arena": "a1", "title": "Relire son objectif SMART", "frequency": "Chaque matin", "kind": "daily", "unlockedBy": "m1.1",
-      "_todo": "Aucune mission du Départ n'enseigne explicitement cette habitude : rattachée provisoirement à la mission 1.1. À confirmer." },
-    { "id": "h2", "arena": "a2", "title": "Respiration avant l'entraînement", "frequency": "Avant chaque séance", "kind": "session", "unlockedBy": "m2.2" },
-    { "id": "h3", "arena": "a3", "title": "Planifier sa semaine d'entraînement", "frequency": "Chaque dimanche", "kind": "weekly", "weekday": 0, "unlockedBy": "m3.4" },
-    { "id": "h4", "arena": "a4", "title": "Noter 3 victoires", "frequency": "Chaque soir", "kind": "daily", "unlockedBy": "m4.4" },
-    { "id": "h5", "arena": "a5", "title": "Préparer sa séance et son sac la veille", "frequency": "Avant chaque séance", "kind": "session", "unlockedBy": "m5.4" },
-    { "id": "h6", "arena": "a6", "title": "Son rituel nutrition du matin", "frequency": "Chaque matin", "kind": "daily", "unlockedBy": "m6.5" },
-    { "id": "h7", "arena": "a7", "title": "Échauffement complet", "frequency": "Avant chaque séance", "kind": "session", "unlockedBy": "m7.2",
-      "_todo": "Le document précise « à préciser avec le livre ». Rattachée provisoirement à 7.2 en attendant la future mission échauffement (7.x)." },
-    { "id": "h8", "arena": "a8", "title": "Routine du soir, gratitude comprise", "frequency": "Chaque soir", "kind": "daily", "unlockedBy": "m8.2" }
+    {
+      "id": "h1",
+      "arena": "a1",
+      "title": "Relire son objectif SMART",
+      "frequency": "Chaque matin",
+      "kind": "daily",
+      "unlockedBy": "m1.1",
+      "_todo": "Aucune mission du Départ n'enseigne explicitement cette habitude : rattachée provisoirement à la mission 1.1. À confirmer."
+    },
+    {
+      "id": "h2",
+      "arena": "a2",
+      "title": "Respiration avant l'entraînement",
+      "frequency": "Avant chaque séance",
+      "kind": "session",
+      "unlockedBy": "m2.2"
+    },
+    {
+      "id": "h3",
+      "arena": "a3",
+      "title": "Planifier sa semaine d'entraînement",
+      "frequency": "Chaque dimanche",
+      "kind": "weekly",
+      "weekday": 0,
+      "unlockedBy": "m3.4"
+    },
+    {
+      "id": "h4",
+      "arena": "a4",
+      "title": "Noter 3 victoires",
+      "frequency": "Chaque soir",
+      "kind": "daily",
+      "unlockedBy": "m4.4"
+    },
+    {
+      "id": "h5",
+      "arena": "a5",
+      "title": "Préparer sa séance et son sac la veille",
+      "frequency": "Avant chaque séance",
+      "kind": "session",
+      "unlockedBy": "m5.4"
+    },
+    {
+      "id": "h6",
+      "arena": "a6",
+      "title": "Son rituel nutrition du matin",
+      "frequency": "Chaque matin",
+      "kind": "daily",
+      "unlockedBy": "m6.5"
+    },
+    {
+      "id": "h7",
+      "arena": "a7",
+      "title": "Échauffement complet",
+      "frequency": "Avant chaque séance",
+      "kind": "session",
+      "unlockedBy": "m7.2",
+      "_todo": "Le document précise « à préciser avec le livre ». Rattachée provisoirement à 7.2 en attendant la future mission échauffement (7.x)."
+    },
+    {
+      "id": "h8",
+      "arena": "a8",
+      "title": "Routine du soir, gratitude comprise",
+      "frequency": "Chaque soir",
+      "kind": "daily",
+      "unlockedBy": "m8.2"
+    }
   ],
-
   "rewards": [
-    { "id": "rookie",   "trigger": "section:n0", "type": "card",  "title": "Carte Rookie", "rank": "Rookie" },
-    { "id": "badge-a1", "trigger": "boss:a1",    "type": "badge", "title": "Badge de victoire — Le Départ" },
-    { "id": "badge-a2", "trigger": "boss:a2",    "type": "badge", "title": "Badge de victoire — Dans la Zone" },
-    { "id": "titulaire","trigger": "boss:a3",    "type": "card",  "title": "Carte Titulaire", "rank": "Titulaire" },
-    { "id": "badge-a4", "trigger": "boss:a4",    "type": "badge", "title": "Badge de victoire — Mental d'Acier" },
-    { "id": "allstar",  "trigger": "boss:a5",    "type": "card",  "title": "Carte All-Star", "rank": "All-Star",
-      "grant": { "type": "hubPremium", "months": 1, "label": "1 mois d'Athletik Hub Premium" } },
-    { "id": "badge-a6", "trigger": "boss:a6",    "type": "badge", "title": "Badge de victoire — Le Carburant" },
-    { "id": "mvp",      "trigger": "boss:a7",    "type": "card",  "title": "Carte MVP", "rank": "MVP" },
-    { "id": "master",   "trigger": "boss:a8",    "type": "card",  "title": "Carte Athletik Master", "rank": "Athletik Master",
-      "physical": "La lettre avec les 5 cartes physiques" }
+    {
+      "id": "rookie",
+      "trigger": "section:n0",
+      "type": "card",
+      "title": "Carte Rookie",
+      "rank": "Rookie"
+    },
+    {
+      "id": "badge-a1",
+      "trigger": "boss:a1",
+      "type": "badge",
+      "title": "Badge de victoire — Le Départ"
+    },
+    {
+      "id": "badge-a2",
+      "trigger": "boss:a2",
+      "type": "badge",
+      "title": "Badge de victoire — Dans la Zone"
+    },
+    {
+      "id": "titulaire",
+      "trigger": "boss:a3",
+      "type": "card",
+      "title": "Carte Titulaire",
+      "rank": "Titulaire"
+    },
+    {
+      "id": "badge-a4",
+      "trigger": "boss:a4",
+      "type": "badge",
+      "title": "Badge de victoire — Mental d'Acier"
+    },
+    {
+      "id": "allstar",
+      "trigger": "boss:a5",
+      "type": "card",
+      "title": "Carte All-Star",
+      "rank": "All-Star",
+      "grant": {
+        "type": "hubPremium",
+        "months": 1,
+        "label": "1 mois d'Athletik Hub Premium"
+      }
+    },
+    {
+      "id": "badge-a6",
+      "trigger": "boss:a6",
+      "type": "badge",
+      "title": "Badge de victoire — Le Carburant"
+    },
+    {
+      "id": "mvp",
+      "trigger": "boss:a7",
+      "type": "card",
+      "title": "Carte MVP",
+      "rank": "MVP"
+    },
+    {
+      "id": "master",
+      "trigger": "boss:a8",
+      "type": "card",
+      "title": "Carte Athletik Master",
+      "rank": "Athletik Master",
+      "physical": "La lettre avec les 5 cartes physiques"
+    }
   ],
-
   "missions": [
     {
-      "id": "m0.1", "num": "0.1", "arena": "n0", "kind": "mission",
+      "id": "m0.1",
+      "num": "0.1",
+      "arena": "n0",
+      "kind": "mission",
       "title": "Bienvenue dans Athletik Master",
-      "action": "Télécharger Athletik Hub et créer ton compte",
+      "videoTitle": "Bienvenue dans Athletik Master",
+      "video": "",
       "description": "La vidéo de bienvenue (2 min max) : le but (devenir Athletik Master), la carte (8 arènes, une mission par jour, un boss par arène), les rangs (Rookie au départ, on monte en battant les boss) et la seule règle à retenir : regarde, fais l'action, valide, la suite se débloque le lendemain.",
-      "video": "", "body": "",
-      "links": [{ "type": "hub", "label": "Ouvrir Athletik Hub" }],
-      "support": { "type": "checklist", "items": [
-        { "id": "dl", "label": "Télécharger Athletik Hub" },
-        { "id": "account", "label": "Créer ton compte" }
-      ] }
+      "body": "",
+      "instructions": "",
+      "action": "Télécharger Athletik Hub et créer ton compte",
+      "links": [
+        {
+          "type": "hub",
+          "label": "Ouvrir Athletik Hub"
+        }
+      ],
+      "support": {
+        "type": "checklist",
+        "items": [
+          {
+            "id": "dl",
+            "label": "Télécharger Athletik Hub"
+          },
+          {
+            "id": "account",
+            "label": "Créer ton compte"
+          }
+        ]
+      }
     },
     {
-      "id": "m0.2", "num": "0.2", "arena": "n0", "kind": "mission",
+      "id": "m0.2",
+      "num": "0.2",
+      "arena": "n0",
+      "kind": "mission",
       "title": "Titan choisit ton programme",
-      "action": "Répondre au questionnaire de Titan",
+      "videoTitle": "Titan choisit ton programme",
+      "video": "",
       "description": "Qui est Titan, quel programme choisir.",
-      "video": "", "body": "",
-      "links": [{ "type": "hub", "label": "Ouvrir Athletik Hub" }],
-      "support": { "type": "checklist", "items": [
-        { "id": "quest", "label": "Répondre au questionnaire de Titan" }
-      ] }
+      "body": "",
+      "instructions": "",
+      "action": "Répondre au questionnaire de Titan",
+      "links": [
+        {
+          "type": "hub",
+          "label": "Ouvrir Athletik Hub"
+        }
+      ],
+      "support": {
+        "type": "checklist",
+        "items": [
+          {
+            "id": "quest",
+            "label": "Répondre au questionnaire de Titan"
+          }
+        ]
+      }
     },
     {
-      "id": "m0.3", "num": "0.3", "arena": "n0", "kind": "mission",
+      "id": "m0.3",
+      "num": "0.3",
+      "arena": "n0",
+      "kind": "mission",
       "title": "Ton équipement",
-      "action": "Vérifier que tu as le matériel de ton programme",
+      "videoTitle": "Ton équipement",
+      "video": "",
       "description": "Matériel sportif et pédagogique.",
-      "video": "", "body": "",
-      "support": { "type": "checklist", "items": [
-        { "id": "gear", "label": "Vérifier que tu as le matériel de ton programme" }
-      ] },
+      "body": "",
+      "instructions": "",
+      "action": "Vérifier que tu as le matériel de ton programme",
+      "support": {
+        "type": "checklist",
+        "items": [
+          {
+            "id": "gear",
+            "label": "Vérifier que tu as le matériel de ton programme"
+          }
+        ]
+      },
       "_todo": "Liste du matériel par programme à fournir pour en faire une checklist détaillée."
     },
     {
-      "id": "m0.4", "num": "0.4", "arena": "n0", "kind": "mission",
+      "id": "m0.4",
+      "num": "0.4",
+      "arena": "n0",
+      "kind": "mission",
       "title": "Ton point de départ",
-      "action": "Faire les tests physiques",
+      "videoTitle": "Ton point de départ",
+      "video": "",
       "description": "Tests physiques : ton point de départ mesuré.",
-      "video": "", "body": "",
-      "links": [{ "type": "hub", "label": "Faire mes tests dans Athletik Hub" }],
-      "support": { "type": "fiche", "fields": [
-        { "id": "date", "label": "Date de tes tests", "type": "date", "required": true },
-        { "id": "detente", "label": "Ta détente verticale (cm)", "type": "number", "required": false },
-        { "id": "results", "label": "Tes résultats de tests physiques", "type": "textarea", "required": true,
-          "placeholder": "Recopie ici les résultats enregistrés dans Athletik Hub" }
-      ] }
+      "body": "",
+      "instructions": "",
+      "action": "Faire les tests physiques",
+      "links": [
+        {
+          "type": "hub",
+          "label": "Faire mes tests dans Athletik Hub"
+        }
+      ],
+      "support": {
+        "type": "fiche",
+        "fields": [
+          {
+            "id": "date",
+            "label": "Date de tes tests",
+            "type": "date",
+            "required": true
+          },
+          {
+            "id": "detente",
+            "label": "Ta détente verticale (cm)",
+            "type": "number",
+            "required": false
+          },
+          {
+            "id": "results",
+            "label": "Tes résultats de tests physiques",
+            "type": "textarea",
+            "required": true,
+            "placeholder": "Recopie ici les résultats enregistrés dans Athletik Hub"
+          }
+        ]
+      }
     },
     {
-      "id": "m0.5", "num": "0.5", "arena": "n0", "kind": "mission",
+      "id": "m0.5",
+      "num": "0.5",
+      "arena": "n0",
+      "kind": "mission",
       "title": "Ta promesse",
-      "action": "Envoyer ta vidéo d'engagement avec ton objectif SMART",
+      "videoTitle": "Ta promesse",
+      "video": "",
       "description": "Ta vidéo d'engagement, envoyée sur WhatsApp. Alassane la regarde. Elle présente : ta situation actuelle, tes objectifs, tes motivations et ton engagement sur les 90 jours.",
-      "video": "", "body": "",
+      "body": "",
+      "instructions": "",
+      "action": "Envoyer ta vidéo d'engagement avec ton objectif SMART",
       "whatsapp": "engagement",
-      "support": { "type": "fiche", "fields": [
-        { "id": "smart", "label": "Ton objectif SMART", "type": "textarea", "required": true },
-        { "id": "sent", "label": "J'ai envoyé ma vidéo d'engagement sur WhatsApp", "type": "check", "required": true }
-      ] }
+      "support": {
+        "type": "fiche",
+        "fields": [
+          {
+            "id": "smart",
+            "label": "Ton objectif SMART",
+            "type": "textarea",
+            "required": true
+          },
+          {
+            "id": "sent",
+            "label": "J'ai envoyé ma vidéo d'engagement sur WhatsApp",
+            "type": "check",
+            "required": true
+          }
+        ]
+      }
     },
     {
-      "id": "m0.6", "num": "0.6", "arena": "n0", "kind": "mission",
+      "id": "m0.6",
+      "num": "0.6",
+      "arena": "n0",
+      "kind": "mission",
       "title": "Ton carburant, ton choix",
-      "action": "Choisir ta nutrition : stricte ou personnalisée",
+      "videoTitle": "Ton carburant, ton choix",
+      "video": "",
       "description": "Nutrition stricte ou personnalisée.",
-      "video": "", "body": "",
-      "support": { "type": "checklist", "items": [
-        { "id": "choice", "label": "Ma nutrition", "choices": ["Stricte", "Personnalisée"] }
-      ] }
+      "body": "",
+      "instructions": "",
+      "action": "Choisir ta nutrition : stricte ou personnalisée",
+      "support": {
+        "type": "checklist",
+        "items": [
+          {
+            "id": "choice",
+            "label": "Ma nutrition",
+            "choices": [
+              "Stricte",
+              "Personnalisée"
+            ]
+          }
+        ]
+      }
     },
-
     {
-      "id": "m1.1", "num": "1.1", "arena": "a1", "kind": "mission",
+      "id": "m1.1",
+      "num": "1.1",
+      "arena": "a1",
+      "kind": "mission",
       "title": "On n'est pas là pour faire du sport",
-      "action": "Écrire l'habitude que tu veux changer en premier",
+      "videoTitle": "On n'est pas là pour faire du sport",
+      "video": "",
       "description": "Tout commence par le comportement (mission d'ouverture).",
-      "video": "", "body": "",
-      "support": { "type": "fiche", "fields": [
-        { "id": "habit", "label": "L'habitude que tu veux changer en premier", "type": "textarea", "required": true }
-      ] }
+      "body": "",
+      "instructions": "",
+      "action": "Écrire l'habitude que tu veux changer en premier",
+      "support": {
+        "type": "fiche",
+        "fields": [
+          {
+            "id": "habit",
+            "label": "L'habitude que tu veux changer en premier",
+            "type": "textarea",
+            "required": true
+          }
+        ]
+      }
     },
     {
-      "id": "m1.2", "num": "1.2", "arena": "a1", "kind": "mission",
+      "id": "m1.2",
+      "num": "1.2",
+      "arena": "a1",
+      "kind": "mission",
       "title": "Pourquoi m'écouter ?",
-      "action": "Écrire ton histoire de départ : où tu en es, où tu vas",
+      "videoTitle": "Pourquoi m'écouter ?",
+      "video": "",
       "description": "Pourquoi m'écouter moi et pas le coach célèbre.",
-      "video": "", "body": "",
-      "support": { "type": "fiche", "fields": [
-        { "id": "now", "label": "Où tu en es", "type": "textarea", "required": true },
-        { "id": "goal", "label": "Où tu vas", "type": "textarea", "required": true }
-      ] }
+      "body": "",
+      "instructions": "",
+      "action": "Écrire ton histoire de départ : où tu en es, où tu vas",
+      "support": {
+        "type": "fiche",
+        "fields": [
+          {
+            "id": "now",
+            "label": "Où tu en es",
+            "type": "textarea",
+            "required": true
+          },
+          {
+            "id": "goal",
+            "label": "Où tu vas",
+            "type": "textarea",
+            "required": true
+          }
+        ]
+      }
     },
     {
-      "id": "m1.3", "num": "1.3", "arena": "a1", "kind": "mission",
+      "id": "m1.3",
+      "num": "1.3",
+      "arena": "a1",
+      "kind": "mission",
       "title": "MENER : ta boussole",
-      "action": "Te noter de 1 à 10 sur les 5 piliers",
+      "videoTitle": "MENER : ta boussole",
+      "video": "",
       "description": "La méthode MENER.",
-      "video": "", "body": "",
-      "support": { "type": "fiche", "fields": [
-        { "id": "p1", "label": "Pilier 1 — M", "type": "scale", "min": 1, "max": 10, "required": true },
-        { "id": "p2", "label": "Pilier 2 — E", "type": "scale", "min": 1, "max": 10, "required": true },
-        { "id": "p3", "label": "Pilier 3 — N", "type": "scale", "min": 1, "max": 10, "required": true },
-        { "id": "p4", "label": "Pilier 4 — E", "type": "scale", "min": 1, "max": 10, "required": true },
-        { "id": "p5", "label": "Pilier 5 — R", "type": "scale", "min": 1, "max": 10, "required": true }
-      ] },
+      "body": "",
+      "instructions": "",
+      "action": "Te noter de 1 à 10 sur les 5 piliers",
+      "support": {
+        "type": "fiche",
+        "fields": [
+          {
+            "id": "p1",
+            "label": "Pilier 1 — M",
+            "type": "scale",
+            "min": 1,
+            "max": 10,
+            "required": true,
+            "pending": true
+          },
+          {
+            "id": "p2",
+            "label": "Pilier 2 — E",
+            "type": "scale",
+            "min": 1,
+            "max": 10,
+            "required": true,
+            "pending": true
+          },
+          {
+            "id": "p3",
+            "label": "Pilier 3 — N",
+            "type": "scale",
+            "min": 1,
+            "max": 10,
+            "required": true,
+            "pending": true
+          },
+          {
+            "id": "p4",
+            "label": "Pilier 4 — E",
+            "type": "scale",
+            "min": 1,
+            "max": 10,
+            "required": true,
+            "pending": true
+          },
+          {
+            "id": "p5",
+            "label": "Pilier 5 — R",
+            "type": "scale",
+            "min": 1,
+            "max": 10,
+            "required": true,
+            "pending": true
+          }
+        ]
+      },
       "_todo": "Nom complet des 5 piliers MENER à fournir (libellés provisoires : la lettre seule)."
     },
     {
-      "id": "m1.4", "num": "1.4", "arena": "a1", "kind": "mission",
+      "id": "m1.4",
+      "num": "1.4",
+      "arena": "a1",
+      "kind": "mission",
       "title": "KFC : savoir, focus, constance",
-      "action": "Identifier ton point faible parmi les trois",
+      "videoTitle": "KFC : savoir, focus, constance",
+      "video": "",
       "description": "KFC : Knowledge (savoir), Focus, Constance.",
-      "video": "", "body": "",
-      "support": { "type": "quiz", "scored": false, "questions": [] },
+      "body": "",
+      "instructions": "",
+      "action": "Identifier ton point faible parmi les trois",
+      "support": {
+        "type": "quiz",
+        "scored": false,
+        "questions": [
+          {
+            "id": "q1",
+            "q": "",
+            "options": [
+              "",
+              "",
+              ""
+            ],
+            "explain": ""
+          },
+          {
+            "id": "q2",
+            "q": "",
+            "options": [
+              "",
+              "",
+              ""
+            ],
+            "explain": ""
+          },
+          {
+            "id": "q3",
+            "q": "",
+            "options": [
+              "",
+              "",
+              ""
+            ],
+            "explain": ""
+          }
+        ]
+      },
       "_todo": "Questions du quiz à fournir (quiz de diagnostic, sans bonne ou mauvaise réponse)."
     },
     {
-      "id": "m1.5", "num": "1.5", "arena": "a1", "kind": "mission",
+      "id": "m1.5",
+      "num": "1.5",
+      "arena": "a1",
+      "kind": "mission",
       "title": "Les bonnes questions",
-      "action": "Répondre à 3 questions sur ton intention",
+      "videoTitle": "Les bonnes questions",
+      "video": "",
       "description": "Pose-toi les bonnes questions, les bonnes intentions.",
-      "video": "", "body": "",
-      "support": { "type": "fiche", "fields": [
-        { "id": "q1", "label": "Question 1 — à compléter", "type": "textarea", "required": true },
-        { "id": "q2", "label": "Question 2 — à compléter", "type": "textarea", "required": true },
-        { "id": "q3", "label": "Question 3 — à compléter", "type": "textarea", "required": true }
-      ] },
+      "body": "",
+      "instructions": "",
+      "action": "Répondre à 3 questions sur ton intention",
+      "support": {
+        "type": "fiche",
+        "fields": [
+          {
+            "id": "q1",
+            "label": "Question 1 sur ton intention",
+            "type": "textarea",
+            "required": true,
+            "pending": true
+          },
+          {
+            "id": "q2",
+            "label": "Question 2 sur ton intention",
+            "type": "textarea",
+            "required": true,
+            "pending": true
+          },
+          {
+            "id": "q3",
+            "label": "Question 3 sur ton intention",
+            "type": "textarea",
+            "required": true,
+            "pending": true
+          }
+        ]
+      },
       "_todo": "Formulation des 3 questions sur l'intention à fournir."
     },
     {
-      "id": "boss-a1", "num": "Boss", "arena": "a1", "kind": "boss",
+      "id": "boss-a1",
+      "num": "Boss",
+      "arena": "a1",
+      "kind": "boss",
       "title": "Le bilan du Départ",
-      "action": "Récapituler tes réponses et fixer ta priorité",
+      "videoTitle": "Le bilan du Départ",
+      "video": "",
       "description": "",
-      "video": "", "body": "",
+      "body": "",
+      "instructions": "",
+      "action": "Récapituler tes réponses et fixer ta priorité",
       "rulesIntro": true,
-      "challenge": { "type": "fiche", "fields": [
-        { "id": "recap", "label": "Tes réponses de l'arène", "type": "recall",
-          "from": [["m1.1", "habit"], ["m1.2", "goal"], ["m1.3", "*"]] },
-        { "id": "priority", "label": "Ta priorité", "type": "textarea", "required": true }
-      ] },
-      "quiz": { "questions": [] }
+      "challenge": {
+        "type": "fiche",
+        "fields": [
+          {
+            "id": "recap",
+            "label": "Tes réponses de l'arène",
+            "type": "recall",
+            "from": [
+              [
+                "m1.1",
+                "habit"
+              ],
+              [
+                "m1.2",
+                "goal"
+              ],
+              [
+                "m1.3",
+                "*"
+              ]
+            ]
+          },
+          {
+            "id": "priority",
+            "label": "Ta priorité",
+            "type": "textarea",
+            "required": true
+          }
+        ]
+      },
+      "quiz": {
+        "questions": [
+          {
+            "id": "q1",
+            "q": "",
+            "options": [
+              "",
+              "",
+              ""
+            ],
+            "explain": ""
+          },
+          {
+            "id": "q2",
+            "q": "",
+            "options": [
+              "",
+              "",
+              ""
+            ],
+            "explain": ""
+          },
+          {
+            "id": "q3",
+            "q": "",
+            "options": [
+              "",
+              "",
+              ""
+            ],
+            "explain": ""
+          },
+          {
+            "id": "q4",
+            "q": "",
+            "options": [
+              "",
+              "",
+              ""
+            ],
+            "explain": ""
+          },
+          {
+            "id": "q5",
+            "q": "",
+            "options": [
+              "",
+              "",
+              ""
+            ],
+            "explain": ""
+          }
+        ]
+      }
     },
-
     {
-      "id": "m2.1", "num": "2.1", "arena": "a2", "kind": "mission",
+      "id": "m2.1",
+      "num": "2.1",
+      "arena": "a2",
+      "kind": "mission",
       "title": "Le pouvoir de la concentration",
+      "videoTitle": "Le pouvoir de la concentration",
+      "video": "",
+      "description": "La concentration.",
+      "body": "",
+      "instructions": "",
       "action": "Faire une séance complète sans téléphone",
-      "description": "La concentration.", "video": "", "body": "",
-      "support": { "type": "checklist", "items": [
-        { "id": "done", "label": "Faire une séance complète sans téléphone" }
-      ] }
+      "support": {
+        "type": "checklist",
+        "items": [
+          {
+            "id": "done",
+            "label": "Faire une séance complète sans téléphone"
+          }
+        ]
+      }
     },
     {
-      "id": "m2.2", "num": "2.2", "arena": "a2", "kind": "mission",
+      "id": "m2.2",
+      "num": "2.2",
+      "arena": "a2",
+      "kind": "mission",
       "title": "Respire pour performer",
+      "videoTitle": "Respire pour performer",
+      "video": "",
+      "description": "La respiration.",
+      "body": "",
+      "instructions": "",
       "action": "Pratiquer l'exercice de respiration avant ta séance",
-      "description": "La respiration.", "video": "", "body": "",
-      "support": { "type": "checklist", "items": [
-        { "id": "done", "label": "Pratiquer l'exercice de respiration avant ta séance" }
-      ] }
+      "support": {
+        "type": "checklist",
+        "items": [
+          {
+            "id": "done",
+            "label": "Pratiquer l'exercice de respiration avant ta séance"
+          }
+        ]
+      }
     },
     {
-      "id": "m2.3", "num": "2.3", "arena": "a2", "kind": "mission",
+      "id": "m2.3",
+      "num": "2.3",
+      "arena": "a2",
+      "kind": "mission",
       "title": "Entrer dans le flow",
+      "videoTitle": "Entrer dans le flow",
+      "video": "",
+      "description": "Le protocole flow.",
+      "body": "",
+      "instructions": "",
       "action": "Appliquer le protocole flow avant ton entraînement",
-      "description": "Le protocole flow.", "video": "", "body": "",
-      "support": { "type": "checklist", "items": [
-        { "id": "done", "label": "Appliquer le protocole flow avant ton entraînement" }
-      ] }
+      "support": {
+        "type": "checklist",
+        "items": [
+          {
+            "id": "done",
+            "label": "Appliquer le protocole flow avant ton entraînement"
+          }
+        ]
+      }
     },
     {
-      "id": "m2.4", "num": "2.4", "arena": "a2", "kind": "mission",
+      "id": "m2.4",
+      "num": "2.4",
+      "arena": "a2",
+      "kind": "mission",
       "title": "Vois-le avant de le faire",
+      "videoTitle": "Vois-le avant de le faire",
+      "video": "",
+      "description": "Méditation et visualisation guidée.",
+      "body": "",
+      "instructions": "",
       "action": "Faire la visualisation guidée de ton objectif",
-      "description": "Méditation et visualisation guidée.", "video": "", "body": "",
-      "support": { "type": "checklist", "items": [
-        { "id": "done", "label": "Faire la visualisation guidée de ton objectif" }
-      ] }
+      "support": {
+        "type": "checklist",
+        "items": [
+          {
+            "id": "done",
+            "label": "Faire la visualisation guidée de ton objectif"
+          }
+        ]
+      }
     },
     {
-      "id": "m2.5", "num": "2.5", "arena": "a2", "kind": "mission",
+      "id": "m2.5",
+      "num": "2.5",
+      "arena": "a2",
+      "kind": "mission",
       "title": "Le QI de jeu",
+      "videoTitle": "Le QI de jeu",
+      "video": "",
+      "description": "Le QI basket/volley (intelligence de jeu).",
+      "body": "",
+      "instructions": "",
       "action": "Analyser une action de match et noter ce que tu aurais fait",
-      "description": "Le QI basket/volley (intelligence de jeu).", "video": "", "body": "",
-      "support": { "type": "fiche", "fields": [
-        { "id": "action", "label": "L'action de match analysée", "type": "textarea", "required": true },
-        { "id": "better", "label": "Ce que tu aurais fait", "type": "textarea", "required": true }
-      ] }
+      "support": {
+        "type": "fiche",
+        "fields": [
+          {
+            "id": "action",
+            "label": "L'action de match analysée",
+            "type": "textarea",
+            "required": true
+          },
+          {
+            "id": "better",
+            "label": "Ce que tu aurais fait",
+            "type": "textarea",
+            "required": true
+          }
+        ]
+      }
     },
     {
-      "id": "boss-a2", "num": "Boss", "arena": "a2", "kind": "boss",
+      "id": "boss-a2",
+      "num": "Boss",
+      "arena": "a2",
+      "kind": "boss",
       "title": "Le défi de la Zone",
+      "videoTitle": "Le défi de la Zone",
+      "video": "",
+      "description": "",
+      "body": "",
+      "instructions": "",
       "action": "Enchaîner respiration, flow et séance concentrée",
-      "description": "", "video": "", "body": "",
-      "challenge": { "type": "checklist", "items": [
-        { "id": "breath", "label": "Respiration" },
-        { "id": "flow", "label": "Flow" },
-        { "id": "session", "label": "Séance concentrée" }
-      ] },
-      "quiz": { "questions": [] }
+      "challenge": {
+        "type": "checklist",
+        "items": [
+          {
+            "id": "breath",
+            "label": "Respiration"
+          },
+          {
+            "id": "flow",
+            "label": "Flow"
+          },
+          {
+            "id": "session",
+            "label": "Séance concentrée"
+          }
+        ]
+      },
+      "quiz": {
+        "questions": [
+          {
+            "id": "q1",
+            "q": "",
+            "options": [
+              "",
+              "",
+              ""
+            ],
+            "explain": ""
+          },
+          {
+            "id": "q2",
+            "q": "",
+            "options": [
+              "",
+              "",
+              ""
+            ],
+            "explain": ""
+          },
+          {
+            "id": "q3",
+            "q": "",
+            "options": [
+              "",
+              "",
+              ""
+            ],
+            "explain": ""
+          },
+          {
+            "id": "q4",
+            "q": "",
+            "options": [
+              "",
+              "",
+              ""
+            ],
+            "explain": ""
+          },
+          {
+            "id": "q5",
+            "q": "",
+            "options": [
+              "",
+              "",
+              ""
+            ],
+            "explain": ""
+          }
+        ]
+      }
     },
-
     {
-      "id": "m3.1", "num": "3.1", "arena": "a3", "kind": "mission",
+      "id": "m3.1",
+      "num": "3.1",
+      "arena": "a3",
+      "kind": "mission",
       "title": "Arrête tes conneries",
+      "videoTitle": "Arrête tes conneries",
+      "video": "",
+      "description": "Arrête tes conneries.",
+      "body": "",
+      "instructions": "",
       "action": "Lister tes 3 excuses favorites et les barrer",
-      "description": "Arrête tes conneries.", "video": "", "body": "",
-      "support": { "type": "fiche", "fields": [
-        { "id": "e1", "label": "Excuse n°1", "type": "text", "required": true, "strike": true },
-        { "id": "e2", "label": "Excuse n°2", "type": "text", "required": true, "strike": true },
-        { "id": "e3", "label": "Excuse n°3", "type": "text", "required": true, "strike": true }
-      ] }
+      "support": {
+        "type": "fiche",
+        "fields": [
+          {
+            "id": "e1",
+            "label": "Excuse n°1",
+            "type": "text",
+            "required": true,
+            "strike": true
+          },
+          {
+            "id": "e2",
+            "label": "Excuse n°2",
+            "type": "text",
+            "required": true,
+            "strike": true
+          },
+          {
+            "id": "e3",
+            "label": "Excuse n°3",
+            "type": "text",
+            "required": true,
+            "strike": true
+          }
+        ]
+      }
     },
     {
-      "id": "m3.2", "num": "3.2", "arena": "a3", "kind": "mission",
+      "id": "m3.2",
+      "num": "3.2",
+      "arena": "a3",
+      "kind": "mission",
       "title": "Un jour de plus",
+      "videoTitle": "Un jour de plus",
+      "video": "",
+      "description": "La régularité.",
+      "body": "",
+      "instructions": "",
       "action": "Tenir ta série 7 jours d'affilée",
-      "description": "La régularité.", "video": "", "body": "",
-      "durationDays": 7, "consecutive": true,
-      "support": { "type": "checklist", "daily": true, "items": [
-        { "id": "streak", "label": "J'ai tenu ma série aujourd'hui" }
-      ] }
+      "durationDays": 7,
+      "consecutive": true,
+      "support": {
+        "type": "checklist",
+        "daily": true,
+        "items": [
+          {
+            "id": "streak",
+            "label": "J'ai tenu ma série aujourd'hui"
+          }
+        ]
+      }
     },
     {
-      "id": "m3.3", "num": "3.3", "arena": "a3", "kind": "mission",
+      "id": "m3.3",
+      "num": "3.3",
+      "arena": "a3",
+      "kind": "mission",
       "title": "L'autodiscipline",
+      "videoTitle": "L'autodiscipline",
+      "video": "",
+      "description": "L'autodiscipline.",
+      "body": "",
+      "instructions": "",
       "action": "Choisir une règle non négociable pour toi",
-      "description": "L'autodiscipline.", "video": "", "body": "",
-      "support": { "type": "fiche", "fields": [
-        { "id": "rule", "label": "Ta règle non négociable", "type": "textarea", "required": true }
-      ] }
+      "support": {
+        "type": "fiche",
+        "fields": [
+          {
+            "id": "rule",
+            "label": "Ta règle non négociable",
+            "type": "textarea",
+            "required": true
+          }
+        ]
+      }
     },
     {
-      "id": "m3.4", "num": "3.4", "arena": "a3", "kind": "mission",
+      "id": "m3.4",
+      "num": "3.4",
+      "arena": "a3",
+      "kind": "mission",
       "title": "Ton temps, ton arme",
+      "videoTitle": "Ton temps, ton arme",
+      "video": "",
+      "description": "L'importance du temps.",
+      "body": "",
+      "instructions": "",
       "action": "Planifier toutes tes séances de la semaine",
-      "description": "L'importance du temps.", "video": "", "body": "",
-      "support": { "type": "checklist", "items": [
-        { "id": "plan", "label": "Planifier toutes tes séances de la semaine" }
-      ] }
+      "support": {
+        "type": "checklist",
+        "items": [
+          {
+            "id": "plan",
+            "label": "Planifier toutes tes séances de la semaine"
+          }
+        ]
+      }
     },
     {
-      "id": "m3.5", "num": "3.5", "arena": "a3", "kind": "mission",
+      "id": "m3.5",
+      "num": "3.5",
+      "arena": "a3",
+      "kind": "mission",
       "title": "Ton environnement te façonne",
+      "videoTitle": "Ton environnement te façonne",
+      "video": "",
+      "description": "L'environnement.",
+      "body": "",
+      "instructions": "",
       "action": "Changer un élément de ton environnement",
-      "description": "L'environnement.", "video": "", "body": "",
-      "support": { "type": "checklist", "items": [
-        { "id": "env", "label": "Changer un élément de ton environnement" }
-      ] }
+      "support": {
+        "type": "checklist",
+        "items": [
+          {
+            "id": "env",
+            "label": "Changer un élément de ton environnement"
+          }
+        ]
+      }
     },
     {
-      "id": "boss-a3", "num": "Boss", "arena": "a3", "kind": "boss",
+      "id": "boss-a3",
+      "num": "Boss",
+      "arena": "a3",
+      "kind": "boss",
       "title": "La semaine parfaite",
+      "videoTitle": "La semaine parfaite",
+      "video": "",
+      "description": "",
+      "body": "",
+      "instructions": "",
       "action": "Tenir une semaine sans excuse, toutes séances faites",
-      "description": "", "video": "", "body": "",
-      "durationDays": 7, "consecutive": true,
-      "challenge": { "type": "checklist", "daily": true, "items": [
-        { "id": "day", "label": "Journée sans excuse, séance(s) prévue(s) faite(s)" }
-      ] },
-      "quiz": { "questions": [] }
+      "durationDays": 7,
+      "consecutive": true,
+      "challenge": {
+        "type": "checklist",
+        "daily": true,
+        "items": [
+          {
+            "id": "day",
+            "label": "Journée sans excuse, séance(s) prévue(s) faite(s)"
+          }
+        ]
+      },
+      "quiz": {
+        "questions": [
+          {
+            "id": "q1",
+            "q": "",
+            "options": [
+              "",
+              "",
+              ""
+            ],
+            "explain": ""
+          },
+          {
+            "id": "q2",
+            "q": "",
+            "options": [
+              "",
+              "",
+              ""
+            ],
+            "explain": ""
+          },
+          {
+            "id": "q3",
+            "q": "",
+            "options": [
+              "",
+              "",
+              ""
+            ],
+            "explain": ""
+          },
+          {
+            "id": "q4",
+            "q": "",
+            "options": [
+              "",
+              "",
+              ""
+            ],
+            "explain": ""
+          },
+          {
+            "id": "q5",
+            "q": "",
+            "options": [
+              "",
+              "",
+              ""
+            ],
+            "explain": ""
+          }
+        ]
+      }
     },
-
     {
-      "id": "m4.1", "num": "4.1", "arena": "a4", "kind": "mission",
+      "id": "m4.1",
+      "num": "4.1",
+      "arena": "a4",
+      "kind": "mission",
       "title": "La barrière est dans ta tête",
+      "videoTitle": "La barrière est dans ta tête",
+      "video": "",
+      "description": "Croyances (exercice de la banane).",
+      "body": "",
+      "instructions": "",
       "action": "Écrire une croyance qui te limite et la reformuler",
-      "description": "Croyances (exercice de la banane).", "video": "", "body": "",
-      "support": { "type": "fiche", "fields": [
-        { "id": "belief", "label": "Une croyance qui te limite", "type": "textarea", "required": true },
-        { "id": "reframe", "label": "Ta croyance reformulée", "type": "textarea", "required": true }
-      ] }
+      "support": {
+        "type": "fiche",
+        "fields": [
+          {
+            "id": "belief",
+            "label": "Une croyance qui te limite",
+            "type": "textarea",
+            "required": true
+          },
+          {
+            "id": "reframe",
+            "label": "Ta croyance reformulée",
+            "type": "textarea",
+            "required": true
+          }
+        ]
+      }
     },
     {
-      "id": "m4.2", "num": "4.2", "arena": "a4", "kind": "mission",
+      "id": "m4.2",
+      "num": "4.2",
+      "arena": "a4",
+      "kind": "mission",
       "title": "Le talent ne suffit pas",
+      "videoTitle": "Le talent ne suffit pas",
+      "video": "",
+      "description": "Le talent ne suffit pas.",
+      "body": "",
+      "instructions": "",
       "action": "Noter ce que tu fais que les talentueux ne font pas",
-      "description": "Le talent ne suffit pas.", "video": "", "body": "",
-      "support": { "type": "fiche", "fields": [
-        { "id": "edge", "label": "Ce que tu fais que les talentueux ne font pas", "type": "textarea", "required": true }
-      ] }
+      "support": {
+        "type": "fiche",
+        "fields": [
+          {
+            "id": "edge",
+            "label": "Ce que tu fais que les talentueux ne font pas",
+            "type": "textarea",
+            "required": true
+          }
+        ]
+      }
     },
     {
-      "id": "m4.3", "num": "4.3", "arena": "a4", "kind": "mission",
+      "id": "m4.3",
+      "num": "4.3",
+      "arena": "a4",
+      "kind": "mission",
       "title": "Ta mentalité décide",
+      "videoTitle": "Ta mentalité décide",
+      "video": "",
+      "description": "Types de mentalité, c'est dans la tête.",
+      "body": "",
+      "instructions": "",
       "action": "Identifier ta réaction habituelle face à l'échec",
-      "description": "Types de mentalité, c'est dans la tête.", "video": "", "body": "",
-      "support": { "type": "quiz", "scored": false, "questions": [] },
+      "support": {
+        "type": "quiz",
+        "scored": false,
+        "questions": [
+          {
+            "id": "q1",
+            "q": "",
+            "options": [
+              "",
+              "",
+              ""
+            ],
+            "explain": ""
+          },
+          {
+            "id": "q2",
+            "q": "",
+            "options": [
+              "",
+              "",
+              ""
+            ],
+            "explain": ""
+          },
+          {
+            "id": "q3",
+            "q": "",
+            "options": [
+              "",
+              "",
+              ""
+            ],
+            "explain": ""
+          }
+        ]
+      },
       "_todo": "Questions du quiz à fournir (diagnostic de mentalité)."
     },
     {
-      "id": "m4.4", "num": "4.4", "arena": "a4", "kind": "mission",
+      "id": "m4.4",
+      "num": "4.4",
+      "arena": "a4",
+      "kind": "mission",
       "title": "Construire ta confiance",
+      "videoTitle": "Construire ta confiance",
+      "video": "",
+      "description": "Confiance en soi.",
+      "body": "",
+      "instructions": "",
       "action": "Noter 3 victoires chaque soir pendant une semaine",
-      "description": "Confiance en soi.", "video": "", "body": "",
-      "durationDays": 7, "consecutive": true,
-      "support": { "type": "checklist", "daily": true, "items": [
-        { "id": "wins", "label": "J'ai noté mes 3 victoires ce soir", "note": true }
-      ] }
+      "durationDays": 7,
+      "consecutive": true,
+      "support": {
+        "type": "checklist",
+        "daily": true,
+        "items": [
+          {
+            "id": "wins",
+            "label": "J'ai noté mes 3 victoires ce soir",
+            "note": true
+          }
+        ]
+      }
     },
     {
-      "id": "m4.5", "num": "4.5", "arena": "a4", "kind": "mission",
+      "id": "m4.5",
+      "num": "4.5",
+      "arena": "a4",
+      "kind": "mission",
       "title": "Ose être arrogant",
+      "videoTitle": "Ose être arrogant",
+      "video": "",
+      "description": "Il faut être arrogant.",
+      "body": "",
+      "instructions": "",
       "action": "Annoncer ton objectif à voix haute à quelqu'un",
-      "description": "Il faut être arrogant.", "video": "", "body": "",
-      "support": { "type": "checklist", "items": [
-        { "id": "said", "label": "Annoncer ton objectif à voix haute à quelqu'un" }
-      ] }
+      "support": {
+        "type": "checklist",
+        "items": [
+          {
+            "id": "said",
+            "label": "Annoncer ton objectif à voix haute à quelqu'un"
+          }
+        ]
+      }
     },
     {
-      "id": "boss-a4", "num": "Boss", "arena": "a4", "kind": "boss",
+      "id": "boss-a4",
+      "num": "Boss",
+      "arena": "a4",
+      "kind": "boss",
       "title": "Le miroir",
+      "videoTitle": "Le miroir",
+      "video": "",
+      "description": "",
+      "body": "",
+      "instructions": "",
       "action": "Comparer ta croyance de départ à ce que tu penses aujourd'hui",
-      "description": "", "video": "", "body": "",
-      "challenge": { "type": "fiche", "fields": [
-        { "id": "start", "label": "Ta croyance de départ", "type": "recall", "from": [["m4.1", "belief"]] },
-        { "id": "today", "label": "Ce que tu penses aujourd'hui", "type": "textarea", "required": true }
-      ] },
-      "quiz": { "questions": [] }
+      "challenge": {
+        "type": "fiche",
+        "fields": [
+          {
+            "id": "start",
+            "label": "Ta croyance de départ",
+            "type": "recall",
+            "from": [
+              [
+                "m4.1",
+                "belief"
+              ]
+            ]
+          },
+          {
+            "id": "today",
+            "label": "Ce que tu penses aujourd'hui",
+            "type": "textarea",
+            "required": true
+          }
+        ]
+      },
+      "quiz": {
+        "questions": [
+          {
+            "id": "q1",
+            "q": "",
+            "options": [
+              "",
+              "",
+              ""
+            ],
+            "explain": ""
+          },
+          {
+            "id": "q2",
+            "q": "",
+            "options": [
+              "",
+              "",
+              ""
+            ],
+            "explain": ""
+          },
+          {
+            "id": "q3",
+            "q": "",
+            "options": [
+              "",
+              "",
+              ""
+            ],
+            "explain": ""
+          },
+          {
+            "id": "q4",
+            "q": "",
+            "options": [
+              "",
+              "",
+              ""
+            ],
+            "explain": ""
+          },
+          {
+            "id": "q5",
+            "q": "",
+            "options": [
+              "",
+              "",
+              ""
+            ],
+            "explain": ""
+          }
+        ]
+      }
     },
-
     {
-      "id": "m5.1", "num": "5.1", "arena": "a5", "kind": "mission",
+      "id": "m5.1",
+      "num": "5.1",
+      "arena": "a5",
+      "kind": "mission",
       "title": "Trouve ton partenaire",
+      "videoTitle": "Trouve ton partenaire",
+      "video": "",
+      "description": "Partenaire d'entraînement.",
+      "body": "",
+      "instructions": "",
       "action": "Recruter un partenaire d'entraînement",
-      "description": "Partenaire d'entraînement.", "video": "", "body": "",
-      "support": { "type": "checklist", "items": [
-        { "id": "partner", "label": "Recruter un partenaire d'entraînement" }
-      ] }
+      "support": {
+        "type": "checklist",
+        "items": [
+          {
+            "id": "partner",
+            "label": "Recruter un partenaire d'entraînement"
+          }
+        ]
+      }
     },
     {
-      "id": "m5.2", "num": "5.2", "arena": "a5", "kind": "mission",
+      "id": "m5.2",
+      "num": "5.2",
+      "arena": "a5",
+      "kind": "mission",
       "title": "Ose être ridicule",
+      "videoTitle": "Ose être ridicule",
+      "video": "",
+      "description": "Se ridiculiser pour avancer.",
+      "body": "",
+      "instructions": "",
       "action": "Faire en public un exercice qui te met mal à l'aise",
-      "description": "Se ridiculiser pour avancer.", "video": "", "body": "",
-      "support": { "type": "checklist", "items": [
-        { "id": "public", "label": "Faire en public un exercice qui te met mal à l'aise" }
-      ] }
+      "support": {
+        "type": "checklist",
+        "items": [
+          {
+            "id": "public",
+            "label": "Faire en public un exercice qui te met mal à l'aise"
+          }
+        ]
+      }
     },
     {
-      "id": "m5.3", "num": "5.3", "arena": "a5", "kind": "mission",
+      "id": "m5.3",
+      "num": "5.3",
+      "arena": "a5",
+      "kind": "mission",
       "title": "Affronte ta plus grande peur",
+      "videoTitle": "Affronte ta plus grande peur",
+      "video": "",
+      "description": "Affronter ses plus grandes peurs.",
+      "body": "",
+      "instructions": "",
       "action": "Écrire ta peur et faire un premier pas vers elle",
-      "description": "Affronter ses plus grandes peurs.", "video": "", "body": "",
-      "support": { "type": "fiche", "fields": [
-        { "id": "fear", "label": "Ta peur", "type": "textarea", "required": true },
-        { "id": "step", "label": "Ton premier pas vers elle", "type": "textarea", "required": true }
-      ] }
+      "support": {
+        "type": "fiche",
+        "fields": [
+          {
+            "id": "fear",
+            "label": "Ta peur",
+            "type": "textarea",
+            "required": true
+          },
+          {
+            "id": "step",
+            "label": "Ton premier pas vers elle",
+            "type": "textarea",
+            "required": true
+          }
+        ]
+      }
     },
     {
-      "id": "m5.4", "num": "5.4", "arena": "a5", "kind": "mission",
+      "id": "m5.4",
+      "num": "5.4",
+      "arena": "a5",
+      "kind": "mission",
       "title": "Prépare-toi à réussir",
+      "videoTitle": "Prépare-toi à réussir",
+      "video": "",
+      "description": "Se préparer à réussir.",
+      "body": "",
+      "instructions": "",
       "action": "Préparer ta séance et ton sac la veille, 5 jours de suite",
-      "description": "Se préparer à réussir.", "video": "", "body": "",
-      "durationDays": 5, "consecutive": true,
-      "support": { "type": "checklist", "daily": true, "items": [
-        { "id": "session", "label": "Séance préparée pour demain" },
-        { "id": "bag", "label": "Sac préparé" }
-      ] }
+      "durationDays": 5,
+      "consecutive": true,
+      "support": {
+        "type": "checklist",
+        "daily": true,
+        "items": [
+          {
+            "id": "session",
+            "label": "Séance préparée pour demain"
+          },
+          {
+            "id": "bag",
+            "label": "Sac préparé"
+          }
+        ]
+      }
     },
     {
-      "id": "boss-a5", "num": "Boss", "arena": "a5", "kind": "boss",
+      "id": "boss-a5",
+      "num": "Boss",
+      "arena": "a5",
+      "kind": "boss",
       "title": "All in",
+      "videoTitle": "All in",
+      "video": "",
+      "description": "",
+      "body": "",
+      "instructions": "",
       "action": "Faire ta séance la plus dure avec ton partenaire",
-      "description": "", "video": "", "body": "",
-      "challenge": { "type": "checklist", "items": [
-        { "id": "hard", "label": "Faire ta séance la plus dure avec ton partenaire" }
-      ] },
-      "quiz": { "questions": [] }
+      "challenge": {
+        "type": "checklist",
+        "items": [
+          {
+            "id": "hard",
+            "label": "Faire ta séance la plus dure avec ton partenaire"
+          }
+        ]
+      },
+      "quiz": {
+        "questions": [
+          {
+            "id": "q1",
+            "q": "",
+            "options": [
+              "",
+              "",
+              ""
+            ],
+            "explain": ""
+          },
+          {
+            "id": "q2",
+            "q": "",
+            "options": [
+              "",
+              "",
+              ""
+            ],
+            "explain": ""
+          },
+          {
+            "id": "q3",
+            "q": "",
+            "options": [
+              "",
+              "",
+              ""
+            ],
+            "explain": ""
+          },
+          {
+            "id": "q4",
+            "q": "",
+            "options": [
+              "",
+              "",
+              ""
+            ],
+            "explain": ""
+          },
+          {
+            "id": "q5",
+            "q": "",
+            "options": [
+              "",
+              "",
+              ""
+            ],
+            "explain": ""
+          }
+        ]
+      }
     },
-
     {
-      "id": "m6.1", "num": "6.1", "arena": "a6", "kind": "mission",
+      "id": "m6.1",
+      "num": "6.1",
+      "arena": "a6",
+      "kind": "mission",
       "title": "Les bases qui changent tout",
+      "videoTitle": "Les bases qui changent tout",
+      "video": "",
+      "description": "Les bases de la nutrition.",
+      "body": "",
+      "instructions": "",
       "action": "Photographier tes assiettes pendant 3 jours et repérer un changement",
-      "description": "Les bases de la nutrition.", "video": "", "body": "",
-      "durationDays": 3, "consecutive": true,
+      "durationDays": 3,
+      "consecutive": true,
       "dailyLabel": "J'ai photographié mes assiettes aujourd'hui",
-      "support": { "type": "fiche", "fields": [
-        { "id": "change", "label": "Le changement repéré", "type": "textarea", "required": true }
-      ] }
+      "support": {
+        "type": "fiche",
+        "fields": [
+          {
+            "id": "change",
+            "label": "Le changement repéré",
+            "type": "textarea",
+            "required": true
+          }
+        ]
+      }
     },
     {
-      "id": "m6.2", "num": "6.2", "arena": "a6", "kind": "mission",
+      "id": "m6.2",
+      "num": "6.2",
+      "arena": "a6",
+      "kind": "mission",
       "title": "Compléments : vrai ou faux",
+      "videoTitle": "Compléments : vrai ou faux",
+      "video": "",
+      "description": "Compléments alimentaires.",
+      "body": "",
+      "instructions": "",
       "action": "Faire le tri dans ce que tu prends ou comptes prendre",
-      "description": "Compléments alimentaires.", "video": "", "body": "",
       "caution": true,
-      "support": { "type": "quiz", "scored": true, "questions": [] },
+      "support": {
+        "type": "quiz",
+        "scored": true,
+        "questions": [
+          {
+            "id": "q1",
+            "q": "",
+            "options": [
+              "",
+              "",
+              ""
+            ],
+            "explain": ""
+          },
+          {
+            "id": "q2",
+            "q": "",
+            "options": [
+              "",
+              "",
+              ""
+            ],
+            "explain": ""
+          },
+          {
+            "id": "q3",
+            "q": "",
+            "options": [
+              "",
+              "",
+              ""
+            ],
+            "explain": ""
+          }
+        ]
+      },
       "_todo": "Questions vrai/faux à fournir."
     },
     {
-      "id": "m6.3", "num": "6.3", "arena": "a6", "kind": "mission",
+      "id": "m6.3",
+      "num": "6.3",
+      "arena": "a6",
+      "kind": "mission",
       "title": "La créatine expliquée",
+      "videoTitle": "La créatine expliquée",
+      "video": "",
+      "description": "Créatine.",
+      "body": "",
+      "instructions": "",
       "action": "Décider en connaissance de cause, avec l'avis d'un professionnel si tu es mineur",
-      "description": "Créatine.", "video": "", "body": "",
       "caution": true,
-      "support": { "type": "quiz", "scored": true, "questions": [] },
+      "support": {
+        "type": "quiz",
+        "scored": true,
+        "questions": [
+          {
+            "id": "q1",
+            "q": "",
+            "options": [
+              "",
+              "",
+              ""
+            ],
+            "explain": ""
+          },
+          {
+            "id": "q2",
+            "q": "",
+            "options": [
+              "",
+              "",
+              ""
+            ],
+            "explain": ""
+          },
+          {
+            "id": "q3",
+            "q": "",
+            "options": [
+              "",
+              "",
+              ""
+            ],
+            "explain": ""
+          }
+        ]
+      },
       "_todo": "Questions du quiz à fournir."
     },
     {
-      "id": "m6.4", "num": "6.4", "arena": "a6", "kind": "mission",
+      "id": "m6.4",
+      "num": "6.4",
+      "arena": "a6",
+      "kind": "mission",
       "title": "Les plantes ayurvédiques",
+      "videoTitle": "Les plantes ayurvédiques",
+      "video": "",
+      "description": "Plantes ayurvédiques.",
+      "body": "",
+      "instructions": "",
       "action": "Choisir une plante à découvrir, avec prudence",
-      "description": "Plantes ayurvédiques.", "video": "", "body": "",
       "caution": true,
-      "support": { "type": "fiche", "fields": [
-        { "id": "plant", "label": "La plante choisie", "type": "text", "required": true },
-        { "id": "why", "label": "Pourquoi celle-ci", "type": "textarea", "required": false }
-      ] }
+      "support": {
+        "type": "fiche",
+        "fields": [
+          {
+            "id": "plant",
+            "label": "La plante choisie",
+            "type": "text",
+            "required": true
+          },
+          {
+            "id": "why",
+            "label": "Pourquoi celle-ci",
+            "type": "textarea",
+            "required": false
+          }
+        ]
+      }
     },
     {
-      "id": "m6.5", "num": "6.5", "arena": "a6", "kind": "mission",
+      "id": "m6.5",
+      "num": "6.5",
+      "arena": "a6",
+      "kind": "mission",
       "title": "Mon rituel ail et gingembre",
+      "videoTitle": "Mon rituel ail et gingembre",
+      "video": "",
+      "description": "L'ail le matin · le gingembre.",
+      "body": "",
+      "instructions": "",
       "action": "Tester le rituel du matin pendant 7 jours",
-      "description": "L'ail le matin · le gingembre.", "video": "", "body": "",
       "caution": true,
-      "durationDays": 7, "consecutive": true,
-      "support": { "type": "checklist", "daily": true, "items": [
-        { "id": "ritual", "label": "Rituel du matin fait aujourd'hui" }
-      ] }
+      "durationDays": 7,
+      "consecutive": true,
+      "support": {
+        "type": "checklist",
+        "daily": true,
+        "items": [
+          {
+            "id": "ritual",
+            "label": "Rituel du matin fait aujourd'hui"
+          }
+        ]
+      }
     },
     {
-      "id": "boss-a6", "num": "Boss", "arena": "a6", "kind": "boss",
+      "id": "boss-a6",
+      "num": "Boss",
+      "arena": "a6",
+      "kind": "boss",
       "title": "Ta semaine carburant",
+      "videoTitle": "Ta semaine carburant",
+      "video": "",
+      "description": "",
+      "body": "",
+      "instructions": "",
       "action": "Tenir 7 jours selon ta nutrition choisie",
-      "description": "", "video": "", "body": "",
-      "durationDays": 7, "consecutive": true,
-      "challenge": { "type": "checklist", "daily": true, "items": [
-        { "id": "day", "label": "Journée tenue selon ta nutrition choisie", "recall": ["m0.6", "choice"] }
-      ] },
-      "quiz": { "questions": [] }
+      "durationDays": 7,
+      "consecutive": true,
+      "challenge": {
+        "type": "checklist",
+        "daily": true,
+        "items": [
+          {
+            "id": "day",
+            "label": "Journée tenue selon ta nutrition choisie",
+            "recall": [
+              "m0.6",
+              "choice"
+            ]
+          }
+        ]
+      },
+      "quiz": {
+        "questions": [
+          {
+            "id": "q1",
+            "q": "",
+            "options": [
+              "",
+              "",
+              ""
+            ],
+            "explain": ""
+          },
+          {
+            "id": "q2",
+            "q": "",
+            "options": [
+              "",
+              "",
+              ""
+            ],
+            "explain": ""
+          },
+          {
+            "id": "q3",
+            "q": "",
+            "options": [
+              "",
+              "",
+              ""
+            ],
+            "explain": ""
+          },
+          {
+            "id": "q4",
+            "q": "",
+            "options": [
+              "",
+              "",
+              ""
+            ],
+            "explain": ""
+          },
+          {
+            "id": "q5",
+            "q": "",
+            "options": [
+              "",
+              "",
+              ""
+            ],
+            "explain": ""
+          }
+        ]
+      }
     },
-
     {
-      "id": "m7.1", "num": "7.1", "arena": "a7", "kind": "mission",
+      "id": "m7.1",
+      "num": "7.1",
+      "arena": "a7",
+      "kind": "mission",
       "title": "Pourquoi la détente change tout",
+      "videoTitle": "Pourquoi la détente change tout",
+      "video": "",
+      "description": "Pourquoi la détente verticale est si importante.",
+      "body": "",
+      "instructions": "",
       "action": "Mesurer ta détente et la comparer à ton point de départ",
-      "description": "Pourquoi la détente verticale est si importante.", "video": "", "body": "",
-      "support": { "type": "fiche", "fields": [
-        { "id": "start", "label": "Ton point de départ", "type": "recall", "from": [["m0.4", "detente"]] },
-        { "id": "today", "label": "Ta détente aujourd'hui (cm)", "type": "number", "required": true }
-      ] }
+      "support": {
+        "type": "fiche",
+        "fields": [
+          {
+            "id": "start",
+            "label": "Ton point de départ",
+            "type": "recall",
+            "from": [
+              [
+                "m0.4",
+                "detente"
+              ]
+            ]
+          },
+          {
+            "id": "today",
+            "label": "Ta détente aujourd'hui (cm)",
+            "type": "number",
+            "required": true
+          }
+        ]
+      }
     },
     {
-      "id": "m7.2", "num": "7.2", "arena": "a7", "kind": "mission",
+      "id": "m7.2",
+      "num": "7.2",
+      "arena": "a7",
+      "kind": "mission",
       "title": "Le piston",
+      "videoTitle": "Le piston",
+      "video": "",
+      "description": "Le piston.",
+      "body": "",
+      "instructions": "",
       "action": "Appliquer le principe du piston dans ta séance",
-      "description": "Le piston.", "video": "", "body": "",
-      "support": { "type": "checklist", "items": [
-        { "id": "piston", "label": "Appliquer le principe du piston dans ta séance" }
-      ] }
+      "support": {
+        "type": "checklist",
+        "items": [
+          {
+            "id": "piston",
+            "label": "Appliquer le principe du piston dans ta séance"
+          }
+        ]
+      }
     },
     {
-      "id": "m7.x", "num": "7.x", "arena": "a7", "kind": "mission", "draft": true,
+      "id": "m7.x",
+      "num": "7.x",
+      "arena": "a7",
+      "kind": "mission",
+      "draft": true,
       "title": "Concepts du livre",
+      "videoTitle": "Concepts du livre",
+      "video": "",
+      "description": "",
+      "body": "",
+      "instructions": "",
       "action": "À compléter selon ta sélection",
-      "description": "", "video": "", "body": "",
-      "support": { "type": "undefined" },
+      "support": {
+        "type": "undefined"
+      },
       "_todo": "Choisir dans le livre les concepts à transformer en missions (comprendre son programme, technique de saut, échauffement, mesurer ses progrès…). Tant que 'draft' vaut true, la mission est visible sur la carte mais ne bloque pas la progression."
     },
     {
-      "id": "boss-a7", "num": "Boss", "arena": "a7", "kind": "boss",
+      "id": "boss-a7",
+      "num": "Boss",
+      "arena": "a7",
+      "kind": "boss",
       "title": "Le test d'explosivité",
+      "videoTitle": "Le test d'explosivité",
+      "video": "",
+      "description": "",
+      "body": "",
+      "instructions": "",
       "action": "Refaire un test de détente en conditions réelles",
-      "description": "", "video": "", "body": "",
-      "challenge": { "type": "fiche", "fields": [
-        { "id": "start", "label": "Ton point de départ", "type": "recall", "from": [["m0.4", "detente"], ["m7.1", "today"]] },
-        { "id": "result", "label": "Ta détente en conditions réelles (cm)", "type": "number", "required": true }
-      ] },
-      "quiz": { "questions": [] }
+      "challenge": {
+        "type": "fiche",
+        "fields": [
+          {
+            "id": "start",
+            "label": "Ton point de départ",
+            "type": "recall",
+            "from": [
+              [
+                "m0.4",
+                "detente"
+              ],
+              [
+                "m7.1",
+                "today"
+              ]
+            ]
+          },
+          {
+            "id": "result",
+            "label": "Ta détente en conditions réelles (cm)",
+            "type": "number",
+            "required": true
+          }
+        ]
+      },
+      "quiz": {
+        "questions": [
+          {
+            "id": "q1",
+            "q": "",
+            "options": [
+              "",
+              "",
+              ""
+            ],
+            "explain": ""
+          },
+          {
+            "id": "q2",
+            "q": "",
+            "options": [
+              "",
+              "",
+              ""
+            ],
+            "explain": ""
+          },
+          {
+            "id": "q3",
+            "q": "",
+            "options": [
+              "",
+              "",
+              ""
+            ],
+            "explain": ""
+          },
+          {
+            "id": "q4",
+            "q": "",
+            "options": [
+              "",
+              "",
+              ""
+            ],
+            "explain": ""
+          },
+          {
+            "id": "q5",
+            "q": "",
+            "options": [
+              "",
+              "",
+              ""
+            ],
+            "explain": ""
+          }
+        ]
+      }
     },
-
     {
-      "id": "m8.1", "num": "8.1", "arena": "a8", "kind": "mission",
+      "id": "m8.1",
+      "num": "8.1",
+      "arena": "a8",
+      "kind": "mission",
       "title": "Le sommeil, ton arme secrète",
+      "videoTitle": "Le sommeil, ton arme secrète",
+      "video": "",
+      "description": "Sommeil.",
+      "body": "",
+      "instructions": "",
       "action": "Suivre ton sommeil pendant 7 jours",
-      "description": "Sommeil.", "video": "", "body": "",
-      "durationDays": 7, "consecutive": true,
-      "support": { "type": "checklist", "daily": true, "items": [
-        { "id": "sleep", "label": "Sommeil de la nuit noté", "note": true }
-      ] }
+      "durationDays": 7,
+      "consecutive": true,
+      "support": {
+        "type": "checklist",
+        "daily": true,
+        "items": [
+          {
+            "id": "sleep",
+            "label": "Sommeil de la nuit noté",
+            "note": true
+          }
+        ]
+      }
     },
     {
-      "id": "m8.2", "num": "8.2", "arena": "a8", "kind": "mission",
+      "id": "m8.2",
+      "num": "8.2",
+      "arena": "a8",
+      "kind": "mission",
       "title": "Ta routine du soir",
+      "videoTitle": "Ta routine du soir",
+      "video": "",
+      "description": "Avant de dormir.",
+      "body": "",
+      "instructions": "",
       "action": "Créer et tenir ta routine avant de dormir",
-      "description": "Avant de dormir.", "video": "", "body": "",
-      "support": { "type": "checklist", "items": [
-        { "id": "create", "label": "Créer ta routine avant de dormir" },
-        { "id": "keep", "label": "La tenir" }
-      ] },
+      "support": {
+        "type": "checklist",
+        "items": [
+          {
+            "id": "create",
+            "label": "Créer ta routine avant de dormir"
+          },
+          {
+            "id": "keep",
+            "label": "La tenir"
+          }
+        ]
+      },
       "_todo": "Durée de tenue non précisée dans le document : si elle doit durer N jours, ajouter \"durationDays\": N."
     },
     {
-      "id": "m8.3", "num": "8.3", "arena": "a8", "kind": "mission",
+      "id": "m8.3",
+      "num": "8.3",
+      "arena": "a8",
+      "kind": "mission",
       "title": "La gratitude",
+      "videoTitle": "La gratitude",
+      "video": "",
+      "description": "Gratitude.",
+      "body": "",
+      "instructions": "",
       "action": "Noter 3 gratitudes chaque soir",
-      "description": "Gratitude.", "video": "", "body": "",
-      "support": { "type": "checklist", "items": [
-        { "id": "grat", "label": "Noter 3 gratitudes ce soir" }
-      ] },
+      "support": {
+        "type": "checklist",
+        "items": [
+          {
+            "id": "grat",
+            "label": "Noter 3 gratitudes ce soir"
+          }
+        ]
+      },
       "_todo": "Durée non précisée dans le document : si la mission doit durer N soirs, ajouter \"durationDays\": N et \"daily\": true."
     },
     {
-      "id": "m8.4", "num": "8.4", "arena": "a8", "kind": "mission",
+      "id": "m8.4",
+      "num": "8.4",
+      "arena": "a8",
+      "kind": "mission",
       "title": "Prévenir plutôt que guérir",
+      "videoTitle": "Prévenir plutôt que guérir",
+      "video": "",
+      "description": "Prévention des blessures.",
+      "body": "",
+      "instructions": "",
       "action": "Ajouter une routine de prévention à tes séances",
-      "description": "Prévention des blessures.", "video": "", "body": "",
-      "support": { "type": "checklist", "items": [
-        { "id": "prev", "label": "Ajouter une routine de prévention à tes séances" }
-      ] }
+      "support": {
+        "type": "checklist",
+        "items": [
+          {
+            "id": "prev",
+            "label": "Ajouter une routine de prévention à tes séances"
+          }
+        ]
+      }
     },
     {
-      "id": "m8.5", "num": "8.5", "arena": "a8", "kind": "mission",
+      "id": "m8.5",
+      "num": "8.5",
+      "arena": "a8",
+      "kind": "mission",
       "title": "Blessé : et maintenant ?",
+      "videoTitle": "Blessé : et maintenant ?",
+      "video": "",
+      "description": "Que faire quand on est blessé.",
+      "body": "",
+      "instructions": "",
       "action": "Écrire ton plan d'action en cas de blessure",
-      "description": "Que faire quand on est blessé.", "video": "", "body": "",
-      "support": { "type": "fiche", "fields": [
-        { "id": "plan", "label": "Ton plan d'action en cas de blessure", "type": "textarea", "required": true }
-      ] }
+      "support": {
+        "type": "fiche",
+        "fields": [
+          {
+            "id": "plan",
+            "label": "Ton plan d'action en cas de blessure",
+            "type": "textarea",
+            "required": true
+          }
+        ]
+      }
     },
     {
-      "id": "boss-a8", "num": "Boss final", "arena": "a8", "kind": "boss", "final": true,
+      "id": "boss-a8",
+      "num": "Boss final",
+      "arena": "a8",
+      "kind": "boss",
+      "final": true,
       "title": "Deviens Athletik Master",
-      "action": "Refaire tes tests physiques et envoyer ta vidéo de fin",
+      "videoTitle": "Deviens Athletik Master",
+      "video": "",
       "description": "Le boss final n'est pas un examen : il est gagné dès que tes tests sont refaits et ta vidéo envoyée, quels que soient les chiffres. Ta vidéo de fin sera comparée à celle du départ.",
-      "video": "", "body": "",
+      "body": "",
+      "instructions": "",
+      "action": "Refaire tes tests physiques et envoyer ta vidéo de fin",
       "whatsapp": "final",
-      "links": [{ "type": "hub", "label": "Refaire mes tests dans Athletik Hub" }],
-      "challenge": { "type": "fiche", "fields": [
-        { "id": "start", "label": "Tes résultats de départ", "type": "recall", "from": [["m0.4", "results"], ["m0.4", "detente"]] },
-        { "id": "tests", "label": "J'ai refait mes tests physiques", "type": "check", "required": true },
-        { "id": "results", "label": "Tes nouveaux résultats (facultatif)", "type": "textarea", "required": false },
-        { "id": "video", "label": "J'ai envoyé ma vidéo de fin sur WhatsApp", "type": "check", "required": true }
-      ] }
+      "links": [
+        {
+          "type": "hub",
+          "label": "Refaire mes tests dans Athletik Hub"
+        }
+      ],
+      "challenge": {
+        "type": "fiche",
+        "fields": [
+          {
+            "id": "start",
+            "label": "Tes résultats de départ",
+            "type": "recall",
+            "from": [
+              [
+                "m0.4",
+                "results"
+              ],
+              [
+                "m0.4",
+                "detente"
+              ]
+            ]
+          },
+          {
+            "id": "tests",
+            "label": "J'ai refait mes tests physiques",
+            "type": "check",
+            "required": true
+          },
+          {
+            "id": "results",
+            "label": "Tes nouveaux résultats (facultatif)",
+            "type": "textarea",
+            "required": false
+          },
+          {
+            "id": "video",
+            "label": "J'ai envoyé ma vidéo de fin sur WhatsApp",
+            "type": "check",
+            "required": true
+          }
+        ]
+      }
     }
   ]
 }

@@ -70,6 +70,7 @@
   // ─── Démarrage ────────────────────────────────────────────────────────────
   function boot() {
     fetch('content/program.json', { cache: 'no-cache' }).then(function (r) { return r.json(); }).then(function (p) {
+      APP.base = p;
       APP.program = p;
       var mode = null;
       try { mode = localStorage.getItem(MODE_KEY); } catch (e) {}
@@ -86,8 +87,9 @@
 
   function startDemo(fresh, name) {
     setMode('demo');
-    APP.store = new AMStore.DemoStore(APP.program);
+    APP.store = new AMStore.DemoStore(APP.base);
     APP.engine = APP.store.engine;
+    APP.program = APP.engine.content;
     if (fresh || !APP.store.data) APP.store.start(name);
     return APP.store.init().then(function (s) { APP.session = s; APP.gate = null; refresh(); });
   }
@@ -95,9 +97,8 @@
   function startRemote() {
     setMode('remote');
     APP.store = new AMStore.RemoteStore(CFG);
-    APP.engine = AMEngine.createEngine(APP.program, { assumeKeys: true });
     $app.innerHTML = '<div class="login"><p class="muted" style="text-align:center">Connexion…</p></div>';
-    return APP.store.init().then(function (s) {
+    return loadRemoteContent().then(function () { return APP.store.init(); }).then(function (s) {
       APP.gate = null;
       APP.session = s ? fromServer(s) : null;
       if (s) refresh(); else render();
@@ -106,6 +107,18 @@
       APP.gate = e.code || 'server_error';
       render();
     });
+  }
+
+  // Contenu = program.json + surcouche publiée depuis l'éditeur (sans redéploiement).
+  function loadRemoteContent() {
+    return APP.store.fetchPublished().then(function (pub) {
+      APP.program = AMContent.merge(APP.base, pub && pub.ov);
+      APP.engine = AMEngine.createEngine(APP.program, { assumeKeys: true });
+    });
+  }
+  function reloadContent() {
+    if (APP.store.demo) { APP.engine = APP.store.engine; APP.program = APP.engine.content; return Promise.resolve(); }
+    return loadRemoteContent();
   }
 
   function fromServer(j) {
@@ -120,6 +133,7 @@
   // ─── Actions ──────────────────────────────────────────────────────────────
   function act(action, opts) {
     opts = opts || {};
+    if (route().name === 'apercu') { toast('Aperçu du brouillon : publie le contenu pour l\'essayer pour de vrai.'); return Promise.reject(new Error('preview')); }
     return APP.store.act(action).then(function (r) {
       if (r.state) APP.session.state = r.state;
       if (r.access) APP.session.access = r.access;
@@ -194,7 +208,7 @@
   function route() {
     var h = (location.hash || '#/').slice(1);
     var parts = h.split('/').filter(Boolean);
-    return { name: parts[0] || 'accueil', arg: parts[1] ? decodeURIComponent(parts[1]) : null };
+    return { name: parts[0] || 'accueil', arg: parts[1] ? decodeURIComponent(parts[1]) : null, arg2: parts[2] ? decodeURIComponent(parts[2]) : null };
   }
 
   function render() {
@@ -213,14 +227,17 @@
       case 'regles': body = viewRules(); break;
       case 'profil': body = viewProfile(); break;
       case 'admin': body = viewAdmin(); break;
+      case 'contenu': body = viewContent(r.arg, r.arg2); break;
+      case 'apercu': body = viewPreview(r.arg); break;
       case 'debut': body = viewStart(); break;
       case 'fin': body = viewEnd(); break;
       default: body = viewDashboard();
     }
-    var tab = { accueil: 'accueil', carte: 'carte', arene: 'carte', mission: 'carte', regles: 'carte', habitudes: 'habitudes', recompenses: 'recompenses', fin: 'recompenses', profil: 'profil', admin: 'profil', debut: 'accueil' }[r.name] || 'accueil';
+    var tab = { accueil: 'accueil', carte: 'carte', arene: 'carte', mission: 'carte', regles: 'carte', habitudes: 'habitudes', recompenses: 'recompenses', fin: 'recompenses', profil: 'profil', admin: 'profil', contenu: 'profil', apercu: 'profil', debut: 'accueil' }[r.name] || 'accueil';
     $app.innerHTML = shell(body, tab);
     window.scrollTo(0, keep ? y : 0);
     if (r.name === 'admin' && !APP.adminData) loadAdmin();
+    if ((r.name === 'contenu' || r.name === 'apercu') && !APP.contentData && !APP.contentLoading) loadContentAdmin();
   }
 
   function shell(body, tab) {
@@ -456,7 +473,7 @@
   }
 
   // ─── Page mission / boss ──────────────────────────────────────────────────
-  function viewMission(id) {
+  function viewMission(id, preview) {
     var m;
     try { m = M(id); } catch (e) { return notFound(); }
     var it = APP.view.items[id], a = A(m.arena), boss = m.kind === 'boss';
@@ -469,7 +486,7 @@
         (it.status === 'waiting' ? '<div class="notice info">🔒 Cette mission se débloque ' + esc(fmtWhen(it.unlockAt)) + '.</div>' :
           it.status === 'draft' ? '<div class="notice warn">Contenu à venir : cette mission est en préparation.</div>' :
             '<div class="notice">🔒 Termine les missions précédentes pour ouvrir celle-ci.</div>') + '</div>';
-      return h + missionNav(m);
+      return h + progressBlock(m, it) + missionNav(m);
     }
 
     if (it.status === 'validated') {
@@ -480,16 +497,41 @@
     if (boss && (m.rulesIntro || !m.final)) h += bossRules(m);
     h += videoBlock(m);
     h += '<div class="card stack"><div class="eyebrow">La notion</div>' +
-      (m.description ? '<p style="margin:0">' + esc(m.description) + '</p>' : '') +
-      (m.body ? '<div style="white-space:pre-wrap">' + esc(m.body) + '</div>' : '<div><span class="placeholder">Contenu pédagogique à compléter</span></div>') + '</div>';
+      (m.description ? '<p style="margin:0" class="muted">' + esc(m.description) + '</p>' : '') +
+      (m.body ? '<div class="prose">' + esc(m.body) + '</div>' : '<div><span class="placeholder">Contenu pédagogique bientôt disponible</span></div>') + '</div>';
+    if (m.instructions) h += '<div class="card stack"><div class="eyebrow">Les consignes</div><div class="prose">' + esc(m.instructions) + '</div></div>';
     if (m.caution) h += '<div class="notice warn">⚠️ Prudence : demande l\'avis d\'un professionnel de santé avant tout changement, et c\'est obligatoire si tu es mineur.</div>';
     h += '<div class="card action-card"><div class="eyebrow">' + (boss ? 'Le défi pratique' : 'Ton action') + '</div><div class="big" style="margin-top:4px">' + esc(m.action) + '</div>' + linksBlock(m) + '</div>';
     h += supportBlock(m, it);
     if (m.durationDays) h += daysBlock(m, it);
     h += '<div id="mfoot">' + footBlock(m, it) + '</div>';
-    if (boss && !m.final) h += bossQuizBlock(m, it);
+    if (boss && !m.final) h += bossQuizBlock(m, it, preview);
+    h += progressBlock(m, it);
     h += '</div>';
-    return h + missionNav(m);
+    return h + (preview ? '' : missionNav(m));
+  }
+
+  // Informations de progression et de déblocage de la mission
+  function progressBlock(m, it) {
+    var list = E().playable, pos = list.indexOf(m), a = A(m.arena);
+    var av = (APP.view.arenas || []).filter(function (x) { return x.id === a.id; })[0];
+    var rows = [];
+    if (pos >= 0) rows.push(['Étape', (pos + 1) + ' sur ' + list.length + ' du parcours']);
+    if (av) rows.push([a.label, esc(a.name) + ' — ' + av.done + ' / ' + av.total + ' validées']);
+    var prev = list[pos - 1];
+    if (a.instantUnlock) rows.push(['Déblocage', 'Ouverte dès le premier jour, sans attente']);
+    else if (m.kind === 'boss') rows.push(['Déblocage', '24 h après la dernière mission de l\'arène']);
+    else if (prev && prev.arena !== m.arena) rows.push(['Déblocage', '24 h après la fin de « ' + esc(A(prev.arena).name) + ' »']);
+    else if (prev) rows.push(['Déblocage', '24 h après la validation de ' + esc(prev.kind === 'boss' ? 'boss' : 'la mission ' + prev.num)]);
+    if (m.durationDays) rows.push(['Durée', m.durationDays + ' jours' + (m.consecutive ? ' d\'affilée' : '') + ', une coche par jour']);
+    if (m.kind === 'boss' && !m.final) rows.push(['Pour gagner', 'défi validé + 4 bonnes réponses sur 5']);
+    var nx = list[pos + 1];
+    if (nx) {
+      var nit = APP.view.items[nx.id] || {};
+      var when = nit.status === 'waiting' ? 'se débloque ' + fmtWhen(nit.unlockAt) : nit.status === 'open' || nit.status === 'validated' ? 'déjà ouverte' : '24 h après la validation de celle-ci';
+      rows.push(['Ensuite', esc((nx.kind === 'boss' ? 'Boss « ' : nx.num + ' « ') + nx.title + ' »') + ' — ' + esc(when)]);
+    }
+    return '<div class="card"><div class="eyebrow">Progression et déblocage</div><dl class="kv">' + rows.map(function (r) { return '<dt>' + esc(r[0]) + '</dt><dd>' + r[1] + '</dd>'; }).join('') + '</dl></div>';
   }
 
   function bossRules(m) {
@@ -498,19 +540,22 @@
         '<p style="margin:6px 0 0">1 défi pratique + 5 questions sur les notions de l\'arène. Le boss est battu quand le défi est validé <b>et</b> qu\'au moins 4 réponses sur 5 sont justes. Sinon : nouvel essai le lendemain, sans pénalité.</p>') + '</div>';
   }
 
-  function videoEmbed(url) {
-    var y = url.match(/(?:youtube\.com\/(?:watch\?v=|shorts\/|embed\/)|youtu\.be\/)([\w-]{6,})/);
-    if (y) return '<iframe src="https://www.youtube-nocookie.com/embed/' + y[1] + '?rel=0" title="Vidéo" allow="accelerometer; encrypted-media; gyroscope; picture-in-picture; fullscreen" allowfullscreen></iframe>';
-    var v = url.match(/vimeo\.com\/(?:video\/)?(\d+)/);
-    if (v) return '<iframe src="https://player.vimeo.com/video/' + v[1] + '" title="Vidéo" allow="fullscreen; picture-in-picture" allowfullscreen></iframe>';
-    return '<video controls playsinline preload="metadata" data-video-for="' + attr(APP.currentMission) + '" src="' + attr(url) + '"></video>';
+  function videoEmbed(url, title, mid) {
+    var c = AMContent.checkVideoUrl(url);
+    var t = ' title="' + attr(title || 'Vidéo') + '"';
+    if (c.kind === 'youtube') return '<iframe src="https://www.youtube-nocookie.com/embed/' + attr(c.id) + '?rel=0&modestbranding=1&playsinline=1"' + t + ' allow="accelerometer; encrypted-media; gyroscope; picture-in-picture; fullscreen" allowfullscreen loading="lazy"></iframe>';
+    if (c.kind === 'vimeo') return '<iframe src="https://player.vimeo.com/video/' + attr(c.id) + '"' + t + ' allow="fullscreen; picture-in-picture" allowfullscreen loading="lazy"></iframe>';
+    if (c.kind === 'mp4') return '<video controls playsinline preload="metadata" data-video-for="' + attr(mid || '') + '" src="' + attr(c.url) + '"></video>';
+    return null;
   }
 
   function videoBlock(m) {
-    APP.currentMission = m.id;
-    if (!m.video) return '<div class="video empty"><div class="play" aria-hidden="true">▶</div><b>Vidéo à ajouter</b><span class="small">La vidéo de cette mission sera bientôt disponible.</span></div>';
+    var title = m.videoTitle || m.title;
+    var head = '<div class="video-title"><span aria-hidden="true">🎬</span> ' + esc(title) + '</div>';
+    var emb = m.video ? videoEmbed(m.video, title, m.id) : null;
+    if (!emb) return '<div>' + head + '<div class="video empty"><div class="play" aria-hidden="true">▶</div><b>Vidéo bientôt disponible</b></div></div>';
     var watched = !!rec(m.id).videoWatchedAt;
-    return '<div><div class="video">' + videoEmbed(m.video) + '</div>' +
+    return '<div>' + head + '<div class="video">' + emb + '</div>' +
       '<div class="row" style="margin-top:8px;justify-content:space-between">' +
       (watched ? '<span class="chip done">✓ Vidéo regardée</span>' : '<span class="small muted">Regarde la vidéo jusqu\'au bout.</span><button class="btn sm" data-act="videoDone" data-id="' + attr(m.id) + '">J\'ai regardé la vidéo</button>') +
       '</div></div>';
@@ -545,14 +590,19 @@
     var data = rec(m.id).support || {};
     return sup.items.map(function (item) {
       if (item.choices) {
-        return '<div class="field"><label>' + esc(item.label) + '</label><div class="choices" role="radiogroup">' + item.choices.map(function (c) {
+        return '<div class="field"><label>' + labelHtml(item) + '</label><div class="choices" role="radiogroup">' + item.choices.map(function (c) {
           var on = data[item.id] === c;
           return '<button class="choice ' + (on ? 'on' : '') + '" role="radio" aria-checked="' + on + '" data-act="choice" data-id="' + attr(m.id) + '" data-item="' + attr(item.id) + '" data-val="' + attr(c) + '">' + esc(c) + '</button>';
         }).join('') + '</div></div>';
       }
       var on2 = data[item.id] === true;
-      return '<div class="check-item ' + (on2 ? 'on' : '') + '" role="checkbox" tabindex="0" aria-checked="' + on2 + '" data-act="check" data-id="' + attr(m.id) + '" data-item="' + attr(item.id) + '"><span class="check-box" aria-hidden="true">✓</span><span>' + esc(item.label) + '</span></div>';
+      return '<div class="check-item ' + (on2 ? 'on' : '') + '" role="checkbox" tabindex="0" aria-checked="' + on2 + '" data-act="check" data-id="' + attr(m.id) + '" data-item="' + attr(item.id) + '"><span class="check-box" aria-hidden="true">✓</span><span>' + labelHtml(item) + '</span></div>';
     }).join('');
+  }
+
+  function labelHtml(x) {
+    var l = String(x.label || '').trim();
+    return (l ? esc(l) : '<span class="muted">Intitulé</span>') + (x.pending || !l ? ' <span class="placeholder">intitulé à compléter</span>' : '');
   }
 
   function recallHtml(f) {
@@ -583,14 +633,14 @@
         case 'number': inner = '<input class="input" type="number" inputmode="decimal" step="any"' + base + ' value="' + attr(val == null ? '' : val) + '">'; break;
         case 'date': inner = '<input class="input" type="date"' + base + ' value="' + attr(val || '') + '">'; break;
         case 'check':
-          return '<div class="check-item ' + (val === true ? 'on' : '') + '" role="checkbox" tabindex="0" aria-checked="' + (val === true) + '" data-act="ficheCheck" data-id="' + attr(m.id) + '" data-item="' + attr(f.id) + '" style="margin-top:14px"><span class="check-box" aria-hidden="true">✓</span><span>' + esc(f.label) + req + '</span></div>';
+          return '<div class="check-item ' + (val === true ? 'on' : '') + '" role="checkbox" tabindex="0" aria-checked="' + (val === true) + '" data-act="ficheCheck" data-id="' + attr(m.id) + '" data-item="' + attr(f.id) + '" style="margin-top:14px"><span class="check-box" aria-hidden="true">✓</span><span>' + labelHtml(f) + req + '</span></div>';
         case 'scale':
           var btns = '';
           for (var i = f.min || 1; i <= (f.max || 10); i++) btns += '<button class="' + (val === i ? 'on' : '') + '" aria-pressed="' + (val === i) + '" data-act="scale" data-id="' + attr(m.id) + '" data-item="' + attr(f.id) + '" data-val="' + i + '">' + i + '</button>';
-          return '<div class="field"><label>' + esc(f.label) + req + '</label><div class="scale" role="group" aria-label="' + attr(f.label) + '">' + btns + '</div></div>';
+          return '<div class="field"><label>' + labelHtml(f) + req + '</label><div class="scale" role="group" aria-label="' + attr(f.label) + '">' + btns + '</div></div>';
         default: inner = '<input class="input' + (f.strike ? ' strike' : '') + '" type="text"' + base + ' placeholder="' + attr(f.placeholder || ' ') + '" value="' + attr(val || '') + '" maxlength="2000">';
       }
-      return '<div class="field"><label for="' + id + '">' + esc(f.label) + req + '</label>' + inner + '</div>';
+      return '<div class="field"><label for="' + id + '">' + labelHtml(f) + req + '</label>' + inner + '</div>';
     }).join('') + '<div class="saved" id="saved_' + attr(m.id) + '" aria-live="polite">' + (rec(m.id).savedAt ? 'Réponses enregistrées' : '') + '</div>';
   }
 
@@ -601,7 +651,7 @@
     APP.quizSel[m.id] = sel;
     var review = submitted && APP.retrying !== m.id;
     var h = sup.scored ? '' : '<p class="small muted" style="margin:6px 0 0">Pas de bonne ou de mauvaise réponse : ce quiz t\'aide à te situer.</p>';
-    if (!sup.questions.length) return h + '<div class="notice warn" style="margin-top:10px">Questions du quiz à ajouter. Cette mission ne peut pas encore être validée.</div>';
+    if (!sup.questions.length || !sup.questions.every(E().questionWritten)) return h + questionSlots(sup.questions) + '<div class="notice warn" style="margin-top:10px">Les questions de ce quiz sont en cours de rédaction. La mission pourra être validée dès qu\'elles seront publiées.</div>';
     sup.questions.forEach(function (q, qi) {
       h += '<div class="quiz-q"><div class="q">' + (qi + 1) + '. ' + esc(q.q) + '</div>';
       q.options.forEach(function (o, oi) {
@@ -669,7 +719,14 @@
     return h + '</div>';
   }
 
-  function bossQuizBlock(m, it) {
+  // Emplacements de questions : rédigées ou « à rédiger » (jamais inventées)
+  function questionSlots(qs) {
+    return '<ol class="slots">' + (qs || []).map(function (q, i) {
+      return '<li>' + (E().questionWritten(q) ? esc(q.q) : '<span class="muted">Question ' + (i + 1) + '</span> <span class="placeholder">à rédiger</span>') + '</li>';
+    }).join('') + '</ol>';
+  }
+
+  function bossQuizBlock(m, it, preview) {
     var h = '<div class="card"><div class="eyebrow" style="color:var(--bad)">Les 5 questions</div>';
     var res = APP.quizRes[m.id];
     if (it.status === 'validated') {
@@ -679,12 +736,14 @@
       h += '<div class="notice warn" style="margin-top:8px"><b>Pas cette fois : ' + res.score + ' / ' + res.total + '.</b> Il en faut 4. Nouvel essai ' + esc(fmtWhen(res.retryAt)) + ', sans pénalité. Ton défi pratique reste acquis.</div>';
     }
     var challengeOk = (it.checks || []).every(function (c) { return c.ok; });
-    if (!it.quizReady) return h + '<div class="notice warn" style="margin-top:8px">Questions du boss à ajouter : le contenu est en préparation.</div></div>';
+    var allW = m.quiz.questions.length && m.quiz.questions.every(E().questionWritten);
+    if (!allW) return h + questionSlots(m.quiz.questions) + '<div class="notice warn" style="margin-top:8px">Les questions de ce boss sont en cours de rédaction : il pourra être affronté dès leur publication.</div></div>';
+    if (!it.quizReady) return h + '<div class="notice warn" style="margin-top:8px">Les réponses de ce boss ne sont pas encore renseignées.</div></div>';
     if (it.retryAt) {
       if (!res) h += '<div class="notice info" style="margin-top:8px">Nouvel essai ' + esc(fmtWhen(it.retryAt)) + ', sans pénalité.</div>';
       return h + '</div>';
     }
-    if (!challengeOk) return h + '<div class="notice" style="margin-top:8px">🔒 Termine le défi pratique pour débloquer les questions.</div></div>';
+    if (!challengeOk && !preview) return h + '<div class="notice" style="margin-top:8px">🔒 Termine le défi pratique pour débloquer les questions.</div></div>';
     var sel = APP.quizSel[m.id] = APP.quizSel[m.id] || {};
     m.quiz.questions.forEach(function (q, qi) {
       h += '<div class="quiz-q"><div class="q">' + (qi + 1) + '. ' + esc(q.q) + '</div>';
@@ -803,13 +862,14 @@
       '<p class="small muted" style="margin:0">' + esc(planTxt) + '</p>' +
       '<p class="tiny" style="margin:0">Dans Athletik Hub, ces droits seront appliqués quand le lien entre les deux apps sera branché.</p></div>';
     h += '<div class="card stack"><h3>Raccourcis</h3><a class="btn block" href="#/debut">Page de début du programme</a><a class="btn block" href="#/fin">Page de fin du programme</a><a class="btn block" href="#/regles">Règles du jeu</a>' +
-      (ro.admin ? '<a class="btn primary block" href="#/admin">Espace administrateur</a>' : '') +
+      (ro.admin ? '<a class="btn primary block" href="#/admin">Espace administrateur</a><a class="btn block" href="#/contenu">Gérer le contenu (vidéos, textes, quiz)</a>' : '') +
       (APP.installEvt ? '<button class="btn block" data-act="install">Installer l\'application</button>' : '') + '</div>';
     if (APP.store.demo) {
       h += '<div class="card stack" style="border-color:#6a4800"><h3>Outils de démonstration</h3><p class="small muted" style="margin:0">Pour tester les délais sans attendre. Horloge démo : ' + esc(fmtShort(APP.store.now()) + ' ' + hm(APP.store.now())) + '</p>' +
         '<div class="row wrap"><button class="btn sm" data-act="travel" data-ms="3600000">+1 h</button><button class="btn sm" data-act="travel" data-ms="86400000">+24 h</button><button class="btn sm" data-act="travel" data-ms="604800000">+7 jours</button></div>' +
         '<button class="btn block sm" data-act="demoPay">Simuler le paiement complet (+ délai de 14 jours)</button>' +
-        '<button class="btn block sm" data-act="demoReset">Remettre la démo à zéro</button></div>';
+        '<button class="btn block sm" data-act="demoReset">Remettre la démo à zéro</button>' +
+        '<button class="btn block sm" data-act="demoResetContent">Effacer le contenu édité en démo</button></div>';
     }
     h += '<button class="btn ghost block" data-act="signout">' + (APP.store.demo ? 'Quitter le mode démo' : 'Se déconnecter') + '</button>';
     return h + '</div>';
@@ -826,6 +886,7 @@
   function viewAdmin() {
     if (!APP.session.roles || !APP.session.roles.admin) return '<div class="notice warn">Accès réservé à l\'administrateur.</div>';
     var h = '<div class="crumb"><a href="#/profil">Profil</a> › Admin</div><h1 class="h-display" style="margin-top:6px">Espace administrateur</h1>';
+    h += '<a class="card card-link row" href="#/contenu" style="margin-top:12px"><span style="font-size:26px" aria-hidden="true">✏️</span><div class="grow"><b>Gérer le contenu</b><div class="small muted">Titres, liens YouTube, textes, consignes, checklists, fiches et quiz — publiés sans redéploiement.</div></div><span aria-hidden="true">›</span></a>';
     if (APP.store.demo) h += '<div class="notice warn" style="margin-top:10px">Démo : les participants marqués [DÉMO] sont fictifs.</div>';
     var d = APP.adminData;
     if (!d) return h + '<p class="muted">Chargement…</p>';
@@ -879,6 +940,305 @@
       '<input class="input" id="gEmail" type="email" placeholder="email@exemple.com"><select class="input" id="gPlan"><option value="one_time">Paiement en une fois</option><option value="installments">Paiement en 3 fois</option></select>' +
       '<button class="btn primary block" data-act="grant"' + (APP.store.demo ? ' disabled' : '') + '>Ajouter le paiement</button>' + (APP.store.demo ? '<p class="tiny" style="margin:0">Indisponible en démo.</p>' : '') + '</div>';
     return h;
+  }
+
+  // ═══ ÉDITEUR DE CONTENU (admin) ═══════════════════════════════════════════
+  // Brouillon → aperçu → publication. Rien n'est écrit dans le code : les
+  // modifications sont des surcouches (voir content-tools.js).
+  function loadContentAdmin() {
+    APP.contentLoading = true;
+    return APP.store.contentCall('get').then(function (d) {
+      APP.contentData = d; APP.contentLoading = false; render();
+    }).catch(function (e) {
+      APP.contentLoading = false; APP.contentData = { error: e.message || 'Erreur' }; render();
+    });
+  }
+  function draftProgram() { return AMContent.merge(APP.base, APP.contentData.draft.ov); }
+  function draftChanged() { var d = APP.contentData; return !AMContent.sameDraft(d.draft, d.published); }
+  function missionModified(id) {
+    var d = APP.contentData;
+    var a = d.draft.ov && d.draft.ov.missions && d.draft.ov.missions[id];
+    var b = d.published.ov && d.published.ov.missions && d.published.ov.missions[id];
+    return JSON.stringify(a || null) !== JSON.stringify(b || null) ||
+      JSON.stringify((d.draft.keys || {})[id] || {}) !== JSON.stringify((d.published.keys || {})[id] || {});
+  }
+
+  function contentGuard() {
+    if (!APP.session.roles || !APP.session.roles.admin) return '<div class="notice warn">Accès réservé à l\'administrateur.</div>';
+    if (!APP.contentData) return '<p class="muted">Chargement du contenu…</p>';
+    if (APP.contentData.error) return '<div class="notice warn">' + esc(APP.contentData.error) + '</div>';
+    return null;
+  }
+
+  function publishBar() {
+    var d = APP.contentData, changed = draftChanged();
+    var pub = d.published;
+    return '<div class="card publish-bar ' + (changed ? 'gold' : '') + '"><div class="row wrap" style="justify-content:space-between">' +
+      '<div><b>' + (changed ? 'Brouillon : modifications non publiées' : 'Tout est publié') + '</b><div class="tiny">Version en ligne : ' + (pub.version ? 'n° ' + pub.version + (pub.publishedAt ? ' du ' + esc(fmtDate(pub.publishedAt)) + ' à ' + hm(pub.publishedAt) : '') : 'contenu d\'origine') + '</div></div>' +
+      (changed ? '<div class="row"><button class="btn sm ghost" data-act="cDiscard">Annuler le brouillon</button><button class="btn sm primary" data-act="cPublish">Publier</button></div>' : '') +
+      '</div></div>';
+  }
+
+  function viewContent(arg, arg2) {
+    var g = contentGuard(); if (g) return g;
+    if (arg === 'arene') return viewArenaEditor(arg2);
+    if (arg) return viewMissionEditor(arg);
+    var prog = draftProgram(), keys = APP.contentData.draft.keys || {};
+    var all = prog.missions.map(function (m) { return { m: m, s: AMContent.missionStatus(m, keys) }; });
+    var count = function (f) { return all.filter(f).length; };
+    var qTot = 0, qW = 0, kTot = 0, kOk = 0;
+    all.forEach(function (x) { qTot += x.s.questions; qW += x.s.written; if (x.s.needKeys) { kTot += x.s.questions; kOk += x.s.keyed; } });
+    var h = '<div class="crumb"><a href="#/profil">Profil</a> › <a href="#/admin">Admin</a> › Contenu</div><h1 class="h-display" style="margin-top:6px">Contenu</h1>';
+    h += '<p class="small muted">Titres, vidéos YouTube, textes, consignes et supports de chaque mission. Enregistre, vérifie l\'aperçu, puis publie : les participants voient la mise à jour sans redéploiement.</p>';
+    if (APP.store.demo) h += '<div class="notice warn">Démo : le contenu édité ici reste sur cet appareil.</div>';
+    h += '<div style="margin-top:12px">' + publishBar() + '</div>';
+    h += '<div class="grid2" style="margin-top:12px">' +
+      '<div class="card stat"><b>' + count(function (x) { return x.s.video; }) + ' / ' + all.length + '</b><span>vidéos renseignées</span></div>' +
+      '<div class="card stat"><b>' + count(function (x) { return x.s.body; }) + ' / ' + all.length + '</b><span>contenus pédagogiques</span></div>' +
+      '<div class="card stat"><b>' + qW + ' / ' + qTot + '</b><span>questions rédigées</span></div>' +
+      '<div class="card stat"><b>' + kOk + ' / ' + kTot + '</b><span>bonnes réponses</span></div></div>';
+    prog.arenas.forEach(function (a) {
+      var habit = (prog.habits || []).filter(function (x) { return x.arena === a.id; })[0];
+      h += '<div class="section-title"><h2>' + esc(a.label + ' — ' + a.name) + '</h2><a href="#/contenu/arene/' + a.id + '">Modifier l\'arène</a></div>';
+      if (habit) h += '<p class="tiny" style="margin:-4px 0 8px">Habitude : ' + esc(habit.title) + ' · ' + esc(habit.frequency) + '</p>';
+      h += '<div class="mlist">' + all.filter(function (x) { return x.m.arena === a.id; }).map(function (x) {
+        var m = x.m, s = x.s;
+        var chips = '<span class="chip ' + (s.video ? 'done' : 'todo') + '">🎬</span><span class="chip ' + (s.body ? 'done' : 'todo') + '">📝</span>' +
+          (s.questions ? '<span class="chip ' + (s.written === s.questions && (!s.needKeys || s.keyed === s.questions) ? 'done' : 'todo') + '">❓ ' + s.written + '/' + s.questions + '</span>' : '') +
+          (missionModified(m.id) ? '<span class="chip wait">brouillon</span>' : '');
+        return '<a class="mrow" href="#/contenu/' + encodeURIComponent(m.id) + '"><div class="n">' + (m.kind === 'boss' ? '⚔️' : esc(m.num)) + '</div>' +
+          '<div class="grow"><div class="t">' + esc(m.title) + (m.draft ? ' <span class="chip todo">hors parcours</span>' : '') + '</div>' +
+          '<div class="a">' + (s.complete ? 'Complet' : 'À compléter : ' + esc(s.todo.join(', '))) + '</div><div class="row wrap" style="gap:4px;margin-top:4px">' + chips + '</div></div></a>';
+      }).join('') + '</div>';
+    });
+    return h;
+  }
+
+  // ─── Éditeur de mission ──────────────────────────────────────────────────
+  function getPath(o, path) { return path.split('.').reduce(function (x, k) { return x == null ? x : x[k]; }, o); }
+  function setPath(o, path, v) {
+    var ks = path.split('.'), last = ks.pop();
+    var t = ks.reduce(function (x, k) { return x[k]; }, o);
+    t[last] = v;
+  }
+  function newId(prefix) { return prefix + Date.now().toString(36).slice(-5) + Math.random().toString(36).slice(2, 4); }
+
+  function edInput(label, path, val, o) {
+    o = o || {};
+    var id = 'ed_' + path.replace(/\W/g, '_');
+    var common = ' id="' + id + '" data-ed="' + attr(path) + '"' + (o.kind ? ' data-ed-kind="' + o.kind + '"' : '') + (o.max ? ' maxlength="' + o.max + '"' : '');
+    var field;
+    if (o.rows) field = '<textarea class="input" rows="' + o.rows + '"' + common + ' placeholder="' + attr(o.ph || '') + '">' + esc(val || '') + '</textarea>';
+    else if (o.select) field = '<select class="input"' + common + '>' + o.select.map(function (x) { return '<option value="' + attr(x[0]) + '"' + (x[0] === val ? ' selected' : '') + '>' + esc(x[1]) + '</option>'; }).join('') + '</select>';
+    else field = '<input class="input" type="' + (o.type || 'text') + '"' + common + ' value="' + attr(val == null ? '' : val) + '" placeholder="' + attr(o.ph || '') + '">';
+    return '<div class="field"><label for="' + id + '">' + esc(label) + '</label>' + field + (o.hint ? '<div class="tiny" style="margin-top:4px"' + (o.hintId ? ' id="' + o.hintId + '"' : '') + '>' + o.hint + '</div>' : '') + '</div>';
+  }
+  function edCheck(label, path, val) {
+    return '<label class="row small" style="margin-top:10px;gap:8px;cursor:pointer"><input type="checkbox" data-ed="' + attr(path) + '" data-ed-kind="bool"' + (val ? ' checked' : '') + ' style="width:20px;height:20px"> ' + esc(label) + '</label>';
+  }
+
+  function videoHint(url) {
+    var c = AMContent.checkVideoUrl(url);
+    if (!String(url || '').trim()) return 'Vide → les participants voient « Vidéo bientôt disponible ».';
+    if (!c.ok) return '<span style="color:var(--bad)">Lien non reconnu. Colle une URL YouTube (youtube.com/watch?v=…, youtu.be/…, /shorts/…).</span>';
+    return '<span style="color:var(--ok)">✓ ' + ({ youtube: 'Vidéo YouTube', vimeo: 'Vidéo Vimeo', mp4: 'Fichier vidéo' }[c.kind]) + ' reconnue.</span>';
+  }
+
+  function viewMissionEditor(id) {
+    var prog = draftProgram();
+    var base = null;
+    prog.missions.forEach(function (x) { if (x.id === id) base = x; });
+    if (!base) return notFound();
+    if (!APP.edit || APP.edit.id !== id) {
+      APP.edit = { id: id, data: JSON.parse(JSON.stringify(base)), keys: JSON.parse(JSON.stringify((APP.contentData.draft.keys || {})[id] || {})), dirty: false };
+    }
+    var d = APP.edit.data, a = A(d.arena) || {}, boss = d.kind === 'boss';
+    var orig = APP.base.missions.filter(function (x) { return x.id === id; })[0];
+    var h = '<div class="crumb"><a href="#/admin">Admin</a> › <a href="#/contenu">Contenu</a> › ' + esc(boss ? 'Boss ' + a.name : 'Mission ' + d.num) + '</div>';
+    h += '<h1 class="h-display" style="margin-top:6px">' + esc(boss ? (d.final ? 'Boss final' : 'Boss') : 'Mission ' + d.num) + '</h1>';
+    h += '<div id="edDirty" class="notice warn" style="margin-top:10px;' + (APP.edit.dirty ? '' : 'display:none') + '">Modifications non enregistrées.</div>';
+    h += '<div class="stack" style="margin-top:12px">';
+
+    // Identité (non modifiable : elle porte la progression des participants)
+    h += '<div class="card"><div class="eyebrow">Place dans le parcours</div><dl class="kv">' +
+      '<dt>Arène</dt><dd>' + esc((a.label || '') + ' — ' + (a.name || '')) + '</dd>' +
+      '<dt>Type</dt><dd>' + esc(boss ? 'Boss' : 'Mission') + ' · support ' + esc(({ checklist: 'checklist', fiche: 'fiche', quiz: 'quiz', undefined: 'à définir' })[(boss ? d.challenge : d.support || {}).type] || '—') + '</dd>' +
+      '<dt>Déblocage</dt><dd>' + (a.instantUnlock ? 'immédiat (niveau 0)' : '24 h après l\'étape précédente') + '</dd>' +
+      (d.draft ? '<dt>Statut</dt><dd>Hors parcours (contenu à définir dans program.json)</dd>' : '') +
+      '</dl><p class="tiny" style="margin:6px 0 0">L\'identifiant, l\'ordre, le type de support et les règles de déblocage ne se modifient pas ici : ils portent la progression des participants.</p></div>';
+
+    // Textes
+    h += '<div class="card"><div class="eyebrow">Textes</div>' +
+      edInput('Titre de la mission', 'title', d.title, { max: 120 }) +
+      edInput('Action concrète', 'action', d.action, { max: 300, rows: 2 }) +
+      edInput('Sujets (court texte sous « La notion »)', 'description', d.description, { max: 2000, rows: 2 }) +
+      edInput('Contenu pédagogique et explications', 'body', d.body, { max: 20000, rows: 10, ph: 'Le texte de la notion. Les retours à la ligne sont conservés.' }) +
+      edInput('Consignes', 'instructions', d.instructions, { max: 5000, rows: 4, ph: 'Facultatif : comment réaliser l\'action, étape par étape.' }) +
+      edCheck('Afficher la mention de prudence (santé, mineurs)', 'caution', d.caution) + '</div>';
+
+    // Vidéo
+    var emb = d.video ? videoEmbed(d.video, d.videoTitle, null) : null;
+    h += '<div class="card"><div class="eyebrow">Vidéo</div>' +
+      edInput('Titre de la vidéo', 'videoTitle', d.videoTitle, { max: 160 }) +
+      edInput('Lien YouTube', 'video', d.video, { type: 'url', ph: 'https://www.youtube.com/watch?v=…', hint: videoHint(d.video), hintId: 'vidHint' }) +
+      '<div id="vidPrev" style="margin-top:10px">' + (emb ? '<div class="video">' + emb + '</div>' : '') + '</div></div>';
+
+    // Durée
+    if (orig.durationDays) {
+      h += '<div class="card"><div class="eyebrow">Pratique sur plusieurs jours</div>' +
+        edInput('Nombre de jours', 'durationDays', d.durationDays, { type: 'number', kind: 'int' }) +
+        edCheck('Jours consécutifs (une absence remet le compteur à zéro)', 'consecutive', d.consecutive) +
+        edInput('Libellé du bouton du jour', 'dailyLabel', d.dailyLabel || '', { max: 120, ph: 'Valider ma journée' }) + '</div>';
+    }
+
+    // Support
+    var supPath = boss ? 'challenge' : 'support', sup = getPath(d, supPath);
+    if (sup && sup.type !== 'undefined') h += supportEditor(sup, supPath, boss);
+    else h += '<div class="notice warn">Support à définir : il se choisit dans program.json (checklist, fiche ou quiz).</div>';
+    if (boss && !d.final) h += quizEditor(d.quiz.questions, 'quiz.questions', true, true);
+
+    h += '</div>';
+    h += '<div class="editor-actions"><button class="btn primary" data-act="edSave">Enregistrer le brouillon</button>' +
+      '<button class="btn" data-act="edPreview">Aperçu</button>' +
+      '<button class="btn ghost sm" data-act="edRevert">Revenir au contenu d\'origine</button></div>';
+    return h;
+  }
+
+  function supportEditor(sup, path, boss) {
+    var h = '<div class="card"><div class="eyebrow">' + (boss ? 'Défi pratique · ' : 'Support · ') + esc(sup.type) + (sup.daily ? ' (une coche par jour)' : '') + '</div>';
+    if (sup.type === 'checklist') {
+      sup.items.forEach(function (it, i) {
+        var p = path + '.items.' + i;
+        h += '<div class="ed-block"><div class="row" style="justify-content:space-between"><b class="small">Élément ' + (i + 1) + '</b>' +
+          (sup.items.length > 1 ? '<button class="linkbtn small" data-act="edDel" data-path="' + attr(path + '.items') + '" data-idx="' + i + '">Supprimer</button>' : '') + '</div>' +
+          edInput('Intitulé', p + '.label', it.label, { max: 300 }) +
+          edInput('Choix proposés (séparés par des virgules, sinon simple case à cocher)', p + '.choices', (it.choices || []).join(', '), { kind: 'list' }) +
+          (sup.daily ? edCheck('Proposer une note du jour', p + '.note', it.note) : '') +
+          edCheck('Intitulé encore provisoire (badge « à compléter »)', p + '.pending', it.pending) + '</div>';
+      });
+      h += '<button class="btn sm" data-act="edAdd" data-path="' + attr(path + '.items') + '" data-kind="item">+ Ajouter un élément</button>';
+    } else if (sup.type === 'fiche') {
+      sup.fields.forEach(function (f, i) {
+        var p = path + '.fields.' + i;
+        h += '<div class="ed-block"><div class="row" style="justify-content:space-between"><b class="small">Champ ' + (i + 1) + (f.type === 'recall' ? ' · rappel des réponses précédentes' : '') + '</b>' +
+          (sup.fields.length > 1 ? '<button class="linkbtn small" data-act="edDel" data-path="' + attr(path + '.fields') + '" data-idx="' + i + '">Supprimer</button>' : '') + '</div>' +
+          edInput('Question / intitulé', p + '.label', f.label, { max: 300 });
+        if (f.type !== 'recall') {
+          h += edInput('Type de réponse', p + '.type', f.type, { select: [['textarea', 'Texte long'], ['text', 'Texte court'], ['number', 'Nombre'], ['date', 'Date'], ['check', 'Case à cocher'], ['scale', 'Note de 1 à 10']] }) +
+            edInput('Texte d\'aide dans le champ', p + '.placeholder', f.placeholder || '', { max: 200 }) +
+            edCheck('Réponse obligatoire pour valider', p + '.required', f.required) +
+            edCheck('Intitulé encore provisoire (badge « à compléter »)', p + '.pending', f.pending);
+        }
+        h += '</div>';
+      });
+      h += '<button class="btn sm" data-act="edAdd" data-path="' + attr(path + '.fields') + '" data-kind="field">+ Ajouter un champ</button>';
+    } else if (sup.type === 'quiz') {
+      return h + '</div>' + quizEditor(sup.questions, path + '.questions', !!sup.scored, false);
+    }
+    return h + '</div>';
+  }
+
+  function quizEditor(qs, path, scored, fixed) {
+    var keys = APP.edit.keys;
+    var h = '<div class="card"><div class="eyebrow">' + (fixed ? 'Les 5 questions du boss' : 'Questions du quiz') + '</div>' +
+      '<p class="tiny" style="margin:4px 0 0">' + (scored ? 'Coche la bonne réponse de chaque question. Les réponses restent sur le serveur, jamais dans l\'application.' : 'Quiz de diagnostic : aucune bonne réponse.') +
+      ' Une question vide reste affichée « à rédiger » et bloque la validation.</p>';
+    qs.forEach(function (q, i) {
+      var p = path + '.' + i;
+      h += '<div class="ed-block"><div class="row" style="justify-content:space-between"><b class="small">Question ' + (i + 1) + (AMContent.questionWritten(q) ? ' ✓' : ' · à rédiger') + '</b>' +
+        (!fixed && qs.length > 1 ? '<button class="linkbtn small" data-act="edDel" data-path="' + attr(path) + '" data-idx="' + i + '">Supprimer</button>' : '') + '</div>' +
+        edInput('Énoncé', p + '.q', q.q, { rows: 2, max: 600 });
+      q.options.forEach(function (o, oi) {
+        h += '<div class="row" style="margin-top:8px;gap:8px">' +
+          (scored ? '<input type="radio" name="key_' + attr(q.id) + '" aria-label="Bonne réponse" title="Bonne réponse" data-act="edKey" data-q="' + attr(q.id) + '" data-o="' + oi + '"' + (keys[q.id] === oi ? ' checked' : '') + ' style="width:22px;height:22px;flex:none">' : '') +
+          '<input class="input grow" data-ed="' + attr(p + '.options.' + oi) + '" value="' + attr(o) + '" maxlength="300" placeholder="Réponse ' + String.fromCharCode(65 + oi) + '" aria-label="Réponse ' + String.fromCharCode(65 + oi) + '">' +
+          (q.options.length > 2 ? '<button class="btn sm ghost" style="min-height:40px;padding:6px 10px" aria-label="Supprimer cette réponse" data-act="edDelOpt" data-path="' + attr(p) + '" data-idx="' + oi + '">✕</button>' : '') + '</div>';
+      });
+      if (q.options.length < 6) h += '<button class="linkbtn small" data-act="edAdd" data-path="' + attr(p + '.options') + '" data-kind="option">+ Ajouter une réponse</button>';
+      if (scored && AMContent.questionWritten(q) && typeof keys[q.id] !== 'number') h += '<div class="tiny" style="color:var(--warn)">Bonne réponse à cocher.</div>';
+      h += edInput('Explication affichée après la réponse (facultatif)', p + '.explain', q.explain || '', { rows: 2, max: 1500 }) + '</div>';
+    });
+    if (!fixed) h += '<button class="btn sm" data-act="edAdd" data-path="' + attr(path) + '" data-kind="question">+ Ajouter une question</button>';
+    return h + '</div>';
+  }
+
+  function viewArenaEditor(id) {
+    var prog = draftProgram(), a = null, habit = null;
+    prog.arenas.forEach(function (x) { if (x.id === id) a = x; });
+    if (!a) return notFound();
+    (prog.habits || []).forEach(function (x) { if (x.arena === id) habit = x; });
+    if (!APP.edit || APP.edit.id !== 'arena:' + id) APP.edit = { id: 'arena:' + id, data: { arena: JSON.parse(JSON.stringify(a)), habit: habit ? JSON.parse(JSON.stringify(habit)) : null }, dirty: false };
+    var d = APP.edit.data;
+    var h = '<div class="crumb"><a href="#/admin">Admin</a> › <a href="#/contenu">Contenu</a> › ' + esc(a.label) + '</div><h1 class="h-display" style="margin-top:6px">' + esc(a.label) + '</h1>';
+    h += '<div id="edDirty" class="notice warn" style="margin-top:10px;' + (APP.edit.dirty ? '' : 'display:none') + '">Modifications non enregistrées.</div>';
+    h += '<div class="card stack" style="margin-top:12px"><div class="eyebrow">L\'arène</div>' +
+      edInput('Nom', 'arena.name', d.arena.name, { max: 400 }) + edInput('Thème', 'arena.theme', d.arena.theme, { max: 400 }) +
+      edInput('Le blocage', 'arena.blocage', d.arena.blocage, { max: 400 }) + edInput('Objectif', 'arena.objectif', d.arena.objectif, { rows: 2, max: 400 }) +
+      edInput('Livrable', 'arena.livrable', d.arena.livrable, { rows: 2, max: 400 }) + '</div>';
+    if (d.habit) h += '<div class="card stack" style="margin-top:12px"><div class="eyebrow">L\'habitude qui reste</div>' +
+      edInput('Habitude', 'habit.title', d.habit.title, { max: 120 }) + edInput('Fréquence (texte affiché)', 'habit.frequency', d.habit.frequency, { max: 60 }) + '</div>';
+    h += '<div class="editor-actions"><button class="btn primary" data-act="edSaveArena">Enregistrer le brouillon</button></div>';
+    return h;
+  }
+
+  function saveEdit() {
+    var e = APP.edit;
+    if (!e) return Promise.resolve();
+    var p;
+    if (e.id.indexOf('arena:') === 0) {
+      var aid = e.id.slice(6);
+      p = APP.store.contentCall('saveArena', { id: aid, data: e.data.arena }).then(function () {
+        return e.data.habit ? APP.store.contentCall('saveHabit', { id: e.data.habit.id, data: e.data.habit }) : null;
+      });
+    } else {
+      p = APP.store.contentCall('saveMission', { id: e.id, data: e.data, keys: e.keys });
+    }
+    return p.then(function () { e.dirty = false; return loadContentAdmin(); });
+  }
+
+  // Aperçu : la page mission telle que la verront les participants, avec le brouillon.
+  function viewPreview(id) {
+    var g = contentGuard(); if (g) return g;
+    var eng = AMEngine.createEngine(draftProgram(), { assumeKeys: true });
+    var m; try { m = eng.mission(id); } catch (e) { return notFound(); }
+    var now = APP.store.now();
+    var saved = { engine: APP.engine, view: APP.view, session: APP.session };
+    var fresh = eng.newState(now, 0);
+    var item = { id: id, status: 'open', checks: eng.checks(fresh, id, now), canValidate: false };
+    if (m.durationDays) item.run = { required: m.durationDays, current: 0, done: false, todayDone: false, broken: false };
+    if (m.kind === 'boss' && !m.final) { item.quizReady = eng.bossQuizReady(m); item.retryAt = null; }
+    APP.engine = eng;
+    APP.session = Object.assign({}, saved.session, { state: fresh });
+    APP.view = eng.view(fresh, now);
+    APP.view.items[id] = item;
+    var body;
+    try {
+      body = '<div class="notice warn" style="margin-bottom:12px"><b>Aperçu du brouillon</b> — ce que verra le participant. Les boutons sont inactifs. <a href="#/contenu/' + encodeURIComponent(id) + '">Retour à l\'éditeur</a></div>' + viewMission(id, true);
+    } finally {
+      APP.engine = saved.engine; APP.view = saved.view; APP.session = saved.session;
+    }
+    return body;
+  }
+
+  // Saisie dans l'éditeur : mise à jour du modèle sans re-rendu (le focus reste)
+  document.addEventListener('input', function (e) { edInputHandler(e.target); });
+  document.addEventListener('change', function (e) { if (e.target.dataset && e.target.dataset.ed && (e.target.type === 'checkbox' || e.target.tagName === 'SELECT')) edInputHandler(e.target, true); });
+  function edInputHandler(t, rerender) {
+    if (!t.dataset || !t.dataset.ed || !APP.edit) return;
+    var k = t.dataset.edKind, v = t.value;
+    if (t.type === 'checkbox') v = t.checked;
+    else if (k === 'int') v = parseInt(v, 10) || 0;
+    else if (k === 'list') v = v.split(',').map(function (x) { return x.trim(); }).filter(Boolean);
+    setPath(APP.edit.data, t.dataset.ed, v);
+    if (/\.pending$/.test(t.dataset.ed) === false && /\.label$/.test(t.dataset.ed) && APP.edit.data) { /* le badge provisoire se retire à la main */ }
+    APP.edit.dirty = true;
+    var dz = document.getElementById('edDirty'); if (dz) dz.style.display = '';
+    if (t.dataset.ed === 'video') {
+      var hint = document.getElementById('vidHint'); if (hint) hint.innerHTML = videoHint(v);
+      var pv = document.getElementById('vidPrev'), emb = AMContent.checkVideoUrl(v).ok && v ? videoEmbed(v, APP.edit.data.videoTitle, null) : null;
+      if (pv) pv.innerHTML = emb ? '<div class="video">' + emb + '</div>' : '';
+    }
+    if (rerender) render();
   }
 
   function notFound() { return '<div class="notice warn">Page introuvable. <a href="#/">Retour à l\'accueil</a></div>'; }
@@ -969,6 +1329,11 @@
       APP.store.reset(); APP.quizSel = {}; APP.quizRes = {}; APP.pending = {};
       return startDemo(true).then(function () { go('#/debut'); });
     },
+    demoResetContent: function () {
+      if (!confirm('Effacer le contenu édité dans la démo (retour au contenu d\'origine) ?')) return;
+      APP.store.resetContent(); APP.contentData = null; APP.edit = null;
+      return reloadContent().then(function () { toast('Contenu de démo remis à l\'origine.'); refresh(); });
+    },
     check: function (d) {
       var cur = (rec(d.id).support || {})[d.item] === true;
       var data = {}; data[d.item] = !cur;
@@ -1017,6 +1382,47 @@
         render();
         var el = document.querySelector('#mfoot'); if (el && !r.result.won) el.scrollIntoView({ behavior: 'smooth' });
       }).catch(function () { render(); });
+    },
+    edAdd: function (d) {
+      var list = getPath(APP.edit.data, d.path);
+      if (d.kind === 'item') list.push({ id: newId('i'), label: '' });
+      else if (d.kind === 'field') list.push({ id: newId('f'), label: '', type: 'textarea', required: true });
+      else if (d.kind === 'question') list.push({ id: newId('q'), q: '', options: ['', '', ''], explain: '' });
+      else if (d.kind === 'option') list.push('');
+      APP.edit.dirty = true; render();
+    },
+    edDel: function (d) {
+      var list = getPath(APP.edit.data, d.path), gone = list[Number(d.idx)];
+      if (gone && (gone.label || gone.q) && !confirm('Supprimer cet élément ? Les réponses déjà données par les participants ne seront plus affichées.')) return;
+      list.splice(Number(d.idx), 1);
+      if (gone && gone.q !== undefined) delete APP.edit.keys[gone.id];
+      APP.edit.dirty = true; render();
+    },
+    edDelOpt: function (d) {
+      var q = getPath(APP.edit.data, d.path), i = Number(d.idx), k = APP.edit.keys[q.id];
+      q.options.splice(i, 1);
+      if (k === i) delete APP.edit.keys[q.id]; else if (typeof k === 'number' && k > i) APP.edit.keys[q.id] = k - 1;
+      APP.edit.dirty = true; render();
+    },
+    edKey: function (d) { APP.edit.keys[d.q] = Number(d.o); APP.edit.dirty = true; var dz = document.getElementById('edDirty'); if (dz) dz.style.display = ''; },
+    edSave: function () { return saveEdit().then(function () { toast('Brouillon enregistré. Publie pour le mettre en ligne.'); }).catch(function (e) { toast(e.message, true); }); },
+    edSaveArena: function () { return HANDLERS.edSave(); },
+    edPreview: function () { return saveEdit().then(function () { go('#/apercu/' + encodeURIComponent(APP.edit.id)); }).catch(function (e) { toast(e.message, true); }); },
+    edRevert: function () {
+      if (!confirm('Revenir au contenu d\'origine pour cette mission ? Les modifications du brouillon seront perdues.')) return;
+      var id = APP.edit.id;
+      return APP.store.contentCall('revertMission', { id: id }).then(function () { APP.edit = null; return loadContentAdmin(); }).then(function () { toast('Mission remise au contenu d\'origine (brouillon).'); });
+    },
+    cPublish: function () {
+      if (!confirm('Publier le contenu ? Les participants verront ces changements dès leur prochaine ouverture de l\'application.')) return;
+      return APP.store.contentCall('publish').then(function (r) {
+        APP.contentData = null; APP.edit = null;
+        return reloadContent().then(function () { toast('Contenu publié (version ' + r.version + ').'); refresh(); });
+      }).catch(function (e) { toast(e.message, true); });
+    },
+    cDiscard: function () {
+      if (!confirm('Annuler toutes les modifications non publiées ?')) return;
+      return APP.store.contentCall('discard').then(function () { APP.contentData = null; APP.edit = null; render(); });
     },
     habit: function (d) { return act({ type: 'habit', id: d.id, value: d.val }); },
     saveName: function () { var v = document.getElementById('pName').value; return act({ type: 'profile', name: v }).then(function () { toast('Prénom enregistré.'); }); },
@@ -1070,7 +1476,16 @@
     busy(function () { return p.then(startRemote).catch(function (err) { toast(authMsg(err), true); }); });
   });
 
-  window.addEventListener('hashchange', function () { if (route().name === 'admin') APP.adminData = null; render(); });
+  window.addEventListener('hashchange', function () {
+    var r = route();
+    if (r.name === 'admin') APP.adminData = null;
+    // Quitter l'éditeur avec des changements : on les garde dans le brouillon (jamais publiés sans clic).
+    if (APP.edit && APP.edit.dirty && !(r.name === 'contenu' && (r.arg === APP.edit.id || 'arena:' + r.arg2 === APP.edit.id))) {
+      saveEdit().then(function () { toast('Modifications gardées dans le brouillon.'); }).catch(function (e) { toast(e.message, true); });
+    }
+    if (APP.edit && !APP.edit.dirty && r.name !== 'contenu') APP.edit = null;
+    render();
+  });
   window.addEventListener('beforeinstallprompt', function (e) { e.preventDefault(); APP.installEvt = e; });
   // Les comptes à rebours se rafraîchissent chaque minute (sans toucher aux saisies)
   setInterval(function () {

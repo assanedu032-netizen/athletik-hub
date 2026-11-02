@@ -239,7 +239,7 @@ t('le boss s\'ouvre quand toutes les missions de l\'arène sont validées (+24 h
 t('boss : 4/5 gagne, débloque l\'arène suivante', () => {
   let { st, now } = reach('boss-a1');
   st = fillSupport(eng, st, 'boss-a1', now);
-  const r = eng.apply(st, { type: 'boss', id: 'boss-a1', answers: { dq1: 1, dq2: 1, dq3: 1, dq4: 1, dq5: 0 } }, now);
+  const r = eng.apply(st, { type: 'boss', id: 'boss-a1', answers: { q1: 1, q2: 1, q3: 1, q4: 1, q5: 0 } }, now);
   assert.strictEqual(r.result.won, true);
   assert.strictEqual(r.result.score, 4);
   assert.ok(r.state.rewards.some(x => x.id === 'badge-a1'));
@@ -249,21 +249,21 @@ t('boss : 4/5 gagne, débloque l\'arène suivante', () => {
 t('boss : 3/5 perd ; nouvel essai le lendemain seulement, sans pénalité', () => {
   let { st, now } = reach('boss-a1');
   st = fillSupport(eng, st, 'boss-a1', now);
-  const bad = { dq1: 1, dq2: 1, dq3: 1, dq4: 0, dq5: 0 };
+  const bad = { q1: 1, q2: 1, q3: 1, q4: 0, q5: 0 };
   const r = eng.apply(st, { type: 'boss', id: 'boss-a1', answers: bad }, now);
   assert.strictEqual(r.result.won, false);
   assert.ok(r.result.retryAt > now);
   assert.strictEqual(eng.status(r.state, 'm2.1', now + 3 * D), 'locked');
   throwsCode(() => eng.apply(r.state, { type: 'boss', id: 'boss-a1', answers: bad }, now + H), 'retry_tomorrow');
   const next = r.result.retryAt;
-  const r2 = eng.apply(r.state, { type: 'boss', id: 'boss-a1', answers: { dq1: 1, dq2: 1, dq3: 1, dq4: 1, dq5: 1 } }, next);
+  const r2 = eng.apply(r.state, { type: 'boss', id: 'boss-a1', answers: { q1: 1, q2: 1, q3: 1, q4: 1, q5: 1 } }, next);
   assert.strictEqual(r2.result.won, true);
   assert.strictEqual(r2.state.missions['boss-a1'].support.priority, 'texte', 'défi conservé');
 });
 
 t('boss : défi pratique non validé → pas d\'essai consommé', () => {
   const { st, now } = reach('boss-a2');
-  throwsCode(() => eng.apply(st, { type: 'boss', id: 'boss-a2', answers: { dq1: 1, dq2: 1, dq3: 1, dq4: 1, dq5: 1 } }, now), 'challenge_incomplete');
+  throwsCode(() => eng.apply(st, { type: 'boss', id: 'boss-a2', answers: { q1: 1, q2: 1, q3: 1, q4: 1, q5: 1 } }, now), 'challenge_incomplete');
 });
 
 t('boss : on ne peut pas le « valider » sans les questions', () => {
@@ -273,7 +273,7 @@ t('boss : on ne peut pas le « valider » sans les questions', () => {
 
 t('boss sur plusieurs jours (semaine parfaite) : quiz refusé avant 7 jours', () => {
   let { st, now } = reach('boss-a3');
-  const all = { dq1: 1, dq2: 1, dq3: 1, dq4: 1, dq5: 1 };
+  const all = { q1: 1, q2: 1, q3: 1, q4: 1, q5: 1 };
   st = run(eng, st, { type: 'checkin', id: 'boss-a3', items: { day: true } }, now);
   throwsCode(() => eng.apply(st, { type: 'boss', id: 'boss-a3', answers: all }, now), 'challenge_incomplete');
 });

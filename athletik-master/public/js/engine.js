@@ -48,6 +48,14 @@
 
   function clone(o) { return JSON.parse(JSON.stringify(o)); }
 
+  // Une question est jouable quand son texte et toutes ses options sont rédigés.
+  // Un emplacement vide (q:'') reste visible comme « à rédiger » mais bloque le quiz.
+  function written(q) {
+    return !!(q && typeof q.q === 'string' && q.q.trim() && Array.isArray(q.options) &&
+      q.options.length >= 2 && q.options.every(function (o) { return typeof o === 'string' && o.trim(); }));
+  }
+  function allWritten(qs) { return !!(qs && qs.length && qs.every(written)); }
+
   function EngineError(code, message) {
     var e = new Error(message || code);
     e.code = code;
@@ -209,7 +217,7 @@
         return { ok: okF, label: 'Fiche remplie' };
       }
       if (sup.type === 'quiz') {
-        if (!sup.questions || !sup.questions.length) return { ok: false, label: 'Questions du quiz à ajouter', contentMissing: true };
+        if (!allWritten(sup.questions)) return { ok: false, label: 'Questions du quiz à rédiger', contentMissing: true };
         return { ok: !!(r.quiz && r.quiz.submittedAt), label: 'Quiz terminé' };
       }
       return { ok: false, label: 'Support inconnu', contentMissing: true };
@@ -246,7 +254,7 @@
 
     function bossQuizReady(m) {
       var q = (m.quiz && m.quiz.questions) || [];
-      if (q.length !== bossCount) return false;
+      if (q.length !== bossCount || !allWritten(q)) return false;
       // Côté navigateur en production, les réponses restent sur le serveur :
       // on ne peut vérifier que la présence des questions.
       if (opts.assumeKeys) return true;
@@ -458,7 +466,7 @@
           m = mission(action.id);
           sup = m.support;
           if (m.kind === 'boss' || !sup || sup.type !== 'quiz') throw EngineError('bad_action', 'Pas de quiz ici.');
-          if (!sup.questions || !sup.questions.length) throw EngineError('content_missing', 'Les questions de ce quiz ne sont pas encore ajoutées.');
+          if (!allWritten(sup.questions)) throw EngineError('content_missing', 'Les questions de ce quiz ne sont pas encore rédigées.');
           requireAccessible(state, m.id, now, true);
           var ans = cleanAnswers(sup.questions, action.answers);
           if (Object.keys(ans).length !== sup.questions.length) throw EngineError('incomplete', 'Réponds à toutes les questions.');
@@ -490,7 +498,7 @@
           requireAccessible(state, m.id, now, false);
           if (bossRetryAt(state, m, now)) throw EngineError('retry_tomorrow', 'Nouvel essai possible demain, sans pénalité.');
           if (!allOk(checks(state, m.id, now))) throw EngineError('challenge_incomplete', 'Termine d\'abord le défi pratique.');
-          if (!bossQuizReady(m)) throw EngineError('content_missing', 'Les 5 questions de ce boss ne sont pas encore ajoutées.');
+          if (!bossQuizReady(m)) throw EngineError('content_missing', 'Les 5 questions de ce boss ne sont pas encore rédigées.');
           var bans = cleanAnswers(m.quiz.questions, action.answers);
           if (Object.keys(bans).length !== bossCount) throw EngineError('incomplete', 'Réponds aux ' + bossCount + ' questions.');
           var bs = scoreQuiz(m.id, m.quiz.questions, bans);
@@ -647,7 +655,8 @@
       apply: apply,
       view: view,
       habitStreak: habitStreak,
-      bossQuizReady: bossQuizReady
+      bossQuizReady: bossQuizReady,
+      questionWritten: written
     };
   }
 

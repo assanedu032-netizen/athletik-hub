@@ -48,8 +48,8 @@ async function t(name, fn) {
     await p.click('[data-act=startProgram]');
     await p.waitForTimeout(100);
     assert.ok((await p.evaluate(() => location.hash)).includes('m0.1'));
-    assert.ok(await p.$('.video.empty'), 'emplacement « Vidéo à ajouter »');
-    assert.ok((await p.textContent('main')).includes('Contenu pédagogique à compléter'));
+    assert.ok(await p.$('.video.empty'), 'emplacement vidéo'); assert.ok((await p.textContent('.video.empty')).includes('Vidéo bientôt disponible')); assert.ok((await p.textContent('.video-title')).includes('Bienvenue dans Athletik Master'), 'titre de la vidéo');
+    assert.ok((await p.textContent('main')).includes('Contenu pédagogique bientôt disponible'));
     await noOverflow();
   });
 

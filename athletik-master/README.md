@@ -64,13 +64,15 @@ athletik-master/
 │  ├─ content/program.json    ← LE CONTENU (arènes, missions, habitudes, récompenses)
 │  ├─ js/engine.js            ← règles du jeu (pur, partagé navigateur / serveur / tests)
 │  ├─ js/access.js            ← paiements, kit, rôles, J30/J60 (pur, partagé)
+│  ├─ js/content-tools.js     ← surcouches de contenu, liens vidéo (pur, partagé)
 │  ├─ js/demo.js              ← pack démo (quiz [DÉMO], participants fictifs)
 │  ├─ js/store.js             ← DemoStore (local) / RemoteStore (Firebase + API)
 │  ├─ js/app.js               ← interface (routeur, vues, composants génériques)
 │  └─ js/config.js            ← config publique (Firebase web, WhatsApp, URLs)
 ├─ netlify/functions/
 │  ├─ master-api.js           ← toutes les actions du participant
-│  ├─ master-admin.js         ← espace admin
+│  ├─ master-admin.js         ← espace admin (participants)
+│  ├─ master-content.js       ← éditeur de contenu (brouillon / publication)
 │  └─ systemeio-webhook.js    ← preuve de paiement
 ├─ server-data/quiz-keys.json ← dev local uniquement (voir § 4)
 └─ tests/
@@ -110,26 +112,64 @@ premier paiement **et** pas de remboursement. Le participant ne voit qu'un
 
 ## 4. Compléter le contenu (sans toucher au code)
 
-Tout est dans `public/content/program.json`. Pour chaque mission :
+### L'éditeur : Profil → Gérer le contenu (`#/contenu`, admin uniquement)
 
-| Champ | Effet |
+- **Tableau de bord** : les 51 missions par arène, avec ce qui manque pour chacune
+  (🎬 vidéo, 📝 contenu, ❓ questions rédigées / bonnes réponses, intitulés provisoires)
+  et des compteurs globaux.
+- **Fiche d'une mission** :
+  - titre de la mission ;
+  - titre de la vidéo + **lien YouTube** (vérifié pendant la saisie, aperçu intégré) ;
+  - sujets ;
+  - contenu pédagogique ;
+  - consignes ;
+  - action concrète ;
+  - mention de prudence ;
+  - durée pour les missions sur plusieurs jours ;
+  - le support : éléments de checklist (avec choix), champs de fiche (type, obligatoire,
+    texte d'aide), questions de quiz (énoncé, réponses, **bonne réponse**, explication).
+- **Arènes et habitudes** : nom, thème, blocage, objectif, livrable, intitulé et fréquence
+  de l'habitude.
+- **Enregistrer le brouillon → Aperçu → Publier.** Le brouillon n'est jamais visible des
+  participants. *Publier* met tout en ligne d'un coup : **aucun redéploiement**. Chaque
+  version publiée est archivée (`masterContent/v<n>`). *Annuler le brouillon* et
+  *Revenir au contenu d'origine* permettent de revenir en arrière.
+- **Ce que l'éditeur ne change pas**, volontairement : l'identifiant, l'ordre, l'arène,
+  le type de support et les règles de déblocage d'une mission. Ce sont eux qui portent la
+  progression des participants. Les identifiants des éléments existants sont conservés,
+  pour que les réponses déjà données restent rattachées.
+- **En démo**, l'éditeur fonctionne de la même façon, avec un stockage sur l'appareil.
+
+### Les emplacements livrés
+
+Chaque mission a déjà tous ses champs : `videoTitle` (le titre de la mission par
+défaut), `video`, `body`, `instructions`, `action` et le support. Chaque quiz a ses
+emplacements de questions : **5 par boss**, 3 par quiz de mission (on peut en ajouter ou
+en retirer).
+
+**Rien n'est inventé.** Quand un emplacement est vide, l'app affiche
+« Vidéo bientôt disponible », « Contenu pédagogique bientôt disponible »,
+« Question n — à rédiger » ou « intitulé à compléter ». Un quiz ou un boss dont les
+questions ne sont pas rédigées **ne peut pas être validé** : il le devient dès la
+publication des questions et de leurs réponses.
+
+### Où vivent les données
+
+| Quoi | Où |
 | --- | --- |
-| `video` | URL YouTube, Vimeo ou fichier `.mp4`. Vide → « Vidéo à ajouter ». Dès qu'une URL existe, la vidéo devient une condition de validation (un `.mp4` se coche tout seul à la fin ; YouTube/Vimeo via « J'ai regardé la vidéo »). |
-| `body` | Texte de la notion. Vide → « Contenu pédagogique à compléter ». |
-| `support` / `challenge` | `checklist` (`items`), `fiche` (`fields` : `text`, `textarea`, `number`, `date`, `check`, `scale`, `recall`) ou `quiz` (`questions`). |
-| `durationDays`, `consecutive` | Mission sur plusieurs jours (une coche par jour). |
-| `unlockDelayHours` | Délai de déblocage (24 h par défaut, 0 au niveau 0). |
-| `draft: true` | Mission visible sur la carte mais hors parcours (cas de 7.x). |
-| `_todo` | Ce qui manque encore (ignoré par l'app). |
+| Contenu de base | `public/content/program.json` (livré avec l'app) |
+| Modifications publiées | Firestore `masterContent/published` (surcouche, lue par tous) |
+| Brouillon | Firestore `masterContent/draft` |
+| **Bonnes réponses** | Firestore `masterConfig/quizKeys` (**serveur uniquement**) |
 
-Format d'une question : `{ "id": "q1", "q": "Texte ?", "options": ["A", "B", "C"] }`.
-Un boss a besoin de **exactement 5** questions.
+Les bonnes réponses ne vont jamais dans `program.json` ni dans le dépôt : le site
+Athletik Hub publie tout le dépôt (`publish = "."`), un fichier commité serait donc
+lisible en ligne. Après une publication, les serveurs prennent le nouveau contenu en
+**une minute au plus**.
 
-**Les bonnes réponses ne vont jamais dans `program.json`** (fichier public), ni dans
-le dépôt : le site Athletik Hub publie tout le dépôt (`publish = "."`), un fichier
-commité serait lisible en ligne. Elles vont dans **Firestore → `masterConfig/quizKeys`** :
-`{ "boss-a1": { "q1": 2, "q2": 0, … }, "m6.2": { … } }` (index de la bonne option,
-0 = la première). Rechargé par le serveur toutes les 5 minutes.
+On peut toujours éditer `program.json` à la main (pour ajouter une mission, par
+exemple). Les surcouches s'appliquent par-dessus, et une mission ajoutée dans le fichier
+apparaît automatiquement.
 
 ## 5. Ce qui fonctionne
 
@@ -151,8 +191,10 @@ début/fin, accès manuel) · webhook Systeme.io · PWA installable et hors lign
 ```bash
 node tests/test-engine.js      # 39 — règles du jeu
 node tests/test-access.js      # 13 — paiements, kit, rôles, webhook, J30/J60
-node tests/test-functions.js   # 16 — fonctions serveur contre un Firebase simulé
+node tests/test-content.js     # 11 — surcouches de l'éditeur, liens vidéo, protections
+node tests/test-functions.js   # 21 — fonctions serveur contre un Firebase simulé
 node tests/test-ui.js          # 14 — parcours réel dans Chromium (375 et 320 px)
+node tests/test-editor.js      # 12 — éditeur : brouillon, aperçu, publication, YouTube
 ```
 
 ## 6. En attente (rien n'est simulé comme « fonctionnel »)
@@ -164,7 +206,7 @@ node tests/test-ui.js          # 14 — parcours réel dans Chromium (375 et 320
 | **Habitudes dans Athletik Hub** | Le déblocage est enregistré côté Master (`masterParticipants/{uid}.state.habits`). Le suivi quotidien tourne **provisoirement dans Master** (écran « Mes habitudes du jour », signalé comme tel). | Côté Hub (non modifié) : lire les habitudes débloquées via une petite fonction serveur, les afficher dans « Mes habitudes du jour » et écrire les coches au même format `{ "AAAA-MM-JJ": "yes"|"no"|"skip" }`. |
 | **Hub Standard / mois Premium** | Calculés et affichés côté Master ; le mois Premium est enregistré avec `status: 'pending_hub_integration'`. | Le Hub ne les lit pas encore (son accès repose sur l'essai 3 jours + livre/codes). Il faudra que `hasValidAccess()` du Hub reconnaisse un achat Master — changement du Hub à valider. |
 | **Lien WhatsApp** | Bouton affiché « Lien WhatsApp à configurer ». | `whatsappNumber` dans `config.js`. |
-| **Vidéos, textes, questions** | Emplacements clairement marqués. | Remplir `program.json` + `masterConfig/quizKeys`. |
+| **Vidéos, textes, questions** | Tous les emplacements existent et sont clairement marqués. | Les remplir dans l'éditeur (Profil → Gérer le contenu), puis Publier. |
 
 ## 7. Décisions provisoires à valider
 

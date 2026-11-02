@@ -18,12 +18,39 @@
   function tz() { return -new Date().getTimezoneOffset(); }
 
   // ─── Démo ─────────────────────────────────────────────────────────────────
-  function DemoStore(program) {
-    var pack = AMDemo.withDemoQuizzes(program);
+  // Le contenu de la démo suit le même circuit que la production (brouillon →
+  // publication), mais stocké sur l'appareil (clé am_demo_content).
+  var DEMO_CONTENT_KEY = 'am_demo_content';
+  function DemoStore(base) {
     this.demo = true;
-    this.engine = AMEngine.createEngine(pack.content, { quizKeys: pack.quizKeys });
+    this.base = base;
+    this.content = lsGet(DEMO_CONTENT_KEY) || { published: { ov: null, keys: {}, version: 0 }, draft: null };
     this.data = lsGet(DEMO_KEY);
+    this.rebuild();
   }
+  DemoStore.prototype.rebuild = function () {
+    var pub = this.content.published;
+    this.program = AMContent.merge(this.base, pub.ov);
+    var pack = AMDemo.withDemoQuizzes(this.program, pub.keys);
+    this.engine = AMEngine.createEngine(pack.content, { quizKeys: pack.quizKeys });
+  };
+  DemoStore.prototype.contentCall = function (action, payload) {
+    var c = this.content, self = this;
+    var draft = c.draft || { ov: c.published.ov || AMContent.emptyOverrides(), keys: c.published.keys || {} };
+    return new Promise(function (resolve) {
+      if (action === 'get') return resolve({ published: c.published, draft: draft });
+      if (action === 'publish') {
+        c.published = { ov: draft.ov, keys: draft.keys, version: (c.published.version || 0) + 1, publishedAt: Date.now() };
+        c.draft = null;
+        lsSet(DEMO_CONTENT_KEY, c); self.rebuild();
+        return resolve({ ok: true, version: c.published.version });
+      }
+      if (action === 'discard') { c.draft = null; lsSet(DEMO_CONTENT_KEY, c); return resolve({ ok: true }); }
+      c.draft = AMContent.draftOp(self.base, draft, Object.assign({ action: action }, payload)); // lève si invalide
+      lsSet(DEMO_CONTENT_KEY, c);
+      resolve({ ok: true, draft: c.draft });
+    });
+  };
   DemoStore.prototype.now = function () { return Date.now() + ((this.data && this.data.offset) || 0); };
   DemoStore.prototype.save = function () { lsSet(DEMO_KEY, this.data); };
   DemoStore.prototype.start = function (name) {
@@ -65,6 +92,11 @@
   // Outils de démo uniquement
   DemoStore.prototype.travel = function (ms) { this.data.offset = (this.data.offset || 0) + ms; this.save(); };
   DemoStore.prototype.reset = function () { try { localStorage.removeItem(DEMO_KEY); } catch (e) {} this.data = null; };
+  DemoStore.prototype.resetContent = function () {
+    try { localStorage.removeItem(DEMO_CONTENT_KEY); } catch (e) {}
+    this.content = { published: { ov: null, keys: {}, version: 0 }, draft: null };
+    this.rebuild();
+  };
   DemoStore.prototype.simulateFullPayment = function () {
     var a = this.data.access, first = a.payments[0].at, now = this.now();
     while (a.payments.length < (a.installments || 3)) a.payments.push({ id: 'demo-' + (a.payments.length + 1), at: now, amount: null });
@@ -152,6 +184,18 @@
     delete body.type;
     return this.call('master-api', body);
   };
+  RemoteStore.prototype.contentCall = function (action, payload) {
+    return this.call('master-content', Object.assign({ action: action }, payload || {}));
+  };
+  // Contenu publié (public, sans authentification), mis en cache pour le hors-ligne.
+  RemoteStore.prototype.fetchPublished = function () {
+    var self = this;
+    return fetch(self.cfg.apiBase + '/master-content', { cache: 'no-cache' }).then(function (r) {
+      if (!r.ok) throw new Error('content ' + r.status);
+      return r.json();
+    }).then(function (j) { lsSet('am_content_cache', j); return j; })
+      .catch(function () { return lsGet('am_content_cache') || { ov: null, version: 0 }; });
+  };
   RemoteStore.prototype.admin = function (action, payload) {
     return this.call('master-admin', Object.assign({ action: action }, payload || {}));
   };
@@ -184,5 +228,5 @@
     return this.load().then(function (fb) { return fb.A.signOut(fb.auth); });
   };
 
-  window.AMStore = { DemoStore: DemoStore, RemoteStore: RemoteStore, DEMO_KEY: DEMO_KEY, lsGet: lsGet, lsSet: lsSet };
+  window.AMStore = { DEMO_CONTENT_KEY: DEMO_CONTENT_KEY, DemoStore: DemoStore, RemoteStore: RemoteStore, DEMO_KEY: DEMO_KEY, lsGet: lsGet, lsSet: lsSet };
 })();

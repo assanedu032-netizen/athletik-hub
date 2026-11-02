@@ -12,7 +12,8 @@
 const admin = require('firebase-admin');
 const Engine = require('../../../public/js/engine.js');
 const Access = require('../../../public/js/access.js');
-const program = require('../../../public/content/program.json');
+const baseProgram = require('../../../public/content/program.json');
+const Content = require('../../../public/js/content-tools.js');
 // Les BONNES RÉPONSES ne sont pas dans le dépôt : le site Athletik Hub publie
 // tout le dépôt (publish = "."), un fichier commité serait donc lisible en
 // ligne. Elles vivent dans Firestore masterConfig/quizKeys (collection
@@ -35,20 +36,42 @@ function initFirebase() {
   }
 }
 
-let engine = null, engineAt = 0;
-const KEYS_TTL = 5 * 60 * 1000;
-async function getEngine() {
-  if (engine && Date.now() - engineAt < KEYS_TTL) return engine;
+// Contenu publié depuis l'éditeur admin : masterContent/published.json (surcouche
+// sérialisée en chaîne — Firestore refuse les tableaux imbriqués du programme).
+async function loadPublished() {
+  const s = await admin.firestore().collection('masterContent').doc('published').get();
+  if (!s.exists) return { ov: null, version: 0 };
+  const d = s.data();
+  try { return { ov: JSON.parse(d.json || 'null'), version: d.version || 0, publishedAt: d.publishedAt || null }; }
+  catch (e) { console.error('[master] contenu publié illisible'); return { ov: null, version: 0 }; }
+}
+async function loadKeys() {
   let keys = Object.assign({}, localKeys);
-  try {
-    const s = await admin.firestore().collection('masterConfig').doc('quizKeys').get();
-    if (s.exists) keys = Object.assign(keys, s.data());
-  } catch (e) { console.warn('[master] quizKeys indisponibles:', e.message); }
+  const s = await admin.firestore().collection('masterConfig').doc('quizKeys').get();
+  if (s.exists) {
+    const d = s.data();
+    // Écrit par l'éditeur sous forme de chaîne (keysJson) ; saisie manuelle possible en objet.
+    if (typeof d.keysJson === 'string') { try { Object.assign(keys, JSON.parse(d.keysJson)); } catch (e) {} }
+    else Object.assign(keys, d);
+  }
   delete keys._comment;
-  engine = Engine.createEngine(program, { quizKeys: keys });
+  delete keys.keysJson;
+  return keys;
+}
+
+let engine = null, engineAt = 0;
+const TTL = 60 * 1000;
+async function getEngine() {
+  if (engine && Date.now() - engineAt < TTL) return engine;
+  let ov = null, keys = Object.assign({}, localKeys);
+  delete keys._comment;
+  try { ov = (await loadPublished()).ov; } catch (e) { console.warn('[master] contenu publié indisponible:', e.message); }
+  try { keys = await loadKeys(); } catch (e) { console.warn('[master] quizKeys indisponibles:', e.message); }
+  engine = Engine.createEngine(Content.merge(baseProgram, ov), { quizKeys: keys });
   engineAt = Date.now();
   return engine;
 }
+function resetEngine() { engine = null; }
 
 function resp(statusCode, payload) {
   return {
@@ -58,7 +81,7 @@ function resp(statusCode, payload) {
       'Cache-Control': 'no-store',
       'Access-Control-Allow-Origin': process.env.MASTER_ALLOWED_ORIGIN || '*',
       'Access-Control-Allow-Headers': 'Content-Type, Authorization',
-      'Access-Control-Allow-Methods': 'POST, OPTIONS'
+      'Access-Control-Allow-Methods': 'GET, POST, OPTIONS'
     },
     body: payload === '' ? '' : JSON.stringify(payload)
   };
@@ -92,4 +115,4 @@ function accessDocId(email) {
   return encodeURIComponent(Access.emailKey(email));
 }
 
-module.exports = { admin, initFirebase, getEngine, resp, verifyUser, isAdmin, parseBody, accessDocId, Access, Engine, program };
+module.exports = { admin, initFirebase, getEngine, resetEngine, loadPublished, loadKeys, baseProgram, Content, resp, verifyUser, isAdmin, parseBody, accessDocId, Access, Engine };

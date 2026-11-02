@@ -57,6 +57,8 @@ process.env.MASTER_OFFER_PLANS = '{"77":"one_time"}';
 const api = require('../netlify/functions/master-api.js').handler;
 const adm = require('../netlify/functions/master-admin.js').handler;
 const hook = require('../netlify/functions/systemeio-webhook.js').handler;
+const content = require('../netlify/functions/master-content.js').handler;
+const program = require('../public/content/program.json');
 
 TOKENS.alice = { uid: 'u-alice', email: 'Alice@Ex.com', email_verified: true, name: 'Alice' };
 TOKENS.bob = { uid: 'u-bob', email: 'bob@ex.com', email_verified: false };
@@ -153,8 +155,48 @@ async function t(n, f) { try { await f(); passed++; } catch (e) { failed++; cons
     await call(adm, 'boss', { action: 'contacted', uid: 'u-alice', day: 30 });
     assert.ok(DB['masterParticipants/u-alice'].contacted.d30);
   });
+
+  await t('contenu : GET public sans surcouche au départ', async () => {
+    const r = await content({ httpMethod: 'GET', headers: {} });
+    assert.strictEqual(r.statusCode, 200);
+    assert.strictEqual(JSON.parse(r.body).ov, null);
+  });
+  await t('contenu : éditeur réservé à l\'admin', async () => {
+    assert.strictEqual((await call(content, 'alice', { action: 'get' })).status, 403);
+    assert.strictEqual((await call(content, null, { action: 'get' })).status, 401);
+  });
+  await t('contenu : lien vidéo invalide → 400', async () => {
+    const m = JSON.parse(JSON.stringify(program.missions.find(x => x.id === 'm1.1')));
+    m.video = 'javascript:alert(1)';
+    const r = await call(content, 'boss', { action: 'saveMission', id: 'm1.1', data: m });
+    assert.strictEqual(r.status, 400);
+  });
+  await t('contenu : brouillon invisible tant que non publié, puis publié sans redéploiement', async () => {
+    const m = JSON.parse(JSON.stringify(program.missions.find(x => x.id === 'boss-a1')));
+    m.video = 'https://youtu.be/dQw4w9WgXcQ';
+    m.quiz.questions.forEach((q, i) => { q.q = 'Vraie question ' + (i + 1); q.options = ['a', 'b', 'c']; });
+    let r = await call(content, 'boss', { action: 'saveMission', id: 'boss-a1', data: m, keys: { q1: 0, q2: 0, q3: 0, q4: 0, q5: 0 } });
+    assert.strictEqual(r.status, 200);
+    assert.strictEqual(JSON.parse((await content({ httpMethod: 'GET', headers: {} })).body).ov, null, 'brouillon non public');
+    r = await call(content, 'boss', { action: 'publish' });
+    assert.strictEqual(r.body.version, 1);
+    const pub = JSON.parse((await content({ httpMethod: 'GET', headers: {} })).body);
+    assert.strictEqual(pub.ov.missions['boss-a1'].video, 'https://youtu.be/dQw4w9WgXcQ');
+    assert.ok(!JSON.stringify(pub).includes('keys'), 'réponses jamais publiques');
+    assert.ok(DB['masterContent/v1'], 'version archivée');
+  });
+  await t('contenu publié → le moteur serveur fait jouer le boss avec les vraies réponses', async () => {
+    // la vidéo publiée devient une condition du défi
+    let r = await call(api, 'alice', { action: 'boss', id: 'boss-a1', answers: { q1: 0, q2: 0, q3: 0, q4: 0, q5: 1 } });
+    assert.strictEqual(r.body.error, 'challenge_incomplete');
+    await call(api, 'alice', { action: 'video', id: 'boss-a1' });
+    r = await call(api, 'alice', { action: 'boss', id: 'boss-a1', answers: { q1: 0, q2: 0, q3: 0, q4: 0, q5: 1 } });
+    assert.strictEqual(r.status, 200, JSON.stringify(r.body));
+    assert.strictEqual(r.body.result.won, true);
+    assert.strictEqual(r.body.result.score, 4);
+  });
   await t('aucune écriture hors des collections master*', async () => {
-    const bad = WRITES.filter(p => !/^master(Participants|Access|PaymentEvents)\//.test(p));
+    const bad = WRITES.filter(p => !/^master(Participants|Access|PaymentEvents|Content|Config)\//.test(p));
     assert.deepStrictEqual(bad, []);
     assert.deepStrictEqual(DB['users/u-alice'], { hasBookAccess: true, profile: { prenom: 'Alice' } }, 'doc Hub intact');
   });

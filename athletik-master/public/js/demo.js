@@ -14,41 +14,35 @@
 })(typeof self !== 'undefined' ? self : this, function () {
   'use strict';
 
-  function demoQuestions(n, prefix) {
-    var qs = [];
-    for (var i = 1; i <= n; i++) {
-      qs.push({
-        id: prefix + i,
-        q: '[DÉMO] Question test n°' + i + ' — choisis « Bonne réponse » pour réussir.',
-        options: ['Mauvaise réponse A', 'Bonne réponse', 'Mauvaise réponse B'],
-        demo: true
-      });
-    }
-    return qs;
+  function written(q) {
+    return !!(q && q.q && q.q.trim() && q.options && q.options.length >= 2 && q.options.every(function (o) { return o && o.trim(); }));
   }
 
-  // Renvoie { content, quizKeys } : une COPIE du programme avec des quiz de démo.
-  function withDemoQuizzes(content) {
+  // Renvoie { content, quizKeys } : une COPIE du programme où chaque emplacement
+  // de question encore vide est rempli par une question [DÉMO]. Les questions
+  // déjà rédigées (via l'éditeur) sont conservées, avec leurs réponses (extraKeys).
+  function withDemoQuizzes(content, extraKeys) {
     var c = JSON.parse(JSON.stringify(content));
-    var keys = {};
+    var keys = JSON.parse(JSON.stringify(extraKeys || {}));
     c.missions.forEach(function (m) {
-      if (m.kind === 'boss' && m.quiz && (!m.quiz.questions || !m.quiz.questions.length)) {
-        m.quiz.questions = demoQuestions(c.settings.bossQuestionCount || 5, 'dq');
-        keys[m.id] = {};
-        m.quiz.questions.forEach(function (q) { keys[m.id][q.id] = 1; });
-      }
-      if (m.support && m.support.type === 'quiz' && (!m.support.questions || !m.support.questions.length)) {
-        m.support.questions = demoQuestions(3, 'dq');
-        if (m.support.scored) {
-          keys[m.id] = {};
-          m.support.questions.forEach(function (q) { keys[m.id][q.id] = 1; });
+      var qs = null, scored = true, diag = false;
+      if (m.kind === 'boss' && m.quiz) qs = m.quiz.questions;
+      else if (m.support && m.support.type === 'quiz') { qs = m.support.questions; scored = !!m.support.scored; diag = !scored; }
+      if (!qs) return;
+      if (!qs.length) for (var i = 1; i <= (m.kind === 'boss' ? (c.settings.bossQuestionCount || 5) : 3); i++) qs.push({ id: 'q' + i, q: '', options: [] });
+      qs.forEach(function (q, i) {
+        if (written(q)) return;
+        q.demo = true;
+        if (diag) {
+          q.q = '[DÉMO] Question de diagnostic n°' + (i + 1) + ' — toutes les réponses sont acceptées.';
+          q.options = ['Réponse A', 'Réponse B', 'Réponse C'];
         } else {
-          m.support.questions.forEach(function (q) {
-            q.q = '[DÉMO] Question de diagnostic test — toutes les réponses sont acceptées.';
-            q.options = ['Réponse A', 'Réponse B', 'Réponse C'];
-          });
+          q.q = '[DÉMO] Question test n°' + (i + 1) + ' — choisis « Bonne réponse » pour réussir.';
+          q.options = ['Mauvaise réponse A', 'Bonne réponse', 'Mauvaise réponse B'];
+          keys[m.id] = keys[m.id] || {};
+          keys[m.id][q.id] = 1;
         }
-      }
+      });
     });
     return { content: c, quizKeys: keys };
   }

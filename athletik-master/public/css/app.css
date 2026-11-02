@@ -290,3 +290,20 @@ details summary { cursor: pointer; color: var(--gold2); font-size: 13px; font-we
 .steps { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; font-weight: 700; font-size: 14px; }
 .steps span { background: var(--surface2); border-radius: 99px; padding: 6px 12px; }
 .steps em { color: var(--gold2); font-style: normal; }
+
+/* ─── Contenu de mission ────────────────────────────────────────────────── */
+.prose { white-space: pre-wrap; line-height: 1.6; }
+.video-title { font-weight: 700; font-size: 15px; margin-bottom: 8px; color: var(--text); }
+.kv { display: grid; grid-template-columns: max-content 1fr; gap: 6px 14px; margin: 8px 0 0; font-size: 14px; }
+.kv dt { color: var(--text3); font-weight: 600; }
+.kv dd { margin: 0; min-width: 0; overflow-wrap: anywhere; }
+.slots { margin: 10px 0 0; padding-left: 22px; font-size: 14px; }
+.slots li { margin: 6px 0; }
+
+/* ─── Éditeur de contenu ────────────────────────────────────────────────── */
+.ed-block { border-top: 1px solid var(--line); padding-top: 12px; margin-top: 14px; }
+.ed-block:first-of-type { border-top: 0; }
+.editor-actions { position: sticky; bottom: calc(var(--nav-h) + 8px); z-index: 10; display: flex; flex-wrap: wrap; gap: 8px; margin-top: 16px; padding: 10px; background: rgba(15, 26, 51, .94); border: 1px solid var(--line); border-radius: 14px; backdrop-filter: blur(8px); }
+.editor-actions .btn { flex: 1 1 auto; }
+@media (min-width: 960px) { .editor-actions { bottom: 12px; } }
+select.input { appearance: auto; }
